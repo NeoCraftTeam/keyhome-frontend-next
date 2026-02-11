@@ -1,0 +1,255 @@
+'use client';
+
+import { useState } from 'react';
+import Image from 'next/image';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Alert,
+  CircularProgress,
+  Link,
+  InputAdornment,
+  IconButton,
+} from '@mui/material';
+import {
+  Visibility,
+  VisibilityOff,
+  Email as EmailIcon,
+} from '@mui/icons-material';
+import { useAuth } from '@/providers/AuthProvider';
+import { AxiosError } from 'axios';
+import FadeIn from '@/components/ui/FadeIn';
+
+export default function LoginPage() {
+  const { login } = useAuth();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      await login(email, password);
+    } catch (err) {
+      const axiosErr = err as AxiosError<{ message?: string }>;
+      setError(
+        axiosErr?.response?.data?.message ||
+          'Identifiants incorrects. Veuillez réessayer.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>
+      {/* Left side — image */}
+      <Box
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          flex: 1,
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <Image
+          src="/images/01login.jpg"
+          alt="Bienvenue sur KeyHome"
+          fill
+          priority
+          sizes="50vw"
+          style={{ objectFit: 'cover' }}
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAABv/EAB4QAAICAgIDAAAAAAAAAAAAAAABAgMEEQUhEjFB/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAYEQADAQEAAAAAAAAAAAAAAAABAgMAEf/aAAwDAQACEQMRAD8AjeN5O/JzIVY8pxjJ7aXoGALRYiLgmf/Z"
+        />
+        {/* Dark overlay */}
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to bottom, rgba(34,34,34,0.2) 0%, rgba(34,34,34,0.55) 100%)',
+            zIndex: 1,
+          }}
+        />
+        {/* Overlay text */}
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            p: 6,
+            zIndex: 2,
+          }}
+        >
+          <FadeIn delay={0.2} direction="up">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <Image src="/images/logo.png" alt="KeyHome" width={42} height={42} />
+              <Typography variant="h4" fontWeight={700} color="#fff">
+                KeyHome
+              </Typography>
+            </Box>
+          </FadeIn>
+          <FadeIn delay={0.4} direction="up">
+            <Typography variant="h5" color="rgba(255,255,255,0.9)" fontWeight={400} sx={{ maxWidth: 360 }}>
+              Trouvez votre bien immobilier idéal au Cameroun
+            </Typography>
+          </FadeIn>
+          <FadeIn delay={0.6} direction="up">
+            <Box sx={{ mt: 3, display: 'flex', gap: 4 }}>
+              {[
+                { value: '1K+', label: 'Annonces' },
+                { value: '50+', label: 'Villes' },
+                { value: '500+', label: 'Agents' },
+              ].map((stat) => (
+                <Box key={stat.label}>
+                  <Typography variant="h5" fontWeight={700} color="#fff">{stat.value}</Typography>
+                  <Typography variant="caption" color="rgba(255,255,255,0.7)">{stat.label}</Typography>
+                </Box>
+              ))}
+            </Box>
+          </FadeIn>
+        </Box>
+      </Box>
+
+      {/* Right side — form */}
+      <Box
+        sx={{
+          flex: { xs: 1, md: '0 0 480px' },
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          p: { xs: 3, sm: 6 },
+          bgcolor: 'background.paper',
+        }}
+      >
+        {/* Mobile logo */}
+        <FadeIn direction="none">
+          <Box
+            sx={{
+              display: { xs: 'flex', md: 'none' },
+              alignItems: 'center',
+              gap: 1,
+              mb: 4,
+            }}
+          >
+            <Image src="/images/logo.png" alt="KeyHome" width={40} height={40} priority />
+            <Typography variant="h5" fontWeight={700} color="primary.main">
+              KeyHome
+            </Typography>
+          </Box>
+        </FadeIn>
+
+        <Box sx={{ width: '100%', maxWidth: 400 }}>
+          <FadeIn delay={0.1} direction="up">
+            <Typography variant="h4" fontWeight={700} gutterBottom>
+              Bienvenue
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Connectez-vous pour accéder à vos annonces
+            </Typography>
+          </FadeIn>
+
+          {error && (
+            <FadeIn direction="none" duration={0.3}>
+              <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+            </FadeIn>
+          )}
+
+          <FadeIn delay={0.2} direction="up">
+            <Box component="form" onSubmit={handleSubmit}>
+              <TextField
+                fullWidth
+                label="Adresse email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                autoFocus
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <EmailIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{ mb: 2 }}
+              />
+
+              <TextField
+                fullWidth
+                label="Mot de passe"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{ mb: 1 }}
+              />
+
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+                <Link
+                  href="/forgot-password"
+                  underline="hover"
+                  sx={{ fontSize: '0.8125rem', color: 'primary.main', fontWeight: 500 }}
+                >
+                  Mot de passe oublié ?
+                </Link>
+              </Box>
+
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
+                disabled={isSubmitting}
+                sx={{
+                  py: 1.5,
+                  borderRadius: 2,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                  '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                }}
+              >
+                {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Se connecter'}
+              </Button>
+            </Box>
+          </FadeIn>
+
+          <FadeIn delay={0.4} direction="up">
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 3, textAlign: 'center' }}>
+              Pas encore de compte ?{' '}
+              <Link href="/register" underline="hover" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                Créer un compte
+              </Link>
+            </Typography>
+          </FadeIn>
+        </Box>
+      </Box>
+    </Box>
+  );
+}

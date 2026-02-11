@@ -1,0 +1,133 @@
+'use client';
+
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Alert,
+  CircularProgress,
+  Link,
+} from '@mui/material';
+import { authService } from '@/services/auth.service';
+import { AxiosError } from 'axios';
+import FadeIn from '@/components/ui/FadeIn';
+
+function ResetPasswordForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token') || '';
+  const email = searchParams.get('email') || '';
+
+  const [password, setPassword] = useState('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      await authService.resetPassword({
+        token,
+        email,
+        password,
+        password_confirmation: passwordConfirmation,
+      });
+      router.push('/login');
+    } catch (err) {
+      const axiosErr = err as AxiosError<{ message?: string }>;
+      setError(axiosErr?.response?.data?.message || 'Erreur lors de la réinitialisation.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Box sx={{ width: '100%', maxWidth: 420 }}>
+      <FadeIn direction="none">
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4 }}>
+          <Image src="/images/logo.png" alt="KeyHome" width={36} height={36} priority />
+          <Typography variant="h6" fontWeight={700} color="primary.main">
+            KeyHome
+          </Typography>
+        </Box>
+      </FadeIn>
+
+      <FadeIn delay={0.1} direction="up">
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Nouveau mot de passe
+        </Typography>
+      </FadeIn>
+
+      {error && (
+        <FadeIn direction="none" duration={0.3}>
+          <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+        </FadeIn>
+      )}
+
+      <FadeIn delay={0.2} direction="up">
+        <Box component="form" onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            label="Nouveau mot de passe"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoFocus
+            helperText="Minimum 8 caractères"
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Confirmer"
+            type="password"
+            value={passwordConfirmation}
+            onChange={(e) => setPasswordConfirmation(e.target.value)}
+            required
+            sx={{ mb: 3 }}
+          />
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            size="large"
+            disabled={isSubmitting || password.length < 8 || password !== passwordConfirmation}
+            sx={{
+              py: 1.5,
+              borderRadius: 2,
+              background: 'linear-gradient(to right, #F6475F, #D93A50)',
+              '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+            }}
+          >
+            {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Réinitialiser'}
+          </Button>
+        </Box>
+      </FadeIn>
+
+      <FadeIn delay={0.3} direction="up">
+        <Box sx={{ mt: 3, textAlign: 'center' }}>
+          <Link href="/login" underline="hover" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
+            Retour à la connexion
+          </Link>
+        </Box>
+      </FadeIn>
+    </Box>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', p: 3 }}>
+      <Suspense fallback={<CircularProgress />}>
+        <ResetPasswordForm />
+      </Suspense>
+    </Box>
+  );
+}
