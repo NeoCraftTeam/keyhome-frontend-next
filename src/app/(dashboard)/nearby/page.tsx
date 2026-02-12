@@ -116,26 +116,15 @@ export default function NearbyPage() {
     ads.forEach((ad) => {
       if (!ad.location) return;
 
-      const el = document.createElement('div');
-      el.className = 'ad-marker';
-      el.style.cssText = `
-        background: white;
-        border-radius: 20px;
-        padding: 4px 10px;
-        font-size: 12px;
-        font-weight: 700;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        cursor: pointer;
-        white-space: nowrap;
-        border: 2px solid transparent;
-        transition: all 0.2s;
-      `;
-      el.textContent = formatPrice(ad.price);
-      el.onmouseenter = () => { el.style.background = '#222'; el.style.color = '#fff'; };
-      el.onmouseleave = () => { el.style.background = '#fff'; el.style.color = '#000'; };
-      el.onclick = () => router.push(`/ads/${ad.id}/${ad.slug}`);
+      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
+        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${ad.id}/${ad.slug}'">
+          <div>${ad.title}</div>
+          <div style="color:#F6475F;font-weight:700">${formatPrice(ad.price)}</div>
+        </div>`
+      );
 
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new mapboxgl.Marker({ color: '#F6475F' })
+        .setPopup(popup)
         .setLngLat([ad.location.longitude, ad.location.latitude])
         .addTo(mapRef.current!);
 

@@ -14,6 +14,7 @@ export const adsService = {
     per_page?: number;
     order_by?: string;
     direction?: 'asc' | 'desc';
+    type?: string;
   }): Promise<PaginatedResponse<Ad>> {
     const { data } = await api.get('/ads', { params });
     return data;

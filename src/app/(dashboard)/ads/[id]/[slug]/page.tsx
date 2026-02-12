@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Container,
@@ -42,6 +42,7 @@ import {
 import { adsService } from '@/services/ads.service';
 import { paymentsService } from '@/services/payments.service';
 import { formatPrice, formatRelativeDate } from '@/lib/constants';
+import { useFavorites } from '@/providers/FavoritesProvider';
 import FadeIn from '@/components/ui/FadeIn';
 
 function AdDetailContent() {
@@ -56,7 +57,18 @@ function AdDetailContent() {
   const [paymentError, setPaymentError] = useState('');
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState('');
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
+  const queryClient = useQueryClient();
+  const verifiedRef = useRef(false);
+
+  useEffect(() => {
+    if (justUnlocked && adId && !verifiedRef.current) {
+      verifiedRef.current = true;
+      paymentsService.verify(adId).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['ad', adId] });
+      }).catch(() => {});
+    }
+  }, [justUnlocked, adId, queryClient]);
 
   const { data: ad, isLoading } = useQuery({
     queryKey: ['ad', adId],
@@ -112,7 +124,6 @@ function AdDetailContent() {
   };
 
   const openLightbox = (idx: number) => {
-    if (isLocked && idx > 0) return;
     setLightboxIndex(idx);
     setLightboxOpen(true);
   };
@@ -131,14 +142,23 @@ function AdDetailContent() {
   return (
     <>
       <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
-        {/* Image gallery — Airbnb grid */}
+        {/* Image gallery */}
         <FadeIn delay={0.1} direction="none">
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-            gridTemplateRows: { md: '200px 200px' },
-            gap: 0.5,
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: images.length >= 5 ? '2fr 1fr 1fr'
+                : images.length >= 3 ? '2fr 1fr'
+                : images.length === 2 ? '1fr 1fr'
+                : '1fr',
+            },
+            gridTemplateRows: {
+              xs: images.length <= 1 ? '300px' : '260px',
+              md: images.length <= 1 ? '400px' : '210px 210px',
+            },
+            gap: '4px',
             borderRadius: 3,
             overflow: 'hidden',
             mb: 3,
@@ -148,12 +168,11 @@ function AdDetailContent() {
           <Box
             onClick={() => openLightbox(0)}
             sx={{
-              gridRow: { md: '1 / 3' },
+              gridRow: { md: images.length >= 3 ? '1 / 3' : images.length === 2 ? '1 / 3' : 'auto' },
               position: 'relative',
               cursor: 'pointer',
-              minHeight: { xs: 250, md: 'auto' },
-              '&:hover': { opacity: 0.92 },
-              transition: 'opacity 0.2s',
+              overflow: 'hidden',
+              '&:hover img': { transform: 'scale(1.03)' },
             }}
           >
             {primaryImage ? (
@@ -162,7 +181,12 @@ function AdDetailContent() {
                 src={primaryImage.url}
                 alt={ad.title}
                 loading="eager"
-                sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  transition: 'transform 0.3s ease',
+                }}
               />
             ) : (
               <Box sx={{ width: '100%', height: '100%', bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -177,11 +201,11 @@ function AdDetailContent() {
               key={img.id}
               onClick={() => openLightbox(idx + 1)}
               sx={{
-                display: { xs: idx > 0 ? 'none' : 'block', md: 'block' },
+                display: { xs: 'none', md: 'block' },
                 position: 'relative',
-                cursor: isLocked ? 'default' : 'pointer',
-                '&:hover': isLocked ? {} : { opacity: 0.92 },
-                transition: 'opacity 0.2s',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                '&:hover img': { transform: 'scale(1.05)' },
               }}
             >
               <Box
@@ -193,27 +217,69 @@ function AdDetailContent() {
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  filter: isLocked ? 'blur(20px)' : 'none',
-                  transition: 'filter 0.3s',
+                  transition: 'transform 0.3s ease',
                 }}
               />
-              {isLocked && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: 'rgba(0,0,0,0.3)',
-                  }}
-                >
-                  <Lock sx={{ color: '#fff', fontSize: 32 }} />
-                </Box>
-              )}
             </Box>
           ))}
+
+          {/* "Show all photos" overlay on last visible image */}
+          {images.length > 5 && (
+            <Box
+              onClick={() => openLightbox(4)}
+              sx={{
+                display: { xs: 'none', md: 'flex' },
+                position: 'absolute',
+                bottom: 12,
+                right: 12,
+                zIndex: 3,
+              }}
+            >
+              <Button
+                variant="contained"
+                size="small"
+                onClick={(e) => { e.stopPropagation(); openLightbox(0); }}
+                sx={{
+                  bgcolor: 'rgba(255,255,255,0.95)',
+                  color: 'text.primary',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  borderRadius: 2,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  '&:hover': { bgcolor: '#fff' },
+                }}
+              >
+                Voir les {images.length} photos
+              </Button>
+            </Box>
+          )}
         </Box>
+
+        {/* Mobile image count + tap to view */}
+        {images.length > 1 && (
+          <Box
+            onClick={() => openLightbox(0)}
+            sx={{
+              display: { xs: 'flex', md: 'none' },
+              justifyContent: 'center',
+              mt: -2,
+              mb: 2,
+            }}
+          >
+            <Chip
+              label={`Voir les ${images.length} photos`}
+              size="small"
+              clickable
+              sx={{
+                fontWeight: 600,
+                bgcolor: 'rgba(0,0,0,0.7)',
+                color: '#fff',
+                '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
+              }}
+            />
+          </Box>
+        )}
         </FadeIn>
 
         {/* Action buttons */}
@@ -231,11 +297,11 @@ function AdDetailContent() {
           <Button
             variant="outlined"
             size="small"
-            startIcon={isFavorite ? <Favorite sx={{ color: '#F6475F' }} /> : <FavoriteBorder />}
-            onClick={() => setIsFavorite(!isFavorite)}
-            sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: isFavorite ? '#F6475F' : 'text.primary' }}
+            startIcon={checkFav(ad.id) ? <Favorite sx={{ color: '#F6475F' }} /> : <FavoriteBorder />}
+            onClick={() => toggleFav(ad)}
+            sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: checkFav(ad.id) ? '#F6475F' : 'text.primary' }}
           >
-            {isFavorite ? 'Sauvegardé' : 'Sauvegarder'}
+            {checkFav(ad.id) ? 'Sauvegardé' : 'Sauvegarder'}
           </Button>
         </Box>
         </FadeIn>
@@ -409,45 +475,54 @@ function AdDetailContent() {
               {paymentError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{paymentError}</Alert>}
 
               {isLocked ? (
-                <Button
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  onClick={() => setPaymentDialogOpen(true)}
-                  startIcon={<Lock />}
-                  sx={{
-                    py: 1.5,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                    background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                    '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-                  }}
-                >
-                  Déverrouiller — 500 FCFA
-                </Button>
+                <>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    size="large"
+                    onClick={() => setPaymentDialogOpen(true)}
+                    startIcon={<Lock />}
+                    sx={{
+                      py: 1.5,
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                      '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                    }}
+                  >
+                    Déverrouiller — 500 FCFA
+                  </Button>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1.5 }}>
+                    Payez pour accéder aux coordonnées de l&apos;annonceur
+                  </Typography>
+                </>
               ) : (
-                <Button
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  startIcon={<LockOpen />}
-                  disabled
-                  sx={{
-                    py: 1.5,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    bgcolor: 'success.main',
-                    '&.Mui-disabled': { bgcolor: 'success.main', color: '#fff', opacity: 0.9 },
-                  }}
-                >
-                  Annonce déverrouillée
-                </Button>
+                <Box>
+                  <Divider sx={{ mb: 2 }} />
+                  <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
+                    Contact de l&apos;annonceur
+                  </Typography>
+                  {publisherPhone && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <Phone sx={{ fontSize: 18, color: 'primary.main' }} />
+                      <Typography variant="body2" fontWeight={500}>{publisherPhone}</Typography>
+                      <IconButton size="small" onClick={() => { navigator.clipboard.writeText(publisherPhone); setSnackbar('Numéro copié'); }}>
+                        <ContentCopy sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Box>
+                  )}
+                  {publisherEmail && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Email sx={{ fontSize: 18, color: 'primary.main' }} />
+                      <Typography variant="body2" fontWeight={500} sx={{ wordBreak: 'break-all' }}>{publisherEmail}</Typography>
+                      <IconButton size="small" onClick={() => { navigator.clipboard.writeText(publisherEmail); setSnackbar('Email copié'); }}>
+                        <ContentCopy sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Box>
               )}
-
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1.5 }}>
-                {isLocked ? 'Payez pour voir les coordonnées et toutes les photos' : 'Vous avez accès à toutes les informations'}
-              </Typography>
             </Paper>
           </Grid>
         </Grid>
@@ -474,7 +549,7 @@ function AdDetailContent() {
             500 FCFA
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Vous aurez accès aux coordonnées de l&apos;annonceur et à toutes les photos de l&apos;annonce.
+            Vous aurez accès aux coordonnées de l&apos;annonceur (téléphone, email).
           </Typography>
 
           {paymentError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{paymentError}</Alert>}
@@ -528,7 +603,7 @@ function AdDetailContent() {
                 component="img"
                 src={images[lightboxIndex]?.url}
                 alt={`Photo ${lightboxIndex + 1}`}
-                sx={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', filter: isLocked && lightboxIndex > 0 ? 'blur(20px)' : 'none' }}
+                sx={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain' }}
               />
               <IconButton onClick={() => setLightboxIndex((p) => (p + 1) % images.length)} sx={{ color: '#fff', position: 'absolute', right: 8, zIndex: 2 }}>
                 <ChevronRight sx={{ fontSize: 32 }} />

@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -19,16 +20,19 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-function getInitialMode(): ThemeMode {
-  if (typeof window === 'undefined') return 'light';
-  const saved = localStorage.getItem('theme') as ThemeMode | null;
-  if (saved === 'dark' || saved === 'light') return saved;
-  if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
-  return 'light';
-}
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<ThemeMode>(getInitialMode);
+  const [mode, setMode] = useState<ThemeMode>('light');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') as ThemeMode | null;
+    if (saved === 'dark' || saved === 'light') {
+      setMode(saved);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setMode('dark');
+    }
+    setMounted(true);
+  }, []);
 
   const toggleTheme = useCallback(() => {
     setMode((prev) => {
@@ -46,7 +50,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     <ThemeContext.Provider value={value}>
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
-        {children}
+        {mounted ? children : <div style={{ visibility: 'hidden' }}>{children}</div>}
       </MuiThemeProvider>
     </ThemeContext.Provider>
   );

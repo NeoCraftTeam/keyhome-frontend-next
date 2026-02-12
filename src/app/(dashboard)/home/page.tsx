@@ -45,9 +45,11 @@ export default function HomePage() {
   const { data: adsData, isLoading, isFetching } = useQuery({
     queryKey: ['ads', page, selectedCategory],
     queryFn: () =>
-      selectedCategory
-        ? adsService.search({ q: selectedCategory, page, per_page: 20 })
-        : adsService.list({ page, per_page: 20 }),
+      adsService.list({
+        page,
+        per_page: 20,
+        type: selectedCategory || undefined,
+      }),
     placeholderData: keepPreviousData,
     staleTime: 2 * 60 * 1000,
   });
@@ -66,35 +68,23 @@ export default function HomePage() {
 
   return (
     <Box sx={{ pb: 6 }}>
-      {/* Category pills */}
-      <Box
-        sx={{
-          position: 'sticky',
-          top: { xs: 56, md: 64 },
-          zIndex: 10,
-          bgcolor: 'background.default',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          py: 1,
-        }}
-      >
-        <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
-          <CategoryPills
-            categories={categories}
-            selected={selectedCategory}
-            onChange={(val) => {
-              setSelectedCategory(val);
-              setPage(1);
-            }}
-          />
-        </Container>
-      </Box>
+      {/* Category pills — centered under navbar */}
+      <Container maxWidth="lg" sx={{ pt: 2, pb: 1 }}>
+        <CategoryPills
+          categories={categories}
+          selected={selectedCategory}
+          onChange={(val) => {
+            setSelectedCategory(val);
+            setPage(1);
+          }}
+        />
+      </Container>
 
-      <Container maxWidth="xl" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3, md: 4 } }}>
+      <Container maxWidth="xl" sx={{ mt: 1, px: { xs: 2, sm: 3, md: 4 } }}>
         {/* Recommendations */}
         {recommendations.length > 0 && (
           <FadeIn delay={0.1} direction="up">
-          <Box sx={{ mb: { xs: 3, md: 5 } }}>
+          <Box sx={{ mb: { xs: 3, md: 4 } }}>
             <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700} gutterBottom>
               Recommandé pour vous
             </Typography>
@@ -123,7 +113,7 @@ export default function HomePage() {
                 </Box>
               ))}
             </Box>
-            <Divider sx={{ mt: { xs: 2, md: 4 } }} />
+            <Divider sx={{ mt: { xs: 2, md: 3 } }} />
           </Box>
           </FadeIn>
         )}
@@ -133,7 +123,7 @@ export default function HomePage() {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 2 }}>
           <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
             {selectedCategory
-              ? `Résultats pour "${selectedCategory}"`
+              ? `${categories.find((c) => c.value === selectedCategory)?.label || selectedCategory}`
               : 'Annonces récentes'}
           </Typography>
           {isFetching && !isLoading && (
@@ -143,7 +133,7 @@ export default function HomePage() {
           )}
         </Box>
 
-        <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+        <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
           {isLoading
             ? Array.from({ length: skeletonCount }).map((_, idx) => (
                 <Grid key={idx} size={{ xs: 6, sm: 6, md: 4, lg: 3 }}>
@@ -151,7 +141,7 @@ export default function HomePage() {
                 </Grid>
               ))
             : ads.map((ad, idx) => (
-                <Grid key={ad.id} size={{ xs: 6, sm: 6, md: 4, lg: 3 }} sx={{ animation: `fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) ${idx * 0.05}s both` }}>
+                <Grid key={ad.id} size={{ xs: 6, sm: 6, md: 4, lg: 3 }} sx={{ animation: `fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) ${idx * 0.03}s both` }}>
                   <AdCard ad={ad} />
                 </Grid>
               ))}

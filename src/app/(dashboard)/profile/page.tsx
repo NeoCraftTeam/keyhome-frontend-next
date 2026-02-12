@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { LockOpen as LockOpenIcon } from '@mui/icons-material';
 import {
   Box,
   Container,
@@ -32,8 +33,9 @@ import {
   PhotoCamera,
 } from '@mui/icons-material';
 import { useAuth } from '@/providers/AuthProvider';
+import { useFavorites } from '@/providers/FavoritesProvider';
 import { authService } from '@/services/auth.service';
-import { usersService } from '@/services/users.service';
+import { usersService, unlockedAdsService } from '@/services/users.service';
 import { citiesService } from '@/services/cities.service';
 import { UserRole, City } from '@/types';
 import { AxiosError } from 'axios';
@@ -52,6 +54,7 @@ function TabPanel({ children, value, index }: TabPanelProps) {
 
 export default function ProfilePage() {
   const { user, setUser, refreshUser } = useAuth();
+  const { favorites } = useFavorites();
   const [tab, setTab] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -66,6 +69,13 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [snackbar, setSnackbar] = useState('');
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Unlocked ads
+  const { data: unlockedAds = [], isLoading: isLoadingUnlocked } = useQuery({
+    queryKey: ['unlocked-ads'],
+    queryFn: () => unlockedAdsService.list(),
+    staleTime: 2 * 60 * 1000,
+  });
 
   // Password change
   const [passwordForm, setPasswordForm] = useState({
@@ -86,15 +96,6 @@ export default function ProfilePage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Unlocked ads (annonces deverrouillees)
-  const { data: unlockedData, isLoading: unlockedLoading } = useQuery({
-    queryKey: ['myUnlockedAds'],
-    queryFn: async () => {
-      const { data } = await (await import('@/lib/api')).default.get('/ads', { params: { unlocked: true, page: 1, per_page: 50 } });
-      return data;
-    },
-    enabled: tab === 1,
-  });
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -235,7 +236,7 @@ export default function ProfilePage() {
               startIcon={<EditIcon />}
               onClick={() => setIsEditing(true)}
               sx={{ borderRadius: 2, textTransform: 'none' }}
-              size={window.innerWidth < 600 ? 'small' : 'medium'}
+              size="medium"
             >
               Modifier
             </Button>
@@ -258,7 +259,8 @@ export default function ProfilePage() {
         }}
       >
         <Tab icon={<EditIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Informations" />
-        <Tab icon={<FavoriteIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Annonces déverrouillées" />
+        <Tab icon={<FavoriteIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={`Favoris (${favorites.length})`} />
+        <Tab icon={<LockOpenIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={`Déverrouillées (${unlockedAds.length})`} />
         <Tab icon={<LockIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Sécurité" />
       </Tabs>
       </FadeIn>
@@ -353,33 +355,58 @@ export default function ProfilePage() {
         )}
       </TabPanel>
 
-      {/* Tab 1: Unlocked ads */}
+      {/* Tab 1: Favorites */}
       <TabPanel value={tab} index={1}>
-        {unlockedLoading ? (
-          <CircularProgress sx={{ display: 'block', mx: 'auto' }} />
-        ) : (unlockedData?.data || []).length === 0 ? (
+        {favorites.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 6 }}>
             <FavoriteIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
             <Typography variant="h6" color="text.secondary">
-              Aucune annonce déverrouillée
+              Aucun favori
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Déverrouillez des annonces pour voir les coordonnées des annonceurs
+              Ajoutez des annonces en favoris en cliquant sur le coeur
             </Typography>
           </Box>
         ) : (
           <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
-            {(unlockedData?.data || []).map((ad: Record<string, unknown>) => (
-              <Grid key={ad.id as string} size={{ xs: 6, sm: 6, md: 4 }}>
-                <AdCard ad={ad as never} />
+            {favorites.map((ad) => (
+              <Grid key={ad.id} size={{ xs: 6, sm: 6, md: 4 }}>
+                <AdCard ad={ad} />
               </Grid>
             ))}
           </Grid>
         )}
       </TabPanel>
 
-      {/* Tab 2: Security (password) */}
+      {/* Tab 2: Unlocked ads */}
       <TabPanel value={tab} index={2}>
+        {isLoadingUnlocked ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress />
+          </Box>
+        ) : unlockedAds.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <LockOpenIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
+            <Typography variant="h6" color="text.secondary">
+              Aucune annonce déverrouillée
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Les annonces que vous déverrouillez apparaîtront ici
+            </Typography>
+          </Box>
+        ) : (
+          <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
+            {unlockedAds.map((ad) => (
+              <Grid key={ad.id} size={{ xs: 6, sm: 6, md: 4 }}>
+                <AdCard ad={ad} />
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </TabPanel>
+
+      {/* Tab 3: Security (password) */}
+      <TabPanel value={tab} index={3}>
         <Typography variant="h6" fontWeight={600} gutterBottom>
           Changer le mot de passe
         </Typography>

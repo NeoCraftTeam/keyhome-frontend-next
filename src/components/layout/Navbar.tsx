@@ -100,8 +100,8 @@ export default function Navbar() {
             <Image
               src="/images/logo.png"
               alt="KeyHome"
-              width={34}
-              height={34}
+              width={44}
+              height={44}
               priority
               style={{ objectFit: 'contain' }}
             />
@@ -110,7 +110,8 @@ export default function Navbar() {
                 variant="h6"
                 sx={{
                   color: 'primary.main',
-                  fontWeight: 700,
+                  fontWeight: 800,
+                  fontSize: '1.25rem',
                   letterSpacing: -0.5,
                 }}
               >

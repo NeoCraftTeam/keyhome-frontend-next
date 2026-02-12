@@ -27,10 +27,19 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
+    const url = error.config?.url || '';
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register');
+
+    if (
+      error.response?.status === 401 &&
+      typeof window !== 'undefined' &&
+      !isAuthEndpoint
+    ) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Dispatch a custom event so AuthProvider can handle the redirect
+      // without a full page reload
+      window.dispatchEvent(new Event('auth:logout'));
     }
     return Promise.reject(error);
   }

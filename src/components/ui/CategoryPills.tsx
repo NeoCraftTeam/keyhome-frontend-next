@@ -45,12 +45,14 @@ export default function CategoryPills({ categories, selected, onChange }: Catego
         ref={scrollRef}
         sx={{
           display: 'flex',
+          justifyContent: 'center',
           gap: 1,
           overflowX: 'auto',
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': { display: 'none' },
           px: 4,
           py: 1,
+          width: '100%',
         }}
       >
         {categories.map((cat) => (

@@ -55,9 +55,19 @@ function SearchContent() {
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
-  // Filter state
+  // Filter state — read initial query from URL
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
+
+  // Sync query from URL when navigating from navbar
+  useEffect(() => {
+    const urlQ = searchParams.get('q') || '';
+    if (urlQ !== query) {
+      setQuery(urlQ);
+      setPage(1);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   const [cityInput, setCityInput] = useState('');
   const [selectedType, setSelectedType] = useState<AdType | null>(null);
   const [bedrooms, setBedrooms] = useState<number | undefined>();
@@ -85,10 +95,10 @@ function SearchContent() {
     city: selectedCity?.name || undefined,
     type: selectedType?.name || undefined,
     bedrooms: bedrooms || undefined,
-    min_price: priceRange[0] > 0 ? priceRange[0] : undefined,
-    max_price: priceRange[1] < 5000000 ? priceRange[1] : undefined,
-    min_surface: surfaceRange[0] > 0 ? surfaceRange[0] : undefined,
-    max_surface: surfaceRange[1] < 1000 ? surfaceRange[1] : undefined,
+    price_min: priceRange[0] > 0 ? priceRange[0] : undefined,
+    price_max: priceRange[1] < 5000000 ? priceRange[1] : undefined,
+    surface_min: surfaceRange[0] > 0 ? surfaceRange[0] : undefined,
+    surface_max: surfaceRange[1] < 1000 ? surfaceRange[1] : undefined,
     has_parking: hasParking || undefined,
     page,
     per_page: 20,
@@ -101,7 +111,14 @@ function SearchContent() {
     staleTime: 60 * 1000,
   });
 
+  const { data: allAdsData } = useQuery({
+    queryKey: ['search-map-all', query, selectedCity?.id, selectedType?.id, bedrooms, priceRange, surfaceRange, hasParking],
+    queryFn: () => adsService.search({ ...buildParams(), page: 1, per_page: 200 }),
+    staleTime: 2 * 60 * 1000,
+  });
+
   const ads = useMemo(() => data?.data || [], [data?.data]);
+  const mapAds = useMemo(() => allAdsData?.data || ads, [allAdsData?.data, ads]);
   const totalPages = data?.meta?.last_page || 1;
   const total = data?.meta?.total || 0;
 
@@ -132,22 +149,19 @@ function SearchContent() {
     const bounds = new mapboxgl.LngLatBounds();
     let hasGeo = false;
 
-    ads.forEach((ad) => {
+    mapAds.forEach((ad) => {
       if (!ad.location) return;
       hasGeo = true;
 
-      const el = document.createElement('div');
-      el.style.cssText = `
-        background: white; border-radius: 20px; padding: 4px 10px;
-        font-size: 12px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        cursor: pointer; white-space: nowrap; border: 2px solid transparent; transition: all 0.15s;
-      `;
-      el.textContent = formatPrice(ad.price);
-      el.onmouseenter = () => { el.style.background = '#222'; el.style.color = '#fff'; };
-      el.onmouseleave = () => { el.style.background = '#fff'; el.style.color = '#000'; };
-      el.onclick = () => router.push(`/ads/${ad.id}/${ad.slug}`);
+      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
+        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${ad.id}/${ad.slug}'">
+          <div>${ad.title}</div>
+          <div style="color:#F6475F;font-weight:700">${formatPrice(ad.price)}</div>
+        </div>`
+      );
 
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new mapboxgl.Marker({ color: '#F6475F' })
+        .setPopup(popup)
         .setLngLat([ad.location.longitude, ad.location.latitude])
         .addTo(mapRef.current!);
       markersRef.current.push(marker);
@@ -157,7 +171,7 @@ function SearchContent() {
     if (hasGeo) {
       mapRef.current.fitBounds(bounds, { padding: 50, maxZoom: 14 });
     }
-  }, [ads, viewMode, router]);
+  }, [mapAds, viewMode, router]);
 
   const clearFilters = () => {
     setQuery('');

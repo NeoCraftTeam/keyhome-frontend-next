@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -24,28 +25,40 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function getInitialToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('token');
-}
-
-function getInitialUser(): User | null {
-  if (typeof window === 'undefined') return null;
-  const saved = localStorage.getItem('user');
-  if (!saved) return null;
-  try {
-    return JSON.parse(saved);
-  } catch {
-    localStorage.removeItem('user');
-    return null;
-  }
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUserState] = useState<User | null>(getInitialUser);
-  const [token, setToken] = useState<string | null>(getInitialToken);
-  const isLoading = false;
+  const [user, setUserState] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    const savedToken = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+
+    if (savedToken) {
+      setToken(savedToken);
+    }
+    if (savedUser) {
+      try {
+        setUserState(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem('user');
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  // Listen for forced logout from the API interceptor (e.g. expired token)
+  useEffect(() => {
+    const handleForcedLogout = () => {
+      setToken(null);
+      setUserState(null);
+      router.replace('/login');
+    };
+
+    window.addEventListener('auth:logout', handleForcedLogout);
+    return () => window.removeEventListener('auth:logout', handleForcedLogout);
+  }, [router]);
 
   const isAuthenticated = !!token && !!user;
 
@@ -64,7 +77,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('user', JSON.stringify(newUser));
       setToken(newToken);
       setUserState(newUser);
-      router.push('/home');
+
+      // Small delay to let React flush state before navigation
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      router.replace('/home');
     },
     [router]
   );

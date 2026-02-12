@@ -6,4 +6,9 @@ export const paymentsService = {
     const { data } = await api.post(`/payments/initialize/${adId}`);
     return data;
   },
+
+  async verify(adId: string): Promise<{ is_unlocked: boolean; message: string }> {
+    const { data } = await api.post(`/payments/verify/${adId}`);
+    return data;
+  },
 };

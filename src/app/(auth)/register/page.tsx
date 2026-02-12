@@ -19,6 +19,8 @@ import {
   StepLabel,
   Autocomplete,
   LinearProgress,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import {
   Visibility,
@@ -28,6 +30,8 @@ import {
   Phone as PhoneIcon,
   LocationCity as CityIcon,
   Lock as LockIcon,
+  Business as BusinessIcon,
+  PersonOutline,
 } from '@mui/icons-material';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
@@ -36,6 +40,8 @@ import { AxiosError } from 'axios';
 import FadeIn from '@/components/ui/FadeIn';
 
 type ApiErrorResponse = { message?: string; errors?: Record<string, string[]> };
+type AccountRole = 'customer' | 'agent';
+type AgentType = 'individual' | 'agency';
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   let score = 0;
@@ -57,6 +63,9 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [accountRole, setAccountRole] = useState<AccountRole>('customer');
+  const [agentType, setAgentType] = useState<AgentType>('individual');
 
   const [form, setForm] = useState({
     firstname: '',
@@ -82,7 +91,7 @@ export default function RegisterPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const canProceedStep0 =
+  const canProceedStep1 =
     form.firstname.trim().length >= 2 &&
     form.lastname.trim().length >= 2 &&
     form.email.includes('@') &&
@@ -99,23 +108,35 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      await authService.registerCustomer({
-        firstname: form.firstname,
-        lastname: form.lastname,
-        email: form.email,
-        phone_number: form.phone_number,
-        password: form.password,
-        confirm_password: form.confirm_password,
-        city_id: selectedCity?.id || undefined,
-      });
+      if (accountRole === 'customer') {
+        await authService.registerCustomer({
+          firstname: form.firstname,
+          lastname: form.lastname,
+          email: form.email,
+          phone_number: form.phone_number,
+          password: form.password,
+          confirm_password: form.confirm_password,
+          city_id: selectedCity?.id || undefined,
+        });
+      } else {
+        await authService.registerAgent({
+          firstname: form.firstname,
+          lastname: form.lastname,
+          email: form.email,
+          phone_number: form.phone_number,
+          password: form.password,
+          confirm_password: form.confirm_password,
+          type: agentType,
+          city_id: selectedCity?.id || undefined,
+        });
+      }
       router.push('/verify-email');
     } catch (err) {
       const axiosErr = err as AxiosError<ApiErrorResponse>;
       const msg = axiosErr?.response?.data?.message || "Erreur lors de l'inscription.";
       const errors = axiosErr?.response?.data?.errors;
       if (errors) {
-        const firstError = Object.values(errors).flat()[0];
-        setError(String(firstError));
+        setError(String(Object.values(errors).flat()[0]));
       } else {
         setError(msg);
       }
@@ -124,7 +145,10 @@ export default function RegisterPage() {
     }
   };
 
-  const steps = ['Informations personnelles', 'Sécurité'];
+  const steps =
+    accountRole === 'customer'
+      ? ['Type de compte', 'Informations', 'Sécurité']
+      : ['Type de compte', 'Informations', 'Sécurité'];
 
   return (
     <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>
@@ -144,10 +168,7 @@ export default function RegisterPage() {
           priority
           sizes="50vw"
           style={{ objectFit: 'cover' }}
-          placeholder="blur"
-          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAABv/EAB4QAAICAgIDAAAAAAAAAAAAAAABAgMEEQUhEjFB/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAYEQADAQEAAAAAAAAAAAAAAAABAgMAEf/aAAwDAQACEQMRAD8AjeN5O/JzIVY8pxjJ7aXoGALRYiLgmf/Z"
         />
-        {/* Dark overlay */}
         <Box
           sx={{
             position: 'absolute',
@@ -156,23 +177,11 @@ export default function RegisterPage() {
             zIndex: 1,
           }}
         />
-        {/* Overlay content */}
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            p: 6,
-            zIndex: 2,
-          }}
-        >
+        <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 6, zIndex: 2 }}>
           <FadeIn delay={0.2} direction="up">
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
               <Image src="/images/logo.png" alt="KeyHome" width={42} height={42} />
-              <Typography variant="h4" fontWeight={700} color="#fff">
-                KeyHome
-              </Typography>
+              <Typography variant="h4" fontWeight={700} color="#fff">KeyHome</Typography>
             </Box>
           </FadeIn>
           <FadeIn delay={0.4} direction="up">
@@ -186,40 +195,28 @@ export default function RegisterPage() {
       {/* Right side — form */}
       <Box
         sx={{
-          flex: { xs: 1, md: '0 0 520px' },
+          flex: { xs: 1, md: '0 0 540px' },
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          p: { xs: 3, sm: 6 },
+          p: { xs: 3, sm: 5 },
           overflowY: 'auto',
           bgcolor: 'background.paper',
         }}
       >
-        <Box sx={{ width: '100%', maxWidth: 420 }}>
+        <Box sx={{ width: '100%', maxWidth: 440 }}>
           {/* Mobile logo */}
           <FadeIn direction="none">
-            <Box
-              sx={{
-                display: { xs: 'flex', md: 'none' },
-                alignItems: 'center',
-                gap: 1,
-                mb: 3,
-                justifyContent: 'center',
-              }}
-            >
+            <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1, mb: 3, justifyContent: 'center' }}>
               <Image src="/images/logo.png" alt="KeyHome" width={36} height={36} priority />
-              <Typography variant="h6" fontWeight={700} color="primary.main">
-                KeyHome
-              </Typography>
+              <Typography variant="h6" fontWeight={700} color="primary.main">KeyHome</Typography>
             </Box>
           </FadeIn>
 
           <FadeIn delay={0.1} direction="up">
-            <Typography variant="h4" fontWeight={700} gutterBottom>
-              Créer un compte
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            <Typography variant="h4" fontWeight={700} gutterBottom>Créer un compte</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Inscrivez-vous pour accéder aux annonces immobilières
             </Typography>
           </FadeIn>
@@ -227,9 +224,7 @@ export default function RegisterPage() {
           <FadeIn delay={0.15} direction="up">
             <Stepper activeStep={step} sx={{ mb: 3 }} alternativeLabel>
               {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
+                <Step key={label}><StepLabel>{label}</StepLabel></Step>
               ))}
             </Stepper>
           </FadeIn>
@@ -240,9 +235,115 @@ export default function RegisterPage() {
             </FadeIn>
           )}
 
-          {/* Step 0: Personal info */}
+          {/* Step 0: Account type */}
           {step === 0 && (
             <FadeIn delay={0.2} direction="up">
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                  Quel type de compte souhaitez-vous créer ?
+                </Typography>
+
+                <ToggleButtonGroup
+                  value={accountRole}
+                  exclusive
+                  onChange={(_, val) => val && setAccountRole(val)}
+                  fullWidth
+                  sx={{ mb: 3 }}
+                >
+                  <ToggleButton
+                    value="customer"
+                    sx={{
+                      py: 2.5,
+                      borderRadius: '12px !important',
+                      textTransform: 'none',
+                      flexDirection: 'column',
+                      gap: 0.5,
+                      '&.Mui-selected': { bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' } },
+                    }}
+                  >
+                    <PersonOutline sx={{ fontSize: 28 }} />
+                    <Typography variant="subtitle2" fontWeight={600}>Particulier</Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.8 }}>Recherche de biens</Typography>
+                  </ToggleButton>
+                  <ToggleButton
+                    value="agent"
+                    sx={{
+                      py: 2.5,
+                      borderRadius: '12px !important',
+                      textTransform: 'none',
+                      flexDirection: 'column',
+                      gap: 0.5,
+                      ml: '12px !important',
+                      '&.Mui-selected': { bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' } },
+                    }}
+                  >
+                    <BusinessIcon sx={{ fontSize: 28 }} />
+                    <Typography variant="subtitle2" fontWeight={600}>Agent / Agence</Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.8 }}>Publication d&apos;annonces</Typography>
+                  </ToggleButton>
+                </ToggleButtonGroup>
+
+                {accountRole === 'agent' && (
+                  <FadeIn direction="up" duration={0.3}>
+                    <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>Précisez votre profil :</Typography>
+                    <ToggleButtonGroup
+                      value={agentType}
+                      exclusive
+                      onChange={(_, val) => val && setAgentType(val)}
+                      fullWidth
+                      sx={{ mb: 3 }}
+                    >
+                      <ToggleButton
+                        value="individual"
+                        sx={{
+                          py: 1.5,
+                          borderRadius: '8px !important',
+                          textTransform: 'none',
+                          '&.Mui-selected': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'rgba(246,71,95,0.08)' },
+                        }}
+                      >
+                        <PersonOutline sx={{ mr: 1 }} />
+                        Indépendant
+                      </ToggleButton>
+                      <ToggleButton
+                        value="agency"
+                        sx={{
+                          py: 1.5,
+                          borderRadius: '8px !important',
+                          textTransform: 'none',
+                          ml: '8px !important',
+                          '&.Mui-selected': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'rgba(246,71,95,0.08)' },
+                        }}
+                      >
+                        <BusinessIcon sx={{ mr: 1 }} />
+                        Agence
+                      </ToggleButton>
+                    </ToggleButtonGroup>
+                  </FadeIn>
+                )}
+
+                <Button
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  onClick={() => setStep(1)}
+                  sx={{
+                    py: 1.5,
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                    '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                  }}
+                >
+                  Continuer
+                </Button>
+              </Box>
+            </FadeIn>
+          )}
+
+          {/* Step 1: Personal info */}
+          {step === 1 && (
+            <FadeIn direction="left" duration={0.4}>
               <Box>
                 <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                   <TextField
@@ -294,7 +395,6 @@ export default function RegisterPage() {
                   }}
                   sx={{ mb: 2 }}
                 />
-
                 <Autocomplete
                   options={cities}
                   getOptionLabel={(opt) => opt.name}
@@ -323,29 +423,39 @@ export default function RegisterPage() {
                   )}
                   sx={{ mb: 3 }}
                 />
-
-                <Button
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  disabled={!canProceedStep0}
-                  onClick={() => setStep(1)}
-                  sx={{
-                    py: 1.5,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                    '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-                  }}
-                >
-                  Continuer
-                </Button>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    size="large"
+                    onClick={() => setStep(0)}
+                    sx={{ py: 1.5, borderRadius: 2, fontWeight: 600 }}
+                  >
+                    Retour
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    size="large"
+                    disabled={!canProceedStep1}
+                    onClick={() => setStep(2)}
+                    sx={{
+                      py: 1.5,
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                      '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                    }}
+                  >
+                    Continuer
+                  </Button>
+                </Box>
               </Box>
             </FadeIn>
           )}
 
-          {/* Step 1: Password */}
-          {step === 1 && (
+          {/* Step 2: Password */}
+          {step === 2 && (
             <FadeIn direction="left" duration={0.4}>
               <Box>
                 <TextField
@@ -388,12 +498,8 @@ export default function RegisterPage() {
                       }}
                     />
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                      <Typography variant="caption" sx={{ color: passwordStrength.color, transition: 'color 0.3s' }}>
-                        {passwordStrength.label}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Min: 8 car., majuscule, chiffre, symbole
-                      </Typography>
+                      <Typography variant="caption" sx={{ color: passwordStrength.color }}>{passwordStrength.label}</Typography>
+                      <Typography variant="caption" color="text.secondary">Min: 8 car., majuscule, chiffre, symbole</Typography>
                     </Box>
                   </Box>
                 )}
@@ -431,7 +537,7 @@ export default function RegisterPage() {
                     fullWidth
                     variant="outlined"
                     size="large"
-                    onClick={() => setStep(0)}
+                    onClick={() => setStep(1)}
                     sx={{ py: 1.5, borderRadius: 2, fontWeight: 600 }}
                   >
                     Retour

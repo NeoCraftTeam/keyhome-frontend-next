@@ -11,10 +11,10 @@ import {
   BedOutlined,
   BathtubOutlined,
   SquareFootOutlined,
-  Lock as LockIcon,
 } from '@mui/icons-material';
 import { Ad } from '@/types';
 import { formatPrice } from '@/lib/constants';
+import { useFavorites } from '@/providers/FavoritesProvider';
 
 interface AdCardProps {
   ad: Ad;
@@ -24,13 +24,13 @@ interface AdCardProps {
 export default function AdCard({ ad, showDistance }: AdCardProps) {
   const router = useRouter();
   const [currentImage, setCurrentImage] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
 
-  const images = ad.images.length > 0
+  const isFavorite = checkFav(ad.id);
+
+  const images = ad.images?.length > 0
     ? ad.images
     : [{ id: 0, url: '/placeholder-house.jpg', thumb: '', mime_type: 'image/jpeg', is_primary: true }];
-
-  const isLocked = ad.is_unlocked === false;
 
   const nextImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -42,9 +42,9 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
     setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
   }, [images.length]);
 
-  const toggleFavorite = (e: React.MouseEvent) => {
+  const handleToggleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsFavorite((prev) => !prev);
+    toggleFav(ad);
   };
 
   return (
@@ -71,26 +71,36 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
         {images.map((img, idx) => (
           <Box
             key={img.id}
-            component="img"
-            src={img.url}
-            alt={ad.title}
             sx={{
               position: 'absolute',
               top: 0,
               left: 0,
               width: '100%',
               height: '100%',
-              objectFit: 'cover',
               opacity: idx === currentImage ? 1 : 0,
               transition: 'opacity 0.3s ease',
-              ...(isLocked && idx > 0 ? { filter: 'blur(20px)' } : {}),
             }}
-          />
+          >
+            <Box
+              component="img"
+              src={img.url}
+              alt={ad.title}
+              loading={idx === 0 ? 'eager' : 'lazy'}
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+          </Box>
         ))}
 
         {/* Favorite button */}
         <IconButton
-          onClick={toggleFavorite}
+          onClick={handleToggleFavorite}
           sx={{
             position: 'absolute',
             top: 8,
@@ -103,25 +113,6 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
         >
           {isFavorite ? <Favorite /> : <FavoriteBorder />}
         </IconButton>
-
-        {/* Lock badge */}
-        {isLocked && (
-          <Chip
-            icon={<LockIcon sx={{ fontSize: 14, color: '#fff !important' }} />}
-            label="Verrouillée"
-            size="small"
-            sx={{
-              position: 'absolute',
-              top: 8,
-              left: 8,
-              zIndex: 2,
-              bgcolor: 'rgba(0,0,0,0.6)',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: '0.7rem',
-            }}
-          />
-        )}
 
         {/* Status badge */}
         {ad.status !== 'available' && (
@@ -218,25 +209,23 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
 
       {/* Card content */}
       <Box sx={{ mt: 1.5 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Typography
-            variant="subtitle1"
-            fontWeight={600}
-            sx={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              flex: 1,
-              color: 'text.primary',
-            }}
-          >
-            {ad.quarter?.name || ad.adresse}
-            {ad.quarter?.city_name ? `, ${ad.quarter.city_name}` : ''}
-          </Typography>
-        </Box>
-
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+        <Typography
+          variant="subtitle1"
+          fontWeight={700}
+          sx={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            color: 'text.primary',
+            lineHeight: 1.3,
+          }}
+        >
           {ad.title}
+        </Typography>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {ad.quarter?.name || ad.adresse}
+          {ad.quarter?.city_name ? `, ${ad.quarter.city_name}` : ''}
         </Typography>
 
         {/* Features row */}

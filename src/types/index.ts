@@ -115,6 +115,7 @@ export interface Ad {
   type: AdType | null;
   images: AdImage[];
   is_unlocked?: boolean;
+  total_images?: number;
   distance?: number;
 }
 
@@ -211,10 +212,10 @@ export interface SearchParams {
   type?: string;
   quarter?: string;
   bedrooms?: number;
-  min_price?: number;
-  max_price?: number;
-  min_surface?: number;
-  max_surface?: number;
+  price_min?: number;
+  price_max?: number;
+  surface_min?: number;
+  surface_max?: number;
   has_parking?: boolean;
   page?: number;
   per_page?: number;

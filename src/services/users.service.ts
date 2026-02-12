@@ -27,3 +27,10 @@ export const recommendationsService = {
     return data;
   },
 };
+
+export const unlockedAdsService = {
+  async list(): Promise<Ad[]> {
+    const { data } = await api.get('/my/unlocked-ads');
+    return data.data ?? data;
+  },
+};
