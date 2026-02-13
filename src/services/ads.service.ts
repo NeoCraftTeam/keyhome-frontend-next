@@ -1,11 +1,11 @@
 import api from '@/lib/api';
 import {
-  Ad,
-  AutocompleteResult,
-  FacetsResponse,
-  NearbyParams,
-  PaginatedResponse,
-  SearchParams,
+    Ad,
+    AutocompleteResult,
+    FacetsResponse,
+    NearbyParams,
+    PaginatedResponse,
+    SearchParams,
 } from '@/types';
 
 export const adsService = {
@@ -66,7 +66,9 @@ export const adsService = {
   },
 
   async update(id: string, formData: FormData): Promise<Ad> {
-    const { data } = await api.put(`/ads/${id}`, formData, {
+    // Laravel requires POST + _method for multipart/form-data uploads
+    formData.append('_method', 'PUT');
+    const { data } = await api.post(`/ads/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data.data ?? data;
