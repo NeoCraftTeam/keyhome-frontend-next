@@ -1,9 +1,10 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { Ad } from '@/types';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 const STORAGE_KEY = 'keyhome_favorites';
+const MAX_FAVORITES = 100;
 
 interface FavoritesContextType {
   favorites: Ad[];
@@ -17,24 +18,32 @@ interface FavoritesContextType {
 const FavoritesContext = createContext<FavoritesContextType | null>(null);
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
-  const [favorites, setFavorites] = useState<Ad[]>([]);
-
-  useEffect(() => {
+  const [favorites, setFavorites] = useState<Ad[]>(() => {
+    if (typeof window === 'undefined') return [];
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setFavorites(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        // Migration: if stored data contains full objects, extract IDs only
+        if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object') {
+          const ids = parsed.map((item: Ad) => item.id).slice(0, MAX_FAVORITES);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+        }
+        return Array.isArray(parsed) ? parsed.slice(0, MAX_FAVORITES) : [];
       }
     } catch {
       // ignore
     }
-  }, []);
+    return [];
+  });
 
   const persist = useCallback((ads: Ad[]) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(ads));
+      // Store only IDs to minimize localStorage usage
+      const ids = ads.map((ad) => ad.id).slice(0, MAX_FAVORITES);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
     } catch {
-      // ignore
+      // ignore — storage quota may be exceeded
     }
   }, []);
 
