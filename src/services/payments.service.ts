@@ -11,4 +11,9 @@ export const paymentsService = {
     const { data } = await api.post(`/payments/verify/${adId}`);
     return data;
   },
+
+  async getUnlockPrice(): Promise<number> {
+    const { data } = await api.get('/payments/unlock-price');
+    return data.unlock_price;
+  },
 };

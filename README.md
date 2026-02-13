@@ -146,6 +146,19 @@ npm start
 npm run lint
 ```
 
+
+## Sécurité
+
+L'application inclut des en-têtes de sécurité HTTP stricts configurés dans `next.config.ts` :
+
+- **CSP (Content Security Policy)** : Restreint les sources de scripts/styles/images (Mapbox, API KeyHome uniquement).
+- **X-XSS-Protection** : Bloque les attaques XSS cross-site.
+- **X-Frame-Options** : Empêche le clickjacking (SAMEORIGIN).
+- **X-Content-Type-Options** : Empêche le sniffing MIME.
+
+⚠️ **Important en Production** :
+Assurez-vous que `NEXT_PUBLIC_API_URL` pointe vers une URL HTTPS sécurisée (ex: `https://api.keyhome.cm/api/v1`) pour éviter toute fuite de données ou problèmes de Mixed Content.
+
 ## Details des dependances
 
 ### Framework et rendu

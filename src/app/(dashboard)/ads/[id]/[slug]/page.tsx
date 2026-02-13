@@ -27,7 +27,6 @@ import {
   LocalParking,
   LocationOn,
   Lock,
-  LockOpen,
   Close,
   ChevronLeft,
   ChevronRight,
@@ -75,6 +74,14 @@ function AdDetailContent() {
     queryFn: () => adsService.show(adId),
     enabled: !!adId,
   });
+
+  const { data: unlockPrice } = useQuery({
+    queryKey: ['unlock-price'],
+    queryFn: () => paymentsService.getUnlockPrice(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const formattedUnlockPrice = unlockPrice ? `${unlockPrice.toLocaleString('fr-FR')} FCFA` : '...';
 
   if (isLoading || !ad) {
     return (
@@ -491,7 +498,7 @@ function AdDetailContent() {
                       '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
                     }}
                   >
-                    Déverrouiller — 500 FCFA
+                    Déverrouiller — {formattedUnlockPrice}
                   </Button>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1.5 }}>
                     Payez pour accéder aux coordonnées de l&apos;annonceur
@@ -546,7 +553,7 @@ function AdDetailContent() {
             {ad.title}
           </Typography>
           <Typography variant="h4" fontWeight={700} color="primary.main" sx={{ mb: 3 }}>
-            500 FCFA
+            {formattedUnlockPrice}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Vous aurez accès aux coordonnées de l&apos;annonceur (téléphone, email).
