@@ -8,13 +8,14 @@ const api = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
+  withCredentials: true,
   timeout: 30000,
 });
 
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -35,8 +36,8 @@ api.interceptors.response.use(
       typeof window !== 'undefined' &&
       !isAuthEndpoint
     ) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user_id');
       // Dispatch a custom event so AuthProvider can handle the redirect
       // without a full page reload
       window.dispatchEvent(new Event('auth:logout'));

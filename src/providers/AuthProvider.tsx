@@ -1,16 +1,16 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-import { useRouter } from 'next/navigation';
-import { User } from '@/types';
 import { authService } from '@/services/auth.service';
+import { User } from '@/types';
+import { useRouter } from 'next/navigation';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 
 interface AuthContextType {
   user: User | null;
@@ -31,21 +31,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
+  // On mount: restore token from sessionStorage and fetch fresh user from API
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
+    const savedToken = sessionStorage.getItem('token');
 
     if (savedToken) {
       setToken(savedToken);
+      // Fetch fresh user data from API instead of reading from storage
+      authService.me()
+        .then((freshUser) => {
+          setUserState(freshUser);
+          sessionStorage.setItem('user_id', freshUser.id);
+        })
+        .catch(() => {
+          // Token is invalid/expired — clean up
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('user_id');
+          setToken(null);
+        })
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
     }
-    if (savedUser) {
-      try {
-        setUserState(JSON.parse(savedUser));
-      } catch {
-        localStorage.removeItem('user');
-      }
-    }
-    setIsLoading(false);
   }, []);
 
   // Listen for forced logout from the API interceptor (e.g. expired token)
@@ -64,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setUser = useCallback((u: User) => {
     setUserState(u);
-    localStorage.setItem('user', JSON.stringify(u));
+    sessionStorage.setItem('user_id', u.id);
   }, []);
 
   const login = useCallback(
@@ -73,8 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const newToken = response.token;
       const newUser = response.user;
 
-      localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify(newUser));
+      sessionStorage.setItem('token', newToken);
+      sessionStorage.setItem('user_id', newUser.id);
       setToken(newToken);
       setUserState(newUser);
 
@@ -91,8 +98,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Silent fail — token may already be invalid
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user_id');
       setToken(null);
       setUserState(null);
       router.push('/login');
