@@ -7,14 +7,16 @@ const connectSources = [
   "'self'",
   'https://api.mapbox.com',
   'https://events.mapbox.com',
+  'https://*.tiles.mapbox.com',
   apiOrigin,
 ].filter(Boolean).join(' ');
 
 const cspHeader = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://api.mapbox.com`,
+  `script-src 'self' 'unsafe-inline' https://api.mapbox.com blob:`,
   `style-src 'self' 'unsafe-inline' https://api.mapbox.com`,
-  `img-src 'self' blob: data: https://*.mapbox.com https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test ${apiOrigin}`,
+  `worker-src blob:`,
+  `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test ${apiOrigin}`,
   `connect-src ${connectSources}`,
   `font-src 'self' https://fonts.gstatic.com`,
   `frame-ancestors 'none'`,
