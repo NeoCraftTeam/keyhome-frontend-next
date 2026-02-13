@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
-import { Box, Button, Typography, Alert, CircularProgress, Link } from '@mui/material';
-import { MarkEmailRead as MailIcon } from '@mui/icons-material';
-import { authService } from '@/services/auth.service';
-import { AxiosError } from 'axios';
 import FadeIn from '@/components/ui/FadeIn';
+import { getSafeErrorMessage } from '@/lib/error-messages';
+import { authService } from '@/services/auth.service';
+import { MarkEmailRead as MailIcon } from '@mui/icons-material';
+import { Alert, Box, Button, CircularProgress, Link, Typography } from '@mui/material';
+import Image from 'next/image';
+import { useState } from 'react';
 
 export default function VerifyEmailPage() {
   const [message, setMessage] = useState('');
@@ -21,8 +21,7 @@ export default function VerifyEmailPage() {
       const res = await authService.resendVerification();
       setMessage(res.message || 'Email de vérification renvoyé avec succès.');
     } catch (err) {
-      const axiosErr = err as AxiosError<{ message?: string }>;
-      setError(axiosErr?.response?.data?.message || 'Erreur lors du renvoi.');
+      setError(getSafeErrorMessage(err, 'Erreur lors du renvoi.'));
     } finally {
       setIsSubmitting(false);
     }

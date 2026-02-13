@@ -1,45 +1,44 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import Image from 'next/image';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-  Link,
-  InputAdornment,
-  IconButton,
-  Stepper,
-  Step,
-  StepLabel,
-  Autocomplete,
-  LinearProgress,
-  ToggleButtonGroup,
-  ToggleButton,
-} from '@mui/material';
-import {
-  Visibility,
-  VisibilityOff,
-  Email as EmailIcon,
-  Person as PersonIcon,
-  Phone as PhoneIcon,
-  LocationCity as CityIcon,
-  Lock as LockIcon,
-  Business as BusinessIcon,
-  PersonOutline,
-} from '@mui/icons-material';
+import FadeIn from '@/components/ui/FadeIn';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { City } from '@/types';
-import { AxiosError } from 'axios';
-import FadeIn from '@/components/ui/FadeIn';
+import {
+    Business as BusinessIcon,
+    LocationCity as CityIcon,
+    Email as EmailIcon,
+    Lock as LockIcon,
+    Person as PersonIcon,
+    PersonOutline,
+    Phone as PhoneIcon,
+    Visibility,
+    VisibilityOff,
+} from '@mui/icons-material';
+import {
+    Alert,
+    Autocomplete,
+    Box,
+    Button,
+    CircularProgress,
+    IconButton,
+    InputAdornment,
+    LinearProgress,
+    Link,
+    Step,
+    StepLabel,
+    Stepper,
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography,
+} from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
-type ApiErrorResponse = { message?: string; errors?: Record<string, string[]> };
 type AccountRole = 'customer' | 'agent';
 type AgentType = 'individual' | 'agency';
 
@@ -132,14 +131,7 @@ export default function RegisterPage() {
       }
       router.push('/verify-email');
     } catch (err) {
-      const axiosErr = err as AxiosError<ApiErrorResponse>;
-      const msg = axiosErr?.response?.data?.message || "Erreur lors de l'inscription.";
-      const errors = axiosErr?.response?.data?.errors;
-      if (errors) {
-        setError(String(Object.values(errors).flat()[0]));
-      } else {
-        setError(msg);
-      }
+      setError(getSafeErrorMessage(err, "Erreur lors de l'inscription."));
     } finally {
       setIsSubmitting(false);
     }

@@ -1,26 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-  Link,
-  InputAdornment,
-  IconButton,
-} from '@mui/material';
-import {
-  Visibility,
-  VisibilityOff,
-  Email as EmailIcon,
-} from '@mui/icons-material';
-import { useAuth } from '@/providers/AuthProvider';
-import { AxiosError } from 'axios';
 import FadeIn from '@/components/ui/FadeIn';
+import { getSafeErrorMessage } from '@/lib/error-messages';
+import { useAuth } from '@/providers/AuthProvider';
+import {
+    Email as EmailIcon,
+    Visibility,
+    VisibilityOff,
+} from '@mui/icons-material';
+import {
+    Alert,
+    Box,
+    Button,
+    CircularProgress,
+    IconButton,
+    InputAdornment,
+    Link,
+    TextField,
+    Typography,
+} from '@mui/material';
+import Image from 'next/image';
+import { useState } from 'react';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -39,11 +39,7 @@ export default function LoginPage() {
     try {
       await login(email, password);
     } catch (err) {
-      const axiosErr = err as AxiosError<{ message?: string }>;
-      setError(
-        axiosErr?.response?.data?.message ||
-          'Identifiants incorrects. Veuillez réessayer.'
-      );
+      setError(getSafeErrorMessage(err, 'Identifiants incorrects. Veuillez réessayer.'));
     } finally {
       setIsSubmitting(false);
     }

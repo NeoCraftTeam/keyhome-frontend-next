@@ -1,20 +1,20 @@
 'use client';
 
-import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-  Link,
-} from '@mui/material';
-import { authService } from '@/services/auth.service';
-import { AxiosError } from 'axios';
 import FadeIn from '@/components/ui/FadeIn';
+import { getSafeErrorMessage } from '@/lib/error-messages';
+import { authService } from '@/services/auth.service';
+import {
+    Alert,
+    Box,
+    Button,
+    CircularProgress,
+    Link,
+    TextField,
+    Typography,
+} from '@mui/material';
+import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -41,8 +41,7 @@ function ResetPasswordForm() {
       });
       router.push('/login');
     } catch (err) {
-      const axiosErr = err as AxiosError<{ message?: string }>;
-      setError(axiosErr?.response?.data?.message || 'Erreur lors de la réinitialisation.');
+      setError(getSafeErrorMessage(err, 'Erreur lors de la réinitialisation.'));
     } finally {
       setIsSubmitting(false);
     }

@@ -1,20 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
-import { AxiosError } from 'axios';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-  Link,
-} from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
-import { authService } from '@/services/auth.service';
 import FadeIn from '@/components/ui/FadeIn';
+import { getSafeErrorMessage } from '@/lib/error-messages';
+import { authService } from '@/services/auth.service';
+import { ArrowBack } from '@mui/icons-material';
+import {
+    Alert,
+    Box,
+    Button,
+    CircularProgress,
+    Link,
+    TextField,
+    Typography,
+} from '@mui/material';
+import Image from 'next/image';
+import { useState } from 'react';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -32,8 +32,7 @@ export default function ForgotPasswordPage() {
       const res = await authService.forgotPassword(email);
       setSuccess(res.message || 'Un lien de réinitialisation a été envoyé à votre adresse email.');
     } catch (err) {
-      const axiosErr = err as AxiosError<{ message?: string }>;
-      setError(axiosErr?.response?.data?.message || 'Erreur lors de l\'envoi du lien.');
+      setError(getSafeErrorMessage(err, 'Erreur lors de l\'envoi du lien.'));
     } finally {
       setIsSubmitting(false);
     }
