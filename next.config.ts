@@ -11,9 +11,11 @@ const connectSources = [
   apiOrigin,
 ].filter(Boolean).join(' ');
 
+const isDev = process.env.NODE_ENV === 'development';
+
 const cspHeader = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://api.mapbox.com blob:`,
+  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com blob:`,
   `style-src 'self' 'unsafe-inline' https://api.mapbox.com`,
   `worker-src blob:`,
   `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test ${apiOrigin}`,

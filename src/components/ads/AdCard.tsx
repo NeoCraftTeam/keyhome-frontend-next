@@ -1,20 +1,21 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { Box, Typography, IconButton, Chip } from '@mui/material';
-import {
-  FavoriteBorder,
-  Favorite,
-  ChevronLeft,
-  ChevronRight,
-  BedOutlined,
-  BathtubOutlined,
-  SquareFootOutlined,
-} from '@mui/icons-material';
-import { Ad } from '@/types';
 import { formatPrice } from '@/lib/constants';
 import { useFavorites } from '@/providers/FavoritesProvider';
+import { Ad } from '@/types';
+import {
+    BathtubOutlined,
+    BedOutlined,
+    ChevronLeft,
+    ChevronRight,
+    Favorite,
+    FavoriteBorder,
+    SquareFootOutlined,
+    Star as StarIcon,
+} from '@mui/icons-material';
+import { Box, Chip, IconButton, Typography } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { useCallback, useState } from 'react';
 
 interface AdCardProps {
   ad: Ad;
@@ -255,6 +256,21 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
             </Box>
           )}
         </Box>
+
+        {/* Rating */}
+        {ad.rating != null && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+            <StarIcon sx={{ fontSize: 14, color: '#FFB400' }} />
+            <Typography variant="caption" fontWeight={600} color="text.primary" sx={{ lineHeight: 1 }}>
+              {ad.rating.toFixed(1)}
+            </Typography>
+            {ad.reviews_count !== undefined && (
+              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>
+                ({ad.reviews_count})
+              </Typography>
+            )}
+          </Box>
+        )}
 
         {/* Price + distance */}
         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mt: 0.5 }}>

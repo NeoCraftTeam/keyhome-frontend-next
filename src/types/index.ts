@@ -117,6 +117,17 @@ export interface Ad {
   is_unlocked?: boolean;
   total_images?: number;
   distance?: number;
+  rating?: number | null;
+  reviews_count?: number;
+  reviews?: Review[];
+}
+
+export interface Review {
+  id: string;
+  rating: number;
+  comment: string | null;
+  user: { id: string; name: string; avatar: string | null } | null;
+  created_at: string;
 }
 
 export interface Agency {
@@ -217,6 +228,8 @@ export interface SearchParams {
   surface_min?: number;
   surface_max?: number;
   has_parking?: boolean;
+  sort?: string;
+  order?: 'asc' | 'desc';
   page?: number;
   per_page?: number;
 }

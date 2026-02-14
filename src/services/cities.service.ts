@@ -1,8 +1,8 @@
 import api from '@/lib/api';
-import { City, Quarter, PaginatedResponse, AdType } from '@/types';
+import { AdType, City, PaginatedResponse, Quarter } from '@/types';
 
 export const citiesService = {
-  async list(params?: { q?: string; page?: number }): Promise<PaginatedResponse<City>> {
+  async list(params?: { q?: string; page?: number; per_page?: number }): Promise<PaginatedResponse<City>> {
     const { data } = await api.get('/cities', { params });
     return data;
   },

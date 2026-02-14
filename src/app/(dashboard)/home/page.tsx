@@ -1,31 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Pagination,
-  Divider,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
-import {
-  Home as HomeIcon,
-  Apartment,
-  Landscape,
-  Villa,
-  Store,
-  MapsHomeWork,
-} from '@mui/icons-material';
-import { adsService } from '@/services/ads.service';
-import { recommendationsService } from '@/services/users.service';
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import CategoryPills from '@/components/ui/CategoryPills';
 import FadeIn from '@/components/ui/FadeIn';
+import { adsService } from '@/services/ads.service';
+import { recommendationsService } from '@/services/users.service';
+import {
+    Apartment,
+    Home as HomeIcon,
+    Landscape,
+    MapsHomeWork,
+    Store,
+    Villa,
+} from '@mui/icons-material';
+import {
+    Box,
+    Container,
+    Divider,
+    Grid,
+    Pagination,
+    Typography,
+    useMediaQuery,
+    useTheme,
+} from '@mui/material';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useRef, useState, useTransition } from 'react';
 
 const categories = [
   { label: 'Tous', value: '', icon: <MapsHomeWork sx={{ fontSize: 18 }} /> },
@@ -41,6 +41,8 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [isPending, startTransition] = useTransition();
 
   const { data: adsData, isLoading, isFetching } = useQuery({
     queryKey: ['ads', page, selectedCategory],
@@ -66,6 +68,24 @@ export default function HomePage() {
 
   const skeletonCount = isMobile ? 4 : 12;
 
+  // Show shimmer when switching categories (isFetching but no cached data for this key)
+  const showShimmer = isLoading || (isFetching && ads.length === 0) || isPending;
+
+  const handleCategoryChange = (val: string) => {
+    startTransition(() => {
+      setSelectedCategory(val);
+      setPage(1);
+    });
+  };
+
+  const handlePageChange = (_: unknown, val: number) => {
+    setPage(val);
+    // Scroll to the listing grid, not the top of the page
+    if (gridRef.current) {
+      gridRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <Box sx={{ pb: 6 }}>
       {/* Category pills — centered under navbar */}
@@ -73,10 +93,7 @@ export default function HomePage() {
         <CategoryPills
           categories={categories}
           selected={selectedCategory}
-          onChange={(val) => {
-            setSelectedCategory(val);
-            setPage(1);
-          }}
+          onChange={handleCategoryChange}
         />
       </Container>
 
@@ -120,13 +137,16 @@ export default function HomePage() {
 
         {/* Main grid */}
         <FadeIn delay={0.2} direction="up">
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 2 }}>
+        <Box
+          ref={gridRef}
+          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 2, scrollMarginTop: '80px' }}
+        >
           <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
             {selectedCategory
               ? `${categories.find((c) => c.value === selectedCategory)?.label || selectedCategory}`
               : 'Annonces récentes'}
           </Typography>
-          {isFetching && !isLoading && (
+          {isFetching && !showShimmer && (
             <Typography variant="caption" color="text.secondary">
               Mise à jour...
             </Typography>
@@ -134,7 +154,7 @@ export default function HomePage() {
         </Box>
 
         <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
-          {isLoading
+          {showShimmer
             ? Array.from({ length: skeletonCount }).map((_, idx) => (
                 <Grid key={idx} size={{ xs: 6, sm: 6, md: 4, lg: 3 }}>
                   <AdCardSkeleton />
@@ -149,7 +169,7 @@ export default function HomePage() {
         </FadeIn>
 
         {/* Empty state */}
-        {!isLoading && ads.length === 0 && (
+        {!showShimmer && ads.length === 0 && (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <MapsHomeWork sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary">
@@ -167,10 +187,7 @@ export default function HomePage() {
             <Pagination
               count={totalPages}
               page={page}
-              onChange={(_, val) => {
-                setPage(val);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onChange={handlePageChange}
               shape="rounded"
               size={isMobile ? 'small' : 'medium'}
               siblingCount={isMobile ? 0 : 1}

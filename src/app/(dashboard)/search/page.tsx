@@ -1,44 +1,44 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import {
-  Box,
-  Typography,
-  Grid,
-  Pagination,
-  Drawer,
-  Button,
-  Slider,
-  TextField,
-  FormControlLabel,
-  Switch,
-  Divider,
-  IconButton,
-  Chip,
-  useMediaQuery,
-  useTheme,
-  Autocomplete,
-  CircularProgress,
-  ToggleButton,
-  ToggleButtonGroup,
-} from '@mui/material';
-import {
-  Tune as FilterIcon,
-  Close as CloseIcon,
-  Search as SearchIcon,
-  Map as MapIcon,
-  ViewModule as GridIcon,
-} from '@mui/icons-material';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import { adsService } from '@/services/ads.service';
-import { citiesService, adTypesService } from '@/services/cities.service';
-import { SearchParams, City, AdType } from '@/types';
-import { MAPBOX_TOKEN, DEFAULT_CENTER, formatPrice } from '@/lib/constants';
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
+import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
+import { adsService } from '@/services/ads.service';
+import { adTypesService, citiesService } from '@/services/cities.service';
+import { AdType, City, SearchParams } from '@/types';
+import {
+    Close as CloseIcon,
+    Tune as FilterIcon,
+    ViewModule as GridIcon,
+    Map as MapIcon,
+    Search as SearchIcon,
+} from '@mui/icons-material';
+import {
+    Autocomplete,
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Divider,
+    Drawer,
+    FormControlLabel,
+    Grid,
+    IconButton,
+    Pagination,
+    Slider,
+    Switch,
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography,
+    useMediaQuery,
+    useTheme,
+} from '@mui/material';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
@@ -57,6 +57,8 @@ function SearchContent() {
 
   // Filter state — read initial query from URL
   const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
 
   // Sync query from URL when navigating from navbar
@@ -75,11 +77,11 @@ function SearchContent() {
   const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 1000]);
   const [hasParking, setHasParking] = useState(false);
 
-  // Fetch cities for autocomplete
+  // Pre-fetch ALL cities once and filter client-side
   const { data: citiesData } = useQuery({
-    queryKey: ['cities', cityInput],
-    queryFn: () => citiesService.list({ q: cityInput || undefined }),
-    staleTime: 5 * 60 * 1000,
+    queryKey: ['cities-all'],
+    queryFn: () => citiesService.list({ per_page: 100 }),
+    staleTime: Infinity,
   });
 
   // Fetch ad types
@@ -100,12 +102,14 @@ function SearchContent() {
     surface_min: surfaceRange[0] > 0 ? surfaceRange[0] : undefined,
     surface_max: surfaceRange[1] < 1000 ? surfaceRange[1] : undefined,
     has_parking: hasParking || undefined,
+    sort: sortBy,
+    order: sortOrder,
     page,
     per_page: 20,
   });
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['search', query, selectedCity?.id, selectedType?.id, bedrooms, priceRange, surfaceRange, hasParking, page],
+    queryKey: ['search', query, selectedCity?.id, selectedType?.id, bedrooms, priceRange, surfaceRange, hasParking, sortBy, sortOrder, page],
     queryFn: () => adsService.search(buildParams()),
     placeholderData: keepPreviousData,
     staleTime: 60 * 1000,
@@ -152,11 +156,15 @@ function SearchContent() {
     mapAds.forEach((ad) => {
       if (!ad.location) return;
       hasGeo = true;
+      const ratingHtml = ad.rating != null
+        ? `<div style="color:#FFB400;font-size:12px">★ ${ad.rating.toFixed(1)}</div>`
+        : '';
 
       const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
         `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${ad.id}/${ad.slug}'">
           <div>${ad.title}</div>
           <div style="color:#F6475F;font-weight:700">${formatPrice(ad.price)}</div>
+          ${ratingHtml}
         </div>`
       );
 
@@ -182,6 +190,9 @@ function SearchContent() {
     setPriceRange([0, 5000000]);
     setSurfaceRange([0, 1000]);
     setHasParking(false);
+    setHasParking(false);
+    setSortBy('created_at');
+    setSortOrder('desc');
     setPage(1);
   };
 
@@ -229,6 +240,11 @@ function SearchContent() {
         onChange={(_, val) => { setSelectedCity(val); setPage(1); }}
         inputValue={cityInput}
         onInputChange={(_, val) => setCityInput(val)}
+        filterOptions={(options, state) =>
+          state.inputValue
+            ? options.filter((opt) => opt.name.toLowerCase().includes(state.inputValue.toLowerCase()))
+            : options
+        }
         noOptionsText="Aucune ville"
         renderInput={(params) => <TextField {...params} label="Ville" sx={{ mb: 2 }} />}
       />
@@ -354,6 +370,8 @@ function SearchContent() {
             alignItems: 'center',
             p: { xs: 2, md: 3 },
             pb: 0,
+            flexWrap: 'wrap',
+            gap: 2,
           }}
         >
           <Box>
@@ -366,7 +384,29 @@ function SearchContent() {
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+             {/* Sort Dropdown */}
+             <TextField
+              select
+              size="small"
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [sb, so] = e.target.value.split('-');
+                setSortBy(sb);
+                setSortOrder(so as 'asc' | 'desc');
+                setPage(1);
+              }}
+              SelectProps={{ native: true }}
+              sx={{ width: 180 }}
+            >
+              <option value="created_at-desc">Plus récents</option>
+              <option value="price-asc">Prix croissant</option>
+              <option value="price-desc">Prix décroissant</option>
+              <option value="surface_area-asc">Surface croissante</option>
+              <option value="surface_area-desc">Surface décroissante</option>
+            </TextField>
+
+            <Box sx={{ display: 'flex', gap: 1 }}>
             {isMobile && (
               <Button
                 variant="outlined"
@@ -390,6 +430,7 @@ function SearchContent() {
               <ToggleButton value="list"><GridIcon sx={{ fontSize: 18 }} /></ToggleButton>
               <ToggleButton value="map"><MapIcon sx={{ fontSize: 18 }} /></ToggleButton>
             </ToggleButtonGroup>
+            </Box>
           </Box>
         </Box>
 
@@ -433,7 +474,7 @@ function SearchContent() {
                 <Pagination
                   count={totalPages}
                   page={page}
-                  onChange={(_, val) => { setPage(val); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  onChange={(_, val) => { setPage(val); }}
                   shape="rounded"
                   size={isMobile ? 'small' : 'medium'}
                 />

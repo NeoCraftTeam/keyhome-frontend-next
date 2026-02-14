@@ -1,33 +1,46 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import AdCard from '@/components/ads/AdCard';
+import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
+import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
+import { useAuth } from '@/providers/AuthProvider';
+import { adsService } from '@/services/ads.service';
 import {
-  Box,
-  Typography,
-  Slider,
-  Paper,
-  CircularProgress,
-  Chip,
-  IconButton,
-  Drawer,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
-import {
-  MyLocation as MyLocationIcon,
-  List as ListIcon,
-  Close as CloseIcon,
+    Close as CloseIcon,
+    List as ListIcon,
+    MyLocation as MyLocationIcon,
 } from '@mui/icons-material';
+import {
+    Box,
+    Chip,
+    CircularProgress,
+    Divider,
+    Drawer,
+    IconButton,
+    Paper,
+    Slider,
+    Typography,
+    useMediaQuery,
+    useTheme,
+} from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { adsService } from '@/services/ads.service';
-import { useAuth } from '@/providers/AuthProvider';
-import { MAPBOX_TOKEN, DEFAULT_CENTER, formatPrice } from '@/lib/constants';
-import AdCard from '@/components/ads/AdCard';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
+
+const typeFilters = [
+  { label: 'Tous', value: '' },
+  { label: 'Maisons', value: 'maison' },
+  { label: 'Appartements', value: 'appartement' },
+  { label: 'Terrains', value: 'terrain' },
+  { label: 'Villas', value: 'villa' },
+  { label: 'Commerces', value: 'commerce' },
+];
+
+const MAX_PRICE = 5_000_000;
 
 export default function NearbyPage() {
   const { user } = useAuth();
@@ -44,6 +57,10 @@ export default function NearbyPage() {
   const [showList, setShowList] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const geoInitRef = useRef(false);
+
+  // Filter state
+  const [selectedType, setSelectedType] = useState('');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, MAX_PRICE]);
 
   // Geolocation
   useEffect(() => {
@@ -103,9 +120,21 @@ export default function NearbyPage() {
     staleTime: 60000,
   });
 
-  const ads = useMemo(() => nearbyAds || [], [nearbyAds]);
+  const allAds = useMemo(() => nearbyAds || [], [nearbyAds]);
 
-  // Update markers when ads change
+  // Client-side filtering by type and price
+  const filteredAds = useMemo(() => {
+    return allAds.filter((ad) => {
+      if (selectedType && ad.type?.name?.toLowerCase() !== selectedType.toLowerCase()) return false;
+      if (ad.price != null) {
+        if (ad.price < priceRange[0]) return false;
+        if (priceRange[1] < MAX_PRICE && ad.price > priceRange[1]) return false;
+      }
+      return true;
+    });
+  }, [allAds, selectedType, priceRange]);
+
+  // Update markers when filtered ads change
   useEffect(() => {
     if (!mapRef.current || !mapReady) return;
 
@@ -113,7 +142,7 @@ export default function NearbyPage() {
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    ads.forEach((ad) => {
+    filteredAds.forEach((ad) => {
       if (!ad.location) return;
 
       const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
@@ -130,7 +159,7 @@ export default function NearbyPage() {
 
       markersRef.current.push(marker);
     });
-  }, [ads, mapReady, router]);
+  }, [filteredAds, mapReady, router]);
 
   const relocate = () => {
     navigator.geolocation.getCurrentPosition(
@@ -141,6 +170,13 @@ export default function NearbyPage() {
       },
       () => setGeoError('Position introuvable.')
     );
+  };
+
+  const hasActiveFilters = selectedType !== '' || priceRange[0] > 0 || priceRange[1] < MAX_PRICE;
+
+  const clearFilters = () => {
+    setSelectedType('');
+    setPriceRange([0, MAX_PRICE]);
   };
 
   return (
@@ -159,7 +195,7 @@ export default function NearbyPage() {
           <Box ref={mapContainerRef} sx={{ width: '100%', height: '100%' }} />
         )}
 
-        {/* Controls */}
+        {/* Controls overlay */}
         <Paper
           elevation={0}
           sx={{
@@ -170,11 +206,14 @@ export default function NearbyPage() {
             p: 2,
             borderRadius: 3,
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            width: isMobile ? 'auto' : 260,
+            width: isMobile ? 'auto' : 280,
             bgcolor: 'rgba(255,255,255,0.95)',
             backdropFilter: 'blur(10px)',
+            maxHeight: isMobile ? '50vh' : 'calc(100vh - 120px)',
+            overflowY: 'auto',
           }}
         >
+          {/* Radius slider */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
             <Typography variant="subtitle2" fontWeight={600}>Rayon</Typography>
             <Chip label={`${radius} km`} size="small" color="primary" />
@@ -187,19 +226,74 @@ export default function NearbyPage() {
             step={1}
             sx={{ color: 'primary.main' }}
           />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+
+          <Divider sx={{ my: 1.5 }} />
+
+          {/* Type filter chips */}
+          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Type de bien</Typography>
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1.5 }}>
+            {typeFilters.map((t) => (
+              <Chip
+                key={t.value}
+                label={t.label}
+                size="small"
+                onClick={() => setSelectedType(t.value)}
+                variant={selectedType === t.value ? 'filled' : 'outlined'}
+                sx={
+                  selectedType === t.value
+                    ? { bgcolor: 'secondary.main', color: '#fff', fontWeight: 600 }
+                    : { fontWeight: 500 }
+                }
+              />
+            ))}
+          </Box>
+
+          {/* Price range slider */}
+          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 0.5 }}>
+            Prix (FCFA)
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+            {formatPrice(priceRange[0])} — {priceRange[1] >= MAX_PRICE ? 'Max' : formatPrice(priceRange[1])}
+          </Typography>
+          <Slider
+            value={priceRange}
+            onChange={(_, val) => setPriceRange(val as [number, number])}
+            min={0}
+            max={MAX_PRICE}
+            step={50000}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(val) => `${(val / 1000).toFixed(0)}k`}
+            sx={{ mb: 1 }}
+          />
+
+          {/* Relocate + counts */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
             <IconButton onClick={relocate} size="small" sx={{ bgcolor: '#fff', border: '1px solid', borderColor: 'divider' }}>
               <MyLocationIcon sx={{ fontSize: 18 }} />
             </IconButton>
             <Typography variant="caption" color="text.secondary">
-              {ads.length} annonce{ads.length !== 1 ? 's' : ''} trouvée{ads.length !== 1 ? 's' : ''}
+              {filteredAds.length} annonce{filteredAds.length !== 1 ? 's' : ''} trouvée{filteredAds.length !== 1 ? 's' : ''}
+              {hasActiveFilters && ` (${allAds.length} au total)`}
             </Typography>
           </Box>
+
+          {/* Clear filters */}
+          {hasActiveFilters && (
+            <Chip
+              label="Réinitialiser filtres"
+              size="small"
+              onDelete={clearFilters}
+              onClick={clearFilters}
+              sx={{ mt: 1, width: '100%' }}
+              variant="outlined"
+            />
+          )}
+
           {geoError && <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>{geoError}</Typography>}
         </Paper>
 
         {/* Mobile list toggle */}
-        {isMobile && ads.length > 0 && (
+        {isMobile && filteredAds.length > 0 && (
           <Paper
             onClick={() => setShowList(true)}
             elevation={0}
@@ -222,7 +316,7 @@ export default function NearbyPage() {
           >
             <ListIcon sx={{ fontSize: 18 }} />
             <Typography variant="subtitle2" fontWeight={600}>
-              Liste ({ads.length})
+              Liste ({filteredAds.length})
             </Typography>
           </Paper>
         )}
@@ -232,18 +326,24 @@ export default function NearbyPage() {
       {!isMobile && (
         <Box sx={{ width: 380, flexShrink: 0, overflowY: 'auto', borderLeft: '1px solid', borderColor: 'divider', p: 2 }}>
           <Typography variant="h6" fontWeight={600} gutterBottom>
-            {ads.length} annonce{ads.length !== 1 ? 's' : ''} à proximité
+            {filteredAds.length} annonce{filteredAds.length !== 1 ? 's' : ''} à proximité
           </Typography>
           {isLoading ? (
-            <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 4 }} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <AdCardSkeleton key={idx} />
+              ))}
+            </Box>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {ads.map((ad) => <AdCard key={ad.id} ad={ad} showDistance />)}
+              {filteredAds.map((ad) => <AdCard key={ad.id} ad={ad} showDistance />)}
             </Box>
           )}
-          {!isLoading && ads.length === 0 && (
+          {!isLoading && filteredAds.length === 0 && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 4, textAlign: 'center' }}>
-              Aucune annonce dans ce rayon.
+              {allAds.length > 0
+                ? 'Aucune annonce ne correspond aux filtres sélectionnés.'
+                : 'Aucune annonce dans ce rayon.'}
             </Typography>
           )}
         </Box>
@@ -258,11 +358,11 @@ export default function NearbyPage() {
       >
         <Box sx={{ p: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" fontWeight={600}>{ads.length} annonce{ads.length !== 1 ? 's' : ''}</Typography>
+            <Typography variant="h6" fontWeight={600}>{filteredAds.length} annonce{filteredAds.length !== 1 ? 's' : ''}</Typography>
             <IconButton onClick={() => setShowList(false)}><CloseIcon /></IconButton>
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {ads.map((ad) => <AdCard key={ad.id} ad={ad} showDistance />)}
+            {filteredAds.map((ad) => <AdCard key={ad.id} ad={ad} showDistance />)}
           </Box>
         </Box>
       </Drawer>

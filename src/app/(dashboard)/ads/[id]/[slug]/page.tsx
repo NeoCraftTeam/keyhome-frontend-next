@@ -1,48 +1,48 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Button,
-  Chip,
-  Divider,
-  Avatar,
-  Dialog,
-  IconButton,
-  Alert,
-  Skeleton,
-  Paper,
-  Snackbar,
-  CircularProgress,
-} from '@mui/material';
-import {
-  BedOutlined,
-  BathtubOutlined,
-  SquareFootOutlined,
-  LocalParking,
-  LocationOn,
-  Lock,
-  Close,
-  ChevronLeft,
-  ChevronRight,
-  Share,
-  FavoriteBorder,
-  Favorite,
-  Verified,
-  Phone,
-  Email,
-  ContentCopy,
-} from '@mui/icons-material';
-import { adsService } from '@/services/ads.service';
-import { paymentsService } from '@/services/payments.service';
+import FadeIn from '@/components/ui/FadeIn';
 import { formatPrice, formatRelativeDate } from '@/lib/constants';
 import { useFavorites } from '@/providers/FavoritesProvider';
-import FadeIn from '@/components/ui/FadeIn';
+import { adsService } from '@/services/ads.service';
+import { paymentsService } from '@/services/payments.service';
+import {
+    BathtubOutlined,
+    BedOutlined,
+    ChevronLeft,
+    ChevronRight,
+    Close,
+    ContentCopy,
+    Email,
+    Favorite,
+    FavoriteBorder,
+    LocalParking,
+    LocationOn,
+    Lock,
+    Phone,
+    Share,
+    SquareFootOutlined,
+    Verified,
+} from '@mui/icons-material';
+import {
+    Alert,
+    Avatar,
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Container,
+    Dialog,
+    Divider,
+    Grid,
+    IconButton,
+    Paper,
+    Skeleton,
+    Snackbar,
+    Typography,
+} from '@mui/material';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useParams, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
 
 function AdDetailContent() {
   const params = useParams();
@@ -102,9 +102,12 @@ function AdDetailContent() {
     );
   }
 
-  const images = ad.images || [];
-  const primaryImage = images.find((img) => img.is_primary) || images[0];
+  const allImages = ad.images || [];
+  const primaryImage = allImages.find((img) => img.is_primary) || allImages[0];
   const isLocked = ad.is_unlocked === false && !justUnlocked;
+  // When locked, only show the primary image
+  const images = isLocked ? (primaryImage ? [primaryImage] : []) : allImages;
+  const totalImageCount = ad.total_images || allImages.length;
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -173,13 +176,13 @@ function AdDetailContent() {
         >
           {/* Main image */}
           <Box
-            onClick={() => openLightbox(0)}
+            onClick={() => !isLocked && openLightbox(0)}
             sx={{
-              gridRow: { md: images.length >= 3 ? '1 / 3' : images.length === 2 ? '1 / 3' : 'auto' },
+              gridRow: { md: !isLocked && images.length >= 3 ? '1 / 3' : !isLocked && images.length === 2 ? '1 / 3' : 'auto' },
               position: 'relative',
-              cursor: 'pointer',
+              cursor: isLocked ? 'default' : 'pointer',
               overflow: 'hidden',
-              '&:hover img': { transform: 'scale(1.03)' },
+              ...(!isLocked && { '&:hover img': { transform: 'scale(1.03)' } }),
             }}
           >
             {primaryImage ? (
@@ -193,11 +196,36 @@ function AdDetailContent() {
                   height: '100%',
                   objectFit: 'cover',
                   transition: 'transform 0.3s ease',
+                  ...(isLocked && { filter: 'blur(3px) brightness(0.7)' }),
                 }}
               />
             ) : (
               <Box sx={{ width: '100%', height: '100%', bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Typography color="text.secondary">Aucune photo</Typography>
+              </Box>
+            )}
+            {/* Lock overlay on primary image when locked */}
+            {isLocked && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: 'rgba(0,0,0,0.3)',
+                  backdropFilter: 'blur(2px)',
+                  zIndex: 3,
+                }}
+              >
+                <Lock sx={{ fontSize: 40, color: '#fff', mb: 1 }} />
+                <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 600 }}>
+                  📷 {totalImageCount} photo{totalImageCount > 1 ? 's' : ''}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                  Déverrouillez pour toutes les voir
+                </Typography>
               </Box>
             )}
           </Box>
@@ -443,6 +471,58 @@ function AdDetailContent() {
             <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line', mb: 3, lineHeight: 1.8 }}>
               {ad.description}
             </Typography>
+
+            {/* Reviews & ratings */}
+            {ad.reviews && ad.reviews.length > 0 && (
+              <Box sx={{ mb: 3 }}>
+                <Divider sx={{ mb: 3 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <Typography variant="h6" fontWeight={600}>Avis</Typography>
+                  {ad.rating != null && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Box key={s} component="span" sx={{ color: s <= Math.round(ad.rating!) ? '#FFB400' : '#E0E0E0', fontSize: 18, lineHeight: 1 }}>★</Box>
+                      ))}
+                      <Typography variant="body2" fontWeight={600} sx={{ ml: 0.5 }}>
+                        {ad.rating.toFixed(1)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        ({ad.reviews_count} avis)
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+                {ad.reviews.map((review) => (
+                  <Paper key={review.id} variant="outlined" sx={{ p: 2, mb: 1.5, borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                      <Avatar sx={{ width: 32, height: 32, fontSize: 14, bgcolor: 'primary.main' }}
+                        src={review.user?.avatar || undefined}
+                      >
+                        {review.user?.name?.charAt(0) || '?'}
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle2" fontWeight={600} sx={{ lineHeight: 1.2 }}>
+                          {review.user?.name || 'Utilisateur'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {formatRelativeDate(review.created_at)}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 0.25 }}>
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Box key={s} component="span" sx={{ color: s <= review.rating ? '#FFB400' : '#E0E0E0', fontSize: 14 }}>★</Box>
+                        ))}
+                      </Box>
+                    </Box>
+                    {review.comment && (
+                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, pl: 5.5 }}>
+                        {review.comment}
+                      </Typography>
+                    )}
+                  </Paper>
+                ))}
+              </Box>
+            )}
           </Grid>
 
           {/* Right column — pricing card */}
