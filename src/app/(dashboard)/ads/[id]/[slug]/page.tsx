@@ -1,44 +1,46 @@
 'use client';
 
+import ReviewForm from '@/components/reviews/ReviewForm';
 import FadeIn from '@/components/ui/FadeIn';
 import { formatPrice, formatRelativeDate } from '@/lib/constants';
+import { useAuth } from '@/providers/AuthProvider';
 import { useFavorites } from '@/providers/FavoritesProvider';
 import { adsService } from '@/services/ads.service';
 import { paymentsService } from '@/services/payments.service';
 import {
-    BathtubOutlined,
-    BedOutlined,
-    ChevronLeft,
-    ChevronRight,
-    Close,
-    ContentCopy,
-    Email,
-    Favorite,
-    FavoriteBorder,
-    LocalParking,
-    LocationOn,
-    Lock,
-    Phone,
-    Share,
-    SquareFootOutlined,
-    Verified,
+  BathtubOutlined,
+  BedOutlined,
+  ChevronLeft,
+  ChevronRight,
+  Close,
+  ContentCopy,
+  Email,
+  Favorite,
+  FavoriteBorder,
+  LocalParking,
+  LocationOn,
+  Lock,
+  Phone,
+  Share,
+  SquareFootOutlined,
+  Verified,
 } from '@mui/icons-material';
 import {
-    Alert,
-    Avatar,
-    Box,
-    Button,
-    Chip,
-    CircularProgress,
-    Container,
-    Dialog,
-    Divider,
-    Grid,
-    IconButton,
-    Paper,
-    Skeleton,
-    Snackbar,
-    Typography,
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Container,
+  Dialog,
+  Divider,
+  Grid,
+  IconButton,
+  Paper,
+  Skeleton,
+  Snackbar,
+  Typography,
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useSearchParams } from 'next/navigation';
@@ -57,6 +59,7 @@ function AdDetailContent() {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState('');
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
+  const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const verifiedRef = useRef(false);
 
@@ -523,6 +526,12 @@ function AdDetailContent() {
                 ))}
               </Box>
             )}
+
+            {/* Review submission form */}
+            <ReviewForm
+              adId={ad.id}
+              hasUserReviewed={!!(currentUser && ad.reviews?.some(r => r.user?.id === currentUser.id))}
+            />
           </Grid>
 
           {/* Right column — pricing card */}

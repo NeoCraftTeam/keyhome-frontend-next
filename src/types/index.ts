@@ -152,16 +152,6 @@ export interface Payment {
   updated_at: string;
 }
 
-export interface Review {
-  id: string;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-  updated_at: string;
-  ad_id: string;
-  user_id: string;
-}
-
 export interface UnlockedAd {
   id: string;
   unlocked_at: string;
