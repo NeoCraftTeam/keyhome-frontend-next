@@ -48,15 +48,16 @@ export interface User {
   id: string;
   firstname: string;
   lastname: string;
-  phone_number: string | null;
-  email: string;
+  phone_number?: string | null;
+  email?: string;
   avatar: string | null;
   display_name: string;
+  name?: string;
   agency_name: string | null;
-  role: UserRole | null;
-  type: UserType | null;
-  created_at: string | null;
-  updated_at: string | null;
+  role?: UserRole | null;
+  type?: UserType | null;
+  created_at?: string | null;
+  updated_at?: string | null;
   city_id: string | null;
   city_name: string | null;
 }
@@ -83,6 +84,7 @@ export interface AdImage {
   id: number;
   url: string;
   thumb: string;
+  medium: string;
   mime_type: string;
   is_primary: boolean;
 }
@@ -105,6 +107,12 @@ export interface Ad {
   has_parking: boolean;
   location: GeoLocation | null;
   status: AdStatus;
+  is_unlocked?: boolean;
+  total_images?: number;
+  is_favorited?: boolean;
+  view_count?: number;
+  rating?: number | null;
+  reviews_count?: number;
   expires_at: string | null;
   created_at: string;
   updated_at: string;
@@ -114,12 +122,8 @@ export interface Ad {
   quarter: Quarter | null;
   type: AdType | null;
   images: AdImage[];
-  is_unlocked?: boolean;
-  total_images?: number;
-  distance?: number;
-  rating?: number | null;
-  reviews_count?: number;
   reviews?: Review[];
+  distance?: number;
 }
 
 export interface Review {
@@ -141,13 +145,6 @@ export interface Agency {
 
 export interface Payment {
   id: string;
-  type: PaymentType;
-  amount: number;
-  transaction_id: string;
-  payment_method: PaymentMethod;
-  status: PaymentStatus;
-  user_id: string;
-  ad_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -199,12 +196,12 @@ export interface AutocompleteResult {
 }
 
 export interface FacetsResponse {
-  cities: { value: string; count: number }[];
-  types: { value: string; count: number }[];
+  cities: { name: string; count: number }[];
+  types: { name: string; count: number }[];
   bedrooms: { value: number; count: number }[];
   price_range: { min: number; max: number };
   surface_range: { min: number; max: number };
-  has_parking: { value: boolean; count: number }[];
+  has_parking: { with_parking: number; without_parking: number };
 }
 
 export interface SearchParams {
