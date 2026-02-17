@@ -3,6 +3,7 @@
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
+import { escapeHtml } from '@/lib/sanitize';
 import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
 import {
@@ -146,8 +147,8 @@ export default function NearbyPage() {
       if (!ad.location) return;
 
       const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
-        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${ad.id}/${ad.slug}'">
-          <div>${ad.title}</div>
+        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${encodeURIComponent(ad.id)}/${encodeURIComponent(ad.slug)}'">
+          <div>${escapeHtml(ad.title)}</div>
           <div style="color:#F6475F;font-weight:700">${formatPrice(ad.price)}</div>
         </div>`
       );

@@ -38,7 +38,7 @@ import { authService } from '@/services/auth.service';
 import { usersService, unlockedAdsService } from '@/services/users.service';
 import { citiesService } from '@/services/cities.service';
 import { UserRole, City } from '@/types';
-import { AxiosError } from 'axios';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import AdCard from '@/components/ads/AdCard';
 import FadeIn from '@/components/ui/FadeIn';
 
@@ -80,8 +80,8 @@ export default function ProfilePage() {
   // Password change
   const [passwordForm, setPasswordForm] = useState({
     current_password: '',
-    password: '',
-    password_confirmation: '',
+    new_password: '',
+    new_password_confirmation: '',
   });
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -132,8 +132,7 @@ export default function ProfilePage() {
       setEditSuccess('Profil mis à jour avec succès.');
       setIsEditing(false);
     } catch (err) {
-      const axiosErr = err as AxiosError<{ message?: string }>;
-      setEditError(axiosErr?.response?.data?.message || 'Erreur lors de la mise à jour.');
+      setEditError(getSafeErrorMessage(err, 'Erreur lors de la mise à jour.'));
     } finally {
       setIsSaving(false);
     }
@@ -146,10 +145,9 @@ export default function ProfilePage() {
     try {
       const res = await authService.updatePassword(passwordForm);
       setPasswordSuccess(res.message || 'Mot de passe modifié avec succès.');
-      setPasswordForm({ current_password: '', password: '', password_confirmation: '' });
+      setPasswordForm({ current_password: '', new_password: '', new_password_confirmation: '' });
     } catch (err) {
-      const axiosErr = err as AxiosError<{ message?: string }>;
-      setPasswordError(axiosErr?.response?.data?.message || 'Erreur lors du changement de mot de passe.');
+      setPasswordError(getSafeErrorMessage(err, 'Erreur lors du changement de mot de passe.'));
     } finally {
       setIsChangingPassword(false);
     }
@@ -438,8 +436,8 @@ export default function ProfilePage() {
             fullWidth
             label="Nouveau mot de passe"
             type={showNewPassword ? 'text' : 'password'}
-            value={passwordForm.password}
-            onChange={(e) => setPasswordForm((p) => ({ ...p, password: e.target.value }))}
+            value={passwordForm.new_password}
+            onChange={(e) => setPasswordForm((p) => ({ ...p, new_password: e.target.value }))}
             helperText="Minimum 8 caractères"
             slotProps={{
               input: {
@@ -458,15 +456,15 @@ export default function ProfilePage() {
             fullWidth
             label="Confirmer le nouveau mot de passe"
             type="password"
-            value={passwordForm.password_confirmation}
-            onChange={(e) => setPasswordForm((p) => ({ ...p, password_confirmation: e.target.value }))}
+            value={passwordForm.new_password_confirmation}
+            onChange={(e) => setPasswordForm((p) => ({ ...p, new_password_confirmation: e.target.value }))}
             error={
-              passwordForm.password_confirmation.length > 0 &&
-              passwordForm.password !== passwordForm.password_confirmation
+              passwordForm.new_password_confirmation.length > 0 &&
+              passwordForm.new_password !== passwordForm.new_password_confirmation
             }
             helperText={
-              passwordForm.password_confirmation.length > 0 &&
-              passwordForm.password !== passwordForm.password_confirmation
+              passwordForm.new_password_confirmation.length > 0 &&
+              passwordForm.new_password !== passwordForm.new_password_confirmation
                 ? 'Les mots de passe ne correspondent pas'
                 : ''
             }
@@ -478,8 +476,8 @@ export default function ProfilePage() {
             disabled={
               isChangingPassword ||
               !passwordForm.current_password ||
-              passwordForm.password.length < 8 ||
-              passwordForm.password !== passwordForm.password_confirmation
+              passwordForm.new_password.length < 8 ||
+              passwordForm.new_password !== passwordForm.new_password_confirmation
             }
             sx={{
               borderRadius: 2,

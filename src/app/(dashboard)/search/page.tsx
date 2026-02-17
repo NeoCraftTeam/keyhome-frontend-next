@@ -3,6 +3,7 @@
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
+import { escapeHtml } from '@/lib/sanitize';
 import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { AdType, City, SearchParams } from '@/types';
@@ -119,6 +120,7 @@ function SearchContent() {
     queryKey: ['search-map-all', query, selectedCity?.id, selectedType?.id, bedrooms, priceRange, surfaceRange, hasParking],
     queryFn: () => adsService.search({ ...buildParams(), page: 1, per_page: 200 }),
     staleTime: 2 * 60 * 1000,
+    enabled: viewMode === 'map',
   });
 
   const ads = useMemo(() => data?.data || [], [data?.data]);
@@ -161,8 +163,8 @@ function SearchContent() {
         : '';
 
       const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
-        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${ad.id}/${ad.slug}'">
-          <div>${ad.title}</div>
+        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${encodeURIComponent(ad.id)}/${encodeURIComponent(ad.slug)}'">
+          <div>${escapeHtml(ad.title)}</div>
           <div style="color:#F6475F;font-weight:700">${formatPrice(ad.price)}</div>
           ${ratingHtml}
         </div>`

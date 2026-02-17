@@ -3,6 +3,7 @@
 import ReviewForm from '@/components/reviews/ReviewForm';
 import FadeIn from '@/components/ui/FadeIn';
 import { formatPrice, formatRelativeDate } from '@/lib/constants';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { useFavorites } from '@/providers/FavoritesProvider';
 import { adsService } from '@/services/ads.service';
@@ -129,8 +130,7 @@ function AdDetailContent() {
       const response = await paymentsService.initialize(ad.id);
       window.location.href = response.payment_url;
     } catch (err) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
-      setPaymentError(axiosErr?.response?.data?.message || 'Erreur lors du paiement.');
+      setPaymentError(getSafeErrorMessage(err, 'Erreur lors du paiement.'));
     } finally {
       setIsPaymentLoading(false);
     }
