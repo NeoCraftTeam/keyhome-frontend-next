@@ -81,8 +81,8 @@ export const authService = {
 
   async updatePassword(payload: {
     current_password: string;
-    password: string;
-    password_confirmation: string;
+    new_password: string;
+    new_password_confirmation: string;
   }): Promise<{ message: string }> {
     const { data } = await api.post('/auth/update-password', payload);
     return data;

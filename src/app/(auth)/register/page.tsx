@@ -107,8 +107,9 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
+      let response;
       if (accountRole === 'customer') {
-        await authService.registerCustomer({
+        response = await authService.registerCustomer({
           firstname: form.firstname,
           lastname: form.lastname,
           email: form.email,
@@ -118,7 +119,7 @@ export default function RegisterPage() {
           city_id: selectedCity?.id || undefined,
         });
       } else {
-        await authService.registerAgent({
+        response = await authService.registerAgent({
           firstname: form.firstname,
           lastname: form.lastname,
           email: form.email,
@@ -129,6 +130,15 @@ export default function RegisterPage() {
           city_id: selectedCity?.id || undefined,
         });
       }
+
+      // Store auth token so verify-email page can resend verification emails
+      if (response.token) {
+        sessionStorage.setItem('token', response.token);
+        if (response.user?.id) {
+          sessionStorage.setItem('user_id', response.user.id);
+        }
+      }
+
       router.push('/verify-email');
     } catch (err) {
       setError(getSafeErrorMessage(err, "Erreur lors de l'inscription."));
