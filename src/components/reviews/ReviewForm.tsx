@@ -14,6 +14,7 @@ import {
     Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useState } from 'react';
 
 interface ReviewFormProps {
@@ -153,8 +154,7 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
       {/* Error feedback */}
       {mutation.isError && (
         <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-          {(mutation.error as any)?.response?.data?.message ||
-            'Une erreur est survenue. Veuillez réessayer.'}
+          {getSafeErrorMessage(mutation.error, 'Une erreur est survenue. Veuillez réessayer.')}
         </Alert>
       )}
 
