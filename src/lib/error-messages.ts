@@ -1,38 +1,24 @@
 import { AxiosError } from 'axios';
 
-/**
- * Safe, user-facing error messages mapped by HTTP status code.
- * Never expose raw API `data.message` to the UI.
- */
-const ERROR_MESSAGES: Record<number, string> = {
-  400: 'Requête invalide. Veuillez vérifier vos informations.',
-  401: 'Identifiants incorrects. Veuillez réessayer.',
-  403: 'Vous n\'avez pas les permissions nécessaires.',
-  404: 'Ressource introuvable.',
-  409: 'Un conflit est survenu. Veuillez réessayer.',
-  422: 'Les données saisies sont invalides. Veuillez corriger les erreurs.',
-  429: 'Trop de tentatives. Veuillez patienter quelques instants.',
-  500: 'Une erreur serveur est survenue. Veuillez réessayer plus tard.',
-  503: 'Le service est temporairement indisponible. Veuillez réessayer plus tard.',
-};
-
 const DEFAULT_ERROR = 'Une erreur est survenue. Veuillez réessayer.';
 
 /**
  * Extract validation errors from a 422 response (Laravel format).
- * Returns first validation message if available, otherwise generic message.
+ * Returns all field errors joined, or null.
  */
-function getValidationError(error: AxiosError<{ errors?: Record<string, string[]> }>): string | null {
-  const errors = error.response?.data?.errors;
-  if (!errors) return null;
-  const firstField = Object.values(errors)[0];
-  return firstField?.[0] || null;
+function getValidationErrors(error: AxiosError<{ message?: string; errors?: Record<string, string[]> }>): string | null {
+  const data = error.response?.data;
+  const errors = data?.errors;
+  if (!errors) return data?.message || null;
+
+  const messages = Object.values(errors).flat();
+  return messages.length > 0 ? messages.join(' ') : null;
 }
 
 /**
- * Get a safe, user-facing error message from an Axios error.
- * For 422 (validation), returns the first specific validation error.
- * For all other codes, returns a generic French message.
+ * Get the error message directly from the API response.
+ * For 422 (validation), returns specific field errors from Laravel.
+ * For all other codes, returns the response `message` field as-is.
  */
 export function getSafeErrorMessage(
   error: unknown,
@@ -43,12 +29,18 @@ export function getSafeErrorMessage(
   }
 
   const status = error.response.status;
+  const data = error.response.data as { message?: string; errors?: Record<string, string[]> } | undefined;
 
   // For validation errors, return specific field errors from Laravel
   if (status === 422) {
-    const validationMsg = getValidationError(error as AxiosError<{ errors?: Record<string, string[]> }>);
+    const validationMsg = getValidationErrors(error as AxiosError<{ message?: string; errors?: Record<string, string[]> }>);
     if (validationMsg) return validationMsg;
   }
 
-  return ERROR_MESSAGES[status] || fallback;
+  // Return the message from the API response directly
+  if (data?.message) {
+    return data.message;
+  }
+
+  return fallback;
 }

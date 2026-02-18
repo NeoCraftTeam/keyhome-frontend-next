@@ -77,10 +77,12 @@ export default function RegisterPage() {
 
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [cityInput, setCityInput] = useState('');
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
 
-  const { data: citiesData } = useQuery({
+  const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
     queryKey: ['register-cities', cityInput],
-    queryFn: () => citiesService.list({ q: cityInput || undefined }),
+    queryFn: () => citiesService.list({ q: cityInput }),
+    enabled: cityInput.length >= 1,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -401,15 +403,19 @@ export default function RegisterPage() {
                   options={cities}
                   getOptionLabel={(opt) => opt.name}
                   value={selectedCity}
-                  onChange={(_, val) => setSelectedCity(val)}
+                  onChange={(_, val) => { setSelectedCity(val); setCityDropdownOpen(false); }}
                   inputValue={cityInput}
-                  onInputChange={(_, val) => setCityInput(val)}
+                  onInputChange={(_, val, reason) => { if (reason !== 'reset') { setCityInput(val); setCityDropdownOpen(val.length >= 1); } }}
+                  onClose={() => setCityDropdownOpen(false)}
+                  open={cityDropdownOpen && cityInput.length >= 1 && !isCitiesLoading && cities.length > 0}
+                  filterOptions={(x) => x}
+                  loading={isCitiesLoading}
                   noOptionsText="Aucune ville trouvée"
                   renderInput={(params) => (
                     <TextField
                       {...params}
                       label="Ville"
-                      placeholder="Sélectionnez votre ville"
+                      placeholder="Rechercher une ville..."
                       slotProps={{
                         input: {
                           ...params.InputProps,
@@ -417,6 +423,12 @@ export default function RegisterPage() {
                             <>
                               <InputAdornment position="start"><CityIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>
                               {params.InputProps.startAdornment}
+                            </>
+                          ),
+                          endAdornment: (
+                            <>
+                              {isCitiesLoading ? <CircularProgress color="inherit" size={18} /> : null}
+                              {params.InputProps.endAdornment}
                             </>
                           ),
                         },

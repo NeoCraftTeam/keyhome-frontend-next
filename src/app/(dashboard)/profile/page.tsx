@@ -64,6 +64,7 @@ export default function ProfilePage() {
   });
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [cityInput, setCityInput] = useState(user?.city_name || '');
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const [editError, setEditError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -89,10 +90,11 @@ export default function ProfilePage() {
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // Cities for autocomplete
-  const { data: citiesData } = useQuery({
+  // Cities for autocomplete — server-side search
+  const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
     queryKey: ['cities', cityInput],
-    queryFn: () => citiesService.list({ q: cityInput || undefined }),
+    queryFn: () => citiesService.list({ q: cityInput }),
+    enabled: cityInput.length >= 1,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -210,7 +212,7 @@ export default function ProfilePage() {
             <Typography variant="body2" color="text.secondary">
               {user.email}
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+           {/*  <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
               {user.role && (
                 <Chip
                   label={
@@ -226,7 +228,7 @@ export default function ProfilePage() {
                 />
               )}
               {user.city_name && <Chip label={user.city_name} size="small" variant="outlined" />}
-            </Box>
+            </Box> */}
           </Box>
           {!isEditing && (
             <Button
@@ -305,11 +307,32 @@ export default function ProfilePage() {
                 options={cities}
                 getOptionLabel={(opt) => opt.name}
                 value={selectedCity}
-                onChange={(_, val) => setSelectedCity(val)}
+                onChange={(_, val) => { setSelectedCity(val); setCityDropdownOpen(false); }}
                 inputValue={cityInput}
-                onInputChange={(_, val) => setCityInput(val)}
-                noOptionsText="Aucune ville"
-                renderInput={(params) => <TextField {...params} label="Ville" />}
+                onInputChange={(_, val, reason) => { if (reason !== 'reset') { setCityInput(val); setCityDropdownOpen(val.length >= 1); } }}
+                onClose={() => setCityDropdownOpen(false)}
+                open={cityDropdownOpen && cityInput.length >= 1 && !isCitiesLoading && cities.length > 0}
+                filterOptions={(x) => x}
+                loading={isCitiesLoading}
+                noOptionsText="Aucune ville trouvée"
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Ville"
+                    placeholder="Rechercher une ville..."
+                    slotProps={{
+                      input: {
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {isCitiesLoading ? <CircularProgress color="inherit" size={18} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      },
+                    }}
+                  />
+                )}
               />
             ) : (
               <TextField fullWidth label="Ville" value={user.city_name || 'Non définie'} disabled />

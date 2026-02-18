@@ -72,17 +72,19 @@ function SearchContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
   const [cityInput, setCityInput] = useState('');
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<AdType | null>(null);
   const [bedrooms, setBedrooms] = useState<number | undefined>();
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]);
   const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 1000]);
   const [hasParking, setHasParking] = useState(false);
 
-  // Pre-fetch ALL cities once and filter client-side
-  const { data: citiesData } = useQuery({
-    queryKey: ['cities-all'],
-    queryFn: () => citiesService.list({ per_page: 100 }),
-    staleTime: Infinity,
+  // Fetch cities matching input — server-side search
+  const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
+    queryKey: ['cities', cityInput],
+    queryFn: () => citiesService.list({ q: cityInput, per_page: 20 }),
+    enabled: cityInput.length >= 1,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch ad types
@@ -239,16 +241,33 @@ function SearchContent() {
         options={cities}
         getOptionLabel={(opt) => opt.name}
         value={selectedCity}
-        onChange={(_, val) => { setSelectedCity(val); setPage(1); }}
+        onChange={(_, val) => { setSelectedCity(val); setPage(1); setCityDropdownOpen(false); }}
         inputValue={cityInput}
-        onInputChange={(_, val) => setCityInput(val)}
-        filterOptions={(options, state) =>
-          state.inputValue
-            ? options.filter((opt) => opt.name.toLowerCase().includes(state.inputValue.toLowerCase()))
-            : options
-        }
-        noOptionsText="Aucune ville"
-        renderInput={(params) => <TextField {...params} label="Ville" sx={{ mb: 2 }} />}
+        onInputChange={(_, val, reason) => { if (reason !== 'reset') { setCityInput(val); setCityDropdownOpen(val.length >= 1); } }}
+        onClose={() => setCityDropdownOpen(false)}
+        open={cityDropdownOpen && cityInput.length >= 1 && !isCitiesLoading && cities.length > 0}
+        filterOptions={(x) => x}
+        loading={isCitiesLoading}
+        noOptionsText="Aucune ville trouvée"
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Ville"
+            placeholder="Rechercher une ville..."
+            slotProps={{
+              input: {
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {isCitiesLoading ? <CircularProgress color="inherit" size={18} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              },
+            }}
+            sx={{ mb: 2 }}
+          />
+        )}
       />
 
       {/* Type */}
