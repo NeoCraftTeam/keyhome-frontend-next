@@ -14,28 +14,19 @@ interface SocialLoginButtonsProps {
 
 const providerConfig: Record<
   OAuthProvider,
-  { label: string; icon: React.ReactNode; bgColor: string; hoverColor: string; iconColor: string }
+  { label: string; icon: React.ReactNode }
 > = {
   google: {
     label: 'Google',
     icon: <Google />,
-    bgColor: '#ffffff',
-    hoverColor: '#f5f5f5',
-    iconColor: '#DB4437',
   },
   facebook: {
     label: 'Facebook',
     icon: <Facebook />,
-    bgColor: '#1877F2',
-    hoverColor: '#166FE5',
-    iconColor: '#ffffff',
   },
   apple: {
     label: 'Apple',
     icon: <Apple />,
-    bgColor: '#000000',
-    hoverColor: '#333333',
-    iconColor: '#ffffff',
   },
 };
 
@@ -85,21 +76,19 @@ export default function SocialLoginButtons({
                 sx={{
                   width: 52,
                   height: 52,
-                  bgcolor: config.bgColor,
-                  color: config.iconColor,
-                  border: provider === 'google' ? '1px solid' : 'none',
-                  borderColor: 'divider',
+                  bgcolor: '#F6475F',
+                  color: '#ffffff',
                   '&:hover': {
-                    bgcolor: config.hoverColor,
+                    bgcolor: '#D93A50',
                   },
                   '&:disabled': {
-                    bgcolor: config.bgColor,
+                    bgcolor: '#F6475F',
                     opacity: 0.6,
                   },
                 }}
               >
                 {isLoading ? (
-                  <CircularProgress size={24} sx={{ color: config.iconColor }} />
+                  <CircularProgress size={24} sx={{ color: '#ffffff' }} />
                 ) : (
                   config.icon
                 )}
