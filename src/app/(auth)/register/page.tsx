@@ -1,5 +1,6 @@
 'use client';
 
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
@@ -341,6 +342,13 @@ export default function RegisterPage() {
                 >
                   Continuer
                 </Button>
+
+                {accountRole === 'customer' && (
+                  <SocialLoginButtons
+                    onError={(err) => setError(err)}
+                    disabled={isSubmitting}
+                  />
+                )}
               </Box>
             </FadeIn>
           )}
