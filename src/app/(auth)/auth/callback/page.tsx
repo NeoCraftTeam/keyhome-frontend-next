@@ -1,8 +1,7 @@
 'use client';
 
-import { getSafeErrorMessage } from '@/lib/error-messages';
+import api from '@/lib/api';
 import { useAuth } from '@/providers/AuthProvider';
-import { authService, OAuthProvider } from '@/services/auth.service';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -15,45 +14,45 @@ function OAuthCallbackContent() {
   const [error, setError] = useState<string | null>(null);
 
   const handleCallback = useCallback(async () => {
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
+    // The backend OAuth callback redirects here with token in query params
+    const token = searchParams.get('token');
     const errorParam = searchParams.get('error');
-    const provider = sessionStorage.getItem('oauth_provider') as OAuthProvider | null;
+    const errorMessage = searchParams.get('message');
 
     // Clear stored provider
     sessionStorage.removeItem('oauth_provider');
 
     // Check for OAuth errors
-    if (errorParam) {
-      const errorDescription = searchParams.get('error_description') || 'Connexion annulée';
-      setError(errorDescription);
+    if (errorParam || errorMessage) {
+      setError(errorMessage || errorParam || 'Connexion annulée');
       return;
     }
 
-    // Validate required params
-    if (!code) {
-      setError('Code d\'autorisation manquant');
-      return;
-    }
-
-    if (!provider) {
-      setError('Provider OAuth non trouvé');
+    // Check if we have a token from backend redirect
+    if (!token) {
+      setError('Token d\'authentification manquant');
       return;
     }
 
     try {
-      const response = await authService.handleOAuthCallback(provider, code, state);
+      // Store token
+      sessionStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      // Store token and user
-      sessionStorage.setItem('token', response.token);
-      sessionStorage.setItem('user_id', response.user.id);
-      setUser(response.user);
+      // Fetch user info
+      const { data } = await api.get('/auth/me');
+      const user = data.data ?? data;
+
+      // Store user
+      sessionStorage.setItem('user_id', user.id);
+      setUser(user);
 
       // Redirect to home
       router.replace('/home');
     } catch (err) {
       console.error('OAuth callback error:', err);
-      setError(getSafeErrorMessage(err, 'Erreur lors de la connexion. Veuillez réessayer.'));
+      sessionStorage.removeItem('token');
+      setError('Erreur lors de la récupération du profil. Veuillez réessayer.');
     }
   }, [searchParams, router, setUser]);
 

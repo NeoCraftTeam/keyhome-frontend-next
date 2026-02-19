@@ -18,13 +18,6 @@ interface OAuthRedirectResponse {
   redirect_url: string;
 }
 
-interface OAuthCallbackResponse {
-  message: string;
-  user: User;
-  token: string;
-  is_new_user: boolean;
-}
-
 export type OAuthProvider = 'google' | 'facebook' | 'apple';
 
 export const authService = {
@@ -107,7 +100,8 @@ export const authService = {
   },
 
   /**
-   * Get OAuth redirect URL for a provider
+   * Get OAuth redirect URL for a provider.
+   * The backend will handle the callback and redirect back to /auth/callback with the token.
    */
   async getOAuthRedirectUrl(provider: OAuthProvider): Promise<string> {
     const redirectUri = `${window.location.origin}/auth/callback`;
@@ -116,44 +110,5 @@ export const authService = {
       { params: { redirect_uri: redirectUri } }
     );
     return data.redirect_url;
-  },
-
-  /**
-   * Handle OAuth callback with code from provider
-   */
-  async handleOAuthCallback(
-    provider: OAuthProvider,
-    code: string,
-    state?: string | null
-  ): Promise<AuthResponse> {
-    const redirectUri = `${window.location.origin}/auth/callback`;
-    const { data } = await api.post<OAuthCallbackResponse>(
-      `/auth/oauth/${provider}/callback`,
-      { code, state, redirect_uri: redirectUri }
-    );
-
-    const token = data.token;
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-    return { token, user: data.user, expires_at: '' };
-  },
-
-  /**
-   * Authenticate with OAuth token directly (for mobile apps or when you have the token)
-   */
-  async authenticateWithOAuthToken(
-    provider: OAuthProvider,
-    token: string,
-    role?: 'customer' | 'agent'
-  ): Promise<AuthResponse> {
-    const { data } = await api.post<OAuthCallbackResponse>(
-      `/auth/oauth/${provider}`,
-      { token, role }
-    );
-
-    const authToken = data.token;
-    api.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
-
-    return { token: authToken, user: data.user, expires_at: '' };
   },
 };

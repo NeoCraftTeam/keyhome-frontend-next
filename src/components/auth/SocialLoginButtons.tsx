@@ -2,7 +2,7 @@
 
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { Apple, Facebook, Google } from '@mui/icons-material';
-import { Box, Button, CircularProgress, Divider, Typography } from '@mui/material';
+import { Box, CircularProgress, Divider, IconButton, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
 
 interface SocialLoginButtonsProps {
@@ -14,25 +14,28 @@ interface SocialLoginButtonsProps {
 
 const providerConfig: Record<
   OAuthProvider,
-  { label: string; icon: React.ReactNode; color: string; hoverColor: string }
+  { label: string; icon: React.ReactNode; bgColor: string; hoverColor: string; iconColor: string }
 > = {
   google: {
     label: 'Google',
     icon: <Google />,
-    color: '#ffffff',
+    bgColor: '#ffffff',
     hoverColor: '#f5f5f5',
+    iconColor: '#DB4437',
   },
   facebook: {
     label: 'Facebook',
     icon: <Facebook />,
-    color: '#1877F2',
+    bgColor: '#1877F2',
     hoverColor: '#166FE5',
+    iconColor: '#ffffff',
   },
   apple: {
     label: 'Apple',
     icon: <Apple />,
-    color: '#000000',
+    bgColor: '#000000',
     hoverColor: '#333333',
+    iconColor: '#ffffff',
   },
 };
 
@@ -50,9 +53,7 @@ export default function SocialLoginButtons({
     setLoadingProvider(provider);
     try {
       const redirectUrl = await authService.getOAuthRedirectUrl(provider);
-      // Store provider in sessionStorage for callback
       sessionStorage.setItem('oauth_provider', provider);
-      // Redirect to OAuth provider
       window.location.href = redirectUrl;
     } catch (err) {
       console.error(`OAuth ${provider} error:`, err);
@@ -71,53 +72,39 @@ export default function SocialLoginButtons({
         </Divider>
       )}
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
         {providers.map((provider) => {
           const config = providerConfig[provider];
           const isLoading = loadingProvider === provider;
-          const isGoogle = provider === 'google';
 
           return (
-            <Button
-              key={provider}
-              fullWidth
-              variant={isGoogle ? 'outlined' : 'contained'}
-              onClick={() => handleOAuthLogin(provider)}
-              disabled={disabled || !!loadingProvider}
-              startIcon={
-                isLoading ? (
-                  <CircularProgress size={20} color="inherit" />
+            <Tooltip key={provider} title={config.label} arrow>
+              <IconButton
+                onClick={() => handleOAuthLogin(provider)}
+                disabled={disabled || !!loadingProvider}
+                sx={{
+                  width: 52,
+                  height: 52,
+                  bgcolor: config.bgColor,
+                  color: config.iconColor,
+                  border: provider === 'google' ? '1px solid' : 'none',
+                  borderColor: 'divider',
+                  '&:hover': {
+                    bgcolor: config.hoverColor,
+                  },
+                  '&:disabled': {
+                    bgcolor: config.bgColor,
+                    opacity: 0.6,
+                  },
+                }}
+              >
+                {isLoading ? (
+                  <CircularProgress size={24} sx={{ color: config.iconColor }} />
                 ) : (
                   config.icon
-                )
-              }
-              sx={{
-                py: 1.25,
-                borderRadius: 2,
-                textTransform: 'none',
-                fontSize: '0.9375rem',
-                fontWeight: 500,
-                ...(isGoogle
-                  ? {
-                      borderColor: 'divider',
-                      color: 'text.primary',
-                      bgcolor: config.color,
-                      '&:hover': {
-                        bgcolor: config.hoverColor,
-                        borderColor: 'divider',
-                      },
-                    }
-                  : {
-                      bgcolor: config.color,
-                      color: '#fff',
-                      '&:hover': {
-                        bgcolor: config.hoverColor,
-                      },
-                    }),
-              }}
-            >
-              Continuer avec {config.label}
-            </Button>
+                )}
+              </IconButton>
+            </Tooltip>
           );
         })}
       </Box>
