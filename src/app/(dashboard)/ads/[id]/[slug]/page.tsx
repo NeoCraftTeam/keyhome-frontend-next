@@ -116,15 +116,18 @@ function AdDetailContent() {
 
   const allImages = ad.images || [];
   const primaryImage = allImages.find((img) => img.is_primary) || allImages[0];
-  const isLocked = ad.is_unlocked === false && !justUnlocked;
+  // SECURITY: isLocked must depend ONLY on server response, never on URL params
+  const isLocked = ad.is_unlocked === false;
   // When locked, only show the primary image
   const images = isLocked ? (primaryImage ? [primaryImage] : []) : allImages;
   const totalImageCount = ad.total_images || allImages.length;
 
   const handleShare = async () => {
-    const url = window.location.href;
+    // SECURITY: Remove any unlocked params from shared URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('unlocked');
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(url.toString());
       setSnackbar('Lien copié dans le presse-papier');
     } catch {
       setSnackbar('Impossible de copier le lien');
