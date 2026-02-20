@@ -1,5 +1,6 @@
 'use client';
 
+import PropertyAttributes from '@/components/ads/PropertyAttributes';
 import ReviewForm from '@/components/reviews/ReviewForm';
 import FadeIn from '@/components/ui/FadeIn';
 import { formatPrice, formatRelativeDate } from '@/lib/constants';
@@ -9,12 +10,16 @@ import { useFavorites } from '@/providers/FavoritesProvider';
 import { adsService } from '@/services/ads.service';
 import { paymentsService } from '@/services/payments.service';
 import {
+  AccountBalanceWallet,
   BathtubOutlined,
   BedOutlined,
+  Call,
+  CalendarMonth,
   ChevronLeft,
   ChevronRight,
   Close,
   ContentCopy,
+  Description,
   Email,
   Favorite,
   FavoriteBorder,
@@ -22,9 +27,12 @@ import {
   LocationOn,
   Lock,
   Phone,
+  ReceiptLong,
   Share,
   SquareFootOutlined,
+  Star,
   Verified,
+  WhatsApp,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -151,6 +159,10 @@ function AdDetailContent() {
   const publisherName = ad.published_by || 'Annonceur';
   const publisherPhone = ad.user?.phone_number;
   const publisherEmail = ad.user?.email;
+  const publisherHasWhatsApp = ad.user?.phone_is_whatsapp ?? false;
+
+  // Format phone number for WhatsApp (remove spaces, dashes, etc.)
+  const whatsappNumber = publisherPhone?.replace(/[\s\-\(\)]/g, '').replace(/^\+/, '');
 
   return (
     <>
@@ -388,84 +400,109 @@ function AdDetailContent() {
               </Box>
             </Box>
 
-            {/* Contact info — blur if locked */}
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                border: '1px solid',
-                borderColor: 'divider',
-                mb: 3,
-                position: 'relative',
-                overflow: 'hidden',
-              }}
-            >
-              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                Coordonnées de l&apos;annonceur
-              </Typography>
+            {/* Premium Info Section - Only when unlocked */}
+            {!isLocked && (ad.deposit_amount || ad.minimum_lease_duration || ad.detailed_charges || ad.property_condition_pdf) && (
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  mb: 3,
+                  bgcolor: 'grey.50',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+                  <Star sx={{ fontSize: 20, color: 'primary.main' }} />
+                  <Typography variant="subtitle1" fontWeight={700} sx={{ letterSpacing: -0.3 }}>
+                    Informations Premium
+                  </Typography>
+                </Box>
 
-              {isLocked ? (
-                <Box sx={{ position: 'relative' }}>
-                  <Box sx={{ filter: 'blur(8px)', userSelect: 'none', pointerEvents: 'none' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Phone sx={{ fontSize: 18, color: 'text.secondary' }} />
-                      <Typography variant="body2">+237 6XX XXX XXX</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Email sx={{ fontSize: 18, color: 'text.secondary' }} />
-                      <Typography variant="body2">email@example.com</Typography>
-                    </Box>
-                  </Box>
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={<Lock />}
-                      onClick={() => setPaymentDialogOpen(true)}
-                      sx={{
-                        borderRadius: 2,
-                        background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                        '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-                      }}
-                    >
-                      Déverrouiller pour voir
-                    </Button>
-                  </Box>
-                </Box>
-              ) : (
-                <Box>
-                  {publisherPhone && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Phone sx={{ fontSize: 18, color: 'text.secondary' }} />
-                      <Typography variant="body2">{publisherPhone}</Typography>
-                      <IconButton size="small" onClick={() => { navigator.clipboard.writeText(publisherPhone); setSnackbar('Numéro copié'); }}>
-                        <ContentCopy sx={{ fontSize: 14 }} />
-                      </IconButton>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2.5 }}>
+                  {ad.deposit_amount && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <AccountBalanceWallet sx={{ fontSize: 24, color: 'text.secondary' }} />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', letterSpacing: 0.5, textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                          Dépôt de garantie
+                        </Typography>
+                        <Typography variant="body1" fontWeight={600}>
+                          {ad.deposit_amount}
+                        </Typography>
+                      </Box>
                     </Box>
                   )}
-                  {publisherEmail && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Email sx={{ fontSize: 18, color: 'text.secondary' }} />
-                      <Typography variant="body2">{publisherEmail}</Typography>
-                      <IconButton size="small" onClick={() => { navigator.clipboard.writeText(publisherEmail); setSnackbar('Email copié'); }}>
-                        <ContentCopy sx={{ fontSize: 14 }} />
-                      </IconButton>
+
+                  {ad.minimum_lease_duration && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <CalendarMonth sx={{ fontSize: 24, color: 'text.secondary' }} />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', letterSpacing: 0.5, textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                          Durée minimum
+                        </Typography>
+                        <Typography variant="body1" fontWeight={600}>
+                          {ad.minimum_lease_duration}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+
+                  {ad.detailed_charges && (
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, gridColumn: { sm: ad.property_condition_pdf ? 'auto' : '1 / -1' } }}>
+                      <ReceiptLong sx={{ fontSize: 24, color: 'text.secondary', mt: 0.25 }} />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', letterSpacing: 0.5, textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                          Charges
+                        </Typography>
+                        <Typography variant="body1" fontWeight={600} sx={{ whiteSpace: 'pre-line' }}>
+                          {ad.detailed_charges}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+
+                  {ad.property_condition_pdf && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Description sx={{ fontSize: 24, color: 'text.secondary' }} />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', letterSpacing: 0.5, textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                          État des lieux
+                        </Typography>
+                        <Button
+                          variant="text"
+                          size="small"
+                          href={ad.property_condition_pdf}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            p: 0,
+                            minWidth: 0,
+                            fontWeight: 600,
+                            color: 'primary.main',
+                            textTransform: 'none',
+                            '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
+                          }}
+                        >
+                          Télécharger le PDF
+                        </Button>
+                      </Box>
                     </Box>
                   )}
                 </Box>
-              )}
-            </Paper>
+              </Paper>
+            )}
 
             <Divider sx={{ mb: 3 }} />
+
+            {/* Property Attributes */}
+            {ad.attributes && ad.attributes.length > 0 && (
+              <>
+                <PropertyAttributes attributes={ad.attributes} variant="list" showTitle />
+                <Divider sx={{ my: 3 }} />
+              </>
+            )}
 
             {/* Description */}
             <Typography variant="h6" fontWeight={600} gutterBottom>
@@ -600,12 +637,50 @@ function AdDetailContent() {
                     Contact de l&apos;annonceur
                   </Typography>
                   {publisherPhone && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Phone sx={{ fontSize: 18, color: 'primary.main' }} />
-                      <Typography variant="body2" fontWeight={500}>{publisherPhone}</Typography>
-                      <IconButton size="small" onClick={() => { navigator.clipboard.writeText(publisherPhone); setSnackbar('Numéro copié'); }}>
-                        <ContentCopy sx={{ fontSize: 14 }} />
-                      </IconButton>
+                    <Box sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                        <Phone sx={{ fontSize: 18, color: 'primary.main' }} />
+                        <Typography variant="body2" fontWeight={500}>{publisherPhone}</Typography>
+                        <IconButton size="small" onClick={() => { navigator.clipboard.writeText(publisherPhone); setSnackbar('Numéro copié'); }}>
+                          <ContentCopy sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<Call sx={{ fontSize: 18 }} />}
+                          href={`tel:${publisherPhone}`}
+                          sx={{ 
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            bgcolor: 'primary.main',
+                            '&:hover': { bgcolor: 'primary.dark' },
+                          }}
+                        >
+                          Appeler
+                        </Button>
+                        {publisherHasWhatsApp && whatsappNumber && (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<WhatsApp sx={{ fontSize: 18 }} />}
+                            href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Bonjour,\n\nJe vous contacte suite à votre annonce *${ad.title}* que j'ai vue sur KeyHome.\n\nJe suis intéressé(e) par ce bien et souhaiterais avoir plus d'informations.\n\nCordialement${currentUser?.firstname ? `, ${currentUser.firstname}` : ''}`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ 
+                              borderRadius: 2,
+                              textTransform: 'none',
+                              fontWeight: 600,
+                              bgcolor: '#25D366',
+                              '&:hover': { bgcolor: '#128C7E' },
+                            }}
+                          >
+                            WhatsApp
+                          </Button>
+                        )}
+                      </Box>
                     </Box>
                   )}
                   {publisherEmail && (

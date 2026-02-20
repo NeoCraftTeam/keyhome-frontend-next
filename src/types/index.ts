@@ -23,6 +23,29 @@ export enum AdStatus {
   SOLD = 'sold',
 }
 
+export enum PropertyAttribute {
+  Wifi = 'wifi',
+  AirConditioning = 'air_conditioning',
+  Heating = 'heating',
+  PetsAllowed = 'pets_allowed',
+  Furnished = 'furnished',
+  Pool = 'pool',
+  Garden = 'garden',
+  Balcony = 'balcony',
+  Terrace = 'terrace',
+  Elevator = 'elevator',
+  Security = 'security',
+  Gym = 'gym',
+  Laundry = 'laundry',
+  Storage = 'storage',
+  Fireplace = 'fireplace',
+  Dishwasher = 'dishwasher',
+  WashingMachine = 'washing_machine',
+  Tv = 'tv',
+  Accessibility = 'accessibility',
+  SmokingAllowed = 'smoking_allowed',
+}
+
 export enum PaymentStatus {
   PENDING = 'pending',
   SUCCESS = 'success',
@@ -49,6 +72,7 @@ export interface User {
   firstname: string;
   lastname: string;
   phone_number?: string | null;
+  phone_is_whatsapp?: boolean | null;
   email?: string;
   avatar: string | null;
   display_name: string;
@@ -124,6 +148,17 @@ export interface Ad {
   images: AdImage[];
   reviews?: Review[];
   distance?: number;
+  // Availability & Attributes
+  is_visible?: boolean;
+  available_from?: string | null;
+  available_to?: string | null;
+  attributes?: string[];
+  is_currently_available?: boolean;
+  // Premium info (only when unlocked)
+  deposit_amount?: string | null;
+  minimum_lease_duration?: string | null;
+  detailed_charges?: string | null;
+  property_condition_pdf?: string | null;
 }
 
 export interface Review {
