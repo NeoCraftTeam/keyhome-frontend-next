@@ -1,5 +1,6 @@
 'use client';
 
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
@@ -234,6 +235,13 @@ export default function LoginPage() {
                 {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Se connecter'}
               </Button>
             </Box>
+          </FadeIn>
+
+          <FadeIn delay={0.3} direction="up">
+            <SocialLoginButtons
+              onError={(err) => setError(err)}
+              disabled={isSubmitting}
+            />
           </FadeIn>
 
           <FadeIn delay={0.4} direction="up">

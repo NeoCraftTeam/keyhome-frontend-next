@@ -1,6 +1,6 @@
 'use client';
 
-import { authService } from '@/services/auth.service';
+import { authService, OAuthProvider } from '@/services/auth.service';
 import { User } from '@/types';
 import { useRouter } from 'next/navigation';
 import {
@@ -18,6 +18,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithOAuth: (provider: OAuthProvider) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User) => void;
   refreshUser: () => Promise<void>;
@@ -92,6 +93,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [router]
   );
 
+  const loginWithOAuth = useCallback(
+    async (provider: OAuthProvider) => {
+      const redirectUrl = await authService.getOAuthRedirectUrl(provider);
+      sessionStorage.setItem('oauth_provider', provider);
+      window.location.href = redirectUrl;
+    },
+    []
+  );
+
   const logout = useCallback(async () => {
     try {
       await authService.logout();
@@ -122,11 +132,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       isAuthenticated,
       login,
+      loginWithOAuth,
       logout,
       setUser,
       refreshUser,
     }),
-    [user, token, isLoading, isAuthenticated, login, logout, setUser, refreshUser]
+    [user, token, isLoading, isAuthenticated, login, loginWithOAuth, logout, setUser, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

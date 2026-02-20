@@ -14,6 +14,12 @@ interface RegisterApiResponse {
   email_verification_required: boolean;
 }
 
+interface OAuthRedirectResponse {
+  redirect_url: string;
+}
+
+export type OAuthProvider = 'google' | 'facebook' | 'apple';
+
 export const authService = {
   async login(email: string, password: string): Promise<AuthResponse> {
     const { data } = await api.post<LoginApiResponse>('/auth/login', { email, password });
@@ -91,5 +97,18 @@ export const authService = {
   async resendVerification(): Promise<{ message: string }> {
     const { data } = await api.post('/auth/email/resend');
     return data;
+  },
+
+  /**
+   * Get OAuth redirect URL for a provider.
+   * The backend will handle the callback and redirect back to /auth/callback with the token.
+   */
+  async getOAuthRedirectUrl(provider: OAuthProvider): Promise<string> {
+    const redirectUri = `${window.location.origin}/auth/callback`;
+    const { data } = await api.get<OAuthRedirectResponse>(
+      `/auth/oauth/${provider}/redirect`,
+      { params: { redirect_uri: redirectUri } }
+    );
+    return data.redirect_url;
   },
 };
