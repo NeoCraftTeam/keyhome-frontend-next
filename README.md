@@ -1,6 +1,6 @@
 # KeyHome - Frontend Next.js
 
-Application web client pour la plateforme immobiliere **KeyHome**, dediee a la recherche et a la consultation d'annonces immobilieres au Cameroun. Ce frontend communique avec une API REST Laravel via des requetes authentifiees (Sanctum token-based).
+Application web client pour la plateforme immobiliere **KeyHome**, dediee a la recherche et a la consultation d'annonces immobilieres. Ce frontend communique avec une API REST Laravel via des requetes authentifiees (Sanctum token-based).
 
 ## Objectifs du projet
 

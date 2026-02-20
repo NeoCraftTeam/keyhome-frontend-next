@@ -68,7 +68,7 @@ export default function Footer() {
         </Grid>
         <Divider sx={{ my: 3 }} />
         <Typography variant="caption" color="text.secondary">
-          © {new Date().getFullYear()} KeyHome. Tous droits réservés. Cameroun.
+          © {new Date().getFullYear()} KeyHome. Tous droits réservés.
         </Typography>
       </Container>
     </Box>

@@ -97,7 +97,7 @@ export default function LoginPage() {
           </FadeIn>
           <FadeIn delay={0.4} direction="up">
             <Typography variant="h5" color="rgba(255,255,255,0.9)" fontWeight={400} sx={{ maxWidth: 360 }}>
-              Trouvez votre bien immobilier idéal au Cameroun
+              Trouvez votre bien immobilier idéal 
             </Typography>
           </FadeIn>
           <FadeIn delay={0.6} direction="up">

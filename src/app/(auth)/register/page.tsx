@@ -191,7 +191,7 @@ export default function RegisterPage() {
           </FadeIn>
           <FadeIn delay={0.4} direction="up">
             <Typography variant="h5" color="rgba(255,255,255,0.9)" fontWeight={400} sx={{ maxWidth: 360 }}>
-              Trouvez votre prochain chez-vous au Cameroun
+              Trouvez votre prochain chez-vous
             </Typography>
           </FadeIn>
         </Box>

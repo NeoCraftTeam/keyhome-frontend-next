@@ -10,10 +10,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'KeyHome — Immobilier au Cameroun',
+  title: 'KeyHome',
   description:
-    'Trouvez votre bien immobilier idéal au Cameroun. Locations, ventes, terrains et plus encore.',
-  keywords: ['immobilier', 'cameroun', 'location', 'vente', 'appartement', 'maison'],
+    'Trouvez votre bien immobilier idéal. Locations, ventes, terrains et plus encore.',
+  keywords: ['immobilier','Keyhome', 'location', 'vente', 'appartement', 'maison'],
 };
 
 export default function RootLayout({

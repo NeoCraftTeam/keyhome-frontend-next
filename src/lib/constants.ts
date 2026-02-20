@@ -1,5 +1,5 @@
 export const APP_NAME = 'KeyHome';
-export const APP_DESCRIPTION = 'Trouvez votre bien immobilier idéal au Cameroun';
+export const APP_DESCRIPTION = 'Trouvez votre bien immobilier idéal';
 export const CURRENCY = 'XAF';
 export const CURRENCY_SYMBOL = 'FCFA';
 
