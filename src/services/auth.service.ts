@@ -24,11 +24,13 @@ export const authService = {
   async login(email: string, password: string): Promise<AuthResponse> {
     const { data } = await api.post<LoginApiResponse>('/auth/login', { email, password });
 
-    // Store token temporarily to fetch user
     const token = data.access_token;
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-    const userResponse = await api.get('/auth/me');
+    // Pass the token explicitly to bypass the Axios interceptor's Clerk token getter
+    // which would return null for email/password users who have no Clerk session.
+    const userResponse = await api.get('/auth/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     const user = userResponse.data.data ?? userResponse.data;
 
     return { token, user, expires_at: data.expires_at };
@@ -64,6 +66,52 @@ export const authService = {
   async me(): Promise<User> {
     const { data } = await api.get('/auth/me');
     return data.data ?? data;
+  },
+
+  async clerkExchange(): Promise<
+    | { state: 'otp_required'; email_hint: string | null }
+    | { token: string; user: User; panel_sso_url: string | null }
+  > {
+    // The Axios interceptor forwards the Clerk JWT as Authorization: Bearer
+    const { data } = await api.post<
+      | { state: 'otp_required'; email_hint: string | null }
+      | { access_token: string; user: User; panel_sso_url: string | null }
+    >('/auth/clerk/exchange', {});
+
+    if ('state' in data && data.state === 'otp_required') {
+      return data;
+    }
+
+    const d = data as { access_token: string; user: User; panel_sso_url: string | null };
+    return { token: d.access_token, user: d.user, panel_sso_url: d.panel_sso_url };
+  },
+
+  async verifyClerkOtp(otp: string): Promise<
+    | { state: 'profile_required'; prefill: { firstname: string; lastname: string; email: string | null; avatar: string | null } }
+    | { state: 'authenticated'; token: string; user: User; panel_sso_url: string | null }
+  > {
+    const { data } = await api.post<
+      | { state: 'profile_required'; prefill: { firstname: string; lastname: string; email: string | null; avatar: string | null } }
+      | { state: 'authenticated'; access_token: string; user: User; panel_sso_url: string | null }
+    >('/auth/clerk/verify-otp', { otp });
+
+    if (data.state === 'profile_required') {
+      return data;
+    }
+
+    const d = data as { state: 'authenticated'; access_token: string; user: User; panel_sso_url: string | null };
+    return { state: 'authenticated', token: d.access_token, user: d.user, panel_sso_url: d.panel_sso_url };
+  },
+
+  async completeClerkProfile(profile: {
+    phone_number: string;
+    city_id?: string | null;
+  }): Promise<{ token: string; user: User; panel_sso_url: string | null }> {
+    const { data } = await api.post<{ access_token: string; user: User; panel_sso_url: string | null }>(
+      '/auth/clerk/complete-profile',
+      profile,
+    );
+    return { token: data.access_token, user: data.user, panel_sso_url: data.panel_sso_url };
   },
 
   async logout(): Promise<void> {
