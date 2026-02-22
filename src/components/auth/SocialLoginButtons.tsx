@@ -1,6 +1,7 @@
 'use client';
 
-import { authService, OAuthProvider } from '@/services/auth.service';
+import { useAuth } from '@/providers/AuthProvider';
+import { OAuthProvider } from '@/services/auth.service';
 import { Apple, Facebook, Google } from '@mui/icons-material';
 import { Box, CircularProgress, Divider, IconButton, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
@@ -38,14 +39,14 @@ export default function SocialLoginButtons({
 }: SocialLoginButtonsProps) {
   const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(null);
 
+  const { loginWithOAuth } = useAuth();
+
   const handleOAuthLogin = async (provider: OAuthProvider) => {
     if (disabled || loadingProvider) return;
 
     setLoadingProvider(provider);
     try {
-      const redirectUrl = await authService.getOAuthRedirectUrl(provider);
-      sessionStorage.setItem('oauth_provider', provider);
-      window.location.href = redirectUrl;
+      await loginWithOAuth(provider);
     } catch (err) {
       console.error(`OAuth ${provider} error:`, err);
       onError?.(`Erreur lors de la connexion avec ${providerConfig[provider].label}`);
