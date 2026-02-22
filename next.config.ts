@@ -8,6 +8,8 @@ const connectSources = [
   'https://api.mapbox.com',
   'https://events.mapbox.com',
   'https://*.tiles.mapbox.com',
+  'https://*.clerk.accounts.dev',
+  'https://clerk.shared.global',
   apiOrigin,
 ].filter(Boolean).join(' ');
 
@@ -15,16 +17,20 @@ const isDev = process.env.NODE_ENV === 'development';
 
 const cspHeader = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com blob:`,
+  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev https://challenges.cloudflare.com blob:`,
   `style-src 'self' 'unsafe-inline' https://api.mapbox.com`,
   `worker-src blob:`,
-  `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test ${apiOrigin}`,
+  `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test https://img.clerk.com ${apiOrigin}`,
   `connect-src ${connectSources}`,
   `font-src 'self' https://fonts.gstatic.com`,
+  `frame-src https://*.clerk.accounts.dev https://challenges.cloudflare.com`,
   `frame-ancestors 'none'`,
 ].join('; ');
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
