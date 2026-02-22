@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from '@/providers/AuthProvider';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +15,22 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     }
   }, [isAuthenticated, isLoading, router]);
 
-  if (isLoading || isAuthenticated) {
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress sx={{ color: '#F6475F' }} />
+      </Box>
+    );
+  }
+
+  if (isAuthenticated) {
     return null;
   }
 

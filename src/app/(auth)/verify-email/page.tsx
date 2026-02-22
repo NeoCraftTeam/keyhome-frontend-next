@@ -3,8 +3,8 @@
 import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
-import { MarkEmailRead as MailIcon } from '@mui/icons-material';
-import { Alert, Box, Button, CircularProgress, Link, Typography } from '@mui/material';
+import { ArrowBack, MarkEmailRead as MailIcon } from '@mui/icons-material';
+import { Alert, Box, Button, CircularProgress, IconButton, Link, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -35,8 +35,26 @@ export default function VerifyEmailPage() {
         justifyContent: 'center',
         alignItems: 'center',
         p: 3,
+        position: 'relative',
       }}
     >
+      {/* Back button */}
+      <Box sx={{ position: 'absolute', top: 24, left: 24 }}>
+        <IconButton
+          href="/login"
+          component={Link}
+          size="medium"
+          sx={{
+            bgcolor: 'rgba(0,0,0,0.05)',
+            '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' },
+            borderRadius: 2,
+            textDecoration: 'none',
+          }}
+        >
+          <ArrowBack sx={{ fontSize: 20 }} />
+        </IconButton>
+      </Box>
+
       <Box sx={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
         <FadeIn direction="none">
           <Box sx={{ mb: 2 }}>

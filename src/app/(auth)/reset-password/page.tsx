@@ -3,11 +3,13 @@
 import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
+import { ArrowBack } from '@mui/icons-material';
 import {
     Alert,
     Box,
     Button,
     CircularProgress,
+    IconButton,
     Link,
     TextField,
     Typography,
@@ -111,7 +113,19 @@ function ResetPasswordForm() {
       </FadeIn>
 
       <FadeIn delay={0.3} direction="up">
-        <Box sx={{ mt: 3, textAlign: 'center' }}>
+        <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+          <IconButton
+            href="/login"
+            component={Link}
+            size="small"
+            sx={{
+              bgcolor: 'rgba(0,0,0,0.05)',
+              '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' },
+              borderRadius: 1.5,
+            }}
+          >
+            <ArrowBack sx={{ fontSize: 18 }} />
+          </IconButton>
           <Link href="/login" underline="hover" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
             Retour à la connexion
           </Link>

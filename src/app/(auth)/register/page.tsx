@@ -167,7 +167,7 @@ export default function RegisterPage() {
         }}
       >
         <Image
-          src="/images/Porterustique.jpg"
+          src="/images/02Register.webp"
           alt="Rejoignez KeyHome"
           fill
           priority

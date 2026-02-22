@@ -58,14 +58,12 @@ export default function LoginPage() {
         }}
       >
         <Image
-          src="/images/01login.jpg"
+          src="/images/01login.webp"
           alt="Bienvenue sur KeyHome"
           fill
           priority
           sizes="50vw"
           style={{ objectFit: 'cover' }}
-          placeholder="blur"
-          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAABv/EAB4QAAICAgIDAAAAAAAAAAAAAAABAgMEEQUhEjFB/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAYEQADAQEAAAAAAAAAAAAAAAABAgMAEf/aAAwDAQACEQMRAD8AjeN5O/JzIVY8pxjJ7aXoGALRYiLgmf/Z"
         />
         {/* Dark overlay */}
         <Box
