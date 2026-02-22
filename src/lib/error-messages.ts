@@ -25,6 +25,10 @@ export function getSafeErrorMessage(
   fallback: string = DEFAULT_ERROR
 ): string {
   if (!(error instanceof AxiosError) || !error.response) {
+    // Propagate plain Error messages (e.g. thrown by AuthProvider for role restrictions)
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
     return fallback;
   }
 
