@@ -31,7 +31,10 @@ import {
   Favorite as FavoriteIcon,
   Lock as LockIcon,
   PhotoCamera,
+  Link as LinkIcon,
+  LinkOff as LinkOffIcon,
 } from '@mui/icons-material';
+import { Apple, Facebook, Google } from '@mui/icons-material';
 import { useAuth } from '@/providers/AuthProvider';
 import { useFavorites } from '@/providers/FavoritesProvider';
 import { authService } from '@/services/auth.service';
@@ -41,6 +44,7 @@ import { UserRole, City } from '@/types';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import AdCard from '@/components/ads/AdCard';
 import FadeIn from '@/components/ui/FadeIn';
+import { useUser } from '@clerk/nextjs';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -54,6 +58,7 @@ function TabPanel({ children, value, index }: TabPanelProps) {
 
 export default function ProfilePage() {
   const { user, setUser, refreshUser } = useAuth();
+  const { user: clerkUser } = useUser();
   const { favorites } = useFavorites();
   const [tab, setTab] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
@@ -89,6 +94,10 @@ export default function ProfilePage() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Connected OAuth accounts (Clerk)
+  const [linkedAccountsLoading, setLinkedAccountsLoading] = useState<string | null>(null);
+  const [linkedAccountsError, setLinkedAccountsError] = useState('');
 
   // Cities for autocomplete — server-side search
   const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
@@ -262,6 +271,7 @@ export default function ProfilePage() {
         <Tab icon={<FavoriteIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={`Favoris (${favorites.length})`} />
         <Tab icon={<LockOpenIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={`Déverrouillées (${unlockedAds.length})`} />
         <Tab icon={<LockIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Sécurité" />
+        <Tab icon={<LinkIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Comptes liés" />
       </Tabs>
       </FadeIn>
 
@@ -512,6 +522,120 @@ export default function ProfilePage() {
           >
             {isChangingPassword ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Modifier le mot de passe'}
           </Button>
+        </Box>
+      </TabPanel>
+
+      {/* Tab 4: Connected OAuth accounts */}
+      <TabPanel value={tab} index={4}>
+        <Typography variant="h6" fontWeight={600} gutterBottom>
+          Comptes liés
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Gérez les comptes OAuth connectés à votre profil. Pour ajouter un compte, vous serez redirigé vers le fournisseur d'identité.
+        </Typography>
+
+        {linkedAccountsError && (
+          <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{linkedAccountsError}</Alert>
+        )}
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 480 }}>
+          {([
+            { key: 'google', label: 'Google', icon: <Google sx={{ color: '#4285F4' }} />, strategy: 'oauth_google' as const },
+            { key: 'facebook', label: 'Facebook', icon: <Facebook sx={{ color: '#1877F2' }} />, strategy: 'oauth_facebook' as const },
+            { key: 'apple', label: 'Apple', icon: <Apple sx={{ color: 'text.primary' }} />, strategy: 'oauth_apple' as const },
+          ] as const).map(({ key, label, icon, strategy }) => {
+            const linked = clerkUser?.externalAccounts?.find(
+              (acc) => acc.provider === key || acc.provider === `oauth_${key}`,
+            );
+            const isLoading = linkedAccountsLoading === key;
+
+            return (
+              <Paper
+                key={key}
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  borderColor: linked ? 'success.light' : 'divider',
+                  bgcolor: linked ? 'success.50' : 'background.paper',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>
+                  {icon}
+                  <Box>
+                    <Typography fontWeight={600}>{label}</Typography>
+                    {linked ? (
+                      <Typography variant="caption" color="success.main">
+                        {linked.emailAddress ?? 'Connecté'}
+                      </Typography>
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        Non connecté
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+                {linked ? (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    startIcon={isLoading ? <CircularProgress size={14} /> : <LinkOffIcon />}
+                    disabled={isLoading}
+                    onClick={async () => {
+                      setLinkedAccountsError('');
+                      setLinkedAccountsLoading(key);
+                      try {
+                        await linked.destroy();
+                      } catch (err) {
+                        setLinkedAccountsError(getSafeErrorMessage(err));
+                      } finally {
+                        setLinkedAccountsLoading(null);
+                      }
+                    }}
+                    sx={{ borderRadius: 2, textTransform: 'none', whiteSpace: 'nowrap' }}
+                  >
+                    Déconnecter
+                  </Button>
+                ) : (
+                  <Button
+                    size="small"
+                    variant="contained"
+                    startIcon={isLoading ? <CircularProgress size={14} sx={{ color: '#fff' }} /> : <LinkIcon />}
+                    disabled={isLoading}
+                    onClick={async () => {
+                      if (!clerkUser) { return; }
+                      setLinkedAccountsError('');
+                      setLinkedAccountsLoading(key);
+                      try {
+                        const externalAccount = await clerkUser.createExternalAccount({
+                          strategy,
+                          redirectUrl: `${window.location.origin}/profile`,
+                        });
+                        if (externalAccount.verification?.externalVerificationRedirectURL) {
+                          window.location.href = externalAccount.verification.externalVerificationRedirectURL.href;
+                        }
+                      } catch (err) {
+                        setLinkedAccountsError(getSafeErrorMessage(err));
+                        setLinkedAccountsLoading(null);
+                      }
+                    }}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      whiteSpace: 'nowrap',
+                      background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                    }}
+                  >
+                    Connecter
+                  </Button>
+                )}
+              </Paper>
+            );
+          })}
         </Box>
       </TabPanel>
 
