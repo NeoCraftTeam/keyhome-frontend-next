@@ -17,6 +17,7 @@ const connectSources = [
   'https://*.clerk.com',
   'https://clerk.shared.global',
   'https://clerk-telemetry.com',
+  'https://challenges.cloudflare.com',
   apiOrigin,
 ].filter(Boolean).join(' ');
 
