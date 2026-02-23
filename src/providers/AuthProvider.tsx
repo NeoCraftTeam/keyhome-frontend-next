@@ -4,7 +4,6 @@ import { registerTokenGetter } from '@/lib/auth-token';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
 import { useAuth as useClerkAuth, useClerk, useSignIn, useUser } from '@clerk/nextjs';
-import type { OAuthStrategy } from '@clerk/types';
 import { useRouter } from 'next/navigation';
 import {
     createContext,
@@ -199,11 +198,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const strategyMap: Record<OAuthProvider, OAuthStrategy> = {
+      const strategyMap = {
         google: 'oauth_google',
         facebook: 'oauth_facebook',
         apple: 'oauth_apple',
-      };
+      } as const;
 
       await signIn.authenticateWithRedirect({
         strategy: strategyMap[provider],
