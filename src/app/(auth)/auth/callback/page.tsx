@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import api from '@/lib/api';
 import { useAuth } from '@/providers/AuthProvider';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';

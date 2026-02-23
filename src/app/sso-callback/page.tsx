@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useClerk } from '@clerk/nextjs';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import Image from 'next/image';
