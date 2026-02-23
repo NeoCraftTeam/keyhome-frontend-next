@@ -23,30 +23,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-  const content = (
-    <html lang="fr" suppressHydrationWarning>
-      <body className={`${inter.variable} antialiased`}>
-        <Providers>{children}</Providers>
-      </body>
-    </html>
-  );
-
-  if (!publishableKey) {
-    return content;
-  }
-
   return (
     <ClerkProvider
-      publishableKey={publishableKey}
       localization={frFR}
       signInUrl="/login"
       signUpUrl="/login"
       signInFallbackRedirectUrl="/home"
       signUpFallbackRedirectUrl="/home"
     >
-      {content}
+      <html lang="fr" suppressHydrationWarning>
+        <body className={`${inter.variable} antialiased`}>
+          <Providers>{children}</Providers>
+        </body>
+      </html>
     </ClerkProvider>
   );
 }
