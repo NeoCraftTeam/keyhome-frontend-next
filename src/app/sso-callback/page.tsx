@@ -25,15 +25,25 @@ export default function SSOCallbackPage() {
 
     handled.current = true;
 
+    // Safety timeout — if Clerk hangs (e.g. Turnstile challenge), redirect after 10s
+    const timeout = setTimeout(() => {
+      console.warn('[sso-callback] Timed out waiting for Clerk redirect');
+      router.replace('/login');
+    }, 10000);
+
     handleRedirectCallback({
       signInUrl: '/login',
       signUpUrl: '/login',
       signInFallbackRedirectUrl: '/home',
       signUpFallbackRedirectUrl: '/home',
       continueSignUpUrl: '/complete-profile',
-    }).catch(() => {
-      router.replace('/login');
-    });
+    })
+      .then(() => clearTimeout(timeout))
+      .catch((err: unknown) => {
+        clearTimeout(timeout);
+        console.error('[sso-callback] handleRedirectCallback error:', err);
+        router.replace('/login');
+      });
   }, [handleRedirectCallback, router]);
 
   return (
