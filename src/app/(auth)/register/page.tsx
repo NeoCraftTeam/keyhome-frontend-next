@@ -64,6 +64,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [showWelcome, setShowWelcome] = useState(false);
   const [accountRole, setAccountRole] = useState<AccountRole>('customer');
   const [agentType, setAgentType] = useState<AgentType>('individual');
 
@@ -142,7 +143,10 @@ export default function RegisterPage() {
         }
       }
 
-      router.push('/verify-email');
+      setShowWelcome(true);
+      setTimeout(() => {
+        router.push('/verify-email');
+      }, 2200);
     } catch (err) {
       setError(getSafeErrorMessage(err, "Erreur lors de l'inscription."));
     } finally {
@@ -154,6 +158,52 @@ export default function RegisterPage() {
     accountRole === 'customer'
       ? ['Type de compte', 'Informations', 'Sécurité']
       : ['Type de compte', 'Informations', 'Sécurité'];
+
+  /** Welcome overlay rendered after successful registration */
+  if (showWelcome) {
+    return (
+      <Box
+        sx={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 50%, #b02a3e 100%)',
+          animation: 'fadeIn 0.5s ease-in-out',
+          '@keyframes fadeIn': { from: { opacity: 0 }, to: { opacity: 1 } },
+        }}
+      >
+        <Box
+          sx={{
+            textAlign: 'center',
+            animation: 'slideUp 0.6s ease-out 0.2s both',
+            '@keyframes slideUp': { from: { opacity: 0, transform: 'translateY(30px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
+          }}
+        >
+          <Image src="/images/logo.png" alt="KeyHome" width={72} height={72} style={{ marginBottom: 24 }} />
+          <Typography
+            variant="h3"
+            fontWeight={700}
+            color="#fff"
+            sx={{ mb: 1, textShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
+          >
+            Bienvenue chez vous !
+          </Typography>
+          <Typography
+            variant="h6"
+            color="rgba(255,255,255,0.85)"
+            fontWeight={400}
+          >
+            {form.firstname ? `Ravi de vous compter parmi nous, ${form.firstname}.` : 'Votre compte a été créé avec succès.'}
+          </Typography>
+        </Box>
+        <CircularProgress sx={{ color: 'rgba(255,255,255,0.6)', mt: 6 }} />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>

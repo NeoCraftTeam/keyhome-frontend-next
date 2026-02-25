@@ -23,8 +23,8 @@ const footerSections = [
     title: 'Aide',
     links: [
       { label: 'Centre d\'aide', href: '#' },
-      { label: 'Conditions d\'utilisation', href: '#' },
-      { label: 'Politique de confidentialité', href: '#' },
+      { label: 'Conditions d\'utilisation', href: '/conditions' },
+      { label: 'Politique de confidentialité', href: '/confidentialite' },
     ],
   },
 ];
@@ -69,6 +69,18 @@ export default function Footer() {
         <Divider sx={{ my: 3 }} />
         <Typography variant="caption" color="text.secondary">
           © {new Date().getFullYear()} KeyHome. Tous droits réservés.
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+          Powered by{' '}
+          <Link
+            href="https://www.neocraft.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            underline="hover"
+            sx={{ color: 'text.secondary', fontWeight: 500 }}
+          >
+            Neocraft Team
+          </Link>
         </Typography>
       </Container>
     </Box>

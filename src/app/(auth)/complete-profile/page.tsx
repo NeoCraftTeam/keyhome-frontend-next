@@ -4,10 +4,13 @@ import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
+import { citiesService } from '@/services/cities.service';
+import { City } from '@/types';
 import { useSignUp } from '@clerk/nextjs';
 import { ArrowBack, Phone as PhoneIcon } from '@mui/icons-material';
 import {
     Alert,
+    Autocomplete,
     Box,
     Button,
     CircularProgress,
@@ -16,6 +19,7 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -34,8 +38,22 @@ export default function CompleteProfilePage() {
   const router = useRouter();
 
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [cityInput, setCityInput] = useState('');
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  // Cities autocomplete — server-side search
+  const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
+    queryKey: ['complete-profile-cities', cityInput],
+    queryFn: () => citiesService.list({ q: cityInput }),
+    enabled: cityInput.length >= 1,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const cities = citiesData?.data || [];
 
   // Detect which flow we're in
   const [isOtpFlow, setIsOtpFlow] = useState(false);
@@ -62,9 +80,15 @@ export default function CompleteProfilePage() {
     setIsSubmitting(true);
 
     try {
-      const result = await authService.completeClerkProfile({ phone_number: phoneNumber });
+      const result = await authService.completeClerkProfile({
+        phone_number: phoneNumber,
+        ...(selectedCity ? { city_id: selectedCity.id } : {}),
+      });
       sessionStorage.removeItem('clerk_auth_prefill');
-      finalizeAuth(result.token, result.user, result.panel_sso_url);
+      setShowWelcome(true);
+      setTimeout(() => {
+        finalizeAuth(result.token, result.user, result.panel_sso_url);
+      }, 2200);
     } catch (err) {
       setError(getSafeErrorMessage(err, 'Une erreur est survenue. Veuillez réessayer.'));
     } finally {
@@ -113,6 +137,52 @@ export default function CompleteProfilePage() {
 
   const showPhoneField = isOtpFlow || missingPhone;
   const handleSubmit = isOtpFlow ? handleOtpFlowSubmit : handleClerkFlowSubmit;
+
+  /** Welcome overlay rendered after successful completion */
+  if (showWelcome) {
+    return (
+      <Box
+        sx={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 50%, #b02a3e 100%)',
+          animation: 'fadeIn 0.5s ease-in-out',
+          '@keyframes fadeIn': { from: { opacity: 0 }, to: { opacity: 1 } },
+        }}
+      >
+        <Box
+          sx={{
+            textAlign: 'center',
+            animation: 'slideUp 0.6s ease-out 0.2s both',
+            '@keyframes slideUp': { from: { opacity: 0, transform: 'translateY(30px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
+          }}
+        >
+          <Image src="/images/logo.png" alt="KeyHome" width={72} height={72} style={{ marginBottom: 24 }} />
+          <Typography
+            variant="h3"
+            fontWeight={700}
+            color="#fff"
+            sx={{ mb: 1, textShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
+          >
+            Bienvenue chez vous !
+          </Typography>
+          <Typography
+            variant="h6"
+            color="rgba(255,255,255,0.85)"
+            fontWeight={400}
+          >
+            {prefill?.firstname ? `Ravi de vous compter parmi nous, ${prefill.firstname}.` : 'Votre compte est prêt.'}
+          </Typography>
+        </Box>
+        <CircularProgress sx={{ color: 'rgba(255,255,255,0.6)', mt: 6 }} />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>
@@ -233,6 +303,40 @@ export default function CompleteProfilePage() {
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
               )}
+
+              <Autocomplete
+                open={cityDropdownOpen}
+                onOpen={() => setCityDropdownOpen(true)}
+                onClose={() => setCityDropdownOpen(false)}
+                options={cities}
+                getOptionLabel={(city) => city.name}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                value={selectedCity}
+                onChange={(_, newValue) => setSelectedCity(newValue)}
+                inputValue={cityInput}
+                onInputChange={(_, newInput) => setCityInput(newInput)}
+                loading={isCitiesLoading}
+                noOptionsText={cityInput.length < 1 ? 'Tapez pour rechercher...' : 'Aucune ville trouvée'}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Ville (optionnel)"
+                    placeholder="Ex : Douala, Yaoundé…"
+                    slotProps={{
+                      input: {
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {isCitiesLoading ? <CircularProgress color="inherit" size={16} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      },
+                    }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  />
+                )}
+              />
 
               <Button
                 type="submit"

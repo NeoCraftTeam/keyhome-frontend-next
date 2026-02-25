@@ -21,6 +21,7 @@ import {
   InputAdornment,
   Snackbar,
   Autocomplete,
+  LinearProgress,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -50,6 +51,18 @@ interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+}
+
+function getPasswordStrength(password: string): { score: number; label: string; color: string } {
+  let score = 0;
+  if (password.length >= 8) { score += 25; }
+  if (/[A-Z]/.test(password)) { score += 25; }
+  if (/[0-9]/.test(password)) { score += 25; }
+  if (/[^A-Za-z0-9]/.test(password)) { score += 25; }
+  if (score <= 25) { return { score, label: 'Faible', color: '#d32f2f' }; }
+  if (score <= 50) { return { score, label: 'Moyen', color: '#ed6c02' }; }
+  if (score <= 75) { return { score, label: 'Bon', color: '#2e7d32' }; }
+  return { score, label: 'Excellent', color: '#1b5e20' };
 }
 
 function TabPanel({ children, value, index }: TabPanelProps) {
@@ -483,8 +496,32 @@ export default function ProfilePage() {
                 ),
               },
             }}
-            sx={{ mb: 2 }}
+            sx={{ mb: passwordForm.new_password ? 1 : 2 }}
           />
+          {passwordForm.new_password.length > 0 && (() => {
+            const strength = getPasswordStrength(passwordForm.new_password);
+            return (
+              <Box sx={{ mb: 2 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={strength.score}
+                  sx={{
+                    height: 6,
+                    borderRadius: 3,
+                    bgcolor: 'grey.200',
+                    '& .MuiLinearProgress-bar': {
+                      bgcolor: strength.color,
+                      borderRadius: 3,
+                      transition: 'width 0.4s ease',
+                    },
+                  }}
+                />
+                <Typography variant="caption" sx={{ color: strength.color, fontWeight: 600, mt: 0.5, display: 'block' }}>
+                  Force : {strength.label}
+                </Typography>
+              </Box>
+            );
+          })()}
           <TextField
             fullWidth
             label="Confirmer le nouveau mot de passe"

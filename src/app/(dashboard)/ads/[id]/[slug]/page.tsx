@@ -239,7 +239,7 @@ function AdDetailContent() {
               >
                 <Lock sx={{ fontSize: 40, color: '#fff', mb: 1 }} />
                 <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 600 }}>
-                  📷 {totalImageCount} photo{totalImageCount > 1 ? 's' : ''}
+                  {totalImageCount} photo{totalImageCount > 1 ? 's' : ''}
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
                   Déverrouillez pour toutes les voir
