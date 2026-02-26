@@ -33,6 +33,9 @@ import {
   Star,
   Verified,
   WhatsApp,
+  ZoomIn,
+  ZoomOut,
+  ZoomOutMap,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -52,17 +55,16 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
 function AdDetailContent() {
   const params = useParams();
-  const searchParams = useSearchParams();
   const adId = params.id as string;
-  const justUnlocked = searchParams.get('unlocked') === '1';
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxZoom, setLightboxZoom] = useState(1);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
@@ -70,16 +72,28 @@ function AdDetailContent() {
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
-  const verifiedRef = useRef(false);
+  const refreshedRef = useRef(false);
+  const viewTrackedRef = useRef(false);
 
+  // After a successful payment, payment-success stores the adId in sessionStorage.
+  // We read it here to invalidate the cache and get fresh unlocked data — no URL param needed.
   useEffect(() => {
-    if (justUnlocked && adId && !verifiedRef.current) {
-      verifiedRef.current = true;
-      paymentsService.verify(adId).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['ad', adId] });
-      }).catch(() => {});
+    if (!adId || refreshedRef.current) { return; }
+    const justUnlocked = sessionStorage.getItem('kh_just_unlocked') === adId;
+    if (justUnlocked) {
+      refreshedRef.current = true;
+      sessionStorage.removeItem('kh_just_unlocked');
+      queryClient.invalidateQueries({ queryKey: ['ad', adId] });
     }
-  }, [justUnlocked, adId, queryClient]);
+  }, [adId, queryClient]);
+
+  // Track view once per page load — feeds the recommendation engine.
+  useEffect(() => {
+    if (adId && !viewTrackedRef.current) {
+      viewTrackedRef.current = true;
+      adsService.trackView(adId);
+    }
+  }, [adId]);
 
   const { data: ad, isLoading } = useQuery({
     queryKey: ['ad', adId],
@@ -123,16 +137,14 @@ function AdDetailContent() {
   const totalImageCount = ad.total_images || allImages.length;
 
   const handleShare = async () => {
-    // SECURITY: Remove any unlocked params from shared URL
     const url = new URL(window.location.href);
-    url.searchParams.delete('unlocked');
     try {
       await navigator.clipboard.writeText(url.toString());
       setSnackbar('Lien copié dans le presse-papier');
     } catch {
       setSnackbar('Impossible de copier le lien');
     }
-  };
+  };;
 
   const handleUnlock = async () => {
     setPaymentError('');
@@ -149,7 +161,13 @@ function AdDetailContent() {
 
   const openLightbox = (idx: number) => {
     setLightboxIndex(idx);
+    setLightboxZoom(1);
     setLightboxOpen(true);
+  };
+
+  const changeLightboxImage = (idx: number) => {
+    setLightboxIndex(idx);
+    setLightboxZoom(1);
   };
 
   const features = [
@@ -183,8 +201,8 @@ function AdDetailContent() {
                 : '1fr',
             },
             gridTemplateRows: {
-              xs: images.length <= 1 ? '300px' : '260px',
-              md: images.length <= 1 ? '400px' : '210px 210px',
+              xs: isLocked ? '420px' : images.length <= 1 ? '300px' : '260px',
+              md: isLocked ? '560px' : images.length <= 1 ? '400px' : '210px 210px',
             },
             gap: '4px',
             borderRadius: 3,
@@ -214,7 +232,7 @@ function AdDetailContent() {
                   height: '100%',
                   objectFit: 'cover',
                   transition: 'transform 0.3s ease',
-                  ...(isLocked && { filter: 'blur(3px) brightness(0.7)' }),
+                  ...(isLocked && { filter: 'blur(1px) brightness(0.92)' }),
                 }}
               />
             ) : (
@@ -222,7 +240,7 @@ function AdDetailContent() {
                 <Typography color="text.secondary">Aucune photo</Typography>
               </Box>
             )}
-            {/* Lock overlay on primary image when locked */}
+            {/* Lock overlay — glassmorphism card, minimal darkening */}
             {isLocked && (
               <Box
                 sx={{
@@ -232,18 +250,57 @@ function AdDetailContent() {
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  bgcolor: 'rgba(0,0,0,0.3)',
-                  backdropFilter: 'blur(2px)',
+                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.0) 30%, rgba(0,0,0,0.28) 100%)',
                   zIndex: 3,
+                  px: 2,
                 }}
               >
-                <Lock sx={{ fontSize: 40, color: '#fff', mb: 1 }} />
-                <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 600 }}>
-                  {totalImageCount} photo{totalImageCount > 1 ? 's' : ''}
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                  Déverrouillez pour toutes les voir
-                </Typography>
+                {/* Glassmorphism lock card */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 1,
+                    bgcolor: 'rgba(255,255,255,0.14)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: 4,
+                    px: { xs: 3, sm: 5 },
+                    py: { xs: 2, sm: 3 },
+                    maxWidth: 340,
+                    width: '100%',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: '50%',
+                      bgcolor: 'rgba(246,71,95,0.88)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 16px rgba(246,71,95,0.4)',
+                    }}
+                  >
+                    <Lock sx={{ fontSize: 26, color: '#fff' }} />
+                  </Box>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ color: '#fff', fontWeight: 700, textAlign: 'center', textShadow: '0 1px 4px rgba(0,0,0,0.4)', fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                  >
+                    {totalImageCount} photo{totalImageCount > 1 ? 's' : ''} disponible{totalImageCount > 1 ? 's' : ''}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: 'rgba(255,255,255,0.9)', textAlign: 'center', lineHeight: 1.4, textShadow: '0 1px 3px rgba(0,0,0,0.2)', fontSize: '0.8rem' }}
+                  >
+                    Déverrouillez pour voir toutes les photos
+                  </Typography>
+                </Box>
               </Box>
             )}
           </Box>
@@ -411,9 +468,9 @@ function AdDetailContent() {
                   p: 3,
                   borderRadius: 3,
                   mb: 3,
-                  bgcolor: 'grey.50',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(246,71,95,0.08)' : 'rgba(246,71,95,0.04)',
                   border: '1px solid',
-                  borderColor: 'divider',
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(246,71,95,0.25)' : 'rgba(246,71,95,0.18)',
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
@@ -756,37 +813,138 @@ function AdDetailContent() {
         </Box>
       </Dialog>
 
-      {/* Lightbox */}
+      {/* Lightbox — fullscreen with zoom, transparent paper */}
       <Dialog
         open={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{ sx: { bgcolor: '#000', borderRadius: 3, maxHeight: '90vh' } }}
+        fullScreen
+        slotProps={{ backdrop: { sx: { bgcolor: 'rgba(8,8,8,0.93)' } } }}
+        PaperProps={{
+          sx: {
+            bgcolor: 'transparent',
+            boxShadow: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+          },
+        }}
       >
-        <Box sx={{ position: 'relative' }}>
-          <IconButton onClick={() => setLightboxOpen(false)} sx={{ position: 'absolute', top: 8, right: 8, color: '#fff', zIndex: 2 }}>
-            <Close />
-          </IconButton>
-          {images.length > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
-              <IconButton onClick={() => setLightboxIndex((p) => (p - 1 + images.length) % images.length)} sx={{ color: '#fff', position: 'absolute', left: 8, zIndex: 2 }}>
-                <ChevronLeft sx={{ fontSize: 32 }} />
-              </IconButton>
-              <Box
-                component="img"
-                src={images[lightboxIndex]?.url}
-                alt={`Photo ${lightboxIndex + 1}`}
-                sx={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain' }}
-              />
-              <IconButton onClick={() => setLightboxIndex((p) => (p + 1) % images.length)} sx={{ color: '#fff', position: 'absolute', right: 8, zIndex: 2 }}>
-                <ChevronRight sx={{ fontSize: 32 }} />
-              </IconButton>
-            </Box>
-          )}
-          <Typography variant="body2" sx={{ color: '#fff', textAlign: 'center', py: 1 }}>
+        {/* Top bar */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: { xs: 1.5, sm: 2 },
+            py: 1,
+            bgcolor: 'rgba(0,0,0,0.45)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          }}
+        >
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
             {lightboxIndex + 1} / {images.length}
           </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <IconButton
+              size="small"
+              onClick={() => setLightboxZoom((z) => Math.max(0.5, parseFloat((z - 0.25).toFixed(2))))}
+              disabled={lightboxZoom <= 0.5}
+              sx={{ color: '#fff', opacity: lightboxZoom <= 0.5 ? 0.3 : 1 }}
+            >
+              <ZoomOut />
+            </IconButton>
+            <Typography variant="caption" sx={{ color: '#fff', minWidth: 36, textAlign: 'center', userSelect: 'none' }}>
+              {Math.round(lightboxZoom * 100)}%
+            </Typography>
+            <IconButton
+              size="small"
+              onClick={() => setLightboxZoom((z) => Math.min(4, parseFloat((z + 0.25).toFixed(2))))}
+              disabled={lightboxZoom >= 4}
+              sx={{ color: '#fff', opacity: lightboxZoom >= 4 ? 0.3 : 1 }}
+            >
+              <ZoomIn />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => setLightboxZoom(1)}
+              title="Réinitialiser"
+              sx={{ color: 'rgba(255,255,255,0.65)', ml: 0.5 }}
+            >
+              <ZoomOutMap sx={{ fontSize: 18 }} />
+            </IconButton>
+            <IconButton onClick={() => setLightboxOpen(false)} sx={{ color: '#fff', ml: 0.5 }}>
+              <Close />
+            </IconButton>
+          </Box>
+        </Box>
+
+        {/* Image area */}
+        <Box
+          sx={{
+            flex: 1,
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            cursor: lightboxZoom >= 3 ? 'zoom-out' : 'zoom-in',
+          }}
+          onClick={() => {
+            if (lightboxZoom < 3) {
+              setLightboxZoom((z) => parseFloat((z + 0.5).toFixed(2)));
+            } else {
+              setLightboxZoom(1);
+            }
+          }}
+        >
+          {/* Prev */}
+          <IconButton
+            onClick={(e) => { e.stopPropagation(); changeLightboxImage((lightboxIndex - 1 + images.length) % images.length); }}
+            sx={{
+              color: '#fff',
+              position: 'absolute',
+              left: { xs: 4, sm: 16 },
+              zIndex: 2,
+              bgcolor: 'rgba(0,0,0,0.35)',
+              '&:hover': { bgcolor: 'rgba(0,0,0,0.6)' },
+            }}
+          >
+            <ChevronLeft sx={{ fontSize: 32 }} />
+          </IconButton>
+
+          {images.length > 0 && (
+            <Box
+              component="img"
+              src={images[lightboxIndex]?.url}
+              alt={`Photo ${lightboxIndex + 1}`}
+              sx={{
+                maxWidth: '100%',
+                maxHeight: 'calc(100vh - 60px)',
+                objectFit: 'contain',
+                transform: `scale(${lightboxZoom})`,
+                transformOrigin: 'center center',
+                transition: 'transform 0.22s ease',
+                borderRadius: lightboxZoom <= 1 ? 2 : 0,
+                userSelect: 'none',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
+
+          {/* Next */}
+          <IconButton
+            onClick={(e) => { e.stopPropagation(); changeLightboxImage((lightboxIndex + 1) % images.length); }}
+            sx={{
+              color: '#fff',
+              position: 'absolute',
+              right: { xs: 4, sm: 16 },
+              zIndex: 2,
+              bgcolor: 'rgba(0,0,0,0.35)',
+              '&:hover': { bgcolor: 'rgba(0,0,0,0.6)' },
+            }}
+          >
+            <ChevronRight sx={{ fontSize: 32 }} />
+          </IconButton>
         </Box>
       </Dialog>
 

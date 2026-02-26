@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense, useRef } from 'react';
+import { useEffect, useState, Suspense, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Box,
@@ -8,14 +8,20 @@ import {
   Button,
   CircularProgress,
   Paper,
+  LinearProgress,
 } from '@mui/material';
 import {
   CheckCircle,
   Error as ErrorIcon,
   Home as HomeIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import Image from 'next/image';
 import { paymentsService } from '@/services/payments.service';
+
+const MAX_RETRIES = 12;
+const INITIAL_RETRY_MS = 800;
+const MAX_RETRY_MS = 3000;
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
@@ -23,43 +29,63 @@ function PaymentSuccessContent() {
   const [countdown, setCountdown] = useState(5);
   const [verifying, setVerifying] = useState(true);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [finalFailed, setFinalFailed] = useState(false);
   const verifiedRef = useRef(false);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const adId = searchParams.get('ad_id');
   const status = searchParams.get('status');
   const isApproved = status === 'approved';
+
+  const attemptVerify = useCallback(async (attempt: number) => {
+    if (!adId) { return; }
+    try {
+      const result = await paymentsService.verify(adId);
+      if (result.is_unlocked) {
+        // Mark in sessionStorage so the ad page knows to refetch (no URL param needed)
+        sessionStorage.setItem('kh_just_unlocked', adId);
+        setIsUnlocked(true);
+        setVerifying(false);
+        return;
+      }
+    } catch {
+      // swallow — will retry
+    }
+
+    if (attempt < MAX_RETRIES) {
+      setRetryCount(attempt + 1);
+      // Progressive delay: starts fast, caps at MAX_RETRY_MS
+      const delay = Math.min(INITIAL_RETRY_MS * Math.pow(1.5, attempt), MAX_RETRY_MS);
+      retryTimerRef.current = setTimeout(() => attemptVerify(attempt + 1), delay);
+    } else {
+      setFinalFailed(true);
+      setVerifying(false);
+    }
+  }, [adId]);
 
   useEffect(() => {
     if (!adId || !isApproved || verifiedRef.current) {
       setVerifying(false);
       return;
     }
-
     verifiedRef.current = true;
+    attemptVerify(0);
 
-    const verifyPayment = async () => {
-      try {
-        const result = await paymentsService.verify(adId);
-        setIsUnlocked(result.is_unlocked);
-      } catch {
-        setIsUnlocked(false);
-      } finally {
-        setVerifying(false);
-      }
+    return () => {
+      if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); }
     };
-
-    verifyPayment();
-  }, [adId, isApproved]);
+  }, [adId, isApproved, attemptVerify]);
 
   useEffect(() => {
-    if (verifying || !isUnlocked) return;
+    if (verifying || !isUnlocked) { return; }
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
           if (adId) {
-            router.push(`/ads/${adId}/annonce?unlocked=1`);
+            router.push(`/ads/${adId}/annonce`);
           } else {
             router.push('/home');
           }
@@ -73,10 +99,32 @@ function PaymentSuccessContent() {
   }, [verifying, isUnlocked, adId, router]);
 
   if (verifying) {
+    const progress = (retryCount / MAX_RETRIES) * 100;
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2 }}>
-        <CircularProgress sx={{ color: 'primary.main' }} />
-        <Typography variant="body1" color="text.secondary">Vérification du paiement...</Typography>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 3, p: 3 }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Image src="/images/logo.png" alt="KeyHome" width={52} height={52} style={{ marginBottom: 16 }} />
+          <Typography variant="h6" fontWeight={600} gutterBottom>
+            Vérification du paiement...
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            {retryCount === 0
+              ? 'Confirmation en cours, merci de patienter.'
+              : `Tentative ${retryCount + 1} / ${MAX_RETRIES + 1} — Le paiement est en cours de confirmation.`}
+          </Typography>
+        </Box>
+        <Box sx={{ width: '100%', maxWidth: 320 }}>
+          <LinearProgress
+            variant={retryCount === 0 ? 'indeterminate' : 'determinate'}
+            value={progress}
+            sx={{
+              height: 6,
+              borderRadius: 3,
+              bgcolor: 'grey.200',
+              '& .MuiLinearProgress-bar': { bgcolor: '#F6475F', borderRadius: 3 },
+            }}
+          />
+        </Box>
       </Box>
     );
   }
@@ -148,7 +196,7 @@ function PaymentSuccessContent() {
               size="large"
               fullWidth
               onClick={() =>
-                adId ? router.push(`/ads/${adId}/annonce?unlocked=1`) : router.push('/home')
+                adId ? router.push(`/ads/${adId}/annonce`) : router.push('/home')
               }
               sx={{
                 py: 1.5,
@@ -180,21 +228,31 @@ function PaymentSuccessContent() {
             </Box>
 
             <Typography variant="h5" fontWeight={700} gutterBottom>
-              Paiement {status === 'declined' ? 'refusé' : 'non confirmé'}
+              {status === 'declined' ? 'Paiement refusé' : finalFailed ? 'Confirmation en attente' : 'Paiement non confirmé'}
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              {isApproved && !isUnlocked
+              {finalFailed
+                ? 'Votre paiement a bien été initié mais la confirmation tarde. Vous pouvez revenir vérifier dans quelques minutes.'
+                : isApproved
                 ? 'Le paiement est en attente de confirmation. Réessayez dans quelques instants.'
                 : "Le paiement n'a pas abouti. Aucun montant n'a été débité."}
             </Typography>
 
-            <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', gap: 1.5, flexDirection: 'column' }}>
               {adId && (
                 <Button
                   variant="contained"
                   size="large"
                   fullWidth
-                  onClick={() => router.push(`/ads/${adId}/annonce`)}
+                  startIcon={<RefreshIcon />}
+                  onClick={() => {
+                    verifiedRef.current = false;
+                    setVerifying(true);
+                    setRetryCount(0);
+                    setFinalFailed(false);
+                    setIsUnlocked(false);
+                    attemptVerify(0);
+                  }}
                   sx={{
                     py: 1.5,
                     borderRadius: 2,
@@ -203,7 +261,7 @@ function PaymentSuccessContent() {
                     '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
                   }}
                 >
-                  Réessayer
+                  Vérifier à nouveau
                 </Button>
               )}
               <Button

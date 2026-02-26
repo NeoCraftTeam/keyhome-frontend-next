@@ -15,6 +15,7 @@ export const adsService = {
     order_by?: string;
     direction?: 'asc' | 'desc';
     type?: string;
+    exclude_ids?: number[];
   }): Promise<PaginatedResponse<Ad>> {
     const { data } = await api.get('/ads', { params });
     return data;
@@ -76,5 +77,16 @@ export const adsService = {
 
   async destroy(id: string): Promise<void> {
     await api.delete(`/ads/${id}`);
+  },
+
+  /**
+   * Record a view interaction — fire & forget, never throws.
+   * Called once when a user opens an ad detail page.
+   * Feeds the recommendation engine.
+   */
+  trackView(id: string): void {
+    api.post(`/ads/${id}/view`).catch(() => {
+      // Silently ignore — non-critical telemetry
+    });
   },
 };

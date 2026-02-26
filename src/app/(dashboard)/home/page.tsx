@@ -4,6 +4,7 @@ import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import CategoryPills from '@/components/ui/CategoryPills';
 import FadeIn from '@/components/ui/FadeIn';
+import AppTour from '@/components/ui/AppTour';
 import { adsService } from '@/services/ads.service';
 import { recommendationsService } from '@/services/users.service';
 import {
@@ -25,7 +26,7 @@ import {
     useTheme,
 } from '@mui/material';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useRef, useState, useTransition } from 'react';
+import { useMemo, useRef, useState, useTransition } from 'react';
 
 const categories = [
   { label: 'Tous', value: '', icon: <MapsHomeWork sx={{ fontSize: 18 }} /> },
@@ -44,27 +45,35 @@ export default function HomePage() {
   const gridRef = useRef<HTMLDivElement>(null);
   const [isPending, startTransition] = useTransition();
 
-  const { data: adsData, isLoading, isFetching } = useQuery({
-    queryKey: ['ads', page, selectedCategory],
-    queryFn: () =>
-      adsService.list({
-        page,
-        per_page: 20,
-        type: selectedCategory || undefined,
-      }),
-    placeholderData: keepPreviousData,
-    staleTime: 2 * 60 * 1000,
-  });
-
+  // Fetch recommendations first so we can exclude their IDs from the main listing
   const { data: recommendationsData } = useQuery({
     queryKey: ['recommendations'],
     queryFn: () => recommendationsService.list(),
     staleTime: 5 * 60 * 1000,
   });
 
+  const recommendations = recommendationsData?.data || [];
+  // Stable array — avoids query key churn when recommendations haven't changed
+  const recommendedIds = useMemo(
+    () => (recommendationsData?.data ?? []).map((r) => Number(r.id)),
+    [recommendationsData],
+  );
+
+  const { data: adsData, isLoading, isFetching } = useQuery({
+    queryKey: ['ads', page, selectedCategory, recommendedIds],
+    queryFn: () =>
+      adsService.list({
+        page,
+        per_page: 20,
+        type: selectedCategory || undefined,
+        exclude_ids: recommendedIds.length > 0 ? recommendedIds : undefined,
+      }),
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
+  });
+
   const ads = adsData?.data || [];
   const totalPages = adsData?.meta?.last_page || 1;
-  const recommendations = recommendationsData?.data || [];
 
   const skeletonCount = isMobile ? 4 : 12;
 
@@ -88,6 +97,7 @@ export default function HomePage() {
 
   return (
     <Box sx={{ pb: 6 }}>
+      <AppTour />
       {/* Category pills — centered under navbar */}
       <Container maxWidth="lg" sx={{ pt: 2, pb: 1 }}>
         <CategoryPills

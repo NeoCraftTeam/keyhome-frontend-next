@@ -121,9 +121,23 @@ export default function ProfilePage() {
   });
 
 
+  const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user) { return; }
+
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      setSnackbar('Format non supporté. Utilisez JPG, PNG, WebP ou GIF.');
+      e.target.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setSnackbar('L\'image ne doit pas dépasser 5 Mo.');
+      e.target.value = '';
+      return;
+    }
 
     const formData = new FormData();
     formData.append('avatar', file);
@@ -135,6 +149,8 @@ export default function ProfilePage() {
       setSnackbar('Avatar mis à jour');
     } catch {
       setSnackbar('Erreur lors de la mise à jour de l\'avatar');
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -206,7 +222,7 @@ export default function ProfilePage() {
             <input
               ref={avatarInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/gif"
               hidden
               onChange={handleAvatarUpload}
             />
@@ -567,110 +583,169 @@ export default function ProfilePage() {
         <Typography variant="h6" fontWeight={600} gutterBottom>
           Comptes liés
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Gérez les comptes OAuth connectés à votre profil. Pour ajouter un compte, vous serez redirigé vers le fournisseur d'identité.
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+          Connectez vos comptes sociaux pour vous connecter en un clic, sans mot de passe.
         </Typography>
 
         {linkedAccountsError && (
           <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{linkedAccountsError}</Alert>
         )}
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 480 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 520 }}>
           {([
-            { key: 'google', label: 'Google', icon: <Google sx={{ color: '#4285F4' }} />, strategy: 'oauth_google' as const },
-            { key: 'facebook', label: 'Facebook', icon: <Facebook sx={{ color: '#1877F2' }} />, strategy: 'oauth_facebook' as const },
-            { key: 'apple', label: 'Apple', icon: <Apple sx={{ color: 'text.primary' }} />, strategy: 'oauth_apple' as const },
-          ] as const).map(({ key, label, icon, strategy }) => {
+            {
+              key: 'google',
+              label: 'Google',
+              icon: <Google sx={{ fontSize: 26 }} />,
+              strategy: 'oauth_google' as const,
+              brandColor: '#4285F4',
+              bgGradient: 'linear-gradient(135deg, #4285F4 0%, #34A853 100%)',
+            },
+            {
+              key: 'facebook',
+              label: 'Facebook',
+              icon: <Facebook sx={{ fontSize: 26 }} />,
+              strategy: 'oauth_facebook' as const,
+              brandColor: '#1877F2',
+              bgGradient: 'linear-gradient(135deg, #1877F2 0%, #0a5cd3 100%)',
+            },
+            {
+              key: 'apple',
+              label: 'Apple',
+              icon: <Apple sx={{ fontSize: 26 }} />,
+              strategy: 'oauth_apple' as const,
+              brandColor: '#1c1c1e',
+              bgGradient: 'linear-gradient(135deg, #1c1c1e 0%, #3a3a3c 100%)',
+            },
+          ] as const).map(({ key, label, icon, strategy, brandColor, bgGradient }) => {
             const linked = clerkUser?.externalAccounts?.find(
               (acc) => acc.provider === key || acc.provider === `oauth_${key}`,
             );
             const isLoading = linkedAccountsLoading === key;
 
             return (
-              <Paper
+              <Box
                 key={key}
-                variant="outlined"
                 sx={{
-                  p: 2,
-                  borderRadius: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  borderColor: linked ? 'success.light' : 'divider',
-                  bgcolor: linked ? 'success.50' : 'background.paper',
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  border: '1px solid',
+                  borderColor: linked ? `${brandColor}55` : 'divider',
+                  transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+                  '&:hover': { boxShadow: `0 6px 24px ${brandColor}22`, transform: 'translateY(-1px)' },
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>
-                  {icon}
-                  <Box>
-                    <Typography fontWeight={600}>{label}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
+                  {/* Brand color stripe */}
+                  <Box
+                    sx={{
+                      width: 60,
+                      flexShrink: 0,
+                      background: bgGradient,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                    }}
+                  >
+                    {icon}
+                  </Box>
+
+                  {/* Content */}
+                  <Box
+                    sx={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      p: 2,
+                      bgcolor: 'background.paper',
+                    }}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography fontWeight={700} variant="body1" sx={{ lineHeight: 1.2 }}>
+                        {label}
+                      </Typography>
+                      {linked ? (
+                        <Typography
+                          variant="caption"
+                          sx={{ color: brandColor, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}
+                        >
+                          <Box
+                            component="span"
+                            sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: brandColor, display: 'inline-block', flexShrink: 0 }}
+                          />
+                          {linked.emailAddress ?? 'Connecté'}
+                        </Typography>
+                      ) : (
+                        <Typography variant="caption" color="text.disabled" sx={{ mt: 0.25, display: 'block' }}>
+                          Non connecté
+                        </Typography>
+                      )}
+                    </Box>
+
                     {linked ? (
-                      <Typography variant="caption" color="success.main">
-                        {linked.emailAddress ?? 'Connecté'}
-                      </Typography>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        startIcon={isLoading ? <CircularProgress size={13} color="error" /> : <LinkOffIcon sx={{ fontSize: 16 }} />}
+                        disabled={isLoading}
+                        onClick={async () => {
+                          setLinkedAccountsError('');
+                          setLinkedAccountsLoading(key);
+                          try {
+                            await linked.destroy();
+                          } catch (err) {
+                            setLinkedAccountsError(getSafeErrorMessage(err));
+                          } finally {
+                            setLinkedAccountsLoading(null);
+                          }
+                        }}
+                        sx={{ borderRadius: 2, textTransform: 'none', fontSize: '0.75rem', whiteSpace: 'nowrap', flexShrink: 0 }}
+                      >
+                        Déconnecter
+                      </Button>
                     ) : (
-                      <Typography variant="caption" color="text.secondary">
-                        Non connecté
-                      </Typography>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={isLoading ? <CircularProgress size={13} sx={{ color: '#fff' }} /> : <LinkIcon sx={{ fontSize: 16 }} />}
+                        disabled={isLoading}
+                        onClick={async () => {
+                          if (!clerkUser) { return; }
+                          setLinkedAccountsError('');
+                          setLinkedAccountsLoading(key);
+                          try {
+                            const externalAccount = await clerkUser.createExternalAccount({
+                              strategy,
+                              redirectUrl: `${window.location.origin}/profile`,
+                            });
+                            if (externalAccount.verification?.externalVerificationRedirectURL) {
+                              window.location.href = externalAccount.verification.externalVerificationRedirectURL.href;
+                            }
+                          } catch (err) {
+                            setLinkedAccountsError(getSafeErrorMessage(err));
+                            setLinkedAccountsLoading(null);
+                          }
+                        }}
+                        sx={{
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          fontSize: '0.75rem',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                          bgcolor: brandColor,
+                          '&:hover': { bgcolor: brandColor, filter: 'brightness(0.88)' },
+                          boxShadow: `0 3px 10px ${brandColor}44`,
+                        }}
+                      >
+                        Connecter
+                      </Button>
                     )}
                   </Box>
                 </Box>
-                {linked ? (
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="error"
-                    startIcon={isLoading ? <CircularProgress size={14} /> : <LinkOffIcon />}
-                    disabled={isLoading}
-                    onClick={async () => {
-                      setLinkedAccountsError('');
-                      setLinkedAccountsLoading(key);
-                      try {
-                        await linked.destroy();
-                      } catch (err) {
-                        setLinkedAccountsError(getSafeErrorMessage(err));
-                      } finally {
-                        setLinkedAccountsLoading(null);
-                      }
-                    }}
-                    sx={{ borderRadius: 2, textTransform: 'none', whiteSpace: 'nowrap' }}
-                  >
-                    Déconnecter
-                  </Button>
-                ) : (
-                  <Button
-                    size="small"
-                    variant="contained"
-                    startIcon={isLoading ? <CircularProgress size={14} sx={{ color: '#fff' }} /> : <LinkIcon />}
-                    disabled={isLoading}
-                    onClick={async () => {
-                      if (!clerkUser) { return; }
-                      setLinkedAccountsError('');
-                      setLinkedAccountsLoading(key);
-                      try {
-                        const externalAccount = await clerkUser.createExternalAccount({
-                          strategy,
-                          redirectUrl: `${window.location.origin}/profile`,
-                        });
-                        if (externalAccount.verification?.externalVerificationRedirectURL) {
-                          window.location.href = externalAccount.verification.externalVerificationRedirectURL.href;
-                        }
-                      } catch (err) {
-                        setLinkedAccountsError(getSafeErrorMessage(err));
-                        setLinkedAccountsLoading(null);
-                      }
-                    }}
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      whiteSpace: 'nowrap',
-                      background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                    }}
-                  >
-                    Connecter
-                  </Button>
-                )}
-              </Paper>
+              </Box>
             );
           })}
         </Box>

@@ -272,16 +272,11 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
           </Box>
         )}
 
-        {/* Price + distance */}
+        {/* Price */}
         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mt: 0.5 }}>
           <Typography variant="subtitle1" fontWeight={700} color="text.primary">
             {formatPrice(ad.price)}
           </Typography>
-          {ad.type && (
-            <Typography variant="caption" color="text.secondary">
-              / {ad.type.name.toLowerCase()}
-            </Typography>
-          )}
         </Box>
 
         {showDistance && ad.distance !== undefined && (

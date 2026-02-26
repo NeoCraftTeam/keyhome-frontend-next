@@ -12,7 +12,27 @@ export function formatPrice(price: number | null): string {
   if (price === null || price === undefined) {
     return 'Prix non défini';
   }
-  return `${new Intl.NumberFormat('fr-FR').format(price)} ${CURRENCY_SYMBOL}`;
+  // Use fr-FR locale (gives narrow no-break spaces) then normalise to regular spaces
+  return `${new Intl.NumberFormat('fr-FR').format(price).replace(/\u202f/g, '\u00a0')} ${CURRENCY_SYMBOL}`;
+}
+
+/**
+ * Returns a compact price for listing cards.
+ * 75 000 → "75k FCFA" | 1 500 000 → "1,5M FCFA" | 500 → "500 FCFA"
+ */
+export function formatPriceCompact(price: number | null): string {
+  if (price === null || price === undefined) {
+    return 'Prix N/D';
+  }
+  if (price >= 1_000_000) {
+    const m = price / 1_000_000;
+    const formatted = m % 1 === 0 ? `${m}` : m.toFixed(1).replace('.', ',');
+    return `${formatted}M ${CURRENCY_SYMBOL}`;
+  }
+  if (price >= 1_000) {
+    return `${Math.round(price / 1_000)}k ${CURRENCY_SYMBOL}`;
+  }
+  return `${price} ${CURRENCY_SYMBOL}`;
 }
 
 export function formatDate(dateStr: string): string {

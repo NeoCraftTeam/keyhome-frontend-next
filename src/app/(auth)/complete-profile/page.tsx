@@ -20,6 +20,7 @@ import {
     Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -88,7 +89,7 @@ export default function CompleteProfilePage() {
       setShowWelcome(true);
       setTimeout(() => {
         finalizeAuth(result.token, result.user, result.panel_sso_url);
-      }, 2200);
+      }, 3800);
     } catch (err) {
       setError(getSafeErrorMessage(err, 'Une erreur est survenue. Veuillez réessayer.'));
     } finally {
@@ -98,31 +99,32 @@ export default function CompleteProfilePage() {
 
   // ── Clerk native sign-up flow ─────────────────────────────────────────────────────
 
-  const missingPhone = signUp?.missingFields?.includes('phone_number') ?? false;
-
   const handleClerkFlowSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signUp) {
-      return;
-    }
+    if (!signUp) { return; }
 
     setError('');
     setIsSubmitting(true);
 
     try {
-      const result = await signUp.update({
-        ...(missingPhone ? { phoneNumber } : {}),
-      });
+      // Always attempt to pass phone_number — Clerk will ignore it if not required
+      const updatePayload: Record<string, string> = {};
+      if (phoneNumber.trim().length >= 8) {
+        updatePayload.phoneNumber = phoneNumber;
+      }
+
+      const result = await signUp.update(updatePayload);
 
       if (result.status === 'complete') {
         await setActive!({ session: result.createdSessionId! });
         router.replace('/home');
       } else {
-        setError('Des informations supplémentaires sont requises. Veuillez réessayer.');
+        // Log missing fields to help debug future issues
+        const missing = result.missingFields?.join(', ') || 'inconnu';
+        setError(`Champs manquants : ${missing}. Veuillez compléter toutes les informations requises.`);
       }
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : 'Une erreur est survenue. Veuillez réessayer.';
+      const msg = err instanceof Error ? err.message : 'Une erreur est survenue. Veuillez réessayer.';
       setError(msg);
     } finally {
       setIsSubmitting(false);
@@ -135,53 +137,12 @@ export default function CompleteProfilePage() {
     return null;
   }
 
-  const showPhoneField = isOtpFlow || missingPhone;
+  // Always show phone field — required by our backend for OTP flow, helpful for Clerk flow
+  const showPhoneField = true;
   const handleSubmit = isOtpFlow ? handleOtpFlowSubmit : handleClerkFlowSubmit;
 
-  /** Welcome overlay rendered after successful completion */
   if (showWelcome) {
-    return (
-      <Box
-        sx={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 50%, #b02a3e 100%)',
-          animation: 'fadeIn 0.5s ease-in-out',
-          '@keyframes fadeIn': { from: { opacity: 0 }, to: { opacity: 1 } },
-        }}
-      >
-        <Box
-          sx={{
-            textAlign: 'center',
-            animation: 'slideUp 0.6s ease-out 0.2s both',
-            '@keyframes slideUp': { from: { opacity: 0, transform: 'translateY(30px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
-          }}
-        >
-          <Image src="/images/logo.png" alt="KeyHome" width={72} height={72} style={{ marginBottom: 24 }} />
-          <Typography
-            variant="h3"
-            fontWeight={700}
-            color="#fff"
-            sx={{ mb: 1, textShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
-          >
-            Bienvenue chez vous !
-          </Typography>
-          <Typography
-            variant="h6"
-            color="rgba(255,255,255,0.85)"
-            fontWeight={400}
-          >
-            {prefill?.firstname ? `Ravi de vous compter parmi nous, ${prefill.firstname}.` : 'Votre compte est prêt.'}
-          </Typography>
-        </Box>
-        <CircularProgress sx={{ color: 'rgba(255,255,255,0.6)', mt: 6 }} />
-      </Box>
-    );
+    return <WelcomeOverlay firstName={prefill?.firstname} />;
   }
 
   return (
