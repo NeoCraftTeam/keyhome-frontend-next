@@ -1,0 +1,18 @@
+# https://keyhome.app robots.txt
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /complete-profile
+Disallow: /verify-email
+Disallow: /verify-otp
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /sso-callback
+Disallow: /payment-success
+Disallow: /profile
+Disallow: /payments
+Disallow: /publish
+
+# Sitemaps
+Sitemap: https://keyhome.app/sitemap.xml
