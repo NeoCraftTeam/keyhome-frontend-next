@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* ===== Base reset ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 :root {
   --font-inter: 'Inter', sans-serif;
   --color-primary: #F6475F;
@@ -12,6 +27,28 @@ body {
   font-family: var(--font-inter);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ===== Prevent any child from escaping viewport ===== */
+.landing-page-wrapper {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  position: relative;
+}
+
+/* All section inner containers */
+.landing-page-wrapper section > div,
+.landing-page-wrapper footer > div {
+  width: 100%;
+}
+
+/* ---- Hero responsive ---- */
+.hero-search-bar {
+  max-width: 560px;
+  margin: 0 auto 20px;
+  width: 100%;
 }
 
 /* ===== Global animations ===== */
@@ -188,10 +225,6 @@ img {
   gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
-}
-.hero-search-bar {
-  max-width: 560px;
-  margin: 0 auto 20px;
 }
 
 /* ---- Section padding ---- */

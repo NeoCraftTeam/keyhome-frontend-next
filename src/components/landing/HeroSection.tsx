@@ -71,7 +71,7 @@ export default function HeroSection() {
       />
 
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: 'clamp(80px, 10vh, 140px) 24px clamp(60px, 8vh, 100px)', maxWidth: 860, margin: '0 auto' }}>
+      <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: 'clamp(80px, 10vh, 140px) 16px clamp(60px, 8vh, 100px)', maxWidth: 860, width: '100%', margin: '0 auto' }}>
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
 
           {/* Badge */}

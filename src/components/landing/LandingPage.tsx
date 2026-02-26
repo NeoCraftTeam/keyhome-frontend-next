@@ -16,7 +16,8 @@ function LandingInner() {
 
   return (
     <motion.div
-      style={{ fontFamily: 'var(--font-inter), Inter, sans-serif', background: bg, transition: 'background 0.4s ease' }}
+      className="landing-page-wrapper"
+      style={{ fontFamily: 'var(--font-inter), Inter, sans-serif', background: bg, transition: 'background 0.4s ease', overflowX: 'hidden' }}
     >
       <LandingNav />
       <main>
