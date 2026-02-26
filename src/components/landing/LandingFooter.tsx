@@ -7,21 +7,20 @@ import { useLandingTheme } from './LandingThemeContext';
 
 const links = {
   Plateforme: [
-    { label: 'Rechercher', href: '/register' },
+    { label: 'Rechercher un logement', href: '/register' },
     { label: 'Publier une annonce', href: '/register' },
     { label: 'Comment ça marche', href: '#how-it-works' },
-    { label: 'Tarifs', href: '/register' },
+    { label: 'Témoignages clients', href: '#testimonials' },
   ],
-  Entreprise: [
-    { label: 'À propos', href: '#' },
-    { label: 'Blog', href: '#' },
-    { label: 'Carrières', href: '#' },
-    { label: 'Contact', href: '#' },
+  Ressources: [
+    { label: 'Inscription gratuite', href: '/register' },
+    { label: 'Se connecter', href: '/login' },
+    { label: 'Annonces à proximité', href: '/register' },
+    { label: 'Carte interactive', href: '/register' },
   ],
   Légal: [
     { label: 'Conditions d\'utilisation', href: '/conditions' },
-    { label: 'Confidentialité', href: '/confidentialite' },
-    { label: 'Cookies', href: '#' },
+    { label: 'Politique de confidentialité', href: '/confidentialite' },
   ],
 };
 
@@ -50,7 +49,7 @@ export default function LandingFooter() {
           {/* Brand */}
           <div>
             <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 20 }}>
-              <Image src="/images/logo.png" alt="KeyHome" width={36} height={36} style={{ borderRadius: 8 }} />
+              <Image src="/images/logo.png" alt="KeyHome — Immobilier en Afrique" width={36} height={36} style={{ borderRadius: 8 }} />
               <span style={{ color: text, fontWeight: 700, fontSize: 20, letterSpacing: '-0.5px' }}>
                 Key<span style={{ color: '#F6475F' }}>Home</span>
               </span>

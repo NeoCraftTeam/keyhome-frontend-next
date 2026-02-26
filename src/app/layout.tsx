@@ -17,11 +17,13 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL('https://keyhome.app'),
   title: {
-    default: 'KeyHome — Immobilier en Afrique | Location, Vente, Terrain',
+    default: 'KeyHome — Immobilier en Afrique : Location, Vente, Terrain sans arnaque',
     template: '%s | KeyHome',
   },
   description:
-    'Trouvez votre bien immobilier idéal en Afrique. Des milliers d\'annonces vérifiées : maisons, appartements, terrains et villas. Accédez aux coordonnées en toute sécurité avec KeyHome.',
+    "Fini les arnaques et les intermédiaires. KeyHome est la plateforme immobilière #1 en Afrique avec des annonces vérifiées manuellement. " +
+    "Trouvez votre maison, appartement, terrain ou villa à Douala, Abidjan, Cotonou, Lomé et dans toute l'Afrique. " +
+    "Inscription gratuite, paiement sécurisé par Mobile Money, contact direct avec les propriétaires.",
   keywords: [
     'immobilier Afrique',
     'location appartement',
@@ -65,9 +67,10 @@ export const metadata: Metadata = {
     locale: 'fr_FR',
     url: 'https://keyhome.app',
     siteName: 'KeyHome',
-    title: 'KeyHome — La plateforme immobilière #1 en Afrique',
+    title: 'KeyHome — Trouvez votre logement en Afrique sans arnaque',
     description:
-      'Des milliers d\'annonces immobilières vérifiées. Maisons, appartements, terrains et villas à travers l\'Afrique. Accédez aux coordonnées en toute sécurité.',
+      "Des milliers d'annonces immobilières vérifiées. Maisons, appartements, terrains et villas à travers l'Afrique. " +
+      "Inscription gratuite, paiement sécurisé Mobile Money, contact direct avec les propriétaires. Zéro intermédiaire.",
     images: [
       {
         url: '/images/og-cover.png',
@@ -80,9 +83,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KeyHome — Immobilier en Afrique',
+    title: 'KeyHome — Immobilier en Afrique sans arnaque',
     description:
-      'Trouvez votre bien immobilier idéal en Afrique. Annonces vérifiées, paiement sécurisé, contact direct.',
+      "Trouvez votre logement idéal parmi des milliers d'annonces vérifiées. Inscription gratuite, paiement sécurisé, contact direct propriétaire.",
     images: ['/images/og-cover.png'],
     creator: '@keyhome_app',
   },

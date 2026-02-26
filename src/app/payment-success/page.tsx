@@ -103,7 +103,7 @@ function PaymentSuccessContent() {
     return (
       <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 3, p: 3 }}>
         <Box sx={{ textAlign: 'center' }}>
-          <Image src="/images/logo.png" alt="KeyHome" width={52} height={52} style={{ marginBottom: 16 }} />
+          <Image src="/images/logo.png" alt="KeyHome — Paiement confirmé" width={52} height={52} style={{ marginBottom: 16 }} />
           <Typography variant="h6" fontWeight={600} gutterBottom>
             Vérification du paiement...
           </Typography>
@@ -154,7 +154,7 @@ function PaymentSuccessContent() {
         }}
       >
         <Box sx={{ mb: 3 }}>
-          <Image src="/images/logo.png" alt="KeyHome" width={48} height={48} />
+          <Image src="/images/logo.png" alt="KeyHome — Paiement confirmé" width={48} height={48} />
         </Box>
 
         {isApproved && isUnlocked ? (

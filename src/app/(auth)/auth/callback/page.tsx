@@ -75,7 +75,7 @@ function OAuthCallbackContent() {
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
-        <Image src="/images/logo.png" alt="KeyHome" width={48} height={48} />
+        <Image src="/images/logo.png" alt="KeyHome — Connexion en cours" width={48} height={48} />
         <Typography variant="h4" fontWeight={700} color="primary.main">
           KeyHome
         </Typography>

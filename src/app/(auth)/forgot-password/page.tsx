@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
       <Box sx={{ width: '100%', maxWidth: 420 }}>
         <FadeIn direction="none">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4 }}>
-            <Image src="/images/logo.png" alt="KeyHome" width={36} height={36} priority />
+            <Image src="/images/logo.png" alt="KeyHome — Mot de passe oublié" width={36} height={36} priority />
             <Typography variant="h6" fontWeight={700} color="primary.main">
               KeyHome
             </Typography>

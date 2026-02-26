@@ -26,7 +26,7 @@ export default function PageLoader() {
       >
         <Image
           src="/images/logo.png"
-          alt="KeyHome"
+          alt="KeyHome — Chargement"
           width={56}
           height={56}
           priority

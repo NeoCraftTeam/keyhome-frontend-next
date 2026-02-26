@@ -80,7 +80,7 @@ export default function PrivacyPolicyPage() {
             <IconButton component={Link} href="/" size="small">
               <ArrowBack />
             </IconButton>
-            <Image src="/images/logo.png" alt="KeyHome" width={32} height={32} />
+            <Image src="/images/logo.png" alt="KeyHome — Politique de confidentialité" width={32} height={32} />
             <Typography variant="subtitle1" fontWeight={600} color="primary.main">
               KeyHome
             </Typography>

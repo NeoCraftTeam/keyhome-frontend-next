@@ -59,7 +59,7 @@ export default function SSOCallbackPage() {
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Image src="/images/logo.png" alt="KeyHome" width={48} height={48} />
+        <Image src="/images/logo.png" alt="KeyHome — Authentification" width={48} height={48} />
         <Typography variant="h5" fontWeight={700} color="primary.main">
           KeyHome
         </Typography>

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Conditions Générales d'Utilisation",
+  title: "Conditions Générales d'Utilisation — KeyHome",
   description:
-    "Conditions générales d'utilisation de la plateforme KeyHome. Règles de publication, politique de paiement, responsabilités et droits des utilisateurs.",
+    "Consultez les conditions générales d'utilisation de KeyHome : règles de publication des annonces, politique de paiement et de remboursement, protection des données, responsabilités et droits des utilisateurs.",
   robots: { index: true, follow: true },
   alternates: {
     canonical: 'https://keyhome.app/conditions',

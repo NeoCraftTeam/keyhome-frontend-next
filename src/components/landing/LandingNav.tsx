@@ -53,7 +53,7 @@ export default function LandingNav() {
 
           {/* Logo */}
           <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', zIndex: 101 }}>
-            <Image src="/images/logo.png" alt="KeyHome" width={36} height={36} style={{ borderRadius: 8 }} />
+            <Image src="/images/logo.png" alt="KeyHome — Logo plateforme immobilière en Afrique" width={36} height={36} style={{ borderRadius: 8 }} />
             <span style={{ color: text, fontWeight: 700, fontSize: 20, letterSpacing: '-0.5px', transition: 'color 0.35s' }}>
               Key<span style={{ color: '#F6475F' }}>Home</span>
             </span>

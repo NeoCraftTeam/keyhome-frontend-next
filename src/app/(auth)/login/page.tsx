@@ -87,7 +87,7 @@ export default function LoginPage() {
         >
           <FadeIn delay={0.2} direction="up">
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Image src="/images/logo.png" alt="KeyHome" width={42} height={42} />
+              <Image src="/images/logo.png" alt="KeyHome — Plateforme immobilière" width={42} height={42} />
               <Typography variant="h4" fontWeight={700} color="#fff">
                 KeyHome
               </Typography>
@@ -137,7 +137,7 @@ export default function LoginPage() {
               mb: 4,
             }}
           >
-            <Image src="/images/logo.png" alt="KeyHome" width={40} height={40} priority />
+            <Image src="/images/logo.png" alt="KeyHome — Plateforme immobilière" width={40} height={40} priority />
             <Typography variant="h5" fontWeight={700} color="primary.main">
               KeyHome
             </Typography>

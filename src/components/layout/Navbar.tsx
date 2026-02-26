@@ -99,7 +99,7 @@ export default function Navbar() {
           >
             <Image
               src="/images/logo.png"
-              alt="KeyHome"
+              alt="KeyHome — Accueil"
               width={44}
               height={44}
               priority
@@ -293,7 +293,7 @@ export default function Navbar() {
       >
         <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Image src="/images/logo.png" alt="KeyHome" width={28} height={28} />
+            <Image src="/images/logo.png" alt="KeyHome — Accueil" width={28} height={28} />
             <Typography variant="h6" fontWeight={700} color="primary.main">
               KeyHome
             </Typography>

@@ -58,7 +58,7 @@ export default function VerifyEmailPage() {
       <Box sx={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
         <FadeIn direction="none">
           <Box sx={{ mb: 2 }}>
-            <Image src="/images/logo.png" alt="KeyHome" width={48} height={48} priority />
+            <Image src="/images/logo.png" alt="KeyHome — Vérification email" width={48} height={48} priority />
           </Box>
         </FadeIn>
 

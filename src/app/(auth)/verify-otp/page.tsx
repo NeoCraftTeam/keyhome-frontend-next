@@ -105,7 +105,7 @@ export default function VerifyOtpPage() {
         <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 6, zIndex: 2 }}>
           <FadeIn delay={0.2} direction="up">
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Image src="/images/logo.png" alt="KeyHome" width={42} height={42} />
+              <Image src="/images/logo.png" alt="KeyHome — Vérification code OTP" width={42} height={42} />
               <Typography variant="h4" fontWeight={700} color="#fff">KeyHome</Typography>
             </Box>
           </FadeIn>
@@ -148,7 +148,7 @@ export default function VerifyOtpPage() {
         {/* Mobile logo */}
         <FadeIn direction="none">
           <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1, mb: 4 }}>
-            <Image src="/images/logo.png" alt="KeyHome" width={40} height={40} priority />
+            <Image src="/images/logo.png" alt="KeyHome — Vérification code OTP" width={40} height={40} priority />
             <Typography variant="h5" fontWeight={700} color="primary.main">KeyHome</Typography>
           </Box>
         </FadeIn>

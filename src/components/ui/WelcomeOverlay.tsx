@@ -111,7 +111,7 @@ export default function WelcomeOverlay({ firstName }: WelcomeOverlayProps) {
               mx: 'auto',
             }}
           >
-            <Image src="/images/logo.png" alt="KeyHome" width={60} height={60} />
+            <Image src="/images/logo.png" alt="Bienvenue sur KeyHome — Plateforme immobilière #1 en Afrique" width={60} height={60} />
           </Box>
         </Box>
 

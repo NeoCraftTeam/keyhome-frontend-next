@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Politique de Confidentialité',
+  title: 'Politique de Confidentialité — KeyHome',
   description:
-    "Politique de confidentialité de KeyHome. Découvrez comment nous collectons, utilisons et protégeons vos données personnelles sur notre plateforme immobilière.",
+    "Découvrez comment KeyHome protège vos données personnelles. Notre politique de confidentialité détaille la collecte, l'utilisation et la sécurisation de vos informations sur notre plateforme immobilière.",
   robots: { index: true, follow: true },
   alternates: {
     canonical: 'https://keyhome.app/confidentialite',
