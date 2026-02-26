@@ -6,6 +6,7 @@ import { Providers } from './providers';
 import { ClerkProvider } from '@clerk/nextjs';
 import { frFR } from '@clerk/localizations';
 import JsonLd from '@/components/seo/JsonLd';
+import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({
   variable: '--font-inter',
@@ -120,7 +121,9 @@ export default function RootLayout({
           <JsonLd />
         </head>
         <body className={`${inter.variable} antialiased`}>
-          <Providers>{children}</Providers>
+          <Providers>{children}
+            <Analytics />
+          </Providers>
         </body>
       </html>
     </ClerkProvider>
