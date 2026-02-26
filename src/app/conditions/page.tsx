@@ -137,7 +137,7 @@ export default function TermsOfUsePage() {
           <Section icon={<Home />} title="Description du service">
             <Typography paragraph color="text.secondary" sx={{ lineHeight: 1.8 }}>
               KeyHome est une plateforme de mise en relation entre propriétaires
-              immobiliers, agents et personnes à la recherche de biens au Bénin.
+              immobiliers, agents et personnes à la recherche de biens en Afrique.
               Notre service permet de :
             </Typography>
             <List dense>
@@ -345,8 +345,7 @@ export default function TermsOfUsePage() {
               réserve le droit de suspendre tout compte violant ces conditions.
             </Typography>
             <Typography color="text.secondary" sx={{ lineHeight: 1.8 }}>
-              Les présentes conditions sont régies par le droit béninois. Tout
-              litige sera soumis aux tribunaux compétents de Cotonou, Bénin.
+              Les présentes conditions sont régies par le droit applicable dans le pays d&apos;utilisation du service. Tout litige sera soumis aux tribunaux compétents du lieu d&apos;établissement de l&apos;utilisateur.
             </Typography>
           </Section>
 
