@@ -1,43 +1,43 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  AppBar,
-  Box,
-  Toolbar,
-  IconButton,
-  Typography,
-  Avatar,
-  Menu,
-  MenuItem,
-  Divider,
-  ListItemIcon,
-  ListItemText,
-  Paper,
-  InputBase,
-  useMediaQuery,
-  useTheme,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-} from '@mui/material';
-import {
-  Search as SearchIcon,
-  Tune as TuneIcon,
-  DarkMode as DarkModeIcon,
-  LightMode as LightModeIcon,
-  Logout as LogoutIcon,
-  Person as PersonIcon,
-  Home as HomeIcon,
-  Explore as ExploreIcon,
-  Menu as MenuIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
-import Image from 'next/image';
 import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
+import {
+    Close as CloseIcon,
+    DarkMode as DarkModeIcon,
+    Explore as ExploreIcon,
+    Home as HomeIcon,
+    LightMode as LightModeIcon,
+    Logout as LogoutIcon,
+    Menu as MenuIcon,
+    Person as PersonIcon,
+    Search as SearchIcon,
+    Tune as TuneIcon,
+} from '@mui/icons-material';
+import {
+    AppBar,
+    Avatar,
+    Box,
+    Divider,
+    Drawer,
+    IconButton,
+    InputBase,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
+    Menu,
+    MenuItem,
+    Paper,
+    Toolbar,
+    Typography,
+    useMediaQuery,
+    useTheme,
+} from '@mui/material';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -159,23 +159,24 @@ export default function Navbar() {
               />
               <IconButton
                 size="small"
+                aria-label="Filtres avancés"
                 onClick={() => router.push('/search')}
                 sx={{
                   bgcolor: 'primary.main',
                   color: '#fff',
-                  width: 32,
-                  height: 32,
+                  width: 44,
+                  height: 44,
                   '&:hover': { bgcolor: 'primary.dark' },
                 }}
               >
-                <TuneIcon sx={{ fontSize: 16 }} />
+                <TuneIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Paper>
           )}
 
           {/* Right side */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-            <IconButton onClick={toggleTheme} size="small">
+            <IconButton onClick={toggleTheme} size="small" aria-label={mode === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}>
               {mode === 'dark' ? (
                 <LightModeIcon sx={{ fontSize: 20 }} />
               ) : (

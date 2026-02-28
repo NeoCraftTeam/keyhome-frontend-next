@@ -2,9 +2,9 @@
 
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
+import AppTour from '@/components/ui/AppTour';
 import CategoryPills from '@/components/ui/CategoryPills';
 import FadeIn from '@/components/ui/FadeIn';
-import AppTour from '@/components/ui/AppTour';
 import { adsService } from '@/services/ads.service';
 import { recommendationsService } from '@/services/users.service';
 import {
@@ -203,8 +203,9 @@ export default function HomePage() {
               siblingCount={isMobile ? 0 : 1}
               sx={{
                 '& .MuiPaginationItem-root.Mui-selected': {
-                  bgcolor: 'secondary.main',
-                  color: 'secondary.contrastText',
+                  bgcolor: '#F6475F',
+                  color: '#fff',
+                  '&:hover': { bgcolor: '#D93A50' },
                 },
               }}
             />

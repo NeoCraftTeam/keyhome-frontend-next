@@ -57,11 +57,12 @@ import {
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
 function AdDetailContent() {
   const params = useParams();
+  const router = useRouter();
   const adId = params.id as string;
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -139,14 +140,19 @@ function AdDetailContent() {
   const totalImageCount = ad.total_images || allImages.length;
 
   const handleShare = async () => {
-    const url = new URL(window.location.href);
-    try {
-      await navigator.clipboard.writeText(url.toString());
+    const shareUrl = window.location.href;
+    const shareText = `${ad.title} — ${formatPrice(ad.price)}`;
+    // Always copy to clipboard first
+    try { await navigator.clipboard.writeText(shareUrl); } catch { /* ignore */ }
+    // Then try native share sheet (mobile + Safari)
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: ad.title, text: shareText, url: shareUrl });
+      } catch { /* user cancelled */ }
+    } else {
       setSnackbar('Lien copié dans le presse-papier');
-    } catch {
-      setSnackbar('Impossible de copier le lien');
     }
-  };;
+  };
 
   const handleUnlock = async () => {
     setPaymentError('');
@@ -192,6 +198,21 @@ function AdDetailContent() {
   return (
     <>
       <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
+        {/* Back navigation */}
+        <Button
+          onClick={() => router.back()}
+          startIcon={<ChevronLeft />}
+          sx={{
+            mb: 1.5,
+            color: 'text.secondary',
+            textTransform: 'none',
+            fontWeight: 500,
+            '&:hover': { bgcolor: 'action.hover' },
+          }}
+        >
+          Retour aux annonces
+        </Button>
+
         {/* Image gallery */}
         <FadeIn delay={0.1} direction="none">
 
@@ -726,6 +747,20 @@ function AdDetailContent() {
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1.5 }}>
                     Payez pour accéder aux coordonnées de l&apos;annonceur
                   </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 1.5, color: 'text.secondary' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Phone sx={{ fontSize: 14 }} />
+                      <Typography variant="caption">Téléphone</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <WhatsApp sx={{ fontSize: 14 }} />
+                      <Typography variant="caption">WhatsApp</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Email sx={{ fontSize: 14 }} />
+                      <Typography variant="caption">Email</Typography>
+                    </Box>
+                  </Box>
                 </>
               ) : (
                 <Box>

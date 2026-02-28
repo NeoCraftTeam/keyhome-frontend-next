@@ -97,6 +97,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
         {/* Favorite button */}
         <IconButton
           onClick={handleToggleFavorite}
+          aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
           sx={{
             position: 'absolute',
             top: 8,

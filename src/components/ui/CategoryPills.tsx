@@ -25,6 +25,7 @@ export default function CategoryPills({ categories, selected, onChange }: Catego
       <IconButton
         onClick={() => scroll('left')}
         size="small"
+        aria-label="Catégories précédentes"
         sx={{
           position: 'absolute',
           left: -4,
@@ -33,12 +34,12 @@ export default function CategoryPills({ categories, selected, onChange }: Catego
           border: '1px solid',
           borderColor: 'divider',
           boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
-          width: 28,
-          height: 28,
+          width: 36,
+          height: 36,
           '&:hover': { bgcolor: 'background.paper' },
         }}
       >
-        <ChevronLeft sx={{ fontSize: 18 }} />
+        <ChevronLeft sx={{ fontSize: 20 }} />
       </IconButton>
 
       <Box
@@ -86,6 +87,7 @@ export default function CategoryPills({ categories, selected, onChange }: Catego
       <IconButton
         onClick={() => scroll('right')}
         size="small"
+        aria-label="Catégories suivantes"
         sx={{
           position: 'absolute',
           right: -4,
@@ -94,12 +96,12 @@ export default function CategoryPills({ categories, selected, onChange }: Catego
           border: '1px solid',
           borderColor: 'divider',
           boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
-          width: 28,
-          height: 28,
+          width: 36,
+          height: 36,
           '&:hover': { bgcolor: 'background.paper' },
         }}
       >
-        <ChevronRight sx={{ fontSize: 18 }} />
+        <ChevronRight sx={{ fontSize: 20 }} />
       </IconButton>
     </Box>
   );
