@@ -14,6 +14,7 @@ import {
     Star as StarIcon,
 } from '@mui/icons-material';
 import { Box, Chip, IconButton, Typography } from '@mui/material';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
@@ -82,19 +83,13 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               transition: 'opacity 0.3s ease',
             }}
           >
-            <Box
-              component="img"
+            <Image
               src={img.url}
-              alt={ad.title}
-              loading={idx === 0 ? 'eager' : 'lazy'}
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
+              alt={`${ad.title}${idx > 0 ? ` ${idx + 1}` : ''}`}
+              fill
+              sizes="(max-width: 600px) 50vw, (max-width: 960px) 33vw, 25vw"
+              priority={idx === 0}
+              style={{ objectFit: 'cover' }}
             />
           </Box>
         ))}
