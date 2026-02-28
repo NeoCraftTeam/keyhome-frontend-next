@@ -2,65 +2,27 @@
 
 export const dynamic = 'force-dynamic';
 
-import api from '@/lib/api';
-import { useAuth } from '@/providers/AuthProvider';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 
 function OAuthCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { setUser } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-
-  const handleCallback = useCallback(async () => {
-    // The backend OAuth callback redirects here with token in query params
-    const token = searchParams.get('token');
+  const error = useMemo(() => {
     const errorParam = searchParams.get('error');
     const errorMessage = searchParams.get('message');
-
-    // Clear stored provider
-    sessionStorage.removeItem('oauth_provider');
-
-    // Check for OAuth errors
-    if (errorParam || errorMessage) {
-      setError(errorMessage || errorParam || 'Connexion annulée');
-      return;
-    }
-
-    // Check if we have a token from backend redirect
-    if (!token) {
-      setError('Token d\'authentification manquant');
-      return;
-    }
-
-    try {
-      // Store token
-      sessionStorage.setItem('token', token);
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-      // Fetch user info
-      const { data } = await api.get('/auth/me');
-      const user = data.data ?? data;
-
-      // Store user
-      sessionStorage.setItem('user_id', user.id);
-      setUser(user);
-
-      // Redirect to home
-      router.replace('/home');
-    } catch (err) {
-      console.error('OAuth callback error:', err);
-      sessionStorage.removeItem('token');
-      setError('Erreur lors de la récupération du profil. Veuillez réessayer.');
-    }
-  }, [searchParams, router, setUser]);
+    return errorMessage || errorParam || 'Cette route OAuth est obsolete. Veuillez vous reconnecter.';
+  }, [searchParams]);
 
   useEffect(() => {
-    handleCallback();
-  }, [handleCallback]);
+    const timer = setTimeout(() => {
+      router.replace('/login');
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  }, [error, router]);
 
   return (
     <Box

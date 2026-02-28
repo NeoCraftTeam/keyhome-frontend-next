@@ -15,7 +15,6 @@ import {
   Tab,
   Alert,
   CircularProgress,
-  Chip,
   Paper,
   IconButton,
   InputAdornment,
@@ -41,7 +40,8 @@ import { useFavorites } from '@/providers/FavoritesProvider';
 import { authService } from '@/services/auth.service';
 import { usersService, unlockedAdsService } from '@/services/users.service';
 import { citiesService } from '@/services/cities.service';
-import { UserRole, City } from '@/types';
+import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
+import { City } from '@/types';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import AdCard from '@/components/ads/AdCard';
 import FadeIn from '@/components/ui/FadeIn';
@@ -722,7 +722,12 @@ export default function ProfilePage() {
                               redirectUrl: `${window.location.origin}/profile`,
                             });
                             if (externalAccount.verification?.externalVerificationRedirectURL) {
-                              window.location.href = externalAccount.verification.externalVerificationRedirectURL.href;
+                              const redirectUrl = externalAccount.verification.externalVerificationRedirectURL.href;
+                              if (!redirectToTrustedUrl(redirectUrl)) {
+                                setLinkedAccountsError('Redirection refusee pour des raisons de securite.');
+                                setLinkedAccountsLoading(null);
+                                return;
+                              }
                             }
                           } catch (err) {
                             setLinkedAccountsError(getSafeErrorMessage(err));

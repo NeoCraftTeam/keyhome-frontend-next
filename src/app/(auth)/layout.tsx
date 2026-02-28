@@ -1,20 +1,59 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Box, CircularProgress } from '@mui/material';
+import SplashTransition from '@/components/ui/SplashTransition';
 import { useAuth } from '@/providers/AuthProvider';
+import { Box, CircularProgress } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+/** Minimum time (ms) the splash screen is visible — feels intentional, not like a flash. */
+const SPLASH_DURATION = 1400;
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.replace('/home');
-    }
-  }, [isAuthenticated, isLoading, router]);
+  /**
+   * showSplash controls the SplashTransition overlay.
+   * We always show it on first mount and let it complete its animation before
+   * revealing the auth content — even if the auth check finishes instantly.
+   */
+  const [showSplash, setShowSplash] = useState(true);
+  const mountedRef = useRef(false);
 
+  // Redirect authenticated users but only after the splash is done
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && !showSplash) {
+      // Restore the page the user was on before being bounced to /login (e.g. after token refresh)
+      const returnTo = sessionStorage.getItem('kh_redirect_after_login');
+      if (returnTo) {
+        sessionStorage.removeItem('kh_redirect_after_login');
+        router.replace(returnTo);
+      } else {
+        router.replace('/home');
+      }
+    }
+  }, [isAuthenticated, isLoading, showSplash, router]);
+
+  const handleSplashComplete = useCallback(() => {
+    setShowSplash(false);
+    mountedRef.current = true;
+  }, []);
+
+  // Show splash on every fresh mount (navigation from landing page)
+  if (showSplash) {
+    return (
+      <>
+        <SplashTransition duration={SPLASH_DURATION} onComplete={handleSplashComplete} />
+        {/* Keep auth subtree mounted in background so it boots during splash */}
+        <Box sx={{ visibility: 'hidden', position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          {children}
+        </Box>
+      </>
+    );
+  }
+
+  // Auth check still running after splash (edge case)
   if (isLoading) {
     return (
       <Box
@@ -38,8 +77,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <Box
       sx={{
         minHeight: '100vh',
-        display: 'flex',
-        bgcolor: 'background.default',
+        display:   'flex',
+        bgcolor:   'background.default',
+        animation: 'kh-auth-in 0.35s ease both',
+        '@keyframes kh-auth-in': {
+          '0%':   { opacity: 0, transform: 'translateY(6px)' },
+          '100%': { opacity: 1, transform: 'translateY(0)'   },
+        },
       }}
     >
       {children}

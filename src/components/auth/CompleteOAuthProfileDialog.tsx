@@ -2,6 +2,7 @@
 
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
+import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { User } from '@/types';
 import {
   Autocomplete,
@@ -75,7 +76,9 @@ export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }
 
       // Agent / Admin → redirect to their Filament panel
       if (panel_sso_url) {
-        window.location.href = panel_sso_url;
+        if (!redirectToTrustedUrl(panel_sso_url)) {
+          setError('Redirection refusee pour des raisons de securite.');
+        }
         return;
       }
 

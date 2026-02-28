@@ -1,18 +1,19 @@
 'use client';
 
 import { registerTokenGetter } from '@/lib/auth-token';
+import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
-import { useAuth as useClerkAuth, useClerk, useSignIn, useUser } from '@clerk/nextjs';
+import { useClerk, useAuth as useClerkAuth, useSignIn, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from 'react';
 
 /** localStorage key for persisting the Sanctum token between page refreshes */
@@ -133,7 +134,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
 
           if (panel_sso_url) {
-            window.location.href = panel_sso_url;
+            if (!redirectToTrustedUrl(panel_sso_url)) {
+              clearSanctumToken();
+              setUserState(null);
+              router.replace('/login');
+            }
             return;
           }
 
@@ -164,7 +169,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const finalizeAuth = useCallback(
     (sanctumToken: string, laravelUser: User, panelSsoUrl: string | null) => {
       if (panelSsoUrl) {
-        window.location.href = panelSsoUrl;
+        if (!redirectToTrustedUrl(panelSsoUrl)) {
+          clearSanctumToken();
+          setUserState(null);
+          router.replace('/login');
+        }
         return;
       }
 
@@ -172,9 +181,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserState(laravelUser);
       sessionStorage.removeItem('clerk_auth_email_hint');
       sessionStorage.removeItem('clerk_auth_prefill');
-      router.replace('/home');
+
+      // Restore the page the user was on before being bounced to /login
+      const returnTo = sessionStorage.getItem('kh_redirect_after_login');
+      if (returnTo) {
+        sessionStorage.removeItem('kh_redirect_after_login');
+        router.replace(returnTo);
+      } else {
+        router.replace('/home');
+      }
     },
-    [activateSanctumToken, router]
+    [activateSanctumToken, clearSanctumToken, router]
   );
 
   const login = useCallback(
@@ -187,7 +204,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       activateSanctumToken(sanctumToken);
       setUserState(laravelUser);
-      router.replace('/home');
+
+      // Restore the page the user was on before being bounced to /login
+      const returnTo = sessionStorage.getItem('kh_redirect_after_login');
+      if (returnTo) {
+        sessionStorage.removeItem('kh_redirect_after_login');
+        router.replace(returnTo);
+      } else {
+        router.replace('/home');
+      }
     },
     [activateSanctumToken, router]
   );
