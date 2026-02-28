@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
 // Build CSP connect-src from environment — no hardcoded dev origins
@@ -28,7 +29,7 @@ const cspHeader = [
   `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com blob:`,
   `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://clerk.neocraft.dev`,
   `worker-src blob:`,
-  `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test https://img.clerk.com ${apiOrigin}`,
+  `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test https://img.clerk.com ${apiOrigin}`,
   `connect-src ${connectSources}`,
   `font-src 'self' https://fonts.gstatic.com https://ray.st https://clerk.neocraft.dev`,
   `frame-src https://*.clerk.accounts.dev https://clerk.neocraft.dev https://*.clerk.com https://challenges.cloudflare.com`,
@@ -41,7 +42,14 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ['image/avif', 'image/webp'],
+    // In dev, keyhome.test resolves to 127.0.0.1 which next/image blocks.
+    // Skip optimization locally; production uses real domains and works fine.
+    unoptimized: process.env.NODE_ENV === 'development',
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.keyhome.app',
+      },
       {
         protocol: 'https',
         hostname: '**.keyhome.cm',
@@ -125,4 +133,17 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Only upload source maps when SENTRY_AUTH_TOKEN is set (CI/CD)
+  silent: !process.env.SENTRY_AUTH_TOKEN,
+
+  // Disable source map uploads unless auth token is present
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+
+  // Tree-shake debug code in production
+  disableLogger: true,
+});
+
+
