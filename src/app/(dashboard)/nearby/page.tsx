@@ -7,22 +7,22 @@ import { escapeHtml } from '@/lib/sanitize';
 import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
 import {
-    Close as CloseIcon,
-    List as ListIcon,
-    MyLocation as MyLocationIcon,
+  Close as CloseIcon,
+  List as ListIcon,
+  MyLocation as MyLocationIcon,
 } from '@mui/icons-material';
 import {
-    Box,
-    Chip,
-    CircularProgress,
-    Divider,
-    Drawer,
-    IconButton,
-    Paper,
-    Slider,
-    Typography,
-    useMediaQuery,
-    useTheme,
+  Box,
+  Chip,
+  CircularProgress,
+  Divider,
+  Drawer,
+  IconButton,
+  Paper,
+  Slider,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import mapboxgl from 'mapbox-gl';
@@ -204,14 +204,27 @@ export default function NearbyPage() {
             top: 16,
             left: 16,
             right: isMobile ? 16 : 'auto',
-            p: 2,
+            p: { xs: 1.5, md: 2 },
             borderRadius: 3,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            boxShadow: (theme) =>
+              theme.palette.mode === 'dark'
+                ? '0 4px 16px rgba(0,0,0,0.4)'
+                : '0 4px 12px rgba(0,0,0,0.1)',
             width: isMobile ? 'auto' : 280,
-            bgcolor: 'rgba(255,255,255,0.95)',
+            bgcolor: (theme) =>
+              theme.palette.mode === 'dark'
+                ? 'rgba(30, 30, 30, 0.95)'
+                : 'rgba(255, 255, 255, 0.95)',
             backdropFilter: 'blur(10px)',
-            maxHeight: isMobile ? '50vh' : 'calc(100vh - 120px)',
+            maxHeight: isMobile ? '40vh' : 'calc(100vh - 120px)',
             overflowY: 'auto',
+            overflowX: 'hidden',
+            // Mobile: compact scrollable panel
+            '&::-webkit-scrollbar': { width: 4 },
+            '&::-webkit-scrollbar-thumb': {
+              bgcolor: 'divider',
+              borderRadius: 2,
+            },
           }}
         >
           {/* Radius slider */}
@@ -232,7 +245,7 @@ export default function NearbyPage() {
 
           {/* Type filter chips */}
           <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Type de bien</Typography>
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1.5, overflow: 'hidden' }}>
             {typeFilters.map((t) => (
               <Chip
                 key={t.value}
@@ -240,11 +253,13 @@ export default function NearbyPage() {
                 size="small"
                 onClick={() => setSelectedType(t.value)}
                 variant={selectedType === t.value ? 'filled' : 'outlined'}
-                sx={
-                  selectedType === t.value
-                    ? { bgcolor: 'secondary.main', color: '#fff', fontWeight: 600 }
-                    : { fontWeight: 500 }
-                }
+                sx={{
+                  fontSize: '0.72rem',
+                  height: 26,
+                  ...(selectedType === t.value
+                    ? { bgcolor: '#F6475F', color: '#fff', fontWeight: 600 }
+                    : { fontWeight: 500 }),
+                }}
               />
             ))}
           </Box>
@@ -269,7 +284,15 @@ export default function NearbyPage() {
 
           {/* Relocate + counts */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-            <IconButton onClick={relocate} size="small" sx={{ bgcolor: '#fff', border: '1px solid', borderColor: 'divider' }}>
+            <IconButton
+              onClick={relocate}
+              size="small"
+              sx={{
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
               <MyLocationIcon sx={{ fontSize: 18 }} />
             </IconButton>
             <Typography variant="caption" color="text.secondary">

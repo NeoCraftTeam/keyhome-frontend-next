@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef } from 'react';
-import { Box, Chip, IconButton } from '@mui/material';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
+import { Box, Chip, IconButton } from '@mui/material';
+import { useRef } from 'react';
 
 interface CategoryPillsProps {
   categories: { label: string; value: string; icon?: React.ReactNode }[];
@@ -69,14 +69,14 @@ export default function CategoryPills({ categories, selected, onChange }: Catego
               px: 1,
               ...(selected === cat.value
                 ? {
-                    bgcolor: 'secondary.main',
-                    color: 'secondary.contrastText',
-                    borderColor: 'secondary.main',
-                    '&:hover': { bgcolor: 'secondary.dark' },
+                    bgcolor: '#F6475F',
+                    color: '#fff',
+                    borderColor: '#F6475F',
+                    '&:hover': { bgcolor: '#D93A50' },
                   }
                 : {
                     borderColor: 'divider',
-                    '&:hover': { bgcolor: 'grey.50', borderColor: 'text.secondary' },
+                    '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' },
                   }),
             }}
           />
