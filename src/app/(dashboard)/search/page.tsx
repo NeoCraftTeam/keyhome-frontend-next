@@ -2,6 +2,7 @@
 
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
+import EmptyState from '@/components/ui/EmptyState';
 import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
 import { escapeHtml } from '@/lib/sanitize';
 import { adsService } from '@/services/ads.service';
@@ -483,11 +484,13 @@ function SearchContent() {
             </Grid>
 
             {!isLoading && ads.length === 0 && (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <SearchIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary">Aucun résultat</Typography>
-                <Typography variant="body2" color="text.secondary">Essayez de modifier vos critères de recherche</Typography>
-              </Box>
+              <EmptyState
+                Icon={SearchIcon}
+                title="Aucun résultat trouvé"
+                description="Aucune annonce ne correspond à vos critères. Essayez de réduire le nombre de filtres ou d'élargir votre zone de recherche."
+                actionLabel="Effacer les filtres"
+                onAction={clearFilters}
+              />
             )}
 
             {totalPages > 1 && (

@@ -332,3 +332,105 @@ img {
     gap: 10px;
   }
 }
+
+/* ===================================================
+   MANUS UX IMPROVEMENTS — feature/manus
+=================================================== */
+
+/* ---- Improved focus ring for accessibility ---- */
+:focus-visible {
+  outline: 2px solid #F6475F;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ---- Selection color ---- */
+::selection {
+  background: rgba(246, 71, 95, 0.18);
+  color: inherit;
+}
+
+/* ---- Hero search bar — wider on large screens ---- */
+.hero-search-bar {
+  max-width: 640px;
+}
+
+/* ---- Smooth card hover lift ---- */
+.ad-card-hover {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+}
+.ad-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.10);
+}
+
+/* ---- Skeleton dark mode ---- */
+@media (prefers-color-scheme: dark) {
+  .skeleton-shimmer {
+    background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+}
+
+/* ---- Dot indicator pill animation ---- */
+@keyframes dotExpand {
+  from { width: 6px; }
+  to   { width: 16px; }
+}
+
+/* ---- Favorite heart pop ---- */
+@keyframes heartPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.4); }
+  70%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+/* ---- Page-level fade-in ---- */
+.page-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ---- Gradient text utility ---- */
+.gradient-text {
+  background: linear-gradient(135deg, #F6475F 20%, #FF8C94 80%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ---- Glassmorphism card ---- */
+.glass-card {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16px;
+}
+
+/* ---- Improved scrollbar for dark mode ---- */
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-thumb {
+    background: #444;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #666;
+  }
+}
+
+/* ---- Trust badge row ---- */
+.trust-badges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+/* ---- Responsive: hide trust badges on very small screens ---- */
+@media (max-width: 399px) {
+  .trust-badges {
+    gap: 14px;
+  }
+}

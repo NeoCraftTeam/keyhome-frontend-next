@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowForward, PhoneIphoneOutlined } from '@mui/icons-material';
+import { ArrowForward, PhoneIphoneOutlined, Search } from '@mui/icons-material';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
 
@@ -24,12 +24,12 @@ export default function CTASection() {
           top: '50%',
           left: '20%',
           transform: 'translate(-50%, -55%)',
-          width: 400,
-          height: 400,
+          width: 500,
+          height: 500,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(246,71,95,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(246,71,95,0.16) 0%, transparent 70%)',
           pointerEvents: 'none',
-          filter: 'blur(40px)',
+          filter: 'blur(50px)',
         }}
       />
       <div
@@ -38,12 +38,12 @@ export default function CTASection() {
           top: '50%',
           right: '10%',
           transform: 'translate(50%, -45%)',
-          width: 300,
-          height: 300,
+          width: 350,
+          height: 350,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)',
           pointerEvents: 'none',
-          filter: 'blur(40px)',
+          filter: 'blur(50px)',
         }}
       />
 
@@ -104,13 +104,15 @@ export default function CTASection() {
               lineHeight: 1.65,
               maxWidth: 520,
               margin: '0 auto 48px',
+              transition: 'color 0.4s ease',
             }}
           >
             Rejoignez des milliers d&apos;utilisateurs qui font confiance à KeyHome pour leurs projets immobiliers à travers l&apos;Afrique.
           </p>
 
           <div className="cta-buttons" style={{ marginBottom: 0 }}>
-            <PageTransitionLink href="/register" style={{ textDecoration: 'none' }}>
+            {/* Primary CTA: explore first, register later */}
+            <PageTransitionLink href="/search" style={{ textDecoration: 'none' }}>
               <motion.button
                 whileHover={{ scale: 1.03, boxShadow: '0 8px 40px rgba(246,71,95,0.6)' }}
                 whileTap={{ scale: 0.97 }}
@@ -130,12 +132,13 @@ export default function CTASection() {
                   letterSpacing: '-0.3px',
                 }}
               >
-                Commencer gratuitement
-                <ArrowForward style={{ fontSize: 20 }} />
+                <Search style={{ fontSize: 20 }} />
+                Explorer les annonces
               </motion.button>
             </PageTransitionLink>
 
-            <PageTransitionLink href="/login" style={{ textDecoration: 'none' }}>
+            {/* Secondary CTA: create account */}
+            <PageTransitionLink href="/register" style={{ textDecoration: 'none' }}>
               <motion.button
                 whileHover={{ scale: 1.03, background: surfaceHover }}
                 whileTap={{ scale: 0.97 }}
@@ -152,9 +155,11 @@ export default function CTASection() {
                   border: `1px solid ${border}`,
                   cursor: 'pointer',
                   letterSpacing: '-0.3px',
+                  transition: 'background 0.2s',
                 }}
               >
-                J&apos;ai déjà un compte
+                Créer un compte gratuit
+                <ArrowForward style={{ fontSize: 18 }} />
               </motion.button>
             </PageTransitionLink>
           </div>
@@ -178,6 +183,7 @@ export default function CTASection() {
                   gap: 6,
                   fontSize: 13,
                   color: textMuted,
+                  transition: 'color 0.4s ease',
                 }}
               >
                 <span style={{ color: '#10B981', fontSize: 16 }}>✓</span>
