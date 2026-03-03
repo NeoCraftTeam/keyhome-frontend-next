@@ -1,11 +1,24 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
 /**
- * Clerk middleware — runs on every request but does NOT enforce Clerk sessions.
- * Route protection is handled client-side in (dashboard)/layout.tsx via useAuth(),
- * which supports both email/password users (Laravel Sanctum token) and OAuth users (Clerk).
+ * Clerk proxy — runs on every request.
+ *
+ * SEO-critical: redirects authenticated users away from the landing page
+ * at the edge so the landing page always SSR-renders for Googlebot.
+ *
+ * Route protection for dashboard pages is handled client-side in
+ * (dashboard)/layout.tsx via useAuth(), which supports both
+ * email/password users (Laravel Sanctum) and OAuth users (Clerk).
  */
-export default clerkMiddleware();
+export default clerkMiddleware(async (auth, req) => {
+  const { userId } = await auth();
+
+  // Authenticated users on the landing page → redirect to dashboard
+  if (userId && req.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/home', req.url));
+  }
+});
 
 export const config = {
   matcher: [

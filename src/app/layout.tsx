@@ -6,6 +6,7 @@ import { Providers } from './providers';
 import { ClerkProvider } from '@clerk/nextjs';
 import { frFR } from '@clerk/localizations';
 import JsonLd from '@/components/seo/JsonLd';
+import { WebVitals } from '@/components/seo/WebVitals';
 import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({
@@ -17,13 +18,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL('https://keyhome.app'),
   title: {
-    default: 'KeyHome — Immobilier en Afrique : Location, Vente, Terrain sans arnaque',
+    default: 'KeyHome — Immobilier en Afrique : Location, Vente, Terrains',
     template: '%s | KeyHome',
   },
   description:
-    "Fini les arnaques et les intermédiaires. KeyHome est la plateforme immobilière #1 en Afrique avec des annonces vérifiées manuellement. " +
-    "Trouvez votre maison, appartement, terrain ou villa à Douala, Abidjan, Cotonou, Lomé et dans toute l'Afrique. " +
-    "Inscription gratuite, paiement sécurisé par Mobile Money, contact direct avec les propriétaires.",
+    "KeyHome : annonces immobilières vérifiées en Afrique. Maisons, appartements, terrains à Douala, Abidjan, Cotonou, Lomé. Inscription gratuite, zéro arnaque.",
   keywords: [
     'immobilier Afrique',
     'location appartement',
@@ -67,7 +66,7 @@ export const metadata: Metadata = {
     locale: 'fr_FR',
     url: 'https://keyhome.app',
     siteName: 'KeyHome',
-    title: 'KeyHome — Trouvez votre logement en Afrique sans arnaque',
+    title: 'KeyHome — Trouvez votre logement en Afrique',
     description:
       "Des milliers d'annonces immobilières vérifiées. Maisons, appartements, terrains et villas à travers l'Afrique. " +
       "Inscription gratuite, paiement sécurisé Mobile Money, contact direct avec les propriétaires. Zéro intermédiaire.",
@@ -83,7 +82,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KeyHome — Immobilier en Afrique sans arnaque',
+    title: 'KeyHome — Immobilier en Afrique',
     description:
       "Trouvez votre logement idéal parmi des milliers d'annonces vérifiées. Inscription gratuite, paiement sécurisé, contact direct propriétaire.",
     images: ['/images/og-cover.png'],
@@ -121,11 +120,16 @@ export default function RootLayout({
     >
       <html lang="fr" suppressHydrationWarning>
         <head>
+          <link rel="preconnect" href="https://api.mapbox.com" />
+          <link rel="preconnect" href="https://clerk.keyhome.app" />
+          <link rel="dns-prefetch" href="https://api.mapbox.com" />
+          <link rel="dns-prefetch" href="https://clerk.keyhome.app" />
           <JsonLd />
         </head>
         <body className={`${inter.variable} antialiased`}>
           <Providers>{children}
             <Analytics />
+            <WebVitals />
           </Providers>
         </body>
       </html>

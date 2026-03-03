@@ -21,6 +21,7 @@ export enum AdStatus {
   RENT = 'rent',
   PENDING = 'pending',
   SOLD = 'sold',
+  DECLINED = 'declined',
 }
 
 export enum PropertyAttribute {
@@ -84,6 +85,7 @@ export interface User {
   updated_at?: string | null;
   city_id: string | null;
   city_name: string | null;
+  point_balance?: number;
 }
 
 export interface City {
@@ -131,6 +133,7 @@ export interface Ad {
   has_parking: boolean;
   location: GeoLocation | null;
   status: AdStatus;
+  status_label?: string;
   is_unlocked?: boolean;
   total_images?: number;
   is_favorited?: boolean;
@@ -220,6 +223,45 @@ export interface AuthResponse {
   expires_at: string;
 }
 
+export interface PointPackage {
+  id: string;
+  name: string;
+  description: string | null;
+  badge: string | null;
+  price: number;
+  price_formatted: string;
+  points_awarded: number;
+  features: string[];
+  is_popular: boolean;
+  sort_order: number;
+}
+
+/** Returned by POST /payments/initialize/:adId */
+export interface UnlockResponse {
+  status: 'unlocked' | 'insufficient_points' | 'owner' | 'already_unlocked';
+  message?: string;
+  points_used?: number;
+  points_balance?: number;
+  /** Returned when status === 'insufficient_points' */
+  packages?: PointPackage[];
+  required_points?: number;
+  current_balance?: number;
+}
+
+/** Returned by POST /credits/purchase/:packageId */
+export interface CreditPurchaseResponse {
+  payment_url: string;
+  message: string;
+}
+
+/** Returned by POST /credits/verify-purchase */
+export interface CreditVerifyResponse {
+  status: 'completed' | 'pending' | 'failed' | 'not_found';
+  message: string;
+  point_balance: number;
+}
+
+/** @deprecated — kept for backwards compatibility */
 export interface PaymentInitResponse {
   payment_url: string;
   transaction_id: string;

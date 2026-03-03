@@ -19,6 +19,10 @@ const connectSources = [
   'https://clerk.shared.global',
   'https://clerk-telemetry.com',
   'https://challenges.cloudflare.com',
+  // Google Analytics 4
+  'https://www.google-analytics.com',
+  'https://analytics.google.com',
+  'https://*.googletagmanager.com',
   apiOrigin,
 ].filter(Boolean).join(' ');
 
@@ -26,7 +30,7 @@ const isDev = process.env.NODE_ENV === 'development';
 
 const cspHeader = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com blob:`,
+  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com blob:`,
   `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://clerk.neocraft.dev`,
   `worker-src blob:`,
   `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test https://img.clerk.com ${apiOrigin}`,
