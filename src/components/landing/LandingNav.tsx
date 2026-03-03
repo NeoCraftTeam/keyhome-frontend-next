@@ -111,18 +111,18 @@ export default function LandingNav() {
             </motion.button>
 
             <PageTransitionLink
-              href="/login"
+              href="/home"
               style={{ color: textNav, textDecoration: 'none', fontSize: 15, fontWeight: 500, padding: '8px 18px', borderRadius: 10, border: `1px solid ${border}`, display: 'inline-block', transition: 'color 0.35s, border-color 0.35s' }}
             >
-              Connexion
+              Visiter
             </PageTransitionLink>
 
-            <PageTransitionLink
-              href="/register"
+            <a
+              href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'}
               style={{ color: '#fff', textDecoration: 'none', fontSize: 15, fontWeight: 600, padding: '8px 20px', borderRadius: 10, background: 'linear-gradient(135deg, #F6475F, #D93A50)', boxShadow: '0 4px 20px rgba(246,71,95,0.35)', display: 'inline-block' }}
             >
-              S&apos;inscrire gratuitement
-            </PageTransitionLink>
+              Annoncer
+            </a>
           </div>
 
           {/* Mobile right side: toggle + hamburger */}
@@ -235,7 +235,7 @@ export default function LandingNav() {
               style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
             >
               <PageTransitionLink
-                href="/login"
+                href="/home"
                 onClick={() => setMenuOpen(false)}
                 style={{
                   color: textNav, textDecoration: 'none', fontSize: 16, fontWeight: 600,
@@ -243,10 +243,10 @@ export default function LandingNav() {
                   display: 'block', textAlign: 'center', transition: 'color 0.2s',
                 }}
               >
-                Connexion
+                Visiter
               </PageTransitionLink>
-              <PageTransitionLink
-                href="/register"
+              <a
+                href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'}
                 onClick={() => setMenuOpen(false)}
                 style={{
                   color: '#fff', textDecoration: 'none', fontSize: 16, fontWeight: 700,
@@ -256,8 +256,8 @@ export default function LandingNav() {
                   display: 'block', textAlign: 'center',
                 }}
               >
-                S&apos;inscrire gratuitement
-              </PageTransitionLink>
+                Annoncer
+              </a>
             </motion.div>
           </motion.div>
         )}

@@ -1,10 +1,14 @@
 'use client';
 
+import api from '@/lib/api';
+import { citiesService } from '@/services/cities.service';
+import type { City } from '@/types';
 import { LocationOn, Search } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
 
 const ThreeCanvas = dynamic(() => import('./ThreeCanvas'), {
@@ -30,11 +34,110 @@ const CITIES = ['Douala', 'Garoua', 'Accra', 'Cotonou', 'Lomé', 'Bafoussam'];
 
 export default function HeroSection() {
   const { isDark, text, textSub, textMuted, bg, surface, border } = useLandingTheme();
+  const router = useRouter();
 
   // Skip heavy Three.js canvas on mobile for better LCP / performance
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     setIsMobile(window.innerWidth < 768);
+  }, []);
+
+  // City autocomplete state
+  const [query, setQuery] = useState('');
+  const [cities, setCities] = useState<City[]>([]);
+  const [highlightIdx, setHighlightIdx] = useState(-1);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Dynamic stats
+  const [stats, setStats] = useState([
+    { value: '2 000+', label: 'Annonces actives' },
+    { value: '10+', label: 'Villes couvertes' },
+    { value: '5 000+', label: 'Utilisateurs' },
+  ]);
+
+  useEffect(() => {
+    const fmt = (n: number): string => {
+      if (n >= 1000) {
+        return new Intl.NumberFormat('fr-FR').format(n) + '+';
+      }
+      return n + '+';
+    };
+    api.get('/stats/landing')
+      .then(({ data }) => {
+        setStats([
+          { value: fmt(data.ads_count ?? 0), label: 'Annonces actives' },
+          { value: fmt(data.cities_count ?? 0), label: 'Villes couvertes' },
+          { value: fmt(data.users_count ?? 0), label: 'Utilisateurs' },
+        ]);
+      })
+      .catch(() => { /* keep fallback values */ });
+  }, []);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchCities = useCallback(async (q: string) => {
+    if (q.length < 1) { setCities([]); return; }
+    setIsLoading(true);
+    try {
+      const res = await citiesService.list({ q, per_page: 8 });
+      setCities(res.data || []);
+    } catch { setCities([]); }
+    finally { setIsLoading(false); }
+  }, []);
+
+  const handleInputChange = (val: string) => {
+    setQuery(val);
+    setHighlightIdx(-1);
+    setShowDropdown(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchCities(val), 250);
+  };
+
+  const navigateToSearch = (cityName?: string) => {
+    const target = cityName || query.trim();
+    if (target) {
+      router.push(`/search?city=${encodeURIComponent(target)}`);
+    } else {
+      router.push('/search');
+    }
+  };
+
+  const handleSelect = (city: City) => {
+    setQuery(city.name);
+    setShowDropdown(false);
+    navigateToSearch(city.name);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightIdx((p) => Math.min(p + 1, cities.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightIdx((p) => Math.max(p - 1, -1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (highlightIdx >= 0 && cities[highlightIdx]) {
+        handleSelect(cities[highlightIdx]);
+      } else {
+        navigateToSearch();
+      }
+    } else if (e.key === 'Escape') {
+      setShowDropdown(false);
+    }
+  };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) && e.target !== inputRef.current) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const heroBg = isDark
@@ -149,12 +252,9 @@ export default function HeroSection() {
             Des milliers d&apos;annonces immobilières vérifiées à travers l&apos;Afrique. Maisons, appartements, terrains et villas — accédez aux coordonnées en toute sécurité.
           </motion.p>
 
-          {/* CTA bar */}
+          {/* CTA bar — real city autocomplete */}
           <motion.div variants={itemVariants}>
-            <Link
-              href="/register"
-              style={{ textDecoration: 'none' }}
-            >
+            <div style={{ position: 'relative', maxWidth: 560, margin: '0 auto' }}>
               <div
                 className="hero-search-bar"
                 style={{
@@ -162,27 +262,38 @@ export default function HeroSection() {
                   alignItems: 'center',
                   gap: 0,
                   background: surface,
-                  border: `1px solid ${border}`,
-                  borderRadius: 16,
+                  border: `1px solid ${showDropdown && cities.length > 0 ? 'rgba(246,71,95,0.4)' : border}`,
+                  borderRadius: showDropdown && cities.length > 0 ? '16px 16px 0 0' : 16,
                   padding: '6px 6px 6px 20px',
-                  cursor: 'pointer',
-                  transition: 'border-color 0.2s, background 0.2s',
+                  transition: 'border-color 0.2s, background 0.2s, border-radius 0.2s',
                   backdropFilter: 'blur(10px)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(246,71,95,0.4)';
-                  (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = border;
-                  (e.currentTarget as HTMLElement).style.background = surface;
                 }}
               >
                 <Search style={{ color: textMuted, fontSize: 22, flexShrink: 0 }} />
-                <span style={{ flex: 1, padding: '0 12px', color: textMuted, fontSize: 15, transition: 'color 0.4s ease' }}>
-                  Inscrivez-vous pour rechercher...
-                </span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onFocus={() => { if (cities.length > 0 || query.length >= 1) setShowDropdown(true); }}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Rechercher une ville, un quartier..."
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    color: text,
+                    fontSize: 15,
+                    fontFamily: 'inherit',
+                  }}
+                />
+                {isLoading && (
+                  <div style={{ width: 18, height: 18, marginRight: 8, border: '2px solid rgba(246,71,95,0.3)', borderTopColor: '#F6475F', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                )}
                 <button
+                  onClick={() => navigateToSearch()}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -199,10 +310,53 @@ export default function HeroSection() {
                     boxShadow: '0 4px 16px rgba(246,71,95,0.4)',
                   }}
                 >
-                  Commencer
+                  Rechercher
                 </button>
               </div>
-            </Link>
+
+              {/* Autocomplete dropdown */}
+              {showDropdown && cities.length > 0 && (
+                <div
+                  ref={dropdownRef}
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: surface,
+                    border: `1px solid ${border}`,
+                    borderTop: 'none',
+                    borderRadius: '0 0 16px 16px',
+                    overflow: 'hidden',
+                    zIndex: 50,
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 12px 32px rgba(0,0,0,0.12)',
+                  }}
+                >
+                  {cities.map((city, idx) => (
+                    <div
+                      key={city.id}
+                      onClick={() => handleSelect(city)}
+                      onMouseEnter={() => setHighlightIdx(idx)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '12px 20px',
+                        cursor: 'pointer',
+                        transition: 'background 0.15s',
+                        background: highlightIdx === idx ? (isDark ? 'rgba(246,71,95,0.12)' : 'rgba(246,71,95,0.06)') : 'transparent',
+                      }}
+                    >
+                      <LocationOn style={{ fontSize: 16, color: highlightIdx === idx ? '#F6475F' : textMuted, transition: 'color 0.15s' }} />
+                      <span style={{ fontSize: 14, fontWeight: highlightIdx === idx ? 600 : 400, color: highlightIdx === idx ? '#F6475F' : text, transition: 'color 0.15s' }}>
+                        {city.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* City chips */}
             <div className="hero-chips">
@@ -248,11 +402,7 @@ export default function HeroSection() {
             className="hero-stats"
             style={{ marginTop: 56 }}
           >
-            {[
-              { value: '2 000+', label: 'Annonces actives' },
-              { value: '10+', label: 'Pays couverts' },
-              { value: '5 000+', label: 'Utilisateurs' },
-            ].map((stat) => (
+            {stats.map((stat) => (
               <div key={stat.label} style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 28, fontWeight: 800, color: text, letterSpacing: '-1px', transition: 'color 0.4s ease' }}>{stat.value}</div>
                 <div style={{ fontSize: 13, color: textMuted, marginTop: 2, transition: 'color 0.4s ease' }}>{stat.label}</div>

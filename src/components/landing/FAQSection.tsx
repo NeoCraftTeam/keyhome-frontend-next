@@ -1,0 +1,196 @@
+'use client';
+
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Add, Remove } from '@mui/icons-material';
+import { useLandingTheme } from './LandingThemeContext';
+
+const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+
+const faqs = [
+  {
+    question: 'KeyHome est-il gratuit ?',
+    answer:
+      "L'inscription et la navigation sur KeyHome sont entièrement gratuites. Vous pouvez explorer toutes les annonces, utiliser les filtres et la carte interactive sans rien payer. Seul le déverrouillage des coordonnées d'un annonceur nécessite des crédits.",
+  },
+  {
+    question: 'Comment fonctionne le système de crédits ?',
+    answer:
+      "Vous achetez un pack de crédits via Mobile Money (MTN, Orange, Moov, Wave…) ou carte bancaire. Chaque déverrouillage d'annonce coûte un nombre fixe de crédits. Une fois déverrouillée, l'annonce reste accessible indéfiniment — vous ne payez qu'une seule fois.",
+  },
+  {
+    question: 'Les annonces sont-elles vérifiées ?',
+    answer:
+      "Oui. Chaque annonce passe par un processus de modération avant publication. Nous vérifions les photos, la description et l'identité de l'annonceur. Les profils vérifiés sont identifiés par un badge ✓.",
+  },
+  {
+    question: 'Dans quelles villes KeyHome est-il disponible ?',
+    answer:
+      "KeyHome couvre les principales villes d'Afrique de l'Ouest et Centrale : Douala, Yaoundé, Abidjan, Cotonou, Lomé, Accra, Bamako et bien d'autres. Nous nous étendons continuellement à de nouvelles villes.",
+  },
+  {
+    question: 'Comment publier une annonce en tant que propriétaire ?',
+    answer:
+      "Rendez-vous sur le panneau propriétaire ou agence, créez votre compte gratuitement, puis publiez votre annonce en quelques minutes : photos, description, prix, localisation. Votre annonce sera visible après validation.",
+  },
+  {
+    question: 'Puis-je contacter directement le propriétaire ?',
+    answer:
+      "Absolument. Une fois l'annonce déverrouillée, vous accédez au numéro de téléphone, WhatsApp et email du propriétaire. Le contact est direct — aucun intermédiaire, aucune commission.",
+  },
+];
+
+export default function FAQSection() {
+  const { text, textSub, textMuted, surface, border, bgAlt } = useLandingTheme();
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const toggle = (idx: number) => {
+    setOpenIndex(openIndex === idx ? null : idx);
+  };
+
+  return (
+    <section
+      id="faq"
+      className="landing-section-pad"
+      style={{ background: bgAlt, transition: 'background 0.4s ease' }}
+    >
+      <div style={{ maxWidth: 780, margin: '0 auto' }}>
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.7, ease: EASE }}
+          style={{ textAlign: 'center', marginBottom: 56 }}
+        >
+          <span
+            style={{
+              display: 'inline-block',
+              padding: '5px 14px',
+              borderRadius: 100,
+              background: 'rgba(246,71,95,0.1)',
+              border: '1px solid rgba(246,71,95,0.2)',
+              color: '#F6475F',
+              fontSize: 13,
+              fontWeight: 600,
+              marginBottom: 20,
+            }}
+          >
+            Questions fréquentes
+          </span>
+          <h2
+            style={{
+              fontSize: 'clamp(28px, 4.5vw, 44px)',
+              fontWeight: 800,
+              color: text,
+              letterSpacing: '-1.2px',
+              margin: '0 0 16px',
+              transition: 'color 0.4s ease',
+            }}
+          >
+            Tout ce que vous devez savoir
+          </h2>
+          <p style={{ fontSize: 17, color: textSub, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
+            Vous avez des questions ? Vous trouverez probablement la réponse ici.
+          </p>
+        </motion.div>
+
+        {/* Accordion */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {faqs.map((faq, idx) => {
+            const isOpen = openIndex === idx;
+            return (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-20px' }}
+                transition={{ duration: 0.5, delay: idx * 0.05, ease: EASE }}
+              >
+                <div
+                  style={{
+                    borderRadius: 16,
+                    background: surface,
+                    border: `1px solid ${isOpen ? 'rgba(246,71,95,0.3)' : border}`,
+                    overflow: 'hidden',
+                    transition: 'border-color 0.3s ease',
+                  }}
+                >
+                  <button
+                    onClick={() => toggle(idx)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '20px 24px',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      gap: 16,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 600,
+                        color: isOpen ? '#F6475F' : text,
+                        transition: 'color 0.3s ease',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {faq.question}
+                    </span>
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        background: isOpen ? 'rgba(246,71,95,0.1)' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'background 0.3s ease',
+                      }}
+                    >
+                      {isOpen ? (
+                        <Remove style={{ fontSize: 20, color: '#F6475F' }} />
+                      ) : (
+                        <Add style={{ fontSize: 20, color: textMuted }} />
+                      )}
+                    </span>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: EASE }}
+                        style={{ overflow: 'hidden' }}
+                      >
+                        <div
+                          style={{
+                            padding: '0 24px 20px',
+                            fontSize: 15,
+                            color: textMuted,
+                            lineHeight: 1.7,
+                          }}
+                        >
+                          {faq.answer}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}

@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { Dashboard, PeopleOutline, VerifiedUser, ArrowForward } from '@mui/icons-material';
 import { useLandingTheme } from './LandingThemeContext';
-import { PageTransitionLink } from './PageTransition';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
@@ -126,7 +125,7 @@ export default function LandlordSection() {
           transition={{ duration: 0.6, ease: EASE }}
           style={{ textAlign: 'center' }}
         >
-          <PageTransitionLink href="/register">
+          <a href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'} style={{ textDecoration: 'none' }}>
             <button
               style={{
                 display: 'inline-flex',
@@ -155,7 +154,7 @@ export default function LandlordSection() {
               Publier mon annonce
               <ArrowForward style={{ fontSize: 18 }} />
             </button>
-          </PageTransitionLink>
+          </a>
         </motion.div>
       </div>
     </section>

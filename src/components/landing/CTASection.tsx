@@ -110,7 +110,7 @@ export default function CTASection() {
           </p>
 
           <div className="cta-buttons" style={{ marginBottom: 0 }}>
-            <PageTransitionLink href="/register" style={{ textDecoration: 'none' }}>
+            <PageTransitionLink href="/home" style={{ textDecoration: 'none' }}>
               <motion.button
                 whileHover={{ scale: 1.03, boxShadow: '0 8px 40px rgba(246,71,95,0.6)' }}
                 whileTap={{ scale: 0.97 }}
@@ -130,12 +130,12 @@ export default function CTASection() {
                   letterSpacing: '-0.3px',
                 }}
               >
-                Commencer gratuitement
+                Voir les annonces
                 <ArrowForward style={{ fontSize: 20 }} />
               </motion.button>
             </PageTransitionLink>
 
-            <PageTransitionLink href="/login" style={{ textDecoration: 'none' }}>
+            <a href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'} style={{ textDecoration: 'none' }}>
               <motion.button
                 whileHover={{ scale: 1.03, background: surfaceHover }}
                 whileTap={{ scale: 0.97 }}
@@ -154,9 +154,9 @@ export default function CTASection() {
                   letterSpacing: '-0.3px',
                 }}
               >
-                J&apos;ai déjà un compte
+                Publier une annonce
               </motion.button>
-            </PageTransitionLink>
+            </a>
           </div>
 
           {/* Trust badges */}

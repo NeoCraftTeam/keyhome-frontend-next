@@ -10,6 +10,7 @@ import LandlordSection from '@/components/landing/LandlordSection';
 import LandingFooter from '@/components/landing/LandingFooter';
 import LandingNav from '@/components/landing/LandingNav';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
+import FAQSection from '@/components/landing/FAQSection';
 import { motion } from 'framer-motion';
 
 function LandingInner() {
@@ -27,6 +28,7 @@ function LandingInner() {
         <HowItWorksSection />
         <LandlordSection />
         <TestimonialsSection />
+        <FAQSection />
         <CTASection />
       </main>
       <LandingFooter />
