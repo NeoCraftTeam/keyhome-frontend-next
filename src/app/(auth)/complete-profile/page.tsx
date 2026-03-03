@@ -1,6 +1,7 @@
 'use client';
 
 import FadeIn from '@/components/ui/FadeIn';
+import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
@@ -20,7 +21,6 @@ import {
     Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -157,8 +157,8 @@ export default function CompleteProfilePage() {
         }}
       >
         <Image
-          src="/images/04Final.jpg"
-          alt="Complétez votre profil KeyHome"
+          src="/images/04Final.webp"
+          alt="Complétez votre profil KeyHome — plateforme immobilière en Afrique"
           fill
           priority
           sizes="50vw"
@@ -205,6 +205,7 @@ export default function CompleteProfilePage() {
           <IconButton
             onClick={() => router.back()}
             size="medium"
+            aria-label="Retour"
             sx={{
               bgcolor: 'rgba(0,0,0,0.05)',
               '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' },
@@ -252,14 +253,12 @@ export default function CompleteProfilePage() {
                   required
                   fullWidth
                   autoFocus
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <PhoneIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-                        </InputAdornment>
-                      ),
-                    },
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                      </InputAdornment>
+                    ),
                   }}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
@@ -283,16 +282,14 @@ export default function CompleteProfilePage() {
                     {...params}
                     label="Ville (optionnel)"
                     placeholder="Ex : Douala, Yaoundé…"
-                    slotProps={{
-                      input: {
-                        ...params.InputProps,
-                        endAdornment: (
-                          <>
-                            {isCitiesLoading ? <CircularProgress color="inherit" size={16} /> : null}
-                            {params.InputProps.endAdornment}
-                          </>
-                        ),
-                      },
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {isCitiesLoading ? <CircularProgress color="inherit" size={16} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
                     }}
                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                   />

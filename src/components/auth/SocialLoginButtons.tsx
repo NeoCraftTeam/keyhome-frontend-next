@@ -72,6 +72,7 @@ export default function SocialLoginButtons({
           return (
             <Tooltip key={provider} title={config.label} arrow>
               <IconButton
+                aria-label={config.label}
                 onClick={() => handleOAuthLogin(provider)}
                 disabled={disabled || !!loadingProvider}
                 sx={{

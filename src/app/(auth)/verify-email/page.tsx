@@ -44,6 +44,7 @@ export default function VerifyEmailPage() {
           href="/login"
           component={Link}
           size="medium"
+          aria-label="Retour à la connexion"
           sx={{
             bgcolor: 'rgba(0,0,0,0.05)',
             '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' },

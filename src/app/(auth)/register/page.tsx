@@ -2,41 +2,43 @@
 
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
+import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { City } from '@/types';
 import {
-    Business as BusinessIcon,
-    LocationCity as CityIcon,
-    Email as EmailIcon,
-    Lock as LockIcon,
-    Person as PersonIcon,
-    PersonOutline,
-    Phone as PhoneIcon,
-    Visibility,
-    VisibilityOff,
+  Business as BusinessIcon,
+  LocationCity as CityIcon,
+  Email as EmailIcon,
+  Lock as LockIcon,
+  Person as PersonIcon,
+  PersonOutline,
+  Phone as PhoneIcon,
+  Visibility,
+  VisibilityOff,
 } from '@mui/icons-material';
 import {
-    Alert,
-    Autocomplete,
-    Box,
-    Button,
-    CircularProgress,
-    IconButton,
-    InputAdornment,
-    LinearProgress,
-    Link,
-    Step,
-    StepLabel,
-    Stepper,
-    TextField,
-    ToggleButton,
-    ToggleButtonGroup,
-    Typography,
+  Alert,
+  Autocomplete,
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  IconButton,
+  InputAdornment,
+  LinearProgress,
+  Link,
+  Step,
+  StepLabel,
+  Stepper,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -68,6 +70,7 @@ export default function RegisterPage() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [accountRole, setAccountRole] = useState<AccountRole>('customer');
   const [agentType, setAgentType] = useState<AgentType>('individual');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const [form, setForm] = useState({
     firstname: '',
@@ -81,6 +84,8 @@ export default function RegisterPage() {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [cityInput, setCityInput] = useState('');
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const markTouched = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
 
   const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
     queryKey: ['register-cities', cityInput],
@@ -95,17 +100,20 @@ export default function RegisterPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const isPhoneValid = /^\+?[0-9]{10,15}$/.test(form.phone_number.replace(/[\s\-]/g, ''));
+
   const canProceedStep1 =
     form.firstname.trim().length >= 2 &&
     form.lastname.trim().length >= 2 &&
     form.email.includes('@') &&
-    form.phone_number.trim().length >= 10;
+    isPhoneValid;
 
   const passwordStrength = getPasswordStrength(form.password);
   const canSubmit =
     form.password.length >= 8 &&
     form.password === form.confirm_password &&
-    passwordStrength.score >= 50;
+    passwordStrength.score >= 50 &&
+    acceptedTerms;
 
   const handleSubmit = async () => {
     setError('');
@@ -161,7 +169,7 @@ export default function RegisterPage() {
       : ['Type de compte', 'Informations', 'Sécurité'];
 
   if (showWelcome) {
-    return <WelcomeOverlay firstName={form.firstname} />;
+    return <WelcomeOverlay firstName={form.firstname} onSkip={() => router.push('/verify-email')} />;
   }
 
   return (
@@ -372,12 +380,13 @@ export default function RegisterPage() {
                     label="Prénom"
                     value={form.firstname}
                     onChange={(e) => updateField('firstname', e.target.value)}
+                    onBlur={() => markTouched('firstname')}
                     required
                     autoFocus
-                    slotProps={{
-                      input: {
-                        startAdornment: <InputAdornment position="start"><PersonIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
-                      },
+                    error={touched.firstname && form.firstname.trim().length < 2}
+                    helperText={touched.firstname && form.firstname.trim().length < 2 ? 'Le prénom doit contenir au moins 2 caractères' : ''}
+                    InputProps={{
+                      startAdornment: <InputAdornment position="start"><PersonIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
                     }}
                   />
                   <TextField
@@ -385,7 +394,10 @@ export default function RegisterPage() {
                     label="Nom"
                     value={form.lastname}
                     onChange={(e) => updateField('lastname', e.target.value)}
+                    onBlur={() => markTouched('lastname')}
                     required
+                    error={touched.lastname && form.lastname.trim().length < 2}
+                    helperText={touched.lastname && form.lastname.trim().length < 2 ? 'Le nom doit contenir au moins 2 caractères' : ''}
                   />
                 </Box>
                 <TextField
@@ -394,11 +406,12 @@ export default function RegisterPage() {
                   type="email"
                   value={form.email}
                   onChange={(e) => updateField('email', e.target.value)}
+                  onBlur={() => markTouched('email')}
                   required
-                  slotProps={{
-                    input: {
-                      startAdornment: <InputAdornment position="start"><EmailIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
-                    },
+                  error={touched.email && !form.email.includes('@')}
+                  helperText={touched.email && !form.email.includes('@') ? 'Veuillez entrer une adresse email valide' : ''}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start"><EmailIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
                   }}
                   sx={{ mb: 2 }}
                 />
@@ -409,10 +422,14 @@ export default function RegisterPage() {
                   onChange={(e) => updateField('phone_number', e.target.value)}
                   placeholder="+237 6XX XXX XXX"
                   required
-                  slotProps={{
-                    input: {
-                      startAdornment: <InputAdornment position="start"><PhoneIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
-                    },
+                  error={form.phone_number.length > 0 && !isPhoneValid}
+                  helperText={
+                    form.phone_number.length > 0 && !isPhoneValid
+                      ? 'Format invalide (ex: +237 6XX XXX XXX)'
+                      : ''
+                  }
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start"><PhoneIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
                   }}
                   sx={{ mb: 2 }}
                 />
@@ -433,22 +450,20 @@ export default function RegisterPage() {
                       {...params}
                       label="Ville"
                       placeholder="Rechercher une ville..."
-                      slotProps={{
-                        input: {
-                          ...params.InputProps,
-                          startAdornment: (
-                            <>
-                              <InputAdornment position="start"><CityIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>
-                              {params.InputProps.startAdornment}
-                            </>
-                          ),
-                          endAdornment: (
-                            <>
-                              {isCitiesLoading ? <CircularProgress color="inherit" size={18} /> : null}
-                              {params.InputProps.endAdornment}
-                            </>
-                          ),
-                        },
+                      InputProps={{
+                        ...params.InputProps,
+                        startAdornment: (
+                          <>
+                            <InputAdornment position="start"><CityIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>
+                            {params.InputProps.startAdornment}
+                          </>
+                        ),
+                        endAdornment: (
+                          <>
+                            {isCitiesLoading ? <CircularProgress color="inherit" size={18} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
                       }}
                     />
                   )}
@@ -497,17 +512,15 @@ export default function RegisterPage() {
                   onChange={(e) => updateField('password', e.target.value)}
                   required
                   autoFocus
-                  slotProps={{
-                    input: {
-                      startAdornment: <InputAdornment position="start"><LockIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    },
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start"><LockIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small" aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
                   }}
                   sx={{ mb: 1 }}
                 />
@@ -548,19 +561,36 @@ export default function RegisterPage() {
                       ? 'Les mots de passe ne correspondent pas'
                       : ''
                   }
-                  slotProps={{
-                    input: {
-                      startAdornment: <InputAdornment position="start"><LockIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end" size="small">
-                            {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    },
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start"><LockIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end" size="small" aria-label={showConfirmPassword ? 'Masquer la confirmation' : 'Afficher la confirmation'}>
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
                   }}
-                  sx={{ mb: 3 }}
+                  sx={{ mb: 2 }}
+                />
+
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      sx={{ '&.Mui-checked': { color: '#F6475F' } }}
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" color="text.secondary">
+                      J&apos;accepte les{' '}
+                      <Link href="/conditions" target="_blank" sx={{ color: 'primary.main' }}>conditions d&apos;utilisation</Link>
+                      {' '}et la{' '}
+                      <Link href="/confidentialite" target="_blank" sx={{ color: 'primary.main' }}>politique de confidentialité</Link>
+                    </Typography>
+                  }
+                  sx={{ mb: 2, alignItems: 'flex-start' }}
                 />
 
                 <Box sx={{ display: 'flex', gap: 2 }}>

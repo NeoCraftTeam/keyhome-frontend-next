@@ -135,6 +135,7 @@ export default function VerifyOtpPage() {
           <IconButton
             onClick={() => router.back()}
             size="medium"
+            aria-label="Retour"
             sx={{
               bgcolor: 'rgba(0,0,0,0.05)',
               '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' },
@@ -184,7 +185,10 @@ export default function VerifyOtpPage() {
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   style={{
-                    width: 52,
+                    width: undefined,
+                    minWidth: 42,
+                    maxWidth: 52,
+                    flex: 1,
                     height: 60,
                     fontSize: 26,
                     fontWeight: 700,

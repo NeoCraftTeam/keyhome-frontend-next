@@ -1,0 +1,55 @@
+'use client';
+
+import { Box, Button, Typography } from '@mui/material';
+import { ErrorOutline as ErrorIcon } from '@mui/icons-material';
+
+export default function AuthError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        textAlign: 'center',
+        p: 4,
+      }}
+    >
+      <ErrorIcon sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
+      <Typography variant="h5" fontWeight={700} gutterBottom>
+        Quelque chose s&apos;est mal passé
+      </Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 400 }}>
+        Une erreur est survenue. Veuillez réessayer ou retourner à la connexion.
+      </Typography>
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <Button
+          variant="contained"
+          onClick={reset}
+          sx={{
+            borderRadius: 2,
+            fontWeight: 600,
+            background: 'linear-gradient(to right, #F6475F, #D93A50)',
+            '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+          }}
+        >
+          Réessayer
+        </Button>
+        <Button
+          variant="outlined"
+          href="/login"
+          sx={{ borderRadius: 2 }}
+        >
+          Retour à la connexion
+        </Button>
+      </Box>
+    </Box>
+  );
+}

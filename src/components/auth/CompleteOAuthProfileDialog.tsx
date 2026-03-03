@@ -1,25 +1,25 @@
 'use client';
 
+import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
-import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { User } from '@/types';
-import {
-  Autocomplete,
-  Avatar,
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  InputAdornment,
-  TextField,
-  Typography,
-} from '@mui/material';
 import { Phone as PhoneIcon } from '@mui/icons-material';
-import { useState } from 'react';
+import {
+    Autocomplete,
+    Avatar,
+    Box,
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    InputAdornment,
+    TextField,
+    Typography,
+} from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
 interface City {
   id: string;
@@ -135,14 +135,12 @@ export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }
             autoFocus
             fullWidth
             placeholder="+225 07 00 00 00 00"
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PhoneIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-              },
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <PhoneIcon fontSize="small" />
+                </InputAdornment>
+              ),
             }}
           />
 
@@ -163,16 +161,14 @@ export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }
               <TextField
                 {...params}
                 label="Ville (optionnel)"
-                slotProps={{
-                  input: {
-                    ...params.InputProps,
-                    endAdornment: (
-                      <>
-                        {isCitiesLoading ? <CircularProgress color="inherit" size={18} /> : null}
-                        {params.InputProps.endAdornment}
-                      </>
-                    ),
-                  },
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: (
+                    <>
+                      {isCitiesLoading ? <CircularProgress color="inherit" size={18} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
                 }}
               />
             )}
