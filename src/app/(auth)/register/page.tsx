@@ -3,12 +3,15 @@
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
+import { registerTokenGetter } from '@/lib/auth-token';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { City } from '@/types';
 import {
   Business as BusinessIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
   LocationCity as CityIcon,
   Email as EmailIcon,
   Lock as LockIcon,
@@ -144,11 +147,19 @@ export default function RegisterPage() {
         });
       }
 
-      // Store auth token so verify-email page can resend verification emails
+      // Store auth token so verify-email page can resend verification emails.
+      // Use a dedicated session key and register the token getter so API calls
+      // include this token automatically. We intentionally avoid localStorage's
+      // `kh_sanctum_token` so AuthProvider doesn't treat the user as fully
+      // authenticated and redirect them away from verify-email.
       if (response.token) {
-        sessionStorage.setItem('token', response.token);
+        sessionStorage.setItem('kh_verify_token', response.token);
+        registerTokenGetter(() => Promise.resolve(response.token));
         if (response.user?.id) {
           sessionStorage.setItem('user_id', response.user.id);
+        }
+        if (response.user?.email) {
+          sessionStorage.setItem('kh_verify_email', response.user.email);
         }
       }
 
@@ -541,9 +552,27 @@ export default function RegisterPage() {
                         },
                       }}
                     />
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                      <Typography variant="caption" sx={{ color: passwordStrength.color }}>{passwordStrength.label}</Typography>
-                      <Typography variant="caption" color="text.secondary">Min: 8 car., majuscule, chiffre, symbole</Typography>
+                    <Typography variant="caption" sx={{ color: passwordStrength.color, display: 'block', mt: 0.5, fontWeight: 600 }}>
+                      {passwordStrength.label}
+                    </Typography>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.25, mt: 1 }}>
+                      {[
+                        { met: form.password.length >= 8, label: '8 caractères min.' },
+                        { met: /[A-Z]/.test(form.password), label: 'Une majuscule' },
+                        { met: /[0-9]/.test(form.password), label: 'Un chiffre' },
+                        { met: /[^A-Za-z0-9]/.test(form.password), label: 'Un symbole' },
+                      ].map((req) => (
+                        <Box key={req.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          {req.met ? (
+                            <CheckIcon sx={{ fontSize: 14, color: '#2e7d32' }} />
+                          ) : (
+                            <CloseIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                          )}
+                          <Typography variant="caption" color={req.met ? '#2e7d32' : 'text.secondary'}>
+                            {req.label}
+                          </Typography>
+                        </Box>
+                      ))}
                     </Box>
                   </Box>
                 )}

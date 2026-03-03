@@ -33,7 +33,7 @@ export default function SSOCallbackPage() {
 
     handleRedirectCallback({
       signInUrl: '/login',
-      signUpUrl: '/login',
+      signUpUrl: '/register',
       signInFallbackRedirectUrl: '/home',
       signUpFallbackRedirectUrl: '/home',
       continueSignUpUrl: '/complete-profile',

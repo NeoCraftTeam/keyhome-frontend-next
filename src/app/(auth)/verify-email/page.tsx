@@ -2,124 +2,331 @@
 
 import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
+import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { ArrowBack, MarkEmailRead as MailIcon } from '@mui/icons-material';
-import { Alert, Box, Button, CircularProgress, IconButton, Link, Typography } from '@mui/material';
+import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
+import { Alert, Box, Button, CircularProgress, IconButton, Typography } from '@mui/material';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+/** Cooldown (seconds) between OTP resend requests */
+const RESEND_COOLDOWN = 60;
 
 export default function VerifyEmailPage() {
-  const [message, setMessage] = useState('');
+  const { finalizeAuth } = useAuth();
+  const router = useRouter();
+
+  const [digits, setDigits] = useState(['', '', '', '', '', '']);
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendMessage, setResendMessage] = useState('');
 
-  const handleResend = async () => {
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    const storedEmail = sessionStorage.getItem('kh_verify_email') ?? '';
+    setEmail(storedEmail);
+    inputRefs.current[0]?.focus();
+  }, []);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const otp = digits.join('');
+  const isComplete = otp.length === 6 && digits.every((d) => d !== '');
+
+  const handleChange = (index: number, value: string) => {
+    const char = value.replace(/\D/g, '').slice(-1);
+    const newDigits = [...digits];
+    newDigits[index] = char;
+    setDigits(newDigits);
+    if (char && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !digits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const newDigits = pasted.split('').concat(Array(6).fill('')).slice(0, 6);
+    setDigits(newDigits);
+    inputRefs.current[Math.min(pasted.length, 5)]?.focus();
+  };
+
+  const handleSubmit = async () => {
+    if (!isComplete || !email) return;
     setError('');
-    setMessage('');
     setIsSubmitting(true);
     try {
-      const res = await authService.resendVerification();
-      setMessage(res.message || 'Email de vérification renvoyé avec succès.');
+      const result = await authService.verifyEmailOtp(email, otp);
+
+      // Clean up session storage
+      sessionStorage.removeItem('kh_verify_token');
+      sessionStorage.removeItem('kh_verify_email');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user_id');
+
+      // Auto-login: finalizeAuth stores the Sanctum token, sets the user, and redirects to /home
+      finalizeAuth(result.access_token, result.user, null);
     } catch (err) {
-      setError(getSafeErrorMessage(err, 'Erreur lors du renvoi.'));
+      setError(getSafeErrorMessage(err, 'Code invalide ou expiré. Veuillez réessayer.'));
+      setDigits(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  /** Re-send the OTP code to the user's email */
+  const handleResendOtp = useCallback(async () => {
+    if (resendCooldown > 0 || !email) return;
+    setError('');
+    setResendMessage('');
+    try {
+      await authService.resendVerification(email);
+      setResendMessage('Un nouveau code a été envoyé à votre adresse email.');
+      setResendCooldown(RESEND_COOLDOWN);
+      setDigits(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } catch (err) {
+      setError(getSafeErrorMessage(err, 'Impossible de renvoyer le code. Veuillez réessayer.'));
+    }
+  }, [resendCooldown, email]);
+
+  /** Mask the email for display: je***@example.com */
+  const maskedEmail = email
+    ? email.replace(/^(.{1,2})(.*)(@.*)$/, (_, start, middle, domain) =>
+        start + '*'.repeat(Math.min(middle.length, 5)) + domain
+      )
+    : '';
+
   return (
-    <Box
-      sx={{
-        flex: 1,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        p: 3,
-        position: 'relative',
-      }}
-    >
-      {/* Back button */}
-      <Box sx={{ position: 'absolute', top: 24, left: 24 }}>
-        <IconButton
-          href="/login"
-          component={Link}
-          size="medium"
-          aria-label="Retour à la connexion"
+    <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>
+      {/* Left side — image */}
+      <Box
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          flex: 1,
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <Image
+          src="/images/02OTP.webp"
+          alt="Vérification KeyHome"
+          fill
+          priority
+          sizes="50vw"
+          style={{ objectFit: 'cover' }}
+        />
+        <Box
           sx={{
-            bgcolor: 'rgba(0,0,0,0.05)',
-            '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' },
-            borderRadius: 2,
-            textDecoration: 'none',
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to bottom, rgba(34,34,34,0.15) 0%, rgba(34,34,34,0.6) 100%)',
+            zIndex: 1,
           }}
-        >
-          <ArrowBack sx={{ fontSize: 20 }} />
-        </IconButton>
+        />
+        <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 6, zIndex: 2 }}>
+          <FadeIn delay={0.2} direction="up">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <Image src="/images/logo.png" alt="KeyHome" width={42} height={42} />
+              <Typography variant="h4" fontWeight={700} color="#fff">KeyHome</Typography>
+            </Box>
+          </FadeIn>
+          <FadeIn delay={0.4} direction="up">
+            <Typography variant="h5" color="rgba(255,255,255,0.9)" fontWeight={400} sx={{ maxWidth: 360 }}>
+              Un dernier pas avant de commencer
+            </Typography>
+          </FadeIn>
+        </Box>
       </Box>
 
-      <Box sx={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
-        <FadeIn direction="none">
-          <Box sx={{ mb: 2 }}>
-            <Image src="/images/logo.png" alt="KeyHome — Vérification email" width={48} height={48} priority />
-          </Box>
-        </FadeIn>
-
-        <FadeIn delay={0.1} direction="up">
-          <Box
+      {/* Right side — OTP form */}
+      <Box
+        sx={{
+          flex: { xs: 1, md: '0 0 480px' },
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          p: { xs: 3, sm: 6 },
+          bgcolor: 'background.paper',
+          position: 'relative',
+        }}
+      >
+        {/* Back button */}
+        <Box sx={{ position: 'absolute', top: 24, left: 24 }}>
+          <IconButton
+            onClick={() => router.back()}
+            size="medium"
+            aria-label="Retour"
             sx={{
-              width: 80,
-              height: 80,
-              borderRadius: '50%',
-              bgcolor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mx: 'auto',
-              mb: 3,
-              animation: 'pulseGlow 2s ease-in-out infinite',
+              bgcolor: 'rgba(0,0,0,0.05)',
+              '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' },
+              borderRadius: 2,
             }}
           >
-            <MailIcon sx={{ color: '#fff', fontSize: 40 }} />
+            <ArrowBack sx={{ fontSize: 20 }} />
+          </IconButton>
+        </Box>
+
+        {/* Mobile logo */}
+        <FadeIn direction="none">
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1, mb: 4 }}>
+            <Image src="/images/logo.png" alt="KeyHome" width={40} height={40} priority />
+            <Typography variant="h5" fontWeight={700} color="primary.main">KeyHome</Typography>
           </Box>
         </FadeIn>
 
-        <FadeIn delay={0.2} direction="up">
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            Vérifiez votre email
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Nous vous avons envoyé un lien de vérification. Consultez votre boîte de réception (et les
-            spams) pour activer votre compte.
-          </Typography>
-        </FadeIn>
-
-        {error && (
-          <FadeIn direction="none" duration={0.3}>
-            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+        <Box sx={{ width: '100%', maxWidth: 400 }}>
+          {/* Progress stepper */}
+          <FadeIn delay={0.05} direction="none">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+              {['Inscription', 'Vérification', 'Terminé'].map((label, idx) => (
+                <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: idx < 2 ? 1 : 'none' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{
+                      width: 22, height: 22, borderRadius: '50%', fontSize: 12, fontWeight: 700,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      bgcolor: idx <= 1 ? 'primary.main' : 'grey.300',
+                      color: idx <= 1 ? '#fff' : 'text.disabled',
+                    }}>
+                      {idx < 1 ? '✓' : idx + 1}
+                    </Box>
+                    <Typography variant="caption" fontWeight={idx === 1 ? 700 : 400} color={idx <= 1 ? 'text.primary' : 'text.disabled'}>
+                      {label}
+                    </Typography>
+                  </Box>
+                  {idx < 2 && (
+                    <Box sx={{ flex: 1, height: 2, bgcolor: idx < 1 ? 'primary.main' : 'grey.300', borderRadius: 1 }} />
+                  )}
+                </Box>
+              ))}
+            </Box>
           </FadeIn>
-        )}
-        {message && (
-          <FadeIn direction="none" duration={0.3}>
-            <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{message}</Alert>
+
+          <FadeIn delay={0.1} direction="up">
+            <Typography variant="h4" fontWeight={700} gutterBottom>
+              Vérifiez votre email
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+              Saisissez le code à 6 chiffres envoyé à{' '}
+              {maskedEmail ? (
+                <Typography component="span" fontWeight={600} color="text.primary" variant="body2">
+                  {maskedEmail}
+                </Typography>
+              ) : (
+                'votre adresse email'
+              )}.
+            </Typography>
           </FadeIn>
-        )}
 
-        <FadeIn delay={0.3} direction="up">
-          <Button
-            onClick={handleResend}
-            variant="outlined"
-            size="large"
-            disabled={isSubmitting}
-            sx={{ borderRadius: 2, mb: 2 }}
-          >
-            {isSubmitting ? <CircularProgress size={20} /> : 'Renvoyer le mail'}
-          </Button>
+          <FadeIn delay={0.2} direction="up">
+            <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
+              {digits.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(el) => { inputRefs.current[index] = el; }}
+                  value={digit}
+                  onChange={(e) => handleChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  onPaste={handlePaste}
+                  maxLength={1}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  style={{
+                    width: undefined,
+                    minWidth: 42,
+                    maxWidth: 52,
+                    flex: 1,
+                    height: 60,
+                    fontSize: 26,
+                    fontWeight: 700,
+                    textAlign: 'center',
+                    border: `2px solid ${digit ? '#F6475F' : '#e2e8f0'}`,
+                    borderRadius: 10,
+                    outline: 'none',
+                    background: digit ? 'rgba(246,71,95,0.04)' : '#fff',
+                    color: '#0f172a',
+                    transition: 'border-color 0.15s, background 0.15s',
+                    cursor: 'text',
+                  }}
+                />
+              ))}
+            </Box>
+          </FadeIn>
 
-          <Box>
-            <Link href="/login" underline="hover" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
-              Retour à la connexion
-            </Link>
-          </Box>
-        </FadeIn>
+          {error && (
+            <FadeIn direction="none" duration={0.3}>
+              <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+            </FadeIn>
+          )}
+          {resendMessage && (
+            <FadeIn direction="none" duration={0.3}>
+              <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{resendMessage}</Alert>
+            </FadeIn>
+          )}
+
+          <FadeIn delay={0.3} direction="up">
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              size="large"
+              fullWidth
+              disabled={!isComplete || isSubmitting}
+              sx={{
+                py: 1.5,
+                borderRadius: 2,
+                fontSize: '1rem',
+                fontWeight: 600,
+                background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+              }}
+            >
+              {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Vérifier le code'}
+            </Button>
+          </FadeIn>
+
+          {/* Resend OTP */}
+          <FadeIn delay={0.4} direction="up">
+            <Box sx={{ textAlign: 'center', mt: 3 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Vous n&apos;avez pas reçu le code ?
+              </Typography>
+              <Button
+                onClick={handleResendOtp}
+                disabled={resendCooldown > 0}
+                startIcon={<RefreshIcon />}
+                size="small"
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  color: resendCooldown > 0 ? 'text.disabled' : 'primary.main',
+                }}
+              >
+                {resendCooldown > 0
+                  ? `Renvoyer dans ${resendCooldown}s`
+                  : 'Renvoyer le code'}
+              </Button>
+            </Box>
+          </FadeIn>
+        </Box>
       </Box>
     </Box>
   );

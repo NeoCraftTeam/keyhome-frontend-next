@@ -4,11 +4,14 @@ import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { ArrowBack } from '@mui/icons-material';
+import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
 import { Alert, Box, Button, CircularProgress, IconButton, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+/** Cooldown (seconds) between OTP resend requests */
+const RESEND_COOLDOWN = 60;
 
 export default function VerifyOtpPage() {
   const { finalizeAuth } = useAuth();
@@ -18,6 +21,8 @@ export default function VerifyOtpPage() {
   const [emailHint, setEmailHint] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendMessage, setResendMessage] = useState('');
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -26,6 +31,15 @@ export default function VerifyOtpPage() {
     setEmailHint(hint);
     inputRefs.current[0]?.focus();
   }, []);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const otp = digits.join('');
   const isComplete = otp.length === 6 && digits.every((d) => d !== '');
@@ -74,6 +88,22 @@ export default function VerifyOtpPage() {
       setIsSubmitting(false);
     }
   };
+
+  /** Re-trigger the Clerk exchange to send a fresh OTP */
+  const handleResendOtp = useCallback(async () => {
+    if (resendCooldown > 0) return;
+    setError('');
+    setResendMessage('');
+    try {
+      await authService.clerkExchange();
+      setResendMessage('Un nouveau code a été envoyé à votre adresse email.');
+      setResendCooldown(RESEND_COOLDOWN);
+      setDigits(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } catch (err) {
+      setError(getSafeErrorMessage(err, "Impossible de renvoyer le code. Veuillez réessayer."));
+    }
+  }, [resendCooldown]);
 
   return (
     <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>
@@ -155,6 +185,34 @@ export default function VerifyOtpPage() {
         </FadeIn>
 
         <Box sx={{ width: '100%', maxWidth: 400 }}>
+          {/* Compact OAuth flow progress */}
+          <FadeIn delay={0.05} direction="none">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+              {['Connexion', 'Vérification', 'Terminé'].map((label, idx) => (
+                <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: idx < 2 ? 1 : 'none' }}>
+                  <Box sx={{
+                    display: 'flex', alignItems: 'center', gap: 0.5,
+                  }}>
+                    <Box sx={{
+                      width: 22, height: 22, borderRadius: '50%', fontSize: 12, fontWeight: 700,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      bgcolor: idx <= 1 ? 'primary.main' : 'grey.300',
+                      color: idx <= 1 ? '#fff' : 'text.disabled',
+                    }}>
+                      {idx < 1 ? '✓' : idx + 1}
+                    </Box>
+                    <Typography variant="caption" fontWeight={idx === 1 ? 700 : 400} color={idx <= 1 ? 'text.primary' : 'text.disabled'}>
+                      {label}
+                    </Typography>
+                  </Box>
+                  {idx < 2 && (
+                    <Box sx={{ flex: 1, height: 2, bgcolor: idx < 1 ? 'primary.main' : 'grey.300', borderRadius: 1 }} />
+                  )}
+                </Box>
+              ))}
+            </Box>
+          </FadeIn>
+
           <FadeIn delay={0.1} direction="up">
             <Typography variant="h4" fontWeight={700} gutterBottom>
               Code de vérification
@@ -211,6 +269,11 @@ export default function VerifyOtpPage() {
               <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
             </FadeIn>
           )}
+          {resendMessage && (
+            <FadeIn direction="none" duration={0.3}>
+              <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{resendMessage}</Alert>
+            </FadeIn>
+          )}
 
           <FadeIn delay={0.3} direction="up">
             <Button
@@ -230,6 +293,30 @@ export default function VerifyOtpPage() {
             >
               {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Vérifier le code'}
             </Button>
+          </FadeIn>
+
+          {/* Resend OTP */}
+          <FadeIn delay={0.4} direction="up">
+            <Box sx={{ textAlign: 'center', mt: 3 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Vous n&apos;avez pas reçu le code ?
+              </Typography>
+              <Button
+                onClick={handleResendOtp}
+                disabled={resendCooldown > 0}
+                startIcon={<RefreshIcon />}
+                size="small"
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  color: resendCooldown > 0 ? 'text.disabled' : 'primary.main',
+                }}
+              >
+                {resendCooldown > 0
+                  ? `Renvoyer dans ${resendCooldown}s`
+                  : 'Renvoyer le code'}
+              </Button>
+            </Box>
           </FadeIn>
         </Box>
       </Box>
