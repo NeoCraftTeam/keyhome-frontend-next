@@ -7,7 +7,10 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { frFR } from '@clerk/localizations';
 import JsonLd from '@/components/seo/JsonLd';
 import { WebVitals } from '@/components/seo/WebVitals';
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next";
+import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
+import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
+import NetworkStatus from '@/components/pwa/NetworkStatus';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -91,11 +94,20 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '32x32' },
-      { url: '/images/logo.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
-    apple: [{ url: '/images/logo.png', sizes: '180x180' }],
+    apple: [
+      { url: '/icons/icon-152x152.png', sizes: '152x152' },
+      { url: '/icons/icon-192x192.png', sizes: '180x180' },
+    ],
   },
   manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'KeyHome',
+  },
   category: 'real estate',
 };
 
@@ -103,6 +115,11 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0A0A0F' },
+  ],
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -130,6 +147,9 @@ export default function RootLayout({
           <Providers>{children}
             <Analytics />
             <WebVitals />
+            <ServiceWorkerRegistrar />
+            <PWAInstallPrompt />
+            <NetworkStatus />
           </Providers>
         </body>
       </html>
