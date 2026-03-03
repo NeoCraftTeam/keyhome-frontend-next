@@ -1,14 +1,8 @@
 'use client';
 
 import type { PointPackage } from '@/types';
-import { CheckCircle, Toll } from '@mui/icons-material';
-import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Typography,
-} from '@mui/material';
+import { CheckCircleRounded, LocalFireDepartment, Toll, WorkspacePremium } from '@mui/icons-material';
+import { Box, Button, Chip, CircularProgress, Typography } from '@mui/material';
 
 export default function PackageCard({
   pkg,
@@ -22,133 +16,107 @@ export default function PackageCard({
   wouldBeEnough?: boolean;
 }) {
   const isPopular = pkg.is_popular;
+  const isPremium = !isPopular && !wouldBeEnough && (pkg.points_awarded ?? 0) >= 100;
 
-  const borderColor = wouldBeEnough
-    ? 'success.light'
+  const gradient = wouldBeEnough
+    ? 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%)'
     : isPopular
-      ? 'primary.main'
-      : 'divider';
+      ? 'linear-gradient(135deg, #F6475F 0%, #D93A50 60%, #A01030 100%)'
+      : isPremium
+        ? 'linear-gradient(135deg, #1A237E 0%, #283593 60%, #3949AB 100%)'
+        : 'linear-gradient(135deg, #1C1C1E 0%, #2C2C2E 100%)';
+
+  const glowColor = wouldBeEnough
+    ? 'rgba(46,125,50,0.35)'
+    : isPopular
+      ? 'rgba(246,71,95,0.35)'
+      : isPremium
+        ? 'rgba(57,73,171,0.35)'
+        : 'rgba(0,0,0,0.18)';
 
   return (
     <Box
+      onClick={() => !loading && onPurchase(pkg)}
       sx={{
         position: 'relative',
-        border: '1.5px solid',
-        borderColor,
-        borderRadius: 3,
+        borderRadius: 4,
         overflow: 'hidden',
-        transition: 'all 0.2s ease',
         width: '100%',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: wouldBeEnough
-          ? 'rgba(0,138,5,0.03)'
-          : isPopular
-            ? 'rgba(246,71,95,0.02)'
-            : 'transparent',
+        cursor: loading ? 'wait' : 'pointer',
+        background: gradient,
+        boxShadow: `0 8px 32px ${glowColor}`,
+        transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
         '&:hover': {
-          transform: 'translateY(-1px)',
-          boxShadow: isPopular
-            ? '0 6px 20px rgba(246,71,95,0.18)'
-            : '0 4px 12px rgba(0,0,0,0.08)',
+          transform: 'translateY(-4px) scale(1.02)',
+          boxShadow: `0 16px 48px ${glowColor}`,
         },
+        '&:active': { transform: 'scale(0.98)' },
       }}
     >
-      {/* Top accent bar for popular */}
-      {isPopular && !wouldBeEnough && (
-        <Box
-          sx={{
-            height: 3,
-            background: 'linear-gradient(to right, #F6475F, #D93A50)',
-          }}
-        />
-      )}
+      {/* Decorative blobs */}
+      <Box sx={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+      <Box sx={{ position: 'absolute', bottom: -30, left: -15, width: 80, height: 80, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
 
-      {/* Sufficient accent bar */}
-      {wouldBeEnough && (
-        <Box
-          sx={{
-            height: 3,
-            bgcolor: 'success.main',
-          }}
-        />
-      )}
-
-      <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', flex: 1 }}>
-        {/* Header: Name + Badge */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}>
-          <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2, flex: 1 }}>
-            {pkg.name}
+      {/* Badge row */}
+      <Box sx={{ px: 2, pt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          {wouldBeEnough ? (
+            <CheckCircleRounded sx={{ fontSize: 18, color: '#A5D6A7' }} />
+          ) : isPopular ? (
+            <LocalFireDepartment sx={{ fontSize: 18, color: '#FFD700' }} />
+          ) : isPremium ? (
+            <WorkspacePremium sx={{ fontSize: 18, color: '#9FA8DA' }} />
+          ) : (
+            <Toll sx={{ fontSize: 18, color: 'rgba(255,255,255,0.7)' }} />
+          )}
+          <Typography variant="caption" fontWeight={800} sx={{
+            color: wouldBeEnough ? '#A5D6A7' : isPopular ? '#FFD700' : isPremium ? '#9FA8DA' : 'rgba(255,255,255,0.6)',
+            textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.62rem',
+          }}>
+            {wouldBeEnough ? 'Suffisant' : pkg.badge ?? (isPopular ? 'Le + populaire' : isPremium ? 'Meilleur rapport' : 'Starter')}
           </Typography>
-
-          {pkg.badge && !wouldBeEnough && (
-            <Chip
-              label={pkg.badge}
-              size="small"
-              sx={{
-                fontWeight: 700,
-                fontSize: '0.6rem',
-                height: 22,
-                bgcolor: isPopular ? 'primary.main' : 'warning.main',
-                color: '#fff',
-                letterSpacing: 0.3,
-              }}
-            />
-          )}
-
-          {wouldBeEnough && (
-            <Chip
-              icon={<CheckCircle sx={{ fontSize: 14, color: '#fff !important' }} />}
-              label="Suffisant"
-              size="small"
-              sx={{
-                bgcolor: 'success.main',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: '0.6rem',
-                height: 22,
-              }}
-            />
-          )}
         </Box>
+        {pkg.points_awarded > 10 && !wouldBeEnough && (
+          <Chip
+            label={`-${Math.round((1 - pkg.price / (pkg.points_awarded * 100)) * 100)}%`}
+            size="small"
+            sx={{ bgcolor: 'rgba(255,255,255,0.18)', color: '#fff', fontWeight: 800, fontSize: '0.65rem', height: 20 }}
+          />
+        )}
+      </Box>
 
-        {/* Credits amount */}
-        <Box
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.5,
-            bgcolor: 'rgba(246,71,95,0.08)',
-            borderRadius: 1.5,
-            px: 1,
-            py: 0.35,
-            mb: 1,
-          }}
-        >
-          <Toll sx={{ fontSize: 15, color: 'primary.main' }} />
-          <Typography variant="body2" fontWeight={700} color="primary.main">
-            {pkg.points_awarded} crédits
+      {/* Main content */}
+      <Box sx={{ px: 2, pt: 1.5, pb: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Typography variant="h6" fontWeight={800} sx={{ color: '#fff', letterSpacing: -0.3, lineHeight: 1.1, mb: 0.5 }}>
+          {pkg.name}
+        </Typography>
+
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mb: 1.5 }}>
+          <Typography variant="h4" fontWeight={900} sx={{ color: '#fff', letterSpacing: -1, lineHeight: 1 }}>
+            {pkg.points_awarded}
+          </Typography>
+          <Typography variant="caption" fontWeight={700} sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            credits
           </Typography>
         </Box>
 
-        {/* Description */}
         {pkg.description && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ display: 'block', mb: 1.25, lineHeight: 1.4, fontSize: '0.8rem' }}
-          >
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', lineHeight: 1.4, mb: 1.5 }}>
             {pkg.description}
           </Typography>
         )}
 
-        {/* Features */}
         {pkg.features && pkg.features.length > 0 && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mb: 2 }}>
             {pkg.features.map((feature, idx) => (
-              <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                <CheckCircle sx={{ fontSize: 13, color: 'success.main', flexShrink: 0 }} />
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem', lineHeight: 1.3 }}>
+              <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.75 }}>
+                <CheckCircleRounded sx={{
+                  fontSize: 14, mt: 0.1, flexShrink: 0,
+                  color: wouldBeEnough ? '#A5D6A7' : isPopular ? '#FFD700' : 'rgba(255,255,255,0.55)',
+                }} />
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.75rem', lineHeight: 1.3 }}>
                   {feature}
                 </Typography>
               </Box>
@@ -156,51 +124,38 @@ export default function PackageCard({
           </Box>
         )}
 
-        {/* Divider */}
-        <Box sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 1.5, mt: 'auto' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box>
-              <Typography variant="body1" fontWeight={800} sx={{ letterSpacing: -0.3 }}>
-                {pkg.price.toLocaleString('fr-FR')}
-                <Typography component="span" variant="caption" fontWeight={600} sx={{ ml: 0.5 }}>
-                  FCFA
-                </Typography>
+        {/* Price + CTA */}
+        <Box sx={{
+          mt: 'auto', pt: 1.5, borderTop: '1px solid rgba(255,255,255,0.1)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1,
+        }}>
+          <Box>
+            <Typography variant="h6" fontWeight={900} sx={{ color: '#fff', letterSpacing: -0.5, lineHeight: 1 }}>
+              {pkg.price.toLocaleString('fr-FR')}
+              <Typography component="span" variant="caption" fontWeight={700} sx={{ ml: 0.4, color: 'rgba(255,255,255,0.6)' }}>
+                FCFA
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                {Math.round(pkg.price / pkg.points_awarded).toLocaleString('fr-FR')} FCFA/crédit
-              </Typography>
-            </Box>
-            <Button
-              size="small"
-              variant={isPopular ? 'contained' : 'outlined'}
-              onClick={() => onPurchase(pkg)}
-              disabled={loading}
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 700,
-                fontSize: '0.8rem',
-                px: 2.5,
-                py: 0.6,
-                ...(isPopular && {
-                  background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                  '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-                }),
-                ...(!isPopular && {
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                  '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'rgba(246,71,95,0.04)' },
-                }),
-                '&:disabled': { opacity: 0.6 },
-              }}
-            >
-              {loading ? (
-                <CircularProgress size={16} sx={{ color: isPopular ? '#fff' : 'primary.main' }} />
-              ) : (
-                'Acheter'
-              )}
-            </Button>
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem' }}>
+              {Math.round(pkg.price / pkg.points_awarded).toLocaleString('fr-FR')} FCFA/credit
+            </Typography>
           </Box>
+
+          <Button
+            variant="contained"
+            size="small"
+            disabled={loading}
+            onClick={(e) => { e.stopPropagation(); onPurchase(pkg); }}
+            sx={{
+              borderRadius: 2.5, textTransform: 'none', fontWeight: 800, fontSize: '0.82rem',
+              px: 2.5, py: 0.75, bgcolor: 'rgba(255,255,255,0.18)', color: '#fff',
+              backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)', flexShrink: 0,
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.28)' },
+              '&:disabled': { opacity: 0.5 },
+            }}
+          >
+            {loading ? <CircularProgress size={15} sx={{ color: '#fff' }} /> : 'Acheter'}
+          </Button>
         </Box>
       </Box>
     </Box>

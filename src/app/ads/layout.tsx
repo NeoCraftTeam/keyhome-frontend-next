@@ -1,3 +1,4 @@
+import AdsTopBar from '@/components/layout/AdsTopBar';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -10,6 +11,11 @@ export const metadata: Metadata = {
  * Googlebot can crawl and index ad pages without authentication.
  */
 export default function AdsLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      <AdsTopBar />
+      {children}
+    </>
+  );
 }
 

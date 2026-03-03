@@ -4,7 +4,7 @@ import PackageCard from '@/components/ui/PackageCard';
 import { creditsService } from '@/services/credits.service';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import type { PointPackage } from '@/types';
-import { Close, Toll } from '@mui/icons-material';
+import { AutoAwesome, Close, Toll } from '@mui/icons-material';
 import {
   Box,
   Dialog,
@@ -46,11 +46,11 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
       const callbackUrl = `${window.location.origin}/credits/callback`;
       const response = await creditsService.purchase(pkg.id, callbackUrl);
       if (!redirectToTrustedUrl(response.payment_url)) {
-        throw new Error('URL de paiement non approuvée.');
+        throw new Error('URL de paiement non approuvee.');
       }
       queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
     } catch {
-      setPkgError('Erreur lors de l\'initialisation du paiement.');
+      setPkgError("Erreur lors de l\'initialisation du paiement.");
     } finally {
       setLoadingPkg(null);
     }
@@ -70,92 +70,108 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 4,
+          borderRadius: 5,
           overflow: 'hidden',
-          maxHeight: '90vh',
+          maxHeight: '92vh',
+          background: 'transparent',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.28)',
         },
       }}
     >
-      {/* Header gradient */}
+      {/* ── HEADER ────────────────────────────────────────── */}
       <Box
         sx={{
           position: 'relative',
           px: 3,
-          pt: 3.5,
-          pb: 3,
-          background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 60%, #A01030 100%)',
+          pt: 4,
+          pb: 3.5,
+          background: 'linear-gradient(135deg, #0A1628 0%, #1a2540 50%, #0D1F3C 100%)',
           textAlign: 'center',
+          overflow: 'hidden',
         }}
       >
+        {/* Background blobs */}
+        <Box sx={{ position: 'absolute', top: -40, left: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(246,71,95,0.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <Box sx={{ position: 'absolute', bottom: -30, right: -30, width: 150, height: 150, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
         <IconButton
           aria-label="Fermer"
           onClick={handleClose}
           sx={{
-            position: 'absolute',
-            top: 10,
-            right: 10,
-            color: 'rgba(255,255,255,0.7)',
-            '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.15)' },
+            position: 'absolute', top: 12, right: 12,
+            color: 'rgba(255,255,255,0.5)',
+            '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.1)' },
           }}
         >
           <Close fontSize="small" />
         </IconButton>
 
-        {/* Balance circle */}
+        {/* Balance ring */}
         <Box
           sx={{
-            width: 56,
-            height: 56,
-            borderRadius: '50%',
-            bgcolor: 'rgba(255,255,255,0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            position: 'relative',
+            width: 72,
+            height: 72,
             mx: 'auto',
-            mb: 1.5,
+            mb: 2,
           }}
         >
-          <Toll sx={{ color: '#fff', fontSize: 28 }} />
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 0 0 8px rgba(246,71,95,0.15), 0 0 0 16px rgba(246,71,95,0.07)',
+            }}
+          >
+            <Toll sx={{ color: '#fff', fontSize: 32 }} />
+          </Box>
         </Box>
 
-        <Typography
-          variant="h4"
-          fontWeight={800}
-          sx={{ color: '#fff', letterSpacing: -0.5, lineHeight: 1 }}
-        >
-          {balanceLoading ? '...' : (balance ?? 0).toLocaleString('fr-FR')}
+        <Typography variant="h3" fontWeight={900} sx={{ color: '#fff', letterSpacing: -1.5, lineHeight: 1, mb: 0.5 }}>
+          {balanceLoading ? (
+            <Skeleton width={80} sx={{ mx: 'auto', bgcolor: 'rgba(255,255,255,0.1)' }} />
+          ) : (
+            (balance ?? 0).toLocaleString('fr-FR')
+          )}
         </Typography>
-        <Typography
-          variant="body2"
-          sx={{ color: 'rgba(255,255,255,0.7)', mt: 0.5 }}
-        >
-          crédits disponibles
+        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', letterSpacing: 0.5 }}>
+          credits disponibles
         </Typography>
+
+        {/* Trust badge */}
+        <Box sx={{
+          display: 'inline-flex', alignItems: 'center', gap: 0.75, mt: 2,
+          bgcolor: 'rgba(255,255,255,0.07)', borderRadius: '40px', px: 2, py: 0.75,
+          border: '1px solid rgba(255,255,255,0.1)',
+        }}>
+          <AutoAwesome sx={{ fontSize: 12, color: '#FFD700' }} />
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', fontWeight: 600 }}>
+            +5 000 utilisateurs en Afrique
+          </Typography>
+        </Box>
       </Box>
 
-      {/* Packages list */}
-      <Box sx={{ px: 3, pt: 2.5, pb: 2, overflowY: 'auto' }}>
-        <Typography
-          variant="subtitle2"
-          color="text.secondary"
-          sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: '0.7rem', mb: 0.5 }}
-        >
+      {/* ── PACKAGES ─────────────────────────────────────── */}
+      <Box sx={{ px: 3, pt: 3, pb: 2.5, bgcolor: '#0F172A', overflowY: 'auto' }}>
+        <Typography variant="overline" sx={{ color: 'rgba(255,255,255,0.4)', letterSpacing: 1.5, fontSize: '0.65rem', fontWeight: 700 }}>
           Choisir un pack
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-          Rejoint par plus de 5 000 utilisateurs en Afrique
         </Typography>
 
         {pkgError && (
-          <Typography variant="caption" color="error" sx={{ display: 'block', mb: 1 }}>
+          <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1, mb: 0.5 }}>
             {pkgError}
           </Typography>
         )}
 
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: 'stretch' }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mt: 1.5, alignItems: 'stretch' }}>
           {packagesLoading ? (
             [1, 2, 3].map((i) => (
-              <Skeleton key={i} variant="rounded" height={200} sx={{ borderRadius: 3, flex: 1, minWidth: 0 }} />
+              <Skeleton key={i} variant="rounded" height={220} sx={{ borderRadius: 4, flex: 1, minWidth: 0, bgcolor: 'rgba(255,255,255,0.06)' }} />
             ))
           ) : packages && packages.length > 0 ? (
             packages.map((pkg) => (
@@ -168,29 +184,18 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
               </Box>
             ))
           ) : (
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
-              Aucun pack disponible pour le moment.
+            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center', py: 4, width: '100%' }}>
+              Aucun pack disponible.
             </Typography>
           )}
         </Box>
       </Box>
 
-      {/* Footer */}
-      <Box
-        sx={{
-          px: 3,
-          py: 1.5,
-          borderTop: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'action.hover',
-        }}
-      >
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ lineHeight: 1.5, display: 'block', textAlign: 'center' }}
-        >
-          Les crédits permettent de déverrouiller les coordonnées des annonceurs.
+      {/* ── FOOTER ───────────────────────────────────────── */}
+      <Box sx={{ px: 3, py: 2, bgcolor: '#0A0F1E', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', lineHeight: 1.5, display: 'block', textAlign: 'center', fontSize: '0.7rem' }}>
+          Les credits permettent de deverrouiller les coordonnees des annonceurs.
+          Paiement securise via FedaPay.
         </Typography>
       </Box>
     </Dialog>

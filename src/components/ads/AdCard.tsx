@@ -36,16 +36,19 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
     : [{ id: 0, url: '/placeholder-house.jpg', thumb: '', mime_type: 'image/jpeg', is_primary: true }];
 
   const nextImage = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     setCurrentImage((prev) => (prev + 1) % images.length);
   }, [images.length]);
 
   const prevImage = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
   }, [images.length]);
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     toggleFav(ad);
   };

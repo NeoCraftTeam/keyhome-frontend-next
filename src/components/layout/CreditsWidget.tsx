@@ -2,7 +2,7 @@
 
 import PurchaseCreditsModal from '@/components/ui/PurchaseCreditsModal';
 import { creditsService } from '@/services/credits.service';
-import { AddCircleOutline, Toll } from '@mui/icons-material';
+import { Toll } from '@mui/icons-material';
 import {
   Box,
   Skeleton,
@@ -23,43 +23,41 @@ export default function CreditsWidget() {
 
   return (
     <>
-      {/* Balance pill */}
       <Box
         onClick={() => setModalOpen(true)}
         sx={{
           display: 'flex',
           alignItems: 'center',
-          gap: 0.75,
-          border: '1px solid',
-          borderColor: 'divider',
+          gap: 0.6,
+          background: 'linear-gradient(135deg, rgba(246,71,95,0.12) 0%, rgba(246,71,95,0.06) 100%)',
+          border: '1px solid rgba(246,71,95,0.25)',
           borderRadius: '40px',
           px: 1.5,
-          py: 0.6,
+          py: 0.55,
           cursor: 'pointer',
           userSelect: 'none',
           transition: 'all 0.18s',
           '&:hover': {
+            background: 'linear-gradient(135deg, rgba(246,71,95,0.2) 0%, rgba(246,71,95,0.12) 100%)',
             borderColor: 'primary.main',
-            boxShadow: '0 0 0 3px rgba(246,71,95,0.1)',
+            boxShadow: '0 0 0 3px rgba(246,71,95,0.12)',
           },
         }}
       >
-        <Toll sx={{ fontSize: 16, color: 'primary.main' }} />
+        <Toll sx={{ fontSize: 15, color: 'primary.main' }} />
         {balanceLoading ? (
-          <Skeleton width={36} height={16} sx={{ borderRadius: 1 }} />
+          <Skeleton width={28} height={14} sx={{ borderRadius: 1 }} />
         ) : (
           <Typography
             variant="body2"
-            fontWeight={700}
-            sx={{ color: 'text.primary', lineHeight: 1, letterSpacing: -0.3 }}
+            fontWeight={800}
+            sx={{ color: 'primary.main', lineHeight: 1, letterSpacing: -0.3, fontSize: '0.82rem' }}
           >
             {(balance ?? 0).toLocaleString('fr-FR')}
           </Typography>
         )}
-        <AddCircleOutline sx={{ fontSize: 14, color: 'text.secondary', ml: 0.25 }} />
       </Box>
 
-      {/* Purchase modal */}
       <PurchaseCreditsModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </>
   );
