@@ -1,12 +1,18 @@
 'use client';
 
+import { LocationOn, Search } from '@mui/icons-material';
+import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Search, LocationOn } from '@mui/icons-material';
+import { useEffect, useState } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
 
-const ThreeCanvas = dynamic(() => import('./ThreeCanvas'), { ssr: false });
+const ThreeCanvas = dynamic(() => import('./ThreeCanvas'), {
+  ssr: false,
+  loading: () => (
+    <div style={{ position: 'absolute', inset: 0, background: 'transparent' }} />
+  ),
+});
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
@@ -25,6 +31,12 @@ const CITIES = ['Douala', 'Garoua', 'Accra', 'Cotonou', 'Lomé', 'Bafoussam'];
 export default function HeroSection() {
   const { isDark, text, textSub, textMuted, bg, surface, border } = useLandingTheme();
 
+  // Skip heavy Three.js canvas on mobile for better LCP / performance
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+  }, []);
+
   const heroBg = isDark
     ? 'linear-gradient(135deg, #0A0A0F 0%, #12121A 50%, #0F0A15 100%)'
     : 'linear-gradient(135deg, #F0F2FA 0%, #F5EFFE 50%, #EEF2FA 100%)';
@@ -42,8 +54,8 @@ export default function HeroSection() {
         transition: 'background 0.4s ease',
       }}
     >
-      {/* Three.js animated particle background */}
-      <ThreeCanvas />
+      {/* Three.js animated particle background — skipped on mobile for better LCP */}
+      {!isMobile && <ThreeCanvas />}
 
       {/* Radial gradient overlay */}
       <div
@@ -92,7 +104,7 @@ export default function HeroSection() {
               }}
             >
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#F6475F', display: 'inline-block', animation: 'pulseGlow 2s infinite' }} />
-              Plateforme immobilière #1 en Afrique
+              Plateforme immobilière panafricaine
             </span>
           </motion.div>
 
@@ -137,7 +149,7 @@ export default function HeroSection() {
             Des milliers d&apos;annonces immobilières vérifiées à travers l&apos;Afrique. Maisons, appartements, terrains et villas — accédez aux coordonnées en toute sécurité.
           </motion.p>
 
-          {/* Fake search bar */}
+          {/* CTA bar */}
           <motion.div variants={itemVariants}>
             <Link
               href="/register"
@@ -153,7 +165,7 @@ export default function HeroSection() {
                   border: `1px solid ${border}`,
                   borderRadius: 16,
                   padding: '6px 6px 6px 20px',
-                  cursor: 'text',
+                  cursor: 'pointer',
                   transition: 'border-color 0.2s, background 0.2s',
                   backdropFilter: 'blur(10px)',
                 }}
@@ -168,7 +180,7 @@ export default function HeroSection() {
               >
                 <Search style={{ color: textMuted, fontSize: 22, flexShrink: 0 }} />
                 <span style={{ flex: 1, padding: '0 12px', color: textMuted, fontSize: 15, transition: 'color 0.4s ease' }}>
-                  Rechercher une annonce...
+                  Inscrivez-vous pour rechercher...
                 </span>
                 <button
                   style={{
@@ -187,8 +199,7 @@ export default function HeroSection() {
                     boxShadow: '0 4px 16px rgba(246,71,95,0.4)',
                   }}
                 >
-                  <Search style={{ fontSize: 18 }} />
-                  Rechercher
+                  Commencer
                 </button>
               </div>
             </Link>
@@ -197,7 +208,7 @@ export default function HeroSection() {
             <div className="hero-chips">
               <span style={{ color: textMuted, fontSize: 13, alignSelf: 'center', transition: 'color 0.4s ease' }}>Populaires :</span>
               {CITIES.map((city) => (
-                <Link key={city} href="/register" style={{ textDecoration: 'none' }}>
+                <Link key={city} href={`/search?city=${city.toLowerCase()}`} style={{ textDecoration: 'none' }}>
                   <span
                     style={{
                       display: 'inline-flex',

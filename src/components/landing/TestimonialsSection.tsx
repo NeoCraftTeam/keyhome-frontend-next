@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Star } from '@mui/icons-material';
+import { Star, StarHalf, StarBorder, Verified } from '@mui/icons-material';
 import { useLandingTheme } from './LandingThemeContext';
 
 const testimonials = [
@@ -11,6 +11,7 @@ const testimonials = [
     avatar: 'AD',
     color: '#F6475F',
     rating: 5,
+    verified: true,
     quote: 'J\'ai trouvé mon appartement en 2 jours ! Le système de déblocage est brillant — payer pour les vrais contacts évite les arnaques. Je recommande à 100%.',
   },
   {
@@ -18,15 +19,17 @@ const testimonials = [
     role: 'Propriétaire · Yaoundé, CM',
     avatar: 'MH',
     color: '#3B82F6',
-    rating: 5,
-    quote: 'En tant que propriétaire, je reçois uniquement des contacts sérieux. Mon bien a été loué en moins d\'une semaine. L\'interface est super simple à utiliser.',
+    rating: 4,
+    verified: true,
+    quote: 'En tant que propriétaire, je reçois uniquement des contacts sérieux. Mon bien a été loué en moins d\'une semaine. J\'aurais aimé plus d\'options pour gérer mes annonces, mais l\'essentiel est là.',
   },
   {
     name: 'Kofi Mensah',
     role: 'Acheteur · Lomé, TG',
     avatar: 'KM',
     color: '#10B981',
-    rating: 5,
+    rating: 4.5,
+    verified: true,
     quote: 'La carte interactive est incroyable pour explorer les quartiers. Les annonces sont vérifiées et les photos correspondent toujours à la réalité.',
   },
   {
@@ -35,9 +38,24 @@ const testimonials = [
     avatar: 'FB',
     color: '#8B5CF6',
     rating: 5,
+    verified: true,
     quote: 'KeyHome a révolutionné ma façon de travailler. Je gère toutes mes annonces depuis le tableau de bord. Mes clients trouvent exactement ce qu\'ils cherchent.',
   },
 ];
+
+function RatingStars({ rating }: { rating: number }) {
+  const stars = [];
+  for (let i = 1; i <= 5; i++) {
+    if (i <= Math.floor(rating)) {
+      stars.push(<Star key={i} style={{ fontSize: 16, color: '#F59E0B' }} />);
+    } else if (i - 0.5 === rating) {
+      stars.push(<StarHalf key={i} style={{ fontSize: 16, color: '#F59E0B' }} />);
+    } else {
+      stars.push(<StarBorder key={i} style={{ fontSize: 16, color: '#F59E0B' }} />);
+    }
+  }
+  return <>{stars}</>;
+}
 
 export default function TestimonialsSection() {
   const { bg, surface, border, text, textSub, quote, textMuted } = useLandingTheme();
@@ -112,9 +130,7 @@ export default function TestimonialsSection() {
             >
               {/* Stars */}
               <div style={{ display: 'flex', gap: 3 }}>
-                {Array.from({ length: t.rating }).map((_, idx) => (
-                  <Star key={idx} style={{ fontSize: 16, color: '#F59E0B' }} />
-                ))}
+                <RatingStars rating={t.rating} />
               </div>
 
               {/* Quote */}
@@ -152,7 +168,10 @@ export default function TestimonialsSection() {
                   {t.avatar}
                 </div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: text }}>{t.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: text }}>{t.name}</span>
+                    {t.verified && <Verified style={{ fontSize: 14, color: '#3B82F6' }} />}
+                  </div>
                   <div style={{ fontSize: 12, color: textMuted }}>{t.role}</div>
                 </div>
               </div>

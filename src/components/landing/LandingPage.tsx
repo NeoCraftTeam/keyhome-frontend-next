@@ -6,6 +6,7 @@ import CTASection from '@/components/landing/CTASection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
 import HeroSection from '@/components/landing/HeroSection';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
+import LandlordSection from '@/components/landing/LandlordSection';
 import LandingFooter from '@/components/landing/LandingFooter';
 import LandingNav from '@/components/landing/LandingNav';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
@@ -24,6 +25,7 @@ function LandingInner() {
         <HeroSection />
         <FeaturesSection />
         <HowItWorksSection />
+        <LandlordSection />
         <TestimonialsSection />
         <CTASection />
       </main>
