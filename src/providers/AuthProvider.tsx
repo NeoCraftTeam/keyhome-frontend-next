@@ -24,6 +24,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isLoggingOut: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithOAuth: (provider: OAuthProvider) => Promise<void>;
   logout: () => Promise<void>;
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUserState] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isExchanging, setIsExchanging] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
   // Guard against stale async callbacks updating state after unmount or re-run
   const authRunRef = useRef(0);
@@ -229,18 +231,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         apple: 'oauth_apple',
       } as const;
 
+      // Sign out any existing Clerk session first so the OAuth provider
+      // always presents the account selection prompt.
+      if (isSignedIn) {
+        await signOut();
+      }
+
       await signIn.authenticateWithRedirect({
         strategy: strategyMap[provider],
         redirectUrl: `${window.location.origin}/sso-callback`,
         redirectUrlComplete: '/home',
-        ...(provider === 'google' ? { qs: { prompt: 'select_account' } } : {}),
       });
     },
-    [signIn]
+    [signIn, isSignedIn, signOut]
   );
 
   const logout = useCallback(async () => {
     ++authRunRef.current; // Invalidate any in-flight auth callbacks
+    setIsLoggingOut(true);
+
     sessionStorage.removeItem('clerk_auth_email_hint');
     sessionStorage.removeItem('clerk_auth_prefill');
     clearSanctumToken();
@@ -250,6 +259,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signOut();
     }
 
+    // Brief pause so the logout overlay animation is visible
+    await new Promise((r) => setTimeout(r, 1800));
+    setIsLoggingOut(false);
     router.push('/home');
   }, [isSignedIn, signOut, clearSanctumToken, router]);
 
@@ -274,6 +286,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       isLoading,
       isAuthenticated,
+      isLoggingOut,
       login,
       loginWithOAuth,
       logout,
@@ -281,7 +294,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshUser,
       finalizeAuth,
     }),
-    [user, token, isLoading, isAuthenticated, login, loginWithOAuth, logout, setUser, refreshUser, finalizeAuth]
+    [user, token, isLoading, isAuthenticated, isLoggingOut, login, loginWithOAuth, logout, setUser, refreshUser, finalizeAuth]
   );
 
   return (

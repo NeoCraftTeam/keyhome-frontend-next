@@ -142,9 +142,27 @@ export const authService = {
     return data;
   },
 
-  async resendVerification(): Promise<{ message: string }> {
+  async resendVerification(email?: string): Promise<{ message: string }> {
+    if (email) {
+      const { data } = await api.post('/auth/resend-verification', { email });
+      return data;
+    }
     const { data } = await api.post('/auth/email/resend');
     return data;
+  },
+
+  async verifyEmailOtp(email: string, otp: string): Promise<{
+    message: string;
+    verified: boolean;
+    access_token: string;
+    user: User;
+  }> {
+    const { data } = await api.post('/auth/verify-email-otp', { email, otp });
+    return data;
+  },
+
+  async completeOnboarding(): Promise<void> {
+    await api.post('/auth/onboarding-complete');
   },
 
   /**

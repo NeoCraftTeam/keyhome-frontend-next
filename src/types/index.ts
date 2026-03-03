@@ -86,6 +86,7 @@ export interface User {
   city_id: string | null;
   city_name: string | null;
   point_balance?: number;
+  onboarding_completed_at?: string | null;
 }
 
 export interface City {
