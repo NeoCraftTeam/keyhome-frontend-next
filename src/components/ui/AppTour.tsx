@@ -180,6 +180,7 @@ export default function AppTour({ onDone }: AppTourProps) {
 
         {/* Skip button */}
         <IconButton
+          aria-label="Fermer le guide"
           onClick={handleClose}
           size="small"
           sx={{ position: 'absolute', top: 12, right: 12, bgcolor: 'rgba(255,255,255,0.15)', color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}

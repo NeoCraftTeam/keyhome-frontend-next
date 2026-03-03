@@ -2,6 +2,7 @@
 
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
+import WelcomeModal from '@/components/ui/WelcomeModal';
 import { useAuth } from '@/providers/AuthProvider';
 import { Box, CircularProgress } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
@@ -10,13 +11,21 @@ import { useEffect } from 'react';
 /** Pages we never want to save as post-login redirect targets */
 const AUTH_PAGES = ['/login', '/register', '/verify-otp', '/verify-email', '/complete-profile'];
 
+/**
+ * Routes within the dashboard group that require the user to be authenticated.
+ * Public routes (/home, /nearby) are accessible to guests for read-only browsing.
+ */
+const PRIVATE_PATHS = ['/profile'];
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
+  const isPrivatePage = PRIVATE_PATHS.some((p) => pathname?.startsWith(p));
+
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (isPrivatePage && !isLoading && !isAuthenticated) {
       // Save where the user was so we can bring them back after re-auth
       const shouldSave = pathname && !AUTH_PAGES.some(p => pathname.startsWith(p)) && pathname !== '/';
       if (shouldSave) {
@@ -24,10 +33,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
       router.replace('/login');
     }
-  }, [isAuthenticated, isLoading, router, pathname]);
+  }, [isAuthenticated, isLoading, router, pathname, isPrivatePage]);
 
-
-  if (isLoading) {
+  // Show a full-screen spinner while auth state is resolving on private pages
+  if (isLoading && isPrivatePage) {
     return (
       <Box
         sx={{
@@ -42,7 +51,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  if (!isAuthenticated) {
+  // Block rendering of private pages until auth is confirmed
+  if (!isAuthenticated && isPrivatePage) {
     return null;
   }
 
@@ -53,6 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </Box>
       <Footer />
+      <WelcomeModal />
     </Box>
   );
 }

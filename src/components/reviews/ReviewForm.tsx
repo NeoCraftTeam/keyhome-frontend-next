@@ -138,6 +138,7 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
         multiline
         rows={3}
         fullWidth
+        label="Votre commentaire"
         placeholder="Partagez votre expérience (optionnel)..."
         value={comment}
         onChange={(e) => setComment(e.target.value)}

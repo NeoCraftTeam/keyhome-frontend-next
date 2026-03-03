@@ -46,7 +46,6 @@ export default function CategoryPills({ categories, selected, onChange }: Catego
         ref={scrollRef}
         sx={{
           display: 'flex',
-          justifyContent: 'center',
           gap: 1,
           overflowX: 'auto',
           scrollbarWidth: 'none',

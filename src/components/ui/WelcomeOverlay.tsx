@@ -1,14 +1,15 @@
 'use client';
 
-import { Box, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import Image from 'next/image';
 
 interface WelcomeOverlayProps {
   firstName?: string | null;
+  onSkip?: () => void;
 }
 
 /** Celebratory full-screen overlay shown after registration / OAuth completion. */
-export default function WelcomeOverlay({ firstName }: WelcomeOverlayProps) {
+export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProps) {
   return (
     <Box
       sx={{
@@ -23,6 +24,9 @@ export default function WelcomeOverlay({ firstName }: WelcomeOverlayProps) {
         bgcolor: '#0f0c29',
         animation: 'overlayIn 0.45s cubic-bezier(0.22, 1, 0.36, 1)',
         '@keyframes overlayIn': { from: { opacity: 0 }, to: { opacity: 1 } },
+        '@media (prefers-reduced-motion: reduce)': {
+          animation: 'none',
+        },
 
         /* purple→red sweep background */
         background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 40%, #8b1a2e 75%, #F6475F 100%)',
@@ -48,6 +52,7 @@ export default function WelcomeOverlay({ firstName }: WelcomeOverlayProps) {
             left: `${5 + (i * 5.5) % 92}%`,
             opacity: 0,
             animation: `confettiFall ${1.8 + (i % 5) * 0.4}s ease-in ${0.3 + (i % 6) * 0.15}s infinite`,
+            '@media (prefers-reduced-motion: reduce)': { animation: 'none', display: 'none' },
             '@keyframes confettiFall': {
               '0%': { opacity: 0, transform: 'translateY(-60px) rotate(0deg)' },
               '20%': { opacity: 0.9 },
@@ -201,6 +206,27 @@ export default function WelcomeOverlay({ firstName }: WelcomeOverlayProps) {
           ))}
         </Box>
       </Box>
+
+      {/* Skip button */}
+      {onSkip && (
+        <Button
+          onClick={onSkip}
+          variant="text"
+          sx={{
+            position: 'absolute',
+            top: 24,
+            right: 24,
+            color: 'rgba(255,255,255,0.55)',
+            fontSize: '0.85rem',
+            fontWeight: 500,
+            textTransform: 'none',
+            zIndex: 2,
+            '&:hover': { color: 'rgba(255,255,255,0.9)', bgcolor: 'rgba(255,255,255,0.08)' },
+          }}
+        >
+          Passer
+        </Button>
+      )}
     </Box>
   );
 }

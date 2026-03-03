@@ -84,7 +84,6 @@ export default function ProfilePage() {
   const [cityInput, setCityInput] = useState(user?.city_name || '');
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const [editError, setEditError] = useState('');
-  const [editSuccess, setEditSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [snackbar, setSnackbar] = useState('');
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -105,7 +104,6 @@ export default function ProfilePage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Connected OAuth accounts (Clerk)
@@ -156,7 +154,6 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async () => {
     setEditError('');
-    setEditSuccess('');
     setIsSaving(true);
     try {
       const formData = new FormData();
@@ -169,7 +166,7 @@ export default function ProfilePage() {
 
       const updated = await usersService.update(user!.id, formData);
       setUser({ ...user!, ...updated });
-      setEditSuccess('Profil mis à jour avec succès.');
+      setSnackbar('Profil mis à jour avec succès.');
       setIsEditing(false);
     } catch (err) {
       setEditError(getSafeErrorMessage(err, 'Erreur lors de la mise à jour.'));
@@ -180,11 +177,10 @@ export default function ProfilePage() {
 
   const handleChangePassword = async () => {
     setPasswordError('');
-    setPasswordSuccess('');
     setIsChangingPassword(true);
     try {
       const res = await authService.updatePassword(passwordForm);
-      setPasswordSuccess(res.message || 'Mot de passe modifié avec succès.');
+      setSnackbar(res.message || 'Mot de passe modifié avec succès.');
       setPasswordForm({ current_password: '', new_password: '', new_password_confirmation: '' });
     } catch (err) {
       setPasswordError(getSafeErrorMessage(err, 'Erreur lors du changement de mot de passe.'));
@@ -228,6 +224,7 @@ export default function ProfilePage() {
             />
             <IconButton
               size="small"
+              aria-label="Changer la photo de profil"
               onClick={() => avatarInputRef.current?.click()}
               sx={{
                 position: 'absolute',
@@ -307,7 +304,6 @@ export default function ProfilePage() {
       {/* Tab 0: Profile info */}
       <TabPanel value={tab} index={0}>
         {editError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{editError}</Alert>}
-        {editSuccess && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{editSuccess}</Alert>}
 
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -472,7 +468,6 @@ export default function ProfilePage() {
         </Typography>
 
         {passwordError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{passwordError}</Alert>}
-        {passwordSuccess && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{passwordSuccess}</Alert>}
 
         <Box sx={{ maxWidth: 420 }}>
           <TextField
@@ -485,7 +480,7 @@ export default function ProfilePage() {
               input: {
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowCurrentPassword(!showCurrentPassword)} edge="end" size="small">
+                    <IconButton onClick={() => setShowCurrentPassword(!showCurrentPassword)} edge="end" size="small" aria-label={showCurrentPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
                       {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -505,7 +500,7 @@ export default function ProfilePage() {
               input: {
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowNewPassword(!showNewPassword)} edge="end" size="small">
+                    <IconButton onClick={() => setShowNewPassword(!showNewPassword)} edge="end" size="small" aria-label={showNewPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
                       {showNewPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -678,7 +673,7 @@ export default function ProfilePage() {
                           {linked.emailAddress ?? 'Connecté'}
                         </Typography>
                       ) : (
-                        <Typography variant="caption" color="text.disabled" sx={{ mt: 0.25, display: 'block' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
                           Non connecté
                         </Typography>
                       )}

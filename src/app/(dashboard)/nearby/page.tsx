@@ -285,6 +285,7 @@ export default function NearbyPage() {
           {/* Relocate + counts */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
             <IconButton
+              aria-label="Recentrer la carte"
               onClick={relocate}
               size="small"
               sx={{
@@ -383,7 +384,7 @@ export default function NearbyPage() {
         <Box sx={{ p: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" fontWeight={600}>{filteredAds.length} annonce{filteredAds.length !== 1 ? 's' : ''}</Typography>
-            <IconButton onClick={() => setShowList(false)}><CloseIcon /></IconButton>
+            <IconButton aria-label="Fermer la liste" onClick={() => setShowList(false)}><CloseIcon /></IconButton>
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {filteredAds.map((ad) => <AdCard key={ad.id} ad={ad} showDistance />)}
