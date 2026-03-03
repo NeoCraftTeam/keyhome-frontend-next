@@ -14,13 +14,15 @@ const links = {
   ],
   'Villes populaires': [
     { label: 'Immobilier Douala', href: '/search?city=douala' },
-    { label: 'Immobilier Abidjan', href: '/search?city=abidjan' },
+    { label: 'Immobilier Garoua', href: '/search?city=garoua' },
+    { label: 'Immobilier Accra', href: '/search?city=accra' },
     { label: 'Immobilier Cotonou', href: '/search?city=cotonou' },
     { label: 'Immobilier Lomé', href: '/search?city=lomé' },
+    { label: 'Immobilier Bafoussam', href: '/search?city=bafoussam' },
   ],
   Ressources: [
-    { label: 'Inscription gratuite', href: '/sign-up' },
-    { label: 'Se connecter', href: '/sign-in' },
+    { label: 'Inscription gratuite', href: '/register' },
+    { label: 'Se connecter', href: '/login' },
   ],
   Légal: [
     { label: 'Conditions d\'utilisation', href: '/conditions' },

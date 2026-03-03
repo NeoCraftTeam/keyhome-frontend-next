@@ -9,6 +9,8 @@ import { PageTransitionLink } from './PageTransition';
 const NAV_LINKS = [
   { label: 'Fonctionnalités', href: '#features' },
   { label: 'Comment ça marche', href: '#how-it-works' },
+  { label: 'Propriétaires', href: '#landlords' },
+  { label: 'FAQ', href: '#faq' },
   { label: 'Témoignages', href: '#testimonials' },
 ];
 
