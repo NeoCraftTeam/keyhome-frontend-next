@@ -6,9 +6,8 @@ const footerSections = [
   {
     title: 'KeyHome',
     links: [
-      { label: 'À propos', href: '#' },
-      { label: 'Comment ça marche', href: '#' },
-      { label: 'Carrières', href: '#' },
+      { label: 'Comment ça marche', href: '/#how-it-works' },
+      { label: 'Témoignages', href: '/#testimonials' },
     ],
   },
   {
@@ -22,7 +21,7 @@ const footerSections = [
   {
     title: 'Aide',
     links: [
-      { label: 'Centre d\'aide', href: '#' },
+      { label: 'Centre d\'aide', href: '/aide' },
       { label: 'Conditions d\'utilisation', href: '/conditions' },
       { label: 'Politique de confidentialité', href: '/confidentialite' },
     ],

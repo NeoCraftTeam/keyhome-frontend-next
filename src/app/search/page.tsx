@@ -1,0 +1,778 @@
+'use client';
+
+import AdCard from '@/components/ads/AdCard';
+import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
+import QueryError from '@/components/ui/QueryError';
+import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
+import { escapeHtml } from '@/lib/sanitize';
+import { useAuth } from '@/providers/AuthProvider';
+import { adsService } from '@/services/ads.service';
+import { adTypesService, citiesService } from '@/services/cities.service';
+import { AdType, City, SearchParams } from '@/types';
+import {
+    BookmarkBorder as SaveIcon,
+    Close as CloseIcon,
+    List as ListIcon,
+    Map as MapIcon,
+    Search as SearchIcon,
+    Tune as TuneIcon,
+} from '@mui/icons-material';
+import {
+    Autocomplete,
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Divider,
+    Drawer,
+    FormControlLabel,
+    Grid,
+    IconButton,
+    InputBase,
+    Menu,
+    MenuItem,
+    Pagination,
+    Paper,
+    Slider,
+    Snackbar,
+    Switch,
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography,
+    useMediaQuery,
+    useTheme,
+} from '@mui/material';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+
+mapboxgl.accessToken = MAPBOX_TOKEN;
+
+function SearchContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { isAuthenticated } = useAuth();
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+
+  const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
+  const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
+  const [saveSnackbar, setSaveSnackbar] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [cityInput, setCityInput] = useState('');
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+  const [selectedType, setSelectedType] = useState<AdType | null>(null);
+  const [bedrooms, setBedrooms] = useState<number | undefined>();
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]);
+  const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 1000]);
+  const [hasParking, setHasParking] = useState(false);
+
+  const [priceAnchor, setPriceAnchor] = useState<null | HTMLElement>(null);
+  const [bedsAnchor, setBedsAnchor] = useState<null | HTMLElement>(null);
+  const [typeAnchor, setTypeAnchor] = useState<null | HTMLElement>(null);
+  const [sortAnchor, setSortAnchor] = useState<null | HTMLElement>(null);
+
+  useEffect(() => {
+    const urlQ = searchParams.get('q') || '';
+    if (urlQ !== query) {
+      setQuery(urlQ);
+      setSearchInput(urlQ);
+      setPage(1);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
+    queryKey: ['cities', cityInput],
+    queryFn: () => citiesService.list({ q: cityInput, per_page: 20 }),
+    enabled: cityInput.length >= 1,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: adTypes } = useQuery({
+    queryKey: ['adTypes'],
+    queryFn: () => adTypesService.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const buildParams = (): SearchParams => ({
+    q: query || undefined,
+    city: selectedCity?.name || undefined,
+    type: selectedType?.name || undefined,
+    bedrooms: bedrooms || undefined,
+    price_min: priceRange[0] > 0 ? priceRange[0] : undefined,
+    price_max: priceRange[1] < 5000000 ? priceRange[1] : undefined,
+    surface_min: surfaceRange[0] > 0 ? surfaceRange[0] : undefined,
+    surface_max: surfaceRange[1] < 1000 ? surfaceRange[1] : undefined,
+    has_parking: hasParking || undefined,
+    sort: sortBy,
+    order: sortOrder,
+    page,
+    per_page: 20,
+  });
+
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
+    queryKey: ['search', query, selectedCity?.id, selectedType?.id, bedrooms, priceRange, surfaceRange, hasParking, sortBy, sortOrder, page],
+    queryFn: () => adsService.search(buildParams()),
+    placeholderData: keepPreviousData,
+    staleTime: 60 * 1000,
+  });
+
+  const { data: allAdsData } = useQuery({
+    queryKey: ['search-map-all', query, selectedCity?.id, selectedType?.id, bedrooms, priceRange, surfaceRange, hasParking],
+    queryFn: () => adsService.search({ ...buildParams(), page: 1, per_page: 200 }),
+    staleTime: 2 * 60 * 1000,
+    enabled: !isMobile || mobileViewMode === 'map',
+  });
+
+  const ads = useMemo(() => data?.data || [], [data?.data]);
+  const mapAds = useMemo(() => allAdsData?.data || ads, [allAdsData?.data, ads]);
+  const totalPages = data?.meta?.last_page || 1;
+  const total = data?.meta?.total || 0;
+
+  useEffect(() => {
+    const showMap = !isMobile || mobileViewMode === 'map';
+    if (!showMap || !mapContainerRef.current || !MAPBOX_TOKEN || mapRef.current) return;
+
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [DEFAULT_CENTER[1], DEFAULT_CENTER[0]],
+      zoom: 11,
+    });
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    mapRef.current = map;
+
+    return () => { map.remove(); mapRef.current = null; };
+  }, [isMobile, mobileViewMode]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+
+    const bounds = new mapboxgl.LngLatBounds();
+    let hasGeo = false;
+
+    mapAds.forEach((ad) => {
+      if (!ad.location) return;
+      hasGeo = true;
+
+      const ratingHtml = ad.rating
+        ? `<div style="color:#F59E0B;font-size:12px">&#9733; ${ad.rating.toFixed(1)}</div>`
+        : '';
+
+      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
+        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${encodeURIComponent(String(ad.id))}/${encodeURIComponent(ad.slug)}'">
+          <div>${escapeHtml(ad.title)}</div>
+          <div style="color:#F6475F;font-weight:700">${formatPrice(ad.price)}</div>
+          ${ratingHtml}
+        </div>`
+      );
+
+      const marker = new mapboxgl.Marker({ color: '#F6475F' })
+        .setPopup(popup)
+        .setLngLat([ad.location.longitude, ad.location.latitude])
+        .addTo(mapRef.current!);
+
+      markersRef.current.push(marker);
+      bounds.extend([ad.location.longitude, ad.location.latitude]);
+    });
+
+    if (hasGeo) {
+      mapRef.current.fitBounds(bounds, { padding: 50, maxZoom: 14 });
+    }
+  }, [mapAds, router]);
+
+  const clearFilters = () => {
+    setQuery('');
+    setSearchInput('');
+    setSelectedCity(null);
+    setCityInput('');
+    setSelectedType(null);
+    setBedrooms(undefined);
+    setPriceRange([0, 5000000]);
+    setSurfaceRange([0, 1000]);
+    setHasParking(false);
+    setSortBy('created_at');
+    setSortOrder('desc');
+    setPage(1);
+  };
+
+  const activeFilterCount = [
+    selectedCity,
+    selectedType,
+    bedrooms,
+    priceRange[0] > 0,
+    priceRange[1] < 5000000,
+    surfaceRange[0] > 0,
+    surfaceRange[1] < 1000,
+    hasParking,
+  ].filter(Boolean).length;
+
+  const cities = citiesData?.data || [];
+
+  const priceLabel =
+    priceRange[0] > 0 || priceRange[1] < 5000000
+      ? `${(priceRange[0] / 1000).toFixed(0)}k – ${priceRange[1] < 5000000 ? (priceRange[1] / 1000).toFixed(0) + 'k' : 'Max'}`
+      : 'Prix';
+
+  const bedsLabel = bedrooms ? `${bedrooms}+ ch.` : 'Chambres';
+  const typeLabel = selectedType ? selectedType.name : 'Type de bien';
+
+  const sortLabel =
+    sortBy === 'price' && sortOrder === 'asc' ? 'Prix ↑'
+    : sortBy === 'price' && sortOrder === 'desc' ? 'Prix ↓'
+    : sortBy === 'surface_area' ? 'Surface'
+    : 'Plus récents';
+
+  const MoreFiltersDrawer = (
+    <Box sx={{ p: 3, width: isMobile ? '100%' : 380 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+        <Typography variant="h6" fontWeight={700}>Tous les filtres</Typography>
+        <IconButton aria-label="Fermer" onClick={() => setMoreFiltersOpen(false)}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
+      <Autocomplete
+        size="small"
+        options={cities}
+        getOptionLabel={(opt) => opt.name}
+        value={selectedCity}
+        onChange={(_, val) => { setSelectedCity(val); setPage(1); setCityDropdownOpen(false); }}
+        inputValue={cityInput}
+        onInputChange={(_, val, reason) => { if (reason !== 'reset') { setCityInput(val); setCityDropdownOpen(val.length >= 1); } }}
+        onClose={() => setCityDropdownOpen(false)}
+        open={cityDropdownOpen && cityInput.length >= 1 && !isCitiesLoading && cities.length > 0}
+        filterOptions={(x) => x}
+        loading={isCitiesLoading}
+        noOptionsText="Aucune ville trouvée"
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Ville"
+            placeholder="Rechercher une ville…"
+            InputProps={{
+              ...params.InputProps,
+              endAdornment: (
+                <>
+                  {isCitiesLoading ? <CircularProgress color="inherit" size={18} /> : null}
+                  {params.InputProps.endAdornment}
+                </>
+              ),
+            }}
+            sx={{ mb: 2 }}
+          />
+        )}
+      />
+
+      <Autocomplete
+        size="small"
+        options={adTypes || []}
+        getOptionLabel={(opt) => opt.name}
+        value={selectedType}
+        onChange={(_, val) => { setSelectedType(val); setPage(1); }}
+        noOptionsText="Aucun type"
+        renderInput={(params) => <TextField {...params} label="Type de bien" sx={{ mb: 2 }} />}
+      />
+
+      <Typography variant="subtitle2" sx={{ mb: 1 }}>Surface (m²)</Typography>
+      <Slider
+        value={surfaceRange}
+        onChange={(_, val) => setSurfaceRange(val as [number, number])}
+        onChangeCommitted={() => setPage(1)}
+        min={0} max={1000} step={10}
+        valueLabelDisplay="auto"
+        sx={{ mb: 2.5 }}
+      />
+
+      <FormControlLabel
+        control={<Switch checked={hasParking} onChange={(e) => { setHasParking(e.target.checked); setPage(1); }} />}
+        label="Parking inclus"
+        sx={{ mb: 2 }}
+      />
+
+      <Divider sx={{ my: 2 }} />
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <Button fullWidth variant="outlined" onClick={clearFilters}>
+          Réinitialiser
+        </Button>
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={() => setMoreFiltersOpen(false)}
+          sx={{ background: 'linear-gradient(to right, #F6475F, #D93A50)' }}
+        >
+          Voir {total} résultats
+        </Button>
+      </Box>
+    </Box>
+  );
+
+  const ResultsList = (
+    <Box
+      sx={{
+        height: { md: 'calc(100vh - 120px)' },
+        overflowY: { md: 'auto' },
+        px: { xs: 2, md: 2 },
+        pt: 1,
+        pb: 4,
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, pt: 1 }}>
+        <Typography variant="subtitle2" color="text.secondary">
+          {isFetching && !isLoading ? (
+            'Mise à jour…'
+          ) : (
+            <><strong>{total}</strong> annonce{total > 1 ? 's' : ''}</>
+          )}
+        </Typography>
+
+        <Button
+          size="small"
+          endIcon={<span style={{ fontSize: 10 }}>▾</span>}
+          onClick={(e) => setSortAnchor(e.currentTarget)}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 600,
+            fontSize: '0.8rem',
+            borderRadius: '20px',
+            border: '1px solid',
+            borderColor: 'divider',
+            color: 'text.primary',
+            px: 1.5,
+            py: 0.25,
+          }}
+        >
+          {sortLabel}
+        </Button>
+        <Menu anchorEl={sortAnchor} open={Boolean(sortAnchor)} onClose={() => setSortAnchor(null)}>
+          {[
+            { label: 'Plus récents', sb: 'created_at', so: 'desc' },
+            { label: 'Prix croissant', sb: 'price', so: 'asc' },
+            { label: 'Prix décroissant', sb: 'price', so: 'desc' },
+            { label: 'Surface croissante', sb: 'surface_area', so: 'asc' },
+          ].map((opt) => (
+            <MenuItem
+              key={opt.label}
+              selected={sortBy === opt.sb && sortOrder === opt.so}
+              onClick={() => { setSortBy(opt.sb); setSortOrder(opt.so as 'asc' | 'desc'); setPage(1); setSortAnchor(null); }}
+            >
+              {opt.label}
+            </MenuItem>
+          ))}
+        </Menu>
+      </Box>
+
+      {isError ? (
+        <QueryError onRetry={() => refetch()} message="Impossible de charger les résultats." />
+      ) : (
+        <>
+          <Grid container spacing={1.5}>
+            {isLoading
+              ? Array.from({ length: 8 }).map((_, idx) => (
+                  <Grid key={idx} size={{ xs: 6, lg: 6, xl: 4 }}>
+                    <AdCardSkeleton />
+                  </Grid>
+                ))
+              : ads.map((ad) => (
+                  <Grid key={ad.id} size={{ xs: 6, lg: 6, xl: 4 }}>
+                    <AdCard ad={ad} />
+                  </Grid>
+                ))}
+          </Grid>
+
+          {!isLoading && ads.length === 0 && (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <SearchIcon sx={{ fontSize: 56, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary">Aucun résultat</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Essayez de modifier vos critères de recherche
+              </Typography>
+            </Box>
+          )}
+
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_, val) => setPage(val)}
+                shape="rounded"
+                size="small"
+                sx={{
+                  '& .MuiPaginationItem-root.Mui-selected': {
+                    bgcolor: '#F6475F',
+                    color: '#fff',
+                    '&:hover': { bgcolor: '#D93A50' },
+                  },
+                }}
+              />
+            </Box>
+          )}
+        </>
+      )}
+    </Box>
+  );
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+
+      {/* ZILLOW-STYLE FILTER BAR */}
+      <Box
+        sx={{
+          flexShrink: 0,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.default',
+          px: { xs: 1.5, md: 2 },
+          py: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+          zIndex: 10,
+        }}
+      >
+        <Paper
+          component="form"
+          onSubmit={(e: React.FormEvent) => {
+            e.preventDefault();
+            setQuery(searchInput.trim());
+            setPage(1);
+          }}
+          elevation={0}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '8px',
+            px: 1.5,
+            py: 0.25,
+            minWidth: { xs: 160, md: 240 },
+            '&:focus-within': { borderColor: 'primary.main', boxShadow: '0 0 0 2px rgba(246,71,95,0.15)' },
+          }}
+        >
+          <SearchIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.75 }} />
+          <InputBase
+            placeholder="Ville, quartier…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            sx={{ fontSize: '0.85rem', flex: 1 }}
+          />
+          {searchInput && (
+            <IconButton size="small" onClick={() => { setSearchInput(''); setQuery(''); setPage(1); }}>
+              <CloseIcon sx={{ fontSize: 14 }} />
+            </IconButton>
+          )}
+        </Paper>
+
+        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+
+        {/* Prix */}
+        <Button
+          size="small"
+          variant={priceRange[0] > 0 || priceRange[1] < 5000000 ? 'contained' : 'outlined'}
+          endIcon={<span style={{ fontSize: 10 }}>▾</span>}
+          onClick={(e) => setPriceAnchor(e.currentTarget)}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 600,
+            borderRadius: '8px',
+            fontSize: '0.825rem',
+            flexShrink: 0,
+            ...(priceRange[0] > 0 || priceRange[1] < 5000000
+              ? { bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' } }
+              : { borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'text.primary' } }),
+          }}
+        >
+          {priceLabel}
+        </Button>
+        <Menu
+          anchorEl={priceAnchor}
+          open={Boolean(priceAnchor)}
+          onClose={() => setPriceAnchor(null)}
+          slotProps={{ paper: { sx: { p: 2.5, width: 280, borderRadius: 3 } } }}
+        >
+          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 2 }}>Prix (FCFA)</Typography>
+          <Slider
+            value={priceRange}
+            onChange={(_, val) => setPriceRange(val as [number, number])}
+            onChangeCommitted={() => setPage(1)}
+            min={0} max={5000000} step={50000}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(val) => `${(val / 1000).toFixed(0)}k`}
+          />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+            <Typography variant="caption" color="text.secondary">0 FCFA</Typography>
+            <Typography variant="caption" color="text.secondary">5 000 000 FCFA</Typography>
+          </Box>
+        </Menu>
+
+        {/* Chambres */}
+        <Button
+          size="small"
+          variant={bedrooms ? 'contained' : 'outlined'}
+          endIcon={<span style={{ fontSize: 10 }}>▾</span>}
+          onClick={(e) => setBedsAnchor(e.currentTarget)}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 600,
+            borderRadius: '8px',
+            fontSize: '0.825rem',
+            flexShrink: 0,
+            ...(bedrooms
+              ? { bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' } }
+              : { borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'text.primary' } }),
+          }}
+        >
+          {bedsLabel}
+        </Button>
+        <Menu
+          anchorEl={bedsAnchor}
+          open={Boolean(bedsAnchor)}
+          onClose={() => setBedsAnchor(null)}
+          slotProps={{ paper: { sx: { p: 2, borderRadius: 3 } } }}
+        >
+          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>Nombre de chambres</Typography>
+          <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+            {[undefined, 1, 2, 3, 4, 5].map((val) => (
+              <Chip
+                key={val ?? 'all'}
+                label={val === undefined ? 'Tous' : `${val}+`}
+                size="small"
+                onClick={() => { setBedrooms(val); setPage(1); setBedsAnchor(null); }}
+                variant={bedrooms === val ? 'filled' : 'outlined'}
+                sx={bedrooms === val ? { bgcolor: 'primary.main', color: '#fff' } : {}}
+              />
+            ))}
+          </Box>
+        </Menu>
+
+        {/* Type de bien */}
+        <Button
+          size="small"
+          variant={selectedType ? 'contained' : 'outlined'}
+          endIcon={<span style={{ fontSize: 10 }}>▾</span>}
+          onClick={(e) => setTypeAnchor(e.currentTarget)}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 600,
+            borderRadius: '8px',
+            fontSize: '0.825rem',
+            flexShrink: 0,
+            minWidth: 0,
+            ...(selectedType
+              ? { bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' } }
+              : { borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'text.primary' } }),
+          }}
+        >
+          {typeLabel}
+        </Button>
+        <Menu
+          anchorEl={typeAnchor}
+          open={Boolean(typeAnchor)}
+          onClose={() => setTypeAnchor(null)}
+          slotProps={{ paper: { sx: { minWidth: 180, borderRadius: 3 } } }}
+        >
+          <MenuItem onClick={() => { setSelectedType(null); setPage(1); setTypeAnchor(null); }}>
+            <em>Tous les types</em>
+          </MenuItem>
+          {(adTypes || []).map((t) => (
+            <MenuItem
+              key={t.id}
+              selected={selectedType?.id === t.id}
+              onClick={() => { setSelectedType(t); setPage(1); setTypeAnchor(null); }}
+            >
+              {t.name}
+            </MenuItem>
+          ))}
+        </Menu>
+
+        {/* Plus de filtres */}
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
+          onClick={() => setMoreFiltersOpen(true)}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 600,
+            borderRadius: '8px',
+            fontSize: '0.825rem',
+            flexShrink: 0,
+            borderColor: activeFilterCount > 0 ? 'primary.main' : 'divider',
+            color: activeFilterCount > 0 ? 'primary.main' : 'text.primary',
+          }}
+        >
+          Filtres
+          {activeFilterCount > 0 && (
+            <Chip
+              label={activeFilterCount}
+              size="small"
+              sx={{ ml: 0.5, height: 18, minWidth: 18, bgcolor: 'primary.main', color: '#fff', fontSize: '0.65rem' }}
+            />
+          )}
+        </Button>
+
+        {activeFilterCount > 0 && (
+          <Button
+            size="small"
+            variant="text"
+            onClick={clearFilters}
+            sx={{ textTransform: 'none', fontSize: '0.8rem', flexShrink: 0, color: 'text.secondary' }}
+          >
+            Réinitialiser
+          </Button>
+        )}
+
+        {!isMobile && (
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
+            onClick={() => {
+              if (!isAuthenticated) { router.push('/login'); return; }
+              setSaveSnackbar(true);
+            }}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              borderRadius: '8px',
+              fontSize: '0.825rem',
+              flexShrink: 0,
+              ml: 'auto',
+              borderColor: 'primary.main',
+              color: 'primary.main',
+              whiteSpace: 'nowrap',
+              '&:hover': { bgcolor: 'primary.main', color: '#fff' },
+            }}
+          >
+            Sauvegarder
+          </Button>
+        )}
+
+        {isMobile && (
+          <ToggleButtonGroup
+            value={mobileViewMode}
+            exclusive
+            onChange={(_, val) => val && setMobileViewMode(val)}
+            size="small"
+            sx={{ ml: 'auto', flexShrink: 0 }}
+          >
+            <ToggleButton value="list" aria-label="Liste"><ListIcon sx={{ fontSize: 18 }} /></ToggleButton>
+            <ToggleButton value="map" aria-label="Carte"><MapIcon sx={{ fontSize: 18 }} /></ToggleButton>
+          </ToggleButtonGroup>
+        )}
+      </Box>
+
+      {/* Active filter chips */}
+      {activeFilterCount > 0 && (
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 0.5,
+            px: 2,
+            py: 0.75,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.default',
+          }}
+        >
+          {selectedCity && (
+            <Chip label={`Ville: ${selectedCity.name}`} onDelete={() => setSelectedCity(null)} size="small" variant="outlined" />
+          )}
+          {selectedType && (
+            <Chip label={`Type: ${selectedType.name}`} onDelete={() => setSelectedType(null)} size="small" variant="outlined" />
+          )}
+          {bedrooms && (
+            <Chip label={`${bedrooms}+ chambres`} onDelete={() => setBedrooms(undefined)} size="small" variant="outlined" />
+          )}
+          {hasParking && (
+            <Chip label="Parking" onDelete={() => setHasParking(false)} size="small" variant="outlined" />
+          )}
+          {query && (
+            <Chip label={`"${query}"`} onDelete={() => { setQuery(''); setSearchInput(''); }} size="small" variant="outlined" />
+          )}
+        </Box>
+      )}
+
+      {/* MAP + RESULTS SPLIT */}
+      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        {(!isMobile || mobileViewMode === 'map') && (
+          <Box
+            sx={{
+              width: { xs: '100%', md: '45%' },
+              flexShrink: 0,
+              position: 'relative',
+              borderRight: { md: '1px solid' },
+              borderColor: { md: 'divider' },
+            }}
+          >
+            {!MAPBOX_TOKEN ? (
+              <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'grey.100' }}>
+                <Typography color="text.secondary">Configurez NEXT_PUBLIC_MAPBOX_TOKEN</Typography>
+              </Box>
+            ) : (
+              <Box ref={mapContainerRef} sx={{ width: '100%', height: '100%' }} />
+            )}
+          </Box>
+        )}
+
+        {(!isMobile || mobileViewMode === 'list') && (
+          <Box sx={{ flex: 1, overflow: 'hidden' }}>
+            {ResultsList}
+          </Box>
+        )}
+      </Box>
+
+      <Drawer
+        anchor={isMobile ? 'bottom' : 'right'}
+        open={moreFiltersOpen}
+        onClose={() => setMoreFiltersOpen(false)}
+        PaperProps={{
+          sx: isMobile
+            ? { borderRadius: '16px 16px 0 0', maxHeight: '85vh' }
+            : { width: 380 },
+        }}
+      >
+        {MoreFiltersDrawer}
+      </Drawer>
+
+      <Snackbar
+        open={saveSnackbar}
+        autoHideDuration={3000}
+        onClose={() => setSaveSnackbar(false)}
+        message="Recherche sauvegardée !"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+    </Box>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<Box sx={{ p: 4 }}><CircularProgress /></Box>}>
+      <SearchContent />
+    </Suspense>
+  );
+}
