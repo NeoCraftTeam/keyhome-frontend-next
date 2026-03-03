@@ -55,6 +55,7 @@ export default function HeroSection() {
     { value: '10+', label: 'Villes couvertes' },
     { value: '5 000+', label: 'Utilisateurs' },
   ]);
+  const [statsLoaded, setStatsLoaded] = useState(false);
 
   useEffect(() => {
     const fmt = (n: number): string => {
@@ -70,8 +71,9 @@ export default function HeroSection() {
           { value: fmt(data.cities_count ?? 0), label: 'Villes couvertes' },
           { value: fmt(data.users_count ?? 0), label: 'Utilisateurs' },
         ]);
+        setStatsLoaded(true);
       })
-      .catch(() => { /* keep fallback values */ });
+      .catch(() => { setStatsLoaded(true); /* keep fallback values */ });
   }, []);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -278,6 +280,11 @@ export default function HeroSection() {
                   onFocus={() => { if (cities.length > 0 || query.length >= 1) setShowDropdown(true); }}
                   onKeyDown={handleKeyDown}
                   placeholder="Rechercher une ville, un quartier..."
+                  aria-label="Rechercher une ville ou un quartier"
+                  role="combobox"
+                  aria-expanded={showDropdown && cities.length > 0}
+                  aria-autocomplete="list"
+                  aria-haspopup="listbox"
                   style={{
                     flex: 1,
                     padding: '10px 12px',
@@ -318,6 +325,8 @@ export default function HeroSection() {
               {showDropdown && cities.length > 0 && (
                 <div
                   ref={dropdownRef}
+                  role="listbox"
+                  aria-label="Suggestions de villes"
                   style={{
                     position: 'absolute',
                     top: '100%',
@@ -403,7 +412,7 @@ export default function HeroSection() {
             style={{ marginTop: 56 }}
           >
             {stats.map((stat) => (
-              <div key={stat.label} style={{ textAlign: 'center' }}>
+              <div key={stat.label} style={{ textAlign: 'center', opacity: statsLoaded ? 1 : 0.5, transition: 'opacity 0.5s ease, color 0.4s ease' }}>
                 <div style={{ fontSize: 28, fontWeight: 800, color: text, letterSpacing: '-1px', transition: 'color 0.4s ease' }}>{stat.value}</div>
                 <div style={{ fontSize: 13, color: textMuted, marginTop: 2, transition: 'color 0.4s ease' }}>{stat.label}</div>
               </div>
