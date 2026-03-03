@@ -16,7 +16,7 @@ import {
 import { Box, Chip, IconButton, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 interface AdCardProps {
   ad: Ad;
@@ -27,6 +27,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
   const router = useRouter();
   const [currentImage, setCurrentImage] = useState(0);
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
+  const touchStartX = useRef<number | null>(null);
 
   const isFavorite = checkFav(ad.id);
 
@@ -51,15 +52,38 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
 
   return (
     <Box
-      onClick={() => router.push(`/ads/${ad.id}/${ad.slug}`)}
+      component="a"
+      href={`/ads/${ad.id}/${ad.slug}`}
+      onClick={(e: React.MouseEvent) => {
+        e.preventDefault();
+        router.push(`/ads/${ad.id}/${ad.slug}`);
+      }}
       sx={{
         cursor: 'pointer',
         width: '100%',
+        textDecoration: 'none',
+        color: 'inherit',
+        display: 'block',
         '&:hover .image-nav': { opacity: 1 },
+        '&:focus-visible': {
+          outline: '2px solid #F6475F',
+          outlineOffset: 4,
+          borderRadius: 3,
+        },
       }}
     >
       {/* Image carousel */}
       <Box
+        onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => {
+          if (touchStartX.current === null || images.length <= 1) return;
+          const delta = e.changedTouches[0].clientX - touchStartX.current;
+          if (Math.abs(delta) > 40) {
+            if (delta < 0) setCurrentImage((prev) => (prev + 1) % images.length);
+            else setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+          }
+          touchStartX.current = null;
+        }}
         sx={{
           position: 'relative',
           width: '100%',
@@ -114,14 +138,29 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
         {/* Status badge */}
         {ad.status !== 'available' && (
           <Chip
-            label={ad.status === 'sold' ? 'Vendu' : ad.status === 'reserved' ? 'Réservé' : ad.status}
+            label={
+              ad.status === 'sold'
+                ? 'Vendu'
+                : ad.status === 'reserved'
+                  ? 'Réservé'
+                  : ad.status === 'rent'
+                    ? 'En location'
+                    : ad.status_label ?? ad.status
+            }
             size="small"
             sx={{
               position: 'absolute',
               bottom: 8,
               left: 8,
               zIndex: 2,
-              bgcolor: ad.status === 'sold' ? '#222' : '#F6475F',
+              bgcolor:
+                ad.status === 'sold'
+                  ? '#222'
+                  : ad.status === 'reserved'
+                    ? '#F59E0B'
+                    : ad.status === 'rent'
+                      ? '#3B82F6'
+                      : '#F6475F',
               color: '#fff',
               fontWeight: 600,
               fontSize: '0.7rem',
@@ -136,6 +175,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               className="image-nav"
               onClick={prevImage}
               size="small"
+              aria-label="Photo précédente"
               sx={{
                 position: 'absolute',
                 left: 8,
@@ -145,9 +185,10 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                 opacity: 0,
                 transition: 'opacity 0.2s',
                 '&:hover': { bgcolor: '#fff' },
+                '@media (hover: none)': { opacity: 0.85 },
                 zIndex: 2,
-                width: 28,
-                height: 28,
+                width: { xs: 36, sm: 28 },
+                height: { xs: 36, sm: 28 },
               }}
             >
               <ChevronLeft sx={{ fontSize: 18 }} />
@@ -156,6 +197,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               className="image-nav"
               onClick={nextImage}
               size="small"
+              aria-label="Photo suivante"
               sx={{
                 position: 'absolute',
                 right: 8,
@@ -165,9 +207,10 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                 opacity: 0,
                 transition: 'opacity 0.2s',
                 '&:hover': { bgcolor: '#fff' },
+                '@media (hover: none)': { opacity: 0.85 },
                 zIndex: 2,
-                width: 28,
-                height: 28,
+                width: { xs: 36, sm: 28 },
+                height: { xs: 36, sm: 28 },
               }}
             >
               <ChevronRight sx={{ fontSize: 18 }} />

@@ -76,6 +76,81 @@ export async function generateMetadata({
   }
 }
 
-export default function AdDetailPage() {
-  return <AdDetailClient />;
+/**
+ * Fetches ad data server-side and injects RealEstateListing JSON-LD
+ * for rich snippets in Google SERPs. The page is publicly accessible
+ * (outside the auth-gated dashboard layout) so Googlebot can crawl it.
+ */
+export default async function AdDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string; slug: string }>;
+}) {
+  const { id, slug } = await params;
+
+  // Fetch ad data server-side for JSON-LD structured data
+  let adJsonLd: React.JSX.Element | null = null;
+  try {
+    const res = await fetch(`${API_URL}/ads/${id}`, {
+      next: { revalidate: 60 },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const ad = json.data ?? json;
+
+      const city = ad.quarter?.city_name || '';
+      const quarter = ad.quarter?.name || '';
+      const country = ad.quarter?.country_code || 'CM';
+      const images = ad.images?.map((img: { url: string }) => img.url) || [];
+
+      const schema = {
+        '@context': 'https://schema.org',
+        '@type': 'RealEstateListing',
+        name: ad.title,
+        description: ad.description?.slice(0, 300),
+        url: `https://keyhome.app/ads/${id}/${slug}`,
+        datePosted: ad.created_at,
+        image: images,
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: city,
+          addressRegion: quarter,
+          addressCountry: country,
+        },
+        ...(ad.price && {
+          offers: {
+            '@type': 'Offer',
+            price: String(ad.price),
+            priceCurrency: 'XAF',
+            availability: 'https://schema.org/InStock',
+          },
+        }),
+        ...(ad.surface_area && {
+          floorSize: {
+            '@type': 'QuantitativeValue',
+            value: ad.surface_area,
+            unitCode: 'MTK',
+          },
+        }),
+        ...(ad.bedrooms && { numberOfRooms: ad.bedrooms }),
+      };
+
+      adJsonLd = (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      );
+    }
+  } catch {
+    // Fail silently — the page still renders, just without JSON-LD
+  }
+
+  return (
+    <>
+      {adJsonLd}
+      <AdDetailClient />
+    </>
+  );
 }
+

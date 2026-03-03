@@ -2,6 +2,8 @@
 
 import PropertyAttributes from '@/components/ads/PropertyAttributes';
 import ReviewForm from '@/components/reviews/ReviewForm';
+import PackageCard from '@/components/ui/PackageCard';
+import QueryError from '@/components/ui/QueryError';
 import FadeIn from '@/components/ui/FadeIn';
 import { formatPrice, formatRelativeDate } from '@/lib/constants';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -9,7 +11,9 @@ import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { useAuth } from '@/providers/AuthProvider';
 import { useFavorites } from '@/providers/FavoritesProvider';
 import { adsService } from '@/services/ads.service';
+import { creditsService } from '@/services/credits.service';
 import { paymentsService } from '@/services/payments.service';
+import type { PointPackage, UnlockResponse } from '@/types';
 import {
   AccountBalanceWallet,
   BathtubOutlined,
@@ -69,11 +73,14 @@ function AdDetailContent() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxZoom, setLightboxZoom] = useState(1);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [isPackageLoading, setIsPackageLoading] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState('');
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [unlockState, setUnlockState] = useState<UnlockResponse | null>(null);
+  const [confirmStep, setConfirmStep] = useState(false);
   const [snackbar, setSnackbar] = useState('');
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, refreshUser, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const refreshedRef = useRef(false);
   const viewTrackedRef = useRef(false);
@@ -98,19 +105,28 @@ function AdDetailContent() {
     }
   }, [adId]);
 
-  const { data: ad, isLoading } = useQuery({
+  const { data: ad, isLoading, isError, refetch } = useQuery({
     queryKey: ['ad', adId],
     queryFn: () => adsService.show(adId),
     enabled: !!adId,
   });
 
-  const { data: unlockPrice } = useQuery({
-    queryKey: ['unlock-price'],
-    queryFn: () => paymentsService.getUnlockPrice(),
-    staleTime: 5 * 60 * 1000,
+  const { data: unlockCostData } = useQuery({
+    queryKey: ['unlock-cost'],
+    queryFn: () => paymentsService.getUnlockCost(),
+    staleTime: 5 * 60_000,
   });
 
-  const formattedUnlockPrice = unlockPrice ? `${unlockPrice.toLocaleString('fr-FR')} FCFA` : '...';
+  if (isError) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <QueryError
+          onRetry={() => refetch()}
+          message="Impossible de charger cette annonce. Elle a peut-être été supprimée ou votre connexion est instable."
+        />
+      </Container>
+    );
+  }
 
   if (isLoading || !ad) {
     return (
@@ -156,16 +172,41 @@ function AdDetailContent() {
 
   const handleUnlock = async () => {
     setPaymentError('');
+    setUnlockState(null);
     setIsPaymentLoading(true);
     try {
       const response = await paymentsService.initialize(ad.id);
-      if (!redirectToTrustedUrl(response.payment_url)) {
-        throw new Error('URL de paiement non approuvee.');
+      setUnlockState(response);
+      if (response.status === 'unlocked') {
+        // Refresh the ad to show unlocked content
+        await queryClient.invalidateQueries({ queryKey: ['ad', adId] });
+        // Refresh balance in AuthContext and Navbar widget
+        await refreshUser();
+        queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
+        setPaymentDialogOpen(false);
+        setSnackbar('Annonce déverrouillée avec succès !');
       }
+      // For 'insufficient_points' → modal stays open and shows packages
     } catch (err) {
-      setPaymentError(getSafeErrorMessage(err, 'Erreur lors du paiement.'));
+      setPaymentError(getSafeErrorMessage(err, 'Erreur lors du déverrouillage.'));
     } finally {
       setIsPaymentLoading(false);
+    }
+  };
+
+  const handlePurchasePackage = async (pkg: PointPackage) => {
+    setIsPackageLoading(pkg.id);
+    setPaymentError('');
+    try {
+      const callbackUrl = `${window.location.origin}/credits/callback?ad_id=${ad.id}`;
+      const response = await creditsService.purchase(pkg.id, callbackUrl);
+      if (!redirectToTrustedUrl(response.payment_url)) {
+        throw new Error('URL de paiement non approuvée.');
+      }
+    } catch (err) {
+      setPaymentError(getSafeErrorMessage(err, 'Erreur lors de l\'initialisation du paiement.'));
+    } finally {
+      setIsPackageLoading(null);
     }
   };
 
@@ -723,15 +764,20 @@ function AdDetailContent() {
                 ))}
               </Box>
 
-              {paymentError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{paymentError}</Alert>}
-
               {isLocked ? (
                 <>
                   <Button
                     fullWidth
                     variant="contained"
                     size="large"
-                    onClick={() => setPaymentDialogOpen(true)}
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        sessionStorage.setItem('kh_redirect_after_login', window.location.pathname + window.location.search);
+                        router.push('/login');
+                        return;
+                      }
+                      setPaymentDialogOpen(true);
+                    }}
                     startIcon={<Lock />}
                     sx={{
                       py: 1.5,
@@ -742,10 +788,10 @@ function AdDetailContent() {
                       '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
                     }}
                   >
-                    Déverrouiller — {formattedUnlockPrice}
+                    Déverrouiller
                   </Button>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1.5 }}>
-                    Payez pour accéder aux coordonnées de l&apos;annonceur
+                    Utilisez vos crédits pour accéder aux coordonnées de l&apos;annonceur
                   </Typography>
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 1.5, color: 'text.secondary' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -773,7 +819,7 @@ function AdDetailContent() {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                         <Phone sx={{ fontSize: 18, color: 'primary.main' }} />
                         <Typography variant="body2" fontWeight={500}>{publisherPhone}</Typography>
-                        <IconButton size="small" onClick={() => { navigator.clipboard.writeText(publisherPhone); setSnackbar('Numéro copié'); }}>
+                        <IconButton size="small" aria-label="Copier le numéro" onClick={() => { navigator.clipboard.writeText(publisherPhone); setSnackbar('Numéro copié'); }}>
                           <ContentCopy sx={{ fontSize: 14 }} />
                         </IconButton>
                       </Box>
@@ -819,7 +865,7 @@ function AdDetailContent() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Email sx={{ fontSize: 18, color: 'primary.main' }} />
                       <Typography variant="body2" fontWeight={500} sx={{ wordBreak: 'break-all' }}>{publisherEmail}</Typography>
-                      <IconButton size="small" onClick={() => { navigator.clipboard.writeText(publisherEmail); setSnackbar('Email copié'); }}>
+                      <IconButton size="small" aria-label="Copier l'email" onClick={() => { navigator.clipboard.writeText(publisherEmail); setSnackbar('Email copié'); }}>
                         <ContentCopy sx={{ fontSize: 14 }} />
                       </IconButton>
                     </Box>
@@ -832,10 +878,10 @@ function AdDetailContent() {
         </FadeIn>
       </Container>
 
-      {/* Payment confirmation dialog */}
+      {/* Unlock / Credits dialog */}
       <Dialog
         open={paymentDialogOpen}
-        onClose={() => setPaymentDialogOpen(false)}
+        onClose={() => { setPaymentDialogOpen(false); setUnlockState(null); setPaymentError(''); setConfirmStep(false); }}
         maxWidth="xs"
         fullWidth
         PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
@@ -845,40 +891,169 @@ function AdDetailContent() {
           <Typography variant="h5" fontWeight={700} gutterBottom>
             Déverrouiller l&apos;annonce
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
             {ad.title}
           </Typography>
-          <Typography variant="h4" fontWeight={700} color="primary.main" sx={{ mb: 3 }}>
-            {formattedUnlockPrice}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Vous aurez accès aux coordonnées de l&apos;annonceur (téléphone, email).
-          </Typography>
+
+          {/* Balance + cost info */}
+          {currentUser && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 2,
+                mb: 2,
+                flexWrap: 'wrap',
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.75,
+                  bgcolor: 'action.hover',
+                  borderRadius: 2,
+                  px: 1.5,
+                  py: 0.75,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">Solde :</Typography>
+                <Typography
+                  variant="body2"
+                  fontWeight={700}
+                  color={(unlockState?.current_balance ?? currentUser.point_balance ?? 0) > 0 ? 'primary.main' : 'error.main'}
+                >
+                  {unlockState?.current_balance ?? currentUser.point_balance ?? 0} crédits
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.75,
+                  bgcolor: 'action.hover',
+                  borderRadius: 2,
+                  px: 1.5,
+                  py: 0.75,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">Coût :</Typography>
+                <Typography variant="body2" fontWeight={700} color="text.primary">
+                  {unlockState?.required_points ?? unlockCostData?.unlock_cost_points ?? '—'} crédits
+                </Typography>
+              </Box>
+            </Box>
+          )}
 
           {paymentError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{paymentError}</Alert>}
 
-          <Button
-            fullWidth
-            variant="contained"
-            size="large"
-            onClick={handleUnlock}
-            disabled={isPaymentLoading}
-            sx={{
-              py: 1.5,
-              borderRadius: 2,
-              fontWeight: 600,
-              mb: 1,
-              background: 'linear-gradient(to right, #F6475F, #D93A50)',
-              '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-            }}
-          >
-            {isPaymentLoading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Payer avec FedaPay'}
-          </Button>
+          {/* Show packages when balance is insufficient */}
+          {unlockState?.status === 'insufficient_points' ? (
+            <Box sx={{ textAlign: 'left' }}>
+              <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
+                Solde insuffisant — il vous faut <strong>{unlockState.required_points} crédits</strong> pour débloquer cette annonce.
+                {(unlockState.current_balance ?? 0) > 0
+                  ? ` Vous avez ${unlockState.current_balance} crédits.`
+                  : ' Rechargez votre solde pour continuer.'}
+              </Alert>
+
+              {unlockState.packages && unlockState.packages.length > 0 ? (
+                <>
+                  <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: 0.5 }}>
+                    Choisissez un pack de crédits
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
+                    {unlockState.packages.map((pkg) => {
+                      const wouldBeEnough = (unlockState.current_balance ?? 0) + pkg.points_awarded >= (unlockState.required_points ?? 0);
+                      return (
+                        <PackageCard
+                          key={pkg.id}
+                          pkg={pkg}
+                          loading={isPackageLoading === pkg.id}
+                          onPurchase={handlePurchasePackage}
+                          wouldBeEnough={wouldBeEnough}
+                        />
+                      );
+                    })}
+                  </Box>
+                </>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Aucun pack disponible pour le moment. Veuillez réessayer ultérieurement.
+                </Typography>
+              )}
+            </Box>
+          ) : confirmStep ? (
+            <>
+              <Alert severity="info" icon={false} sx={{ mb: 2.5, borderRadius: 2, textAlign: 'left' }}>
+                <Typography variant="body2" fontWeight={600} gutterBottom>
+                  Confirmer le déverrouillage
+                </Typography>
+                <Typography variant="body2">
+                  <strong>{unlockState?.required_points ?? unlockCostData?.unlock_cost_points ?? '—'} crédits</strong> seront déduits
+                  de votre solde. Cette action est irréversible.
+                </Typography>
+              </Alert>
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                onClick={handleUnlock}
+                disabled={isPaymentLoading}
+                sx={{
+                  py: 1.5,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  mb: 1,
+                  background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                  '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                }}
+              >
+                {isPaymentLoading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Confirmer'}
+              </Button>
+              <Button
+                fullWidth
+                variant="text"
+                onClick={() => setConfirmStep(false)}
+                disabled={isPaymentLoading}
+                sx={{ color: 'text.secondary' }}
+              >
+                Retour
+              </Button>
+            </>
+          ) : (
+            <>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                Vous aurez accès aux coordonnées de l&apos;annonceur (téléphone, email).
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 3 }}>
+                🔓 Plus de 200 annonces déverrouillées cette semaine
+              </Typography>
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                onClick={() => setConfirmStep(true)}
+                sx={{
+                  py: 1.5,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  mb: 1,
+                  background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                  '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                }}
+              >
+                Déverrouiller
+              </Button>
+            </>
+          )}
+
           <Button
             fullWidth
             variant="text"
-            onClick={() => setPaymentDialogOpen(false)}
-            sx={{ color: 'text.secondary' }}
+            onClick={() => { setPaymentDialogOpen(false); setUnlockState(null); setPaymentError(''); setConfirmStep(false); }}
+            sx={{ color: 'text.secondary', mt: 0.5 }}
           >
             Annuler
           </Button>
@@ -890,6 +1065,13 @@ function AdDetailContent() {
         open={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
         fullScreen
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowLeft') changeLightboxImage((lightboxIndex - 1 + images.length) % images.length);
+          else if (e.key === 'ArrowRight') changeLightboxImage((lightboxIndex + 1) % images.length);
+          else if (e.key === 'Escape') setLightboxOpen(false);
+          else if (e.key === '+' || e.key === '=') setLightboxZoom((z) => Math.min(4, parseFloat((z + 0.25).toFixed(2))));
+          else if (e.key === '-') setLightboxZoom((z) => Math.max(0.5, parseFloat((z - 0.25).toFixed(2))));
+        }}
         slotProps={{ backdrop: { sx: { bgcolor: 'rgba(8,8,8,0.93)' } } }}
         PaperProps={{
           sx: {
@@ -919,6 +1101,7 @@ function AdDetailContent() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <IconButton
               size="small"
+              aria-label="Dézoomer"
               onClick={() => setLightboxZoom((z) => Math.max(0.5, parseFloat((z - 0.25).toFixed(2))))}
               disabled={lightboxZoom <= 0.5}
               sx={{ color: '#fff', opacity: lightboxZoom <= 0.5 ? 0.3 : 1 }}
@@ -930,6 +1113,7 @@ function AdDetailContent() {
             </Typography>
             <IconButton
               size="small"
+              aria-label="Zoomer"
               onClick={() => setLightboxZoom((z) => Math.min(4, parseFloat((z + 0.25).toFixed(2))))}
               disabled={lightboxZoom >= 4}
               sx={{ color: '#fff', opacity: lightboxZoom >= 4 ? 0.3 : 1 }}
@@ -939,12 +1123,13 @@ function AdDetailContent() {
             <IconButton
               size="small"
               onClick={() => setLightboxZoom(1)}
+              aria-label="Réinitialiser le zoom"
               title="Réinitialiser"
               sx={{ color: 'rgba(255,255,255,0.65)', ml: 0.5 }}
             >
               <ZoomOutMap sx={{ fontSize: 18 }} />
             </IconButton>
-            <IconButton onClick={() => setLightboxOpen(false)} sx={{ color: '#fff', ml: 0.5 }}>
+            <IconButton aria-label="Fermer la visionneuse" onClick={() => setLightboxOpen(false)} sx={{ color: '#fff', ml: 0.5 }}>
               <Close />
             </IconButton>
           </Box>
@@ -971,6 +1156,7 @@ function AdDetailContent() {
         >
           {/* Prev */}
           <IconButton
+            aria-label="Photo précédente"
             onClick={(e) => { e.stopPropagation(); changeLightboxImage((lightboxIndex - 1 + images.length) % images.length); }}
             sx={{
               color: '#fff',
@@ -1005,6 +1191,7 @@ function AdDetailContent() {
 
           {/* Next */}
           <IconButton
+            aria-label="Photo suivante"
             onClick={(e) => { e.stopPropagation(); changeLightboxImage((lightboxIndex + 1) % images.length); }}
             sx={{
               color: '#fff',
