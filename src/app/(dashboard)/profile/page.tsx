@@ -82,9 +82,8 @@ export default function ProfilePage() {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [cityInput, setCityInput] = useState(user?.city_name || '');
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
-  const [editError, setEditError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [snackbar, setSnackbar] = useState('');
+  const [snackbar, setSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Unlocked ads
@@ -102,12 +101,10 @@ export default function ProfilePage() {
   });
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Connected OAuth accounts (Clerk)
   const [linkedAccountsLoading, setLinkedAccountsLoading] = useState<string | null>(null);
-  const [linkedAccountsError, setLinkedAccountsError] = useState('');
 
   // Cities for autocomplete — server-side search
   const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
@@ -143,16 +140,15 @@ export default function ProfilePage() {
       const updated = await usersService.update(user.id, formData);
       setUser({ ...user, ...updated });
       await refreshUser();
-      setSnackbar('Avatar mis à jour');
+      setSnackbar({ message: 'Avatar mis à jour', severity: 'success' });
     } catch {
-      setSnackbar('Erreur lors de la mise à jour de l\'avatar');
+      setSnackbar({ message: 'Erreur lors de la mise à jour de l\'avatar', severity: 'error' });
     } finally {
       e.target.value = '';
     }
   };
 
   const handleSaveProfile = async () => {
-    setEditError('');
     setIsSaving(true);
     try {
       const formData = new FormData();
@@ -165,24 +161,23 @@ export default function ProfilePage() {
 
       const updated = await usersService.update(user!.id, formData);
       setUser({ ...user!, ...updated });
-      setSnackbar('Profil mis à jour avec succès.');
+      setSnackbar({ message: 'Profil mis à jour avec succès.', severity: 'success' });
       setIsEditing(false);
     } catch (err) {
-      setEditError(getSafeErrorMessage(err, 'Erreur lors de la mise à jour.'));
+      setSnackbar({ message: getSafeErrorMessage(err, 'Erreur lors de la mise à jour.'), severity: 'error' });
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleChangePassword = async () => {
-    setPasswordError('');
     setIsChangingPassword(true);
     try {
       const res = await authService.updatePassword(passwordForm);
-      setSnackbar(res.message || 'Mot de passe modifié avec succès.');
+      setSnackbar({ message: res.message || 'Mot de passe modifié avec succès.', severity: 'success' });
       setPasswordForm({ current_password: '', new_password: '', new_password_confirmation: '' });
     } catch (err) {
-      setPasswordError(getSafeErrorMessage(err, 'Erreur lors du changement de mot de passe.'));
+      setSnackbar({ message: getSafeErrorMessage(err, 'Erreur lors du changement de mot de passe.'), severity: 'error' });
     } finally {
       setIsChangingPassword(false);
     }
@@ -302,8 +297,6 @@ export default function ProfilePage() {
 
       {/* Tab 0: Profile info */}
       <TabPanel value={tab} index={0}>
-        {editError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{editError}</Alert>}
-
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
@@ -466,8 +459,6 @@ export default function ProfilePage() {
           Changer le mot de passe
         </Typography>
 
-        {passwordError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{passwordError}</Alert>}
-
         <Box sx={{ maxWidth: 420 }}>
           <TextField
             fullWidth
@@ -581,10 +572,6 @@ export default function ProfilePage() {
           Connectez vos comptes sociaux pour vous connecter en un clic, sans mot de passe.
         </Typography>
 
-        {linkedAccountsError && (
-          <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{linkedAccountsError}</Alert>
-        )}
-
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 520 }}>
           {([
             {
@@ -686,14 +673,14 @@ export default function ProfilePage() {
                         startIcon={isLoading ? <CircularProgress size={13} color="error" /> : <LinkOffIcon sx={{ fontSize: 16 }} />}
                         disabled={isLoading}
                         onClick={async () => {
-                          setLinkedAccountsError('');
+                          setSnackbar(null);
                           setLinkedAccountsLoading(key);
                           try {
                             await linked.destroy();
                             // Refresh Clerk user so UI updates immediately
                             await clerkUser?.reload();
                           } catch (err) {
-                            setLinkedAccountsError(getSafeErrorMessage(err));
+                            setSnackbar({ message: getSafeErrorMessage(err), severity: 'error' });
                           } finally {
                             setLinkedAccountsLoading(null);
                           }
@@ -710,13 +697,14 @@ export default function ProfilePage() {
                         disabled={isLoading}
                         onClick={async () => {
                           if (!clerkUser) {
-                            setLinkedAccountsError(
-                              'La liaison de comptes sociaux nécessite une connexion via Google, Facebook ou Apple. ' +
-                              'Connectez-vous d\'abord avec un compte social, puis liez les autres ici.'
-                            );
+                            setSnackbar({
+                              message: 'La liaison de comptes sociaux nécessite une connexion via Google, Facebook ou Apple. ' +
+                                'Connectez-vous d\'abord avec un compte social, puis liez les autres ici.',
+                              severity: 'error',
+                            });
                             return;
                           }
-                          setLinkedAccountsError('');
+                          setSnackbar(null);
                           setLinkedAccountsLoading(key);
                           try {
                             const externalAccount = await clerkUser.createExternalAccount({
@@ -731,7 +719,7 @@ export default function ProfilePage() {
                               window.location.assign(verifyUrl);
                             }
                           } catch (err) {
-                            setLinkedAccountsError(getSafeErrorMessage(err));
+                            setSnackbar({ message: getSafeErrorMessage(err), severity: 'error' });
                             setLinkedAccountsLoading(null);
                           }
                         }}
@@ -759,11 +747,21 @@ export default function ProfilePage() {
 
       <Snackbar
         open={!!snackbar}
-        autoHideDuration={2500}
-        onClose={() => setSnackbar('')}
-        message={snackbar}
+        autoHideDuration={3500}
+        onClose={() => setSnackbar(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      />
+      >
+        {snackbar && (
+          <Alert
+            onClose={() => setSnackbar(null)}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{ width: '100%', borderRadius: 2 }}
+          >
+            {snackbar.message}
+          </Alert>
+        )}
+      </Snackbar>
     </Container>
   );
 }
