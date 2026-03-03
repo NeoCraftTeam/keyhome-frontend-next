@@ -63,7 +63,7 @@ const FAQ_ITEMS = [
   { cat: 'vendeur', catLabel: 'Vendeur', q: "Combien coûte la publication d\'une annonce ?", a: "KeyHome utilise un système de crédits. 1 annonce = 1 crédit. Des forfaits mensuels sont disponibles dans la rubrique «Crédits»." },
   { cat: 'vendeur', catLabel: 'Vendeur', q: 'Comment modifier ou supprimer mon annonce ?', a: "Rendez-vous dans «Mes annonces» depuis votre profil. Cliquez sur l’annonce puis «Modifier» ou «Supprimer». La suppression est définitive." },
   { cat: 'agent', catLabel: 'Agent', q: 'Comment créer un compte professionnel ?', a: "Lors de l’inscription, sélectionnez «Compte professionnel / Agence». Vous bénéficiez d’un tableau de bord dédié et d’un badge «Agent vérifié» après validation." },
-  { cat: 'agent', catLabel: 'Agent', q: 'Comment obtenir le badge «Agent vérifié» ?', a: "Envoyez votre carte professionnelle ou agrément à support@keyhome.cm. Notre équipe valide votre dossier sous 48h ouvrables." },
+  { cat: 'agent', catLabel: 'Agent', q: 'Comment obtenir le badge «Agent vérifié» ?', a: "Envoyez votre carte professionnelle ou agrément à support@keyhome.app. Notre équipe valide votre dossier sous 48h ouvrables." },
 ];
 
 function StatPill({ value, label }: { value: string; label: string }) {
@@ -405,10 +405,10 @@ export default function AidePage() {
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
             <Button
-              variant="contained" size="large" href="mailto:support@keyhome.cm" startIcon={<EmailIcon />}
+              variant="contained" size="large" href="mailto:support@keyhome.app" startIcon={<EmailIcon />}
               sx={{ bgcolor: '#fff', color: '#F6475F', fontWeight: 700, borderRadius: '14px', px: 4, py: 1.6, fontSize: '0.95rem', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', '&:hover': { bgcolor: '#f5f5f5', transform: 'translateY(-3px)', boxShadow: '0 16px 48px rgba(0,0,0,0.25)' }, transition: 'all 0.3s ease' }}
             >
-              support@keyhome.cm
+              support@keyhome.app
             </Button>
             <Button
               variant="outlined" size="large" href="https://wa.me/+237600000000" target="_blank" rel="noopener noreferrer" startIcon={<WhatsAppIcon />}

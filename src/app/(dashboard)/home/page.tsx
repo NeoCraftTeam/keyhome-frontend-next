@@ -14,6 +14,7 @@ import {
     Apartment,
     Home as HomeIcon,
     Landscape,
+    LocationOn,
     MapsHomeWork,
     Search as SearchIcon,
     Store,
@@ -210,12 +211,52 @@ export default function HomePage() {
             noOptionsText={
               cityInput.length < 1 ? 'Tapez une ville…' : 'Aucune ville trouvée'
             }
+            slotProps={{
+              paper: {
+                sx: {
+                  borderRadius: '0 0 16px 16px',
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderTop: 'none',
+                  mt: '-2px',
+                  overflow: 'hidden',
+                },
+              },
+              listbox: {
+                sx: {
+                  py: 0.5,
+                  '& .MuiAutocomplete-option': {
+                    px: 2.5,
+                    py: 1.5,
+                    gap: 1.5,
+                    fontSize: '0.9rem',
+                    borderRadius: 0,
+                    transition: 'background 0.15s',
+                    '&[aria-selected="true"]': {
+                      bgcolor: 'rgba(246,71,95,0.08)',
+                      color: 'primary.main',
+                      fontWeight: 600,
+                    },
+                    '&.Mui-focused': {
+                      bgcolor: 'rgba(246,71,95,0.06)',
+                    },
+                  },
+                },
+              },
+            }}
+            renderOption={({ key, ...props }, option) => (
+              <li key={key} {...props}>
+                <LocationOn sx={{ fontSize: 16, color: 'text.disabled', mr: 0.5 }} />
+                {option.name}
+              </li>
+            )}
             renderInput={(params) => (
               <TextField
                 {...params}
                 placeholder="Entrez une ville, un quartier…"
                 sx={{
-                  bgcolor: '#fff',
+                  bgcolor: 'background.paper',
                   borderRadius: '12px',
                   '& .MuiOutlinedInput-root': {
                     borderRadius: '12px',
@@ -486,9 +527,9 @@ export default function HomePage() {
               siblingCount={isMobile ? 0 : 1}
               sx={{
                 '& .MuiPaginationItem-root.Mui-selected': {
-                  bgcolor: '#F6475F',
+                  bgcolor: 'primary.main',
                   color: '#fff',
-                  '&:hover': { bgcolor: '#D93A50' },
+                  '&:hover': { bgcolor: 'primary.dark' },
                 },
               }}
             />
