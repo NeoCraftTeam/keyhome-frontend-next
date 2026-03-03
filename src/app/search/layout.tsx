@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import SearchLayoutClient from './SearchLayoutClient';
 
 export const metadata: Metadata = {
   title: 'Rechercher un logement — Carte interactive & filtres avancés',
@@ -48,7 +49,7 @@ export default function SearchLayout({ children }: { children: React.ReactNode }
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {children}
+      <SearchLayoutClient>{children}</SearchLayoutClient>
     </>
   );
 }

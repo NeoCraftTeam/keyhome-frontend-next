@@ -65,7 +65,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
         cursor: 'pointer',
         width: '100%',
         textDecoration: 'none',
-        color: 'inherit',
+        color: 'text.primary',
         display: 'block',
         '&:hover .image-nav': { opacity: 1 },
         '&:focus-visible': {
@@ -252,26 +252,44 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
 
       {/* Card content */}
       <Box sx={{ mt: 1.5 }}>
-        <Typography
-          variant="subtitle1"
-          fontWeight={700}
-          sx={{
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            color: 'text.primary',
-            lineHeight: 1.3,
-          }}
-        >
-          {ad.title}
-        </Typography>
+        {/* Title + Rating row */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          <Typography
+            variant="subtitle1"
+            fontWeight={700}
+            color="text.primary"
+            className="ad-card-title"
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              lineHeight: 1.3,
+              minWidth: 0,
+            }}
+          >
+            {ad.title}
+          </Typography>
+          {ad.rating != null && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, flexShrink: 0 }}>
+              <StarIcon sx={{ fontSize: 14, color: '#FFB400' }} />
+              <Typography variant="caption" fontWeight={600} color="text.primary" sx={{ lineHeight: 1 }}>
+                {ad.rating.toFixed(1)}
+              </Typography>
+              {ad.reviews_count !== undefined && (
+                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>
+                  ({ad.reviews_count})
+                </Typography>
+              )}
+            </Box>
+          )}
+        </Box>
 
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {ad.quarter?.name || ad.adresse}
           {ad.quarter?.city_name ? `, ${ad.quarter.city_name}` : ''}
         </Typography>
 
-        {/* Features row */}
+        {/* Features + Price row */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 0.5 }}>
           {ad.bedrooms > 0 && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
@@ -297,26 +315,14 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               </Typography>
             </Box>
           )}
-        </Box>
 
-        {/* Rating */}
-        {ad.rating != null && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-            <StarIcon sx={{ fontSize: 14, color: '#FFB400' }} />
-            <Typography variant="caption" fontWeight={600} color="text.primary" sx={{ lineHeight: 1 }}>
-              {ad.rating.toFixed(1)}
-            </Typography>
-            {ad.reviews_count !== undefined && (
-              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>
-                ({ad.reviews_count})
-              </Typography>
-            )}
-          </Box>
-        )}
-
-        {/* Price */}
-        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mt: 0.5 }}>
-          <Typography variant="subtitle1" fontWeight={700} color="text.primary">
+          {/* Price */}
+          <Typography
+            variant="subtitle2"
+            fontWeight={700}
+            color="text.primary"
+            sx={{ whiteSpace: 'nowrap' }}
+          >
             {formatPrice(ad.price)}
           </Typography>
         </Box>

@@ -10,12 +10,13 @@ import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { AdType, City, SearchParams } from '@/types';
 import {
-    BookmarkBorder as SaveIcon,
     Close as CloseIcon,
     List as ListIcon,
     Map as MapIcon,
     Search as SearchIcon,
     Tune as TuneIcon,
+    WhatsApp as WhatsAppIcon,
+    HomeWork as HomeWorkIcon,
 } from '@mui/icons-material';
 import {
     Autocomplete,
@@ -28,18 +29,17 @@ import {
     FormControlLabel,
     Grid,
     IconButton,
-    InputBase,
     Menu,
     MenuItem,
     Pagination,
-    Paper,
     Slider,
-    Snackbar,
     Switch,
     TextField,
     ToggleButton,
     ToggleButtonGroup,
+    Tooltip,
     Typography,
+    Fab,
     useMediaQuery,
     useTheme,
 } from '@mui/material';
@@ -63,16 +63,13 @@ function SearchContent() {
 
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
-  const [saveSnackbar, setSaveSnackbar] = useState(false);
   const [page, setPage] = useState(1);
 
   const [query, setQuery] = useState(searchParams.get('q') || '');
-  const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [cityInput, setCityInput] = useState('');
-  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+  const [cityInput, setCityInput] = useState(searchParams.get('city') || '');
   const [selectedType, setSelectedType] = useState<AdType | null>(null);
   const [bedrooms, setBedrooms] = useState<number | undefined>();
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]);
@@ -84,12 +81,18 @@ function SearchContent() {
   const [typeAnchor, setTypeAnchor] = useState<null | HTMLElement>(null);
   const [sortAnchor, setSortAnchor] = useState<null | HTMLElement>(null);
 
+  // Sync URL params on mount and navigation
   useEffect(() => {
     const urlQ = searchParams.get('q') || '';
     if (urlQ !== query) {
       setQuery(urlQ);
-      setSearchInput(urlQ);
       setPage(1);
+    }
+
+    // Sync ?city= param → set cityInput so the autocomplete query triggers
+    const urlCity = searchParams.get('city') || '';
+    if (urlCity && !selectedCity) {
+      setCityInput(urlCity);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -106,6 +109,35 @@ function SearchContent() {
     queryFn: () => adTypesService.list(),
     staleTime: 10 * 60 * 1000,
   });
+
+  // Auto-select city from URL param when cities load
+  useEffect(() => {
+    const urlCity = searchParams.get('city') || '';
+    if (urlCity && !selectedCity && citiesData?.data?.length) {
+      const match = citiesData.data.find(
+        (c) => c.name.toLowerCase() === urlCity.toLowerCase()
+      );
+      if (match) {
+        setSelectedCity(match);
+        setCityInput(match.name);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [citiesData]);
+
+  // Auto-select type from URL param when adTypes load
+  useEffect(() => {
+    const urlType = searchParams.get('type') || '';
+    if (urlType && !selectedType && adTypes?.length) {
+      const match = adTypes.find(
+        (t) => t.name.toLowerCase() === urlType.toLowerCase()
+      );
+      if (match) {
+        setSelectedType(match);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adTypes]);
 
   const buildParams = (): SearchParams => ({
     q: query || undefined,
@@ -176,7 +208,7 @@ function SearchContent() {
         : '';
 
       const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
-        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${encodeURIComponent(String(ad.id))}/${encodeURIComponent(ad.slug)}'">
+        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer;color:#222" onclick="window.location.href='/ads/${encodeURIComponent(String(ad.id))}/${encodeURIComponent(ad.slug)}'">
           <div>${escapeHtml(ad.title)}</div>
           <div style="color:#F6475F;font-weight:700">${formatPrice(ad.price)}</div>
           ${ratingHtml}
@@ -199,7 +231,6 @@ function SearchContent() {
 
   const clearFilters = () => {
     setQuery('');
-    setSearchInput('');
     setSelectedCity(null);
     setCityInput('');
     setSelectedType(null);
@@ -253,14 +284,12 @@ function SearchContent() {
         options={cities}
         getOptionLabel={(opt) => opt.name}
         value={selectedCity}
-        onChange={(_, val) => { setSelectedCity(val); setPage(1); setCityDropdownOpen(false); }}
+        onChange={(_, val) => { setSelectedCity(val); setCityInput(val?.name || ''); setPage(1); }}
         inputValue={cityInput}
-        onInputChange={(_, val, reason) => { if (reason !== 'reset') { setCityInput(val); setCityDropdownOpen(val.length >= 1); } }}
-        onClose={() => setCityDropdownOpen(false)}
-        open={cityDropdownOpen && cityInput.length >= 1 && !isCitiesLoading && cities.length > 0}
+        onInputChange={(_, val, reason) => { if (reason !== 'reset') { setCityInput(val); } }}
         filterOptions={(x) => x}
         loading={isCitiesLoading}
-        noOptionsText="Aucune ville trouvée"
+        noOptionsText={cityInput.length < 1 ? 'Tapez pour rechercher…' : 'Aucune ville trouvée'}
         renderInput={(params) => (
           <TextField
             {...params}
@@ -326,19 +355,21 @@ function SearchContent() {
   const ResultsList = (
     <Box
       sx={{
-        height: { md: 'calc(100vh - 120px)' },
+        height: { md: 'calc(100vh - 140px)' },
         overflowY: { md: 'auto' },
-        px: { xs: 2, md: 2 },
-        pt: 1,
+        px: { xs: 2, md: 2.5 },
+        pt: 1.5,
         pb: 4,
+        '&::-webkit-scrollbar': { width: 6 },
+        '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 3 },
       }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, pt: 1 }}>
-        <Typography variant="subtitle2" color="text.secondary">
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, pt: 0.5 }}>
+        <Typography variant="subtitle2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
           {isFetching && !isLoading ? (
             'Mise à jour…'
           ) : (
-            <><strong>{total}</strong> annonce{total > 1 ? 's' : ''}</>
+            <><strong style={{ color: 'inherit', fontWeight: 800 }}>{total.toLocaleString('fr-FR')}</strong> annonce{total > 1 ? 's' : ''}</>
           )}
         </Typography>
 
@@ -382,7 +413,7 @@ function SearchContent() {
         <QueryError onRetry={() => refetch()} message="Impossible de charger les résultats." />
       ) : (
         <>
-          <Grid container spacing={1.5}>
+          <Grid container spacing={1.5} sx={{ '& .ad-card-title': { color: '#222 !important' } }}>
             {isLoading
               ? Array.from({ length: 8 }).map((_, idx) => (
                   <Grid key={idx} size={{ xs: 6, lg: 6, xl: 4 }}>
@@ -397,12 +428,28 @@ function SearchContent() {
           </Grid>
 
           {!isLoading && ads.length === 0 && (
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <SearchIcon sx={{ fontSize: 56, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary">Aucun résultat</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Essayez de modifier vos critères de recherche
+            <Box sx={{ textAlign: 'center', py: 10 }}>
+              <HomeWorkIcon sx={{ fontSize: 72, color: 'text.disabled', mb: 2, opacity: 0.5 }} />
+              <Typography variant="h6" fontWeight={700} color="text.secondary" sx={{ mb: 0.5 }}>
+                Aucun résultat trouvé
               </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 340, mx: 'auto' }}>
+                Essayez de modifier vos critères de recherche ou explorez d&apos;autres villes
+              </Typography>
+              <Button
+                variant="outlined"
+                onClick={clearFilters}
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: '10px',
+                  fontWeight: 600,
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                  '&:hover': { bgcolor: 'primary.main', color: '#fff' },
+                }}
+              >
+                Réinitialiser les filtres
+              </Button>
             </Box>
           )}
 
@@ -416,9 +463,9 @@ function SearchContent() {
                 size="small"
                 sx={{
                   '& .MuiPaginationItem-root.Mui-selected': {
-                    bgcolor: '#F6475F',
+                    bgcolor: 'primary.main',
                     color: '#fff',
-                    '&:hover': { bgcolor: '#D93A50' },
+                    '&:hover': { bgcolor: 'primary.dark' },
                   },
                 }}
               />
@@ -430,17 +477,17 @@ function SearchContent() {
   );
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
-      {/* ZILLOW-STYLE FILTER BAR */}
+      {/* FILTER BAR */}
       <Box
         sx={{
           flexShrink: 0,
           borderBottom: '1px solid',
           borderColor: 'divider',
-          bgcolor: 'background.default',
-          px: { xs: 1.5, md: 2 },
-          py: 1,
+          bgcolor: 'background.paper',
+          px: { xs: 1.5, md: 2.5 },
+          py: 1.25,
           display: 'flex',
           alignItems: 'center',
           gap: 1,
@@ -448,42 +495,110 @@ function SearchContent() {
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': { display: 'none' },
           zIndex: 10,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
-        <Paper
-          component="form"
-          onSubmit={(e: React.FormEvent) => {
-            e.preventDefault();
-            setQuery(searchInput.trim());
+        {/* City autocomplete */}
+        <Autocomplete
+          size="small"
+          freeSolo
+          options={citiesData?.data || []}
+          getOptionLabel={(opt) => typeof opt === 'string' ? opt : opt.name}
+          value={selectedCity}
+          onChange={(_, val) => {
+            if (typeof val === 'string') {
+              setQuery(val);
+              setSelectedCity(null);
+            } else {
+              setSelectedCity(val);
+              setCityInput(val?.name || '');
+              setQuery('');
+            }
             setPage(1);
           }}
-          elevation={0}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            flexShrink: 0,
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: '8px',
-            px: 1.5,
-            py: 0.25,
-            minWidth: { xs: 160, md: 240 },
-            '&:focus-within': { borderColor: 'primary.main', boxShadow: '0 0 0 2px rgba(246,71,95,0.15)' },
+          inputValue={cityInput}
+          onInputChange={(_, val, reason) => {
+            if (reason !== 'reset') {
+              setCityInput(val);
+            }
           }}
-        >
-          <SearchIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.75 }} />
-          <InputBase
-            placeholder="Ville, quartier…"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            sx={{ fontSize: '0.85rem', flex: 1 }}
-          />
-          {searchInput && (
-            <IconButton size="small" onClick={() => { setSearchInput(''); setQuery(''); setPage(1); }}>
-              <CloseIcon sx={{ fontSize: 14 }} />
-            </IconButton>
+          filterOptions={(x) => x}
+          loading={isCitiesLoading}
+          noOptionsText={cityInput.length < 1 ? 'Tapez pour rechercher…' : 'Aucune ville trouvée'}
+          loadingText="Recherche…"
+          slotProps={{
+            paper: { sx: { borderRadius: 3, mt: 0.5, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' } },
+            listbox: { sx: { py: 0.5 } },
+          }}
+          renderOption={(props, option) => (
+            <li {...props} key={typeof option === 'string' ? option : option.id}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.25 }}>
+                <SearchIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                <Typography sx={{ fontSize: '0.875rem' }}>
+                  {typeof option === 'string' ? option : option.name}
+                </Typography>
+              </Box>
+            </li>
           )}
-        </Paper>
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder="Ville, quartier…"
+              variant="outlined"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !selectedCity && cityInput.trim()) {
+                  e.preventDefault();
+                  setQuery(cityInput.trim());
+                  setPage(1);
+                }
+              }}
+              slotProps={{
+                input: {
+                  ...params.InputProps,
+                  startAdornment: <SearchIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.5 }} />,
+                  endAdornment: (
+                    <>
+                      {isCitiesLoading ? <CircularProgress color="inherit" size={16} /> : null}
+                      {(selectedCity || cityInput) && (
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCity(null);
+                            setCityInput('');
+                            setQuery('');
+                            setPage(1);
+                          }}
+                          sx={{ p: 0.25 }}
+                        >
+                          <CloseIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      )}
+                    </>
+                  ),
+                },
+              }}
+              sx={{
+                minWidth: { xs: 180, md: 280 },
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '10px',
+                  py: '2px',
+                  pr: '8px !important',
+                  fontSize: '0.875rem',
+                  bgcolor: 'background.default',
+                  transition: 'all 0.2s ease',
+                  '& fieldset': { borderColor: 'divider' },
+                  '&:hover fieldset': { borderColor: 'text.secondary' },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                    boxShadow: '0 0 0 3px rgba(246,71,95,0.12)',
+                  },
+                },
+              }}
+            />
+          )}
+          sx={{ flexShrink: 0 }}
+        />
 
         <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
@@ -644,30 +759,21 @@ function SearchContent() {
           </Button>
         )}
 
-        {!isMobile && (
-          <Button
+        {/* Results count badge */}
+        {!isMobile && !isLoading && total > 0 && (
+          <Chip
+            label={`${total.toLocaleString('fr-FR')} résultat${total > 1 ? 's' : ''}`}
             size="small"
-            variant="outlined"
-            startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
-            onClick={() => {
-              if (!isAuthenticated) { router.push('/login'); return; }
-              setSaveSnackbar(true);
-            }}
             sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              borderRadius: '8px',
-              fontSize: '0.825rem',
-              flexShrink: 0,
               ml: 'auto',
-              borderColor: 'primary.main',
-              color: 'primary.main',
-              whiteSpace: 'nowrap',
-              '&:hover': { bgcolor: 'primary.main', color: '#fff' },
+              flexShrink: 0,
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              bgcolor: 'primary.main',
+              color: '#fff',
+              px: 0.5,
             }}
-          >
-            Sauvegarder
-          </Button>
+          />
         )}
 
         {isMobile && (
@@ -676,7 +782,20 @@ function SearchContent() {
             exclusive
             onChange={(_, val) => val && setMobileViewMode(val)}
             size="small"
-            sx={{ ml: 'auto', flexShrink: 0 }}
+            sx={{
+              ml: 'auto',
+              flexShrink: 0,
+              '& .MuiToggleButton-root': {
+                borderRadius: '8px !important',
+                border: '1px solid',
+                borderColor: 'divider',
+                px: 1.5,
+              },
+              '& .Mui-selected': {
+                bgcolor: 'primary.main !important',
+                color: '#fff !important',
+              },
+            }}
           >
             <ToggleButton value="list" aria-label="Liste"><ListIcon sx={{ fontSize: 18 }} /></ToggleButton>
             <ToggleButton value="map" aria-label="Carte"><MapIcon sx={{ fontSize: 18 }} /></ToggleButton>
@@ -711,7 +830,7 @@ function SearchContent() {
             <Chip label="Parking" onDelete={() => setHasParking(false)} size="small" variant="outlined" />
           )}
           {query && (
-            <Chip label={`"${query}"`} onDelete={() => { setQuery(''); setSearchInput(''); }} size="small" variant="outlined" />
+            <Chip label={`"${query}"`} onDelete={() => { setQuery(''); }} size="small" variant="outlined" />
           )}
         </Box>
       )}
@@ -758,13 +877,34 @@ function SearchContent() {
         {MoreFiltersDrawer}
       </Drawer>
 
-      <Snackbar
-        open={saveSnackbar}
-        autoHideDuration={3000}
-        onClose={() => setSaveSnackbar(false)}
-        message="Recherche sauvegardée !"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      />
+      {/* WhatsApp help FAB */}
+      <Tooltip title="Besoin d'aide ? Contactez-nous" placement="left">
+        <Fab
+          component="a"
+          href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '237657507909'}?text=${encodeURIComponent('Bonjour KeyHome ! 👋 Je cherche un logement et j\'aimerais votre aide pour trouver le bien idéal.')}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          size="medium"
+          aria-label="WhatsApp"
+          sx={{
+            position: 'fixed',
+            bottom: { xs: 20, md: 28 },
+            right: { xs: 16, md: 28 },
+            bgcolor: '#25D366',
+            color: '#fff',
+            boxShadow: '0 4px 20px rgba(37,211,102,0.4)',
+            zIndex: 50,
+            '&:hover': {
+              bgcolor: '#1DA851',
+              transform: 'scale(1.08)',
+              boxShadow: '0 6px 28px rgba(37,211,102,0.5)',
+            },
+            transition: 'all 0.25s ease',
+          }}
+        >
+          <WhatsAppIcon />
+        </Fab>
+      </Tooltip>
     </Box>
   );
 }

@@ -5,7 +5,7 @@ import { COMPARISONS } from './comparisons';
 export const metadata: Metadata = {
   title: 'Comparaisons immobilières en Afrique — KeyHome',
   description:
-    'Louer vs acheter, Douala vs Yaoundé, appartement vs maison… Comparez les options immobilières en Afrique de l'Ouest pour faire le meilleur choix.',
+    'Louer vs acheter, Douala vs Yaoundé, appartement vs maison… Comparez les options immobilières en Afrique de l\'Ouest pour faire le meilleur choix.',
   alternates: { canonical: 'https://keyhome.app/comparaison' },
   openGraph: {
     title: 'Comparaisons immobilières — KeyHome',
