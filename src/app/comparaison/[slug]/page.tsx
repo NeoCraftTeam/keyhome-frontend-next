@@ -1,0 +1,240 @@
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { COMPARISONS } from '../comparisons';
+
+export function generateStaticParams() {
+  return Object.keys(COMPARISONS).map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const data = COMPARISONS[slug];
+  if (!data) return { title: 'Comparaison immobilière — KeyHome' };
+
+  return {
+    title: data.metaTitle,
+    description: data.metaDescription,
+    alternates: {
+      canonical: `https://keyhome.app/comparaison/${slug}`,
+    },
+    openGraph: {
+      title: data.metaTitle,
+      description: data.metaDescription,
+      url: `https://keyhome.app/comparaison/${slug}`,
+    },
+  };
+}
+
+export default async function ComparisonPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const data = COMPARISONS[slug];
+
+  if (!data) notFound();
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: data.title,
+    description: data.metaDescription,
+    url: `https://keyhome.app/comparaison/${slug}`,
+    publisher: {
+      '@type': 'Organization',
+      name: 'KeyHome',
+      url: 'https://keyhome.app',
+    },
+    dateModified: new Date().toISOString(),
+  };
+
+  const cellStyle: React.CSSProperties = {
+    padding: '12px 16px',
+    borderBottom: '1px solid #f0f0f0',
+    fontSize: 14,
+    lineHeight: 1.6,
+    verticalAlign: 'top',
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 20px', fontFamily: 'system-ui, sans-serif' }}>
+        {/* Breadcrumb */}
+        <nav style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>
+          <Link href="/" style={{ color: '#888', textDecoration: 'none' }}>KeyHome</Link>
+          {' › '}
+          <Link href="/comparaison" style={{ color: '#888', textDecoration: 'none' }}>Comparaisons</Link>
+          {' › '}
+          <span style={{ color: '#222', fontWeight: 600 }}>{data.labelA} vs {data.labelB}</span>
+        </nav>
+
+        {/* Header */}
+        <h1 style={{ fontSize: 30, fontWeight: 800, lineHeight: 1.25, marginBottom: 20, color: '#111' }}>
+          {data.title}
+        </h1>
+        <p style={{ color: '#555', lineHeight: 1.8, fontSize: 16, marginBottom: 40, maxWidth: 760 }}>
+          {data.intro}
+        </p>
+
+        {/* Column headers */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            background: '#111',
+            borderRadius: '12px 12px 0 0',
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ padding: '16px', color: '#999', fontSize: 13, fontWeight: 600 }}>Critère</div>
+          <div
+            style={{
+              padding: '16px',
+              background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+              color: '#fff',
+              fontSize: 15,
+              fontWeight: 700,
+              textAlign: 'center',
+            }}
+          >
+            {data.labelA}
+          </div>
+          <div
+            style={{
+              padding: '16px',
+              background: '#1C1C2E',
+              color: '#fff',
+              fontSize: 15,
+              fontWeight: 700,
+              textAlign: 'center',
+            }}
+          >
+            {data.labelB}
+          </div>
+        </div>
+
+        {/* Comparison sections */}
+        {data.sections.map((section) => (
+          <div key={section.title}>
+            {/* Section header */}
+            <div
+              style={{
+                background: '#F8F8FF',
+                padding: '10px 16px',
+                borderLeft: '4px solid #F6475F',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#444',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              {section.title}
+            </div>
+            {/* Rows */}
+            {section.items.map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr 1fr',
+                  background: i % 2 === 0 ? '#fff' : '#FAFAFA',
+                  borderLeft: '1px solid #eee',
+                  borderRight: '1px solid #eee',
+                }}
+              >
+                <div style={{ ...cellStyle, fontWeight: 500, color: '#333' }}>{item.label}</div>
+                <div style={{ ...cellStyle, color: '#444', borderLeft: '1px solid #f0f0f0' }}>{item.a}</div>
+                <div style={{ ...cellStyle, color: '#444', borderLeft: '1px solid #f0f0f0' }}>{item.b}</div>
+              </div>
+            ))}
+          </div>
+        ))}
+
+        <div style={{ border: '1px solid #eee', borderTop: 'none', borderRadius: '0 0 12px 12px', height: 8 }} />
+
+        {/* Verdict */}
+        <div
+          style={{
+            marginTop: 40,
+            padding: '28px 32px',
+            background: 'linear-gradient(135deg, #FFF0F2, #FFF5F6)',
+            borderRadius: 16,
+            borderLeft: '4px solid #F6475F',
+          }}
+        >
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#D93A50', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <EmojiEventsIcon style={{ fontSize: 22 }} />
+            Notre verdict
+          </h2>
+          <p style={{ lineHeight: 1.8, color: '#444', fontSize: 15, margin: 0 }}>{data.verdict}</p>
+        </div>
+
+        {/* Related links */}
+        <section style={{ marginTop: 56 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#222', marginBottom: 16 }}>
+            Explorez par vous-même
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+            {data.relatedLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                style={{
+                  padding: '12px 22px',
+                  borderRadius: 100,
+                  background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  textDecoration: 'none',
+                  boxShadow: '0 4px 12px rgba(246,71,95,0.25)',
+                }}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Other comparisons */}
+        <section style={{ marginTop: 48 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#222', marginBottom: 14 }}>
+            Autres comparaisons
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {Object.values(COMPARISONS)
+              .filter((c) => c.slug !== slug)
+              .map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/comparaison/${c.slug}`}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 100,
+                    border: '1px solid #ddd',
+                    fontSize: 14,
+                    color: '#444',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {c.labelA} vs {c.labelB}
+                </Link>
+              ))}
+          </div>
+        </section>
+      </div>
+    </>
+  );
+}

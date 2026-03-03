@@ -48,6 +48,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
+  // ── Property-type pages ──────────────────────────────────────
+  const propertyTypes = ['appartement', 'maison', 'villa', 'terrain', 'bureau', 'studio'];
+  const typePages: MetadataRoute.Sitemap = propertyTypes.map((type) => ({
+    url: `${baseUrl}/type-bien/${type}`,
+    lastModified: now,
+    changeFrequency: 'daily' as const,
+    priority: 0.75,
+  }));
+
+  // ── Comparison pages ─────────────────────────────────────────
+  const comparisonSlugs = ['louer-vs-acheter', 'douala-vs-yaounde', 'appartement-vs-maison'];
+  const comparisonPages: MetadataRoute.Sitemap = [
+    { url: `${baseUrl}/comparaison`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.65 },
+    ...comparisonSlugs.map((slug) => ({
+      url: `${baseUrl}/comparaison/${slug}`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.65,
+    })),
+  ];
+
   // ── Blog pages ───────────────────────────────────────────────
   const blogSlugs = ['eviter-arnaques-immobilieres-cameroun', 'prix-loyers-douala-2026', 'location-appartement-abidjan-guide'];
   const blogPages: MetadataRoute.Sitemap = [
@@ -82,5 +103,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Fail silently — static pages are always included even if the API is down
   }
 
-  return [...staticPages, ...cityPages, ...blogPages, ...adPages];
+  return [...staticPages, ...cityPages, ...typePages, ...comparisonPages, ...blogPages, ...adPages];
 }
