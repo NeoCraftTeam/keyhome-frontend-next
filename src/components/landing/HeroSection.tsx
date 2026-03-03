@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Search, LocationOn } from '@mui/icons-material';
+import { Search, LocationOn, TrendingUp, Shield, Verified } from '@mui/icons-material';
 import { useLandingTheme } from './LandingThemeContext';
 
 const ThreeCanvas = dynamic(() => import('./ThreeCanvas'), { ssr: false });
@@ -20,7 +20,13 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
 };
 
-const CITIES = ['Douala', 'Garoua', 'Accra', 'Cotonou', 'Lomé', 'Bafoussam'];
+const CITIES = ['Douala', 'Yaoundé', 'Accra', 'Cotonou', 'Lomé', 'Abidjan'];
+
+const TRUST_BADGES = [
+  { icon: <Shield style={{ fontSize: 14 }} />, label: 'Paiement sécurisé' },
+  { icon: <Verified style={{ fontSize: 14 }} />, label: 'Annonces vérifiées' },
+  { icon: <TrendingUp style={{ fontSize: 14 }} />, label: 'Mise à jour quotidienne' },
+];
 
 export default function HeroSection() {
   const { isDark, text, textSub, textMuted, bg, surface, border } = useLandingTheme();
@@ -45,12 +51,14 @@ export default function HeroSection() {
       {/* Three.js animated particle background */}
       <ThreeCanvas />
 
-      {/* Radial gradient overlay */}
+      {/* Radial gradient overlay — enhanced with dual radials for depth */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'radial-gradient(ellipse 80% 60% at 50% 40%, rgba(246,71,95,0.12) 0%, transparent 70%)',
+          background: isDark
+            ? 'radial-gradient(ellipse 80% 60% at 50% 40%, rgba(246,71,95,0.14) 0%, transparent 65%), radial-gradient(ellipse 40% 40% at 80% 70%, rgba(99,102,241,0.06) 0%, transparent 60%)'
+            : 'radial-gradient(ellipse 80% 60% at 50% 40%, rgba(246,71,95,0.10) 0%, transparent 65%), radial-gradient(ellipse 40% 40% at 80% 70%, rgba(99,102,241,0.04) 0%, transparent 60%)',
           zIndex: 1,
           pointerEvents: 'none',
         }}
@@ -71,7 +79,7 @@ export default function HeroSection() {
       />
 
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: 'clamp(80px, 10vh, 140px) 16px clamp(60px, 8vh, 100px)', maxWidth: 860, width: '100%', margin: '0 auto' }}>
+      <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: 'clamp(80px, 10vh, 140px) 16px clamp(60px, 8vh, 100px)', maxWidth: 900, width: '100%', margin: '0 auto' }}>
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
 
           {/* Badge */}
@@ -81,14 +89,15 @@ export default function HeroSection() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 8,
-                padding: '6px 16px',
+                padding: '7px 18px',
                 borderRadius: 100,
-                background: 'rgba(246, 71, 95, 0.12)',
-                border: '1px solid rgba(246, 71, 95, 0.25)',
+                background: isDark ? 'rgba(246, 71, 95, 0.12)' : 'rgba(246, 71, 95, 0.08)',
+                border: '1px solid rgba(246, 71, 95, 0.28)',
                 color: '#F6475F',
                 fontSize: 13,
                 fontWeight: 600,
                 letterSpacing: '0.3px',
+                backdropFilter: 'blur(8px)',
               }}
             >
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#F6475F', display: 'inline-block', animation: 'pulseGlow 2s infinite' }} />
@@ -100,7 +109,7 @@ export default function HeroSection() {
           <motion.h1
             variants={itemVariants}
             style={{
-              fontSize: 'clamp(40px, 7vw, 80px)',
+              fontSize: 'clamp(40px, 7vw, 82px)',
               fontWeight: 800,
               color: text,
               lineHeight: 1.05,
@@ -120,6 +129,10 @@ export default function HeroSection() {
             >
               maison idéale
             </span>
+            <br />
+            <span style={{ fontSize: '0.75em', fontWeight: 700, color: textSub, letterSpacing: '-1px' }}>
+              en Afrique
+            </span>
           </motion.h1>
 
           {/* Subheadline */}
@@ -137,10 +150,10 @@ export default function HeroSection() {
             Des milliers d&apos;annonces immobilières vérifiées à travers l&apos;Afrique. Maisons, appartements, terrains et villas — accédez aux coordonnées en toute sécurité.
           </motion.p>
 
-          {/* Fake search bar */}
+          {/* Search bar — now links to /search for immediate value */}
           <motion.div variants={itemVariants}>
             <Link
-              href="/register"
+              href="/search"
               style={{ textDecoration: 'none' }}
             >
               <div
@@ -149,26 +162,29 @@ export default function HeroSection() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0,
-                  background: surface,
+                  background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.85)',
                   border: `1px solid ${border}`,
-                  borderRadius: 16,
+                  borderRadius: 18,
                   padding: '6px 6px 6px 20px',
                   cursor: 'text',
-                  transition: 'border-color 0.2s, background 0.2s',
-                  backdropFilter: 'blur(10px)',
+                  transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: isDark ? '0 4px 32px rgba(0,0,0,0.3)' : '0 4px 32px rgba(0,0,0,0.08)',
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(246,71,95,0.4)';
-                  (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(246,71,95,0.5)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 32px rgba(246,71,95,0.2)';
+                  (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.95)';
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLElement).style.borderColor = border;
-                  (e.currentTarget as HTMLElement).style.background = surface;
+                  (e.currentTarget as HTMLElement).style.boxShadow = isDark ? '0 4px 32px rgba(0,0,0,0.3)' : '0 4px 32px rgba(0,0,0,0.08)';
+                  (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.85)';
                 }}
               >
                 <Search style={{ color: textMuted, fontSize: 22, flexShrink: 0 }} />
                 <span style={{ flex: 1, padding: '0 12px', color: textMuted, fontSize: 15, transition: 'color 0.4s ease' }}>
-                  Rechercher une annonce...
+                  Rechercher par ville, quartier, type de bien...
                 </span>
                 <button
                   style={{
@@ -178,13 +194,22 @@ export default function HeroSection() {
                     background: 'linear-gradient(135deg, #F6475F, #D93A50)',
                     color: '#fff',
                     border: 'none',
-                    borderRadius: 12,
-                    padding: '12px 22px',
+                    borderRadius: 13,
+                    padding: '13px 24px',
                     fontSize: 15,
                     fontWeight: 600,
                     cursor: 'pointer',
                     flexShrink: 0,
-                    boxShadow: '0 4px 16px rgba(246,71,95,0.4)',
+                    boxShadow: '0 4px 20px rgba(246,71,95,0.45)',
+                    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.transform = 'scale(1.03)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(246,71,95,0.55)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(246,71,95,0.45)';
                   }}
                 >
                   <Search style={{ fontSize: 18 }} />
@@ -193,34 +218,37 @@ export default function HeroSection() {
               </div>
             </Link>
 
-            {/* City chips */}
-            <div className="hero-chips">
+            {/* City chips — now link to /search with city query */}
+            <div className="hero-chips" style={{ marginTop: 16 }}>
               <span style={{ color: textMuted, fontSize: 13, alignSelf: 'center', transition: 'color 0.4s ease' }}>Populaires :</span>
               {CITIES.map((city) => (
-                <Link key={city} href="/register" style={{ textDecoration: 'none' }}>
+                <Link key={city} href={`/search?q=${encodeURIComponent(city)}`} style={{ textDecoration: 'none' }}>
                   <span
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 4,
-                      padding: '5px 12px',
+                      padding: '6px 14px',
                       borderRadius: 100,
-                    background: surface,
-                    border: `1px solid ${border}`,
-                    color: textSub,
+                      background: surface,
+                      border: `1px solid ${border}`,
+                      color: textSub,
                       fontSize: 13,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
+                      backdropFilter: 'blur(4px)',
                     }}
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLElement).style.background = 'rgba(246,71,95,0.12)';
-                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(246,71,95,0.3)';
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(246,71,95,0.35)';
                       (e.currentTarget as HTMLElement).style.color = '#F6475F';
+                      (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
                     }}
                     onMouseLeave={(e) => {
                       (e.currentTarget as HTMLElement).style.background = surface;
                       (e.currentTarget as HTMLElement).style.borderColor = border;
                       (e.currentTarget as HTMLElement).style.color = textSub;
+                      (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
                     }}
                   >
                     <LocationOn style={{ fontSize: 12 }} />
@@ -231,20 +259,62 @@ export default function HeroSection() {
             </div>
           </motion.div>
 
-          {/* Social proof */}
+          {/* Trust badges row */}
+          <motion.div
+            variants={itemVariants}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 24,
+              marginTop: 28,
+              flexWrap: 'wrap',
+            }}
+          >
+            {TRUST_BADGES.map((badge) => (
+              <span
+                key={badge.label}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 13,
+                  color: textMuted,
+                  transition: 'color 0.4s ease',
+                }}
+              >
+                <span style={{ color: '#10B981' }}>{badge.icon}</span>
+                {badge.label}
+              </span>
+            ))}
+          </motion.div>
+
+          {/* Social proof stats */}
           <motion.div
             variants={itemVariants}
             className="hero-stats"
-            style={{ marginTop: 56 }}
+            style={{ marginTop: 52 }}
           >
             {[
               { value: '2 000+', label: 'Annonces actives' },
               { value: '10+', label: 'Pays couverts' },
               { value: '5 000+', label: 'Utilisateurs' },
-            ].map((stat) => (
-              <div key={stat.label} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 28, fontWeight: 800, color: text, letterSpacing: '-1px', transition: 'color 0.4s ease' }}>{stat.value}</div>
-                <div style={{ fontSize: 13, color: textMuted, marginTop: 2, transition: 'color 0.4s ease' }}>{stat.label}</div>
+            ].map((stat, i) => (
+              <div
+                key={stat.label}
+                style={{
+                  textAlign: 'center',
+                  padding: '16px 24px',
+                  borderRadius: 16,
+                  background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                  border: `1px solid ${border}`,
+                  backdropFilter: 'blur(4px)',
+                  transition: 'all 0.3s ease',
+                  animationDelay: `${i * 0.1}s`,
+                }}
+              >
+                <div style={{ fontSize: 30, fontWeight: 800, color: text, letterSpacing: '-1px', transition: 'color 0.4s ease' }}>{stat.value}</div>
+                <div style={{ fontSize: 13, color: textMuted, marginTop: 4, transition: 'color 0.4s ease' }}>{stat.label}</div>
               </div>
             ))}
           </motion.div>

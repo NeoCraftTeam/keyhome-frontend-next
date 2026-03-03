@@ -12,10 +12,22 @@ const NAV_LINKS = [
   { label: 'Témoignages', href: '#testimonials' },
 ];
 
+/** Smooth-scroll to an anchor section, accounting for the fixed navbar height */
+function scrollToSection(href: string) {
+  if (!href.startsWith('#')) return;
+  const id = href.slice(1);
+  const el = document.getElementById(id);
+  if (el) {
+    const navHeight = 80;
+    const top = el.getBoundingClientRect().top + window.scrollY - navHeight;
+    window.scrollTo({ top, behavior: 'smooth' });
+  }
+}
+
 export default function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isDark, toggle, text, textNav, navBg, navBorder, border, bg, surface } = useLandingTheme();
+  const { isDark, toggle, text, textNav, navBg, navBorder, border, bg: _bg, surface } = useLandingTheme();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -40,10 +52,11 @@ export default function LandingNav() {
           position: 'fixed',
           top: 0, left: 0, right: 0,
           zIndex: 100,
-          transition: 'background 0.35s ease, border-color 0.35s ease',
+          transition: 'background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease',
           background: (scrolled || menuOpen) ? navBg : 'transparent',
           backdropFilter: (scrolled || menuOpen) ? 'blur(20px)' : 'none',
           borderBottom: (scrolled || menuOpen) ? `1px solid ${navBorder}` : 'none',
+          boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.08)' : 'none',
         }}
       >
         <div style={{
@@ -59,13 +72,19 @@ export default function LandingNav() {
             </span>
           </a>
 
-          {/* Desktop links */}
+          {/* Desktop links — with smooth scroll for anchor links */}
           <div className="landing-nav-links" style={{ alignItems: 'center', gap: 32 }}>
             {NAV_LINKS.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
-                style={{ color: textNav, textDecoration: 'none', fontSize: 15, fontWeight: 500, transition: 'color 0.2s' }}
+                onClick={(e) => {
+                  if (item.href.startsWith('#')) {
+                    e.preventDefault();
+                    scrollToSection(item.href);
+                  }
+                }}
+                style={{ color: textNav, textDecoration: 'none', fontSize: 15, fontWeight: 500, transition: 'color 0.2s', cursor: 'pointer' }}
                 onMouseEnter={(e) => { (e.target as HTMLElement).style.color = '#F6475F'; }}
                 onMouseLeave={(e) => { (e.target as HTMLElement).style.color = textNav; }}
               >
@@ -112,14 +131,25 @@ export default function LandingNav() {
 
             <PageTransitionLink
               href="/login"
-              style={{ color: textNav, textDecoration: 'none', fontSize: 15, fontWeight: 500, padding: '8px 18px', borderRadius: 10, border: `1px solid ${border}`, display: 'inline-block', transition: 'color 0.35s, border-color 0.35s' }}
+              style={{
+                color: textNav, textDecoration: 'none', fontSize: 15, fontWeight: 500,
+                padding: '8px 18px', borderRadius: 10, border: `1px solid ${border}`,
+                display: 'inline-block', transition: 'color 0.35s, border-color 0.35s, background 0.2s',
+              }}
             >
               Connexion
             </PageTransitionLink>
 
             <PageTransitionLink
               href="/register"
-              style={{ color: '#fff', textDecoration: 'none', fontSize: 15, fontWeight: 600, padding: '8px 20px', borderRadius: 10, background: 'linear-gradient(135deg, #F6475F, #D93A50)', boxShadow: '0 4px 20px rgba(246,71,95,0.35)', display: 'inline-block' }}
+              style={{
+                color: '#fff', textDecoration: 'none', fontSize: 15, fontWeight: 600,
+                padding: '8px 20px', borderRadius: 10,
+                background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+                boxShadow: '0 4px 20px rgba(246,71,95,0.35)',
+                display: 'inline-block',
+                transition: 'box-shadow 0.2s, transform 0.2s',
+              }}
             >
               S&apos;inscrire gratuitement
             </PageTransitionLink>
@@ -211,7 +241,13 @@ export default function LandingNav() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.07, duration: 0.3 }}
-                onClick={() => setMenuOpen(false)}
+                onClick={(e) => {
+                  setMenuOpen(false);
+                  if (item.href.startsWith('#')) {
+                    e.preventDefault();
+                    setTimeout(() => scrollToSection(item.href), 100);
+                  }
+                }}
                 style={{
                   color: text, textDecoration: 'none', fontSize: 17, fontWeight: 600,
                   padding: '14px 16px', borderRadius: 12,
@@ -265,4 +301,3 @@ export default function LandingNav() {
     </>
   );
 }
-

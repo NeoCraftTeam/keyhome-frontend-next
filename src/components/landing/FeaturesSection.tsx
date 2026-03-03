@@ -74,7 +74,7 @@ const cardVariants = {
 };
 
 export default function FeaturesSection() {
-  const { bg, surface, border, text, textSub } = useLandingTheme();
+  const { isDark, bg, surface, border, text, textSub, textMuted } = useLandingTheme();
 
   return (
     <section
@@ -89,7 +89,7 @@ export default function FeaturesSection() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+          transition={{ duration: 0.7, ease: EASE }}
           style={{ textAlign: 'center', marginBottom: 72 }}
         >
           <span
@@ -119,7 +119,7 @@ export default function FeaturesSection() {
           >
             Tout pour trouver votre logement
           </h2>
-          <p style={{ fontSize: 18, color: textSub, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 18, color: textSub, maxWidth: 520, margin: '0 auto', lineHeight: 1.6, transition: 'color 0.4s ease' }}>
             Une plateforme complète pensée pour les locataires, acheteurs et bailleurs à travers l&apos;Afrique.
           </p>
         </motion.div>
@@ -142,17 +142,41 @@ export default function FeaturesSection() {
                 border: `1px solid ${border}`,
                 cursor: 'default',
                 backdropFilter: 'blur(4px)',
-                transition: 'border-color 0.2s, background 0.4s ease',
+                transition: 'border-color 0.25s, background 0.4s ease, box-shadow 0.25s',
+                position: 'relative',
+                overflow: 'hidden',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = f.border;
-                (e.currentTarget as HTMLElement).style.background = f.bg.replace('0.1)', '0.05)');
+                const el = e.currentTarget as HTMLElement;
+                el.style.borderColor = f.border;
+                el.style.background = isDark ? f.bg.replace('0.1)', '0.07)') : f.bg.replace('0.1)', '0.06)');
+                el.style.boxShadow = `0 8px 32px ${f.bg}`;
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = border;
-                (e.currentTarget as HTMLElement).style.background = surface;
+                const el = e.currentTarget as HTMLElement;
+                el.style.borderColor = border;
+                el.style.background = surface;
+                el.style.boxShadow = 'none';
               }}
             >
+              {/* Feature number — decorative */}
+              <span
+                style={{
+                  position: 'absolute',
+                  top: 20,
+                  right: 24,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: textMuted,
+                  opacity: 0.4,
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                {String(i + 1).padStart(2, '0')}
+              </span>
+
+              {/* Icon */}
               <div
                 style={{
                   width: 56,
@@ -165,10 +189,12 @@ export default function FeaturesSection() {
                   justifyContent: 'center',
                   color: f.color,
                   marginBottom: 24,
+                  transition: 'transform 0.2s ease',
                 }}
               >
                 {f.icon}
               </div>
+
               <h3
                 style={{
                   fontSize: 18,
@@ -176,11 +202,12 @@ export default function FeaturesSection() {
                   color: text,
                   margin: '0 0 12px',
                   letterSpacing: '-0.3px',
+                  transition: 'color 0.4s ease',
                 }}
               >
                 {f.title}
               </h3>
-              <p style={{ fontSize: 15, color: textSub, lineHeight: 1.65, margin: 0 }}>
+              <p style={{ fontSize: 15, color: textSub, lineHeight: 1.65, margin: 0, transition: 'color 0.4s ease' }}>
                 {f.description}
               </p>
             </motion.div>
