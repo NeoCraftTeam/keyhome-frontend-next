@@ -131,7 +131,7 @@ export default function RootLayout({
     <ClerkProvider
       localization={frFR}
       signInUrl="/login"
-      signUpUrl="/login"
+      signUpUrl="/register"
       signInFallbackRedirectUrl="/home"
       signUpFallbackRedirectUrl="/home"
     >

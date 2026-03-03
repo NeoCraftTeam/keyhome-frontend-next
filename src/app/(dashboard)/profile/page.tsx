@@ -40,7 +40,6 @@ import { useFavorites } from '@/providers/FavoritesProvider';
 import { authService } from '@/services/auth.service';
 import { usersService, unlockedAdsService } from '@/services/users.service';
 import { citiesService } from '@/services/cities.service';
-import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { City } from '@/types';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import AdCard from '@/components/ads/AdCard';
@@ -691,6 +690,8 @@ export default function ProfilePage() {
                           setLinkedAccountsLoading(key);
                           try {
                             await linked.destroy();
+                            // Refresh Clerk user so UI updates immediately
+                            await clerkUser?.reload();
                           } catch (err) {
                             setLinkedAccountsError(getSafeErrorMessage(err));
                           } finally {
@@ -708,7 +709,13 @@ export default function ProfilePage() {
                         startIcon={isLoading ? <CircularProgress size={13} sx={{ color: '#fff' }} /> : <LinkIcon sx={{ fontSize: 16 }} />}
                         disabled={isLoading}
                         onClick={async () => {
-                          if (!clerkUser) { return; }
+                          if (!clerkUser) {
+                            setLinkedAccountsError(
+                              'La liaison de comptes sociaux nécessite une connexion via Google, Facebook ou Apple. ' +
+                              'Connectez-vous d\'abord avec un compte social, puis liez les autres ici.'
+                            );
+                            return;
+                          }
                           setLinkedAccountsError('');
                           setLinkedAccountsLoading(key);
                           try {
@@ -716,13 +723,12 @@ export default function ProfilePage() {
                               strategy,
                               redirectUrl: `${window.location.origin}/profile`,
                             });
-                            if (externalAccount.verification?.externalVerificationRedirectURL) {
-                              const redirectUrl = externalAccount.verification.externalVerificationRedirectURL.href;
-                              if (!redirectToTrustedUrl(redirectUrl)) {
-                                setLinkedAccountsError('Redirection refusee pour des raisons de securite.');
-                                setLinkedAccountsLoading(null);
-                                return;
-                              }
+                            const verifyUrl = externalAccount.verification?.externalVerificationRedirectURL?.href;
+                            if (verifyUrl) {
+                              // Clerk-generated OAuth redirect — always safe to follow.
+                              // Do NOT route through redirectToTrustedUrl() as it blocks
+                              // external OAuth provider domains (google.com, facebook.com, etc.).
+                              window.location.assign(verifyUrl);
                             }
                           } catch (err) {
                             setLinkedAccountsError(getSafeErrorMessage(err));

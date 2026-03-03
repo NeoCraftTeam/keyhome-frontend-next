@@ -2,6 +2,7 @@
 
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
+import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import WelcomeModal from '@/components/ui/WelcomeModal';
 import { useAuth } from '@/providers/AuthProvider';
 import { Box, CircularProgress } from '@mui/material';
@@ -64,6 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </Box>
       <Footer />
       <WelcomeModal />
+      <LogoutOverlay />
     </Box>
   );
 }
