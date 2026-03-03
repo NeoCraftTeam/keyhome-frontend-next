@@ -250,7 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signOut();
     }
 
-    router.push('/login');
+    router.push('/home');
   }, [isSignedIn, signOut, clearSanctumToken, router]);
 
   const refreshUser = useCallback(async () => {
@@ -264,7 +264,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (isSignedIn) {
         await signOut();
       }
-      router.push('/login');
+      router.push('/home');
     }
   }, [isSignedIn, signOut, clearSanctumToken, router]);
 
