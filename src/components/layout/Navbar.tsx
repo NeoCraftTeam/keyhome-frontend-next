@@ -4,6 +4,7 @@ import CreditsWidget from '@/components/layout/CreditsWidget';
 import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
 import {
+    AddCircleOutline as AddCircleOutlineIcon,
     Close as CloseIcon,
     DarkMode as DarkModeIcon,
     Explore as ExploreIcon,
@@ -184,6 +185,34 @@ export default function Navbar() {
                 <DarkModeIcon sx={{ fontSize: 20 }} />
               )}
             </IconButton>
+
+            {/* Publier une annonce CTA — desktop only */}
+            {!isMobile && (
+              <Button
+                variant="contained"
+                size="small"
+                href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'}
+                component="a"
+                target="_blank"
+                rel="noopener noreferrer"
+                startIcon={<AddCircleOutlineIcon sx={{ fontSize: 18 }} />}
+                sx={{
+                  borderRadius: '20px',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  px: 2,
+                  background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+                  boxShadow: 'none',
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    boxShadow: '0 4px 12px rgba(246,71,95,0.35)',
+                  },
+                }}
+              >
+                Publier
+              </Button>
+            )}
 
             {isAuthenticated ? (
               <>
@@ -367,6 +396,26 @@ export default function Navbar() {
               </ListItemButton>
             </ListItem>
           ))}
+          {/* Publier une annonce — mobile drawer */}
+          <ListItem disablePadding>
+            <ListItemButton
+              component="a"
+              href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMobileOpen(false)}
+              sx={{ color: 'primary.main' }}
+            >
+              <ListItemIcon>
+                <AddCircleOutlineIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Publier une annonce"
+                primaryTypographyProps={{ fontWeight: 600 }}
+              />
+            </ListItemButton>
+          </ListItem>
+          <Divider sx={{ my: 1 }} />
           {isAuthenticated && (
             <>
               <ListItem disablePadding>
