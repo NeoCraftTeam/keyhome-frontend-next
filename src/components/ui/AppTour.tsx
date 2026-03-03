@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@/providers/AuthProvider';
 import { useState, useEffect } from 'react';
 import {
   Box,
@@ -69,17 +70,36 @@ interface AppTourProps {
 }
 
 export default function AppTour({ onDone }: AppTourProps) {
+  const { user, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
 
   useEffect(() => {
     if (typeof window === 'undefined') { return; }
-    if (!localStorage.getItem(TOUR_KEY)) {
-      // Small delay so the app loads first
-      const t = setTimeout(() => setOpen(true), 800);
-      return () => clearTimeout(t);
+
+    // Already completed the tour — nothing to do
+    if (localStorage.getItem(TOUR_KEY)) { return; }
+
+    // Only show the tour to "just registered" users (onboarding not yet complete)
+    if (!isAuthenticated || !user) { return; }
+
+    // If onboarding already completed, this is NOT a first-login — skip the tour
+    if (user.onboarding_completed_at != null) {
+      return;
     }
-  }, []);
+
+    // Onboarding not completed → WelcomeModal will show first.
+    // Wait for the user to dismiss it before activating the tour.
+    const handler = () => {
+      setTimeout(() => setOpen(true), 600);
+      window.removeEventListener('kh:welcome-dismissed', handler);
+    };
+    window.addEventListener('kh:welcome-dismissed', handler);
+
+    return () => {
+      window.removeEventListener('kh:welcome-dismissed', handler);
+    };
+  }, [isAuthenticated, user]);
 
   const handleClose = () => {
     localStorage.setItem(TOUR_KEY, '1');

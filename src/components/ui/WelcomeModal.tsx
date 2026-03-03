@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/providers/AuthProvider';
+import { authService } from '@/services/auth.service';
 import { AutoAwesome, Toll } from '@mui/icons-material';
 import {
   Box,
@@ -10,14 +11,18 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'kh_welcome_seen';
-
 /**
- * Welcome modal shown once to newly registered users.
- * Displays a short intro and the welcome bonus credits.
+ * Welcome modal shown once to newly registered users on their very first login.
+ *
+ * Trigger: `user.onboarding_completed_at` is `null` (set by the backend).
+ * No time-windows, no fragile localStorage — the backend is the source of truth.
+ *
+ * On dismiss:
+ * 1. Calls `POST /auth/onboarding-complete` to persist the flag server-side.
+ * 2. Dispatches `kh:welcome-dismissed` so AppTour + CreditsWidget can react.
  */
 export default function WelcomeModal() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, refreshUser } = useAuth();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -25,32 +30,27 @@ export default function WelcomeModal() {
       return;
     }
 
-    // Only show once ever
-    const alreadySeen = localStorage.getItem(STORAGE_KEY);
-    if (alreadySeen) {
+    // The SOLE condition: backend says onboarding hasn't been completed yet
+    if (user.onboarding_completed_at != null) {
       return;
     }
 
-    // Only show if account is very recent (< 2 minutes old)
-    // This avoids showing the modal to existing users who haven't seen it yet
-    if (user.created_at) {
-      const createdAt = new Date(user.created_at).getTime();
-      const twoMinutesAgo = Date.now() - 2 * 60 * 1000;
-      if (createdAt < twoMinutesAgo) {
-        // Mark as seen so we don't check again
-        localStorage.setItem(STORAGE_KEY, 'true');
-        return;
-      }
-    }
-
-    // Small delay so the page loads first
-    const timer = setTimeout(() => setOpen(true), 800);
+    // Small delay so the dashboard page renders first
+    const timer = setTimeout(() => setOpen(true), 600);
     return () => clearTimeout(timer);
   }, [isAuthenticated, user]);
 
-  const handleClose = () => {
+  const handleClose = async (): Promise<void> => {
     setOpen(false);
-    localStorage.setItem(STORAGE_KEY, 'true');
+
+    // Persist on backend (idempotent – safe to fire-and-forget)
+    authService.completeOnboarding().catch(() => {});
+
+    // Refresh user state so subsequent checks see onboarding_completed_at set
+    refreshUser().catch(() => {});
+
+    // Signal AppTour & CreditsWidget
+    window.dispatchEvent(new CustomEvent('kh:welcome-dismissed'));
   };
 
   const bonusCredits = Math.max(user?.point_balance ?? 0, 5);
