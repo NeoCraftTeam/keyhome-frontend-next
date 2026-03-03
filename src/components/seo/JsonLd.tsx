@@ -143,14 +143,8 @@ const softwareApplicationSchema = {
       "Inscription 100% gratuite. Parcourez toutes les annonces sans frais. " +
       "Vous ne payez qu'un micro-montant (à partir de 500 FCFA) uniquement quand vous souhaitez obtenir les coordonnées d'un propriétaire.",
   },
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.8',
-    reviewCount: '850',
-    ratingCount: '1200',
-    bestRating: '5',
-    worstRating: '1',
-  },
+  // NOTE: aggregateRating removed — only add back when real review data is
+  // available from the backend to avoid Google manual penalty for fake markup.
 };
 
 /* ------------------------------------------------------------------ */
