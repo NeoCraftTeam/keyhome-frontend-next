@@ -2,6 +2,7 @@
 
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
+import HeroSection from '@/components/landing/HeroSection';
 import CategoryPills from '@/components/ui/CategoryPills';
 import FadeIn from '@/components/ui/FadeIn';
 import AppTour from '@/components/ui/AppTour';
@@ -104,16 +105,20 @@ export default function HomePage() {
         title="Votre avis compte !"
         description="Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience."
       />
-      {/* Category pills — centered under navbar */}
+
+      {/* Hero Section — Title + Search */}
+      <HeroSection />
+
+      {/* Category pills — centered under Hero */}
       <Box 
         sx={{ 
           position: 'sticky', 
           top: 64, 
           zIndex: 10, 
-          bgcolor: 'background.default',
+          bgcolor: '#111', // Dark background like in the image
           borderBottom: '1px solid',
-          borderColor: 'divider',
-          py: 1.5,
+          borderColor: 'rgba(255,255,255,0.1)',
+          py: 2,
           display: 'flex',
           justifyContent: 'center'
         }}

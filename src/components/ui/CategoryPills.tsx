@@ -72,23 +72,24 @@ export default function CategoryPills({ categories, selected, onChange }: Catego
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               ...(selected === cat.value
                 ? {
-                    bgcolor: 'text.primary',
-                    color: 'background.default',
-                    borderColor: 'text.primary',
-                    '&:hover': { bgcolor: 'text.primary', opacity: 0.9 },
+                    bgcolor: 'primary.main',
+                    color: '#fff',
+                    borderColor: 'primary.main',
+                    '&:hover': { bgcolor: 'primary.dark' },
                     '& .MuiChip-icon': { color: 'inherit' },
+                    boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)',
                   }
                 : {
-                    bgcolor: 'transparent',
-                    borderColor: 'divider',
-                    color: 'text.secondary',
+                    bgcolor: 'rgba(255,255,255,0.05)',
+                    borderColor: 'rgba(255,255,255,0.2)',
+                    color: '#fff',
                     '&:hover': { 
-                      bgcolor: 'action.hover', 
-                      borderColor: 'text.primary',
-                      color: 'text.primary',
-                      '& .MuiChip-icon': { color: 'text.primary' }
+                      bgcolor: 'rgba(255,255,255,0.1)', 
+                      borderColor: '#fff',
+                      color: '#fff',
+                      '& .MuiChip-icon': { color: '#fff' }
                     },
-                    '& .MuiChip-icon': { color: 'text.secondary' },
+                    '& .MuiChip-icon': { color: 'rgba(255,255,255,0.7)' },
                   }),
             }}
           />
