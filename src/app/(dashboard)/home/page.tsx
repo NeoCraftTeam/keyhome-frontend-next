@@ -105,13 +105,27 @@ export default function HomePage() {
         description="Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience."
       />
       {/* Category pills — centered under navbar */}
-      <Container maxWidth="lg" sx={{ pt: 2, pb: 1 }}>
-        <CategoryPills
-          categories={categories}
-          selected={selectedCategory}
-          onChange={handleCategoryChange}
-        />
-      </Container>
+      <Box 
+        sx={{ 
+          position: 'sticky', 
+          top: 64, 
+          zIndex: 10, 
+          bgcolor: 'background.default',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          py: 1.5,
+          display: 'flex',
+          justifyContent: 'center'
+        }}
+      >
+        <Container maxWidth="lg">
+          <CategoryPills
+            categories={categories}
+            selected={selectedCategory}
+            onChange={handleCategoryChange}
+          />
+        </Container>
+      </Box>
 
       <Container maxWidth="xl" sx={{ mt: 1, px: { xs: 2, sm: 3, md: 4 } }}>
         {/* Recommendations */}

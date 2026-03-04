@@ -46,12 +46,12 @@ export default function CategoryPills({ categories, selected, onChange }: Catego
         sx={{
           display: 'flex',
           justifyContent: 'center',
-          gap: 1,
+          gap: 1.5,
           overflowX: 'auto',
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': { display: 'none' },
           px: 4,
-          py: 1,
+          py: 0.5,
           width: '100%',
         }}
       >
@@ -64,19 +64,31 @@ export default function CategoryPills({ categories, selected, onChange }: Catego
             variant={selected === cat.value ? 'filled' : 'outlined'}
             sx={{
               flexShrink: 0,
-              fontWeight: 500,
-              borderRadius: '20px',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              borderRadius: '12px',
+              height: 36,
               px: 1,
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               ...(selected === cat.value
                 ? {
-                    bgcolor: 'secondary.main',
-                    color: 'secondary.contrastText',
-                    borderColor: 'secondary.main',
-                    '&:hover': { bgcolor: 'secondary.dark' },
+                    bgcolor: 'text.primary',
+                    color: 'background.default',
+                    borderColor: 'text.primary',
+                    '&:hover': { bgcolor: 'text.primary', opacity: 0.9 },
+                    '& .MuiChip-icon': { color: 'inherit' },
                   }
                 : {
+                    bgcolor: 'transparent',
                     borderColor: 'divider',
-                    '&:hover': { bgcolor: 'grey.50', borderColor: 'text.secondary' },
+                    color: 'text.secondary',
+                    '&:hover': { 
+                      bgcolor: 'action.hover', 
+                      borderColor: 'text.primary',
+                      color: 'text.primary',
+                      '& .MuiChip-icon': { color: 'text.primary' }
+                    },
+                    '& .MuiChip-icon': { color: 'text.secondary' },
                   }),
             }}
           />

@@ -143,32 +143,34 @@ export default function Navbar() {
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                flex: '0 1 560px',
+                flex: '0 1 600px',
                 mx: 'auto',
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
                 border: '1px solid',
                 borderColor: 'divider',
                 borderRadius: '40px',
-                px: 2,
+                px: 2.5,
                 py: 0.5,
-                transition: 'box-shadow 0.2s',
+                transition: 'all 0.2s',
                 '&:hover': {
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                 },
                 '&:focus-within': {
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
-                  borderColor: 'text.secondary',
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#fff',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  borderColor: 'primary.main',
                 },
               }}
             >
-              <SearchIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />
+              <SearchIcon sx={{ color: 'text.secondary', mr: 1.5, fontSize: 20 }} />
               <InputBase
                 placeholder="Rechercher une ville, un quartier, un type..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 sx={{
                   flex: 1,
-                  fontSize: '0.875rem',
-                  '& input::placeholder': { color: 'text.secondary' },
+                  fontSize: '0.9rem',
+                  '& input::placeholder': { color: 'text.secondary', opacity: 0.7 },
                 }}
               />
               <IconButton
@@ -179,7 +181,9 @@ export default function Navbar() {
                   color: '#fff',
                   width: 32,
                   height: 32,
+                  ml: 1,
                   '&:hover': { bgcolor: 'primary.dark' },
+                  boxShadow: '0 2px 6px rgba(246, 71, 95, 0.3)',
                 }}
               >
                 <TuneIcon sx={{ fontSize: 16 }} />
