@@ -208,18 +208,16 @@ export default function HomePage() {
             inputValue={cityInput}
             onInputChange={(_, val) => setCityInput(val)}
             onChange={handleCitySelect}
-            noOptionsText={
-              cityInput.length < 1 ? 'Tapez une ville…' : 'Aucune ville trouvée'
-            }
+            noOptionsText={null}
+            open={cityInput.length >= 2 && cities.length > 0}
             slotProps={{
               paper: {
                 sx: {
-                  borderRadius: '0 0 16px 16px',
+                  borderRadius: '14px',
                   boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
                   border: '1px solid',
                   borderColor: 'divider',
-                  borderTop: 'none',
-                  mt: '-2px',
+                  mt: 1,
                   overflow: 'hidden',
                 },
               },

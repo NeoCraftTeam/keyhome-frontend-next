@@ -66,21 +66,23 @@ export default function Footer() {
           ))}
         </Grid>
         <Divider sx={{ my: 3 }} />
-        <Typography variant="caption" color="text.secondary">
-          © {new Date().getFullYear()} KeyHome. Tous droits réservés.
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-          Powered by{' '}
-          <Link
-            href="https://www.neocraft.dev"
-            target="_blank"
-            rel="noopener noreferrer"
-            underline="hover"
-            sx={{ color: 'text.secondary', fontWeight: 500 }}
-          >
-            Neocraft Team
-          </Link>
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            © {new Date().getFullYear()} KeyHome. Tous droits réservés.
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Propulsé par{' '}
+            <Link
+              href="https://www.neocraft.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              underline="hover"
+              sx={{ color: 'text.secondary', fontWeight: 600 }}
+            >
+              NeoCraftTeam
+            </Link>
+          </Typography>
+        </Box>
       </Container>
     </Box>
   );

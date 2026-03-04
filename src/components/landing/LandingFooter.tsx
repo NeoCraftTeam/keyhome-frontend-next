@@ -150,7 +150,6 @@ export default function LandingFooter() {
             © {new Date().getFullYear()} KeyHome. Tous droits réservés.
           </span>
 
-          {/* NeoCraftTeam credit */}
           <div
             style={{
               display: 'flex',
@@ -181,10 +180,6 @@ export default function LandingFooter() {
               NeoCraftTeam
             </a>
           </div>
-
-          <span style={{ fontSize: 13, color: textMuted }}>
-            Fait avec ❤️ pour l'Afrique 🌍
-          </span>
         </div>
       </div>
     </footer>
