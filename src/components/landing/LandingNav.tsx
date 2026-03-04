@@ -119,12 +119,12 @@ export default function LandingNav() {
               Visiter
             </PageTransitionLink>
 
-            <a
-              href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'}
+            <PageTransitionLink
+              href={process.env.NEXT_PUBLIC_OWNER_URL || '/owner'}
               style={{ color: '#fff', textDecoration: 'none', fontSize: 15, fontWeight: 600, padding: '8px 20px', borderRadius: 10, background: 'linear-gradient(135deg, #F6475F, #D93A50)', boxShadow: '0 4px 20px rgba(246,71,95,0.35)', display: 'inline-block' }}
             >
               Annoncer
-            </a>
+            </PageTransitionLink>
           </div>
 
           {/* Mobile right side: toggle + hamburger */}
@@ -247,8 +247,8 @@ export default function LandingNav() {
               >
                 Visiter
               </PageTransitionLink>
-              <a
-                href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'}
+              <PageTransitionLink
+                href={process.env.NEXT_PUBLIC_OWNER_URL || '/owner'}
                 onClick={() => setMenuOpen(false)}
                 style={{
                   color: '#fff', textDecoration: 'none', fontSize: 16, fontWeight: 700,
@@ -259,7 +259,7 @@ export default function LandingNav() {
                 }}
               >
                 Annoncer
-              </a>
+              </PageTransitionLink>
             </motion.div>
           </motion.div>
         )}

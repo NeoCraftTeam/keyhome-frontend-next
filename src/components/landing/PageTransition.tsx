@@ -64,7 +64,11 @@ export function PageTransitionOverlay() {
             animate={{ scaleY: 1 }}
             transition={{ duration: 0.45, ease: [0.76, 0, 0.24, 1] }}
             onAnimationComplete={() => {
-              router.push(target);
+              if (target.startsWith('http')) {
+                window.location.href = target;
+              } else {
+                router.push(target);
+              }
             }}
             style={{
               position: 'fixed',
