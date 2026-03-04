@@ -36,13 +36,13 @@ export default function LandingNav() {
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+        className={(scrolled || menuOpen) ? 'aura-glass' : ''}
         style={{
           position: 'fixed',
           top: 0, left: 0, right: 0,
           zIndex: 100,
           transition: 'background 0.35s ease, border-color 0.35s ease',
           background: (scrolled || menuOpen) ? navBg : 'transparent',
-          backdropFilter: (scrolled || menuOpen) ? 'blur(20px)' : 'none',
           borderBottom: (scrolled || menuOpen) ? `1px solid ${navBorder}` : 'none',
         }}
       >

@@ -97,9 +97,11 @@ export default function NearbyPage() {
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
     // User position marker
+    const userPopupContent = document.createElement('strong');
+    userPopupContent.textContent = 'Votre position';
     const userMarker = new mapboxgl.Marker({ color: '#F6475F' })
       .setLngLat([coords.lng, coords.lat])
-      .setPopup(new mapboxgl.Popup().setHTML('<strong>Votre position</strong>'))
+      .setPopup(new mapboxgl.Popup().setDOMContent(userPopupContent))
       .addTo(map);
 
     map.on('load', () => setMapReady(true));

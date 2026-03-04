@@ -198,30 +198,30 @@ export default function Navbar() {
             </IconButton>
 
             {isAuthenticated && !isMobile && (
-              <Box
-                onClick={(e) => setAnchorEl(e.currentTarget)}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: '40px',
-                  px: 1.5,
-                  py: 0.5,
-                  cursor: 'pointer',
-                  '&:hover': { boxShadow: '0 2px 4px rgba(0,0,0,0.08)' },
-                }}
-              >
-                <MenuIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                <Avatar
-                  src={user?.avatar || undefined}
-                  sx={{ width: 30, height: 30, bgcolor: 'text.secondary' }}
+              <>
+                <Box
+                  onClick={(e) => setAnchorEl(e.currentTarget)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: '40px',
+                    px: 1.5,
+                    py: 0.5,
+                    cursor: 'pointer',
+                    '&:hover': { boxShadow: '0 2px 4px rgba(0,0,0,0.08)' },
+                  }}
                 >
-                  {user?.firstname?.[0] || 'U'}
-                </Avatar>
-              </Box>
-            )}
+                  <MenuIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                  <Avatar
+                    src={user?.avatar || undefined}
+                    sx={{ width: 30, height: 30, bgcolor: 'text.secondary' }}
+                  >
+                    {user?.firstname?.[0] || 'U'}
+                  </Avatar>
+                </Box>
 
                 {/* Desktop dropdown */}
                 <Menu
@@ -287,7 +287,7 @@ export default function Navbar() {
                   </MenuItem>
                 </Menu>
               </>
-            ) : null}
+            )}
           </Box>
         </Toolbar>
       </AppBar>
