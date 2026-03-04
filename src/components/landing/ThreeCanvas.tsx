@@ -21,6 +21,9 @@ export default function ThreeCanvas() {
     let animId: number;
     const dpr = Math.min(window.devicePixelRatio, 2);
 
+    // Respect prefers-reduced-motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     // Configuration
     const PARTICLE_COUNT = 80;
     const MAX_DIST = 120;
@@ -98,17 +101,19 @@ export default function ThreeCanvas() {
         ctx.fill();
       }
 
-      // Update positions
-      for (const p of particles) {
-        p.x += p.vx;
-        p.y += p.vy;
+      // Update positions (skip if reduced motion)
+      if (!prefersReducedMotion) {
+        for (const p of particles) {
+          p.x += p.vx;
+          p.y += p.vy;
 
-        // Bounce off edges
-        if (p.x < 0 || p.x > w) p.vx *= -1;
-        if (p.y < 0 || p.y > h) p.vy *= -1;
+          // Bounce off edges
+          if (p.x < 0 || p.x > w) p.vx *= -1;
+          if (p.y < 0 || p.y > h) p.vy *= -1;
+        }
+
+        animId = requestAnimationFrame(draw);
       }
-
-      animId = requestAnimationFrame(draw);
     };
 
     const onMouseMove = (e: MouseEvent) => {

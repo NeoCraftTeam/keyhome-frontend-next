@@ -43,6 +43,10 @@ export default function FadeIn({
             transform: 'translate(0)',
           },
         },
+        '@media (prefers-reduced-motion: reduce)': {
+          animation: 'none',
+          opacity: 1,
+        },
         ...sx,
       }}
     >

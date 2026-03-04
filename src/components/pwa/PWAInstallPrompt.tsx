@@ -144,6 +144,7 @@ export default function PWAInstallPrompt() {
             </Button>
             <IconButton
               size="small"
+              aria-label="Fermer"
               onClick={handleDismiss}
               sx={{ color: 'text.secondary', ml: -0.5 }}
             >

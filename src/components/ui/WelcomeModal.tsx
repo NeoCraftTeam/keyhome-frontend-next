@@ -94,6 +94,9 @@ export default function WelcomeModal() {
               '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(255,255,255,0.2)' },
               '50%': { transform: 'scale(1.05)', boxShadow: '0 0 0 12px rgba(255,255,255,0)' },
             },
+            '@media (prefers-reduced-motion: reduce)': {
+              animation: 'none',
+            },
           }}
         >
           <AutoAwesome sx={{ fontSize: 32, color: '#fff' }} />

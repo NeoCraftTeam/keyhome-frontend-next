@@ -32,6 +32,10 @@ export default function LogoutOverlay() {
           from: { opacity: 0 },
           to: { opacity: 1 },
         },
+        '@media (prefers-reduced-motion: reduce)': {
+          animation: 'none',
+          '& *': { animation: 'none !important' },
+        },
       }}
     >
       {/* Animated logo */}

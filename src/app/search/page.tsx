@@ -562,6 +562,7 @@ function SearchContent() {
                       {(selectedCity || cityInput) && (
                         <IconButton
                           size="small"
+                          aria-label="Effacer la recherche"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedCity(null);

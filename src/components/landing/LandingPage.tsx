@@ -11,7 +11,7 @@ import LandingFooter from '@/components/landing/LandingFooter';
 import LandingNav from '@/components/landing/LandingNav';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import FAQSection from '@/components/landing/FAQSection';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 function BackToTop() {
@@ -89,7 +89,9 @@ function LandingInner() {
 export default function LandingPage() {
   return (
     <LandingThemeProvider>
-      <LandingInner />
+      <MotionConfig reducedMotion="user">
+        <LandingInner />
+      </MotionConfig>
     </LandingThemeProvider>
   );
 }
