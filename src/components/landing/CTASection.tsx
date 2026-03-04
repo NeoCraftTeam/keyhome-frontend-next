@@ -6,7 +6,7 @@ import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
 
 export default function CTASection() {
-  const { bgAlt, text, textSub, surface, surfaceHover, border, textMuted } = useLandingTheme();
+  const { bgAlt, text, textSub, surface, surfaceHover, border } = useLandingTheme();
   return (
     <section
       className="landing-section-pad"
@@ -70,7 +70,7 @@ export default function CTASection() {
             }}
           >
             <PhoneIphoneOutlined style={{ fontSize: 16 }} />
-            Disponible sur mobile
+            Compatible mobile &amp; tablette
           </div>
 
           <h2
@@ -110,7 +110,7 @@ export default function CTASection() {
           </p>
 
           <div className="cta-buttons" style={{ marginBottom: 0 }}>
-            <PageTransitionLink href="/home" style={{ textDecoration: 'none' }}>
+            <PageTransitionLink href="/search" style={{ textDecoration: 'none' }}>
               <motion.button
                 whileHover={{ scale: 1.03, boxShadow: '0 8px 40px rgba(246,71,95,0.6)' }}
                 whileTap={{ scale: 0.97 }}
@@ -177,7 +177,7 @@ export default function CTASection() {
                   alignItems: 'center',
                   gap: 6,
                   fontSize: 13,
-                  color: textMuted,
+                  color: textSub,
                 }}
               >
                 <span style={{ color: '#10B981', fontSize: 16 }}>✓</span>

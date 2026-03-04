@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useLandingTheme } from './LandingThemeContext';
+import { PageTransitionLink } from './PageTransition';
 import {
   SearchOutlined,
   LockOpenOutlined,
@@ -19,6 +20,7 @@ const features = [
     border: 'rgba(59,130,246,0.2)',
     title: 'Recherche intelligente',
     description: 'Filtrez par ville, quartier, type de bien, superficie et budget. Trouvez exactement ce que vous cherchez en quelques secondes.',
+    href: '/search',
   },
   {
     icon: <LocationOnOutlined style={{ fontSize: 28 }} />,
@@ -27,6 +29,7 @@ const features = [
     border: 'rgba(16,185,129,0.2)',
     title: 'Carte interactive',
     description: 'Visualisez toutes les annonces sur une carte dynamique. Explorez les quartiers et estimez les distances depuis chez vous.',
+    href: '/search',
   },
   {
     icon: <LockOpenOutlined style={{ fontSize: 28 }} />,
@@ -35,6 +38,7 @@ const features = [
     border: 'rgba(246,71,95,0.2)',
     title: 'Accès sécurisé',
     description: 'Débloquez les coordonnées du propriétaire instantanément avec un micro-paiement FedaPay. 100% sécurisé et vérifié.',
+    href: '/register',
   },
   {
     icon: <PhoneEnabledOutlined style={{ fontSize: 28 }} />,
@@ -43,6 +47,7 @@ const features = [
     border: 'rgba(139,92,246,0.2)',
     title: 'Contact direct',
     description: 'Appelez, WhatsApp ou envoyez un email directement au propriétaire ou à l\'agence. Sans intermédiaire.',
+    href: '/register',
   },
   {
     icon: <FavoriteBorderOutlined style={{ fontSize: 28 }} />,
@@ -51,6 +56,7 @@ const features = [
     border: 'rgba(245,158,11,0.2)',
     title: 'Favoris & alertes',
     description: 'Sauvegardez vos annonces favorites et recevez des recommandations personnalisées basées sur vos préférences.',
+    href: '/register',
   },
   {
     icon: <VerifiedOutlined style={{ fontSize: 28 }} />,
@@ -59,6 +65,7 @@ const features = [
     border: 'rgba(6,182,212,0.2)',
     title: 'Annonces vérifiées',
     description: 'Toutes les annonces sont modérées par notre équipe. Photos authentiques, prix cohérents et propriétaires vérifiés.',
+    href: '/search',
   },
 ];
 
@@ -127,32 +134,33 @@ export default function FeaturesSection() {
         {/* Cards grid */}
         <div className="features-grid">
           {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              custom={i}
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-60px' }}
-              whileHover={{ y: -6, transition: { duration: 0.2 } }}
-              style={{
-                padding: '32px',
-                borderRadius: 20,
-                background: surface,
-                border: `1px solid ${border}`,
-                cursor: 'default',
-                backdropFilter: 'blur(4px)',
-                transition: 'border-color 0.2s, background 0.4s ease',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = f.border;
-                (e.currentTarget as HTMLElement).style.background = f.bg.replace('0.1)', '0.05)');
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = border;
-                (e.currentTarget as HTMLElement).style.background = surface;
-              }}
-            >
+            <PageTransitionLink key={f.title} href={f.href} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <motion.div
+                custom={i}
+                variants={cardVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '-60px' }}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+                style={{
+                  padding: '32px',
+                  borderRadius: 20,
+                  background: surface,
+                  border: `1px solid ${border}`,
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(4px)',
+                  transition: 'border-color 0.2s, background 0.4s ease',
+                  height: '100%',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = f.border;
+                  (e.currentTarget as HTMLElement).style.background = f.bg.replace('0.1)', '0.05)');
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = border;
+                  (e.currentTarget as HTMLElement).style.background = surface;
+                }}
+              >
               <div
                 style={{
                   width: 56,
@@ -184,6 +192,7 @@ export default function FeaturesSection() {
                 {f.description}
               </p>
             </motion.div>
+            </PageTransitionLink>
           ))}
         </div>
       </div>

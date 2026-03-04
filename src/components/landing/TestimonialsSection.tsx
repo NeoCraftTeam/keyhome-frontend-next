@@ -12,6 +12,7 @@ const testimonials = [
     color: '#F6475F',
     rating: 5,
     verified: true,
+    date: 'Février 2026',
     quote: 'J\'ai trouvé mon appartement en 2 jours ! Le système de déblocage est brillant — payer pour les vrais contacts évite les arnaques. Je recommande à 100%.',
   },
   {
@@ -21,6 +22,7 @@ const testimonials = [
     color: '#3B82F6',
     rating: 4,
     verified: true,
+    date: 'Janvier 2026',
     quote: 'En tant que propriétaire, je reçois uniquement des contacts sérieux. Mon bien a été loué en moins d\'une semaine. J\'aurais aimé plus d\'options pour gérer mes annonces, mais l\'essentiel est là.',
   },
   {
@@ -30,6 +32,7 @@ const testimonials = [
     color: '#10B981',
     rating: 4.5,
     verified: true,
+    date: 'Décembre 2025',
     quote: 'La carte interactive est incroyable pour explorer les quartiers. Les annonces sont vérifiées et les photos correspondent toujours à la réalité.',
   },
   {
@@ -39,6 +42,7 @@ const testimonials = [
     color: '#8B5CF6',
     rating: 5,
     verified: true,
+    date: 'Novembre 2025',
     quote: 'KeyHome a révolutionné ma façon de travailler. Je gère toutes mes annonces depuis le tableau de bord. Mes clients trouvent exactement ce qu\'ils cherchent.',
   },
 ];
@@ -105,6 +109,27 @@ export default function TestimonialsSection() {
           <p style={{ fontSize: 18, color: textSub, maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>
             Des milliers d&apos;utilisateurs ont déjà trouvé leur logement idéal avec KeyHome.
           </p>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 20,
+              padding: '8px 18px',
+              borderRadius: 100,
+              background: 'rgba(245,158,11,0.1)',
+              border: '1px solid rgba(245,158,11,0.2)',
+            }}
+          >
+            <div style={{ display: 'flex', gap: 2 }}>
+              {[1, 2, 3, 4].map((i) => (
+                <Star key={i} style={{ fontSize: 16, color: '#F59E0B' }} />
+              ))}
+              <StarHalf style={{ fontSize: 16, color: '#F59E0B' }} />
+            </div>
+            <span style={{ fontSize: 14, fontWeight: 700, color: text }}>4.6/5</span>
+            <span style={{ fontSize: 13, color: textSub }}>basé sur 120+ avis</span>
+          </div>
         </motion.div>
 
         {/* Cards */}
@@ -170,9 +195,10 @@ export default function TestimonialsSection() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: text }}>{t.name}</span>
-                    {t.verified && <Verified style={{ fontSize: 14, color: '#3B82F6' }} />}
+                    {t.verified && <Verified titleAccess="Profil vérifié" style={{ fontSize: 14, color: '#3B82F6' }} />}
                   </div>
                   <div style={{ fontSize: 12, color: textMuted }}>{t.role}</div>
+                  <div style={{ fontSize: 11, color: textMuted, marginTop: 2 }}>{t.date}</div>
                 </div>
               </div>
             </motion.div>

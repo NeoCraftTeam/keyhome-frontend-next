@@ -793,18 +793,24 @@ function AdDetailContent() {
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1.5 }}>
                     Utilisez vos crédits pour accéder aux coordonnées de l&apos;annonceur
                   </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 1.5, color: 'text.secondary' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Phone sx={{ fontSize: 14 }} />
-                      <Typography variant="caption">Téléphone</Typography>
+                  <Box sx={{ mt: 2, px: 2, py: 1.5, bgcolor: 'action.hover', borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <Phone sx={{ fontSize: 16, color: 'text.secondary' }} />
+                      <Typography variant="body2" sx={{ filter: 'blur(4px)', userSelect: 'none', color: 'text.secondary' }} aria-hidden>
+                        +237 6** *** **9
+                      </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <WhatsApp sx={{ fontSize: 14 }} />
-                      <Typography variant="caption">WhatsApp</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <WhatsApp sx={{ fontSize: 16, color: 'text.secondary' }} />
+                      <Typography variant="body2" sx={{ filter: 'blur(4px)', userSelect: 'none', color: 'text.secondary' }} aria-hidden>
+                        +237 6** *** **9
+                      </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Email sx={{ fontSize: 14 }} />
-                      <Typography variant="caption">Email</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Email sx={{ fontSize: 16, color: 'text.secondary' }} />
+                      <Typography variant="body2" sx={{ filter: 'blur(4px)', userSelect: 'none', color: 'text.secondary' }} aria-hidden>
+                        ****@****.com
+                      </Typography>
                     </Box>
                   </Box>
                 </>
