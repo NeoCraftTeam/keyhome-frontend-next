@@ -122,13 +122,13 @@ export default function ProfilePage() {
     if (!file || !user) { return; }
 
     if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
-      setSnackbar('Format non supporté. Utilisez JPG, PNG, WebP ou GIF.');
+      setSnackbar({ message: 'Format non supporté. Utilisez JPG, PNG, WebP ou GIF.', severity: 'error' });
       e.target.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setSnackbar('L\'image ne doit pas dépasser 5 Mo.');
+      setSnackbar({ message: 'L\'image ne doit pas dépasser 5 Mo.', severity: 'error' });
       e.target.value = '';
       return;
     }
@@ -751,7 +751,7 @@ export default function ProfilePage() {
         onClose={() => setSnackbar(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        {snackbar && (
+        {snackbar ? (
           <Alert
             onClose={() => setSnackbar(null)}
             severity={snackbar.severity}
@@ -760,7 +760,7 @@ export default function ProfilePage() {
           >
             {snackbar.message}
           </Alert>
-        )}
+        ) : undefined}
       </Snackbar>
     </Container>
   );
