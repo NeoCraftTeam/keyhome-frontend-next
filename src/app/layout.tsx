@@ -94,12 +94,22 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   category: 'real estate',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'KeyHome',
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#F6475F',
 };
 
 export default function RootLayout({

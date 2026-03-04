@@ -1,4 +1,10 @@
 import type { NextConfig } from 'next';
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: true,
+});
 
 // Build CSP connect-src from environment — no hardcoded dev origins
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -27,7 +33,7 @@ const cspHeader = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com blob:`,
   `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://clerk.neocraft.dev`,
-  `worker-src blob:`,
+  `worker-src 'self' blob:`,
   `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test https://img.clerk.com ${apiOrigin}`,
   `connect-src ${connectSources}`,
   `font-src 'self' https://fonts.gstatic.com https://ray.st https://clerk.neocraft.dev`,
@@ -107,4 +113,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = withPWA(nextConfig);
