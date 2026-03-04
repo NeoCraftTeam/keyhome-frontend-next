@@ -40,6 +40,7 @@ export default function HeroSection() {
         overflow: 'hidden',
         background: heroBg,
         transition: 'background 0.4s ease',
+        paddingTop: '64px', // Space for fixed navbar
       }}
     >
       {/* Three.js animated particle background */}
@@ -101,17 +102,19 @@ export default function HeroSection() {
             variants={itemVariants}
             className="aura-float"
             style={{
-              fontSize: 'clamp(40px, 7vw, 80px)',
+              fontSize: 'clamp(36px, 8vw, 80px)',
               fontWeight: 800,
               color: text,
-              lineHeight: 1.05,
-              letterSpacing: '-2px',
-              margin: '0 0 24px',
+              lineHeight: 1.1,
+              letterSpacing: '-1.5px',
+              margin: '0 auto 24px',
+              maxWidth: '90%',
               transition: 'color 0.4s ease',
+              textAlign: 'center',
             }}
           >
             Trouvez votre{' '}
-            <span className="aura-gradient-text">
+            <span className="aura-gradient-text" style={{ display: 'block' }}>
               maison idéale
             </span>
           </motion.h1>
@@ -143,10 +146,13 @@ export default function HeroSection() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 0,
-                    borderRadius: 16,
-                    padding: '6px 6px 6px 20px',
+                    borderRadius: 100, // More rounded for premium look
+                    padding: '8px 8px 8px 24px',
                     cursor: 'text',
-                    transition: 'border-color 0.2s, background 0.2s',
+                    transition: 'all 0.3s ease',
+                    margin: '0 auto 20px',
+                    width: 'calc(100% - 32px)',
+                    maxWidth: '600px',
                   }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.borderColor = 'rgba(246,71,95,0.4)';
@@ -165,21 +171,22 @@ export default function HeroSection() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     gap: 8,
                     background: 'linear-gradient(135deg, #F6475F, #D93A50)',
                     color: '#fff',
                     border: 'none',
-                    borderRadius: 12,
-                    padding: '12px 22px',
+                    borderRadius: 100,
+                    padding: '12px 24px',
                     fontSize: 15,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     cursor: 'pointer',
                     flexShrink: 0,
                     boxShadow: '0 4px 16px rgba(246,71,95,0.4)',
                   }}
                 >
-                  <Search style={{ fontSize: 18 }} />
-                  Rechercher
+                  <Search style={{ fontSize: 20 }} />
+                  <span className="desktop-only" style={{ display: 'inline' }}>Rechercher</span>
                 </button>
               </div>
             </Link>

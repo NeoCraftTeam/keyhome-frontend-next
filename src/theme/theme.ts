@@ -112,6 +112,31 @@ const baseTheme = {
         },
       },
     },
+    MuiAutocomplete: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 12,
+            padding: '4px 12px',
+          },
+        },
+        paper: {
+          borderRadius: 16,
+          marginTop: 8,
+          boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+          border: '1px solid',
+          borderColor: 'divider',
+        },
+        listbox: {
+          padding: 8,
+          '& .MuiAutocomplete-option': {
+            borderRadius: 8,
+            margin: '2px 0',
+            transition: 'all 0.2s ease',
+          },
+        },
+      },
+    },
   },
 };
 

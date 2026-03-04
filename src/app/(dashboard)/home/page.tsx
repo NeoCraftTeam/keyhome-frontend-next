@@ -169,7 +169,7 @@ export default function HomePage() {
           )}
         </Box>
 
-        <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
+        <Grid container spacing={{ xs: 2, sm: 2, md: 2.5 }}>
           {showShimmer
             ? Array.from({ length: skeletonCount }).map((_, idx) => (
                 <Grid key={idx} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>

@@ -83,9 +83,19 @@ export default function Navbar() {
             px: { xs: 2, md: 4 },
             py: 1,
             gap: 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          {/* Logo */}
+          {/* Mobile: Hamburger Left */}
+          {isMobile && (
+            <IconButton onClick={() => setMobileOpen(true)} sx={{ color: 'text.primary' }}>
+              <MenuIcon />
+            </IconButton>
+          )}
+
+          {/* Logo - Centered on Mobile, Left on Desktop */}
           <Box
             onClick={() => router.push('/home')}
             sx={{
@@ -96,13 +106,16 @@ export default function Navbar() {
               flexShrink: 0,
               transition: 'opacity 0.2s',
               '&:hover': { opacity: 0.85 },
+              position: isMobile ? 'absolute' : 'static',
+              left: isMobile ? '50%' : 'auto',
+              transform: isMobile ? 'translateX(-50%)' : 'none',
             }}
           >
             <Image
               src="/images/logo.png"
               alt="KeyHome"
-              width={44}
-              height={44}
+              width={isMobile ? 36 : 44}
+              height={isMobile ? 36 : 44}
               priority
               style={{ objectFit: 'contain' }}
             />
@@ -121,8 +134,8 @@ export default function Navbar() {
             )}
           </Box>
 
-          {/* Search Bar — Airbnb style */}
-          {isAuthenticated && (
+          {/* Search Bar — Desktop only in Navbar */}
+          {!isMobile && isAuthenticated && (
             <Paper
               component="form"
               onSubmit={handleSearch}
@@ -130,7 +143,7 @@ export default function Navbar() {
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                flex: { xs: 1, md: '0 1 560px' },
+                flex: '0 1 560px',
                 mx: 'auto',
                 border: '1px solid',
                 borderColor: 'divider',
@@ -174,9 +187,9 @@ export default function Navbar() {
             </Paper>
           )}
 
-          {/* Right side */}
+          {/* Right side: Theme Toggle + Profile */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-            <IconButton onClick={toggleTheme} size="small">
+            <IconButton onClick={toggleTheme} size="small" sx={{ color: 'text.primary' }}>
               {mode === 'dark' ? (
                 <LightModeIcon sx={{ fontSize: 20 }} />
               ) : (
@@ -184,37 +197,31 @@ export default function Navbar() {
               )}
             </IconButton>
 
-            {isAuthenticated ? (
-              <>
-                {isMobile ? (
-                  <IconButton onClick={() => setMobileOpen(true)}>
-                    <MenuIcon />
-                  </IconButton>
-                ) : (
-                  <Box
-                    onClick={(e) => setAnchorEl(e.currentTarget)}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: '40px',
-                      px: 1.5,
-                      py: 0.5,
-                      cursor: 'pointer',
-                      '&:hover': { boxShadow: '0 2px 4px rgba(0,0,0,0.08)' },
-                    }}
-                  >
-                    <MenuIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                    <Avatar
-                      src={user?.avatar || undefined}
-                      sx={{ width: 30, height: 30, bgcolor: 'text.secondary' }}
-                    >
-                      {user?.firstname?.[0] || 'U'}
-                    </Avatar>
-                  </Box>
-                )}
+            {isAuthenticated && !isMobile && (
+              <Box
+                onClick={(e) => setAnchorEl(e.currentTarget)}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: '40px',
+                  px: 1.5,
+                  py: 0.5,
+                  cursor: 'pointer',
+                  '&:hover': { boxShadow: '0 2px 4px rgba(0,0,0,0.08)' },
+                }}
+              >
+                <MenuIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                <Avatar
+                  src={user?.avatar || undefined}
+                  sx={{ width: 30, height: 30, bgcolor: 'text.secondary' }}
+                >
+                  {user?.firstname?.[0] || 'U'}
+                </Avatar>
+              </Box>
+            )}
 
                 {/* Desktop dropdown */}
                 <Menu
