@@ -2,6 +2,7 @@
 
 import PropertyAttributes from '@/components/ads/PropertyAttributes';
 import ReviewForm from '@/components/reviews/ReviewForm';
+import MortgageCalculator from '@/components/tools/MortgageCalculator';
 import FadeIn from '@/components/ui/FadeIn';
 import { formatPrice, formatRelativeDate } from '@/lib/constants';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -569,9 +570,16 @@ function AdDetailContent() {
             <Typography variant="h6" fontWeight={600} gutterBottom>
               Description
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line', mb: 3, lineHeight: 1.8 }}>
+            <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line', mb: 4, lineHeight: 1.8 }}>
               {ad.description}
             </Typography>
+
+            {/* Mortgage Calculator */}
+            {ad.price && ad.price > 0 && (
+              <Box sx={{ mb: 5 }}>
+                <MortgageCalculator initialPrice={ad.price} />
+              </Box>
+            )}
 
             {/* Reviews & ratings */}
             {ad.reviews && ad.reviews.length > 0 && (

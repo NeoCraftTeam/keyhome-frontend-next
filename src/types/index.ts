@@ -84,6 +84,8 @@ export interface User {
   updated_at?: string | null;
   city_id: string | null;
   city_name: string | null;
+  is_verified?: boolean;
+  verification_badge?: string | null;
 }
 
 export interface City {
@@ -148,6 +150,9 @@ export interface Ad {
   images: AdImage[];
   reviews?: Review[];
   distance?: number;
+  is_boosted?: boolean;
+  is_featured?: boolean;
+  boost_expires_at?: string | null;
   // Availability & Attributes
   is_visible?: boolean;
   available_from?: string | null;
@@ -174,6 +179,10 @@ export interface Agency {
   name: string;
   slug: string;
   logo: string | null;
+  description?: string | null;
+  is_verified?: boolean;
+  rating?: number;
+  reviews_count?: number;
   created_at: string;
   updated_at: string;
 }

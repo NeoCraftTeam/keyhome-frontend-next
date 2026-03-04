@@ -12,8 +12,10 @@ import {
     FavoriteBorder,
     SquareFootOutlined,
     Star as StarIcon,
+    Verified as VerifiedIcon,
+    Bolt as BoltIcon,
 } from '@mui/icons-material';
-import { Box, Chip, IconButton, Typography } from '@mui/material';
+import { Box, Chip, IconButton, Typography, Tooltip } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
@@ -54,7 +56,10 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
       sx={{
         cursor: 'pointer',
         width: '100%',
+        transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        '&:hover': { transform: 'translateY(-8px)' },
         '&:hover .image-nav': { opacity: 1 },
+        '&:hover .ad-card-image': { transform: 'scale(1.08)' },
       }}
     >
       {/* Image carousel */}
@@ -87,6 +92,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               src={img.url}
               alt={ad.title}
               loading={idx === 0 ? 'eager' : 'lazy'}
+              className="ad-card-image"
               sx={{
                 position: 'absolute',
                 top: 0,
@@ -94,6 +100,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
+                transition: 'transform 0.6s cubic-bezier(0.33, 1, 0.68, 1)',
               }}
             />
           </Box>
@@ -115,23 +122,37 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
           {isFavorite ? <Favorite /> : <FavoriteBorder />}
         </IconButton>
 
-        {/* Status badge */}
-        {ad.status !== 'available' && (
-          <Chip
-            label={ad.status === 'sold' ? 'Vendu' : ad.status === 'reserved' ? 'Réservé' : ad.status}
-            size="small"
-            sx={{
-              position: 'absolute',
-              bottom: 8,
-              left: 8,
-              zIndex: 2,
-              bgcolor: ad.status === 'sold' ? 'secondary.main' : 'primary.main',
-              color: 'primary.contrastText',
-              fontWeight: 600,
-              fontSize: '0.7rem',
-            }}
-          />
-        )}
+        {/* Status & Boost badges */}
+        <Box sx={{ position: 'absolute', bottom: 8, left: 8, zIndex: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          {ad.is_boosted && (
+            <Chip
+              icon={<BoltIcon sx={{ fontSize: '14px !important', color: 'inherit' }} />}
+              label="Boosté"
+              size="small"
+              sx={{
+                bgcolor: 'warning.main',
+                color: '#000',
+                fontWeight: 700,
+                fontSize: '0.65rem',
+                height: 20,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              }}
+            />
+          )}
+          {ad.status !== 'available' && (
+            <Chip
+              label={ad.status === 'sold' ? 'Vendu' : ad.status === 'reserved' ? 'Réservé' : ad.status}
+              size="small"
+              sx={{
+                bgcolor: ad.status === 'sold' ? 'secondary.main' : 'primary.main',
+                color: 'primary.contrastText',
+                fontWeight: 600,
+                fontSize: '0.7rem',
+                height: 20,
+              }}
+            />
+          )}
+        </Box>
 
         {/* Navigation arrows */}
         {images.length > 1 && (
@@ -210,19 +231,27 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
 
       {/* Card content */}
       <Box sx={{ mt: 1.5 }}>
-        <Typography
-          variant="subtitle1"
-          fontWeight={700}
-          sx={{
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            color: 'text.primary',
-            lineHeight: 1.3,
-          }}
-        >
-          {ad.title}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.25 }}>
+          <Typography
+            variant="subtitle1"
+            fontWeight={700}
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              color: 'text.primary',
+              lineHeight: 1.3,
+              flex: 1,
+            }}
+          >
+            {ad.title}
+          </Typography>
+          {ad.user?.is_verified && (
+            <Tooltip title="Annonceur vérifié" arrow>
+              <VerifiedIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+            </Tooltip>
+          )}
+        </Box>
 
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {ad.quarter?.name || ad.adresse}
