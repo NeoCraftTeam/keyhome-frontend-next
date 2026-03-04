@@ -97,7 +97,7 @@ export default function NearbyPage() {
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
     // User position marker
-    new mapboxgl.Marker({ color: '#F6475F' })
+    const userMarker = new mapboxgl.Marker({ color: '#F6475F' })
       .setLngLat([coords.lng, coords.lat])
       .setPopup(new mapboxgl.Popup().setHTML('<strong>Votre position</strong>'))
       .addTo(map);
@@ -106,6 +106,7 @@ export default function NearbyPage() {
     mapRef.current = map;
 
     return () => {
+      userMarker.remove();
       map.remove();
       mapRef.current = null;
     };
@@ -146,12 +147,24 @@ export default function NearbyPage() {
     filteredAds.forEach((ad) => {
       if (!ad.location) return;
 
-      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
-        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${encodeURIComponent(ad.id)}/${encodeURIComponent(ad.slug)}'">
-          <div>${escapeHtml(ad.title)}</div>
-          <div style="color:#F6475F;font-weight:700">${formatPrice(ad.price)}</div>
-        </div>`
-      );
+      const popupContent = document.createElement('div');
+      popupContent.style.fontSize = '13px';
+      popupContent.style.fontWeight = '600';
+      popupContent.style.maxWidth = '180px';
+      popupContent.style.cursor = 'pointer';
+      popupContent.onclick = () => router.push(`/ads/${ad.id}/${ad.slug}`);
+
+      const titleDiv = document.createElement('div');
+      titleDiv.textContent = ad.title;
+      popupContent.appendChild(titleDiv);
+
+      const priceDiv = document.createElement('div');
+      priceDiv.style.color = '#F6475F';
+      priceDiv.style.fontWeight = '700';
+      priceDiv.textContent = formatPrice(ad.price);
+      popupContent.appendChild(priceDiv);
+
+      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setDOMContent(popupContent);
 
       const marker = new mapboxgl.Marker({ color: '#F6475F' })
         .setPopup(popup)

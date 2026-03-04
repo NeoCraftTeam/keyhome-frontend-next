@@ -58,6 +58,34 @@ body {
   100% { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.aura-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.aura-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .aura-glass {
+  background: rgba(34, 34, 34, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.aura-gradient-text {
+  background: linear-gradient(135deg, #F6475F 0%, #D93A50 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 @keyframes fadeIn {
   0% { opacity: 0; }
   100% { opacity: 1; }

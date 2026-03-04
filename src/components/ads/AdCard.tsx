@@ -107,7 +107,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
             top: 8,
             right: 8,
             zIndex: 2,
-            color: isFavorite ? '#F6475F' : '#fff',
+            color: isFavorite ? 'primary.main' : '#fff',
             filter: isFavorite ? 'none' : 'drop-shadow(0 1px 3px rgba(0,0,0,0.4))',
           }}
           size="small"
@@ -125,8 +125,8 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               bottom: 8,
               left: 8,
               zIndex: 2,
-              bgcolor: ad.status === 'sold' ? '#222' : '#F6475F',
-              color: '#fff',
+              bgcolor: ad.status === 'sold' ? 'secondary.main' : 'primary.main',
+              color: 'primary.contrastText',
               fontWeight: 600,
               fontSize: '0.7rem',
             }}
@@ -260,7 +260,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
         {/* Rating */}
         {ad.rating != null && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-            <StarIcon sx={{ fontSize: 14, color: '#FFB400' }} />
+            <StarIcon sx={{ fontSize: 14, color: 'warning.main' }} />
             <Typography variant="caption" fontWeight={600} color="text.primary" sx={{ lineHeight: 1 }}>
               {ad.rating.toFixed(1)}
             </Typography>

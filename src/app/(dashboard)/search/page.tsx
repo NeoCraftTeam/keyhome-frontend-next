@@ -160,17 +160,32 @@ function SearchContent() {
     mapAds.forEach((ad) => {
       if (!ad.location) return;
       hasGeo = true;
-      const ratingHtml = ad.rating != null
-        ? `<div style="color:#FFB400;font-size:12px">★ ${ad.rating.toFixed(1)}</div>`
-        : '';
+      const popupContent = document.createElement('div');
+      popupContent.style.fontSize = '13px';
+      popupContent.style.fontWeight = '600';
+      popupContent.style.maxWidth = '180px';
+      popupContent.style.cursor = 'pointer';
+      popupContent.onclick = () => router.push(`/ads/${ad.id}/${ad.slug}`);
 
-      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
-        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${encodeURIComponent(ad.id)}/${encodeURIComponent(ad.slug)}'">
-          <div>${escapeHtml(ad.title)}</div>
-          <div style="color:#F6475F;font-weight:700">${formatPrice(ad.price)}</div>
-          ${ratingHtml}
-        </div>`
-      );
+      const titleDiv = document.createElement('div');
+      titleDiv.textContent = ad.title;
+      popupContent.appendChild(titleDiv);
+
+      const priceDiv = document.createElement('div');
+      priceDiv.style.color = '#F6475F';
+      priceDiv.style.fontWeight = '700';
+      priceDiv.textContent = formatPrice(ad.price);
+      popupContent.appendChild(priceDiv);
+
+      if (ad.rating != null) {
+        const ratingDiv = document.createElement('div');
+        ratingDiv.style.color = '#FFB400';
+        ratingDiv.style.fontSize = '12px';
+        ratingDiv.textContent = `★ ${ad.rating.toFixed(1)}`;
+        popupContent.appendChild(ratingDiv);
+      }
+
+      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setDOMContent(popupContent);
 
       const marker = new mapboxgl.Marker({ color: '#F6475F' })
         .setPopup(popup)

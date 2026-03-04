@@ -144,13 +144,14 @@ function AdDetailContent() {
     } catch {
       setSnackbar('Impossible de copier le lien');
     }
-  };;
+  };
 
   const handleUnlock = async () => {
     setPaymentError('');
     setIsPaymentLoading(true);
     try {
       const response = await paymentsService.initialize(ad.id);
+      // External URL for payment provider, window.location.href is appropriate here
       window.location.href = response.payment_url;
     } catch (err) {
       setPaymentError(getSafeErrorMessage(err, 'Erreur lors du paiement.'));

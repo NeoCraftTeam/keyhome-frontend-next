@@ -110,8 +110,8 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
           onChange={(_, newValue) => setRating(newValue)}
           onChangeActive={(_, newHover) => setHoverRating(newHover)}
           sx={{
-            '& .MuiRating-iconFilled': { color: '#FFB400' },
-            '& .MuiRating-iconHover': { color: '#FFB400' },
+            '& .MuiRating-iconFilled': { color: 'warning.main' },
+            '& .MuiRating-iconHover': { color: 'warning.main' },
             '& .MuiRating-icon': { fontSize: 32 },
           }}
         />
@@ -164,15 +164,12 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
         disabled={!rating || mutation.isPending}
         onClick={() => mutation.mutate()}
         sx={{
-          bgcolor: '#F6475F',
-          '&:hover': { bgcolor: '#D5384E' },
-          borderRadius: 2,
+          borderRadius: 3,
           px: 4,
           py: 1.2,
           fontWeight: 600,
           textTransform: 'none',
           fontSize: '0.95rem',
-          boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)',
         }}
         startIcon={mutation.isPending ? <CircularProgress size={18} color="inherit" /> : null}
       >

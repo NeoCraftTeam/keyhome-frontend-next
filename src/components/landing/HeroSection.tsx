@@ -99,6 +99,7 @@ export default function HeroSection() {
           {/* Headline */}
           <motion.h1
             variants={itemVariants}
+            className="aura-float"
             style={{
               fontSize: 'clamp(40px, 7vw, 80px)',
               fontWeight: 800,
@@ -110,14 +111,7 @@ export default function HeroSection() {
             }}
           >
             Trouvez votre{' '}
-            <span
-              style={{
-                background: 'linear-gradient(135deg, #F6475F 20%, #FF8C94 80%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
+            <span className="aura-gradient-text">
               maison idéale
             </span>
           </motion.h1>
@@ -143,20 +137,17 @@ export default function HeroSection() {
               href="/register"
               style={{ textDecoration: 'none' }}
             >
-              <div
-                className="hero-search-bar"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0,
-                  background: surface,
-                  border: `1px solid ${border}`,
-                  borderRadius: 16,
-                  padding: '6px 6px 6px 20px',
-                  cursor: 'text',
-                  transition: 'border-color 0.2s, background 0.2s',
-                  backdropFilter: 'blur(10px)',
-                }}
+                <div
+                  className="hero-search-bar aura-glass"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0,
+                    borderRadius: 16,
+                    padding: '6px 6px 6px 20px',
+                    cursor: 'text',
+                    transition: 'border-color 0.2s, background 0.2s',
+                  }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.borderColor = 'rgba(246,71,95,0.4)';
                   (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';

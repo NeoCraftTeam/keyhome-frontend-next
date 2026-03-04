@@ -25,7 +25,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('theme') as ThemeMode | null;
+    const saved = localStorage.getItem('keyhome-theme') as ThemeMode | null;
     if (saved === 'dark' || saved === 'light') {
       setMode(saved);
     } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -37,7 +37,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = useCallback(() => {
     setMode((prev) => {
       const next = prev === 'light' ? 'dark' : 'light';
-      localStorage.setItem('theme', next);
+      localStorage.setItem('keyhome-theme', next);
       return next;
     });
   }, []);

@@ -68,6 +68,7 @@ export default function Navbar() {
       <AppBar
         position="sticky"
         elevation={0}
+        className="aura-glass"
         sx={{
           bgcolor: 'background.default',
           borderBottom: '1px solid',
@@ -108,8 +109,8 @@ export default function Navbar() {
             {!isMobile && (
               <Typography
                 variant="h6"
+                className="aura-gradient-text"
                 sx={{
-                  color: 'primary.main',
                   fontWeight: 800,
                   fontSize: '1.25rem',
                   letterSpacing: -0.5,

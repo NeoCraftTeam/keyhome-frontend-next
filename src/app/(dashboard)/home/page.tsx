@@ -5,6 +5,7 @@ import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import CategoryPills from '@/components/ui/CategoryPills';
 import FadeIn from '@/components/ui/FadeIn';
 import AppTour from '@/components/ui/AppTour';
+import SurveyPrompt from '@/components/surveys/SurveyPrompt';
 import { adsService } from '@/services/ads.service';
 import { recommendationsService } from '@/services/users.service';
 import {
@@ -98,6 +99,11 @@ export default function HomePage() {
   return (
     <Box sx={{ pb: 6 }}>
       <AppTour />
+      <SurveyPrompt
+        surveyId="experience-utilisateur-2026"
+        title="Votre avis compte !"
+        description="Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience."
+      />
       {/* Category pills — centered under navbar */}
       <Container maxWidth="lg" sx={{ pt: 2, pb: 1 }}>
         <CategoryPills
@@ -166,12 +172,12 @@ export default function HomePage() {
         <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
           {showShimmer
             ? Array.from({ length: skeletonCount }).map((_, idx) => (
-                <Grid key={idx} size={{ xs: 6, sm: 6, md: 4, lg: 3 }}>
+                <Grid key={idx} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                   <AdCardSkeleton />
                 </Grid>
               ))
             : ads.map((ad, idx) => (
-                <Grid key={ad.id} size={{ xs: 6, sm: 6, md: 4, lg: 3 }} sx={{ animation: `fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) ${idx * 0.03}s both` }}>
+                <Grid key={ad.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }} sx={{ animation: `fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) ${idx * 0.03}s both` }}>
                   <AdCard ad={ad} />
                 </Grid>
               ))}

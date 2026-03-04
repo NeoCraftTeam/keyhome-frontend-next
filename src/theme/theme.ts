@@ -24,7 +24,7 @@ const baseTheme = {
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 12,
           padding: '10px 24px',
           fontSize: '0.9375rem',
           transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -66,7 +66,7 @@ const baseTheme = {
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 8,
+            borderRadius: 12,
             transition: 'box-shadow 0.2s ease',
             '&.Mui-focused': {
               boxShadow: '0 0 0 3px rgba(246, 71, 95, 0.12)',

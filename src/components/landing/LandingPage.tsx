@@ -1,6 +1,6 @@
 'use client';
 
-import { LandingThemeProvider, useLandingTheme } from '@/components/landing/LandingThemeContext';
+import { useLandingTheme } from '@/components/landing/LandingThemeContext';
 import { PageTransitionOverlay } from '@/components/landing/PageTransition';
 import CTASection from '@/components/landing/CTASection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
@@ -34,9 +34,5 @@ function LandingInner() {
 }
 
 export default function LandingPage() {
-  return (
-    <LandingThemeProvider>
-      <LandingInner />
-    </LandingThemeProvider>
-  );
+  return <LandingInner />;
 }
