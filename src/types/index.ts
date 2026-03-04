@@ -268,6 +268,62 @@ export interface PaymentInitResponse {
   transaction_id: string;
 }
 
+// =====================================================
+// Viewing / Appointment booking
+// =====================================================
+
+export enum ReservationStatus {
+  Pending   = 'Pending',
+  Confirmed = 'Confirmed',
+  Cancelled = 'Cancelled',
+  Expired   = 'Expired',
+}
+
+export enum CancelledBy {
+  Client   = 'Client',
+  Landlord = 'Landlord',
+  System   = 'System',
+}
+
+export interface BookableSlot {
+  starts_at: string;   // "HH:MM"
+  ends_at: string;     // "HH:MM"
+  is_available: boolean;
+}
+
+export interface Reservation {
+  id: string;
+  status: ReservationStatus;
+  status_label: string;
+  slot_date: string;          // "YYYY-MM-DD"
+  slot_starts_at: string;     // "HH:MM:SS"
+  slot_ends_at: string;       // "HH:MM:SS"
+  client_message: string | null;
+  landlord_notes: string | null;
+  cancelled_by: CancelledBy | null;
+  cancellation_reason: string | null;
+  expires_at: string;         // ISO 8601
+  created_at: string;
+  updated_at: string;
+  ad?: Ad;
+  client?: User;
+  next_steps?: string;
+}
+
+export interface CreateReservationPayload {
+  slot_date: string;
+  slot_starts_at: string;
+  slot_ends_at: string;
+  client_message?: string;
+}
+
+export interface SlotsResponse {
+  date: string;
+  slots: BookableSlot[];
+}
+
+// =====================================================
+
 export interface AutocompleteResult {
   value: string;
   count: number;

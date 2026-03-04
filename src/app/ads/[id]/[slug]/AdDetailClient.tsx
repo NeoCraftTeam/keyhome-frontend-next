@@ -3,6 +3,7 @@
 import PropertyAttributes from '@/components/ads/PropertyAttributes';
 import ReviewForm from '@/components/reviews/ReviewForm';
 import PackageCard from '@/components/ui/PackageCard';
+import ViewingBookingPanel from '@/components/viewing/ViewingBookingPanel';
 import QueryError from '@/components/ui/QueryError';
 import FadeIn from '@/components/ui/FadeIn';
 import { formatPrice, formatRelativeDate } from '@/lib/constants';
@@ -876,6 +877,10 @@ function AdDetailContent() {
                       </IconButton>
                     </Box>
                   )}
+
+                  {/* Viewing appointment booking — only when unlocked */}
+                  <Divider sx={{ mt: 2.5, mb: 0 }} />
+                  <ViewingBookingPanel adId={ad.id} adTitle={ad.title} />
                 </Box>
               )}
             </Paper>
