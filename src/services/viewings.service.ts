@@ -13,7 +13,7 @@ export const viewingsService = {
   async getSlots(adId: string, date: string): Promise<BookableSlot[]> {
     const { data } = await api.get(`/ads/${adId}/slots`, { params: { date } });
     // Backend response: { data: { slots_by_date: { "YYYY-MM-DD": [...] } } }
-    return data.data?.slots_by_date?.[date] ?? data.data ?? data ?? [];
+    return data.data?.slots_by_date?.[date] ?? [];
   },
 
   /**
