@@ -273,16 +273,16 @@ export interface PaymentInitResponse {
 // =====================================================
 
 export enum ReservationStatus {
-  Pending   = 'Pending',
-  Confirmed = 'Confirmed',
-  Cancelled = 'Cancelled',
-  Expired   = 'Expired',
+  Pending   = 'pending',
+  Confirmed = 'confirmed',
+  Cancelled = 'cancelled',
+  Expired   = 'expired',
 }
 
 export enum CancelledBy {
-  Client   = 'Client',
-  Landlord = 'Landlord',
-  System   = 'System',
+  Client   = 'client',
+  Landlord = 'landlord',
+  System   = 'system',
 }
 
 export interface BookableSlot {
