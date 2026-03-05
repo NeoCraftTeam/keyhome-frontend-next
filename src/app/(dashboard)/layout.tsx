@@ -16,7 +16,7 @@ const AUTH_PAGES = ['/login', '/register', '/verify-otp', '/verify-email', '/com
  * Routes within the dashboard group that require the user to be authenticated.
  * Public routes (/home, /nearby) are accessible to guests for read-only browsing.
  */
-const PRIVATE_PATHS = ['/profile'];
+const PRIVATE_PATHS = ['/profile', '/my/reservations'];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
