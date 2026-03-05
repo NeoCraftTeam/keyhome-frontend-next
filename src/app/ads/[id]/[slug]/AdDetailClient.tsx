@@ -858,7 +858,7 @@ function AdDetailContent() {
                               borderRadius: 2,
                               textTransform: 'none',
                               fontWeight: 600,
-                              bgcolor: '#25D366',
+                              bgcolor: '#0D9488',
                               '&:hover': { bgcolor: '#128C7E' },
                             }}
                           >

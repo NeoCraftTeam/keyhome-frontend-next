@@ -625,7 +625,7 @@ export default function ViewingBookingPanel({ adId, adTitle }: Props) {
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Typography variant="subtitle2" fontWeight={600}>
-            Mes visites ({reservations.length})
+            Mes réservations ({reservations.length})
           </Typography>
           <Tooltip title="Actualiser">
             <IconButton size="small" onClick={() => refetchMyRes()} aria-label="Actualiser">
@@ -785,8 +785,8 @@ export default function ViewingBookingPanel({ adId, adTitle }: Props) {
               myReservations && myReservations.filter(
                 (r) => r.status === ReservationStatus.Pending || r.status === ReservationStatus.Confirmed,
               ).length > 0
-                ? `Mes visites (${myReservations.filter((r) => r.status === ReservationStatus.Pending || r.status === ReservationStatus.Confirmed).length})`
-                : 'Mes visites'
+                ? `Mes réservations (${myReservations.filter((r) => r.status === ReservationStatus.Pending || r.status === ReservationStatus.Confirmed).length})`
+                : 'Mes réservations'
             }
           />
         </Tabs>

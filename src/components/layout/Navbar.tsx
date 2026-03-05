@@ -5,6 +5,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
 import {
     AddCircleOutline as AddCircleOutlineIcon,
+    CalendarMonth as CalendarMonthIcon,
     Close as CloseIcon,
     DarkMode as DarkModeIcon,
     Explore as ExploreIcon,
@@ -191,7 +192,7 @@ export default function Navbar() {
               <Button
                 variant="contained"
                 size="small"
-                href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'}
+                href={process.env.NEXT_PUBLIC_OWNER_URL || '/owner'}
                 component="a"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -281,6 +282,17 @@ export default function Navbar() {
                     </MenuItem>
                   ))}
                   <Divider />
+                  <MenuItem
+                    onClick={() => {
+                      setAnchorEl(null);
+                      router.push('/my/reservations');
+                    }}
+                  >
+                    <ListItemIcon>
+                      <CalendarMonthIcon />
+                    </ListItemIcon>
+                    <ListItemText>Mes réservations</ListItemText>
+                  </MenuItem>
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
@@ -400,7 +412,7 @@ export default function Navbar() {
           <ListItem disablePadding>
             <ListItemButton
               component="a"
-              href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'}
+              href={process.env.NEXT_PUBLIC_OWNER_URL || '/owner'}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setMobileOpen(false)}
@@ -418,6 +430,19 @@ export default function Navbar() {
           <Divider sx={{ my: 1 }} />
           {isAuthenticated && (
             <>
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    setMobileOpen(false);
+                    router.push('/my/reservations');
+                  }}
+                >
+                  <ListItemIcon>
+                    <CalendarMonthIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Mes réservations" />
+                </ListItemButton>
+              </ListItem>
               <ListItem disablePadding>
                 <ListItemButton
                   onClick={() => {
