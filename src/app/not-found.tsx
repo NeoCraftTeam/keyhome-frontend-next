@@ -35,10 +35,10 @@ export default function NotFound() {
             variant="contained"
             size="large"
             sx={{
-              borderRadius: 2,
               fontWeight: 600,
               background: 'linear-gradient(to right, #F6475F, #D93A50)',
               '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+              '&:active': { transform: 'scale(0.97)' },
             }}
           >
             Accueil
@@ -48,7 +48,7 @@ export default function NotFound() {
             href="/search"
             variant="outlined"
             size="large"
-            sx={{ borderRadius: 2, fontWeight: 600 }}
+            sx={{ fontWeight: 600 }}
           >
             Rechercher
           </Button>

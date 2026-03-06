@@ -1,6 +1,7 @@
 'use client';
 
 import PropertyAttributes from '@/components/ads/PropertyAttributes';
+import StickyPropertyBar from '@/components/ads/StickyPropertyBar';
 import ReviewForm from '@/components/reviews/ReviewForm';
 import PackageCard from '@/components/ui/PackageCard';
 import ViewingBookingPanel from '@/components/viewing/ViewingBookingPanel';
@@ -782,11 +783,11 @@ function AdDetailContent() {
                     startIcon={<Lock />}
                     sx={{
                       py: 1.5,
-                      borderRadius: 2,
                       fontWeight: 600,
                       fontSize: '1rem',
                       background: 'linear-gradient(to right, #F6475F, #D93A50)',
                       '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                      '&:active': { transform: 'scale(0.97)' },
                     }}
                   >
                     Déverrouiller
@@ -837,7 +838,6 @@ function AdDetailContent() {
                           startIcon={<Call sx={{ fontSize: 18 }} />}
                           href={`tel:${publisherPhone}`}
                           sx={{ 
-                            borderRadius: 2,
                             textTransform: 'none',
                             fontWeight: 600,
                             bgcolor: 'primary.main',
@@ -855,7 +855,6 @@ function AdDetailContent() {
                             target="_blank"
                             rel="noopener noreferrer"
                             sx={{ 
-                              borderRadius: 2,
                               textTransform: 'none',
                               fontWeight: 600,
                               bgcolor: '#0D9488',
@@ -1014,11 +1013,11 @@ function AdDetailContent() {
                 disabled={isPaymentLoading}
                 sx={{
                   py: 1.5,
-                  borderRadius: 2,
                   fontWeight: 600,
                   mb: 1,
                   background: 'linear-gradient(to right, #F6475F, #D93A50)',
                   '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                  '&:active': { transform: 'scale(0.97)' },
                 }}
               >
                 {isPaymentLoading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Confirmer'}
@@ -1048,11 +1047,11 @@ function AdDetailContent() {
                 onClick={() => setConfirmStep(true)}
                 sx={{
                   py: 1.5,
-                  borderRadius: 2,
                   fontWeight: 600,
                   mb: 1,
                   background: 'linear-gradient(to right, #F6475F, #D93A50)',
                   '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                  '&:active': { transform: 'scale(0.97)' },
                 }}
               >
                 Déverrouiller
@@ -1217,6 +1216,21 @@ function AdDetailContent() {
           </IconButton>
         </Box>
       </Dialog>
+
+      {/* Sticky mobile contact bar */}
+      {ad && (
+        <StickyPropertyBar
+          price={ad.price ?? 0}
+          title={ad.title}
+          onContact={() => {
+            if (isLocked) {
+              setPaymentDialogOpen(true);
+            } else if (publisherPhone) {
+              window.location.href = `tel:${publisherPhone}`;
+            }
+          }}
+        />
+      )}
 
       {/* Snackbar */}
       <Snackbar

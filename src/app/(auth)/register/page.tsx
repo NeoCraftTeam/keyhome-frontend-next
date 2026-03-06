@@ -362,10 +362,10 @@ export default function RegisterPage() {
                   onClick={() => setStep(1)}
                   sx={{
                     py: 1.5,
-                    borderRadius: 2,
                     fontWeight: 600,
                     background: 'linear-gradient(to right, #F6475F, #D93A50)',
                     '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                    '&:active': { transform: 'scale(0.97)' },
                   }}
                 >
                   Continuer
@@ -486,7 +486,7 @@ export default function RegisterPage() {
                     variant="outlined"
                     size="large"
                     onClick={() => setStep(0)}
-                    sx={{ py: 1.5, borderRadius: 2, fontWeight: 600 }}
+                    sx={{ py: 1.5, fontWeight: 600 }}
                   >
                     Retour
                   </Button>
@@ -498,10 +498,10 @@ export default function RegisterPage() {
                     onClick={() => setStep(2)}
                     sx={{
                       py: 1.5,
-                      borderRadius: 2,
                       fontWeight: 600,
                       background: 'linear-gradient(to right, #F6475F, #D93A50)',
                       '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                      '&:active': { transform: 'scale(0.97)' },
                     }}
                   >
                     Continuer
@@ -628,7 +628,7 @@ export default function RegisterPage() {
                     variant="outlined"
                     size="large"
                     onClick={() => setStep(1)}
-                    sx={{ py: 1.5, borderRadius: 2, fontWeight: 600 }}
+                    sx={{ py: 1.5, fontWeight: 600 }}
                   >
                     Retour
                   </Button>
@@ -640,10 +640,10 @@ export default function RegisterPage() {
                     onClick={handleSubmit}
                     sx={{
                       py: 1.5,
-                      borderRadius: 2,
                       fontWeight: 600,
                       background: 'linear-gradient(to right, #F6475F, #D93A50)',
                       '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                      '&:active': { transform: 'scale(0.97)' },
                     }}
                   >
                     {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : "S'inscrire"}

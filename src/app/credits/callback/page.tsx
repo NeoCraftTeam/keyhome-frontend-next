@@ -223,10 +223,10 @@ function CreditCallbackContent() {
                   onClick={() => router.push(`/ads/${adId}/annonce`)}
                   sx={{
                     py: 1.5,
-                    borderRadius: 2,
                     fontWeight: 600,
                     background: 'linear-gradient(to right, #F6475F, #D93A50)',
                     '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                    '&:active': { transform: 'scale(0.97)' },
                   }}
                 >
                   Déverrouiller l&apos;annonce
@@ -239,10 +239,10 @@ function CreditCallbackContent() {
                   onClick={() => router.push('/home')}
                   sx={{
                     py: 1.5,
-                    borderRadius: 2,
                     fontWeight: 600,
                     background: 'linear-gradient(to right, #F6475F, #D93A50)',
                     '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                    '&:active': { transform: 'scale(0.97)' },
                   }}
                 >
                   Explorer les annonces
@@ -268,10 +268,10 @@ function CreditCallbackContent() {
               onClick={() => adId ? router.push(`/ads/${adId}/annonce`) : router.push('/home')}
               sx={{
                 py: 1.5,
-                borderRadius: 2,
                 fontWeight: 600,
                 background: 'linear-gradient(to right, #F6475F, #D93A50)',
                 '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                '&:active': { transform: 'scale(0.97)' },
               }}
             >
               Réessayer
@@ -323,7 +323,7 @@ function CreditCallbackContent() {
                   size="large"
                   fullWidth
                   onClick={() => router.push(`/ads/${adId}/annonce`)}
-                  sx={{ py: 1.5, borderRadius: 2, fontWeight: 600, borderColor: '#F6475F', color: '#F6475F', '&:hover': { borderColor: '#D93A50', color: '#D93A50', bgcolor: 'rgba(246,71,95,0.05)' } }}
+                  sx={{ py: 1.5, fontWeight: 600, borderColor: '#F6475F', color: '#F6475F', '&:hover': { borderColor: '#D93A50', color: '#D93A50', bgcolor: 'rgba(246,71,95,0.05)' } }}
                 >
                   Retourner à l&apos;annonce
                 </Button>
@@ -334,7 +334,7 @@ function CreditCallbackContent() {
                 fullWidth
                 startIcon={<HomeIcon />}
                 onClick={() => router.push('/home')}
-                sx={{ borderRadius: 2, fontWeight: 600, color: 'text.secondary' }}
+                sx={{ fontWeight: 600, color: 'text.secondary' }}
               >
                 Accueil
               </Button>

@@ -285,7 +285,7 @@ export default function ProfilePage() {
               variant="outlined"
               startIcon={<EditIcon />}
               onClick={() => setIsEditing(true)}
-              sx={{ borderRadius: 2, textTransform: 'none' }}
+              sx={{ textTransform: 'none' }}
               size="medium"
             >
               Modifier
@@ -397,9 +397,9 @@ export default function ProfilePage() {
               onClick={handleSaveProfile}
               disabled={isSaving}
               sx={{
-                borderRadius: 2,
                 textTransform: 'none',
                 background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                '&:active': { transform: 'scale(0.97)' },
               }}
             >
               Sauvegarder
@@ -417,7 +417,7 @@ export default function ProfilePage() {
                 setCityInput(user.city_name || '');
                 setSelectedCity(null);
               }}
-              sx={{ borderRadius: 2, textTransform: 'none' }}
+              sx={{ textTransform: 'none' }}
             >
               Annuler
             </Button>
@@ -573,11 +573,11 @@ export default function ProfilePage() {
               passwordForm.new_password !== passwordForm.new_password_confirmation
             }
             sx={{
-              borderRadius: 2,
               textTransform: 'none',
               fontWeight: 600,
               background: 'linear-gradient(to right, #F6475F, #D93A50)',
               '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+              '&:active': { transform: 'scale(0.97)' },
             }}
           >
             {isChangingPassword ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Modifier le mot de passe'}
@@ -707,7 +707,7 @@ export default function ProfilePage() {
                             setLinkedAccountsLoading(null);
                           }
                         }}
-                        sx={{ borderRadius: 2, textTransform: 'none', fontSize: '0.75rem', whiteSpace: 'nowrap', flexShrink: 0 }}
+                        sx={{ textTransform: 'none', fontSize: '0.75rem', whiteSpace: 'nowrap', flexShrink: 0 }}
                       >
                         Déconnecter
                       </Button>
@@ -746,7 +746,6 @@ export default function ProfilePage() {
                           }
                         }}
                         sx={{
-                          borderRadius: 2,
                           textTransform: 'none',
                           fontSize: '0.75rem',
                           whiteSpace: 'nowrap',
@@ -826,7 +825,7 @@ export default function ProfilePage() {
               size="large"
               startIcon={<AssignmentIcon />}
               onClick={() => router.push(`/sondage/${activeSurvey.id}`)}
-              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+              sx={{ textTransform: 'none', fontWeight: 700 }}
             >
               Répondre au sondage
             </Button>

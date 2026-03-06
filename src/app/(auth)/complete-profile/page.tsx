@@ -304,11 +304,11 @@ export default function CompleteProfilePage() {
                 disabled={isSubmitting || (showPhoneField && phoneNumber.trim().length < 8)}
                 sx={{
                   py: 1.5,
-                  borderRadius: 2,
                   fontSize: '1rem',
                   fontWeight: 600,
                   background: 'linear-gradient(to right, #F6475F, #D93A50)',
                   '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                  '&:active': { transform: 'scale(0.97)' },
                 }}
               >
                 {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Continuer'}

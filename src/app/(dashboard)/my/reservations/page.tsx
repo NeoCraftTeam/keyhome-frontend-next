@@ -238,7 +238,7 @@ function ReservationCard({
               size="small"
               variant="outlined"
               endIcon={<OpenInNew sx={{ fontSize: 14 }} />}
-              sx={{ borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
+              sx={{ fontWeight: 600, textTransform: 'none' }}
             >
               Voir l&apos;annonce
             </Button>
@@ -250,7 +250,7 @@ function ReservationCard({
               color="error"
               onClick={() => onCancel(r)}
               startIcon={<CancelIcon sx={{ fontSize: 14 }} />}
-              sx={{ borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
+              sx={{ fontWeight: 600, textTransform: 'none' }}
             >
               Annuler
             </Button>
@@ -482,7 +482,7 @@ export default function MyReservationsPage() {
           <Button
             onClick={() => { setCancelTarget(null); setCancelReason(''); }}
             variant="outlined"
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
           >
             Retour
           </Button>
@@ -491,7 +491,7 @@ export default function MyReservationsPage() {
             variant="contained"
             color="error"
             disabled={cancelMutation.isPending}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+            sx={{ textTransform: 'none', fontWeight: 700 }}
           >
             {cancelMutation.isPending ? <CircularProgress size={18} color="inherit" /> : 'Confirmer l\'annulation'}
           </Button>

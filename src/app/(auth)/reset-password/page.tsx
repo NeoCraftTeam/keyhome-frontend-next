@@ -102,9 +102,9 @@ function ResetPasswordForm() {
             disabled={isSubmitting || password.length < 8 || password !== passwordConfirmation}
             sx={{
               py: 1.5,
-              borderRadius: 2,
               background: 'linear-gradient(to right, #F6475F, #D93A50)',
               '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+              '&:active': { transform: 'scale(0.97)' },
             }}
           >
             {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Réinitialiser'}

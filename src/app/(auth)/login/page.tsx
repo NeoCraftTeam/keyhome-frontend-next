@@ -219,11 +219,12 @@ export default function LoginPage() {
                 disabled={isSubmitting}
                 sx={{
                   py: 1.5,
-                  borderRadius: 2,
                   fontSize: '1rem',
                   fontWeight: 600,
                   background: 'linear-gradient(to right, #F6475F, #D93A50)',
                   '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                  transition: 'transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s',
+                  '&:active': { transform: 'scale(0.97)' },
                 }}
               >
                 {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Se connecter'}

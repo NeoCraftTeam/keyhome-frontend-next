@@ -334,7 +334,6 @@ export default function HomePage() {
         onClose={() => setIntentOpen(false)}
         PaperProps={{
           sx: {
-            borderRadius: 4,
             px: { xs: 2, sm: 4 },
             py: 3,
             maxWidth: 420,
@@ -364,7 +363,6 @@ export default function HomePage() {
               size="large"
               onClick={() => handleIntentChoice('acheter')}
               sx={{
-                borderRadius: '12px',
                 textTransform: 'none',
                 fontWeight: 700,
                 fontSize: '1rem',
@@ -382,7 +380,6 @@ export default function HomePage() {
               size="large"
               onClick={() => handleIntentChoice('louer')}
               sx={{
-                borderRadius: '12px',
                 textTransform: 'none',
                 fontWeight: 700,
                 fontSize: '1rem',
