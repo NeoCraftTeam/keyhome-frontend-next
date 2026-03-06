@@ -1,0 +1,311 @@
+'use client';
+
+import { publicSurveysService } from '@/services/publicSurveys.service';
+import { PublicSurvey, SurveyAnswerPayload } from '@/types';
+import SurveyStepper from '@/components/surveys/public/SurveyStepper';
+import FadeIn from '@/components/ui/FadeIn';
+import {
+  Box,
+  Button,
+  Container,
+  Dialog,
+  DialogContent,
+  Paper,
+  Skeleton,
+  Typography,
+} from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ShareOutlinedIcon from '@mui/icons-material/ShareOutlined';
+import SentimentDissatisfiedOutlinedIcon from '@mui/icons-material/SentimentDissatisfiedOutlined';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
+
+export default function SurveySlugPage() {
+  const params = useParams();
+  const slug = params.slug as string;
+  const router = useRouter();
+  const [showThankYou, setShowThankYou] = useState(false);
+
+  const {
+    data: survey,
+    isLoading,
+    error,
+  } = useQuery<PublicSurvey>({
+    queryKey: ['public-survey', slug],
+    queryFn: () => publicSurveysService.get(slug),
+    enabled: !!slug,
+  });
+
+  const mutation = useMutation({
+    mutationFn: (answers: SurveyAnswerPayload[]) =>
+      publicSurveysService.submit(slug, answers),
+    onSuccess: () => {
+      setShowThankYou(true);
+    },
+  });
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/surveys/${slug}`;
+    if (navigator.share) {
+      await navigator.share({ title: survey?.title ?? 'Sondage KeyHome', url });
+    } else {
+      await navigator.clipboard.writeText(url);
+    }
+  };
+
+  /* ── Loading ── */
+  if (isLoading) {
+    return (
+      <Container maxWidth="md" sx={{ py: { xs: 5, md: 8 } }}>
+        <Skeleton variant="rounded" height={48} width="60%" sx={{ mb: 2, borderRadius: 2 }} />
+        <Skeleton variant="rounded" height={24} width="40%" sx={{ mb: 5, borderRadius: 2 }} />
+        <Skeleton variant="rounded" height={320} sx={{ borderRadius: 4 }} />
+      </Container>
+    );
+  }
+
+  /* ── Error / 404 ── */
+  if (error || !survey) {
+    return (
+      <Container maxWidth="sm" sx={{ py: 12, textAlign: 'center' }}>
+        <SentimentDissatisfiedOutlinedIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+        <Typography variant="h5" fontWeight={700} gutterBottom>
+          Sondage introuvable
+        </Typography>
+        <Typography color="text.secondary" sx={{ mb: 4 }}>
+          Ce sondage n&apos;existe pas ou a été désactivé.
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => router.push('/surveys')}
+          sx={{ borderRadius: 2.5, px: 4 }}
+        >
+          Voir tous les sondages
+        </Button>
+      </Container>
+    );
+  }
+
+  /* ── Already submitted ── */
+  if (survey.already_submitted) {
+    return (
+      <Container maxWidth="sm" sx={{ py: 12 }}>
+        <FadeIn direction="up">
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 4, md: 6 },
+              textAlign: 'center',
+              borderRadius: 4,
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'inline-flex',
+                p: 2,
+                mb: 3,
+                borderRadius: 3,
+                bgcolor: '#E8F5E9',
+              }}
+            >
+              <CheckCircleOutlineIcon sx={{ fontSize: 48, color: '#2E7D32' }} />
+            </Box>
+            <Typography variant="h5" fontWeight={800} gutterBottom>
+              Déjà répondu !
+            </Typography>
+            <Typography color="text.secondary" sx={{ mb: 4 }}>
+              Vous avez déjà participé à ce sondage. Merci pour votre contribution.
+            </Typography>
+            <Button
+              variant="outlined"
+              onClick={() => router.push('/surveys')}
+              sx={{ borderRadius: 2.5, px: 4 }}
+            >
+              Voir d&apos;autres sondages
+            </Button>
+          </Paper>
+        </FadeIn>
+      </Container>
+    );
+  }
+
+  /* ── Survey stepper ── */
+  return (
+    <>
+      <Container maxWidth="md" sx={{ py: { xs: 4, md: 8 } }}>
+        <FadeIn direction="up">
+          <Button
+            variant="text"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => router.push('/surveys')}
+            sx={{
+              mb: 4,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              color: 'text.secondary',
+              '&:hover': { color: 'primary.main', bgcolor: 'rgba(246,71,95,0.05)' },
+            }}
+          >
+            Tous les sondages
+          </Button>
+
+          {/* Survey title + description */}
+          <Box sx={{ mb: 5 }}>
+            <Typography
+              variant="h4"
+              fontWeight={800}
+              gutterBottom
+              className="aura-gradient-text"
+              sx={{ letterSpacing: '-0.02em' }}
+            >
+              {survey.title}
+            </Typography>
+            {survey.description && (
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ lineHeight: 1.7, maxWidth: 580 }}
+              >
+                {survey.description}
+              </Typography>
+            )}
+          </Box>
+
+          <SurveyStepper
+            survey={survey}
+            onSubmit={(answers) => mutation.mutate(answers)}
+            isSubmitting={mutation.isPending}
+          />
+        </FadeIn>
+      </Container>
+
+      {/* ── Thank-you Dialog ── */}
+      <Dialog
+        open={showThankYou}
+        maxWidth="sm"
+        fullWidth
+        disableEscapeKeyDown
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            overflow: 'visible',
+            mx: 2,
+          },
+        }}
+      >
+        <DialogContent sx={{ p: { xs: 4, md: 6 }, textAlign: 'center' }}>
+          {/* Animated checkmark */}
+          <Box
+            sx={{
+              display: 'inline-flex',
+              mb: 3,
+              p: 2.5,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(46,125,50,0.12) 0%, rgba(46,125,50,0.06) 100%)',
+              '@keyframes popIn': {
+                '0%': { transform: 'scale(0.5)', opacity: 0 },
+                '70%': { transform: 'scale(1.15)' },
+                '100%': { transform: 'scale(1)', opacity: 1 },
+              },
+              animation: 'popIn 0.55s cubic-bezier(0.22,1,0.36,1) 0.1s both',
+            }}
+          >
+            <CheckCircleIcon
+              sx={{
+                fontSize: 72,
+                color: '#2E7D32',
+                filter: 'drop-shadow(0 4px 16px rgba(46,125,50,0.25))',
+              }}
+            />
+          </Box>
+
+          <Typography
+            variant="h4"
+            fontWeight={800}
+            gutterBottom
+            sx={{ letterSpacing: '-0.02em' }}
+          >
+            Merci pour votre avis&nbsp;!
+          </Typography>
+
+          <Typography color="text.secondary" sx={{ mb: 4, lineHeight: 1.7, fontSize: '1.05rem' }}>
+            Vos réponses ont bien été enregistrées anonymement. Votre retour nous aide à améliorer
+            KeyHome pour toute notre communauté.
+          </Typography>
+
+          {/* Anonymity reminder */}
+          <Box
+            sx={{
+              mb: 4,
+              px: 3,
+              py: 2,
+              borderRadius: 2.5,
+              bgcolor: 'rgba(246,71,95,0.05)',
+              border: '1px solid rgba(246,71,95,0.15)',
+            }}
+          >
+            <Typography variant="caption" color="text.secondary" fontWeight={500}>
+              🔒&nbsp; Vos réponses ne peuvent en aucun cas être reliées à votre identité.
+            </Typography>
+          </Box>
+
+          {/* Actions */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => router.push('/surveys')}
+              sx={{
+                borderRadius: 3,
+                py: 1.5,
+                fontWeight: 700,
+                background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 100%)',
+                boxShadow: '0 6px 20px rgba(246,71,95,0.30)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #E83D55 0%, #C93248 100%)',
+                  boxShadow: '0 8px 24px rgba(246,71,95,0.40)',
+                  transform: 'translateY(-1px)',
+                },
+              }}
+            >
+              Voir d&apos;autres sondages
+            </Button>
+
+            <Button
+              variant="outlined"
+              size="large"
+              startIcon={<ShareOutlinedIcon />}
+              onClick={handleShare}
+              sx={{
+                borderRadius: 3,
+                py: 1.5,
+                fontWeight: 600,
+                borderColor: 'divider',
+                color: 'text.primary',
+                '&:hover': { borderColor: 'primary.main', color: 'primary.main' },
+              }}
+            >
+              Partager ce sondage
+            </Button>
+
+            <Button
+              variant="text"
+              onClick={() => router.push('/')}
+              sx={{ color: 'text.secondary', fontWeight: 500, '&:hover': { color: 'primary.main' } }}
+            >
+              Retour à l&apos;accueil
+            </Button>
+          </Box>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
