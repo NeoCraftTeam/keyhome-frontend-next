@@ -47,7 +47,7 @@ const STEPS = [
 ];
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '237657507909';
-const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'support@keyhome.cm';
+const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'support@keyhome.app';
 const CONTACT_PHONE = process.env.NEXT_PUBLIC_PHONE_NUMBER || '+237 657 507 909';
 
 export default function ContactPage() {

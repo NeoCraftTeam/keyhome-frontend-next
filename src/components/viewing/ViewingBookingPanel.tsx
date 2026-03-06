@@ -38,13 +38,18 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addDays,
+  addMonths,
+  eachDayOfInterval,
+  endOfMonth,
   format,
+  getDay,
   isAfter,
   isBefore,
   isSameDay,
   isToday,
   parseISO,
   startOfDay,
+  startOfMonth,
   startOfToday,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -62,18 +67,13 @@ const STATUS_CONFIG: Record<
   [ReservationStatus.Expired]:   { label: 'Expirée',     color: 'default' },
 };
 
-const WEEK_SIZE = 7;          // days visible in the strip
-const MAX_BOOKING_DAYS = 45;  // how many days ahead to allow booking
+const MAX_BOOKING_DAYS = 90;  // how many days ahead to allow booking
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 function formatSlot(time: string) {
   // "HH:MM" or "HH:MM:SS" → "HH:MM"
   return time.slice(0, 5);
-}
-
-function buildDateStrip(startDate: Date, count: number): Date[] {
-  return Array.from({ length: count }, (_, i) => addDays(startDate, i));
 }
 
 // ─── sub-components ──────────────────────────────────────────────────────────
@@ -121,8 +121,8 @@ export default function ViewingBookingPanel({ adId, adTitle }: Props) {
   const [message, setMessage] = useState('');
   const [bookingError, setBookingError] = useState('');
 
-  // Date strip navigation: which week is shown
-  const [stripStart, setStripStart] = useState<Date>(today);
+  // Calendar month currently displayed
+  const [calendarMonth, setCalendarMonth] = useState<Date>(startOfMonth(today));
 
   // ── Cancel dialog ─────────────────────────────────────────────────────────
   const [cancelTarget, setCancelTarget] = useState<Reservation | null>(null);
@@ -138,7 +138,7 @@ export default function ViewingBookingPanel({ adId, adTitle }: Props) {
         setSelectedSlot(null);
         setMessage('');
         setBookingError('');
-        setStripStart(today);
+        setCalendarMonth(startOfMonth(today));
       }, 300);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -205,18 +205,17 @@ export default function ViewingBookingPanel({ adId, adTitle }: Props) {
     },
   });
 
-  // ─── date strip ────────────────────────────────────────────────────────────
-  const strip = buildDateStrip(stripStart, WEEK_SIZE);
-  const canGoPrev = isAfter(stripStart, today);
-  const canGoNext = isBefore(addDays(stripStart, WEEK_SIZE), maxDate);
+  // ─── calendar month navigation ─────────────────────────────────────────────
+  const canGoPrevMonth = isAfter(startOfMonth(calendarMonth), startOfMonth(today));
+  const canGoNextMonth = isBefore(startOfMonth(addMonths(calendarMonth, 1)), addDays(maxDate, 1));
 
-  function handlePrevWeek() {
-    const newStart = addDays(stripStart, -WEEK_SIZE);
-    setStripStart(isBefore(newStart, today) ? today : newStart);
+  function handlePrevMonth() {
+    const prev = addMonths(calendarMonth, -1);
+    setCalendarMonth(isBefore(prev, startOfMonth(today)) ? startOfMonth(today) : prev);
   }
-  function handleNextWeek() {
-    const newStart = addDays(stripStart, WEEK_SIZE);
-    if (!isAfter(newStart, maxDate)) { setStripStart(newStart); }
+  function handleNextMonth() {
+    const next = addMonths(calendarMonth, 1);
+    if (canGoNextMonth) { setCalendarMonth(next); }
   }
 
   function handleDateSelect(d: Date) {
@@ -235,86 +234,106 @@ export default function ViewingBookingPanel({ adId, adTitle }: Props) {
   // ─── render helpers ────────────────────────────────────────────────────────
 
   function renderDateStep() {
+    const firstDay = startOfMonth(calendarMonth);
+    const lastDay  = endOfMonth(calendarMonth);
+    const days     = eachDayOfInterval({ start: firstDay, end: lastDay });
+
+    // Monday-first padding: Sunday(0)→6, Monday(1)→0, …
+    const startPad = (getDay(firstDay) + 6) % 7;
+    const cells: (Date | null)[] = [...Array<null>(startPad).fill(null), ...days];
+    const endPad = (7 - (cells.length % 7)) % 7;
+    for (let i = 0; i < endPad; i++) { cells.push(null); }
+
+    const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+
     return (
       <Box>
         <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
           Choisissez une date
         </Typography>
 
-        {/* Week navigator */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-          <IconButton
-            size="small"
-            onClick={handlePrevWeek}
-            disabled={!canGoPrev}
-            aria-label="Semaine précédente"
-          >
+        {/* Month navigator */}
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          <IconButton size="small" onClick={handlePrevMonth} disabled={!canGoPrevMonth} aria-label="Mois précédent">
             <ChevronLeft fontSize="small" />
           </IconButton>
-          <Typography variant="caption" color="text.secondary" sx={{ flex: 1, textAlign: 'center', fontWeight: 500 }}>
-            {format(strip[0], 'MMMM yyyy', { locale: fr })}
-          </Typography>
-          <IconButton
-            size="small"
-            onClick={handleNextWeek}
-            disabled={!canGoNext}
-            aria-label="Semaine suivante"
+          <Typography
+            variant="subtitle2"
+            fontWeight={600}
+            sx={{ flex: 1, textAlign: 'center', textTransform: 'capitalize' }}
           >
+            {format(calendarMonth, 'MMMM yyyy', { locale: fr })}
+          </Typography>
+          <IconButton size="small" onClick={handleNextMonth} disabled={!canGoNextMonth} aria-label="Mois suivant">
             <ChevronRight fontSize="small" />
           </IconButton>
         </Box>
 
-        {/* Day strip */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
-          {strip.map((d) => {
-            const isPast   = isBefore(startOfDay(d), today);
-            const isSel    = selectedDate ? isSameDay(d, selectedDate) : false;
-            const isNow    = isToday(d);
+        {/* Day-of-week header */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 0.5 }}>
+          {DOW_LABELS.map((d) => (
+            <Typography
+              key={d}
+              variant="caption"
+              sx={{
+                textAlign: 'center',
+                fontWeight: 600,
+                color: 'text.disabled',
+                fontSize: '0.62rem',
+                textTransform: 'uppercase',
+              }}
+            >
+              {d}
+            </Typography>
+          ))}
+        </Box>
+
+        {/* Calendar grid */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.25 }}>
+          {cells.map((d, idx) => {
+            if (!d) {
+              return <Box key={`pad-${idx}`} />;
+            }
+            const isPast      = isBefore(startOfDay(d), today);
+            const isBeyondMax = isAfter(d, maxDate);
+            const isDisabled  = isPast || isBeyondMax;
+            const isSel       = selectedDate ? isSameDay(d, selectedDate) : false;
+            const isNow       = isToday(d);
             return (
               <Box
                 key={d.toISOString()}
-                onClick={() => !isPast && handleDateSelect(d)}
+                onClick={() => !isDisabled && handleDateSelect(d)}
+                role={isDisabled ? undefined : 'button'}
+                tabIndex={isDisabled ? -1 : 0}
                 aria-label={format(d, 'EEEE d MMMM', { locale: fr })}
-                role={isPast ? undefined : 'button'}
-                tabIndex={isPast ? -1 : 0}
-                onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !isPast) { handleDateSelect(d); } }}
+                aria-pressed={isSel}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === ' ') && !isDisabled) { handleDateSelect(d); }
+                }}
                 sx={{
+                  aspectRatio: '1',
                   display: 'flex',
-                  flexDirection: 'column',
                   alignItems: 'center',
-                  py: 1,
-                  borderRadius: 2,
-                  cursor: isPast ? 'default' : 'pointer',
-                  opacity: isPast ? 0.35 : 1,
-                  bgcolor: isSel
-                    ? 'primary.main'
-                    : isNow
-                    ? 'primary.50'
-                    : 'action.hover',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  cursor: isDisabled ? 'default' : 'pointer',
+                  opacity: isDisabled ? 0.28 : 1,
+                  bgcolor: isSel ? 'primary.main' : 'transparent',
                   border: '2px solid',
-                  borderColor: isSel ? 'primary.main' : isNow ? 'primary.light' : 'transparent',
+                  borderColor: isSel ? 'primary.main' : isNow ? 'primary.main' : 'transparent',
                   transition: 'all 0.15s',
-                  '&:hover': !isPast ? { bgcolor: isSel ? 'primary.dark' : 'primary.100', borderColor: 'primary.light' } : {},
+                  '&:hover': !isDisabled
+                    ? { bgcolor: isSel ? 'primary.dark' : 'action.hover' }
+                    : {},
                 }}
               >
                 <Typography
-                  variant="caption"
+                  variant="body2"
                   sx={{
-                    fontWeight: 600,
-                    color: isSel ? 'primary.contrastText' : 'text.disabled',
-                    lineHeight: 1.2,
-                    textTransform: 'uppercase',
-                    fontSize: '0.6rem',
-                  }}
-                >
-                  {format(d, 'EEE', { locale: fr })}
-                </Typography>
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    fontWeight: 700,
-                    color: isSel ? 'primary.contrastText' : 'text.primary',
-                    lineHeight: 1.3,
+                    fontWeight: isSel || isNow ? 700 : 400,
+                    color: isSel ? 'primary.contrastText' : isNow ? 'primary.main' : 'text.primary',
+                    fontSize: '0.82rem',
+                    lineHeight: 1,
                   }}
                 >
                   {format(d, 'd')}

@@ -121,6 +121,15 @@ function AdDetailContent() {
     staleTime: 5 * 60_000,
   });
 
+  // Live balance query — shares the same cache key as CreditsWidget so both
+  // always display the same value and a single fetch satisfies both consumers.
+  const { data: liveBalance } = useQuery({
+    queryKey: ['credits-balance'],
+    queryFn: () => creditsService.getBalance(),
+    staleTime: 15_000,
+    enabled: isAuthenticated,
+  });
+
   if (isError) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -184,9 +193,15 @@ function AdDetailContent() {
       if (response.status === 'unlocked') {
         // Refresh the ad to show unlocked content
         await queryClient.invalidateQueries({ queryKey: ['ad', adId] });
-        // Refresh balance in AuthContext and Navbar widget
-        await refreshUser();
-        queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
+        // Immediately write the server-confirmed balance into the shared cache.
+        // setQueryData is synchronous \u2014 the Navbar widget and dialog both update
+        // in the same render cycle with zero network wait.
+        if (response.points_balance !== undefined) {
+          queryClient.setQueryData<number>(['credits-balance'], response.points_balance);
+        } else {
+          const pointsUsed = response.points_used ?? unlockCostData?.unlock_cost_points ?? 0;
+          queryClient.setQueryData<number>(['credits-balance'], (old) => Math.max(0, (old ?? 0) - pointsUsed));
+        }
         setPaymentDialogOpen(false);
         setSnackbar('Annonce déverrouillée avec succès !');
       }
@@ -952,9 +967,9 @@ function AdDetailContent() {
                 <Typography
                   variant="body2"
                   fontWeight={700}
-                  color={(unlockState?.current_balance ?? currentUser.point_balance ?? 0) > 0 ? 'primary.main' : 'error.main'}
+                  color={(unlockState?.current_balance ?? liveBalance ?? currentUser?.point_balance ?? 0) > 0 ? 'primary.main' : 'error.main'}
                 >
-                  {unlockState?.current_balance ?? currentUser.point_balance ?? 0} crédits
+                  {unlockState?.current_balance ?? liveBalance ?? currentUser?.point_balance ?? 0} crédits
                 </Typography>
               </Box>
               <Box
