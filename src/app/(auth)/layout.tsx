@@ -2,7 +2,8 @@
 
 import SplashTransition from '@/components/ui/SplashTransition';
 import { useAuth } from '@/providers/AuthProvider';
-import { Box, CircularProgress } from '@mui/material';
+import AppLoader from '@/components/ui/AppLoader';
+import { Box } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -69,7 +70,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           justifyContent: 'center',
         }}
       >
-        <CircularProgress sx={{ color: '#F6475F' }} />
+        <AppLoader size={48} />
       </Box>
     );
   }

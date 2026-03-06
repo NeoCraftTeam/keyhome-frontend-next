@@ -2,8 +2,9 @@
 
 export const dynamic = 'force-dynamic';
 
+import AppLoader from '@/components/ui/AppLoader';
 import { useClerk } from '@clerk/nextjs';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
@@ -64,7 +65,7 @@ export default function SSOCallbackPage() {
           KeyHome
         </Typography>
       </Box>
-      <CircularProgress sx={{ color: 'primary.main' }} />
+      <AppLoader size={48} />
       <Typography variant="body2" color="text.secondary">
         Connexion en cours…
       </Typography>

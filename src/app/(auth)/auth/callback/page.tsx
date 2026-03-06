@@ -2,7 +2,8 @@
 
 export const dynamic = 'force-dynamic';
 
-import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import AppLoader from '@/components/ui/AppLoader';
+import { Alert, Box, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo } from 'react';
@@ -62,7 +63,7 @@ function OAuthCallbackContent() {
         </Box>
       ) : (
         <Box sx={{ textAlign: 'center' }}>
-          <CircularProgress size={48} sx={{ mb: 2, color: 'primary.main' }} />
+          <AppLoader size={48} />
           <Typography variant="h6" color="text.secondary">
             Connexion en cours...
           </Typography>
@@ -84,7 +85,7 @@ export default function OAuthCallbackPage() {
             justifyContent: 'center',
           }}
         >
-          <CircularProgress size={48} />
+          <AppLoader size={48} />
         </Box>
       }
     >

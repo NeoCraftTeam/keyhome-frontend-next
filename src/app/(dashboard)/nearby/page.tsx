@@ -2,21 +2,23 @@
 
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
+import AppLoader from '@/components/ui/AppLoader';
 import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
 import { escapeHtml } from '@/lib/sanitize';
 import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
 import {
   Close as CloseIcon,
+  FilterList as FilterListIcon,
   List as ListIcon,
   MyLocation as MyLocationIcon,
 } from '@mui/icons-material';
 import {
   Box,
   Chip,
-  CircularProgress,
   Divider,
   Drawer,
+  Fab,
   IconButton,
   Paper,
   Slider,
@@ -24,6 +26,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -56,6 +59,7 @@ export default function NearbyPage() {
   const [radius, setRadius] = useState(10);
   const [geoError, setGeoError] = useState('');
   const [showList, setShowList] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const geoInitRef = useRef(false);
 
@@ -180,13 +184,80 @@ export default function NearbyPage() {
     setPriceRange([0, MAX_PRICE]);
   };
 
+  const filterPanelContent = (
+    <>
+      {/* Radius slider */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+        <Typography variant="subtitle2" fontWeight={600}>Rayon</Typography>
+        <Chip label={`${radius} km`} size="small" color="primary" />
+      </Box>
+      <Slider value={radius} onChange={(_, val) => setRadius(val as number)} min={1} max={50} step={1} sx={{ color: 'primary.main' }} />
+
+      <Divider sx={{ my: 1 }} />
+
+      {/* Type filter chips */}
+      <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 0.75 }}>Type de bien</Typography>
+      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1.25, overflow: 'hidden' }}>
+        {typeFilters.map((t) => (
+          <Chip
+            key={t.value}
+            label={t.label}
+            size="small"
+            onClick={() => setSelectedType(t.value)}
+            variant={selectedType === t.value ? 'filled' : 'outlined'}
+            sx={{
+              fontSize: '0.72rem',
+              height: 24,
+              ...(selectedType === t.value
+                ? { bgcolor: '#F6475F', color: '#fff', fontWeight: 600 }
+                : { fontWeight: 500 }),
+            }}
+          />
+        ))}
+      </Box>
+
+      {/* Price range slider */}
+      <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 0.25 }}>Prix (FCFA)</Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.75, display: 'block' }}>
+        {formatPrice(priceRange[0])} — {priceRange[1] >= MAX_PRICE ? 'Max' : formatPrice(priceRange[1])}
+      </Typography>
+      <Slider
+        value={priceRange}
+        onChange={(_, val) => setPriceRange(val as [number, number])}
+        min={0} max={MAX_PRICE} step={50000}
+        valueLabelDisplay="auto"
+        valueLabelFormat={(val) => `${(val / 1000).toFixed(0)}k`}
+        sx={{ mb: 0.5 }}
+      />
+
+      {/* Relocate + counts */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+        <IconButton aria-label="Recentrer la carte" onClick={relocate} size="small"
+          sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+          <MyLocationIcon sx={{ fontSize: 16 }} />
+        </IconButton>
+        <Typography variant="caption" color="text.secondary">
+          {filteredAds.length} annonce{filteredAds.length !== 1 ? 's' : ''} trouvée{filteredAds.length !== 1 ? 's' : ''}
+          {hasActiveFilters && ` (${allAds.length} au total)`}
+        </Typography>
+      </Box>
+
+      {hasActiveFilters && (
+        <Chip label="Réinitialiser filtres" size="small" onDelete={clearFilters} onClick={clearFilters}
+          sx={{ mt: 0.75, width: '100%' }} variant="outlined" />
+      )}
+
+      {geoError && <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>{geoError}</Typography>}
+    </>
+  );
+
   return (
     <Box sx={{ display: 'flex', height: 'calc(100vh - 64px)', position: 'relative' }}>
       {/* Map */}
       <Box sx={{ flex: 1, position: 'relative' }}>
         {!coords ? (
           <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CircularProgress />
+            <AppLoader size={48} />
           </Box>
         ) : !MAPBOX_TOKEN ? (
           <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 1, bgcolor: 'grey.100' }}>
@@ -197,125 +268,121 @@ export default function NearbyPage() {
         )}
 
         {/* Controls overlay */}
+        {/* Filter panel — always shown on desktop; animated on mobile */}
+        {!isMobile && (
         <Paper
           elevation={0}
           sx={{
             position: 'absolute',
             top: 16,
             left: 16,
-            right: isMobile ? 16 : 'auto',
-            p: { xs: 1.5, md: 2 },
+            p: 2,
             borderRadius: 3,
             boxShadow: (theme) =>
               theme.palette.mode === 'dark'
                 ? '0 4px 16px rgba(0,0,0,0.4)'
                 : '0 4px 12px rgba(0,0,0,0.1)',
-            width: isMobile ? 'auto' : 280,
+            width: 280,
             bgcolor: (theme) =>
               theme.palette.mode === 'dark'
                 ? 'rgba(30, 30, 30, 0.95)'
                 : 'rgba(255, 255, 255, 0.95)',
             backdropFilter: 'blur(10px)',
-            maxHeight: isMobile ? '40vh' : 'calc(100vh - 120px)',
+            maxHeight: 'calc(100vh - 120px)',
             overflowY: 'auto',
             overflowX: 'hidden',
-            // Mobile: compact scrollable panel
             '&::-webkit-scrollbar': { width: 4 },
-            '&::-webkit-scrollbar-thumb': {
-              bgcolor: 'divider',
-              borderRadius: 2,
-            },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 2 },
           }}
         >
-          {/* Radius slider */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="subtitle2" fontWeight={600}>Rayon</Typography>
-            <Chip label={`${radius} km`} size="small" color="primary" />
-          </Box>
-          <Slider
-            value={radius}
-            onChange={(_, val) => setRadius(val as number)}
-            min={1}
-            max={50}
-            step={1}
-            sx={{ color: 'primary.main' }}
-          />
-
-          <Divider sx={{ my: 1.5 }} />
-
-          {/* Type filter chips */}
-          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Type de bien</Typography>
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1.5, overflow: 'hidden' }}>
-            {typeFilters.map((t) => (
-              <Chip
-                key={t.value}
-                label={t.label}
-                size="small"
-                onClick={() => setSelectedType(t.value)}
-                variant={selectedType === t.value ? 'filled' : 'outlined'}
-                sx={{
-                  fontSize: '0.72rem',
-                  height: 26,
-                  ...(selectedType === t.value
-                    ? { bgcolor: '#F6475F', color: '#fff', fontWeight: 600 }
-                    : { fontWeight: 500 }),
-                }}
-              />
-            ))}
-          </Box>
-
-          {/* Price range slider */}
-          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 0.5 }}>
-            Prix (FCFA)
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-            {formatPrice(priceRange[0])} — {priceRange[1] >= MAX_PRICE ? 'Max' : formatPrice(priceRange[1])}
-          </Typography>
-          <Slider
-            value={priceRange}
-            onChange={(_, val) => setPriceRange(val as [number, number])}
-            min={0}
-            max={MAX_PRICE}
-            step={50000}
-            valueLabelDisplay="auto"
-            valueLabelFormat={(val) => `${(val / 1000).toFixed(0)}k`}
-            sx={{ mb: 1 }}
-          />
-
-          {/* Relocate + counts */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-            <IconButton
-              aria-label="Recentrer la carte"
-              onClick={relocate}
-              size="small"
-              sx={{
-                bgcolor: 'background.paper',
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <MyLocationIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-            <Typography variant="caption" color="text.secondary">
-              {filteredAds.length} annonce{filteredAds.length !== 1 ? 's' : ''} trouvée{filteredAds.length !== 1 ? 's' : ''}
-              {hasActiveFilters && ` (${allAds.length} au total)`}
-            </Typography>
-          </Box>
-
-          {/* Clear filters */}
-          {hasActiveFilters && (
-            <Chip
-              label="Réinitialiser filtres"
-              size="small"
-              onDelete={clearFilters}
-              onClick={clearFilters}
-              sx={{ mt: 1, width: '100%' }}
-              variant="outlined"
-            />
-          )}
-
-          {geoError && <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>{geoError}</Typography>}
+          {filterPanelContent}
         </Paper>
+        )}
+
+        {/* Mobile animated filter panel */}
+        {isMobile && (
+          <AnimatePresence>
+            {showFilter && (
+              <motion.div
+                key="filter-panel"
+                initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+                style={{ position: 'absolute', top: 70, left: 12, right: 12, zIndex: 20 }}
+              >
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 3,
+                    boxShadow: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? '0 8px 32px rgba(0,0,0,0.5)'
+                        : '0 8px 24px rgba(0,0,0,0.15)',
+                    bgcolor: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(30, 30, 30, 0.97)'
+                        : 'rgba(255, 255, 255, 0.98)',
+                    backdropFilter: 'blur(12px)',
+                    maxHeight: '42vh',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    '&::-webkit-scrollbar': { width: 4 },
+                    '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 2 },
+                  }}
+                >
+                  {filterPanelContent}
+                </Paper>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
+
+        {/* Mobile FAB: toggle filter panel */}
+        {isMobile && (
+          <Fab
+            size="small"
+            onClick={() => setShowFilter((v) => !v)}
+            aria-label={showFilter ? 'Masquer les filtres' : 'Afficher les filtres'}
+            sx={{
+              position: 'absolute',
+              top: 16,
+              left: 16,
+              bgcolor: showFilter ? '#F6475F' : 'background.paper',
+              color: showFilter ? '#fff' : 'text.primary',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+              transition: 'all 0.25s ease',
+              '&:hover': { bgcolor: showFilter ? '#D93A50' : 'action.hover' },
+            }}
+          >
+            <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FilterListIcon sx={{ fontSize: 20, transition: 'transform 0.3s ease', transform: showFilter ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+              {hasActiveFilters && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -10,
+                    width: 14,
+                    height: 14,
+                    borderRadius: '50%',
+                    bgcolor: showFilter ? '#fff' : '#F6475F',
+                    color: showFilter ? '#F6475F' : '#fff',
+                    fontSize: 9,
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                  }}
+                >
+                  {[selectedType !== '', priceRange[0] > 0, priceRange[1] < MAX_PRICE].filter(Boolean).length}
+                </Box>
+              )}
+            </Box>
+          </Fab>
+        )}
 
         {/* Mobile list toggle */}
         {isMobile && filteredAds.length > 0 && (

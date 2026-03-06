@@ -2,6 +2,7 @@
 
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
+import AppLoader from '@/components/ui/AppLoader';
 import QueryError from '@/components/ui/QueryError';
 import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
 import { escapeHtml } from '@/lib/sanitize';
@@ -76,9 +77,6 @@ function SearchContent() {
   const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 1000]);
   const [hasParking, setHasParking] = useState(false);
 
-  const [priceAnchor, setPriceAnchor] = useState<null | HTMLElement>(null);
-  const [bedsAnchor, setBedsAnchor] = useState<null | HTMLElement>(null);
-  const [typeAnchor, setTypeAnchor] = useState<null | HTMLElement>(null);
   const [sortAnchor, setSortAnchor] = useState<null | HTMLElement>(null);
 
   // Sync URL params on mount and navigation
@@ -256,14 +254,6 @@ function SearchContent() {
 
   const cities = citiesData?.data || [];
 
-  const priceLabel =
-    priceRange[0] > 0 || priceRange[1] < 5000000
-      ? `${(priceRange[0] / 1000).toFixed(0)}k – ${priceRange[1] < 5000000 ? (priceRange[1] / 1000).toFixed(0) + 'k' : 'Max'}`
-      : 'Prix';
-
-  const bedsLabel = bedrooms ? `${bedrooms}+ ch.` : 'Chambres';
-  const typeLabel = selectedType ? selectedType.name : 'Type de bien';
-
   const sortLabel =
     sortBy === 'price' && sortOrder === 'asc' ? 'Prix ↑'
     : sortBy === 'price' && sortOrder === 'desc' ? 'Prix ↓'
@@ -318,6 +308,35 @@ function SearchContent() {
         noOptionsText="Aucun type"
         renderInput={(params) => <TextField {...params} label="Type de bien" sx={{ mb: 2 }} />}
       />
+
+      <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>Prix (FCFA)</Typography>
+      <Slider
+        value={priceRange}
+        onChange={(_, val) => setPriceRange(val as [number, number])}
+        onChangeCommitted={() => setPage(1)}
+        min={0} max={5000000} step={50000}
+        valueLabelDisplay="auto"
+        valueLabelFormat={(val) => `${(val / 1000).toFixed(0)}k`}
+        sx={{ mb: 0.5 }}
+      />
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="caption" color="text.secondary">0 FCFA</Typography>
+        <Typography variant="caption" color="text.secondary">5 000 000 FCFA</Typography>
+      </Box>
+
+      <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>Chambres</Typography>
+      <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 2.5 }}>
+        {[undefined, 1, 2, 3, 4, 5].map((val) => (
+          <Chip
+            key={val ?? 'all'}
+            label={val === undefined ? 'Tous' : `${val}+`}
+            size="small"
+            onClick={() => { setBedrooms(val); setPage(1); }}
+            variant={bedrooms === val ? 'filled' : 'outlined'}
+            sx={bedrooms === val ? { bgcolor: 'primary.main', color: '#fff' } : {}}
+          />
+        ))}
+      </Box>
 
       <Typography variant="subtitle2" sx={{ mb: 1 }}>Surface (m²)</Typography>
       <Slider
@@ -603,127 +622,7 @@ function SearchContent() {
 
         <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
-        {/* Prix */}
-        <Button
-          size="small"
-          variant={priceRange[0] > 0 || priceRange[1] < 5000000 ? 'contained' : 'outlined'}
-          endIcon={<span style={{ fontSize: 10 }}>▾</span>}
-          onClick={(e) => setPriceAnchor(e.currentTarget)}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: '8px',
-            fontSize: '0.825rem',
-            flexShrink: 0,
-            ...(priceRange[0] > 0 || priceRange[1] < 5000000
-              ? { bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' } }
-              : { borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'text.primary' } }),
-          }}
-        >
-          {priceLabel}
-        </Button>
-        <Menu
-          anchorEl={priceAnchor}
-          open={Boolean(priceAnchor)}
-          onClose={() => setPriceAnchor(null)}
-          slotProps={{ paper: { sx: { p: 2.5, width: 280, borderRadius: 3 } } }}
-        >
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 2 }}>Prix (FCFA)</Typography>
-          <Slider
-            value={priceRange}
-            onChange={(_, val) => setPriceRange(val as [number, number])}
-            onChangeCommitted={() => setPage(1)}
-            min={0} max={5000000} step={50000}
-            valueLabelDisplay="auto"
-            valueLabelFormat={(val) => `${(val / 1000).toFixed(0)}k`}
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-            <Typography variant="caption" color="text.secondary">0 FCFA</Typography>
-            <Typography variant="caption" color="text.secondary">5 000 000 FCFA</Typography>
-          </Box>
-        </Menu>
-
-        {/* Chambres */}
-        <Button
-          size="small"
-          variant={bedrooms ? 'contained' : 'outlined'}
-          endIcon={<span style={{ fontSize: 10 }}>▾</span>}
-          onClick={(e) => setBedsAnchor(e.currentTarget)}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: '8px',
-            fontSize: '0.825rem',
-            flexShrink: 0,
-            ...(bedrooms
-              ? { bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' } }
-              : { borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'text.primary' } }),
-          }}
-        >
-          {bedsLabel}
-        </Button>
-        <Menu
-          anchorEl={bedsAnchor}
-          open={Boolean(bedsAnchor)}
-          onClose={() => setBedsAnchor(null)}
-          slotProps={{ paper: { sx: { p: 2, borderRadius: 3 } } }}
-        >
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>Nombre de chambres</Typography>
-          <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-            {[undefined, 1, 2, 3, 4, 5].map((val) => (
-              <Chip
-                key={val ?? 'all'}
-                label={val === undefined ? 'Tous' : `${val}+`}
-                size="small"
-                onClick={() => { setBedrooms(val); setPage(1); setBedsAnchor(null); }}
-                variant={bedrooms === val ? 'filled' : 'outlined'}
-                sx={bedrooms === val ? { bgcolor: 'primary.main', color: '#fff' } : {}}
-              />
-            ))}
-          </Box>
-        </Menu>
-
-        {/* Type de bien */}
-        <Button
-          size="small"
-          variant={selectedType ? 'contained' : 'outlined'}
-          endIcon={<span style={{ fontSize: 10 }}>▾</span>}
-          onClick={(e) => setTypeAnchor(e.currentTarget)}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: '8px',
-            fontSize: '0.825rem',
-            flexShrink: 0,
-            minWidth: 0,
-            ...(selectedType
-              ? { bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' } }
-              : { borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'text.primary' } }),
-          }}
-        >
-          {typeLabel}
-        </Button>
-        <Menu
-          anchorEl={typeAnchor}
-          open={Boolean(typeAnchor)}
-          onClose={() => setTypeAnchor(null)}
-          slotProps={{ paper: { sx: { minWidth: 180, borderRadius: 3 } } }}
-        >
-          <MenuItem onClick={() => { setSelectedType(null); setPage(1); setTypeAnchor(null); }}>
-            <em>Tous les types</em>
-          </MenuItem>
-          {(adTypes || []).map((t) => (
-            <MenuItem
-              key={t.id}
-              selected={selectedType?.id === t.id}
-              onClick={() => { setSelectedType(t); setPage(1); setTypeAnchor(null); }}
-            >
-              {t.name}
-            </MenuItem>
-          ))}
-        </Menu>
-
-        {/* Plus de filtres */}
+        {/* Filtres */}
         <Button
           size="small"
           variant="outlined"
@@ -798,8 +697,14 @@ function SearchContent() {
               },
             }}
           >
-            <ToggleButton value="list" aria-label="Liste"><ListIcon sx={{ fontSize: 18 }} /></ToggleButton>
-            <ToggleButton value="map" aria-label="Carte"><MapIcon sx={{ fontSize: 18 }} /></ToggleButton>
+            <ToggleButton value="list" aria-label="Liste" sx={{ gap: 0.5, fontSize: '0.8rem', fontWeight: 600 }}>
+              <ListIcon sx={{ fontSize: 16 }} />
+              Liste
+            </ToggleButton>
+            <ToggleButton value="map" aria-label="Carte" sx={{ gap: 0.5, fontSize: '0.8rem', fontWeight: 600 }}>
+              <MapIcon sx={{ fontSize: 16 }} />
+              Carte
+            </ToggleButton>
           </ToggleButtonGroup>
         )}
       </Box>
@@ -912,7 +817,7 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<Box sx={{ p: 4 }}><CircularProgress /></Box>}>
+    <Suspense fallback={<AppLoader />}>
       <SearchContent />
     </Suspense>
   );

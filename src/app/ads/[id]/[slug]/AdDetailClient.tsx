@@ -44,6 +44,7 @@ import {
   ZoomOut,
   ZoomOutMap,
 } from '@mui/icons-material';
+import AppLoader from '@/components/ui/AppLoader';
 import {
   Alert,
   Avatar,
@@ -61,6 +62,7 @@ import {
   Snackbar,
   Typography,
 } from '@mui/material';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
@@ -897,11 +899,27 @@ function AdDetailContent() {
         PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
       >
         <Box sx={{ p: 3, textAlign: 'center' }}>
-          <Lock sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-          <Typography variant="h5" fontWeight={700} gutterBottom>
+          {/* Gradient lock icon */}
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 2,
+              boxShadow: '0 0 0 8px rgba(246,71,95,0.1), 0 8px 24px rgba(246,71,95,0.25)',
+            }}
+          >
+            <Lock sx={{ color: '#fff', fontSize: 30 }} />
+          </Box>
+          <Typography variant="h6" fontWeight={700} gutterBottom>
             Déverrouiller l&apos;annonce
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, px: 1 }}>
             {ad.title}
           </Typography>
 
@@ -912,8 +930,8 @@ function AdDetailContent() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 2,
-                mb: 2,
+                gap: 1.5,
+                mb: 2.5,
                 flexWrap: 'wrap',
               }}
             >
@@ -926,6 +944,8 @@ function AdDetailContent() {
                   borderRadius: 2,
                   px: 1.5,
                   py: 0.75,
+                  border: '1px solid',
+                  borderColor: 'divider',
                 }}
               >
                 <Typography variant="body2" color="text.secondary">Solde :</Typography>
@@ -946,6 +966,8 @@ function AdDetailContent() {
                   borderRadius: 2,
                   px: 1.5,
                   py: 0.75,
+                  border: '1px solid',
+                  borderColor: 'divider',
                 }}
               >
                 <Typography variant="body2" color="text.secondary">Coût :</Typography>
@@ -958,112 +980,139 @@ function AdDetailContent() {
 
           {paymentError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{paymentError}</Alert>}
 
-          {/* Show packages when balance is insufficient */}
-          {unlockState?.status === 'insufficient_points' ? (
-            <Box sx={{ textAlign: 'left' }}>
-              <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
-                Solde insuffisant — il vous faut <strong>{unlockState.required_points} crédits</strong> pour débloquer cette annonce.
-                {(unlockState.current_balance ?? 0) > 0
-                  ? ` Vous avez ${unlockState.current_balance} crédits.`
-                  : ' Rechargez votre solde pour continuer.'}
-              </Alert>
+          {/* Animated state transitions */}
+          <AnimatePresence mode="wait">
+            {isPaymentLoading ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Box sx={{ py: 3.5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
+                  <AppLoader size={48} />
+                  <Typography variant="caption" color="text.secondary">Traitement en cours…</Typography>
+                </Box>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={unlockState?.status === 'insufficient_points' ? 'insufficient' : confirmStep ? 'confirm' : 'init'}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18 }}
+              >
+                {/* Show packages when balance is insufficient */}
+                {unlockState?.status === 'insufficient_points' ? (
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
+                      Solde insuffisant — il vous faut <strong>{unlockState.required_points} crédits</strong> pour débloquer cette annonce.
+                      {(unlockState.current_balance ?? 0) > 0
+                        ? ` Vous avez ${unlockState.current_balance} crédits.`
+                        : ' Rechargez votre solde pour continuer.'}
+                    </Alert>
 
-              {unlockState.packages && unlockState.packages.length > 0 ? (
-                <>
-                  <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: 0.5 }}>
-                    Choisissez un pack de crédits
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
-                    {unlockState.packages.map((pkg) => {
-                      const wouldBeEnough = (unlockState.current_balance ?? 0) + pkg.points_awarded >= (unlockState.required_points ?? 0);
-                      return (
-                        <PackageCard
-                          key={pkg.id}
-                          pkg={pkg}
-                          loading={isPackageLoading === pkg.id}
-                          onPurchase={handlePurchasePackage}
-                          wouldBeEnough={wouldBeEnough}
-                        />
-                      );
-                    })}
+                    {unlockState.packages && unlockState.packages.length > 0 ? (
+                      <>
+                        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: 0.5 }}>
+                          Choisissez un pack de crédits
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
+                          {unlockState.packages.map((pkg) => {
+                            const wouldBeEnough = (unlockState.current_balance ?? 0) + pkg.points_awarded >= (unlockState.required_points ?? 0);
+                            return (
+                              <PackageCard
+                                key={pkg.id}
+                                pkg={pkg}
+                                loading={isPackageLoading === pkg.id}
+                                onPurchase={handlePurchasePackage}
+                                wouldBeEnough={wouldBeEnough}
+                              />
+                            );
+                          })}
+                        </Box>
+                      </>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Aucun pack disponible pour le moment. Veuillez réessayer ultérieurement.
+                      </Typography>
+                    )}
                   </Box>
-                </>
-              ) : (
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Aucun pack disponible pour le moment. Veuillez réessayer ultérieurement.
-                </Typography>
-              )}
-            </Box>
-          ) : confirmStep ? (
-            <>
-              <Alert severity="info" icon={false} sx={{ mb: 2.5, borderRadius: 2, textAlign: 'left' }}>
-                <Typography variant="body2" fontWeight={600} gutterBottom>
-                  Confirmer le déverrouillage
-                </Typography>
-                <Typography variant="body2">
-                  <strong>{unlockState?.required_points ?? unlockCostData?.unlock_cost_points ?? '—'} crédits</strong> seront déduits
-                  de votre solde. Cette action est irréversible.
-                </Typography>
-              </Alert>
-              <Button
-                fullWidth
-                variant="contained"
-                size="large"
-                onClick={handleUnlock}
-                disabled={isPaymentLoading}
-                sx={{
-                  py: 1.5,
-                  fontWeight: 600,
-                  mb: 1,
-                  background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                  '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-                  '&:active': { transform: 'scale(0.97)' },
-                }}
-              >
-                {isPaymentLoading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Confirmer'}
-              </Button>
-              <Button
-                fullWidth
-                variant="text"
-                onClick={() => setConfirmStep(false)}
-                disabled={isPaymentLoading}
-                sx={{ color: 'text.secondary' }}
-              >
-                Retour
-              </Button>
-            </>
-          ) : (
-            <>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                Vous aurez accès aux coordonnées de l&apos;annonceur (téléphone, email).
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 3 }}>
-                🔓 Plus de 200 annonces déverrouillées cette semaine
-              </Typography>
-              <Button
-                fullWidth
-                variant="contained"
-                size="large"
-                onClick={() => setConfirmStep(true)}
-                sx={{
-                  py: 1.5,
-                  fontWeight: 600,
-                  mb: 1,
-                  background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                  '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-                  '&:active': { transform: 'scale(0.97)' },
-                }}
-              >
-                Déverrouiller
-              </Button>
-            </>
-          )}
+                ) : confirmStep ? (
+                  <>
+                    <Alert severity="info" icon={false} sx={{ mb: 2.5, borderRadius: 2, textAlign: 'left' }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        Confirmer le déverrouillage
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong>{unlockState?.required_points ?? unlockCostData?.unlock_cost_points ?? '—'} crédits</strong> seront déduits
+                        de votre solde. Cette action est irréversible.
+                      </Typography>
+                    </Alert>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      size="large"
+                      onClick={handleUnlock}
+                      disabled={isPaymentLoading}
+                      sx={{
+                        py: 1.5,
+                        fontWeight: 600,
+                        mb: 1,
+                        borderRadius: 2.5,
+                        background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                        '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                        '&:active': { transform: 'scale(0.97)' },
+                      }}
+                    >
+                      Confirmer
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="text"
+                      onClick={() => setConfirmStep(false)}
+                      sx={{ color: 'text.secondary', borderRadius: 2.5 }}
+                    >
+                      Retour
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                      Vous aurez accès aux coordonnées de l&apos;annonceur (téléphone, email).
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mb: 3 }}>
+                       Plus de 200 annonces déverrouillées cette semaine
+                    </Typography>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      size="large"
+                      onClick={() => setConfirmStep(true)}
+                      sx={{
+                        py: 1.5,
+                        fontWeight: 600,
+                        mb: 1,
+                        borderRadius: 2.5,
+                        background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                        '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                        '&:active': { transform: 'scale(0.97)' },
+                      }}
+                    >
+                      Déverrouiller
+                    </Button>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <Button
             fullWidth
             variant="text"
             onClick={() => { setPaymentDialogOpen(false); setUnlockState(null); setPaymentError(''); setConfirmStep(false); }}
-            sx={{ color: 'text.secondary', mt: 0.5 }}
+            sx={{ color: 'text.secondary', mt: 1, borderRadius: 2.5 }}
           >
             Annuler
           </Button>
@@ -1246,7 +1295,7 @@ function AdDetailContent() {
 
 export default function AdDetailClient() {
   return (
-    <Suspense fallback={<Box sx={{ p: 4 }}><CircularProgress /></Box>}>
+    <Suspense fallback={<AppLoader />}>
       <AdDetailContent />
     </Suspense>
   );

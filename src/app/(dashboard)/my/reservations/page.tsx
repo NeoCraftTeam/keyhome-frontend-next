@@ -8,6 +8,7 @@ import {
   CalendarMonth,
   Cancel as CancelIcon,
   CheckCircle,
+  ChevronLeft as ChevronLeftIcon,
   ErrorOutline,
   HourglassTop,
   OpenInNew,
@@ -26,6 +27,7 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  IconButton,
   Paper,
   Skeleton,
   Tab,
@@ -37,6 +39,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -291,6 +294,7 @@ const TAB_PAST     = 'past';
 
 export default function MyReservationsPage() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [tab, setTab] = useState(TAB_ACTIVE);
   const [cancelTarget, setCancelTarget] = useState<Reservation | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -342,9 +346,14 @@ export default function MyReservationsPage() {
       <FadeIn>
         {/* page header */}
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" fontWeight={800} color="text.primary" gutterBottom>
-            Mes réservations
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+            <IconButton onClick={() => router.back()} size="small" aria-label="Retour" sx={{ border: '1px solid', borderColor: 'divider', mr: 0.5 }}>
+              <ChevronLeftIcon />
+            </IconButton>
+            <Typography variant="h4" fontWeight={800} color="text.primary">
+              Mes réservations
+            </Typography>
+          </Box>
           <Typography variant="body1" color="text.secondary">
             Retrouvez ici toutes vos demandes de visite et leur statut.
           </Typography>

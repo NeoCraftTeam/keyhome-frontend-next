@@ -6,6 +6,7 @@ import { useThemeMode } from '@/providers/ThemeProvider';
 import {
   CalendarMonth as CalendarMonthIcon,
   Close as CloseIcon,
+  ContactSupport as ContactSupportIcon,
   DarkMode as DarkModeIcon,
   Explore as ExploreIcon,
   HelpOutline as HelpOutlineIcon,
@@ -14,7 +15,8 @@ import {
   Logout as LogoutIcon,
   Menu as MenuIcon,
   Person as PersonIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import {
   AppBar,
@@ -45,6 +47,7 @@ const NAV_LINKS = [
   { label: 'Rechercher', href: '/search', icon: <SearchIcon /> },
   { label: 'Explorer la carte', href: '/nearby', icon: <ExploreIcon /> },
   { label: 'Aide', href: '/aide', icon: <HelpOutlineIcon /> },
+  { label: 'Contact', href: '/contact', icon: <ContactSupportIcon /> },
 ];
 
 export default function Navbar() {
@@ -185,26 +188,29 @@ export default function Navbar() {
               gap: { xs: 0.5, md: 1 },
             }}
           >
-            {/* Theme toggle — always visible on mobile (user requirement) */}
-            <IconButton
-              onClick={toggleTheme}
-              size="small"
-              aria-label={
-                mode === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'
-              }
-            >
-              {mode === 'dark' ? (
-                <LightModeIcon sx={{ fontSize: 20 }} />
-              ) : (
-                <DarkModeIcon sx={{ fontSize: 20 }} />
-              )}
-            </IconButton>
+            {/* Theme toggle — desktop only; moved to Paramètres on mobile */}
+            {!isMobile && (
+              <IconButton
+                onClick={toggleTheme}
+                size="small"
+                aria-label={
+                  mode === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'
+                }
+              >
+                {mode === 'dark' ? (
+                  <LightModeIcon sx={{ fontSize: 20 }} />
+                ) : (
+                  <DarkModeIcon sx={{ fontSize: 20 }} />
+                )}
+              </IconButton>
+            )}
 
             {/* Desktop: no Publier button here — it lives in the footer host section */}
 
             {isAuthenticated ? (
               <>
-                {!isMobile && <CreditsWidget />}
+                {/* Credits: visible on both mobile and desktop */}
+                <CreditsWidget />
 
                 {/* Avatar menu — desktop only; mobile uses the drawer */}
                 {!isMobile && (
@@ -282,6 +288,17 @@ export default function Navbar() {
                           <CalendarMonthIcon />
                         </ListItemIcon>
                         <ListItemText>Mes réservations</ListItemText>
+                      </MenuItem>
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorEl(null);
+                          router.push('/parametres');
+                        }}
+                      >
+                        <ListItemIcon>
+                          <SettingsIcon />
+                        </ListItemIcon>
+                        <ListItemText>Paramètres</ListItemText>
                       </MenuItem>
                       <MenuItem
                         onClick={() => {
@@ -398,9 +415,6 @@ export default function Navbar() {
                 </Typography>
               </Box>
             </Box>
-            <Box sx={{ px: 2, pb: 1 }}>
-              <CreditsWidget />
-            </Box>
             <Divider />
           </>
         )}
@@ -439,6 +453,20 @@ export default function Navbar() {
                     <CalendarMonthIcon />
                   </ListItemIcon>
                   <ListItemText primary="Mes réservations" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    setMobileOpen(false);
+                    router.push('/parametres');
+                  }}
+                  sx={{ borderRadius: 2, mx: 1 }}
+                >
+                  <ListItemIcon>
+                    <SettingsIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Paramètres" />
                 </ListItemButton>
               </ListItem>
               <ListItem disablePadding>

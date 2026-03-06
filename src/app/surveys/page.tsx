@@ -8,12 +8,13 @@ import {
   CardActionArea,
   CardContent,
   Chip,
-  CircularProgress,
   Container,
+  IconButton,
   Skeleton,
   Typography,
 } from '@mui/material';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import QuizOutlinedIcon from '@mui/icons-material/QuizOutlined';
 import { useQuery } from '@tanstack/react-query';
@@ -30,6 +31,12 @@ export default function SurveysIndexPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 5, md: 8 } }}>
+      {/* Back button */}
+      <Box sx={{ mb: 2 }}>
+        <IconButton onClick={() => router.back()} size="small" aria-label="Retour" sx={{ border: '1px solid', borderColor: 'divider' }}>
+          <ChevronLeftIcon />
+        </IconButton>
+      </Box>
       {/* ── Header ── */}
       <FadeIn direction="up">
         <Box sx={{ mb: 6, textAlign: 'center' }}>

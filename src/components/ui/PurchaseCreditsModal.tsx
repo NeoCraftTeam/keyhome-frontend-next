@@ -11,6 +11,7 @@ import {
   IconButton,
   Skeleton,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -24,6 +25,8 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
   const [loadingPkg, setLoadingPkg] = useState<string | null>(null);
   const [pkgError, setPkgError] = useState('');
   const queryClient = useQueryClient();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   const { data: balance, isLoading: balanceLoading } = useQuery({
     queryKey: ['credits-balance'],
@@ -157,8 +160,8 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
       </Box>
 
       {/* ── PACKAGES ─────────────────────────────────────── */}
-      <Box sx={{ px: 3, pt: 3, pb: 2.5, bgcolor: '#0F172A', overflowY: 'auto' }}>
-        <Typography variant="overline" sx={{ color: 'rgba(255,255,255,0.4)', letterSpacing: 1.5, fontSize: '0.65rem', fontWeight: 700 }}>
+      <Box sx={{ px: 3, pt: 3, pb: 2.5, bgcolor: isDark ? '#0F172A' : 'background.paper', overflowY: 'auto' }}>
+        <Typography variant="overline" sx={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'text.secondary', letterSpacing: 1.5, fontSize: '0.65rem', fontWeight: 700 }}>
           Choisir un pack
         </Typography>
 
@@ -171,7 +174,7 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mt: 1.5, alignItems: 'stretch' }}>
           {packagesLoading ? (
             [1, 2, 3].map((i) => (
-              <Skeleton key={i} variant="rounded" height={220} sx={{ borderRadius: 4, flex: 1, minWidth: 0, bgcolor: 'rgba(255,255,255,0.06)' }} />
+              <Skeleton key={i} variant="rounded" height={220} sx={{ borderRadius: 4, flex: 1, minWidth: 0, bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }} />
             ))
           ) : packages && packages.length > 0 ? (
             packages.map((pkg) => (
@@ -184,7 +187,7 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
               </Box>
             ))
           ) : (
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center', py: 4, width: '100%' }}>
+            <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'text.secondary', textAlign: 'center', py: 4, width: '100%' }}>
               Aucun pack disponible.
             </Typography>
           )}
@@ -192,8 +195,8 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
       </Box>
 
       {/* ── FOOTER ───────────────────────────────────────── */}
-      <Box sx={{ px: 3, py: 2, bgcolor: '#0A0F1E', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', lineHeight: 1.5, display: 'block', textAlign: 'center', fontSize: '0.7rem' }}>
+      <Box sx={{ px: 3, py: 2, bgcolor: isDark ? '#0A0F1E' : 'background.default', borderTop: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'divider' }}>
+        <Typography variant="caption" sx={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'text.disabled', lineHeight: 1.5, display: 'block', textAlign: 'center', fontSize: '0.7rem' }}>
           Les credits permettent de deverrouiller les coordonnees des annonceurs.
           Paiement securise via FedaPay.
         </Typography>

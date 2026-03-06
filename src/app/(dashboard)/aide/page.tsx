@@ -4,6 +4,7 @@ import { useThemeMode } from '@/providers/ThemeProvider';
 import {
     ArrowForward as ArrowForwardIcon,
     AutoAwesome as AutoAwesomeIcon,
+    ChevronLeft as ChevronLeftIcon,
     Email as EmailIcon,
     ExpandMore as ExpandMoreIcon,
     Search as SearchIcon,
@@ -18,6 +19,7 @@ import {
     Chip,
     Container,
     Grid,
+    IconButton,
     InputAdornment,
     TextField,
     Typography,
@@ -25,6 +27,7 @@ import {
     useTheme,
 } from '@mui/material';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const BRAND = '#F6475F';
 const BRAND_DARK = '#C73048';
@@ -66,11 +69,11 @@ const FAQ_ITEMS = [
   { cat: 'agent', catLabel: 'Agent', q: 'Comment obtenir le badge «Agent vérifié» ?', a: "Envoyez votre carte professionnelle ou agrément à support@keyhome.app. Notre équipe valide votre dossier sous 48h ouvrables." },
 ];
 
-function StatPill({ value, label }: { value: string; label: string }) {
+function StatPill({ value, label, isDark }: { value: string; label: string; isDark: boolean }) {
   return (
     <Box sx={{ textAlign: 'center', px: { xs: 2.5, md: 4 } }}>
-      <Typography sx={{ fontSize: { xs: '1.6rem', md: '2.2rem' }, fontWeight: 800, color: '#fff', letterSpacing: -1, lineHeight: 1 }}>{value}</Typography>
-      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', mt: 0.5, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>{label}</Typography>
+      <Typography sx={{ fontSize: { xs: '1.6rem', md: '2.2rem' }, fontWeight: 800, color: isDark ? '#fff' : 'text.primary', letterSpacing: -1, lineHeight: 1 }}>{value}</Typography>
+      <Typography sx={{ fontSize: '0.72rem', color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary', mt: 0.5, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>{label}</Typography>
     </Box>
   );
 }
@@ -80,6 +83,7 @@ export default function AidePage() {
   const { mode } = useThemeMode();
   const isDark = mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | false>(false);
@@ -92,6 +96,23 @@ export default function AidePage() {
 
   return (
     <Box sx={{ pb: 0 }}>
+      {/* Back button */}
+      <Box sx={{ position: 'absolute', top: { xs: 70, md: 76 }, left: { xs: 12, md: 20 }, zIndex: 10 }}>
+        <IconButton
+          onClick={() => router.back()}
+          size="small"
+          aria-label="Retour"
+          sx={{
+            bgcolor: 'rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(8px)',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.2)',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' },
+          }}
+        >
+          <ChevronLeftIcon />
+        </IconButton>
+      </Box>
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <Box
@@ -170,10 +191,17 @@ export default function AidePage() {
       </Box>
 
       {/* ── STATS ─────────────────────────────────────────────────────────── */}
-      <Box sx={{ background: 'linear-gradient(90deg, #070E1C 0%, #0F1E3A 50%, #070E1C 100%)', py: { xs: 4, md: 3.5 } }}>
+      <Box
+        sx={{
+          background: isDark ? 'linear-gradient(90deg, #070E1C 0%, #0F1E3A 50%, #070E1C 100%)' : 'background.paper',
+          borderBottom: '1px solid',
+          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'divider',
+          py: { xs: 4, md: 3.5 },
+        }}
+      >
         <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', '& > *:not(:last-child)': { borderRight: '1px solid rgba(255,255,255,0.1)' } }}>
-            {STATS.map((s) => <StatPill key={s.label} value={s.value} label={s.label} />)}
+          <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', '& > *:not(:last-child)': { borderRight: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'divider' } }}>
+            {STATS.map((s) => <StatPill key={s.label} value={s.value} label={s.label} isDark={isDark} />)}
           </Box>
         </Container>
       </Box>
