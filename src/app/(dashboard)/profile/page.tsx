@@ -33,13 +33,17 @@ import {
   PhotoCamera,
   Link as LinkIcon,
   LinkOff as LinkOffIcon,
+  Assignment as AssignmentIcon,
+  CheckCircleOutline as CheckCircleOutlineIcon,
 } from '@mui/icons-material';
 import { Apple, Facebook, Google } from '@mui/icons-material';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
 import { useFavorites } from '@/providers/FavoritesProvider';
 import { authService } from '@/services/auth.service';
 import { usersService, unlockedAdsService } from '@/services/users.service';
 import { citiesService } from '@/services/cities.service';
+import { surveysService } from '@/services/surveys.service';
 import { City } from '@/types';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import AdCard from '@/components/ads/AdCard';
@@ -111,6 +115,23 @@ export default function ProfilePage() {
     queryKey: ['cities', cityInput],
     queryFn: () => citiesService.list({ q: cityInput }),
     enabled: cityInput.length >= 1,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const router = useRouter();
+
+  // Active survey + has-answered check
+  const { data: activeSurvey, isLoading: isSurveyLoading } = useQuery({
+    queryKey: ['active-survey'],
+    queryFn: () => surveysService.getActive(),
+    staleTime: 30 * 60 * 1000,
+    retry: false,
+  });
+
+  const { data: surveyAnsweredData, isLoading: isSurveyAnsweredLoading } = useQuery({
+    queryKey: ['survey-has-answered', activeSurvey?.id],
+    queryFn: () => surveysService.hasAnswered(activeSurvey!.id),
+    enabled: !!activeSurvey?.id,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -292,6 +313,7 @@ export default function ProfilePage() {
         <Tab icon={<LockOpenIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={`Déverrouillées (${unlockedAds.length})`} />
         <Tab icon={<LockIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Sécurité" />
         <Tab icon={<LinkIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Comptes liés" />
+        <Tab icon={<AssignmentIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Sondage" />
       </Tabs>
       </FadeIn>
 
@@ -743,6 +765,73 @@ export default function ProfilePage() {
             );
           })}
         </Box>
+      </TabPanel>
+
+      {/* Tab 5: Sondage */}
+      <TabPanel value={tab} index={5}>
+        <Typography variant="h6" fontWeight={600} gutterBottom>
+          Sondage de satisfaction
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+          Partagez votre expérience KeyHome en répondant à notre sondage.
+        </Typography>
+
+        {(isSurveyLoading || isSurveyAnsweredLoading) ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress />
+          </Box>
+        ) : !activeSurvey ? (
+          <Alert severity="info" sx={{ borderRadius: 2 }}>
+            Aucun sondage en cours pour le moment. Revenez bientôt&nbsp;!
+          </Alert>
+        ) : surveyAnsweredData?.has_answered ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              py: 6,
+              gap: 2,
+              bgcolor: 'success.50',
+              borderRadius: 3,
+              border: '1px solid',
+              borderColor: 'success.200',
+            }}
+          >
+            <CheckCircleOutlineIcon sx={{ fontSize: 56, color: 'success.main' }} />
+            <Typography variant="h6" fontWeight={700} color="success.dark">
+              Merci pour votre participation&nbsp;!
+            </Typography>
+            <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={420}>
+              Vous avez déjà répondu au sondage <strong>«&nbsp;{activeSurvey.title}&nbsp;»</strong>.
+              Votre avis contribue à améliorer notre service.
+            </Typography>
+          </Box>
+        ) : (
+          <Paper
+            variant="outlined"
+            sx={{ p: 3, borderRadius: 3, maxWidth: 520 }}
+          >
+            <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+              {activeSurvey.title}
+            </Typography>
+            {activeSurvey.description && (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                {activeSurvey.description}
+              </Typography>
+            )}
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<AssignmentIcon />}
+              onClick={() => router.push(`/sondage/${activeSurvey.id}`)}
+              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+            >
+              Répondre au sondage
+            </Button>
+          </Paper>
+        )}
       </TabPanel>
 
       <Snackbar

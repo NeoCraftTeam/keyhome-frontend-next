@@ -5,10 +5,12 @@ import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import AppTour from '@/components/ui/AppTour';
 import FadeIn from '@/components/ui/FadeIn';
 import QueryError from '@/components/ui/QueryError';
+import SurveyPrompt from '@/components/surveys/SurveyPrompt';
 import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
 import { citiesService } from '@/services/cities.service';
 import { recommendationsService } from '@/services/users.service';
+import { surveysService } from '@/services/surveys.service';
 import { City } from '@/types';
 import {
     Apartment,
@@ -96,7 +98,7 @@ export default function HomePage() {
     queryKey: ['recommendations'],
     queryFn: () => recommendationsService.list(),
     staleTime: 5 * 60 * 1000,
-    enabled: isAuthenticated,
+    // enabled: isAuthenticated,
   });
 
   const recommendations = recommendationsData?.data || [];
@@ -116,6 +118,21 @@ export default function HomePage() {
       }),
     placeholderData: keepPreviousData,
     staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: activeSurvey } = useQuery({
+    queryKey: ['active-survey'],
+    queryFn: () => surveysService.getActive(),
+    staleTime: 30 * 60 * 1000,
+    retry: false,
+    enabled: isAuthenticated,
+  });
+
+  const { data: surveyAnsweredData } = useQuery({
+    queryKey: ['survey-has-answered', activeSurvey?.id],
+    queryFn: () => surveysService.hasAnswered(activeSurvey!.id),
+    enabled: !!activeSurvey?.id && isAuthenticated,
+    staleTime: 5 * 60 * 1000,
   });
 
   const ads = adsData?.data || [];
@@ -140,6 +157,13 @@ export default function HomePage() {
   return (
     <Box sx={{ pb: 6 }}>
       <AppTour />
+      {activeSurvey && !surveyAnsweredData?.has_answered && (
+        <SurveyPrompt
+          surveyId={activeSurvey.id}
+          title="Votre avis compte !"
+          description={activeSurvey.description ?? "Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience."}
+        />
+      )}
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <Box
