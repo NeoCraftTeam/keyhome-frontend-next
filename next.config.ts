@@ -32,7 +32,7 @@ const cspHeader = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com blob:`,
   `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://clerk.neocraft.dev`,
-  `worker-src blob:`,
+  `worker-src 'self' blob:`,
   `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test https://img.clerk.com ${apiOrigin}`,
   `connect-src ${connectSources}`,
   `font-src 'self' https://fonts.gstatic.com https://ray.st https://clerk.neocraft.dev`,
@@ -131,6 +131,38 @@ const nextConfig: NextConfig = {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
           },
+        ],
+      },
+      // Service worker — never cache the SW file itself so updates propagate immediately
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control',        value: 'public, max-age=0, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+          { key: 'Content-Type',          value: 'application/javascript; charset=utf-8' },
+        ],
+      },
+      // Web App Manifest — short cache so icon/name updates reach users quickly
+      {
+        source: '/manifest.json',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=3600' },
+          { key: 'Content-Type',  value: 'application/manifest+json; charset=utf-8' },
+        ],
+      },
+      // Offline page — revalidated every request so it stays fresh
+      {
+        source: '/offline',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+        ],
+      },
+      // Digital Asset Links for TWA / Play Store
+      {
+        source: '/.well-known/assetlinks.json',
+        headers: [
+          { key: 'Content-Type',  value: 'application/json' },
+          { key: 'Cache-Control', value: 'public, max-age=3600' },
         ],
       },
     ];

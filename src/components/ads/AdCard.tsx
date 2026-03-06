@@ -14,15 +14,29 @@ import {
     Star as StarIcon,
 } from '@mui/icons-material';
 import { Box, Chip, IconButton, Typography } from '@mui/material';
+import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useRef, useState } from 'react';
+
+/** Tiny inline blur placeholder — avoids layout shift while image loads */
+const BLUR_DATA_URL =
+  'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAARC' +
+  'AAGAAQDAQ/EgAIRAQMRAf/EAAGiAAAHAQEBAQEAAAAAAAAAAAQFAwIGAQAHCAkKCwEAAgIDAQEBAQEAAAAAAAAAAAECAwQFBgcICQoLEAACAQMDAgQCBgcDBAIGAnMBAgMRBAAFIRIxQVEGE2EicYEUMpGh' +
+  'BxWxQiPBUtHhMxZi8CRygvElQzRTkqKyY3PCNUQnk6OzNhdUZHTD0uIIJoMJChgZhJRFRqS0VtNVKBry4/PE1OT0ZXWFlaW1xdXl9WZ2hpamtsbW5vY3R1dnd4eXp7fH1+f3OEBAQF/8QAGwAAAQUBAQAAAAAAAAAAAAAAAAECAwQFBgf/xAAuEQACAgEEAg' +
+  'IBBAMBAAAAAAABAgADBAURITETUWEiMkGBkaEGFCNxsf/aAAwDAQACEQMRAD8ApJJJJ//Z';
 
 interface AdCardProps {
   ad: Ad;
   showDistance?: boolean;
 }
 
+/**
+ * AdCard — Airbnb-inspired flat card style:
+ *  - Minimal border-radius on image (8px), zero card border/shadow
+ *  - Clean typography directly below image, no wrapper box
+ *  - Price on its own line, features compact row above it
+ */
 export default function AdCard({ ad, showDistance }: AdCardProps) {
   const router = useRouter();
   const [currentImage, setCurrentImage] = useState(0);
@@ -30,6 +44,17 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
   const touchStartX = useRef<number | null>(null);
 
   const isFavorite = checkFav(ad.id);
+  const [heartBurst, setHeartBurst] = useState(false);
+
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isFavorite) {
+      setHeartBurst(true);
+      setTimeout(() => setHeartBurst(false), 600);
+    }
+    toggleFav(ad);
+  };
 
   const images = ad.images?.length > 0
     ? ad.images
@@ -47,35 +72,35 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
     setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
   }, [images.length]);
 
-  const handleToggleFavorite = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    toggleFav(ad);
-  };
-
   return (
-    <Box
-      component="a"
+    <motion.a
       href={`/ads/${ad.id}/${ad.slug}`}
       onClick={(e: React.MouseEvent) => {
         e.preventDefault();
         router.push(`/ads/${ad.id}/${ad.slug}`);
       }}
-      sx={{
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+      style={{
         cursor: 'pointer',
         width: '100%',
         textDecoration: 'none',
-        color: 'text.primary',
+        color: 'inherit',
         display: 'block',
-        '&:hover .image-nav': { opacity: 1 },
-        '&:focus-visible': {
-          outline: '2px solid #F6475F',
-          outlineOffset: 4,
-          borderRadius: 3,
-        },
       }}
+      aria-label={ad.title}
     >
-      {/* Image carousel */}
+      <Box
+        sx={{
+          '&:hover .image-nav': { opacity: 1 },
+          '&:focus-visible': {
+            outline: '2px solid #F6475F',
+            outlineOffset: 4,
+            borderRadius: 1,
+          },
+        }}
+      >
+      {/* ── Image area ─────────────────────────────────────────────── */}
       <Box
         onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
         onTouchEnd={(e) => {
@@ -90,8 +115,9 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
         sx={{
           position: 'relative',
           width: '100%',
-          paddingTop: '66.67%', // 3:2 aspect ratio
-          borderRadius: 3,
+          paddingTop: '66.67%', // 3:2 — matches Airbnb
+          // Airbnb uses ~12px radius, nothing more
+          borderRadius: '12px',
           overflow: 'hidden',
           bgcolor: 'grey.100',
         }}
@@ -102,10 +128,8 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
             key={img.id}
             sx={{
               position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
+              top: 0, left: 0,
+              width: '100%', height: '100%',
               opacity: idx === currentImage ? 1 : 0,
               transition: 'opacity 0.3s ease',
             }}
@@ -116,29 +140,64 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               fill
               sizes="(max-width: 600px) 50vw, (max-width: 960px) 33vw, 25vw"
               priority={idx === 0}
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
               style={{ objectFit: 'cover' }}
             />
           </Box>
         ))}
 
-        {/* Favorite button */}
-        <IconButton
-          onClick={handleToggleFavorite}
-          aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 2,
-            color: isFavorite ? '#F6475F' : '#fff',
-            filter: isFavorite ? 'none' : 'drop-shadow(0 1px 3px rgba(0,0,0,0.4))',
-          }}
-          size="small"
-        >
-          {isFavorite ? <Favorite /> : <FavoriteBorder />}
-        </IconButton>
+        {/* Heart button with burst animation */}
+        <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
+          <motion.div
+            animate={heartBurst ? { scale: [1, 1.5, 0.85, 1.15, 1] } : { scale: 1 }}
+            transition={{ duration: 0.5, ease: 'easeInOut' }}
+          >
+            <IconButton
+              onClick={handleToggleFavorite}
+              aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+              size="small"
+              sx={{
+                bgcolor: 'rgba(255,255,255,0.2)',
+                backdropFilter: 'blur(4px)',
+                color: isFavorite ? '#F6475F' : '#fff',
+                width: 32,
+                height: 32,
+                transition: 'background-color 0.2s ease',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.35)', transform: 'none' },
+                '&:active': { transform: 'none' },
+              }}
+            >
+              <AnimatePresence mode="wait">
+                {isFavorite ? (
+                  <motion.span
+                    key="filled"
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ display: 'flex' }}
+                  >
+                    <Favorite sx={{ fontSize: 16 }} />
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="outlined"
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ display: 'flex' }}
+                  >
+                    <FavoriteBorder sx={{ fontSize: 16 }} />
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </IconButton>
+          </motion.div>
+        </Box>
 
-        {/* Status badge */}
+        {/* Status badge — bottom-left */}
         {ad.status !== 'available' && (
           <Chip
             label={
@@ -156,6 +215,9 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               bottom: 8,
               left: 8,
               zIndex: 2,
+              borderRadius: '6px',
+              fontWeight: 600,
+              fontSize: '0.7rem',
               bgcolor:
                 ad.status === 'sold'
                   ? '#222'
@@ -165,13 +227,11 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                       ? '#3B82F6'
                       : '#F6475F',
               color: '#fff',
-              fontWeight: 600,
-              fontSize: '0.7rem',
             }}
           />
         )}
 
-        {/* Navigation arrows */}
+        {/* Navigation arrows — appear on hover (desktop) */}
         {images.length > 1 && (
           <>
             <IconButton
@@ -184,14 +244,15 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                 left: 8,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                bgcolor: 'rgba(255,255,255,0.9)',
+                bgcolor: 'rgba(255,255,255,0.92)',
                 opacity: 0,
                 transition: 'opacity 0.2s',
                 '&:hover': { bgcolor: '#fff' },
                 '@media (hover: none)': { opacity: 0.85 },
                 zIndex: 2,
-                width: { xs: 36, sm: 28 },
-                height: { xs: 36, sm: 28 },
+                width: 28,
+                height: 28,
+                boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
               }}
             >
               <ChevronLeft sx={{ fontSize: 18 }} />
@@ -206,14 +267,15 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                 right: 8,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                bgcolor: 'rgba(255,255,255,0.9)',
+                bgcolor: 'rgba(255,255,255,0.92)',
                 opacity: 0,
                 transition: 'opacity 0.2s',
                 '&:hover': { bgcolor: '#fff' },
                 '@media (hover: none)': { opacity: 0.85 },
                 zIndex: 2,
-                width: { xs: 36, sm: 28 },
-                height: { xs: 36, sm: 28 },
+                width: 28,
+                height: 28,
+                boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
               }}
             >
               <ChevronRight sx={{ fontSize: 18 }} />
@@ -238,10 +300,10 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               <Box
                 key={idx}
                 sx={{
-                  width: 6,
-                  height: 6,
+                  width: 5,
+                  height: 5,
                   borderRadius: '50%',
-                  bgcolor: idx === currentImage ? '#fff' : 'rgba(255,255,255,0.5)',
+                  bgcolor: idx === currentImage ? '#fff' : 'rgba(255,255,255,0.45)',
                   transition: 'background-color 0.2s',
                 }}
               />
@@ -250,89 +312,103 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
         )}
       </Box>
 
-      {/* Card content */}
-      <Box sx={{ mt: 1.5 }}>
-        {/* Title + Rating row */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+      {/* ── Text content — Airbnb style ────────────────────────────── */}
+      <Box sx={{ pt: 1.25, pb: 0.5 }}>
+        {/* Title + Rating  — same row */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 0.5 }}>
           <Typography
-            variant="subtitle1"
-            fontWeight={700}
-            color="text.primary"
-            className="ad-card-title"
+            variant="body2"
+            fontWeight={600}
             sx={{
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              lineHeight: 1.3,
+              lineHeight: 1.4,
+              flex: 1,
               minWidth: 0,
+              fontSize: { xs: '0.82rem', sm: '0.875rem' },
             }}
           >
             {ad.title}
           </Typography>
           {ad.rating != null && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, flexShrink: 0 }}>
-              <StarIcon sx={{ fontSize: 14, color: '#FFB400' }} />
-              <Typography variant="caption" fontWeight={600} color="text.primary" sx={{ lineHeight: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0, ml: 0.5 }}>
+              <StarIcon sx={{ fontSize: 12, color: '#222' }} />
+              <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.75rem', lineHeight: 1 }}>
                 {ad.rating.toFixed(1)}
               </Typography>
-              {ad.reviews_count !== undefined && (
-                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>
-                  ({ad.reviews_count})
-                </Typography>
-              )}
             </Box>
           )}
         </Box>
 
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {/* Location */}
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{
+            display: 'block',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            mt: 0.15,
+            fontSize: { xs: '0.75rem', sm: '0.8rem' },
+          }}
+        >
           {ad.quarter?.name || ad.adresse}
           {ad.quarter?.city_name ? `, ${ad.quarter.city_name}` : ''}
         </Typography>
 
-        {/* Features + Price row */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 0.5 }}>
-          {ad.bedrooms > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
-              <BedOutlined sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography variant="caption" color="text.secondary">
-                {ad.bedrooms}
+        {/* Features — compact row */}
+        {(ad.bedrooms > 0 || ad.bathrooms > 0 || ad.surface_area > 0) && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.4, flexWrap: 'wrap' }}>
+            {ad.bedrooms > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                <BedOutlined sx={{ fontSize: 13, color: 'text.secondary' }} />
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem' }}>
+                  {ad.bedrooms}
+                </Typography>
+              </Box>
+            )}
+            {ad.bathrooms > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                <BathtubOutlined sx={{ fontSize: 13, color: 'text.secondary' }} />
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem' }}>
+                  {ad.bathrooms}
+                </Typography>
+              </Box>
+            )}
+            {ad.surface_area > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                <SquareFootOutlined sx={{ fontSize: 13, color: 'text.secondary' }} />
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem' }}>
+                  {ad.surface_area} m²
+                </Typography>
+              </Box>
+            )}
+            {showDistance && ad.distance !== undefined && (
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem' }}>
+                · {ad.distance < 1 ? `${Math.round(ad.distance * 1000)} m` : `${ad.distance.toFixed(1)} km`}
               </Typography>
-            </Box>
-          )}
-          {ad.bathrooms > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
-              <BathtubOutlined sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography variant="caption" color="text.secondary">
-                {ad.bathrooms}
-              </Typography>
-            </Box>
-          )}
-          {ad.surface_area > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
-              <SquareFootOutlined sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography variant="caption" color="text.secondary">
-                {ad.surface_area} m²
-              </Typography>
-            </Box>
-          )}
-
-          {/* Price */}
-          <Typography
-            variant="subtitle2"
-            fontWeight={700}
-            color="text.primary"
-            sx={{ whiteSpace: 'nowrap' }}
-          >
-            {formatPrice(ad.price)}
-          </Typography>
-        </Box>
-
-        {showDistance && ad.distance !== undefined && (
-          <Typography variant="caption" color="text.secondary">
-            à {ad.distance < 1 ? `${Math.round(ad.distance * 1000)} m` : `${ad.distance.toFixed(1)} km`}
-          </Typography>
+            )}
+          </Box>
         )}
+
+        {/* Price — own row, bold, Airbnb-style */}
+        <Typography
+          variant="body2"
+          fontWeight={700}
+          sx={{
+            mt: 0.5,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontSize: { xs: '0.82rem', sm: '0.875rem' },
+          }}
+        >
+          {formatPrice(ad.price)}
+        </Typography>
       </Box>
     </Box>
+    </motion.a>
   );
 }

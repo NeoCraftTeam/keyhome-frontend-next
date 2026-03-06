@@ -188,7 +188,7 @@ export default function HeroSection() {
       />
 
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: 'clamp(80px, 10vh, 140px) 16px clamp(60px, 8vh, 100px)', maxWidth: 860, width: '100%', margin: '0 auto' }}>
+      <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: 'clamp(72px, 10vh, 140px) clamp(16px, 5vw, 40px) clamp(48px, 8vh, 100px)', maxWidth: 860, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
 
           {/* Badge */}
@@ -217,12 +217,13 @@ export default function HeroSection() {
           <motion.h1
             variants={itemVariants}
             style={{
-              fontSize: 'clamp(40px, 7vw, 80px)',
+              fontSize: 'clamp(32px, 7vw, 80px)',
               fontWeight: 800,
               color: text,
-              lineHeight: 1.05,
-              letterSpacing: '-2px',
-              margin: '0 0 24px',
+              lineHeight: 1.1,
+              letterSpacing: 'clamp(-1px, -0.03em, -2px)',
+              margin: '0 0 20px',
+              wordBreak: 'break-word',
               transition: 'color 0.4s ease',
             }}
           >
@@ -256,7 +257,7 @@ export default function HeroSection() {
 
           {/* CTA bar — real city autocomplete */}
           <motion.div variants={itemVariants}>
-            <div style={{ position: 'relative', maxWidth: 560, margin: '0 auto' }}>
+            <div style={{ position: 'relative', maxWidth: 560, margin: '0 auto', width: '100%' }}>
               <div
                 className="hero-search-bar"
                 style={{
@@ -266,12 +267,15 @@ export default function HeroSection() {
                   background: surface,
                   border: `1px solid ${showDropdown && cities.length > 0 ? 'rgba(246,71,95,0.4)' : border}`,
                   borderRadius: showDropdown && cities.length > 0 ? '16px 16px 0 0' : 16,
-                  padding: '6px 6px 6px 20px',
+                  padding: '5px 5px 5px 14px',
                   transition: 'border-color 0.2s, background 0.2s, border-radius 0.2s',
                   backdropFilter: 'blur(10px)',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  overflow: 'hidden',
                 }}
               >
-                <Search style={{ color: textMuted, fontSize: 22, flexShrink: 0 }} />
+                <Search style={{ color: textMuted, fontSize: 19, flexShrink: 0 }} />
                 <input
                   ref={inputRef}
                   type="text"
@@ -279,42 +283,46 @@ export default function HeroSection() {
                   onChange={(e) => handleInputChange(e.target.value)}
                   onFocus={() => { if (cities.length > 0 || query.length >= 1) setShowDropdown(true); }}
                   onKeyDown={handleKeyDown}
-                  placeholder="Rechercher une ville, un quartier..."
+                  placeholder="Ville, quartier..."
                   aria-label="Rechercher une ville ou un quartier"
                   role="combobox"
                   aria-expanded={showDropdown && cities.length > 0}
                   aria-autocomplete="list"
                   aria-haspopup="listbox"
+                  aria-controls="hero-cities-listbox"
                   style={{
                     flex: 1,
-                    padding: '10px 12px',
+                    minWidth: 0,
+                    padding: '10px 8px',
                     background: 'transparent',
                     border: 'none',
                     outline: 'none',
                     color: text,
-                    fontSize: 15,
+                    fontSize: 14,
                     fontFamily: 'inherit',
                   }}
                 />
                 {isLoading && (
-                  <div style={{ width: 18, height: 18, marginRight: 8, border: '2px solid rgba(246,71,95,0.3)', borderTopColor: '#F6475F', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                  <div style={{ width: 16, height: 16, marginRight: 6, border: '2px solid rgba(246,71,95,0.3)', borderTopColor: '#F6475F', borderRadius: '50%', animation: 'spin 0.6s linear infinite', flexShrink: 0 }} />
                 )}
                 <button
                   onClick={() => navigateToSearch()}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 8,
+                    justifyContent: 'center',
+                    gap: 6,
                     background: 'linear-gradient(135deg, #F6475F, #D93A50)',
                     color: '#fff',
                     border: 'none',
                     borderRadius: 12,
-                    padding: '12px 22px',
-                    fontSize: 15,
+                    padding: '11px 16px',
+                    fontSize: 14,
                     fontWeight: 600,
                     cursor: 'pointer',
                     flexShrink: 0,
                     boxShadow: '0 4px 16px rgba(246,71,95,0.4)',
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   Rechercher

@@ -2,15 +2,15 @@
 
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
+import SurveyPrompt from '@/components/surveys/SurveyPrompt';
 import AppTour from '@/components/ui/AppTour';
 import FadeIn from '@/components/ui/FadeIn';
 import QueryError from '@/components/ui/QueryError';
-import SurveyPrompt from '@/components/surveys/SurveyPrompt';
 import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
 import { citiesService } from '@/services/cities.service';
-import { recommendationsService } from '@/services/users.service';
 import { surveysService } from '@/services/surveys.service';
+import { recommendationsService } from '@/services/users.service';
 import { City } from '@/types';
 import {
     Apartment,
@@ -41,8 +41,8 @@ import {
     useTheme,
 } from '@mui/material';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useMemo, useRef, useState, useTransition } from 'react';
 
 const CATEGORIES = [
   { label: 'Tous', value: '', icon: <MapsHomeWork sx={{ fontSize: 16 }} /> },
@@ -189,35 +189,51 @@ export default function HomePage() {
             objectPosition: 'center 60%',
           }}
         />
-        {/* Overlay */}
+        {/* Overlay — top-to-bottom on mobile (full coverage), left-to-right on desktop */}
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
-            background:
-              'linear-gradient(to right, rgba(0,0,0,0.68) 0%, rgba(0,0,0,0.38) 55%, rgba(0,0,0,0.12) 100%)',
+            background: {
+              xs: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.45) 100%)',
+              md: 'linear-gradient(to right, rgba(0,0,0,0.68) 0%, rgba(0,0,0,0.38) 55%, rgba(0,0,0,0.12) 100%)',
+            },
           }}
         />
 
-        {/* Content — left-aligned like Zillow */}
+        {/* Content — centered on mobile, left-aligned on desktop */}
         <Box
           sx={{
             position: 'relative',
             zIndex: 1,
-            px: { xs: 3, sm: 5, md: 8 },
-            maxWidth: 640,
+            width: '100%',
+            px: { xs: 2.5, sm: 5, md: 8 },
+            maxWidth: { xs: '100%', md: 640 },
+            // Center text on mobile, left on desktop
+            textAlign: { xs: 'center', md: 'left' },
+            // Ensure the box itself is centered on mobile
+            mx: { xs: 'auto', md: 0 },
           }}
         >
           <Typography
             component="h1"
             sx={{
-              fontSize: { xs: '2rem', sm: '2.8rem', md: '3.6rem' },
+              // Shrink enough on xs so 'Acheter. Louer. Vendre.' fits without breaking
+              fontSize: { xs: '1.45rem', sm: '2.6rem', md: '3.4rem' },
               fontWeight: 800,
               color: '#fff',
-              lineHeight: 1.1,
-              letterSpacing: -1,
-              mb: { xs: 2.5, md: 3 },
+              lineHeight: 1.15,
+              letterSpacing: { xs: -0.3, md: -1 },
+              mb: { xs: 2, md: 3 },
               textShadow: '0 2px 16px rgba(0,0,0,0.4)',
+              // Never break mid-word — text has non-breaking spaces so wrapping is safe
+              whiteSpace: { xs: 'nowrap', md: 'normal' },
+              // On very small screens (< 375px) allow wrap between phrases
+              '@media (max-width: 375px)': {
+                fontSize: '1.25rem',
+                whiteSpace: 'normal',
+                wordBreak: 'keep-all',
+              },
             }}
           >
             Acheter.{'\u00a0'}Louer.{'\u00a0'}Vendre.
@@ -282,7 +298,7 @@ export default function HomePage() {
                   borderRadius: '12px',
                   '& .MuiOutlinedInput-root': {
                     borderRadius: '12px',
-                    fontSize: { xs: '0.9rem', md: '1rem' },
+                    fontSize: { xs: '0.875rem', md: '1rem' },
                     pr: '14px !important',
                   },
                   '& fieldset': { border: 'none' },
@@ -306,7 +322,8 @@ export default function HomePage() {
                 }}
               />
             )}
-            sx={{ width: '100%', maxWidth: 500 }}
+            // Full width on mobile, capped on desktop
+            sx={{ width: '100%', maxWidth: { xs: '100%', md: 500 }, textAlign: 'left' }}
           />
         </Box>
       </Box>

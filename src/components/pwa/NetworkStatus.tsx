@@ -1,28 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Alert, Slide, Snackbar } from '@mui/material';
 import { SignalWifiOff, Wifi } from '@mui/icons-material';
+import { Alert, Slide, Snackbar } from '@mui/material';
+import { useEffect, useState } from 'react';
 
 /**
  * Shows a subtle toast when the user goes offline or comes back online.
  */
 export default function NetworkStatus() {
-  const [isOnline, setIsOnline] = useState(true);
+  // Lazy initializer avoids the synchronous setState-in-effect lint error
   const [showOnline, setShowOnline] = useState(false);
-  const [showOffline, setShowOffline] = useState(false);
+  const [showOffline, setShowOffline] = useState(() => !navigator.onLine);
 
   useEffect(() => {
-    setIsOnline(navigator.onLine);
-
     const goOnline = () => {
-      setIsOnline(true);
       setShowOffline(false);
       setShowOnline(true);
     };
 
     const goOffline = () => {
-      setIsOnline(false);
       setShowOnline(false);
       setShowOffline(true);
     };
@@ -57,7 +53,7 @@ export default function NetworkStatus() {
       </Snackbar>
 
       <Snackbar
-        open={showOnline && !isOnline === false}
+        open={showOnline}
         autoHideDuration={3000}
         onClose={() => setShowOnline(false)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}

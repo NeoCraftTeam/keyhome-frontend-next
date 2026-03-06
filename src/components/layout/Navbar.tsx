@@ -4,38 +4,37 @@ import CreditsWidget from '@/components/layout/CreditsWidget';
 import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
 import {
-    AddCircleOutline as AddCircleOutlineIcon,
-    CalendarMonth as CalendarMonthIcon,
-    Close as CloseIcon,
-    DarkMode as DarkModeIcon,
-    Explore as ExploreIcon,
-    HelpOutline as HelpOutlineIcon,
-    Home as HomeIcon,
-    LightMode as LightModeIcon,
-    Logout as LogoutIcon,
-    Menu as MenuIcon,
-    Person as PersonIcon,
-    Search as SearchIcon,
+  CalendarMonth as CalendarMonthIcon,
+  Close as CloseIcon,
+  DarkMode as DarkModeIcon,
+  Explore as ExploreIcon,
+  HelpOutline as HelpOutlineIcon,
+  Home as HomeIcon,
+  LightMode as LightModeIcon,
+  Logout as LogoutIcon,
+  Menu as MenuIcon,
+  Person as PersonIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import {
-    AppBar,
-    Avatar,
-    Box,
-    Button,
-    Divider,
-    Drawer,
-    IconButton,
-    List,
-    ListItem,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
-    Menu,
-    MenuItem,
-    Toolbar,
-    Typography,
-    useMediaQuery,
-    useTheme,
+  AppBar,
+  Avatar,
+  Box,
+  Button,
+  Divider,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Toolbar,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -65,26 +64,38 @@ export default function Navbar() {
         position="sticky"
         elevation={0}
         sx={{
-          bgcolor: 'background.default',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          // Glass effect is applied via MuiAppBar theme override
+          // mode-aware colors are handled in theme.ts
+          color: 'text.primary',
         }}
       >
         <Toolbar
+          disableGutters
           sx={{
             maxWidth: 1760,
             width: '100%',
             mx: 'auto',
-            px: { xs: 2, md: 4 },
+            px: { xs: 1.5, md: 4 },
             minHeight: { xs: 56, md: 64 },
-            display: 'flex',
+            display: 'grid',
+            // Mobile: 3 equal columns — hamburger | logo | actions
+            // Desktop: auto nav | logo | auto actions
+            gridTemplateColumns: {
+              xs: '1fr auto 1fr',
+              md: '1fr auto 1fr',
+            },
             alignItems: 'center',
           }}
         >
-          {/* LEFT — nav links desktop / hamburger mobile */}
-          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          {/* LEFT — hamburger (mobile) / nav links (desktop) */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             {isMobile ? (
-              <IconButton aria-label="Ouvrir le menu" onClick={() => setMobileOpen(true)}>
+              <IconButton
+                aria-label="Ouvrir le menu"
+                onClick={() => setMobileOpen(true)}
+                size="medium"
+                sx={{ ml: 0.5 }}
+              >
                 <MenuIcon />
               </IconButton>
             ) : (
@@ -128,13 +139,14 @@ export default function Navbar() {
             )}
           </Box>
 
-          {/* CENTER — Logo */}
+          {/* CENTER — Logo (absolutely centered in grid) */}
           <Box
             onClick={() => router.push('/home')}
             sx={{
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: 1,
               flexShrink: 0,
               transition: 'opacity 0.2s',
@@ -144,8 +156,8 @@ export default function Navbar() {
             <Image
               src="/images/logo.png"
               alt="KeyHome — Accueil"
-              width={44}
-              height={44}
+              width={isMobile ? 36 : 44}
+              height={isMobile ? 36 : 44}
               priority
               style={{ objectFit: 'contain' }}
             />
@@ -154,25 +166,26 @@ export default function Navbar() {
               sx={{
                 color: 'primary.main',
                 fontWeight: 800,
-                fontSize: '1.2rem',
+                fontSize: { xs: '1.05rem', md: '1.2rem' },
                 letterSpacing: -0.5,
-                display: { xs: 'none', sm: 'block' },
+                // Show "KeyHome" text on mobile too (just smaller)
+                display: 'block',
               }}
             >
               KeyHome
             </Typography>
           </Box>
 
-          {/* RIGHT — dark mode + credits + user menu */}
+          {/* RIGHT — theme switcher + user actions */}
           <Box
             sx={{
-              flex: 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'flex-end',
-              gap: 1,
+              gap: { xs: 0.5, md: 1 },
             }}
           >
+            {/* Theme toggle — always visible on mobile (user requirement) */}
             <IconButton
               onClick={toggleTheme}
               size="small"
@@ -187,153 +200,150 @@ export default function Navbar() {
               )}
             </IconButton>
 
-            {/* Publier une annonce CTA — desktop only */}
-            {!isMobile && (
-              <Button
-                variant="contained"
-                size="small"
-                href={process.env.NEXT_PUBLIC_OWNER_URL || '/owner'}
-                component="a"
-                target="_blank"
-                rel="noopener noreferrer"
-                startIcon={<AddCircleOutlineIcon sx={{ fontSize: 18 }} />}
-                sx={{
-                  borderRadius: '20px',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  px: 2,
-                  background: 'linear-gradient(135deg, #F6475F, #D93A50)',
-                  boxShadow: 'none',
-                  whiteSpace: 'nowrap',
-                  '&:hover': {
-                    boxShadow: '0 4px 12px rgba(246,71,95,0.35)',
-                  },
-                }}
-              >
-                Publier
-              </Button>
-            )}
+            {/* Desktop: no Publier button here — it lives in the footer host section */}
 
             {isAuthenticated ? (
               <>
                 {!isMobile && <CreditsWidget />}
 
-                <Box
-                  onClick={(e) => setAnchorEl(e.currentTarget)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: '40px',
-                    px: 1.5,
-                    py: 0.5,
-                    cursor: 'pointer',
-                    '&:hover': { boxShadow: '0 2px 4px rgba(0,0,0,0.08)' },
-                  }}
-                >
-                  <MenuIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                  <Avatar
-                    src={user?.avatar || undefined}
-                    sx={{ width: 30, height: 30, bgcolor: 'text.secondary' }}
-                  >
-                    {user?.firstname?.[0] || 'U'}
-                  </Avatar>
-                </Box>
-
-                <Menu
-                  anchorEl={anchorEl}
-                  open={Boolean(anchorEl)}
-                  onClose={() => setAnchorEl(null)}
-                  transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                  anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                  slotProps={{
-                    paper: {
-                      sx: {
-                        mt: 1.5,
-                        minWidth: 220,
-                        borderRadius: 3,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-                      },
-                    },
-                  }}
-                >
-                  <Box sx={{ px: 2, py: 1.5 }}>
-                    <Typography variant="subtitle2" fontWeight={600}>
-                      {user?.firstname} {user?.lastname}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {user?.email}
-                    </Typography>
-                  </Box>
-                  <Divider />
-                  {NAV_LINKS.map((link) => (
-                    <MenuItem
-                      key={link.href}
-                      onClick={() => {
-                        setAnchorEl(null);
-                        router.push(link.href);
+                {/* Avatar menu — desktop only; mobile uses the drawer */}
+                {!isMobile && (
+                  <>
+                    <Box
+                      onClick={(e) => setAnchorEl(e.currentTarget)}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: '40px',
+                        px: 1.5,
+                        py: 0.5,
+                        cursor: 'pointer',
+                        '&:hover': { boxShadow: '0 2px 4px rgba(0,0,0,0.08)' },
                       }}
                     >
-                      <ListItemIcon>{link.icon}</ListItemIcon>
-                      <ListItemText>{link.label}</ListItemText>
-                    </MenuItem>
-                  ))}
-                  <Divider />
-                  <MenuItem
-                    onClick={() => {
-                      setAnchorEl(null);
-                      router.push('/my/reservations');
-                    }}
-                  >
-                    <ListItemIcon>
-                      <CalendarMonthIcon />
-                    </ListItemIcon>
-                    <ListItemText>Mes réservations</ListItemText>
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => {
-                      setAnchorEl(null);
-                      router.push('/profile');
-                    }}
-                  >
-                    <ListItemIcon>
-                      <PersonIcon />
-                    </ListItemIcon>
-                    <ListItemText>Mon profil</ListItemText>
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => {
-                      setAnchorEl(null);
-                      logout();
-                    }}
-                  >
-                    <ListItemIcon>
-                      <LogoutIcon />
-                    </ListItemIcon>
-                    <ListItemText>Déconnexion</ListItemText>
-                  </MenuItem>
-                </Menu>
+                      <MenuIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                      <Avatar
+                        src={user?.avatar || undefined}
+                        sx={{ width: 28, height: 28, bgcolor: 'text.secondary' }}
+                      >
+                        {user?.firstname?.[0] || 'U'}
+                      </Avatar>
+                    </Box>
+
+                    <Menu
+                      anchorEl={anchorEl}
+                      open={Boolean(anchorEl)}
+                      onClose={() => setAnchorEl(null)}
+                      transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                      anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                      slotProps={{
+                        paper: {
+                          sx: {
+                            mt: 1.5,
+                            minWidth: 220,
+                            borderRadius: 3,
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+                          },
+                        },
+                      }}
+                    >
+                      <Box sx={{ px: 2, py: 1.5 }}>
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          {user?.firstname} {user?.lastname}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {user?.email}
+                        </Typography>
+                      </Box>
+                      <Divider />
+                      {NAV_LINKS.map((link) => (
+                        <MenuItem
+                          key={link.href}
+                          onClick={() => {
+                            setAnchorEl(null);
+                            router.push(link.href);
+                          }}
+                        >
+                          <ListItemIcon>{link.icon}</ListItemIcon>
+                          <ListItemText>{link.label}</ListItemText>
+                        </MenuItem>
+                      ))}
+                      <Divider />
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorEl(null);
+                          router.push('/my/reservations');
+                        }}
+                      >
+                        <ListItemIcon>
+                          <CalendarMonthIcon />
+                        </ListItemIcon>
+                        <ListItemText>Mes réservations</ListItemText>
+                      </MenuItem>
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorEl(null);
+                          router.push('/profile');
+                        }}
+                      >
+                        <ListItemIcon>
+                          <PersonIcon />
+                        </ListItemIcon>
+                        <ListItemText>Mon profil</ListItemText>
+                      </MenuItem>
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorEl(null);
+                          logout();
+                        }}
+                      >
+                        <ListItemIcon>
+                          <LogoutIcon />
+                        </ListItemIcon>
+                        <ListItemText>Déconnexion</ListItemText>
+                      </MenuItem>
+                    </Menu>
+                  </>
+                )}
               </>
             ) : (
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => router.push('/login')}
-                sx={{
-                  borderRadius: '20px',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                  whiteSpace: 'nowrap',
-                  '&:hover': { borderColor: 'primary.main', color: 'primary.main' },
-                }}
-              >
-                Se connecter
-              </Button>
+              // On mobile: just show a compact icon button for login
+              isMobile ? (
+                <IconButton
+                  size="small"
+                  onClick={() => router.push('/login')}
+                  aria-label="Se connecter"
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: '50%',
+                    width: 34,
+                    height: 34,
+                  }}
+                >
+                  <PersonIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              ) : (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => router.push('/login')}
+                  sx={{
+                    borderRadius: '20px',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    borderColor: 'divider',
+                    color: 'text.primary',
+                    whiteSpace: 'nowrap',
+                    '&:hover': { borderColor: 'primary.main', color: 'primary.main' },
+                  }}
+                >
+                  Se connecter
+                </Button>
+              )
             )}
           </Box>
         </Toolbar>
@@ -344,7 +354,7 @@ export default function Navbar() {
         anchor="left"
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        PaperProps={{ sx: { width: 280 } }}
+        PaperProps={{ sx: { width: 300 } }}
       >
         <Box
           sx={{
@@ -358,8 +368,8 @@ export default function Navbar() {
             <Image
               src="/images/logo.png"
               alt="KeyHome — Accueil"
-              width={28}
-              height={28}
+              width={32}
+              height={32}
             />
             <Typography variant="h6" fontWeight={700} color="primary.main">
               KeyHome
@@ -376,7 +386,7 @@ export default function Navbar() {
         {user && (
           <>
             <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Avatar src={user.avatar || undefined} sx={{ width: 40, height: 40 }}>
+              <Avatar src={user.avatar || undefined} sx={{ width: 44, height: 44 }}>
                 {user.firstname?.[0]}
               </Avatar>
               <Box>
@@ -402,32 +412,19 @@ export default function Navbar() {
                   setMobileOpen(false);
                   router.push(link.href);
                 }}
+                sx={{
+                  borderRadius: 2,
+                  mx: 1,
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
               >
                 <ListItemIcon>{link.icon}</ListItemIcon>
                 <ListItemText primary={link.label} />
               </ListItemButton>
             </ListItem>
           ))}
-          {/* Publier une annonce — mobile drawer */}
-          <ListItem disablePadding>
-            <ListItemButton
-              component="a"
-              href={process.env.NEXT_PUBLIC_OWNER_URL || '/owner'}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setMobileOpen(false)}
-              sx={{ color: 'primary.main' }}
-            >
-              <ListItemIcon>
-                <AddCircleOutlineIcon color="primary" />
-              </ListItemIcon>
-              <ListItemText
-                primary="Publier une annonce"
-                primaryTypographyProps={{ fontWeight: 600 }}
-              />
-            </ListItemButton>
-          </ListItem>
-          <Divider sx={{ my: 1 }} />
+
+          <Divider sx={{ my: 1, mx: 2 }} />
           {isAuthenticated && (
             <>
               <ListItem disablePadding>
@@ -436,6 +433,7 @@ export default function Navbar() {
                     setMobileOpen(false);
                     router.push('/my/reservations');
                   }}
+                  sx={{ borderRadius: 2, mx: 1 }}
                 >
                   <ListItemIcon>
                     <CalendarMonthIcon />
@@ -449,6 +447,7 @@ export default function Navbar() {
                     setMobileOpen(false);
                     router.push('/profile');
                   }}
+                  sx={{ borderRadius: 2, mx: 1 }}
                 >
                   <ListItemIcon>
                     <PersonIcon />
@@ -456,16 +455,17 @@ export default function Navbar() {
                   <ListItemText primary="Mon profil" />
                 </ListItemButton>
               </ListItem>
-              <Divider sx={{ my: 1 }} />
+              <Divider sx={{ my: 1, mx: 2 }} />
               <ListItem disablePadding>
                 <ListItemButton
                   onClick={() => {
                     setMobileOpen(false);
                     logout();
                   }}
+                  sx={{ borderRadius: 2, mx: 1, color: 'error.main' }}
                 >
                   <ListItemIcon>
-                    <LogoutIcon />
+                    <LogoutIcon color="error" />
                   </ListItemIcon>
                   <ListItemText primary="Déconnexion" />
                 </ListItemButton>
@@ -473,7 +473,7 @@ export default function Navbar() {
             </>
           )}
           {!isAuthenticated && (
-            <ListItem sx={{ pt: 2 }}>
+            <ListItem sx={{ pt: 2, px: 2 }}>
               <Button
                 fullWidth
                 variant="contained"
@@ -485,6 +485,7 @@ export default function Navbar() {
                   borderRadius: '20px',
                   textTransform: 'none',
                   fontWeight: 600,
+                  background: 'linear-gradient(135deg, #F6475F, #D93A50)',
                 }}
               >
                 Se connecter

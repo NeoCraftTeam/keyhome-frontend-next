@@ -1,7 +1,9 @@
 'use client';
 
+import { getOwnerUrl } from '@/lib/constants';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
@@ -17,7 +19,7 @@ const NAV_LINKS = [
 export default function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isDark, toggle, text, textNav, navBg, navBorder, border, bg, surface } = useLandingTheme();
+  const { isDark, toggle, text, textNav, navBg, navBorder, border, surface } = useLandingTheme();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -54,12 +56,12 @@ export default function LandingNav() {
         }}>
 
           {/* Logo */}
-          <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', zIndex: 101 }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', zIndex: 101 }}>
             <Image src="/images/logo.png" alt="KeyHome — Logo plateforme immobilière en Afrique" width={36} height={36} style={{ borderRadius: 8 }} />
             <span style={{ color: text, fontWeight: 700, fontSize: 20, letterSpacing: '-0.5px', transition: 'color 0.35s' }}>
               Key<span style={{ color: '#F6475F' }}>Home</span>
             </span>
-          </a>
+          </Link>
 
           {/* Desktop links */}
           <div className="landing-nav-links" style={{ alignItems: 'center', gap: 32 }}>
@@ -120,7 +122,7 @@ export default function LandingNav() {
             </PageTransitionLink>
 
             <PageTransitionLink
-              href={process.env.NEXT_PUBLIC_OWNER_URL || '/owner'}
+              href={getOwnerUrl()}
               style={{ color: '#fff', textDecoration: 'none', fontSize: 15, fontWeight: 600, padding: '8px 20px', borderRadius: 10, background: 'linear-gradient(135deg, #F6475F, #D93A50)', boxShadow: '0 4px 20px rgba(246,71,95,0.35)', display: 'inline-block' }}
             >
               Annoncer
@@ -248,7 +250,7 @@ export default function LandingNav() {
                 Visiter
               </PageTransitionLink>
               <PageTransitionLink
-                href={process.env.NEXT_PUBLIC_OWNER_URL || '/owner'}
+                href={getOwnerUrl()}
                 onClick={() => setMenuOpen(false)}
                 style={{
                   color: '#fff', textDecoration: 'none', fontSize: 16, fontWeight: 700,
