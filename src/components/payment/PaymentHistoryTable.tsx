@@ -1,0 +1,239 @@
+'use client';
+
+import PaymentAmountDisplay from '@/components/payment/PaymentAmountDisplay';
+import PaymentStatusBadge from '@/components/payment/PaymentStatusBadge';
+import { paymentsService } from '@/services/payments.service';
+import { PaymentHistoryItem } from '@/types';
+import {
+  Box,
+  Pagination,
+  Paper,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import { Toll } from '@mui/icons-material';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+
+const TYPE_LABELS: Record<string, string> = {
+  unlock:       'Déblocage',
+  subscription: 'Abonnement',
+  boost:        'Boost',
+  credit:       'Crédits',
+};
+
+const METHOD_LABELS: Record<string, string> = {
+  mobile_money:  'MTN MoMo',
+  orange_money:  'Orange Money',
+  card:          'Carte',
+  flutterwave:   'Flutterwave',
+};
+
+interface PaymentHistoryTableProps {
+  perPage?: number;
+}
+
+export default function PaymentHistoryTable({ perPage = 15 }: PaymentHistoryTableProps): React.ReactElement {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [page, setPage] = useState(1);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['payment-history', page],
+    queryFn: () => paymentsService.getHistory(page),
+    staleTime: 30_000,
+  });
+
+  const items: PaymentHistoryItem[] = data?.data ?? [];
+  const totalPages: number = data?.meta?.last_page ?? 1;
+
+  const formatDate = (iso: string): string =>
+    new Intl.DateTimeFormat('fr-CM', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+
+  if (isMobile) {
+    return (
+      <Box>
+        {isLoading ? (
+          Array.from({ length: perPage }, (_, i) => (
+            <Paper
+              key={i}
+              elevation={0}
+              sx={{ p: 2, mb: 1.5, borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}
+            >
+              <Skeleton height={20} width="60%" sx={{ mb: 1 }} />
+              <Skeleton height={16} width="40%" />
+            </Paper>
+          ))
+        ) : items.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Toll sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
+            <Typography variant="body2" color="text.secondary">
+              Aucune transaction trouvée.
+            </Typography>
+          </Box>
+        ) : (
+          items.map((item) => (
+            <Paper
+              key={item.id}
+              elevation={0}
+              sx={{
+                p: 2,
+                mb: 1.5,
+                borderRadius: 2.5,
+                border: '1px solid',
+                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'divider',
+                transition: 'border-color 0.15s',
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    {item.pack_name ?? TYPE_LABELS[item.type] ?? item.type}
+                  </Typography>
+                  {item.points_awarded != null && (
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                      <Toll sx={{ fontSize: 14, color: 'primary.main' }} />
+                      <Typography variant="caption" fontWeight={600} color="primary.main">
+                        {item.points_awarded} crédits
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+                <PaymentStatusBadge status={item.status} />
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <PaymentAmountDisplay amount={item.amount} variant="body2" fontWeight={700} />
+                <Typography variant="caption" color="text.secondary">
+                  {formatDate(item.created_at)}
+                </Typography>
+              </Box>
+            </Paper>
+          ))
+        )}
+
+        {totalPages > 1 && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={(_, v) => setPage(v)}
+              color="primary"
+              shape="rounded"
+              size="small"
+            />
+          </Box>
+        )}
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      <TableContainer
+        component={Paper}
+        elevation={0}
+        sx={{
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'divider',
+          overflow: 'hidden',
+        }}
+      >
+        <Table>
+          <TableHead>
+            <TableRow sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'grey.50' }}>
+              {['Pack', 'Crédits', 'Montant', 'Statut', 'Date'].map((header) => (
+                <TableCell
+                  key={header}
+                  sx={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: 0.5, textTransform: 'uppercase', color: 'text.secondary', py: 1.5 }}
+                >
+                  {header}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: perPage }, (_, i) => (
+                <TableRow key={i}>
+                  {Array.from({ length: 5 }, (__, j) => (
+                    <TableCell key={j}>
+                      <Skeleton height={20} width={j === 0 ? 120 : j === 2 ? 80 : 60} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : items.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} sx={{ textAlign: 'center', py: 6 }}>
+                  <Toll sx={{ fontSize: 48, color: 'text.secondary', mb: 1, display: 'block', mx: 'auto' }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Aucune transaction trouvée.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              items.map((item) => (
+                <TableRow
+                  key={item.id}
+                  sx={{ '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'grey.50' } }}
+                >
+                  <TableCell>
+                    <Typography variant="body2" fontWeight={600}>
+                      {item.pack_name ?? TYPE_LABELS[item.type] ?? item.type}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                      {item.reference ? item.reference.slice(0, 14) : '—'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {item.points_awarded != null ? (
+                      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                        <Toll sx={{ fontSize: 16, color: 'primary.main' }} />
+                        <Typography variant="body2" fontWeight={700} color="primary.main">
+                          {item.points_awarded}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">—</Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <PaymentAmountDisplay amount={item.amount} variant="body2" fontWeight={700} />
+                  </TableCell>
+                  <TableCell>
+                    <PaymentStatusBadge status={item.status} />
+                  </TableCell>
+                  <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                    {formatDate(item.created_at)}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {totalPages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(_, v) => setPage(v)}
+            color="primary"
+            shape="rounded"
+          />
+        </Box>
+      )}
+    </Box>
+  );
+}

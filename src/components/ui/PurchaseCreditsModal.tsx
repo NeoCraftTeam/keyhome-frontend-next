@@ -198,7 +198,7 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
       <Box sx={{ px: 3, py: 2, bgcolor: isDark ? '#0A0F1E' : 'background.default', borderTop: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'divider' }}>
         <Typography variant="caption" sx={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'text.disabled', lineHeight: 1.5, display: 'block', textAlign: 'center', fontSize: '0.7rem' }}>
           Les credits permettent de deverrouiller les coordonnees des annonceurs.
-          Paiement securise via FedaPay.
+          Paiement securise.
         </Typography>
       </Box>
     </Dialog>

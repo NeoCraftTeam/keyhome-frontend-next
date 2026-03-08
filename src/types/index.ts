@@ -57,13 +57,62 @@ export enum PaymentType {
   UNLOCK = 'unlock',
   SUBSCRIPTION = 'subscription',
   BOOST = 'boost',
+  CREDIT = 'credit',
 }
 
 export enum PaymentMethod {
   ORANGE_MONEY = 'orange_money',
   MOBILE_MONEY = 'mobile_money',
+  CARD = 'card',
   STRIPE = 'stripe',
-  FEDAPAY = 'fedapay',
+  FLUTTERWAVE = 'flutterwave',
+}
+
+export type PaymentGateway = 'flutterwave';
+
+export interface FlutterwaveInitiatePayload {
+  type: 'unlock' | 'subscription' | 'credit';
+  payment_method?: 'mobile_money' | 'orange_money' | 'flutterwave' | 'card';
+  phone_number?: string;
+  ad_id?: string | null;
+  agency_id?: string | null;
+  plan_id?: string | null;
+  period?: 'monthly' | 'yearly' | null;
+}
+
+export interface FlutterwaveInitiateResponse {
+  reference: string;
+  payment_link: string;
+  tx_ref: string;
+  gateway: PaymentGateway;
+  status: 'pending';
+}
+
+export interface FlutterwaveVerifyResponse {
+  status: string;
+  is_paid: boolean;
+  is_unlocked: boolean;
+  reference: string;
+  ad_id: string | null;
+  tx_ref: string;
+  gateway: PaymentGateway;
+}
+
+export interface PaymentHistoryItem {
+  id: string;
+  reference: string | null;
+  status: string;
+  type: string;
+  amount: number;
+  gateway: PaymentGateway | null;
+  payment_method: string | null;
+  phone_number: string | null;
+  payment_link: string | null;
+  ad: { id: string } | null;
+  agency_id: string | null;
+  pack_name: string | null;
+  points_awarded: number | null;
+  created_at: string;
 }
 
 // --- Models ---

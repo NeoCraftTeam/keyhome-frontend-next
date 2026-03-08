@@ -15,7 +15,7 @@ export const creditsService = {
   },
 
   /**
-   * Initiate a FedaPay checkout to purchase a point package.
+   * Initiate a Flutterwave checkout to purchase a point package.
    * Returns the payment URL to redirect the user to.
    */
   async purchase(
