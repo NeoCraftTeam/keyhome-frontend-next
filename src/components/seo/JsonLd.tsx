@@ -210,7 +210,7 @@ const faqPageSchema = {
         text:
           "KeyHome accepte tous les moyens de paiement les plus utilisés en Afrique : " +
           "Mobile Money (MTN Mobile Money, Moov Money, Orange Money, Wave), " +
-          "cartes bancaires (Visa, Mastercard) et paiement par FedaPay — le tout chiffré et sécurisé. " +
+          "cartes bancaires (Visa, Mastercard) et paiement par Flutterwave — le tout chiffré et sécurisé. " +
           "Votre transaction est confirmée instantanément et vous recevez immédiatement les coordonnées du propriétaire. " +
           "En cas de problème, notre support client vous rembourse.",
       },

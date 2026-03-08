@@ -114,7 +114,7 @@ export default function TermsOfUsePage() {
               <li>Abonnements : forfaits pour les professionnels</li>
             </ul>
             <p className={styles.note}>
-              Les paiements sont traités de manière sécurisée via FedaPay. Les
+              Les paiements sont traités de manière sécurisé. Les
               achats ne sont généralement pas remboursables une fois activés.
             </p>
           </section>
