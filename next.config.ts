@@ -23,6 +23,8 @@ const connectSources = [
   'https://www.google-analytics.com',
   'https://analytics.google.com',
   'https://*.googletagmanager.com',
+  // Flutterwave
+  'https://api.flutterwave.com',
   apiOrigin,
 ].filter(Boolean).join(' ');
 
@@ -30,13 +32,13 @@ const isDev = process.env.NODE_ENV === 'development';
 
 const cspHeader = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com blob:`,
+  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com blob:`,
   `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://clerk.neocraft.dev`,
   `worker-src 'self' blob:`,
   `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test https://img.clerk.com ${apiOrigin}`,
   `connect-src ${connectSources}`,
   `font-src 'self' https://fonts.gstatic.com https://ray.st https://clerk.neocraft.dev`,
-  `frame-src https://*.clerk.accounts.dev https://clerk.neocraft.dev https://*.clerk.com https://challenges.cloudflare.com`,
+  `frame-src https://*.clerk.accounts.dev https://clerk.neocraft.dev https://*.clerk.com https://challenges.cloudflare.com https://checkout.flutterwave.com`,
   `frame-ancestors 'none'`,
 ].join('; ');
 

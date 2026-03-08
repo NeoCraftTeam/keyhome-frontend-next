@@ -8,7 +8,8 @@ const DEFAULT_TRUSTED_HOSTS = [
   'clerk.com',
   'clerk.neocraft.dev',
   'clerk.shared.global',
-  'fedapay.com',
+  'flutterwave.com',
+  'dev-flutterwave.com',
 ];
 
 function getConfiguredTrustedHosts(): string[] {
