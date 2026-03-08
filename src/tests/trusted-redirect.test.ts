@@ -52,7 +52,7 @@ describe('isTrustedRedirectUrl', () => {
   });
 
   describe('trusted external hosts', () => {
-    // BUG CATCH: After Clerk or FedaPay OAuth flows, the app needs to
+    // BUG CATCH: After Clerk or Flutterwave OAuth flows, the app needs to
     // redirect to these external services. Blocking them breaks auth/payments.
     it('allows keyhome.app', () => {
       expect(isTrustedRedirectUrl('https://keyhome.app/callback')).toBe(true);
@@ -70,8 +70,8 @@ describe('isTrustedRedirectUrl', () => {
       expect(isTrustedRedirectUrl('https://clerk.com/sso')).toBe(true);
     });
 
-    it('allows fedapay.com', () => {
-      expect(isTrustedRedirectUrl('https://fedapay.com/pay/abc123')).toBe(true);
+    it('allows flutterwave.com', () => {
+      expect(isTrustedRedirectUrl('https://flutterwave.com/pay/abc123')).toBe(true);
     });
 
     // BUG CATCH: Subdomains of trusted hosts must be allowed, e.g.
@@ -81,7 +81,11 @@ describe('isTrustedRedirectUrl', () => {
     });
 
     it('allows deep subdomains of trusted hosts', () => {
-      expect(isTrustedRedirectUrl('https://app.sandbox.fedapay.com/tx/123')).toBe(true);
+      expect(isTrustedRedirectUrl('https://checkout.flutterwave.com/pay/123')).toBe(true);
+    });
+
+    it('allows dev-flutterwave.com sandbox checkout', () => {
+      expect(isTrustedRedirectUrl('https://checkout-v2.dev-flutterwave.com/v3/hosted/pay/abc123')).toBe(true);
     });
   });
 

@@ -16,7 +16,7 @@ export default function SurveyPrompt({ surveyId, title, description }: SurveyPro
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const dismissed = localStorage.getItem(`survey_dismissed_${surveyId}`);
+    const dismissed = sessionStorage.getItem(`survey_dismissed_${surveyId}`);
     if (!dismissed) {
       const timer = setTimeout(() => setVisible(true), 2000);
       return () => clearTimeout(timer);
@@ -24,7 +24,7 @@ export default function SurveyPrompt({ surveyId, title, description }: SurveyPro
   }, [surveyId]);
 
   const handleDismiss = () => {
-    localStorage.setItem(`survey_dismissed_${surveyId}`, 'true');
+    sessionStorage.setItem(`survey_dismissed_${surveyId}`, 'true');
     setVisible(false);
   };
 
