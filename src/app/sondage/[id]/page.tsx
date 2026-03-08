@@ -30,8 +30,8 @@ export default function SurveyPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: (answers: SurveyAnswerPayload[]) =>
-      surveysService.submitResponse(surveyId, answers),
+    mutationFn: ({ answers, anonymous }: { answers: SurveyAnswerPayload[]; anonymous: boolean }) =>
+      surveysService.submitResponse(surveyId, answers, anonymous),
     onSuccess: () => {
       setSubmitted(true);
     },
@@ -114,7 +114,7 @@ export default function SurveyPage() {
         </Button>
         <SurveyForm
           survey={survey}
-          onSubmit={(answers) => mutation.mutate(answers)}
+          onSubmit={(answers, anonymous) => mutation.mutate({ answers, anonymous })}
           isSubmitting={mutation.isPending}
         />
       </FadeIn>

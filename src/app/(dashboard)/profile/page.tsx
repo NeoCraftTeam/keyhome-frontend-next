@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { LockOpen as LockOpenIcon } from '@mui/icons-material';
 import {
   Box,
   Container,
@@ -35,6 +34,8 @@ import {
   LinkOff as LinkOffIcon,
   Assignment as AssignmentIcon,
   CheckCircleOutline as CheckCircleOutlineIcon,
+  ReceiptLong as ReceiptLongIcon,
+  LockOpen as LockOpenIcon,
 } from '@mui/icons-material';
 import { Apple, Facebook, Google } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
@@ -47,7 +48,9 @@ import { surveysService } from '@/services/surveys.service';
 import { City } from '@/types';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import AdCard from '@/components/ads/AdCard';
+import PaymentHistoryTable from '@/components/payment/PaymentHistoryTable';
 import FadeIn from '@/components/ui/FadeIn';
+import PhoneField from '@/components/ui/PhoneField';
 import { useUser } from '@clerk/nextjs';
 
 interface TabPanelProps {
@@ -90,13 +93,6 @@ export default function ProfilePage() {
   const [snackbar, setSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Unlocked ads
-  const { data: unlockedAds = [], isLoading: isLoadingUnlocked } = useQuery({
-    queryKey: ['unlocked-ads'],
-    queryFn: () => unlockedAdsService.list(),
-    staleTime: 2 * 60 * 1000,
-  });
-
   // Password change
   const [passwordForm, setPasswordForm] = useState({
     current_password: '',
@@ -132,6 +128,12 @@ export default function ProfilePage() {
     queryKey: ['survey-has-answered', activeSurvey?.id],
     queryFn: () => surveysService.hasAnswered(activeSurvey!.id),
     enabled: !!activeSurvey?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: unlockedAds = [] } = useQuery({
+    queryKey: ['unlocked-ads'],
+    queryFn: () => unlockedAdsService.list(),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -181,7 +183,13 @@ export default function ProfilePage() {
       }
 
       const updated = await usersService.update(user!.id, formData);
-      setUser({ ...user!, ...updated });
+      // Merge city_name from selected city as fallback if the API doesn't return it loaded
+      const cityName = selectedCity?.name ?? updated.city_name ?? user!.city_name;
+      setUser({ ...user!, ...updated, city_name: cityName });
+      if (selectedCity) {
+        setCityInput(selectedCity.name);
+      }
+      await refreshUser();
       setSnackbar({ message: 'Profil mis à jour avec succès.', severity: 'success' });
       setIsEditing(false);
     } catch (err) {
@@ -284,7 +292,16 @@ export default function ProfilePage() {
             <Button
               variant="outlined"
               startIcon={<EditIcon />}
-              onClick={() => setIsEditing(true)}
+              onClick={() => {
+                setCityInput(user.city_name || '');
+                setEditForm({
+                  firstname: user.firstname,
+                  lastname: user.lastname,
+                  phone_number: user.phone_number || '',
+                });
+                setSelectedCity(null);
+                setIsEditing(true);
+              }}
               sx={{ textTransform: 'none' }}
               size="medium"
             >
@@ -311,6 +328,7 @@ export default function ProfilePage() {
         <Tab icon={<EditIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Informations" />
         <Tab icon={<FavoriteIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={`Favoris (${favorites.length})`} />
         <Tab icon={<LockOpenIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={`Déverrouillées (${unlockedAds.length})`} />
+        <Tab icon={<ReceiptLongIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Paiements" />
         <Tab icon={<LockIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Sécurité" />
         <Tab icon={<LinkIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Comptes liés" />
         <Tab icon={<AssignmentIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Sondage" />
@@ -342,11 +360,9 @@ export default function ProfilePage() {
             <TextField fullWidth label="Email" value={user.email} disabled helperText="L'email ne peut pas être modifié" />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              fullWidth
-              label="Téléphone"
+            <PhoneField
               value={isEditing ? editForm.phone_number : user.phone_number || ''}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, phone_number: e.target.value }))}
+              onChange={(val) => setEditForm((prev) => ({ ...prev, phone_number: val }))}
               disabled={!isEditing}
             />
           </Grid>
@@ -448,13 +464,9 @@ export default function ProfilePage() {
         )}
       </TabPanel>
 
-      {/* Tab 2: Unlocked ads */}
+      {/* Tab 2: Unlocked Ads */}
       <TabPanel value={tab} index={2}>
-        {isLoadingUnlocked ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress />
-          </Box>
-        ) : unlockedAds.length === 0 ? (
+        {unlockedAds.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 6 }}>
             <LockOpenIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
             <Typography variant="h6" color="text.secondary">
@@ -475,8 +487,19 @@ export default function ProfilePage() {
         )}
       </TabPanel>
 
-      {/* Tab 3: Security (password) */}
+      {/* Tab 3: Payment History */}
       <TabPanel value={tab} index={3}>
+        <Typography variant="h6" fontWeight={600} gutterBottom>
+          Historique des paiements
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Retrouvez ici toutes vos transactions de crédits.
+        </Typography>
+        <PaymentHistoryTable perPage={10} />
+      </TabPanel>
+
+      {/* Tab 4: Security (password) */}
+      <TabPanel value={tab} index={4}>
         <Typography variant="h6" fontWeight={600} gutterBottom>
           Changer le mot de passe
         </Typography>
@@ -585,8 +608,8 @@ export default function ProfilePage() {
         </Box>
       </TabPanel>
 
-      {/* Tab 4: Connected OAuth accounts */}
-      <TabPanel value={tab} index={4}>
+      {/* Tab 5: Connected OAuth accounts */}
+      <TabPanel value={tab} index={5}>
         <Typography variant="h6" fontWeight={600} gutterBottom>
           Comptes liés
         </Typography>
@@ -766,8 +789,8 @@ export default function ProfilePage() {
         </Box>
       </TabPanel>
 
-      {/* Tab 5: Sondage */}
-      <TabPanel value={tab} index={5}>
+      {/* Tab 6: Sondage */}
+      <TabPanel value={tab} index={6}>
         <Typography variant="h6" fontWeight={600} gutterBottom>
           Sondage de satisfaction
         </Typography>

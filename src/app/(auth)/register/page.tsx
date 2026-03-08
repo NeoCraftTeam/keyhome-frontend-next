@@ -2,6 +2,7 @@
 
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
+import PhoneField from '@/components/ui/PhoneField';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { registerTokenGetter } from '@/lib/auth-token';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -17,7 +18,6 @@ import {
   Lock as LockIcon,
   Person as PersonIcon,
   PersonOutline,
-  Phone as PhoneIcon,
   Visibility,
   VisibilityOff,
 } from '@mui/icons-material';
@@ -426,24 +426,19 @@ export default function RegisterPage() {
                   }}
                   sx={{ mb: 2 }}
                 />
-                <TextField
-                  fullWidth
-                  label="Téléphone"
-                  value={form.phone_number}
-                  onChange={(e) => updateField('phone_number', e.target.value)}
-                  placeholder="+237 6XX XXX XXX"
-                  required
-                  error={form.phone_number.length > 0 && !isPhoneValid}
-                  helperText={
-                    form.phone_number.length > 0 && !isPhoneValid
-                      ? 'Format invalide (ex: +237 6XX XXX XXX)'
-                      : ''
-                  }
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><PhoneIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
-                  }}
-                  sx={{ mb: 2 }}
-                />
+                <Box sx={{ mb: 2 }}>
+                  <PhoneField
+                    value={form.phone_number}
+                    onChange={(val) => updateField('phone_number', val)}
+                    required
+                    error={form.phone_number.length > 0 && !isPhoneValid}
+                    helperText={
+                      form.phone_number.length > 0 && !isPhoneValid
+                        ? 'Format invalide (ex: +237 6XX XXX XXX)'
+                        : ''
+                    }
+                  />
+                </Box>
                 <Autocomplete
                   options={cities}
                   getOptionLabel={(opt) => opt.name}

@@ -4,6 +4,7 @@ import PropertyAttributes from '@/components/ads/PropertyAttributes';
 import StickyPropertyBar from '@/components/ads/StickyPropertyBar';
 import ReviewForm from '@/components/reviews/ReviewForm';
 import PackageCard from '@/components/ui/PackageCard';
+import ImageLightbox from '@/components/ui/ImageLightbox';
 import ViewingBookingPanel from '@/components/viewing/ViewingBookingPanel';
 import QueryError from '@/components/ui/QueryError';
 import FadeIn from '@/components/ui/FadeIn';
@@ -23,7 +24,6 @@ import {
   CalendarMonth,
   Call,
   ChevronLeft,
-  ChevronRight,
   Close,
   ContentCopy,
   Description,
@@ -40,9 +40,6 @@ import {
   Star,
   Verified,
   WhatsApp,
-  ZoomIn,
-  ZoomOut,
-  ZoomOutMap,
 } from '@mui/icons-material';
 import AppLoader from '@/components/ui/AppLoader';
 import {
@@ -75,7 +72,6 @@ function AdDetailContent() {
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [lightboxZoom, setLightboxZoom] = useState(1);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [isPackageLoading, setIsPackageLoading] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState('');
@@ -84,7 +80,7 @@ function AdDetailContent() {
   const [confirmStep, setConfirmStep] = useState(false);
   const [snackbar, setSnackbar] = useState('');
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
-  const { user: currentUser, refreshUser, isAuthenticated } = useAuth();
+  const { user: currentUser, refreshUser, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
   const refreshedRef = useRef(false);
   const viewTrackedRef = useRef(false);
@@ -97,7 +93,7 @@ function AdDetailContent() {
     if (justUnlocked) {
       refreshedRef.current = true;
       sessionStorage.removeItem('kh_just_unlocked');
-      queryClient.invalidateQueries({ queryKey: ['ad', adId] });
+      queryClient.invalidateQueries({ queryKey: ['ad', adId, isAuthenticated] });
     }
   }, [adId, queryClient]);
 
@@ -110,15 +106,9 @@ function AdDetailContent() {
   }, [adId]);
 
   const { data: ad, isLoading, isError, refetch } = useQuery({
-    queryKey: ['ad', adId],
+    queryKey: ['ad', adId, isAuthenticated],
     queryFn: () => adsService.show(adId),
-    enabled: !!adId,
-  });
-
-  const { data: unlockCostData } = useQuery({
-    queryKey: ['unlock-cost'],
-    queryFn: () => paymentsService.getUnlockCost(),
-    staleTime: 5 * 60_000,
+    enabled: !!adId && !isAuthLoading,
   });
 
   // Live balance query — shares the same cache key as CreditsWidget so both
@@ -190,16 +180,16 @@ function AdDetailContent() {
     try {
       const response = await paymentsService.initialize(ad.id);
       setUnlockState(response);
-      if (response.status === 'unlocked') {
+      if (response.status === 'unlocked' || response.status === 'already_unlocked' || response.status === 'owner') {
         // Refresh the ad to show unlocked content
-        await queryClient.invalidateQueries({ queryKey: ['ad', adId] });
+        await queryClient.invalidateQueries({ queryKey: ['ad', adId, isAuthenticated] });
         // Immediately write the server-confirmed balance into the shared cache.
         // setQueryData is synchronous \u2014 the Navbar widget and dialog both update
         // in the same render cycle with zero network wait.
         if (response.points_balance !== undefined) {
           queryClient.setQueryData<number>(['credits-balance'], response.points_balance);
         } else {
-          const pointsUsed = response.points_used ?? unlockCostData?.unlock_cost_points ?? 0;
+          const pointsUsed = response.points_used ?? 0;
           queryClient.setQueryData<number>(['credits-balance'], (old) => Math.max(0, (old ?? 0) - pointsUsed));
         }
         setPaymentDialogOpen(false);
@@ -231,13 +221,7 @@ function AdDetailContent() {
 
   const openLightbox = (idx: number) => {
     setLightboxIndex(idx);
-    setLightboxZoom(1);
     setLightboxOpen(true);
-  };
-
-  const changeLightboxImage = (idx: number) => {
-    setLightboxIndex(idx);
-    setLightboxZoom(1);
   };
 
   const features = [
@@ -987,7 +971,7 @@ function AdDetailContent() {
               >
                 <Typography variant="body2" color="text.secondary">Coût :</Typography>
                 <Typography variant="body2" fontWeight={700} color="text.primary">
-                  {unlockState?.required_points ?? unlockCostData?.unlock_cost_points ?? '—'} crédits
+                  {unlockState?.required_points ?? '—'} crédits
                 </Typography>
               </Box>
             </Box>
@@ -1061,7 +1045,7 @@ function AdDetailContent() {
                         Confirmer le déverrouillage
                       </Typography>
                       <Typography variant="body2">
-                        <strong>{unlockState?.required_points ?? unlockCostData?.unlock_cost_points ?? '—'} crédits</strong> seront déduits
+                        <strong>{unlockState?.required_points ?? '—'} crédits</strong> seront déduits
                         de votre solde. Cette action est irréversible.
                       </Typography>
                     </Alert>
@@ -1134,152 +1118,13 @@ function AdDetailContent() {
         </Box>
       </Dialog>
 
-      {/* Lightbox — fullscreen with zoom, transparent paper */}
-      <Dialog
+      {/* Lightbox — Airbnb-style fullscreen with swipe, zoom, thumbnails */}
+      <ImageLightbox
+        images={images}
         open={lightboxOpen}
+        initialIndex={lightboxIndex}
         onClose={() => setLightboxOpen(false)}
-        fullScreen
-        onKeyDown={(e) => {
-          if (e.key === 'ArrowLeft') changeLightboxImage((lightboxIndex - 1 + images.length) % images.length);
-          else if (e.key === 'ArrowRight') changeLightboxImage((lightboxIndex + 1) % images.length);
-          else if (e.key === 'Escape') setLightboxOpen(false);
-          else if (e.key === '+' || e.key === '=') setLightboxZoom((z) => Math.min(4, parseFloat((z + 0.25).toFixed(2))));
-          else if (e.key === '-') setLightboxZoom((z) => Math.max(0.5, parseFloat((z - 0.25).toFixed(2))));
-        }}
-        slotProps={{ backdrop: { sx: { bgcolor: 'rgba(8,8,8,0.93)' } } }}
-        PaperProps={{
-          sx: {
-            bgcolor: 'transparent',
-            boxShadow: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-          },
-        }}
-      >
-        {/* Top bar */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            px: { xs: 1.5, sm: 2 },
-            py: 1,
-            bgcolor: 'rgba(0,0,0,0.45)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-          }}
-        >
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
-            {lightboxIndex + 1} / {images.length}
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <IconButton
-              size="small"
-              aria-label="Dézoomer"
-              onClick={() => setLightboxZoom((z) => Math.max(0.5, parseFloat((z - 0.25).toFixed(2))))}
-              disabled={lightboxZoom <= 0.5}
-              sx={{ color: '#fff', opacity: lightboxZoom <= 0.5 ? 0.3 : 1 }}
-            >
-              <ZoomOut />
-            </IconButton>
-            <Typography variant="caption" sx={{ color: '#fff', minWidth: 36, textAlign: 'center', userSelect: 'none' }}>
-              {Math.round(lightboxZoom * 100)}%
-            </Typography>
-            <IconButton
-              size="small"
-              aria-label="Zoomer"
-              onClick={() => setLightboxZoom((z) => Math.min(4, parseFloat((z + 0.25).toFixed(2))))}
-              disabled={lightboxZoom >= 4}
-              sx={{ color: '#fff', opacity: lightboxZoom >= 4 ? 0.3 : 1 }}
-            >
-              <ZoomIn />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={() => setLightboxZoom(1)}
-              aria-label="Réinitialiser le zoom"
-              title="Réinitialiser"
-              sx={{ color: 'rgba(255,255,255,0.65)', ml: 0.5 }}
-            >
-              <ZoomOutMap sx={{ fontSize: 18 }} />
-            </IconButton>
-            <IconButton aria-label="Fermer la visionneuse" onClick={() => setLightboxOpen(false)} sx={{ color: '#fff', ml: 0.5 }}>
-              <Close />
-            </IconButton>
-          </Box>
-        </Box>
-
-        {/* Image area */}
-        <Box
-          sx={{
-            flex: 1,
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            cursor: lightboxZoom >= 3 ? 'zoom-out' : 'zoom-in',
-          }}
-          onClick={() => {
-            if (lightboxZoom < 3) {
-              setLightboxZoom((z) => parseFloat((z + 0.5).toFixed(2)));
-            } else {
-              setLightboxZoom(1);
-            }
-          }}
-        >
-          {/* Prev */}
-          <IconButton
-            aria-label="Photo précédente"
-            onClick={(e) => { e.stopPropagation(); changeLightboxImage((lightboxIndex - 1 + images.length) % images.length); }}
-            sx={{
-              color: '#fff',
-              position: 'absolute',
-              left: { xs: 4, sm: 16 },
-              zIndex: 2,
-              bgcolor: 'rgba(0,0,0,0.35)',
-              '&:hover': { bgcolor: 'rgba(0,0,0,0.6)' },
-            }}
-          >
-            <ChevronLeft sx={{ fontSize: 32 }} />
-          </IconButton>
-
-          {images.length > 0 && (
-            <Box
-              component="img"
-              src={images[lightboxIndex]?.url}
-              alt={`Photo ${lightboxIndex + 1}`}
-              sx={{
-                maxWidth: '100%',
-                maxHeight: 'calc(100vh - 60px)',
-                objectFit: 'contain',
-                transform: `scale(${lightboxZoom})`,
-                transformOrigin: 'center center',
-                transition: 'transform 0.22s ease',
-                borderRadius: lightboxZoom <= 1 ? 2 : 0,
-                userSelect: 'none',
-                pointerEvents: 'none',
-              }}
-            />
-          )}
-
-          {/* Next */}
-          <IconButton
-            aria-label="Photo suivante"
-            onClick={(e) => { e.stopPropagation(); changeLightboxImage((lightboxIndex + 1) % images.length); }}
-            sx={{
-              color: '#fff',
-              position: 'absolute',
-              right: { xs: 4, sm: 16 },
-              zIndex: 2,
-              bgcolor: 'rgba(0,0,0,0.35)',
-              '&:hover': { bgcolor: 'rgba(0,0,0,0.6)' },
-            }}
-          >
-            <ChevronRight sx={{ fontSize: 32 }} />
-          </IconButton>
-        </Box>
-      </Dialog>
+      />
 
       {/* Sticky mobile contact bar */}
       {ad && (
