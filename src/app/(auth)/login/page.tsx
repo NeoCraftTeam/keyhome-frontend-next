@@ -4,6 +4,7 @@ import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
+import { useLandingStats } from '@/hooks/useLandingStats';
 import {
     Email as EmailIcon,
     Visibility,
@@ -25,6 +26,7 @@ import { useState } from 'react';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { authStats } = useLandingStats();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -95,16 +97,12 @@ export default function LoginPage() {
           </FadeIn>
           <FadeIn delay={0.4} direction="up">
             <Typography variant="h5" color="rgba(255,255,255,0.9)" fontWeight={400} sx={{ maxWidth: 360 }}>
-              Trouvez votre bien immobilier idéal 
+              Trouvez votre bien immobilier idéal
             </Typography>
           </FadeIn>
           <FadeIn delay={0.6} direction="up">
             <Box sx={{ mt: 3, display: 'flex', gap: 4 }}>
-              {[
-                { value: '1K+', label: 'Annonces' },
-                { value: '50+', label: 'Villes' },
-                { value: '500+', label: 'Agents' },
-              ].map((stat) => (
+              {authStats.map((stat) => (
                 <Box key={stat.label}>
                   <Typography variant="h5" fontWeight={700} color="#fff">{stat.value}</Typography>
                   <Typography variant="caption" color="rgba(255,255,255,0.7)">{stat.label}</Typography>

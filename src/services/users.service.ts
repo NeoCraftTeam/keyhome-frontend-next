@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import { User, PaginatedResponse, Ad } from '@/types';
+import { Ad, User, PaginatedResponse } from '@/types';
 
 export const usersService = {
   async list(params?: { page?: number }): Promise<PaginatedResponse<User>> {

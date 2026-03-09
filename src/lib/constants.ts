@@ -71,17 +71,3 @@ export function truncate(text: string, maxLength: number): string {
   }
   return text.slice(0, maxLength).trimEnd() + '…';
 }
-
-/**
- * Returns the owner/landlord platform URL, always with an absolute protocol.
- * Prevents protocol-less env values (e.g. "owner.keyhome.test") from being
- * treated as relative paths by the browser.
- */
-export function getOwnerUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_OWNER_URL || '';
-  if (!raw) return '#';
-  // Already absolute
-  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-  // Assume http for local/staging domains; production should use https
-  return `http://${raw}`;
-}

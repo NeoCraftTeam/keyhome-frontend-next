@@ -28,8 +28,8 @@ const steps = [
     number: '03',
     icon: <LockOpenOutlined style={{ fontSize: 26 }} />,
     color: '#10B981',
-    title: 'Déverrouillez les contacts',
-    description: 'Payez un petit montant via Mobile Money pour accéder aux coordonnées complètes du propriétaire.',
+    title: 'Accès direct & sécurisé',
+    description: 'Payez un petit montant unique via Mobile Money pour accéder aux coordonnées. Zéro commission, 100% direct.',
   },
   {
     number: '04',

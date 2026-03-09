@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
+import { useLandingStats } from '@/hooks/useLandingStats';
 
 const ThreeCanvas = dynamic(() => import('./ThreeCanvas'), {
   ssr: false,
@@ -35,6 +36,7 @@ const CITIES = ['Douala', 'Garoua', 'Accra', 'Cotonou', 'Lomé', 'Bafoussam'];
 export default function HeroSection() {
   const { isDark, text, textSub, textMuted, bg, surface, border } = useLandingTheme();
   const router = useRouter();
+  const { stats, isLoading: statsLoading } = useLandingStats();
 
   // Skip heavy Three.js canvas on mobile for better LCP / performance
   const [isMobile, setIsMobile] = useState(false);
@@ -49,32 +51,6 @@ export default function HeroSection() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Dynamic stats
-  const [stats, setStats] = useState([
-    { value: '2 000+', label: 'Annonces actives' },
-    { value: '10+', label: 'Villes couvertes' },
-    { value: '5 000+', label: 'Utilisateurs' },
-  ]);
-  const [statsLoaded, setStatsLoaded] = useState(false);
-
-  useEffect(() => {
-    const fmt = (n: number): string => {
-      if (n >= 1000) {
-        return new Intl.NumberFormat('fr-FR').format(n) + '+';
-      }
-      return n + '+';
-    };
-    api.get('/stats/landing')
-      .then(({ data }) => {
-        setStats([
-          { value: fmt(data.ads_count ?? 0), label: 'Annonces actives' },
-          { value: fmt(data.cities_count ?? 0), label: 'Villes couvertes' },
-          { value: fmt(data.users_count ?? 0), label: 'Utilisateurs' },
-        ]);
-        setStatsLoaded(true);
-      })
-      .catch(() => { setStatsLoaded(true); /* keep fallback values */ });
-  }, []);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -420,7 +396,7 @@ export default function HeroSection() {
             style={{ marginTop: 56 }}
           >
             {stats.map((stat) => (
-              <div key={stat.label} style={{ textAlign: 'center', opacity: statsLoaded ? 1 : 0.5, transition: 'opacity 0.5s ease, color 0.4s ease' }}>
+              <div key={stat.label} style={{ textAlign: 'center', opacity: !statsLoading ? 1 : 0.5, transition: 'opacity 0.5s ease, color 0.4s ease' }}>
                 <div style={{ fontSize: 28, fontWeight: 800, color: text, letterSpacing: '-1px', transition: 'color 0.4s ease' }}>{stat.value}</div>
                 <div style={{ fontSize: 13, color: textMuted, marginTop: 2, transition: 'color 0.4s ease' }}>{stat.label}</div>
               </div>

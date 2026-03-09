@@ -57,13 +57,62 @@ export enum PaymentType {
   UNLOCK = 'unlock',
   SUBSCRIPTION = 'subscription',
   BOOST = 'boost',
+  CREDIT = 'credit',
 }
 
 export enum PaymentMethod {
   ORANGE_MONEY = 'orange_money',
   MOBILE_MONEY = 'mobile_money',
+  CARD = 'card',
   STRIPE = 'stripe',
-  FEDAPAY = 'fedapay',
+  FLUTTERWAVE = 'flutterwave',
+}
+
+export type PaymentGateway = 'flutterwave';
+
+export interface FlutterwaveInitiatePayload {
+  type: 'unlock' | 'subscription' | 'credit';
+  payment_method?: 'mobile_money' | 'orange_money' | 'flutterwave' | 'card';
+  phone_number?: string;
+  ad_id?: string | null;
+  agency_id?: string | null;
+  plan_id?: string | null;
+  period?: 'monthly' | 'yearly' | null;
+}
+
+export interface FlutterwaveInitiateResponse {
+  reference: string;
+  payment_link: string;
+  tx_ref: string;
+  gateway: PaymentGateway;
+  status: 'pending';
+}
+
+export interface FlutterwaveVerifyResponse {
+  status: string;
+  is_paid: boolean;
+  is_unlocked: boolean;
+  reference: string;
+  ad_id: string | null;
+  tx_ref: string;
+  gateway: PaymentGateway;
+}
+
+export interface PaymentHistoryItem {
+  id: string;
+  reference: string | null;
+  status: string;
+  type: string;
+  amount: number;
+  gateway: PaymentGateway | null;
+  payment_method: string | null;
+  phone_number: string | null;
+  payment_link: string | null;
+  ad: { id: string } | null;
+  agency_id: string | null;
+  pack_name: string | null;
+  points_awarded: number | null;
+  created_at: string;
 }
 
 // --- Models ---
@@ -116,6 +165,39 @@ export interface AdImage {
   is_primary: boolean;
 }
 
+export interface TourHotspot {
+  pitch: number;
+  yaw: number;
+  target_scene: string;
+  label: string;
+  type?: 'scene';
+}
+
+export interface TourScene {
+  id: string;
+  title: string;
+  type?: 'equirectangular' | 'cubemap' | 'multires';
+  image_url?: string;
+  initial_view: { pitch: number; yaw: number; hfov: number };
+  hotspots: TourHotspot[];
+  /** Cubemap: 6 proxy URLs in Pannellum order [f, r, b, l, u, d] */
+  cube_map?: string[];
+  /** Multires tile pyramid base URL (up to the /tiles segment) */
+  tiles_base_url?: string;
+  /** Multires fallback low-res faces base URL */
+  fallback_base_url?: string;
+  tiles_max_level?: number;
+  cube_resolution?: number;
+  /** True while the background conversion job is running */
+  processing?: boolean;
+  processing_failed?: boolean;
+}
+
+export interface TourConfig {
+  default_scene: string;
+  scenes: TourScene[];
+}
+
 export interface GeoLocation {
   latitude: number;
   longitude: number;
@@ -136,6 +218,11 @@ export interface Ad {
   status: AdStatus;
   status_label?: string;
   is_unlocked?: boolean;
+  unlock_cost?: number;
+  has_3d_tour?: boolean;
+  tour_config?: TourConfig | null;
+  tour_scenes_count?: number;
+  tour_published_at?: string | null;
   total_images?: number;
   is_favorited?: boolean;
   view_count?: number;

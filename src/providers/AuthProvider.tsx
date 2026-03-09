@@ -252,6 +252,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     sessionStorage.removeItem('clerk_auth_email_hint');
     sessionStorage.removeItem('clerk_auth_prefill');
+    sessionStorage.removeItem('kh_flw_tx_ref');
+    sessionStorage.removeItem('kh_flw_reference');
+    sessionStorage.removeItem('kh_just_unlocked');
+    sessionStorage.removeItem('kh_redirect_after_login');
     clearSanctumToken();
     setUserState(null);
 

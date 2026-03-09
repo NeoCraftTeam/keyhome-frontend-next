@@ -37,7 +37,7 @@ const features = [
     bg: 'rgba(246,71,95,0.1)',
     border: 'rgba(246,71,95,0.2)',
     title: 'Accès sécurisé',
-    description: 'Débloquez les coordonnées du propriétaire instantanément avec un micro-paiement FedaPay. 100% sécurisé et vérifié.',
+    description: 'Débloquez les coordonnées du propriétaire instantanément avec un micro-paiement sécurisé. 100% vérifié.',
     href: '/register',
   },
   {

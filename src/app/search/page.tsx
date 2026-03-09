@@ -57,6 +57,7 @@ function SearchContent() {
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { isAuthenticated } = useAuth();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -447,28 +448,46 @@ function SearchContent() {
           </Grid>
 
           {!isLoading && ads.length === 0 && (
-            <Box sx={{ textAlign: 'center', py: 10 }}>
+            <Box sx={{ textAlign: 'center', py: 10, px: 3 }}>
               <HomeWorkIcon sx={{ fontSize: 72, color: 'text.disabled', mb: 2, opacity: 0.5 }} />
-              <Typography variant="h6" fontWeight={700} color="text.secondary" sx={{ mb: 0.5 }}>
+              <Typography variant="h6" fontWeight={700} color="text.secondary" sx={{ mb: 1 }}>
                 Aucun résultat trouvé
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 340, mx: 'auto' }}>
-                Essayez de modifier vos critères de recherche ou explorez d&apos;autres villes
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 360, mx: 'auto', lineHeight: 1.6 }}>
+                Nous n&apos;avons pas trouvé de biens correspondant à vos critères actuels. Essayez d&apos;élargir votre zone de recherche ou de réinitialiser vos filtres.
               </Typography>
-              <Button
-                variant="outlined"
-                onClick={clearFilters}
-                sx={{
-                  textTransform: 'none',
-                  borderRadius: '10px',
-                  fontWeight: 600,
-                  borderColor: 'primary.main',
-                  color: 'primary.main',
-                  '&:hover': { bgcolor: 'primary.main', color: '#fff' },
-                }}
-              >
-                Réinitialiser les filtres
-              </Button>
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Button
+                  variant="contained"
+                  onClick={clearFilters}
+                  sx={{
+                    textTransform: 'none',
+                    borderRadius: '10px',
+                    fontWeight: 700,
+                    px: 3,
+                    boxShadow: '0 4px 14px 0 rgba(246,71,95,0.39)',
+                  }}
+                >
+                  Réinitialiser tout
+                </Button>
+                {selectedCity && (
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setCityInput('');
+                      setSelectedCity(null);
+                      setPage(1);
+                    }}
+                    sx={{
+                      textTransform: 'none',
+                      borderRadius: '10px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Changer de ville
+                  </Button>
+                )}
+              </Box>
             </Box>
           )}
 
@@ -794,7 +813,7 @@ function SearchContent() {
           aria-label="WhatsApp"
           sx={{
             position: 'fixed',
-            bottom: { xs: 20, md: 28 },
+            bottom: { xs: 80, sm: 20, md: 28 },
             right: { xs: 16, md: 28 },
             bgcolor: '#25D366',
             color: '#fff',

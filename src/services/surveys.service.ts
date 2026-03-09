@@ -26,9 +26,10 @@ export const surveysService = {
    */
   async submitResponse(
     surveyId: string,
-    answers: SurveyAnswerPayload[]
+    answers: SurveyAnswerPayload[],
+    anonymous: boolean = false
   ): Promise<void> {
-    await api.post(`/surveys/${surveyId}/responses`, { answers });
+    await api.post(`/surveys/${surveyId}/responses`, { answers, anonymous });
   },
 
   /**

@@ -8,11 +8,15 @@ import { useEffect, useState } from 'react';
  * Shows a subtle toast when the user goes offline or comes back online.
  */
 export default function NetworkStatus() {
-  // Lazy initializer avoids the synchronous setState-in-effect lint error
   const [showOnline, setShowOnline] = useState(false);
-  const [showOffline, setShowOffline] = useState(() => !navigator.onLine);
+  const [showOffline, setShowOffline] = useState(false);
 
   useEffect(() => {
+    // Set initial offline state after mount (navigator is not available on server)
+    if (!navigator.onLine) {
+      setShowOffline(true);
+    }
+
     const goOnline = () => {
       setShowOffline(false);
       setShowOnline(true);

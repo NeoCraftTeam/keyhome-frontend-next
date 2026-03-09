@@ -152,8 +152,6 @@ describe('recommendationsService', () => {
 
 describe('unlockedAdsService', () => {
   describe('list', () => {
-    // BUG CATCH: Unlocked ads are shown in the user's profile/dashboard.
-    // Must unwrap data.data correctly.
     it('unwraps ads from data.data', async () => {
       mockedApi.get.mockResolvedValue({
         data: { data: [mockAd] },
@@ -178,3 +176,5 @@ describe('unlockedAdsService', () => {
     });
   });
 });
+
+

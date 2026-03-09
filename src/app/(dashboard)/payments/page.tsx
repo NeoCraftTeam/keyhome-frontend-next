@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Box, CircularProgress } from '@mui/material';
 
 /**
- * Legacy FedaPay callback route — kept for backward compatibility.
+ * Legacy payment callback route — kept for backward compatibility.
  * Immediately forwards to /payment-success which handles all retry logic.
  */
 function PaymentRedirect() {
