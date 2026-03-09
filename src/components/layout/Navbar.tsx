@@ -186,7 +186,7 @@ export default function Navbar() {
               gap: { xs: 0.5, md: 1 },
             }}
           >
-            
+
             {isAuthenticated ? (
               <>
                 {!isMobile && <CreditsWidget />}
@@ -386,7 +386,10 @@ export default function Navbar() {
             <Divider />
           </>
         )}
-        <List>
+        <List sx={{ px: 1 }}>
+          <Typography variant="overline" color="text.secondary" sx={{ px: 2, mb: 1, display: 'block', fontWeight: 700, letterSpacing: 1.2 }}>
+            Navigation
+          </Typography>
           {NAV_LINKS.map((link) => (
             <ListItem key={link.href} disablePadding>
               <ListItemButton
@@ -430,7 +433,12 @@ export default function Navbar() {
               />
             </ListItemButton>
           </ListItem>
-          <Divider sx={{ my: 1, mx: 2 }} />
+          <Divider sx={{ my: 1.5, mx: 2 }} />
+
+          <Typography variant="overline" color="text.secondary" sx={{ px: 2, mb: 1, display: 'block', fontWeight: 700, letterSpacing: 1.2 }}>
+            Compte
+          </Typography>
+
           {isAuthenticated && (
             <>
               <ListItem disablePadding>

@@ -146,6 +146,10 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
           credits disponibles
         </Typography>
 
+        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mt: 2, fontStyle: 'italic', maxWidth: 400, mx: 'auto', lineHeight: 1.4 }}>
+          "Grâce à KeyHome, j'ai trouvé mon studio à Douala en 2 jours seulement sans payer de commission d'agence." — Marc D.
+        </Typography>
+
         {/* Trust badge */}
         <Box sx={{
           display: 'inline-flex', alignItems: 'center', gap: 0.75, mt: 2,

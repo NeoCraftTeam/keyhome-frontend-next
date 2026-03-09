@@ -4,6 +4,10 @@ import type { NextConfig } from 'next';
 // Build CSP connect-src from environment — no hardcoded dev origins
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
 const apiOrigin = apiUrl ? new URL(apiUrl).origin : '';
+// The Laravel backend may be served from a different subdomain (e.g. owner.keyhome.test).
+// Tour image proxy URLs are generated from APP_URL, so we need that origin in the CSP too.
+const ownerUrl = process.env.NEXT_PUBLIC_OWNER_URL || '';
+const backendOrigin = ownerUrl ? new URL(ownerUrl).origin : apiOrigin;
 const clerkFrontendApiUrl = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_live_')
   ? 'https://clerk.neocraft.dev'
   : 'https://*.clerk.accounts.dev';
@@ -25,19 +29,24 @@ const connectSources = [
   'https://*.googletagmanager.com',
   // Flutterwave
   'https://api.flutterwave.com',
+  // Cloudflare R2 public CDN — Pannellum fetches panorama images via XHR (needs connect-src)
+  'https://*.r2.dev',
   apiOrigin,
+  // Laravel backend origin — tour image proxy URLs are generated from APP_URL (may differ from apiOrigin)
+  backendOrigin,
 ].filter(Boolean).join(' ');
 
 const isDev = process.env.NODE_ENV === 'development';
 
 const cspHeader = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com blob:`,
-  `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://clerk.neocraft.dev`,
+  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://cdn.jsdelivr.net blob:`,
+  `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://clerk.neocraft.dev https://cdn.jsdelivr.net`,
+  `font-src 'self' https://fonts.gstatic.com https://ray.st https://clerk.neocraft.dev https://cdn.jsdelivr.net`,
   `worker-src 'self' blob:`,
-  `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test https://img.clerk.com ${apiOrigin}`,
+  `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev ${apiOrigin} ${backendOrigin}`,
   `connect-src ${connectSources}`,
-  `font-src 'self' https://fonts.gstatic.com https://ray.st https://clerk.neocraft.dev`,
+
   `frame-src https://*.clerk.accounts.dev https://clerk.neocraft.dev https://*.clerk.com https://challenges.cloudflare.com https://checkout.flutterwave.com`,
   `frame-ancestors 'none'`,
 ].join('; ');

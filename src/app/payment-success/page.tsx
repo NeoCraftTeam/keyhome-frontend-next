@@ -40,13 +40,14 @@ function PaymentSuccessContent() {
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const adId = searchParams.get('ad_id');
+  const txRef = searchParams.get('tx_ref');
   const status = searchParams.get('status');
   const isApproved = status === 'approved';
 
   const attemptVerify = useCallback(async (attempt: number) => {
-    if (!adId) { return; }
+    if (!adId || !txRef) { return; }
     try {
-      const result = await paymentsService.verify(adId);
+      const result = await paymentsService.flutterwaveVerify(txRef);
       if (result.is_unlocked) {
         sessionStorage.setItem('kh_just_unlocked', adId);
         setIsUnlocked(true);
@@ -71,9 +72,9 @@ function PaymentSuccessContent() {
   // Silent extended polling: when status=approved but webhook hasn't arrived yet,
   // keep checking every 5s for up to 3 minutes before giving up entirely.
   const extendedPoll = useCallback(async (attempt: number) => {
-    if (!adId) { return; }
+    if (!adId || !txRef) { return; }
     try {
-      const result = await paymentsService.verify(adId);
+      const result = await paymentsService.flutterwaveVerify(txRef);
       if (result.is_unlocked) {
         sessionStorage.setItem('kh_just_unlocked', adId);
         setIsUnlocked(true);
@@ -97,7 +98,7 @@ function PaymentSuccessContent() {
     verifiedRef.current = true;
     attemptVerify(0);
     return () => { if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); } };
-  }, [adId, isApproved, attemptVerify]);
+  }, [adId, txRef, isApproved, attemptVerify]);
 
   // Start extended polling once initial retries are done and payment was approved
   useEffect(() => {

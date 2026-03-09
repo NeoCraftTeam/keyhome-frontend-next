@@ -7,6 +7,7 @@ import FeaturesSection from '@/components/landing/FeaturesSection';
 import HeroSection from '@/components/landing/HeroSection';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import LandlordSection from '@/components/landing/LandlordSection';
+import PricingSection from '@/components/landing/PricingSection';
 import LandingFooter from '@/components/landing/LandingFooter';
 import LandingNav from '@/components/landing/LandingNav';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
@@ -74,6 +75,7 @@ function LandingInner() {
         <HeroSection />
         <FeaturesSection />
         <HowItWorksSection />
+        <PricingSection />
         <LandlordSection />
         <TestimonialsSection />
         <FAQSection />

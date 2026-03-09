@@ -79,6 +79,11 @@ export const adsService = {
     await api.delete(`/ads/${id}`);
   },
 
+  async getStats(): Promise<{ ads_count: number; cities_count: number; users_count: number }> {
+    const { data } = await api.get('/stats/landing');
+    return data;
+  },
+
   /**
    * Record a view interaction — fire & forget, never throws.
    * Called once when a user opens an ad detail page.

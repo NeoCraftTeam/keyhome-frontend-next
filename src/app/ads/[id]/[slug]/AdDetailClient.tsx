@@ -2,6 +2,7 @@
 
 import PropertyAttributes from '@/components/ads/PropertyAttributes';
 import StickyPropertyBar from '@/components/ads/StickyPropertyBar';
+import TourViewer from '@/components/ads/TourViewer';
 import ReviewForm from '@/components/reviews/ReviewForm';
 import PackageCard from '@/components/ui/PackageCard';
 import ImageLightbox from '@/components/ui/ImageLightbox';
@@ -39,6 +40,7 @@ import {
   SquareFootOutlined,
   Star,
   Verified,
+  ViewInAr,
   WhatsApp,
 } from '@mui/icons-material';
 import AppLoader from '@/components/ui/AppLoader';
@@ -72,6 +74,7 @@ function AdDetailContent() {
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [showTour, setShowTour] = useState(false);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [isPackageLoading, setIsPackageLoading] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState('');
@@ -542,6 +545,97 @@ function AdDetailContent() {
               {ad.type && <Chip label={ad.type.name} color="primary" variant="outlined" sx={{ borderRadius: 2 }} />}
             </Box>
 
+            {/* 3D Tour — locked teaser or unlocked button */}
+            {ad.has_3d_tour && (
+              <Box sx={{ mb: 3 }}>
+                {isLocked ? (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      px: 2.5,
+                      py: 2,
+                      borderRadius: 3,
+                      border: '1px dashed',
+                      borderColor: 'divider',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : '#FAFAFA',
+                      opacity: 0.8,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        bgcolor: 'rgba(246,71,95,0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <ViewInAr sx={{ fontSize: 22, color: '#F6475F' }} />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="subtitle2" fontWeight={700} sx={{ lineHeight: 1.3 }}>
+                        Visite Virtuelle 3D disponible
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {ad.tour_scenes_count
+                          ? `${ad.tour_scenes_count} pièce${ad.tour_scenes_count > 1 ? 's' : ''} à explorer`
+                          : 'Déverrouillez pour accéder à la visite 360°'}
+                      </Typography>
+                    </Box>
+                    <Lock sx={{ fontSize: 18, color: 'text.disabled', flexShrink: 0 }} />
+                  </Box>
+                ) : (
+                  ad.tour_config && (
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      size="large"
+                      startIcon={<ViewInAr sx={{ fontSize: 22 }} />}
+                      onClick={() => setShowTour(true)}
+                      sx={{
+                        py: 1.75,
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                        borderRadius: 3,
+                        bgcolor: '#F7F7F7',
+                        color: 'text.primary',
+                        borderColor: 'divider',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        justifyContent: 'flex-start',
+                        gap: 1,
+                        textTransform: 'none',
+                        letterSpacing: 0.2,
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: '#EFEFEF',
+                          borderColor: 'text.disabled',
+                          boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
+                          transform: 'translateY(-1px)',
+                        },
+                        '&:active': { transform: 'scale(0.98)' },
+                      }}
+                    >
+                      <Box sx={{ flex: 1, textAlign: 'left' }}>
+                        <Typography variant="body1" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                          Visiter en 3D
+                        </Typography>
+                        {ad.tour_scenes_count != null && (
+                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 400 }}>
+                            {ad.tour_scenes_count} pièce{ad.tour_scenes_count > 1 ? 's' : ''} · visite immersive 360°
+                          </Typography>
+                        )}
+                      </Box>
+                    </Button>
+                  )
+                )}
+              </Box>
+            )}
+
             <Divider sx={{ mb: 3 }} />
 
             {/* Publisher info — blurred if locked */}
@@ -838,7 +932,7 @@ function AdDetailContent() {
                           size="small"
                           startIcon={<Call sx={{ fontSize: 18 }} />}
                           href={`tel:${publisherPhone}`}
-                          sx={{ 
+                          sx={{
                             textTransform: 'none',
                             fontWeight: 600,
                             bgcolor: 'primary.main',
@@ -855,7 +949,7 @@ function AdDetailContent() {
                             href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Bonjour,\n\nJe vous contacte suite à votre annonce *${ad.title}* que j'ai vue sur KeyHome.\n\nJe suis intéressé(e) par ce bien et souhaiterais avoir plus d'informations.\n\nCordialement${currentUser?.firstname ? `, ${currentUser.firstname}` : ''}`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            sx={{ 
+                            sx={{
                               textTransform: 'none',
                               fontWeight: 600,
                               bgcolor: '#0D9488',
@@ -971,7 +1065,7 @@ function AdDetailContent() {
               >
                 <Typography variant="body2" color="text.secondary">Coût :</Typography>
                 <Typography variant="body2" fontWeight={700} color="text.primary">
-                  {unlockState?.required_points ?? '—'} crédits
+                  {unlockState?.required_points ?? ad.unlock_cost ?? '—'} crédits
                 </Typography>
               </Box>
             </Box>
@@ -1045,7 +1139,7 @@ function AdDetailContent() {
                         Confirmer le déverrouillage
                       </Typography>
                       <Typography variant="body2">
-                        <strong>{unlockState?.required_points ?? '—'} crédits</strong> seront déduits
+                        <strong>{unlockState?.required_points ?? ad.unlock_cost ?? '—'} crédits</strong> seront déduits
                         de votre solde. Cette action est irréversible.
                       </Typography>
                     </Alert>
@@ -1117,6 +1211,14 @@ function AdDetailContent() {
           </Button>
         </Box>
       </Dialog>
+
+      {/* 3D Tour fullscreen viewer */}
+      {showTour && ad.tour_config && (
+        <TourViewer
+          tourConfig={ad.tour_config}
+          onClose={() => setShowTour(false)}
+        />
+      )}
 
       {/* Lightbox — Airbnb-style fullscreen with swipe, zoom, thumbnails */}
       <ImageLightbox
