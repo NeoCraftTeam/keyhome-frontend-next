@@ -135,7 +135,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
             }}
           >
             <Image
-              src={img.url}
+              src={img.thumb || img.url}
               alt={`${ad.title}${idx > 0 ? ` ${idx + 1}` : ''}`}
               fill
               sizes="(max-width: 600px) 50vw, (max-width: 960px) 33vw, 25vw"

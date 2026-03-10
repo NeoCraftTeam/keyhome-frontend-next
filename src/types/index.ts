@@ -159,8 +159,9 @@ export interface AdType {
 export interface AdImage {
   id: number;
   url: string;
+  placeholder: string | null;
   thumb: string;
-  medium: string;
+  large: string;
   mime_type: string;
   is_primary: boolean;
 }

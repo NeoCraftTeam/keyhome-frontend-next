@@ -264,7 +264,7 @@ export default function ImageLightbox({ images, open, initialIndex = 0, onClose 
             {image && (
               <Box
                 component="img"
-                src={image.url}
+                src={image.large || image.url}
                 alt={`Photo ${currentIndex + 1}`}
                 draggable={false}
                 sx={{
@@ -347,7 +347,7 @@ export default function ImageLightbox({ images, open, initialIndex = 0, onClose 
             >
               <Box
                 component="img"
-                src={img.thumb || img.medium || img.url}
+                src={img.thumb || img.url}
                 alt={`Miniature ${idx + 1}`}
                 draggable={false}
                 sx={{

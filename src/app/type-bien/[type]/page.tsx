@@ -284,7 +284,7 @@ export default async function PropertyTypePage({
                       <div style={{ position: 'relative', paddingTop: '60%', background: '#f5f5f5' }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={img.url}
+                          src={img.thumb || img.url}
                           alt={`${ad.title} — ${data.display} à ${ad.quarter?.city_name || 'vendre ou louer'}`}
                           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                           loading="lazy"

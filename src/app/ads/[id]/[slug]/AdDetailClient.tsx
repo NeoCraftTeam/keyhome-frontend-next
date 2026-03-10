@@ -281,7 +281,7 @@ function AdDetailContent() {
           >
             {primaryImage ? (
               <Image
-                src={primaryImage.url}
+                src={primaryImage.large || primaryImage.url}
                 alt={ad.title}
                 fill
                 priority
@@ -394,7 +394,7 @@ function AdDetailContent() {
             >
               {primaryImage ? (
                 <Image
-                  src={primaryImage.url}
+                  src={primaryImage.large || primaryImage.url}
                   alt={ad.title}
                   fill
                   priority
@@ -425,7 +425,7 @@ function AdDetailContent() {
                 }}
               >
                 <Image
-                  src={img.url}
+                  src={img.thumb || img.url}
                   alt={`${ad.title} ${idx + 2}`}
                   fill
                   sizes="(max-width: 960px) 0px, 20vw"
