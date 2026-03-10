@@ -18,8 +18,10 @@ test.describe('Login Page', () => {
   // BUG CATCH: Login page not rendering means users can't sign in at all.
   test('renders the login form with email and password fields', async ({ page }) => {
     // French labels: "Adresse email" and "Mot de passe"
+    // MUI renders both the <input> and the show-password <button> with an aria-label matching
+    // "Mot de passe" — use .first() to target only the input field.
     await expect(page.getByLabel(/adresse email/i)).toBeVisible();
-    await expect(page.getByLabel(/mot de passe/i)).toBeVisible();
+    await expect(page.getByLabel(/mot de passe/i).first()).toBeVisible();
   });
 
   // BUG CATCH: If the submit button is missing, nobody can log in.
@@ -49,7 +51,7 @@ test.describe('Login Page', () => {
   // BUG CATCH: Password visibility toggle works — the eye icon toggles
   // between password and text input types.
   test('password visibility toggle works', async ({ page }) => {
-    const passwordField = page.getByLabel(/mot de passe/i);
+    const passwordField = page.getByLabel(/mot de passe/i).first();
     await expect(passwordField).toHaveAttribute('type', 'password');
 
     // The visibility toggle is an IconButton inside the password field's InputAdornment

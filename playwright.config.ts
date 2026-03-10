@@ -26,8 +26,9 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
     {
+      // Uses Chromium under the hood — no separate browser install needed
       name: 'mobile',
-      use: { ...devices['iPhone 14'] },
+      use: { ...devices['Pixel 5'] },
     },
   ],
 
@@ -35,7 +36,7 @@ export default defineConfig({
   webServer: process.env.CI
     ? undefined
     : {
-        command: 'pnpm dev',
+        command: 'npm run dev',
         url: 'http://localhost:3000',
         reuseExistingServer: true,
         timeout: 60_000,

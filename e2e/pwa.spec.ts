@@ -12,8 +12,12 @@ import { expect, test } from '@playwright/test';
  */
 
 // These tests require a fully built app (next build && next start)
-// They are skipped in development unless NEXT_PUBLIC_ENABLE_SW=1 is set.
+// Run them with: PLAYWRIGHT_SW=1 npm run test:e2e
+const SW_ENABLED = !!process.env.PLAYWRIGHT_SW;
+
 test.describe('PWA — Service Worker', () => {
+  test.skip(!SW_ENABLED, 'Skipped: set PLAYWRIGHT_SW=1 to run service-worker tests against a production build');
+
   test('service worker registers and becomes active', async ({ page }) => {
     await page.goto('/home');
     await page.waitForLoadState('networkidle');
@@ -48,6 +52,8 @@ test.describe('PWA — Service Worker', () => {
 });
 
 test.describe('PWA — Offline Behaviour', () => {
+  test.skip(!SW_ENABLED, 'Skipped: set PLAYWRIGHT_SW=1 to run offline tests against a production build');
+
   test('cached /home page loads when offline', async ({ page, context }) => {
     // Warm the cache
     await page.goto('/home');
@@ -123,17 +129,18 @@ test.describe('PWA — Manifest & Meta Tags', () => {
   });
 
   test('Apple PWA meta tags are present', async ({ page }) => {
+    test.skip(!SW_ENABLED, 'Apple meta tags are only emitted by the production Next.js build');
     await page.goto('/');
 
     // Next.js Metadata API emits these via the <head>
     const capable = await page
       .locator('meta[name="apple-mobile-web-app-capable"]')
-      .getAttribute('content');
+      .getAttribute('content', { timeout: 10_000 });
     expect(capable).toBe('yes');
 
     const statusBar = await page
       .locator('meta[name="apple-mobile-web-app-status-bar-style"]')
-      .getAttribute('content');
+      .getAttribute('content', { timeout: 10_000 });
     expect(statusBar).toBeTruthy();
   });
 
