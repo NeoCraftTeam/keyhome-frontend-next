@@ -14,7 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 const RESEND_COOLDOWN = 60;
 
 export default function VerifyOtpPage() {
-  const { finalizeAuth } = useAuth();
+  const { finalizeAuth, getClerkToken } = useAuth();
   const router = useRouter();
 
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
@@ -95,7 +95,8 @@ export default function VerifyOtpPage() {
     setError('');
     setResendMessage('');
     try {
-      await authService.clerkExchange();
+      const freshToken = await getClerkToken();
+      await authService.clerkExchange(freshToken);
       setResendMessage('Un nouveau code a été envoyé à votre adresse email.');
       setResendCooldown(RESEND_COOLDOWN);
       setDigits(['', '', '', '', '', '']);
@@ -103,7 +104,7 @@ export default function VerifyOtpPage() {
     } catch (err) {
       setError(getSafeErrorMessage(err, "Impossible de renvoyer le code. Veuillez réessayer."));
     }
-  }, [resendCooldown]);
+  }, [resendCooldown, getClerkToken]);
 
   return (
     <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>

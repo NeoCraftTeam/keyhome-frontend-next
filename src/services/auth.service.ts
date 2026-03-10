@@ -68,15 +68,19 @@ export const authService = {
     return data.data ?? data;
   },
 
-  async clerkExchange(): Promise<
+  async clerkExchange(
+    bearerToken?: string | null,
+  ): Promise<
     | { state: 'otp_required'; email_hint: string | null }
     | { token: string; user: User; panel_sso_url: string | null }
   > {
-    // The Axios interceptor forwards the Clerk JWT as Authorization: Bearer
+    const config = bearerToken
+      ? { headers: { Authorization: `Bearer ${bearerToken}` } }
+      : undefined;
     const { data } = await api.post<
       | { state: 'otp_required'; email_hint: string | null }
       | { access_token: string; user: User; panel_sso_url: string | null }
-    >('/auth/clerk/exchange', {});
+    >('/auth/clerk/exchange', {}, config);
 
     if ('state' in data && data.state === 'otp_required') {
       return data;

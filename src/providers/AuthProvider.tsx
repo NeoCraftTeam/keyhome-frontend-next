@@ -32,6 +32,8 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   /** Called by /verify-email and /complete-profile after successful auth */
   finalizeAuth: (token: string, user: User, panelSsoUrl: string | null) => void;
+  /** Returns a fresh Clerk session JWT, or null if unavailable */
+  getClerkToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -119,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         registerTokenGetter(() => getToken());
 
         try {
-          const result = await authService.clerkExchange();
+          const result = await authService.clerkExchange(clerkToken);
 
           if (runId !== authRunRef.current) { return; }
 
@@ -297,8 +299,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser,
       refreshUser,
       finalizeAuth,
+      getClerkToken: getToken,
     }),
-    [user, token, isLoading, isAuthenticated, isLoggingOut, login, loginWithOAuth, logout, setUser, refreshUser, finalizeAuth]
+    [user, token, isLoading, isAuthenticated, isLoggingOut, login, loginWithOAuth, logout, setUser, refreshUser, finalizeAuth, getToken]
   );
 
   return (
