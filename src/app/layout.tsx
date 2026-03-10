@@ -115,6 +115,11 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'KeyHome',
   },
+  // Next.js 16 emits `mobile-web-app-capable` from appleWebApp.capable.
+  // Add the Apple-specific tag explicitly for older Apple WebKit and tooling.
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
+  },
   category: 'real estate',
 };
 

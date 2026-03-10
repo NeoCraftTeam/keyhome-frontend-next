@@ -46,7 +46,16 @@ test.describe('PWA — Service Worker', () => {
     await page.goto('/home');
     await page.waitForLoadState('networkidle');
 
-    const isControlled = await page.evaluate(() => !!navigator.serviceWorker.controller);
+    const isControlled = await page.evaluate(async () => {
+      if (navigator.serviceWorker.controller) return true;
+      await navigator.serviceWorker.ready;
+      if (navigator.serviceWorker.controller) return true;
+      await new Promise<void>((resolve) => {
+        navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true });
+        setTimeout(resolve, 3000);
+      });
+      return !!navigator.serviceWorker.controller;
+    });
     expect(isControlled).toBe(true);
   });
 });
@@ -59,8 +68,16 @@ test.describe('PWA — Offline Behaviour', () => {
     await page.goto('/home');
     await page.waitForLoadState('networkidle');
 
-    // Wait for the SW to cache the page
-    await page.waitForTimeout(500);
+    // Wait for the SW to be controlling the page (skipWaiting + clients.claim)
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) {
+        await new Promise<void>((resolve) => {
+          navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true });
+          setTimeout(resolve, 3000);
+        });
+      }
+    });
 
     // Cut the network
     await context.setOffline(true);
@@ -79,7 +96,17 @@ test.describe('PWA — Offline Behaviour', () => {
     // Visit home to activate the SW first
     await page.goto('/home');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(500);
+
+    // Wait for the SW to be controlling the page (skipWaiting + clients.claim)
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) {
+        await new Promise<void>((resolve) => {
+          navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true });
+          setTimeout(resolve, 3000);
+        });
+      }
+    });
 
     // Cut network
     await context.setOffline(true);
@@ -99,7 +126,7 @@ test.describe('PWA — Offline Behaviour', () => {
     await page.goto('/offline');
     await expect(page).toHaveTitle(/hors ligne/i);
     // Should contain a retry/reload affordance
-    await expect(page.getByRole('button')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Réessayer' })).toBeVisible();
   });
 });
 

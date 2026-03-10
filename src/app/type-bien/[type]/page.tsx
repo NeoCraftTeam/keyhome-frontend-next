@@ -140,7 +140,7 @@ export default async function PropertyTypePage({
     slug?: string;
     title: string;
     price?: number;
-    images?: Array<{ url: string; is_primary?: boolean }>;
+    images?: Array<{ url: string; thumb?: string; large?: string; placeholder?: string | null; is_primary?: boolean }>;
     quarter?: { name?: string; city_name?: string };
   }> = [];
   let total = 0;
