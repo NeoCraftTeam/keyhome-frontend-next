@@ -7,17 +7,19 @@ import { User, UserRole } from '@/types';
 import { useClerk, useAuth as useClerkAuth, useSignIn, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from 'react';
 
 /** localStorage key for persisting the Sanctum token between page refreshes */
 const SANCTUM_TOKEN_KEY = 'kh_sanctum_token';
+const LOGOUT_OVERLAY_DURATION_MS = 3500;
+const CLERK_SIGN_OUT_FALLBACK_MS = 1200;
 
 interface AuthContextType {
   user: User | null;
@@ -261,14 +263,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearSanctumToken();
     setUserState(null);
 
+    await new Promise((resolve) => setTimeout(resolve, LOGOUT_OVERLAY_DURATION_MS));
+
     if (isSignedIn) {
-      await signOut();
+      try {
+        await Promise.race([
+          signOut({
+            redirectUrl: `${window.location.origin}/home`,
+          }),
+          new Promise((resolve) => setTimeout(resolve, CLERK_SIGN_OUT_FALLBACK_MS)),
+        ]);
+      } catch {
+        // Fall through to hard redirect fallback.
+      }
+
+      window.location.replace('/home');
+      return;
     }
 
-    // Brief pause so the logout overlay animation is visible
-    await new Promise((r) => setTimeout(r, 1800));
     setIsLoggingOut(false);
-    router.push('/home');
+    router.replace('/home');
   }, [isSignedIn, signOut, clearSanctumToken, router]);
 
   const refreshUser = useCallback(async () => {
