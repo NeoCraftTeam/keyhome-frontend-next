@@ -4,6 +4,7 @@ import PropertyAttributes from '@/components/ads/PropertyAttributes';
 import StickyPropertyBar from '@/components/ads/StickyPropertyBar';
 import TourViewer from '@/components/ads/TourViewer';
 import ReviewForm from '@/components/reviews/ReviewForm';
+import ReviewsSection from '@/components/reviews/ReviewsSection';
 import PackageCard from '@/components/ui/PackageCard';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import ViewingBookingPanel from '@/components/viewing/ViewingBookingPanel';
@@ -25,7 +26,6 @@ import {
   CalendarMonth,
   Call,
   ChevronLeft,
-  Close,
   ContentCopy,
   Description,
   Email,
@@ -50,7 +50,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Container,
   Dialog,
   Divider,
@@ -67,6 +66,8 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
+const MIN_UNLOCK_LOADER_MS = 2000;
+
 function AdDetailContent() {
   const params = useParams();
   const router = useRouter();
@@ -82,8 +83,9 @@ function AdDetailContent() {
   const [unlockState, setUnlockState] = useState<UnlockResponse | null>(null);
   const [confirmStep, setConfirmStep] = useState(false);
   const [snackbar, setSnackbar] = useState('');
+  const [hasStoredSanctumToken, setHasStoredSanctumToken] = useState<boolean | null>(null);
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
-  const { user: currentUser, refreshUser, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { user: currentUser, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
   const refreshedRef = useRef(false);
   const viewTrackedRef = useRef(false);
@@ -98,7 +100,7 @@ function AdDetailContent() {
       sessionStorage.removeItem('kh_just_unlocked');
       queryClient.invalidateQueries({ queryKey: ['ad', adId, isAuthenticated] });
     }
-  }, [adId, queryClient]);
+  }, [adId, isAuthenticated, queryClient]);
 
   // Track view once per page load — feeds the recommendation engine.
   useEffect(() => {
@@ -108,10 +110,19 @@ function AdDetailContent() {
     }
   }, [adId]);
 
+  // Prevent a guest fetch flash on refresh when a token exists in storage
+  // but AuthProvider has not finished hydrating the authenticated user yet.
+  useEffect(() => {
+    setHasStoredSanctumToken(!!localStorage.getItem('kh_sanctum_token'));
+  }, []);
+
   const { data: ad, isLoading, isError, refetch } = useQuery({
     queryKey: ['ad', adId, isAuthenticated],
     queryFn: () => adsService.show(adId),
-    enabled: !!adId && !isAuthLoading,
+    enabled: !!adId
+      && hasStoredSanctumToken !== null
+      && !isAuthLoading
+      && (isAuthenticated || !hasStoredSanctumToken),
   });
 
   // Live balance query — shares the same cache key as CreditsWidget so both
@@ -177,6 +188,7 @@ function AdDetailContent() {
   };
 
   const handleUnlock = async () => {
+    const startedAt = Date.now();
     setPaymentError('');
     setUnlockState(null);
     setIsPaymentLoading(true);
@@ -202,6 +214,11 @@ function AdDetailContent() {
     } catch (err) {
       setPaymentError(getSafeErrorMessage(err, 'Erreur lors du déverrouillage.'));
     } finally {
+      const elapsed = Date.now() - startedAt;
+      const remaining = MIN_UNLOCK_LOADER_MS - elapsed;
+      if (remaining > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remaining));
+      }
       setIsPaymentLoading(false);
     }
   };
@@ -238,6 +255,12 @@ function AdDetailContent() {
   const publisherPhone = ad.user?.phone_number;
   const publisherEmail = ad.user?.email;
   const publisherHasWhatsApp = ad.user?.phone_is_whatsapp ?? false;
+  const reviews = ad.reviews ?? [];
+  const reviewsCount = ad.reviews_count ?? reviews.length;
+  const averageRating = ad.rating ?? (reviews.length
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+    : null);
+  const currentBalance = unlockState?.current_balance ?? liveBalance ?? currentUser?.point_balance ?? 0;
 
   // Format phone number for WhatsApp (remove spaces, dashes, etc.)
   const whatsappNumber = publisherPhone?.replace(/[\s\-\(\)]/g, '').replace(/^\+/, '');
@@ -454,14 +477,26 @@ function AdDetailContent() {
                   size="small"
                   onClick={(e) => { e.stopPropagation(); openLightbox(0); }}
                   sx={{
-                    bgcolor: 'rgba(255,255,255,0.95)',
-                    color: 'text.primary',
+                    bgcolor: (theme) => theme.palette.mode === 'dark'
+                      ? 'rgba(20,20,20,0.9)'
+                      : 'rgba(255,255,255,0.95)',
+                    color: (theme) => theme.palette.mode === 'dark'
+                      ? 'rgba(255,255,255,0.96)'
+                      : 'rgba(17,24,39,0.95)',
                     textTransform: 'none',
                     fontWeight: 600,
                     fontSize: '0.8rem',
                     borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: (theme) => theme.palette.mode === 'dark'
+                      ? 'rgba(255,255,255,0.16)'
+                      : 'rgba(17,24,39,0.08)',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    '&:hover': { bgcolor: '#fff' },
+                    '&:hover': {
+                      bgcolor: (theme) => theme.palette.mode === 'dark'
+                        ? 'rgba(28,28,28,0.95)'
+                        : '#fff',
+                    },
                   }}
                 >
                   Voir les {images.length} photos
@@ -536,7 +571,6 @@ function AdDetailContent() {
                 {ad.adresse ? ` — ${ad.adresse}` : ''}
               </Typography>
             </Box>
-
             {/* Features pills */}
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
               {features.map((f, idx) => (
@@ -602,9 +636,15 @@ function AdDetailContent() {
                         fontWeight: 700,
                         fontSize: '1rem',
                         borderRadius: 3,
-                        bgcolor: '#F7F7F7',
-                        color: 'text.primary',
-                        borderColor: 'divider',
+                        bgcolor: (theme) => theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.06)'
+                          : '#F7F7F7',
+                        color: (theme) => theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.96)'
+                          : 'text.primary',
+                        borderColor: (theme) => theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.2)'
+                          : 'divider',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                         justifyContent: 'flex-start',
                         gap: 1,
@@ -612,8 +652,12 @@ function AdDetailContent() {
                         letterSpacing: 0.2,
                         transition: 'all 0.2s ease',
                         '&:hover': {
-                          bgcolor: '#EFEFEF',
-                          borderColor: 'text.disabled',
+                          bgcolor: (theme) => theme.palette.mode === 'dark'
+                            ? 'rgba(255,255,255,0.12)'
+                            : '#EFEFEF',
+                          borderColor: (theme) => theme.palette.mode === 'dark'
+                            ? 'rgba(255,255,255,0.3)'
+                            : 'text.disabled',
                           boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
                           transform: 'translateY(-1px)',
                         },
@@ -625,7 +669,15 @@ function AdDetailContent() {
                           Visiter en 3D
                         </Typography>
                         {ad.tour_scenes_count != null && (
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 400 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 400,
+                              color: (theme) => theme.palette.mode === 'dark'
+                                ? 'rgba(255,255,255,0.78)'
+                                : 'text.secondary',
+                            }}
+                          >
                             {ad.tour_scenes_count} pièce{ad.tour_scenes_count > 1 ? 's' : ''} · visite immersive 360°
                           </Typography>
                         )}
@@ -672,7 +724,7 @@ function AdDetailContent() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
                   <Star sx={{ fontSize: 20, color: 'primary.main' }} />
                   <Typography variant="subtitle1" fontWeight={700} sx={{ letterSpacing: -0.3 }}>
-                    Informations Premium
+                    Informations Supplémentaires
                   </Typography>
                 </Box>
 
@@ -769,56 +821,11 @@ function AdDetailContent() {
             </Typography>
 
             {/* Reviews & ratings */}
-            {ad.reviews && ad.reviews.length > 0 && (
-              <Box sx={{ mb: 3 }}>
-                <Divider sx={{ mb: 3 }} />
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <Typography variant="h6" fontWeight={600}>Avis</Typography>
-                  {ad.rating != null && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Box key={s} component="span" sx={{ color: s <= Math.round(ad.rating!) ? '#FFB400' : '#E0E0E0', fontSize: 18, lineHeight: 1 }}>★</Box>
-                      ))}
-                      <Typography variant="body2" fontWeight={600} sx={{ ml: 0.5 }}>
-                        {ad.rating.toFixed(1)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        ({ad.reviews_count} avis)
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-                {ad.reviews.map((review) => (
-                  <Paper key={review.id} variant="outlined" sx={{ p: 2, mb: 1.5, borderRadius: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                      <Avatar sx={{ width: 32, height: 32, fontSize: 14, bgcolor: 'primary.main' }}
-                        src={review.user?.avatar || undefined}
-                      >
-                        {review.user?.name?.charAt(0) || '?'}
-                      </Avatar>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="subtitle2" fontWeight={600} sx={{ lineHeight: 1.2 }}>
-                          {review.user?.name || 'Utilisateur'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {formatRelativeDate(review.created_at)}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', gap: 0.25 }}>
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Box key={s} component="span" sx={{ color: s <= review.rating ? '#FFB400' : '#E0E0E0', fontSize: 14 }}>★</Box>
-                        ))}
-                      </Box>
-                    </Box>
-                    {review.comment && (
-                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, pl: 5.5 }}>
-                        {review.comment}
-                      </Typography>
-                    )}
-                  </Paper>
-                ))}
-              </Box>
-            )}
+            <ReviewsSection
+              reviews={reviews}
+              averageRating={averageRating}
+              reviewsCount={reviewsCount}
+            />
 
             {/* Review submission form */}
             <ReviewForm
@@ -828,7 +835,7 @@ function AdDetailContent() {
           </Grid>
 
           {/* Right column — pricing card */}
-          <Grid size={{ xs: 12, md: 5, lg: 4 }}>
+          <Grid size={{ xs: 12, md: 5, lg: 4 }} sx={{ order: { xs: 1, md: 2 } }}>
             <Paper
               elevation={0}
               sx={{
@@ -987,9 +994,17 @@ function AdDetailContent() {
       <Dialog
         open={paymentDialogOpen}
         onClose={() => { setPaymentDialogOpen(false); setUnlockState(null); setPaymentError(''); setConfirmStep(false); }}
-        maxWidth="xs"
+        maxWidth={unlockState?.status === 'insufficient_points' ? 'lg' : 'xs'}
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            p: 1,
+            maxWidth: unlockState?.status === 'insufficient_points'
+              ? { xs: '92vw', md: 980 }
+              : undefined,
+          },
+        }}
       >
         <Box sx={{ p: 3, textAlign: 'center' }}>
           {/* Gradient lock icon */}
@@ -1045,9 +1060,9 @@ function AdDetailContent() {
                 <Typography
                   variant="body2"
                   fontWeight={700}
-                  color={(unlockState?.current_balance ?? liveBalance ?? currentUser?.point_balance ?? 0) > 0 ? 'primary.main' : 'error.main'}
+                  color={currentBalance > 0 ? 'primary.main' : 'error.main'}
                 >
-                  {unlockState?.current_balance ?? liveBalance ?? currentUser?.point_balance ?? 0} crédits
+                  {currentBalance} crédit{currentBalance > 1 ? 's' : ''}
                 </Typography>
               </Box>
               <Box
@@ -1099,32 +1114,37 @@ function AdDetailContent() {
                 {/* Show packages when balance is insufficient */}
                 {unlockState?.status === 'insufficient_points' ? (
                   <Box sx={{ textAlign: 'left' }}>
+                    {(() => {
+                      const requiredPoints = unlockState.required_points ?? 0;
+                      const balancePoints = unlockState.current_balance ?? 0;
+                      return (
                     <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
-                      Solde insuffisant — il vous faut <strong>{unlockState.required_points} crédits</strong> pour débloquer cette annonce.
-                      {(unlockState.current_balance ?? 0) > 0
-                        ? ` Vous avez ${unlockState.current_balance} crédits.`
+                      Solde insuffisant — il vous faut <strong>{requiredPoints} crédit{requiredPoints > 1 ? 's' : ''}</strong> pour débloquer cette annonce.
+                      {balancePoints > 0
+                        ? ` Vous avez ${balancePoints} crédit${balancePoints > 1 ? 's' : ''}.`
                         : ' Rechargez votre solde pour continuer.'}
                     </Alert>
+                      );
+                    })()}
 
                     {unlockState.packages && unlockState.packages.length > 0 ? (
                       <>
                         <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: 0.5 }}>
                           Choisissez un pack de crédits
                         </Typography>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
+                        <Grid container spacing={1.5} sx={{ mb: 2 }}>
                           {unlockState.packages.map((pkg) => {
-                            const wouldBeEnough = (unlockState.current_balance ?? 0) + pkg.points_awarded >= (unlockState.required_points ?? 0);
                             return (
-                              <PackageCard
-                                key={pkg.id}
-                                pkg={pkg}
-                                loading={isPackageLoading === pkg.id}
-                                onPurchase={handlePurchasePackage}
-                                wouldBeEnough={wouldBeEnough}
-                              />
+                              <Grid key={pkg.id} size={{ xs: 12, sm: 6, lg: 4 }}>
+                                <PackageCard
+                                  pkg={pkg}
+                                  loading={isPackageLoading === pkg.id}
+                                  onPurchase={handlePurchasePackage}
+                                />
+                              </Grid>
                             );
                           })}
-                        </Box>
+                        </Grid>
                       </>
                     ) : (
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>

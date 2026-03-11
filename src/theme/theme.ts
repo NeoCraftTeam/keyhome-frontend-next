@@ -118,10 +118,32 @@ const baseTheme = {
       },
     },
     MuiDialog: {
+      defaultProps: {
+        disableScrollLock: false,
+      },
       styleOverrides: {
+        container: {
+          overscrollBehavior: 'contain',
+        },
         paper: {
           borderRadius: 20,
           boxShadow: '0 25px 60px rgba(0,0,0,0.15)',
+          scrollbarWidth: 'none' as const,
+          msOverflowStyle: 'none' as const,
+          '&::-webkit-scrollbar': {
+            display: 'none',
+            width: 0,
+            height: 0,
+          },
+          '& *': {
+            scrollbarWidth: 'none' as const,
+            msOverflowStyle: 'none' as const,
+          },
+          '& *::-webkit-scrollbar': {
+            display: 'none',
+            width: 0,
+            height: 0,
+          },
         },
       },
     },

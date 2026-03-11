@@ -8,6 +8,7 @@ import { AutoAwesome, Close, Toll } from '@mui/icons-material';
 import {
   Box,
   Dialog,
+  Grid,
   IconButton,
   Skeleton,
   Typography,
@@ -41,6 +42,8 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
     staleTime: 5 * 60_000,
     enabled: open,
   });
+  const availableCredits = balance ?? 0;
+  const creditsLabel = availableCredits > 1 ? 'credits disponibles' : 'credit disponible';
 
   const handlePurchase = async (pkg: PointPackage) => {
     setLoadingPkg(pkg.id);
@@ -139,16 +142,13 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
           {balanceLoading ? (
             <Skeleton width={80} sx={{ mx: 'auto', bgcolor: 'rgba(255,255,255,0.1)' }} />
           ) : (
-            (balance ?? 0).toLocaleString('fr-FR')
+            availableCredits.toLocaleString('fr-FR')
           )}
         </Typography>
         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', letterSpacing: 0.5 }}>
-          credits disponibles
+          {balanceLoading ? 'credits disponibles' : creditsLabel}
         </Typography>
 
-        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mt: 2, fontStyle: 'italic', maxWidth: 400, mx: 'auto', lineHeight: 1.4 }}>
-          "Grâce à KeyHome, j'ai trouvé mon studio à Douala en 2 jours seulement sans payer de commission d'agence." — Marc D.
-        </Typography>
 
         {/* Trust badge */}
         <Box sx={{
@@ -164,7 +164,18 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
       </Box>
 
       {/* ── PACKAGES ─────────────────────────────────────── */}
-      <Box sx={{ px: 3, pt: 3, pb: 2.5, bgcolor: isDark ? '#0F172A' : 'background.paper', overflowY: 'auto' }}>
+      <Box
+        sx={{
+          px: 3,
+          pt: 3,
+          pb: 2.5,
+          bgcolor: isDark ? '#0F172A' : 'background.paper',
+          overflowY: 'auto',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          '&::-webkit-scrollbar': { display: 'none', width: 0, height: 0 },
+        }}
+      >
         <Typography variant="overline" sx={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'text.secondary', letterSpacing: 1.5, fontSize: '0.65rem', fontWeight: 700 }}>
           Choisir un pack
         </Typography>
@@ -175,27 +186,33 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
           </Typography>
         )}
 
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mt: 1.5, alignItems: 'stretch' }}>
+        <Grid container spacing={2} sx={{ mt: 1.5 }}>
           {packagesLoading ? (
             [1, 2, 3].map((i) => (
-              <Skeleton key={i} variant="rounded" height={220} sx={{ borderRadius: 4, flex: 1, minWidth: 0, bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }} />
+              <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Skeleton
+                  variant="rounded"
+                  height={220}
+                  sx={{ borderRadius: 4, bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}
+                />
+              </Grid>
             ))
           ) : packages && packages.length > 0 ? (
             packages.map((pkg) => (
-              <Box key={pkg.id} sx={{ flex: 1, minWidth: 0, display: 'flex' }}>
+              <Grid key={pkg.id} size={{ xs: 12, sm: 6, md: 4 }}>
                 <PackageCard
                   pkg={pkg}
                   loading={loadingPkg === pkg.id}
                   onPurchase={handlePurchase}
                 />
-              </Box>
+              </Grid>
             ))
           ) : (
             <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'text.secondary', textAlign: 'center', py: 4, width: '100%' }}>
               Aucun pack disponible.
             </Typography>
           )}
-        </Box>
+        </Grid>
       </Box>
 
       {/* ── FOOTER ───────────────────────────────────────── */}
