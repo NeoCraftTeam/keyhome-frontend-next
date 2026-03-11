@@ -1,17 +1,15 @@
 'use client';
 
+import AppLoader from '@/components/ui/AppLoader';
 import { paymentsService } from '@/services/payments.service';
 import { FlutterwaveVerifyResponse } from '@/types';
 import {
-  CheckCircle,
   Error as ErrorIcon,
-  Home as HomeIcon,
   Refresh,
 } from '@mui/icons-material';
 import {
   Box,
   Button,
-  LinearProgress,
   Paper,
   Typography,
 } from '@mui/material';
@@ -19,7 +17,6 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
-const REDIRECT_DELAY_MS = 5000;
 const MAX_VERIFY_RETRIES = 3;
 const RETRY_DELAY_MS = 2000;
 
@@ -106,7 +103,9 @@ function CallbackContent(): React.ReactElement {
   useEffect(() => {
     if (verifiedRef.current) { return; }
     verifiedRef.current = true;
-    verify();
+    queueMicrotask(() => {
+      void verify();
+    });
   }, [verify]);
 
   // Auto-redirect countdown when terminal + success
@@ -139,20 +138,41 @@ function CallbackContent(): React.ReactElement {
   // ── VERIFYING ──
   if (pageState === 'verifying') {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 3, p: 3 }}>
-        <Image src="/images/logo.png" alt="KeyHome" width={52} height={52} style={{ marginBottom: 8 }} />
-        <Typography variant="h6" fontWeight={600}>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Image src="/images/logo.png" alt="KeyHome — Paiement" width={48} height={48} />
+          <Typography variant="h5" fontWeight={700} color="primary.main">
+            KeyHome
+          </Typography>
+        </Box>
+        <AppLoader size={48} />
+        <Typography variant="body2" fontWeight={600}>
           Vérification du paiement...
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Confirmation en cours, merci de patienter.
         </Typography>
-        <Box sx={{ width: '100%', maxWidth: 320 }}>
-          <LinearProgress
-            variant="indeterminate"
-            sx={{ height: 6, borderRadius: 3, bgcolor: 'grey.200', '& .MuiLinearProgress-bar': { bgcolor: '#F6475F', borderRadius: 3 } }}
-          />
+      </Box>
+    );
+  }
+
+  // ── SUCCESS (loader-style redirect screen) ──
+  if (pageState === 'success') {
+    return (
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Image src="/images/logo.png" alt="KeyHome — Paiement confirmé" width={48} height={48} />
+          <Typography variant="h5" fontWeight={700} color="primary.main">
+            KeyHome
+          </Typography>
         </Box>
+        <AppLoader size={48} />
+        <Typography variant="body1" fontWeight={700}>
+          Paiement confirmé !
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Redirection en cours dans <strong>{countdown} seconde{countdown > 1 ? 's' : ''}</strong>...
+        </Typography>
       </Box>
     );
   }
@@ -185,53 +205,6 @@ function CallbackContent(): React.ReactElement {
         <Box sx={{ mb: 3 }}>
           <Image src="/images/logo.png" alt="KeyHome" width={48} height={48} />
         </Box>
-
-        {pageState === 'success' && (
-          <>
-            <Box
-              sx={{
-                width: 80,
-                height: 80,
-                borderRadius: '50%',
-                bgcolor: 'rgba(0,138,5,0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mx: 'auto',
-                mb: 3,
-                animation: 'scaleIn 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
-                '@keyframes scaleIn': {
-                  '0%': { transform: 'scale(0)', opacity: 0 },
-                  '100%': { transform: 'scale(1)', opacity: 1 },
-                },
-              }}
-            >
-              <CheckCircle sx={{ color: '#008A05', fontSize: 42 }} />
-            </Box>
-            <Typography variant="h6" fontWeight={800} gutterBottom>
-              Paiement confirmé !
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Votre paiement a bien été reçu. Vous allez être redirigé dans{' '}
-              <strong>{countdown} seconde{countdown > 1 ? 's' : ''}</strong>.
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<HomeIcon />}
-              href="/home"
-              sx={{ borderRadius: 3, px: 3, py: 1.2, fontWeight: 700, bgcolor: '#008A05', '&:hover': { bgcolor: '#007004' } }}
-            >
-              Retour à l&apos;accueil
-            </Button>
-            <Box sx={{ mt: 2.5 }}>
-              <LinearProgress
-                variant="determinate"
-                value={((REDIRECT_DELAY_MS - countdown * 1000) / REDIRECT_DELAY_MS) * 100}
-                sx={{ height: 4, borderRadius: 2, bgcolor: 'grey.200', '& .MuiLinearProgress-bar': { bgcolor: '#008A05' } }}
-              />
-            </Box>
-          </>
-        )}
 
         {(pageState === 'failed' || pageState === 'cancelled' || pageState === 'error') && (
           <>
@@ -272,7 +245,6 @@ function CallbackContent(): React.ReactElement {
               </Button>
               <Button
                 variant="text"
-                startIcon={<HomeIcon />}
                 href="/home"
                 sx={{ borderRadius: 3, px: 3, py: 1.2, fontWeight: 600, color: 'text.secondary' }}
               >
@@ -291,7 +263,7 @@ export default function PaymentCallbackPage(): React.ReactElement {
     <Suspense
       fallback={
         <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <LinearProgress sx={{ width: 200 }} />
+          <AppLoader size={48} />
         </Box>
       }
     >

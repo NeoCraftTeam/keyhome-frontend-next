@@ -1,87 +1,117 @@
 'use client';
 
-import { Box, Container, Divider, Grid, Link, Typography } from '@mui/material';
+import { Facebook, Instagram, X } from '@mui/icons-material';
+import { Box, Container, Link, Typography } from '@mui/material';
 
-const footerSections = [
-  {
-    title: 'KeyHome',
-    links: [
-      { label: 'Comment ça marche', href: '/#how-it-works' },
-      { label: 'Témoignages', href: '/#testimonials' },
-    ],
-  },
-  {
-    title: 'Découvrir',
-    links: [
-      { label: 'Locations', href: '/search?type=location' },
-      { label: 'Ventes', href: '/search?type=vente' },
-      { label: 'Terrains', href: '/search?type=terrain' },
-    ],
-  },
-  {
-    title: 'Aide',
-    links: [
-      { label: 'Centre d\'aide', href: '/aide' },
-      { label: 'Conditions d\'utilisation', href: '/conditions' },
-      { label: 'Politique de confidentialité', href: '/confidentialite' },
-    ],
-  },
+const LEGAL_LINKS = [
+  { label: 'Confidentialité', href: '/confidentialite' },
+  { label: 'Conditions générales', href: '/conditions' },
+  { label: 'Infos sur l’entreprise', href: '/aide' },
+];
+
+const SOCIAL_LINKS = [
+  { label: 'Facebook', href: 'https://www.facebook.com/keyhomeapp', icon: Facebook },
+  { label: 'X', href: 'https://twitter.com/keyhome_app', icon: X },
+  { label: 'Instagram', href: 'https://www.instagram.com/keyhome_app', icon: Instagram },
 ];
 
 export default function Footer() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <Box
       component="footer"
       sx={{
         borderTop: '1px solid',
         borderColor: 'divider',
-        bgcolor: 'background.paper',
+        bgcolor: (theme) => theme.palette.mode === 'dark' ? '#10131A' : '#F5F5F5',
         mt: 'auto',
       }}
     >
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Grid container spacing={4}>
-          {footerSections.map((section) => (
-            <Grid key={section.title} size={{ xs: 12, sm: 4 }}>
-              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                {section.title}
-              </Typography>
-              {section.links.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  underline="none"
-                  display="block"
-                  sx={{
-                    color: 'text.secondary',
-                    fontSize: '0.875rem',
-                    py: 0.3,
-                    '&:hover': { textDecoration: 'underline', color: 'text.primary' },
-                  }}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </Grid>
-          ))}
-        </Grid>
-        <Divider sx={{ my: 3 }} />
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+      <Container
+        maxWidth="xl"
+        sx={{
+          py: 1.4,
+          px: { xs: 2, md: 3 },
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          rowGap: 1,
+          columnGap: 2,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.75 }}>
           <Typography variant="caption" color="text.secondary">
-            © {new Date().getFullYear()} KeyHome. Tous droits réservés.
+            © {currentYear} KeyHome, Inc.
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Propulsé par{' '}
+          {LEGAL_LINKS.map((link) => (
+            <Box key={link.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <Typography variant="caption" color="text.disabled">
+                ·
+              </Typography>
+              <Link
+                href={link.href}
+                underline="none"
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.78rem',
+                  '&:hover': { color: 'text.primary', textDecoration: 'underline' },
+                }}
+              >
+                {link.label}
+              </Link>
+            </Box>
+          ))}
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+            Français (CM)
+          </Typography>
+          <Typography variant="caption" color="text.disabled">
+            ·
+          </Typography>
+          <Typography variant="caption" color="text.disabled">
+            ·
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+            Powered by{' '}
             <Link
               href="https://www.neocraft.dev"
               target="_blank"
               rel="noopener noreferrer"
               underline="hover"
-              sx={{ color: 'text.secondary', fontWeight: 600 }}
+              sx={{ color: 'text.secondary', fontWeight: 700 }}
             >
               NeoCraftTeam
             </Link>
           </Typography>
+          {SOCIAL_LINKS.map((social) => {
+            const Icon = social.icon;
+            return (
+              <Link
+                key={social.label}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={social.label}
+                underline="none"
+                sx={{
+                  color: 'text.secondary',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 20,
+                  height: 20,
+                  transition: 'color 0.2s ease, transform 0.2s ease',
+                  '&:hover': { color: 'text.primary', transform: 'translateY(-1px)' },
+                }}
+              >
+                <Icon sx={{ fontSize: 14 }} />
+              </Link>
+            );
+          })}
         </Box>
       </Container>
     </Box>
