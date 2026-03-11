@@ -144,7 +144,7 @@ export default async function CityPage({
               fontWeight: 600, fontSize: 15, textDecoration: 'none',
             }}
           >
-            Publier une annonce gratuite
+            Devenir hôte gratuite
           </Link>
         </div>
 

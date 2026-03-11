@@ -19,13 +19,15 @@ const AUTH_PAGES = ['/login', '/register', '/verify-otp', '/verify-email', '/com
 const PRIVATE_PATHS = ['/profile', '/my/reservations'];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isLoggingOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   const isPrivatePage = PRIVATE_PATHS.some((p) => pathname?.startsWith(p));
 
   useEffect(() => {
+    // Never redirect while the logout overlay is playing
+    if (isLoggingOut) { return; }
     if (isPrivatePage && !isLoading && !isAuthenticated) {
       // Save where the user was so we can bring them back after re-auth
       const shouldSave = pathname && !AUTH_PAGES.some(p => pathname.startsWith(p)) && pathname !== '/';
@@ -34,7 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
       router.replace('/login');
     }
-  }, [isAuthenticated, isLoading, router, pathname, isPrivatePage]);
+  }, [isAuthenticated, isLoading, isLoggingOut, router, pathname, isPrivatePage]);
 
   // Show a full-screen spinner while auth state is resolving on private pages
   if (isLoading && isPrivatePage) {
@@ -52,8 +54,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  // Block rendering of private pages until auth is confirmed
-  if (!isAuthenticated && isPrivatePage) {
+  // Block rendering of private pages until auth is confirmed.
+  // Exception: while logging out, keep the layout alive so LogoutOverlay stays mounted.
+  if (!isLoggingOut && !isAuthenticated && isPrivatePage) {
     return null;
   }
 

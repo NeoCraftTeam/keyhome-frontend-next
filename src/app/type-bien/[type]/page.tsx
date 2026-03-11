@@ -1,12 +1,12 @@
+import type { SvgIconComponent } from '@mui/icons-material';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import BedIcon from '@mui/icons-material/Bed';
 import BusinessIcon from '@mui/icons-material/Business';
+import HomeIcon from '@mui/icons-material/Home';
 import LandscapeIcon from '@mui/icons-material/Landscape';
 import OtherHousesIcon from '@mui/icons-material/OtherHouses';
 import PlaceIcon from '@mui/icons-material/Place';
 import SearchIcon from '@mui/icons-material/Search';
-import HomeIcon from '@mui/icons-material/Home';
-import type { SvgIconComponent } from '@mui/icons-material';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -250,7 +250,7 @@ export default async function PropertyTypePage({
               fontWeight: 600, fontSize: 15, textDecoration: 'none',
             }}
           >
-            Publier une annonce
+            Devenir hôte
           </Link>
         </div>
 

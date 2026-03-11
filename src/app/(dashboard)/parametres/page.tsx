@@ -582,7 +582,7 @@ export default function ParametresPage() {
         color="text.disabled"
         sx={{ display: 'block', textAlign: 'center', mt: 3, mb: 1 }}
       >
-        KeyHome v2.0 — Fait avec ❤️ au Cameroun
+        KeyHome v1.0 — Propulsé par NeoCraftTeam
       </Typography>
     </Container>
   );

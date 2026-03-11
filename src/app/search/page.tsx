@@ -11,38 +11,38 @@ import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { AdType, City, SearchParams } from '@/types';
 import {
-    Close as CloseIcon,
-    List as ListIcon,
-    Map as MapIcon,
-    Search as SearchIcon,
-    Tune as TuneIcon,
-    WhatsApp as WhatsAppIcon,
-    HomeWork as HomeWorkIcon,
+  Close as CloseIcon,
+  HomeWork as HomeWorkIcon,
+  List as ListIcon,
+  Map as MapIcon,
+  Search as SearchIcon,
+  Tune as TuneIcon,
+  WhatsApp as WhatsAppIcon,
 } from '@mui/icons-material';
 import {
-    Autocomplete,
-    Box,
-    Button,
-    Chip,
-    CircularProgress,
-    Divider,
-    Drawer,
-    FormControlLabel,
-    Grid,
-    IconButton,
-    Menu,
-    MenuItem,
-    Pagination,
-    Slider,
-    Switch,
-    TextField,
-    ToggleButton,
-    ToggleButtonGroup,
-    Tooltip,
-    Typography,
-    Fab,
-    useMediaQuery,
-    useTheme,
+  Autocomplete,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Divider,
+  Drawer,
+  Fab,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  Menu,
+  MenuItem,
+  Pagination,
+  Slider,
+  Switch,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import mapboxgl from 'mapbox-gl';
@@ -536,110 +536,144 @@ function SearchContent() {
           boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
-        {/* City autocomplete */}
-        <Autocomplete
-          size="small"
-          freeSolo
-          options={citiesData?.data || []}
-          getOptionLabel={(opt) => typeof opt === 'string' ? opt : opt.name}
-          value={selectedCity}
-          onChange={(_, val) => {
-            if (typeof val === 'string') {
-              setQuery(val);
-              setSelectedCity(null);
-            } else {
-              setSelectedCity(val);
-              setCityInput(val?.name || '');
-              setQuery('');
-            }
-            setPage(1);
-          }}
-          inputValue={cityInput}
-          onInputChange={(_, val, reason) => {
-            if (reason !== 'reset') {
-              setCityInput(val);
-            }
-          }}
-          filterOptions={(x) => x}
-          loading={isCitiesLoading}
-          noOptionsText={cityInput.length < 1 ? 'Tapez pour rechercher…' : 'Aucune ville trouvée'}
-          loadingText="Recherche…"
-          slotProps={{
-            paper: { sx: { borderRadius: 3, mt: 0.5, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' } },
-            listbox: { sx: { py: 0.5 } },
-          }}
-          renderOption={(props, option) => (
-            <li {...props} key={typeof option === 'string' ? option : option.id}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.25 }}>
-                <SearchIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                <Typography sx={{ fontSize: '0.875rem' }}>
-                  {typeof option === 'string' ? option : option.name}
-                </Typography>
-              </Box>
-            </li>
-          )}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder="Ville, quartier…"
-              variant="outlined"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !selectedCity && cityInput.trim()) {
-                  e.preventDefault();
-                  setQuery(cityInput.trim());
-                  setPage(1);
-                }
-              }}
-              slotProps={{
-                input: {
-                  ...params.InputProps,
-                  startAdornment: <SearchIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.5 }} />,
-                  endAdornment: (
-                    <>
-                      {isCitiesLoading ? <CircularProgress color="inherit" size={16} /> : null}
-                      {(selectedCity || cityInput) && (
-                        <IconButton
-                          size="small"
-                          aria-label="Effacer la recherche"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedCity(null);
-                            setCityInput('');
-                            setQuery('');
-                            setPage(1);
-                          }}
-                          sx={{ p: 0.25 }}
-                        >
-                          <CloseIcon sx={{ fontSize: 14 }} />
-                        </IconButton>
-                      )}
-                    </>
-                  ),
-                },
-              }}
-              sx={{
-                minWidth: { xs: 180, md: 280 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '10px',
-                  py: '2px',
-                  pr: '8px !important',
-                  fontSize: '0.875rem',
-                  bgcolor: 'background.default',
-                  transition: 'all 0.2s ease',
-                  '& fieldset': { borderColor: 'divider' },
-                  '&:hover fieldset': { borderColor: 'text.secondary' },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
-                    boxShadow: '0 0 0 3px rgba(246,71,95,0.12)',
-                  },
-                },
-              }}
-            />
-          )}
-          sx={{ flexShrink: 0 }}
-        />
+        {/* List / Map toggle — mobile first so it's always visible */}
+        {isMobile && (
+          <ToggleButtonGroup
+            value={mobileViewMode}
+            exclusive
+            onChange={(_, val) => val && setMobileViewMode(val)}
+            size="small"
+            sx={{
+              flexShrink: 0,
+              '& .MuiToggleButton-root': {
+                borderRadius: '8px !important',
+                border: '1px solid',
+                borderColor: 'divider',
+                px: 1.5,
+              },
+              '& .Mui-selected': {
+                bgcolor: 'primary.main !important',
+                color: '#fff !important',
+              },
+            }}
+          >
+            <ToggleButton value="list" aria-label="Liste" sx={{ gap: 0.5, fontSize: '0.8rem', fontWeight: 600 }}>
+              <ListIcon sx={{ fontSize: 16 }} />
+              Liste
+            </ToggleButton>
+            <ToggleButton value="map" aria-label="Carte" sx={{ gap: 0.5, fontSize: '0.8rem', fontWeight: 600 }}>
+              <MapIcon sx={{ fontSize: 16 }} />
+              Carte
+            </ToggleButton>
+          </ToggleButtonGroup>
+        )}
 
-        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+        {/* City autocomplete — desktop only; on mobile it lives inside the Filtres drawer */}
+        {!isMobile && (
+          <Autocomplete
+            size="small"
+            freeSolo
+            options={citiesData?.data || []}
+            getOptionLabel={(opt) => typeof opt === 'string' ? opt : opt.name}
+            value={selectedCity}
+            onChange={(_, val) => {
+              if (typeof val === 'string') {
+                setQuery(val);
+                setSelectedCity(null);
+              } else {
+                setSelectedCity(val);
+                setCityInput(val?.name || '');
+                setQuery('');
+              }
+              setPage(1);
+            }}
+            inputValue={cityInput}
+            onInputChange={(_, val, reason) => {
+              if (reason !== 'reset') {
+                setCityInput(val);
+              }
+            }}
+            filterOptions={(x) => x}
+            loading={isCitiesLoading}
+            noOptionsText={cityInput.length < 1 ? 'Tapez pour rechercher…' : 'Aucune ville trouvée'}
+            loadingText="Recherche…"
+            slotProps={{
+              paper: { sx: { borderRadius: 3, mt: 0.5, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' } },
+              listbox: { sx: { py: 0.5 } },
+            }}
+            renderOption={(props, option) => (
+              <li {...props} key={typeof option === 'string' ? option : option.id}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.25 }}>
+                  <SearchIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                  <Typography sx={{ fontSize: '0.875rem' }}>
+                    {typeof option === 'string' ? option : option.name}
+                  </Typography>
+                </Box>
+              </li>
+            )}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Ville, quartier…"
+                variant="outlined"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !selectedCity && cityInput.trim()) {
+                    e.preventDefault();
+                    setQuery(cityInput.trim());
+                    setPage(1);
+                  }
+                }}
+                slotProps={{
+                  input: {
+                    ...params.InputProps,
+                    startAdornment: <SearchIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.5 }} />,
+                    endAdornment: (
+                      <>
+                        {isCitiesLoading ? <CircularProgress color="inherit" size={16} /> : null}
+                        {(selectedCity || cityInput) && (
+                          <IconButton
+                            size="small"
+                            aria-label="Effacer la recherche"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCity(null);
+                              setCityInput('');
+                              setQuery('');
+                              setPage(1);
+                            }}
+                            sx={{ p: 0.25 }}
+                          >
+                            <CloseIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        )}
+                      </>
+                    ),
+                  },
+                }}
+                sx={{
+                  minWidth: { xs: 180, md: 280 },
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '10px',
+                    py: '2px',
+                    pr: '8px !important',
+                    fontSize: '0.875rem',
+                    bgcolor: 'background.default',
+                    transition: 'all 0.2s ease',
+                    '& fieldset': { borderColor: 'divider' },
+                    '&:hover fieldset': { borderColor: 'text.secondary' },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'primary.main',
+                      boxShadow: '0 0 0 3px rgba(246,71,95,0.12)',
+                    },
+                  },
+                }}
+              />
+            )}
+            sx={{ flexShrink: 0 }}
+          />
+        )}
+
+        {!isMobile && <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />}
 
         {/* Filtres */}
         <Button
@@ -678,7 +712,7 @@ function SearchContent() {
           </Button>
         )}
 
-        {/* Results count badge */}
+        {/* Results count badge — desktop only */}
         {!isMobile && !isLoading && total > 0 && (
           <Chip
             label={`${total.toLocaleString('fr-FR')} résultat${total > 1 ? 's' : ''}`}
@@ -693,38 +727,6 @@ function SearchContent() {
               px: 0.5,
             }}
           />
-        )}
-
-        {isMobile && (
-          <ToggleButtonGroup
-            value={mobileViewMode}
-            exclusive
-            onChange={(_, val) => val && setMobileViewMode(val)}
-            size="small"
-            sx={{
-              ml: 'auto',
-              flexShrink: 0,
-              '& .MuiToggleButton-root': {
-                borderRadius: '8px !important',
-                border: '1px solid',
-                borderColor: 'divider',
-                px: 1.5,
-              },
-              '& .Mui-selected': {
-                bgcolor: 'primary.main !important',
-                color: '#fff !important',
-              },
-            }}
-          >
-            <ToggleButton value="list" aria-label="Liste" sx={{ gap: 0.5, fontSize: '0.8rem', fontWeight: 600 }}>
-              <ListIcon sx={{ fontSize: 16 }} />
-              Liste
-            </ToggleButton>
-            <ToggleButton value="map" aria-label="Carte" sx={{ gap: 0.5, fontSize: '0.8rem', fontWeight: 600 }}>
-              <MapIcon sx={{ fontSize: 16 }} />
-              Carte
-            </ToggleButton>
-          </ToggleButtonGroup>
         )}
       </Box>
 

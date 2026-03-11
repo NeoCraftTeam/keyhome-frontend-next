@@ -1,57 +1,53 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Avatar,
-  Button,
-  TextField,
-  Tabs,
-  Tab,
-  Alert,
-  CircularProgress,
-  Paper,
-  IconButton,
-  InputAdornment,
-  Snackbar,
-  Autocomplete,
-  LinearProgress,
-} from '@mui/material';
-import {
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  Visibility,
-  VisibilityOff,
-  Favorite as FavoriteIcon,
-  Lock as LockIcon,
-  PhotoCamera,
-  Link as LinkIcon,
-  LinkOff as LinkOffIcon,
-  Assignment as AssignmentIcon,
-  CheckCircleOutline as CheckCircleOutlineIcon,
-  ReceiptLong as ReceiptLongIcon,
-  LockOpen as LockOpenIcon,
-} from '@mui/icons-material';
-import { Apple, Facebook, Google } from '@mui/icons-material';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
-import { useFavorites } from '@/providers/FavoritesProvider';
-import { authService } from '@/services/auth.service';
-import { usersService, unlockedAdsService } from '@/services/users.service';
-import { citiesService } from '@/services/cities.service';
-import { surveysService } from '@/services/surveys.service';
-import { City } from '@/types';
-import { getSafeErrorMessage } from '@/lib/error-messages';
 import AdCard from '@/components/ads/AdCard';
 import PaymentHistoryTable from '@/components/payment/PaymentHistoryTable';
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
-import { useUser } from '@clerk/nextjs';
+import { getSafeErrorMessage } from '@/lib/error-messages';
+import { useAuth } from '@/providers/AuthProvider';
+import { useFavorites } from '@/providers/FavoritesProvider';
+import { authService } from '@/services/auth.service';
+import { citiesService } from '@/services/cities.service';
+import { surveysService } from '@/services/surveys.service';
+import { unlockedAdsService, usersService } from '@/services/users.service';
+import { City } from '@/types';
+import {
+    Assignment as AssignmentIcon,
+    Cancel as CancelIcon,
+    CheckCircleOutline as CheckCircleOutlineIcon,
+    Edit as EditIcon,
+    Favorite as FavoriteIcon,
+    Lock as LockIcon,
+    LockOpen as LockOpenIcon,
+    PhotoCamera,
+    ReceiptLong as ReceiptLongIcon,
+    Save as SaveIcon,
+    Visibility,
+    VisibilityOff,
+} from '@mui/icons-material';
+import {
+    Alert,
+    Autocomplete,
+    Avatar,
+    Box,
+    Button,
+    CircularProgress,
+    Container,
+    Grid,
+    IconButton,
+    InputAdornment,
+    LinearProgress,
+    Paper,
+    Snackbar,
+    Tab,
+    Tabs,
+    TextField,
+    Typography,
+} from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { useRef, useState } from 'react';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -77,7 +73,6 @@ function TabPanel({ children, value, index }: TabPanelProps) {
 
 export default function ProfilePage() {
   const { user, setUser, refreshUser } = useAuth();
-  const { user: clerkUser } = useUser();
   const { favorites } = useFavorites();
   const [tab, setTab] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
@@ -330,7 +325,6 @@ export default function ProfilePage() {
         <Tab icon={<LockOpenIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={`Déverrouillées (${unlockedAds.length})`} />
         <Tab icon={<ReceiptLongIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Paiements" />
         <Tab icon={<LockIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Sécurité" />
-        <Tab icon={<LinkIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Comptes liés" />
         <Tab icon={<AssignmentIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Sondage" />
       </Tabs>
       </FadeIn>
@@ -608,189 +602,8 @@ export default function ProfilePage() {
         </Box>
       </TabPanel>
 
-      {/* Tab 5: Connected OAuth accounts */}
+      {/* Tab 5: Sondage */}
       <TabPanel value={tab} index={5}>
-        <Typography variant="h6" fontWeight={600} gutterBottom>
-          Comptes liés
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-          Connectez vos comptes sociaux pour vous connecter en un clic, sans mot de passe.
-        </Typography>
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 520 }}>
-          {([
-            {
-              key: 'google',
-              label: 'Google',
-              icon: <Google sx={{ fontSize: 26 }} />,
-              strategy: 'oauth_google' as const,
-              brandColor: '#4285F4',
-              bgGradient: 'linear-gradient(135deg, #4285F4 0%, #34A853 100%)',
-            },
-            {
-              key: 'facebook',
-              label: 'Facebook',
-              icon: <Facebook sx={{ fontSize: 26 }} />,
-              strategy: 'oauth_facebook' as const,
-              brandColor: '#1877F2',
-              bgGradient: 'linear-gradient(135deg, #1877F2 0%, #0a5cd3 100%)',
-            },
-            {
-              key: 'apple',
-              label: 'Apple',
-              icon: <Apple sx={{ fontSize: 26 }} />,
-              strategy: 'oauth_apple' as const,
-              brandColor: '#1c1c1e',
-              bgGradient: 'linear-gradient(135deg, #1c1c1e 0%, #3a3a3c 100%)',
-            },
-          ] as const).map(({ key, label, icon, strategy, brandColor, bgGradient }) => {
-            const linked = clerkUser?.externalAccounts?.find(
-              (acc) => acc.provider === key || acc.provider === `oauth_${key}`,
-            );
-            const isLoading = linkedAccountsLoading === key;
-
-            return (
-              <Box
-                key={key}
-                sx={{
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                  border: '1px solid',
-                  borderColor: linked ? `${brandColor}55` : 'divider',
-                  transition: 'box-shadow 0.2s ease, transform 0.2s ease',
-                  '&:hover': { boxShadow: `0 6px 24px ${brandColor}22`, transform: 'translateY(-1px)' },
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
-                  {/* Brand color stripe */}
-                  <Box
-                    sx={{
-                      width: 60,
-                      flexShrink: 0,
-                      background: bgGradient,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                    }}
-                  >
-                    {icon}
-                  </Box>
-
-                  {/* Content */}
-                  <Box
-                    sx={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1.5,
-                      p: 2,
-                      bgcolor: 'background.paper',
-                    }}
-                  >
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography fontWeight={700} variant="body1" sx={{ lineHeight: 1.2 }}>
-                        {label}
-                      </Typography>
-                      {linked ? (
-                        <Typography
-                          variant="caption"
-                          sx={{ color: brandColor, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}
-                        >
-                          <Box
-                            component="span"
-                            sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: brandColor, display: 'inline-block', flexShrink: 0 }}
-                          />
-                          {linked.emailAddress ?? 'Connecté'}
-                        </Typography>
-                      ) : (
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
-                          Non connecté
-                        </Typography>
-                      )}
-                    </Box>
-
-                    {linked ? (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="error"
-                        startIcon={isLoading ? <CircularProgress size={13} color="error" /> : <LinkOffIcon sx={{ fontSize: 16 }} />}
-                        disabled={isLoading}
-                        onClick={async () => {
-                          setSnackbar(null);
-                          setLinkedAccountsLoading(key);
-                          try {
-                            await linked.destroy();
-                            // Refresh Clerk user so UI updates immediately
-                            await clerkUser?.reload();
-                          } catch (err) {
-                            setSnackbar({ message: getSafeErrorMessage(err), severity: 'error' });
-                          } finally {
-                            setLinkedAccountsLoading(null);
-                          }
-                        }}
-                        sx={{ textTransform: 'none', fontSize: '0.75rem', whiteSpace: 'nowrap', flexShrink: 0 }}
-                      >
-                        Déconnecter
-                      </Button>
-                    ) : (
-                      <Button
-                        size="small"
-                        variant="contained"
-                        startIcon={isLoading ? <CircularProgress size={13} sx={{ color: '#fff' }} /> : <LinkIcon sx={{ fontSize: 16 }} />}
-                        disabled={isLoading}
-                        onClick={async () => {
-                          if (!clerkUser) {
-                            setSnackbar({
-                              message: 'La liaison de comptes sociaux nécessite une connexion via Google, Facebook ou Apple. ' +
-                                'Connectez-vous d\'abord avec un compte social, puis liez les autres ici.',
-                              severity: 'error',
-                            });
-                            return;
-                          }
-                          setSnackbar(null);
-                          setLinkedAccountsLoading(key);
-                          try {
-                            const externalAccount = await clerkUser.createExternalAccount({
-                              strategy,
-                              redirectUrl: `${window.location.origin}/profile`,
-                            });
-                            const verifyUrl = externalAccount.verification?.externalVerificationRedirectURL?.href;
-                            if (verifyUrl) {
-                              // Clerk-generated OAuth redirect — always safe to follow.
-                              // Do NOT route through redirectToTrustedUrl() as it blocks
-                              // external OAuth provider domains (google.com, facebook.com, etc.).
-                              window.location.assign(verifyUrl);
-                            }
-                          } catch (err) {
-                            setSnackbar({ message: getSafeErrorMessage(err), severity: 'error' });
-                            setLinkedAccountsLoading(null);
-                          }
-                        }}
-                        sx={{
-                          textTransform: 'none',
-                          fontSize: '0.75rem',
-                          whiteSpace: 'nowrap',
-                          flexShrink: 0,
-                          bgcolor: brandColor,
-                          '&:hover': { bgcolor: brandColor, filter: 'brightness(0.88)' },
-                          boxShadow: `0 3px 10px ${brandColor}44`,
-                        }}
-                      >
-                        Connecter
-                      </Button>
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-            );
-          })}
-        </Box>
-      </TabPanel>
-
-      {/* Tab 6: Sondage */}
-      <TabPanel value={tab} index={6}>
         <Typography variant="h6" fontWeight={600} gutterBottom>
           Sondage de satisfaction
         </Typography>

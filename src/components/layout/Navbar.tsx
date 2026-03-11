@@ -7,21 +7,25 @@ import {
   AddCircleOutline as AddCircleOutlineIcon,
   CalendarMonth as CalendarMonthIcon,
   Close as CloseIcon,
-  DarkMode as DarkModeIcon,
   Explore as ExploreIcon,
   HelpOutline as HelpOutlineIcon,
   Home as HomeIcon,
-  LightMode as LightModeIcon,
   Logout as LogoutIcon,
   Menu as MenuIcon,
   Person as PersonIcon,
   Search as SearchIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import {
   AppBar,
   Avatar,
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   Drawer,
   IconButton,
@@ -58,6 +62,7 @@ export default function Navbar() {
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   return (
     <>
@@ -189,7 +194,7 @@ export default function Navbar() {
 
             {isAuthenticated ? (
               <>
-                {!isMobile && <CreditsWidget />}
+                <CreditsWidget />
 
                 {/* Avatar menu — desktop only; mobile uses the drawer */}
                 {!isMobile && (
@@ -282,7 +287,18 @@ export default function Navbar() {
                       <MenuItem
                         onClick={() => {
                           setAnchorEl(null);
-                          logout();
+                          router.push('/parametres');
+                        }}
+                      >
+                        <ListItemIcon>
+                          <SettingsIcon />
+                        </ListItemIcon>
+                        <ListItemText>Paramètres</ListItemText>
+                      </MenuItem>
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorEl(null);
+                          setLogoutOpen(true);
                         }}
                       >
                         <ListItemIcon>
@@ -409,7 +425,7 @@ export default function Navbar() {
             </ListItem>
           ))}
 
-          {/* Publier une annonce — mobile drawer */}
+          {/* Devenir hôte — mobile drawer */}
           <ListItem disablePadding>
             <ListItemButton
               component="a"
@@ -428,7 +444,7 @@ export default function Navbar() {
                 <AddCircleOutlineIcon color="primary" />
               </ListItemIcon>
               <ListItemText
-                primary="Publier une annonce"
+                primary="Devenir hôte"
                 primaryTypographyProps={{ fontWeight: 600 }}
               />
             </ListItemButton>
@@ -469,12 +485,26 @@ export default function Navbar() {
                   <ListItemText primary="Mon profil" />
                 </ListItemButton>
               </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    setMobileOpen(false);
+                    router.push('/parametres');
+                  }}
+                  sx={{ borderRadius: 2, mx: 1 }}
+                >
+                  <ListItemIcon>
+                    <SettingsIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Paramètres" />
+                </ListItemButton>
+              </ListItem>
               <Divider sx={{ my: 1, mx: 2 }} />
               <ListItem disablePadding>
                 <ListItemButton
                   onClick={() => {
                     setMobileOpen(false);
-                    logout();
+                    setLogoutOpen(true);
                   }}
                   sx={{ borderRadius: 2, mx: 1, color: 'error.main' }}
                 >
@@ -508,6 +538,39 @@ export default function Navbar() {
           )}
         </List>
       </Drawer>
+      {/* Logout confirmation dialog */}
+      <Dialog
+        open={logoutOpen}
+        onClose={() => setLogoutOpen(false)}
+        PaperProps={{ sx: { borderRadius: 3, px: 1 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Se déconnecter ?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Êtes-vous sûr(e) de vouloir vous déconnecter de votre compte KeyHome ?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ pb: 2, px: 3, gap: 1 }}>
+          <Button
+            onClick={() => setLogoutOpen(false)}
+            variant="outlined"
+            sx={{ borderRadius: '20px', textTransform: 'none', fontWeight: 600 }}
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={() => {
+              setLogoutOpen(false);
+              logout();
+            }}
+            variant="contained"
+            color="error"
+            sx={{ borderRadius: '20px', textTransform: 'none', fontWeight: 600 }}
+          >
+            Déconnexion
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

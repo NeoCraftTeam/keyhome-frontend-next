@@ -231,69 +231,79 @@ export default function VerifyOtpPage() {
           </FadeIn>
 
           <FadeIn delay={0.2} direction="up">
-            <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
-              {digits.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => { inputRefs.current[index] = el; }}
-                  value={digit}
-                  onChange={(e) => handleChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  onPaste={handlePaste}
-                  maxLength={1}
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  style={{
-                    width: undefined,
-                    minWidth: 42,
-                    maxWidth: 52,
-                    flex: 1,
-                    height: 60,
-                    fontSize: 26,
-                    fontWeight: 700,
-                    textAlign: 'center',
-                    border: `2px solid ${digit ? '#F6475F' : '#e2e8f0'}`,
-                    borderRadius: 10,
-                    outline: 'none',
-                    background: digit ? 'rgba(246,71,95,0.04)' : '#fff',
-                    color: '#0f172a',
-                    transition: 'border-color 0.15s, background 0.15s',
-                    cursor: 'text',
-                  }}
-                />
-              ))}
-            </Box>
-          </FadeIn>
-
-          {error && (
-            <FadeIn direction="none" duration={0.3}>
-              <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
-            </FadeIn>
-          )}
-          {resendMessage && (
-            <FadeIn direction="none" duration={0.3}>
-              <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{resendMessage}</Alert>
-            </FadeIn>
-          )}
-
-          <FadeIn delay={0.3} direction="up">
-            <Button
-              onClick={handleSubmit}
-              variant="contained"
-              size="large"
-              fullWidth
-              disabled={!isComplete || isSubmitting}
-              sx={{
-                py: 1.5,
-                fontSize: '1rem',
-                fontWeight: 600,
-                background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-                '&:active': { transform: 'scale(0.97)' },
-              }}
+            {/* form wrapper is required for iOS/Android SMS OTP autofill */}
+            <Box
+              component="form"
+              onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}
+              autoComplete="on"
             >
-              {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Vérifier le code'}
-            </Button>
+              <Box sx={{ display: 'flex', gap: { xs: 0.75, sm: 1.5 }, mb: 3 }}>
+                {digits.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => { inputRefs.current[index] = el; }}
+                    value={digit}
+                    onChange={(e) => handleChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    onPaste={handlePaste}
+                    maxLength={1}
+                    inputMode="numeric"
+                    type="text"
+                    // Only the FIRST box gets one-time-code — browsers/OS use it
+                    // to detect an OTP field. Setting it on all 6 breaks autofill.
+                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      width: 'clamp(36px, 12vw, 56px)',
+                      height: 'clamp(44px, 13vw, 64px)',
+                      fontSize: 'clamp(18px, 5vw, 28px)',
+                      fontWeight: 700,
+                      textAlign: 'center',
+                      border: `2px solid ${digit ? '#F6475F' : '#e2e8f0'}`,
+                      borderRadius: 10,
+                      outline: 'none',
+                      background: digit ? 'rgba(246,71,95,0.04)' : '#fff',
+                      color: '#0f172a',
+                      transition: 'border-color 0.15s, background 0.15s',
+                      cursor: 'text',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                ))}
+              </Box>
+
+              {error && (
+                <FadeIn direction="none" duration={0.3}>
+                  <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+                </FadeIn>
+              )}
+              {resendMessage && (
+                <FadeIn direction="none" duration={0.3}>
+                  <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{resendMessage}</Alert>
+                </FadeIn>
+              )}
+
+              <FadeIn delay={0.3} direction="up">
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  fullWidth
+                  disabled={!isComplete || isSubmitting}
+                  sx={{
+                    py: 1.5,
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                    '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                    '&:active': { transform: 'scale(0.97)' },
+                  }}
+                >
+                  {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Vérifier le code'}
+                </Button>
+              </FadeIn>
+            </Box>
           </FadeIn>
 
           {/* Resend OTP */}

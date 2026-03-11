@@ -1,6 +1,7 @@
 'use client';
 
 import FadeIn from '@/components/ui/FadeIn';
+import PhoneField from '@/components/ui/PhoneField';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
@@ -8,7 +9,7 @@ import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { City } from '@/types';
 import { useSignUp } from '@clerk/nextjs';
-import { ArrowBack, Phone as PhoneIcon } from '@mui/icons-material';
+import { ArrowBack } from '@mui/icons-material';
 import {
     Alert,
     Autocomplete,
@@ -16,7 +17,6 @@ import {
     Button,
     CircularProgress,
     IconButton,
-    InputAdornment,
     TextField,
     Typography,
 } from '@mui/material';
@@ -245,22 +245,11 @@ export default function CompleteProfilePage() {
           <FadeIn delay={0.2} direction="up">
             <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {showPhoneField && (
-                <TextField
-                  label="Numéro de téléphone"
+                <PhoneField
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="+237 6XX XXX XXX"
+                  onChange={(val) => setPhoneNumber(val)}
+                  label="Numéro de téléphone"
                   required
-                  fullWidth
-                  autoFocus
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PhoneIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
               )}
 

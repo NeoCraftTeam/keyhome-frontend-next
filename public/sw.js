@@ -54,6 +54,7 @@ const BYPASS_PATTERNS = [
   /sentry/,
   /googletagmanager/,
   /mapbox\.com\/events/,
+  /^\/_next\/image(\?|$)/,
 ];
 
 // Background Sync queue tags

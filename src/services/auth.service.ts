@@ -89,7 +89,6 @@ export const authService = {
     const d = data as { access_token: string; user: User; panel_sso_url: string | null };
     return { token: d.access_token, user: d.user, panel_sso_url: d.panel_sso_url };
   },
-
   async verifyClerkOtp(otp: string): Promise<
     | { state: 'profile_required'; prefill: { firstname: string; lastname: string; email: string | null; avatar: string | null } }
     | { state: 'authenticated'; token: string; user: User; panel_sso_url: string | null }
