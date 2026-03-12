@@ -1,47 +1,120 @@
 'use client';
 
+import { creditsService } from '@/services/credits.service';
+import { PointPackage } from '@/types';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useLandingTheme } from './LandingThemeContext';
-import { CheckCircleRounded, Toll, LocalFireDepartment, WorkspacePremium, CreditCard, HelpOutline } from '@mui/icons-material';
+import { CheckCircleRounded, Toll, LocalFireDepartment, CreditCard, HelpOutline } from '@mui/icons-material';
 import { PageTransitionLink } from './PageTransition';
 import { Tooltip } from '@mui/material';
 
-const packages = [
+type LandingPackageCard = {
+  id: string;
+  name: string;
+  points: number;
+  price: string;
+  description: string;
+  features: string[];
+  badge: string;
+  isPopular?: boolean;
+  sortOrder: number;
+};
+
+const fallbackPackages: LandingPackageCard[] = [
   {
+    id: 'fallback-starter',
     name: 'Starter',
     points: 10,
     price: '1 000',
-    description: 'Parfait pour un besoin ponctuel et tester le service.',
-    features: ['Accès à 10 numéros', 'Validité illimitée', 'Support par email'],
+    description: 'Débloquez vos premiers contacts propriétaires vérifiés pour lancer votre recherche.',
+    features: ['10 déverrouillages de contacts', 'Accès direct aux numéros et WhatsApp', 'Historique des annonces déverrouillées'],
     badge: 'Essai',
-    color: '#1C1C1E',
+    sortOrder: 1,
   },
   {
+    id: 'fallback-standard',
     name: 'Standard',
     points: 50,
     price: '4 000',
-    description: 'Le meilleur choix pour trouver votre futur logement rapidement.',
-    features: ['Accès à 50 numéros', 'Validité illimitée', 'Priorité support', 'Badge vérifié'],
+    description: 'Le pack équilibré pour comparer plus d’annonces et contacter rapidement les bons propriétaires.',
+    features: ['50 déverrouillages de contacts', 'Accès direct aux numéros et WhatsApp', 'Priorité de traitement support', 'Meilleur ratio coût/contact'],
     badge: 'Populaire',
     isPopular: true,
-    color: '#F6475F',
+    sortOrder: 2,
   },
   {
+    id: 'fallback-premium',
     name: 'Premium',
-    points: 150,
+    points: 120,
     price: '10 000',
-    description: 'Idéal pour les chasseurs de perles rares ou les agences.',
-    features: ['Accès à 150 numéros', 'Validité illimitée', 'Support WhatsApp', 'Analyses de prix'],
+    description: 'Conçu pour les chercheurs intensifs et pros qui veulent traiter un grand volume d’annonces.',
+    features: ['120 déverrouillages de contacts', 'Accès direct aux numéros et WhatsApp', 'Support prioritaire', 'Volume optimisé pour pros'],
     badge: 'Expert',
-    isPremium: true,
-    color: '#1A237E',
-  }
+    sortOrder: 3,
+  },
 ];
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
+const formatFcfa = (amount: number): string => {
+  return new Intl.NumberFormat('fr-FR').format(amount);
+};
+
+const normalizeName = (name: string): string => {
+  return name.replace(/^pack\s+/i, '').trim();
+};
+
+const defaultDescription = (points: number): string => {
+  if (points <= 20) {
+    return 'Parfait pour tester KeyHome et débloquer vos premiers contacts propriétaires.';
+  }
+
+  if (points <= 80) {
+    return 'Idéal pour accélérer votre recherche et multiplier les prises de contact qualifiées.';
+  }
+
+  return 'Pensé pour les utilisateurs intensifs et équipes qui traitent beaucoup d’annonces.';
+};
+
+const defaultFeatures = (points: number): string[] => {
+  return [
+    `${points} déverrouillages de contacts`,
+    'Accès direct aux numéros et WhatsApp des propriétaires',
+    'Historique des annonces déverrouillées',
+  ];
+};
+
+const mapApiPackageToCard = (pkg: PointPackage): LandingPackageCard => {
+  const trimmedDescription = pkg.description?.trim() ?? '';
+  const cleanedFeatures = (pkg.features ?? []).map((feature) => feature.trim()).filter(Boolean);
+  const normalizedName = normalizeName(pkg.name);
+
+  return {
+    id: pkg.id,
+    name: normalizedName || pkg.name,
+    points: pkg.points_awarded,
+    price: formatFcfa(pkg.price),
+    description: trimmedDescription || defaultDescription(pkg.points_awarded),
+    features: cleanedFeatures.length > 0 ? cleanedFeatures : defaultFeatures(pkg.points_awarded),
+    badge: pkg.badge?.trim() || (pkg.is_popular ? 'Populaire' : 'Crédits'),
+    isPopular: pkg.is_popular,
+    sortOrder: pkg.sort_order ?? 0,
+  };
+};
+
 export default function PricingSection() {
   const { bg, surface, border, text, textSub, textMuted } = useLandingTheme();
+  const { data: apiPackages = [] } = useQuery({
+    queryKey: ['landing-credit-packages'],
+    queryFn: creditsService.listPackages,
+  });
+
+  const packages = apiPackages.length > 0
+    ? [...apiPackages]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(mapApiPackageToCard)
+    : fallbackPackages;
 
   return (
     <section
@@ -100,7 +173,7 @@ export default function PricingSection() {
         }}>
           {packages.map((pkg, i) => (
             <motion.div
-              key={pkg.name}
+              key={pkg.id}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
@@ -180,8 +253,8 @@ export default function PricingSection() {
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 40, flex: 1 }}>
-                {pkg.features.map(feat => (
-                  <div key={feat} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {pkg.features.map((feat) => (
+                  <div key={`${pkg.id}-${feat}`} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <CheckCircleRounded style={{
                       fontSize: 18,
                       color: pkg.isPopular ? '#fff' : '#10B981'

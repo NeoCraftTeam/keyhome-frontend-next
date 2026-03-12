@@ -1,11 +1,24 @@
 import api from '@/lib/api';
 import { CreditPurchaseResponse, CreditVerifyResponse, PointPackage } from '@/types';
 
+type ResourceCollection<T> = {
+  data?: T[];
+};
+
 export const creditsService = {
-  /** List all active point packages. */
+  async listPackages(): Promise<PointPackage[]> {
+    const response = await api.get('/credits/packages');
+    const payload = response.data as PointPackage[] | ResourceCollection<PointPackage>;
+
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    return Array.isArray(payload?.data) ? payload.data : [];
+  },
+
   async getPackages(): Promise<PointPackage[]> {
-    const { data } = await api.get('/credits/packages');
-    return data.data ?? data;
+    return this.listPackages();
   },
 
   /** Return the authenticated user's current point balance. */

@@ -10,6 +10,7 @@ import ImageLightbox from '@/components/ui/ImageLightbox';
 import ViewingBookingPanel from '@/components/viewing/ViewingBookingPanel';
 import QueryError from '@/components/ui/QueryError';
 import FadeIn from '@/components/ui/FadeIn';
+import AdReportModal from '@/components/ads/AdReportModal';
 import { formatPrice, formatRelativeDate } from '@/lib/constants';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
@@ -31,6 +32,7 @@ import {
   Email,
   Favorite,
   FavoriteBorder,
+  FlagOutlined,
   LocalParking,
   LocationOn,
   Lock,
@@ -83,6 +85,9 @@ function AdDetailContent() {
   const [unlockState, setUnlockState] = useState<UnlockResponse | null>(null);
   const [confirmStep, setConfirmStep] = useState(false);
   const [snackbar, setSnackbar] = useState('');
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [reportError, setReportError] = useState('');
   const [hasStoredSanctumToken, setHasStoredSanctumToken] = useState<boolean | null>(null);
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
   const { user: currentUser, isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -984,6 +989,32 @@ function AdDetailContent() {
                   <ViewingBookingPanel adId={ad.id} adTitle={ad.title} />
                 </Box>
               )}
+
+              <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Button
+                  fullWidth
+                  variant="text"
+                  startIcon={<FlagOutlined />}
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      sessionStorage.setItem('kh_redirect_after_login', window.location.pathname + window.location.search);
+                      router.push('/login');
+                      return;
+                    }
+                    setReportModalOpen(true);
+                  }}
+                  sx={{
+                    justifyContent: 'flex-start',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    color: 'text.secondary',
+                    textDecoration: 'underline',
+                    '&:hover': { bgcolor: 'transparent', color: 'text.primary' },
+                  }}
+                >
+                  Signaler cette annonce
+                </Button>
+              </Box>
             </Paper>
           </Grid>
         </Grid>
@@ -1231,6 +1262,17 @@ function AdDetailContent() {
           </Button>
         </Box>
       </Dialog>
+
+      <AdReportModal
+        adId={ad.id}
+        open={reportModalOpen}
+        submitting={isSubmittingReport}
+        serverError={reportError}
+        onClose={() => setReportModalOpen(false)}
+        onSubmittingChange={setIsSubmittingReport}
+        onServerErrorChange={setReportError}
+        onSuccess={() => setSnackbar('Signalement envoye. Merci pour votre vigilance.')}
+      />
 
       {/* 3D Tour fullscreen viewer */}
       {showTour && ad.tour_config && (
