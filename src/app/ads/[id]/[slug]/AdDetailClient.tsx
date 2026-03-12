@@ -66,7 +66,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 const MIN_UNLOCK_LOADER_MS = 2000;
 
@@ -88,6 +88,7 @@ function AdDetailContent() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [reportError, setReportError] = useState('');
+  const [showFullDescription, setShowFullDescription] = useState(false);
   const [hasStoredSanctumToken, setHasStoredSanctumToken] = useState<boolean | null>(null);
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
   const { user: currentUser, isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -138,6 +139,26 @@ function AdDetailContent() {
     staleTime: 15_000,
     enabled: isAuthenticated,
   });
+  const currentType = ad?.type?.name;
+  const { data: similarAdsResponse } = useQuery({
+    queryKey: ['ads-similar', adId, currentType],
+    queryFn: () => adsService.list({
+      per_page: 12,
+      type: currentType,
+      direction: 'desc',
+      order_by: 'created_at',
+    }),
+    enabled: !!currentType,
+  });
+  const descriptionText = ad?.description ?? '';
+  const descriptionParagraphs = useMemo(
+    () => descriptionText.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean),
+    [descriptionText]
+  );
+  const hasExpandableDescription = descriptionParagraphs.length > 1;
+  const visibleDescription = hasExpandableDescription && !showFullDescription
+    ? descriptionParagraphs[0]
+    : descriptionText;
 
   if (isError) {
     return (
@@ -266,6 +287,10 @@ function AdDetailContent() {
     ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
     : null);
   const currentBalance = unlockState?.current_balance ?? liveBalance ?? currentUser?.point_balance ?? 0;
+  const hasSupplementaryInfo = !!(ad?.deposit_amount || ad?.minimum_lease_duration || ad?.detailed_charges || ad?.property_condition_pdf);
+  const similarAds = (similarAdsResponse?.data ?? [])
+    .filter((item) => item.id !== ad?.id)
+    .slice(0, 10);
 
   // Format phone number for WhatsApp (remove spaces, dashes, etc.)
   const whatsappNumber = publisherPhone?.replace(/[\s\-\(\)]/g, '').replace(/^\+/, '');
@@ -631,15 +656,17 @@ function AdDetailContent() {
                 ) : (
                   ad.tour_config && (
                     <Button
-                      fullWidth
                       variant="outlined"
-                      size="large"
+                      size="medium"
                       startIcon={<ViewInAr sx={{ fontSize: 22 }} />}
                       onClick={() => setShowTour(true)}
                       sx={{
-                        py: 1.75,
+                        width: { xs: '100%', sm: 'fit-content' },
+                        minWidth: { sm: 250 },
+                        maxWidth: 360,
+                        py: 1.1,
                         fontWeight: 700,
-                        fontSize: '1rem',
+                        fontSize: '0.95rem',
                         borderRadius: 3,
                         bgcolor: (theme) => theme.palette.mode === 'dark'
                           ? 'rgba(255,255,255,0.06)'
@@ -713,98 +740,27 @@ function AdDetailContent() {
               </Box>
             </Box>
 
-            {/* Premium Info Section - Only when unlocked */}
-            {!isLocked && (ad.deposit_amount || ad.minimum_lease_duration || ad.detailed_charges || ad.property_condition_pdf) && (
-              <Paper
-                elevation={0}
+            {/* Description */}
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              Description
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line', mb: 3, lineHeight: 1.8 }}>
+              {visibleDescription}
+            </Typography>
+            {hasExpandableDescription && (
+              <Button
+                onClick={() => setShowFullDescription((previous) => !previous)}
+                size="small"
                 sx={{
-                  p: 3,
-                  borderRadius: 3,
+                  mt: -2,
                   mb: 3,
-                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(246,71,95,0.08)' : 'rgba(246,71,95,0.04)',
-                  border: '1px solid',
-                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(246,71,95,0.25)' : 'rgba(246,71,95,0.18)',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: 0.5,
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
-                  <Star sx={{ fontSize: 20, color: 'primary.main' }} />
-                  <Typography variant="subtitle1" fontWeight={700} sx={{ letterSpacing: -0.3 }}>
-                    Informations Supplémentaires
-                  </Typography>
-                </Box>
-
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2.5 }}>
-                  {ad.deposit_amount && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <AccountBalanceWallet sx={{ fontSize: 24, color: 'text.secondary' }} />
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', letterSpacing: 0.5, textTransform: 'uppercase', fontSize: '0.65rem' }}>
-                          Dépôt de garantie
-                        </Typography>
-                        <Typography variant="body1" fontWeight={600}>
-                          {ad.deposit_amount}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  )}
-
-                  {ad.minimum_lease_duration && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <CalendarMonth sx={{ fontSize: 24, color: 'text.secondary' }} />
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', letterSpacing: 0.5, textTransform: 'uppercase', fontSize: '0.65rem' }}>
-                          Durée minimum
-                        </Typography>
-                        <Typography variant="body1" fontWeight={600}>
-                          {ad.minimum_lease_duration}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  )}
-
-                  {ad.detailed_charges && (
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, gridColumn: { sm: ad.property_condition_pdf ? 'auto' : '1 / -1' } }}>
-                      <ReceiptLong sx={{ fontSize: 24, color: 'text.secondary', mt: 0.25 }} />
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', letterSpacing: 0.5, textTransform: 'uppercase', fontSize: '0.65rem' }}>
-                          Charges
-                        </Typography>
-                        <Typography variant="body1" fontWeight={600} sx={{ whiteSpace: 'pre-line' }}>
-                          {ad.detailed_charges}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  )}
-
-                  {ad.property_condition_pdf && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Description sx={{ fontSize: 24, color: 'text.secondary' }} />
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', letterSpacing: 0.5, textTransform: 'uppercase', fontSize: '0.65rem' }}>
-                          État des lieux
-                        </Typography>
-                        <Button
-                          variant="text"
-                          size="small"
-                          href={ad.property_condition_pdf}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          sx={{
-                            p: 0,
-                            minWidth: 0,
-                            fontWeight: 600,
-                            color: 'primary.main',
-                            textTransform: 'none',
-                            '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
-                          }}
-                        >
-                          Télécharger le PDF
-                        </Button>
-                      </Box>
-                    </Box>
-                  )}
-                </Box>
-              </Paper>
+                {showFullDescription ? 'Voir moins' : 'Voir plus'}
+              </Button>
             )}
 
             <Divider sx={{ mb: 3 }} />
@@ -812,18 +768,16 @@ function AdDetailContent() {
             {/* Property Attributes */}
             {ad.attributes && ad.attributes.length > 0 && (
               <>
-                <PropertyAttributes attributes={ad.attributes} variant="list" showTitle />
+                <PropertyAttributes
+                  attributes={ad.attributes}
+                  maxDisplay={9}
+                  variant="list"
+                  showTitle
+                />
                 <Divider sx={{ my: 3 }} />
               </>
-            )}
 
-            {/* Description */}
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Description
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line', mb: 3, lineHeight: 1.8 }}>
-              {ad.description}
-            </Typography>
+            )}
 
             {/* Reviews & ratings */}
             <ReviewsSection
@@ -837,6 +791,7 @@ function AdDetailContent() {
               adId={ad.id}
               hasUserReviewed={!!(currentUser && ad.reviews?.some(r => r.user?.id === currentUser.id))}
             />
+
           </Grid>
 
           {/* Right column — pricing card */}
@@ -864,14 +819,74 @@ function AdDetailContent() {
 
               <Divider sx={{ my: 2 }} />
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
-                {features.map((f, idx) => (
-                  <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{ color: 'text.secondary' }}>{f.icon}</Box>
-                    <Typography variant="body2">{f.label}</Typography>
+              {!isLocked && hasSupplementaryInfo && (
+                <Box
+                  sx={{
+                    mb: 3,
+                    p: 2,
+                    borderRadius: 2.5,
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(246,71,95,0.08)' : 'rgba(246,71,95,0.04)',
+                    border: '1px solid',
+                    borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(246,71,95,0.25)' : 'rgba(246,71,95,0.18)',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <Star sx={{ fontSize: 18, color: 'primary.main' }} />
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      Informations supplémentaires
+                    </Typography>
                   </Box>
-                ))}
-              </Box>
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+                    {ad.deposit_amount && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                        <AccountBalanceWallet sx={{ fontSize: 17, color: 'text.secondary' }} />
+                        <Typography variant="body2">
+                          Dépôt de garantie: <strong>{ad.deposit_amount}</strong>
+                        </Typography>
+                      </Box>
+                    )}
+                    {ad.minimum_lease_duration && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                        <CalendarMonth sx={{ fontSize: 17, color: 'text.secondary' }} />
+                        <Typography variant="body2">
+                          Durée minimum: <strong>{ad.minimum_lease_duration}</strong>
+                        </Typography>
+                      </Box>
+                    )}
+                    {ad.detailed_charges && (
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25 }}>
+                        <ReceiptLong sx={{ fontSize: 17, color: 'text.secondary', mt: 0.3 }} />
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                          Charges: <strong>{ad.detailed_charges}</strong>
+                        </Typography>
+                      </Box>
+                    )}
+                    {ad.property_condition_pdf && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                        <Description sx={{ fontSize: 17, color: 'text.secondary' }} />
+                        <Button
+                          variant="text"
+                          size="small"
+                          href={ad.property_condition_pdf}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            p: 0,
+                            minWidth: 0,
+                            fontWeight: 600,
+                            color: 'primary.main',
+                            textTransform: 'none',
+                            '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
+                          }}
+                        >
+                          Télécharger l&apos;état des lieux
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              )}
 
               {isLocked ? (
                 <>
@@ -1017,6 +1032,81 @@ function AdDetailContent() {
               </Box>
             </Paper>
           </Grid>
+
+          {/* Similar ads */}
+          {ad.type && similarAds.length > 0 && (
+            <Grid size={{ xs: 12 }}>
+              <Box sx={{ mt: { xs: 2, md: 1 } }}>
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+                  Annonces similaires qui pourraient vous plaire
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Comparez rapidement avec d&apos;autres biens du même type.
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 2,
+                    overflowX: 'auto',
+                    pb: 1,
+                    scrollSnapType: 'x mandatory',
+                    scrollbarWidth: 'none',
+                    '&::-webkit-scrollbar': { display: 'none' },
+                  }}
+                >
+                  {similarAds.map((similarAd) => {
+                    const coverImage = similarAd.images?.find((image) => image.is_primary) ?? similarAd.images?.[0];
+                    return (
+                      <Paper
+                        key={similarAd.id}
+                        elevation={0}
+                        onClick={() => router.push(`/ads/${similarAd.id}/${similarAd.slug}`)}
+                        sx={{
+                          minWidth: { xs: 250, sm: 280 },
+                          maxWidth: { xs: 250, sm: 280 },
+                          borderRadius: 3,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          scrollSnapAlign: 'start',
+                          transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+                          '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
+                          },
+                        }}
+                      >
+                        <Box sx={{ position: 'relative', height: 150, bgcolor: 'grey.100' }}>
+                          {coverImage ? (
+                            <Image
+                              src={coverImage.large || coverImage.url}
+                              alt={similarAd.title}
+                              fill
+                              sizes="280px"
+                              style={{ objectFit: 'cover' }}
+                            />
+                          ) : null}
+                        </Box>
+                        <Box sx={{ p: 1.5 }}>
+                          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }} noWrap>
+                            {similarAd.title}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }} noWrap>
+                            {similarAd.quarter?.name}
+                            {similarAd.quarter?.city_name ? `, ${similarAd.quarter.city_name}` : ''}
+                          </Typography>
+                          <Typography variant="subtitle1" fontWeight={800}>
+                            {formatPrice(similarAd.price)}
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    );
+                  })}
+                </Box>
+              </Box>
+            </Grid>
+          )}
         </Grid>
         </FadeIn>
       </Container>

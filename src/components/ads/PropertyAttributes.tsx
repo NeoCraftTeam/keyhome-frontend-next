@@ -1,82 +1,11 @@
 'use client';
 
-import { PropertyAttribute } from '@/types';
-import {
-  AccessibleForward,
-  AcUnit,
-  Balcony,
-  CheckCircleOutline,
-  Checkroom,
-  Deck,
-  Elevator,
-  FitnessCenter,
-  Kitchen,
-  LocalFireDepartment,
-  LocalLaundryService,
-  Pets,
-  Pool,
-  Security,
-  SmokeFree,
-  Tv,
-  Warehouse,
-  Whatshot,
-  Wifi,
-  Yard,
-} from '@mui/icons-material';
-import { Box, Chip, Tooltip, Typography } from '@mui/material';
+import { propertyAttributesService } from '@/services/property-attributes.service';
+import { useQuery } from '@tanstack/react-query';
+import * as MuiIcons from '@mui/icons-material';
+import { Box, Button, Chip, Dialog, DialogContent, DialogTitle, Tooltip, Typography } from '@mui/material';
 import type { SvgIconComponent } from '@mui/icons-material';
-
-interface PropertyAttributeConfig {
-  label: string;
-  icon: SvgIconComponent;
-  color?: string;
-}
-
-const attributeConfig: Record<string, PropertyAttributeConfig> = {
-  [PropertyAttribute.Wifi]: { label: 'Wi-Fi', icon: Wifi },
-  [PropertyAttribute.AirConditioning]: { label: 'Climatisation', icon: AcUnit },
-  [PropertyAttribute.Heating]: { label: 'Chauffage', icon: Whatshot },
-  [PropertyAttribute.PetsAllowed]: { label: 'Animaux acceptés', icon: Pets, color: '#4caf50' },
-  [PropertyAttribute.Furnished]: { label: 'Meublé', icon: Checkroom },
-  [PropertyAttribute.Pool]: { label: 'Piscine', icon: Pool, color: '#2196f3' },
-  [PropertyAttribute.Garden]: { label: 'Jardin', icon: Yard, color: '#4caf50' },
-  [PropertyAttribute.Balcony]: { label: 'Balcon', icon: Balcony },
-  [PropertyAttribute.Terrace]: { label: 'Terrasse', icon: Deck },
-  [PropertyAttribute.Elevator]: { label: 'Ascenseur', icon: Elevator },
-  [PropertyAttribute.Security]: { label: 'Sécurité 24h', icon: Security },
-  [PropertyAttribute.Gym]: { label: 'Salle de sport', icon: FitnessCenter },
-  [PropertyAttribute.Laundry]: { label: 'Buanderie', icon: LocalLaundryService },
-  [PropertyAttribute.Storage]: { label: 'Rangement', icon: Warehouse },
-  [PropertyAttribute.Fireplace]: { label: 'Cheminée', icon: LocalFireDepartment, color: '#f57c00' },
-  [PropertyAttribute.Dishwasher]: { label: 'Lave-vaisselle', icon: Kitchen },
-  [PropertyAttribute.WashingMachine]: { label: 'Machine à laver', icon: LocalLaundryService },
-  [PropertyAttribute.Tv]: { label: 'Télévision', icon: Tv },
-  [PropertyAttribute.Accessibility]: { label: 'Accessible PMR', icon: AccessibleForward },
-  [PropertyAttribute.SmokingAllowed]: { label: 'Fumeurs acceptés', icon: SmokeFree },
-};
-
-const attributeAliases: Record<string, string> = {
-  // Wifi/internet variants
-  wi_fi: PropertyAttribute.Wifi,
-  internet: PropertyAttribute.Wifi,
-  internet_access: PropertyAttribute.Wifi,
-
-  // Pets variants
-  pets: PropertyAttribute.PetsAllowed,
-  pet_friendly: PropertyAttribute.PetsAllowed,
-  animals: PropertyAttribute.PetsAllowed,
-  animaux: PropertyAttribute.PetsAllowed,
-  animaux_acceptes: PropertyAttribute.PetsAllowed,
-
-  // Common backend/frontend wording variants
-  air_conditioner: PropertyAttribute.AirConditioning,
-  climatisation: PropertyAttribute.AirConditioning,
-  furnished: PropertyAttribute.Furnished,
-  meuble: PropertyAttribute.Furnished,
-  meublé: PropertyAttribute.Furnished,
-  securite: PropertyAttribute.Security,
-  tv_room: PropertyAttribute.Tv,
-};
+import { useMemo, useState } from 'react';
 
 function normalizeAttributeKey(value: string): string {
   return value
@@ -88,19 +17,20 @@ function normalizeAttributeKey(value: string): string {
     .replace(/[-\s]+/g, '_');
 }
 
+const FALLBACK_ICON: SvgIconComponent = MuiIcons.CheckCircleOutline;
+
 function humanizeAttribute(value: string): string {
-  const cleaned = value
-    .replace(/[_-]+/g, ' ')
-    .trim();
+  const cleaned = value.replace(/[_-]+/g, ' ').trim();
   if (!cleaned) {
     return 'Équipement';
   }
+
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
 interface PropertyAttributesProps {
   attributes: string[];
-  variant?: 'chips' | 'list' | 'compact';
+  variant?: 'chips' | 'list' | 'compact' | 'preview';
   maxDisplay?: number;
   showTitle?: boolean;
 }
@@ -111,40 +41,80 @@ export default function PropertyAttributes({
   maxDisplay,
   showTitle = false,
 }: PropertyAttributesProps) {
+  const [isExpandedModalOpen, setIsExpandedModalOpen] = useState(false);
+
+  const { data: metadata } = useQuery({
+    queryKey: ['property-attributes'],
+    queryFn: propertyAttributesService.list,
+    staleTime: 1000 * 60 * 10,
+  });
+
   if (!attributes || attributes.length === 0) {
     return null;
   }
 
-  const normalizedAttributes = attributes
-    .map((attr) => {
-      const normalized = normalizeAttributeKey(attr);
-      const canonicalKey = attributeAliases[normalized] ?? normalized;
-      const knownConfig = attributeConfig[canonicalKey];
+  const bySlug = metadata?.data ?? {};
+  const grouped = metadata?.grouped ?? [];
+  const fallbackSelectedByCategory = [
+    {
+      slug: 'autres',
+      name: 'Autres',
+      attributes: attributes.map((attribute) => ({
+        value: attribute,
+        label: humanizeAttribute(attribute),
+        icon: 'CheckCircleOutline',
+        admin_icon: 'heroicon-o-check-circle',
+      })),
+    },
+  ];
+  const selected = attributes
+    .map((slug) => bySlug[slug] ?? bySlug[normalizeAttributeKey(slug)])
+    .filter(Boolean);
 
-      return {
-        key: canonicalKey || attr,
-        original: attr,
-        config: knownConfig ?? {
-          label: humanizeAttribute(attr),
-          icon: CheckCircleOutline,
-        },
-      };
-    })
-    .filter((entry, index, arr) => arr.findIndex((item) => item.key === entry.key) === index);
+  const selectedByCategory = grouped
+    .map((category) => ({
+      ...category,
+      attributes: category.attributes.filter((item) =>
+        selected.some((picked) => picked.value === item.value)
+      ),
+    }))
+    .filter((category) => category.attributes.length > 0);
+  const effectiveSelectedByCategory = selectedByCategory.length > 0 ? selectedByCategory : fallbackSelectedByCategory;
 
-  const displayAttributes = maxDisplay ? normalizedAttributes.slice(0, maxDisplay) : normalizedAttributes;
-  const remainingCount = maxDisplay && normalizedAttributes.length > maxDisplay
-    ? normalizedAttributes.length - maxDisplay
+  const flatSelected = useMemo(
+    () => effectiveSelectedByCategory.flatMap((category) =>
+      category.attributes.map((attribute) => ({ ...attribute, category: category.name }))
+    ),
+    [effectiveSelectedByCategory]
+  );
+
+  const displayAttributes = maxDisplay ? flatSelected.slice(0, maxDisplay) : flatSelected;
+  const remainingCount = maxDisplay && flatSelected.length > maxDisplay
+    ? flatSelected.length - maxDisplay
     : 0;
+
+  const getIcon = (iconName: string): SvgIconComponent => {
+    const icon = (MuiIcons as Record<string, SvgIconComponent>)[iconName];
+    return icon ?? FALLBACK_ICON;
+  };
+
+  const previewGrouped = useMemo(() => {
+    const previewValues = new Set(displayAttributes.map((item) => item.value));
+    return effectiveSelectedByCategory
+      .map((category) => ({
+        ...category,
+        attributes: category.attributes.filter((item) => previewValues.has(item.value)),
+      }))
+      .filter((category) => category.attributes.length > 0);
+  }, [displayAttributes, effectiveSelectedByCategory]);
 
   if (variant === 'compact') {
     return (
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
         {displayAttributes.map((entry) => {
-          const { config } = entry;
-          const IconComponent = config.icon;
+          const IconComponent = getIcon(entry.icon);
           return (
-            <Tooltip key={entry.key} title={config.label} arrow>
+            <Tooltip key={entry.value} title={`${entry.category} · ${entry.label}`} arrow>
               <Box
                 sx={{
                   display: 'flex',
@@ -157,7 +127,7 @@ export default function PropertyAttributes({
                 }}
               >
                 <IconComponent
-                  sx={{ fontSize: 16, color: config.color || 'text.secondary' }}
+                  sx={{ fontSize: 16, color: 'text.secondary' }}
                 />
               </Box>
             </Tooltip>
@@ -172,6 +142,158 @@ export default function PropertyAttributes({
     );
   }
 
+  if (variant === 'preview') {
+    return (
+      <>
+        <Box>
+          {showTitle && (
+            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
+              Équipements & Services
+            </Typography>
+          )}
+
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+              gap: 1.25,
+            }}
+          >
+            {displayAttributes.map((entry) => {
+              const IconComponent = getIcon(entry.icon);
+              return (
+                <Box
+                  key={entry.value}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    minHeight: 34,
+                    px: 0.25,
+                    py: 0.25,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      minWidth: 24,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'background.paper',
+                    }}
+                  >
+                    <IconComponent sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  </Box>
+                  <Typography variant="body2" sx={{ lineHeight: 1.3 }}>
+                    {entry.label}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Box>
+
+          {remainingCount > 0 && (
+            <Button
+              onClick={() => setIsExpandedModalOpen(true)}
+              size="small"
+              sx={{
+                mt: 1.25,
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 0.5,
+              }}
+            >
+              Voir plus ({remainingCount} autres)
+            </Button>
+          )}
+        </Box>
+
+        <Dialog
+          open={isExpandedModalOpen}
+          onClose={() => setIsExpandedModalOpen(false)}
+          fullWidth
+          maxWidth="md"
+          fullScreen={false}
+          PaperProps={{
+            sx: {
+              borderRadius: { xs: 2, sm: 3 },
+              mx: { xs: 1.5, sm: 2 },
+            },
+          }}
+        >
+          <DialogTitle sx={{ pb: 1.5, fontWeight: 700 }}>
+            Tous les équipements
+          </DialogTitle>
+          <DialogContent
+            sx={{
+              pt: 0.5,
+              pb: 2.5,
+              overflowY: 'auto',
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' },
+            }}
+          >
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {effectiveSelectedByCategory.map((category) => (
+                <Box key={category.slug}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}
+                  >
+                    {category.name}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+                      gap: 1.1,
+                    }}
+                  >
+                    {category.attributes.map((entry) => {
+                      const IconComponent = getIcon(entry.icon);
+                      return (
+                        <Box
+                          key={entry.value}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            minHeight: 34,
+                            px: 0.25,
+                            py: 0.25,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 24,
+                              height: 24,
+                              minWidth: 24,
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              bgcolor: 'background.paper',
+                            }}
+                          >
+                            <IconComponent sx={{ fontSize: 14, color: 'text.secondary' }} />
+                          </Box>
+                          <Typography variant="body2">{entry.label}</Typography>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
   if (variant === 'list') {
     return (
       <Box>
@@ -180,37 +302,43 @@ export default function PropertyAttributes({
             Équipements & Services
           </Typography>
         )}
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-            gap: 1.5,
-          }}
-        >
-          {displayAttributes.map((entry) => {
-            const { config } = entry;
-            const IconComponent = config.icon;
-            return (
-              <Box key={entry.key} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 36,
-                    height: 36,
-                    borderRadius: 1.5,
-                    bgcolor: config.color ? `${config.color}15` : 'action.hover',
-                  }}
-                >
-                  <IconComponent
-                    sx={{ fontSize: 20, color: config.color || 'text.secondary' }}
-                  />
-                </Box>
-                <Typography variant="body2">{config.label}</Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {effectiveSelectedByCategory.map((category) => (
+            <Box key={category.slug}>
+              <Typography variant="body2" fontWeight={700} sx={{ mb: 1 }}>
+                {category.name}
+              </Typography>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                  gap: 1.5,
+                }}
+              >
+                {category.attributes.map((entry) => {
+                  const IconComponent = getIcon(entry.icon);
+                  return (
+                    <Box key={entry.value} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 36,
+                          height: 36,
+                          borderRadius: 1.5,
+                          bgcolor: 'action.hover',
+                        }}
+                      >
+                        <IconComponent sx={{ fontSize: 20, color: 'text.secondary' }} />
+                      </Box>
+                      <Typography variant="body2">{entry.label}</Typography>
+                    </Box>
+                  );
+                })}
               </Box>
-            );
-          })}
+            </Box>
+          ))}
         </Box>
         {remainingCount > 0 && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -221,7 +349,6 @@ export default function PropertyAttributes({
     );
   }
 
-  // Default: chips variant
   return (
     <Box>
       {showTitle && (
@@ -229,31 +356,38 @@ export default function PropertyAttributes({
           Équipements & Services
         </Typography>
       )}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-        {displayAttributes.map((entry) => {
-          const { config } = entry;
-          const IconComponent = config.icon;
-          return (
-            <Chip
-              key={entry.key}
-              icon={<IconComponent sx={{ fontSize: 18, color: config.color }} />}
-              label={config.label}
-              variant="outlined"
-              size="small"
-              sx={{
-                borderRadius: 2,
-                borderColor: config.color || 'divider',
-                '& .MuiChip-label': { fontWeight: 500 },
-              }}
-            />
-          );
-        })}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+        {previewGrouped.map((category) => (
+          <Box key={category.slug}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
+              {category.name}
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {category.attributes.map((entry) => {
+                const IconComponent = getIcon(entry.icon);
+                return (
+                  <Chip
+                    key={entry.value}
+                    icon={<IconComponent sx={{ fontSize: 18 }} />}
+                    label={entry.label}
+                    variant="outlined"
+                    size="small"
+                    sx={{
+                      borderRadius: 2,
+                      '& .MuiChip-label': { fontWeight: 500 },
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          </Box>
+        ))}
         {remainingCount > 0 && (
           <Chip
             label={`+${remainingCount}`}
             variant="outlined"
             size="small"
-            sx={{ borderRadius: 2, borderColor: 'divider' }}
+            sx={{ borderRadius: 2, borderColor: 'divider', width: 'fit-content' }}
           />
         )}
       </Box>

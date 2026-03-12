@@ -6,7 +6,6 @@ import AppLoader from '@/components/ui/AppLoader';
 import QueryError from '@/components/ui/QueryError';
 import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
 import { escapeHtml } from '@/lib/sanitize';
-import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { AdType, City, SearchParams } from '@/types';
@@ -17,7 +16,6 @@ import {
   Map as MapIcon,
   Search as SearchIcon,
   Tune as TuneIcon,
-  WhatsApp as WhatsAppIcon,
 } from '@mui/icons-material';
 import {
   Autocomplete,
@@ -27,7 +25,6 @@ import {
   CircularProgress,
   Divider,
   Drawer,
-  Fab,
   FormControlLabel,
   Grid,
   IconButton,
@@ -39,7 +36,6 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -57,8 +53,6 @@ function SearchContent() {
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { isAuthenticated } = useAuth();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -273,6 +267,7 @@ function SearchContent() {
       <Autocomplete
         size="small"
         options={cities}
+        forcePopupIcon={false}
         getOptionLabel={(opt) => opt.name}
         value={selectedCity}
         onChange={(_, val) => { setSelectedCity(val); setCityInput(val?.name || ''); setPage(1); }}
@@ -528,8 +523,10 @@ function SearchContent() {
           py: 1.25,
           display: 'flex',
           alignItems: 'center',
+          justifyContent: { xs: 'center', md: 'flex-start' },
+          flexWrap: { xs: 'wrap', md: 'nowrap' },
           gap: 1,
-          overflowX: 'auto',
+          overflowX: { xs: 'visible', md: 'auto' },
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': { display: 'none' },
           zIndex: 10,
@@ -568,111 +565,116 @@ function SearchContent() {
           </ToggleButtonGroup>
         )}
 
-        {/* City autocomplete — desktop only; on mobile it lives inside the Filtres drawer */}
-        {!isMobile && (
-          <Autocomplete
-            size="small"
-            freeSolo
-            options={citiesData?.data || []}
-            getOptionLabel={(opt) => typeof opt === 'string' ? opt : opt.name}
-            value={selectedCity}
-            onChange={(_, val) => {
-              if (typeof val === 'string') {
-                setQuery(val);
-                setSelectedCity(null);
-              } else {
-                setSelectedCity(val);
-                setCityInput(val?.name || '');
-                setQuery('');
-              }
-              setPage(1);
-            }}
-            inputValue={cityInput}
-            onInputChange={(_, val, reason) => {
-              if (reason !== 'reset') {
-                setCityInput(val);
-              }
-            }}
-            filterOptions={(x) => x}
-            loading={isCitiesLoading}
-            noOptionsText={cityInput.length < 1 ? 'Tapez pour rechercher…' : 'Aucune ville trouvée'}
-            loadingText="Recherche…"
-            slotProps={{
-              paper: { sx: { borderRadius: 3, mt: 0.5, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' } },
-              listbox: { sx: { py: 0.5 } },
-            }}
-            renderOption={(props, option) => (
-              <li {...props} key={typeof option === 'string' ? option : option.id}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.25 }}>
-                  <SearchIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                  <Typography sx={{ fontSize: '0.875rem' }}>
-                    {typeof option === 'string' ? option : option.name}
-                  </Typography>
-                </Box>
-              </li>
-            )}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Ville, quartier…"
-                variant="outlined"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !selectedCity && cityInput.trim()) {
-                    e.preventDefault();
-                    setQuery(cityInput.trim());
-                    setPage(1);
-                  }
-                }}
-                slotProps={{
-                  input: {
-                    ...params.InputProps,
-                    startAdornment: <SearchIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.5 }} />,
-                    endAdornment: (
-                      <>
-                        {isCitiesLoading ? <CircularProgress color="inherit" size={16} /> : null}
-                        {(selectedCity || cityInput) && (
-                          <IconButton
-                            size="small"
-                            aria-label="Effacer la recherche"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedCity(null);
-                              setCityInput('');
-                              setQuery('');
-                              setPage(1);
-                            }}
-                            sx={{ p: 0.25 }}
-                          >
-                            <CloseIcon sx={{ fontSize: 14 }} />
-                          </IconButton>
-                        )}
-                      </>
-                    ),
+        {/* City autocomplete */}
+        <Autocomplete
+          size="small"
+          freeSolo
+          forcePopupIcon={false}
+          options={citiesData?.data || []}
+          getOptionLabel={(opt) => typeof opt === 'string' ? opt : opt.name}
+          value={selectedCity}
+          onChange={(_, val) => {
+            if (typeof val === 'string') {
+              setQuery(val);
+              setSelectedCity(null);
+            } else {
+              setSelectedCity(val);
+              setCityInput(val?.name || '');
+              setQuery('');
+            }
+            setPage(1);
+          }}
+          inputValue={cityInput}
+          onInputChange={(_, val, reason) => {
+            if (reason !== 'reset') {
+              setCityInput(val);
+            }
+          }}
+          filterOptions={(x) => x}
+          loading={isCitiesLoading}
+          noOptionsText={cityInput.length < 1 ? 'Tapez pour rechercher…' : 'Aucune ville trouvée'}
+          loadingText="Recherche…"
+          slotProps={{
+            paper: { sx: { borderRadius: 3, mt: 0.5, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' } },
+            listbox: { sx: { py: 0.5 } },
+          }}
+          renderOption={(props, option) => (
+            <li {...props} key={typeof option === 'string' ? option : option.id}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.25 }}>
+                <SearchIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                <Typography sx={{ fontSize: '0.875rem' }}>
+                  {typeof option === 'string' ? option : option.name}
+                </Typography>
+              </Box>
+            </li>
+          )}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder="Ville, quartier…"
+              variant="outlined"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !selectedCity && cityInput.trim()) {
+                  e.preventDefault();
+                  setQuery(cityInput.trim());
+                  setPage(1);
+                }
+              }}
+              slotProps={{
+                input: {
+                  ...params.InputProps,
+                  startAdornment: <SearchIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.5 }} />,
+                  endAdornment: (
+                    <>
+                      {isCitiesLoading ? <CircularProgress color="inherit" size={16} /> : null}
+                      {(selectedCity || cityInput) && (
+                        <IconButton
+                          size="small"
+                          aria-label="Effacer la recherche"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCity(null);
+                            setCityInput('');
+                            setQuery('');
+                            setPage(1);
+                          }}
+                          sx={{ p: 0.25 }}
+                        >
+                          <CloseIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      )}
+                    </>
+                  ),
+                },
+              }}
+              sx={{
+                minWidth: { xs: 0, sm: 220, md: 280 },
+                flex: { xs: 1, md: '0 0 auto' },
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '999px',
+                  py: '2px',
+                  pr: '8px !important',
+                  fontSize: '0.875rem',
+                  bgcolor: 'background.default',
+                  transition: 'all 0.2s ease',
+                  '& fieldset': { borderColor: 'divider' },
+                  '&:hover fieldset': { borderColor: 'text.secondary' },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                    boxShadow: '0 0 0 3px rgba(246,71,95,0.12)',
                   },
-                }}
-                sx={{
-                  minWidth: { xs: 180, md: 280 },
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '10px',
-                    py: '2px',
-                    pr: '8px !important',
-                    fontSize: '0.875rem',
-                    bgcolor: 'background.default',
-                    transition: 'all 0.2s ease',
-                    '& fieldset': { borderColor: 'divider' },
-                    '&:hover fieldset': { borderColor: 'text.secondary' },
-                    '&.Mui-focused fieldset': {
-                      borderColor: 'primary.main',
-                      boxShadow: '0 0 0 3px rgba(246,71,95,0.12)',
-                    },
-                  },
-                }}
-              />
-            )}
-            sx={{ flexShrink: 0 }}
-          />
-        )}
-
+                },
+              }}
+            />
+          )}
+          sx={{
+            flexShrink: 1,
+            flexBasis: { xs: '100%', md: 'auto' },
+            width: { xs: '100%', md: 'auto' },
+            maxWidth: { xs: 560, md: 420 },
+            mx: { xs: 'auto', md: 0 },
+          }}
+        />
         {!isMobile && <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />}
 
         {/* Filtres */}
@@ -770,6 +772,8 @@ function SearchContent() {
               width: { xs: '100%', md: '45%' },
               flexShrink: 0,
               position: 'relative',
+              borderRadius: { md: 3 },
+              overflow: 'hidden',
               borderRight: { md: '1px solid' },
               borderColor: { md: 'divider' },
             }}
@@ -804,34 +808,6 @@ function SearchContent() {
         {MoreFiltersDrawer}
       </Drawer>
 
-      {/* WhatsApp help FAB */}
-      <Tooltip title="Besoin d'aide ? Contactez-nous" placement="left">
-        <Fab
-          component="a"
-          href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '237657507909'}?text=${encodeURIComponent('Bonjour KeyHome ! 👋 Je cherche un logement et j\'aimerais votre aide pour trouver le bien idéal.')}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          size="medium"
-          aria-label="WhatsApp"
-          sx={{
-            position: 'fixed',
-            bottom: { xs: 80, sm: 20, md: 28 },
-            right: { xs: 16, md: 28 },
-            bgcolor: '#25D366',
-            color: '#fff',
-            boxShadow: '0 4px 20px rgba(37,211,102,0.4)',
-            zIndex: 50,
-            '&:hover': {
-              bgcolor: '#1DA851',
-              transform: 'scale(1.08)',
-              boxShadow: '0 6px 28px rgba(37,211,102,0.5)',
-            },
-            transition: 'all 0.25s ease',
-          }}
-        >
-          <WhatsAppIcon />
-        </Fab>
-      </Tooltip>
     </Box>
   );
 }

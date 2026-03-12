@@ -1,33 +1,38 @@
 'use client';
 
 import { publicSurveysService } from '@/services/publicSurveys.service';
+import { surveysService } from '@/services/surveys.service';
 import { PublicSurvey, SurveyAnswerPayload } from '@/types';
 import SurveyStepper from '@/components/surveys/public/SurveyStepper';
 import FadeIn from '@/components/ui/FadeIn';
+import { useAuth } from '@/providers/AuthProvider';
 import {
   Box,
   Button,
   Container,
   Dialog,
   DialogContent,
+  FormControlLabel,
   Paper,
   Skeleton,
+  Switch,
   Typography,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ShareOutlinedIcon from '@mui/icons-material/ShareOutlined';
 import SentimentDissatisfiedOutlinedIcon from '@mui/icons-material/SentimentDissatisfiedOutlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function SurveySlugPage() {
   const params = useParams();
   const slug = params.slug as string;
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [showThankYou, setShowThankYou] = useState(false);
+  const [submitAnonymously, setSubmitAnonymously] = useState(true);
 
   const {
     data: survey,
@@ -39,22 +44,39 @@ export default function SurveySlugPage() {
     enabled: !!slug,
   });
 
+  const { data: authAnswered } = useQuery<{ has_answered: boolean }>({
+    queryKey: ['auth-survey-has-answered', survey?.id, isAuthenticated],
+    queryFn: () => surveysService.hasAnswered(survey!.id),
+    enabled: isAuthenticated && !!survey?.id,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
   const mutation = useMutation({
-    mutationFn: (answers: SurveyAnswerPayload[]) =>
-      publicSurveysService.submit(slug, answers),
+    mutationFn: async (answers: SurveyAnswerPayload[]) => {
+      if (isAuthenticated && survey?.id) {
+        await surveysService.submitResponse(survey.id, answers, submitAnonymously);
+        return { submitted: true };
+      }
+
+      return publicSurveysService.submit(slug, answers);
+    },
     onSuccess: () => {
       setShowThankYou(true);
     },
   });
 
-  const handleShare = async () => {
-    const url = `${window.location.origin}/surveys/${slug}`;
-    if (navigator.share) {
-      await navigator.share({ title: survey?.title ?? 'Sondage KeyHome', url });
-    } else {
-      await navigator.clipboard.writeText(url);
+  useEffect(() => {
+    if (!showThankYou) {
+      return;
     }
-  };
+
+    const timer = setTimeout(() => {
+      router.push('/search?sort=created_at&order=desc');
+    }, 2200);
+
+    return () => clearTimeout(timer);
+  }, [showThankYou, router]);
 
   /* ── Loading ── */
   if (isLoading) {
@@ -91,7 +113,7 @@ export default function SurveySlugPage() {
   }
 
   /* ── Already submitted ── */
-  if (survey.already_submitted) {
+  if (survey.already_submitted || (isAuthenticated && authAnswered?.has_answered)) {
     return (
       <Container maxWidth="sm" sx={{ py: 12 }}>
         <FadeIn direction="up">
@@ -124,10 +146,10 @@ export default function SurveySlugPage() {
             </Typography>
             <Button
               variant="outlined"
-              onClick={() => router.push('/surveys')}
+              onClick={() => router.push('/search?sort=created_at&order=desc')}
               sx={{ borderRadius: 2.5, px: 4 }}
             >
-              Voir d&apos;autres sondages
+              Voir les dernières annonces
             </Button>
           </Paper>
         </FadeIn>
@@ -175,6 +197,23 @@ export default function SurveySlugPage() {
               >
                 {survey.description}
               </Typography>
+            )}
+
+            {isAuthenticated && (
+              <FormControlLabel
+                sx={{ mt: 2 }}
+                control={
+                  <Switch
+                    checked={submitAnonymously}
+                    onChange={(event) => setSubmitAnonymously(event.target.checked)}
+                  />
+                }
+                label={
+                  <Typography variant="body2" color="text.secondary">
+                    Envoyer mes réponses en mode anonyme
+                  </Typography>
+                }
+              />
             )}
           </Box>
 
@@ -236,32 +275,32 @@ export default function SurveySlugPage() {
           </Typography>
 
           <Typography color="text.secondary" sx={{ mb: 4, lineHeight: 1.7, fontSize: '1.05rem' }}>
-            Vos réponses ont bien été enregistrées anonymement. Votre retour nous aide à améliorer
-            KeyHome pour toute notre communauté.
+            Merci pour votre retour. Nous vous redirigeons vers les dernières annonces.
           </Typography>
 
-          {/* Anonymity reminder */}
-          <Box
-            sx={{
-              mb: 4,
-              px: 3,
-              py: 2,
-              borderRadius: 2.5,
-              bgcolor: 'rgba(246,71,95,0.05)',
-              border: '1px solid rgba(246,71,95,0.15)',
-            }}
-          >
-            <Typography variant="caption" color="text.secondary" fontWeight={500}>
-              🔒&nbsp; Vos réponses ne peuvent en aucun cas être reliées à votre identité.
-            </Typography>
-          </Box>
+          {submitAnonymously && (
+            <Box
+              sx={{
+                mb: 4,
+                px: 3,
+                py: 2,
+                borderRadius: 2.5,
+                bgcolor: 'rgba(246,71,95,0.05)',
+                border: '1px solid rgba(246,71,95,0.15)',
+              }}
+            >
+              <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                🔒&nbsp; Réponse enregistrée en mode anonyme.
+              </Typography>
+            </Box>
+          )}
 
           {/* Actions */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             <Button
               variant="contained"
               size="large"
-              onClick={() => router.push('/surveys')}
+              onClick={() => router.push('/search?sort=created_at&order=desc')}
               sx={{
                 borderRadius: 3,
                 py: 1.5,
@@ -275,30 +314,20 @@ export default function SurveySlugPage() {
                 },
               }}
             >
-              Voir d&apos;autres sondages
-            </Button>
-
-            <Button
-              variant="outlined"
-              size="large"
-              startIcon={<ShareOutlinedIcon />}
-              onClick={handleShare}
-              sx={{
-                borderRadius: 3,
-                py: 1.5,
-                fontWeight: 600,
-                borderColor: 'divider',
-                color: 'text.primary',
-                '&:hover': { borderColor: 'primary.main', color: 'primary.main' },
-              }}
-            >
-              Partager ce sondage
+              Voir les dernières annonces
             </Button>
 
             <Button
               variant="text"
+              size="large"
               onClick={() => router.push('/')}
-              sx={{ color: 'text.secondary', fontWeight: 500, '&:hover': { color: 'primary.main' } }}
+              sx={{
+                borderRadius: 3,
+                py: 1,
+                fontWeight: 500,
+                color: 'text.secondary',
+                '&:hover': { color: 'primary.main' },
+              }}
             >
               Retour à l&apos;accueil
             </Button>

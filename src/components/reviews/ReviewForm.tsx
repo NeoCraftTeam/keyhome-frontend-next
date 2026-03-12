@@ -110,8 +110,8 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
           onChange={(_, newValue) => setRating(newValue)}
           onChangeActive={(_, newHover) => setHoverRating(newHover)}
           sx={{
-            '& .MuiRating-iconFilled': { color: '#FFB400' },
-            '& .MuiRating-iconHover': { color: '#FFB400' },
+            '& .MuiRating-iconFilled': { color: '#F6475F' },
+            '& .MuiRating-iconHover': { color: '#F6475F' },
             '& .MuiRating-icon': { fontSize: 32 },
           }}
         />

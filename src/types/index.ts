@@ -463,6 +463,7 @@ export interface SurveyQuestion {
 
 export interface Survey {
   id: string;
+  slug: string;
   title: string;
   description: string | null;
   is_active: boolean;

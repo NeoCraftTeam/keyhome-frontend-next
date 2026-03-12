@@ -7,11 +7,12 @@ import { useState, useEffect } from 'react';
 
 interface SurveyPromptProps {
   surveyId: string;
+  surveySlug?: string;
   title: string;
   description: string;
 }
 
-export default function SurveyPrompt({ surveyId, title, description }: SurveyPromptProps) {
+export default function SurveyPrompt({ surveyId, surveySlug, title, description }: SurveyPromptProps) {
   const router = useRouter();
   const [visible, setVisible] = useState(false);
 
@@ -29,7 +30,7 @@ export default function SurveyPrompt({ surveyId, title, description }: SurveyPro
   };
 
   const handleStart = () => {
-    router.push(`/sondage/${surveyId}`);
+    router.push(`/surveys/${surveySlug ?? surveyId}`);
   };
 
   if (!visible) return null;

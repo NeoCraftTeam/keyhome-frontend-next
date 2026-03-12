@@ -2,11 +2,14 @@
 
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
+import SurveyPrompt from '@/components/surveys/SurveyPrompt';
 import AppLoader from '@/components/ui/AppLoader';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import WelcomeModal from '@/components/ui/WelcomeModal';
 import { useAuth } from '@/providers/AuthProvider';
+import { surveysService } from '@/services/surveys.service';
 import { Box } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -23,15 +26,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { isAuthenticated, isLoading, isLoggingOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [hasCheckedStoredToken, setHasCheckedStoredToken] = useState(false);
-  const [hasStoredToken, setHasStoredToken] = useState(false);
+  const [hasStoredToken] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return !!window.localStorage.getItem('kh_sanctum_token');
+  });
 
   const isPrivatePage = PRIVATE_PATHS.some((p) => pathname?.startsWith(p));
+  const isSurveyPage = pathname?.startsWith('/surveys') || pathname?.startsWith('/sondage');
 
-  useEffect(() => {
-    setHasStoredToken(!!localStorage.getItem('kh_sanctum_token'));
-    setHasCheckedStoredToken(true);
-  }, []);
+  const { data: activeSurvey } = useQuery({
+    queryKey: ['active-survey-global', isAuthenticated],
+    queryFn: () => surveysService.getActive(),
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+
+  const { data: surveyAnsweredData, isError: surveyAnsweredError } = useQuery({
+    queryKey: ['survey-has-answered-global', activeSurvey?.id, isAuthenticated],
+    queryFn: () => surveysService.hasAnswered(activeSurvey!.id),
+    enabled: isAuthenticated && !!activeSurvey?.id,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
 
   useEffect(() => {
     // Never redirect while the logout overlay is playing
@@ -49,8 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // On first page load, wait until we know whether a persisted token exists.
   // If one exists, keep waiting until auth finishes hydrating to avoid
   // guest-first flashes before the authenticated UI appears.
-  const shouldHoldForBootstrap =
-    !hasCheckedStoredToken || (hasStoredToken && isLoading);
+  const shouldHoldForBootstrap = hasStoredToken && isLoading;
 
   if (!isLoggingOut && (shouldHoldForBootstrap || (isLoading && isPrivatePage))) {
     return (
@@ -80,6 +99,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </Box>
       <Footer />
+      {isAuthenticated && !isSurveyPage && activeSurvey && (surveyAnsweredError || surveyAnsweredData?.has_answered !== true) && (
+        <SurveyPrompt
+          surveyId={activeSurvey.id}
+          surveySlug={activeSurvey.slug}
+          title="Votre avis compte !"
+          description={activeSurvey.description ?? "Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience."}
+        />
+      )}
       <WelcomeModal />
       <LogoutOverlay />
     </Box>

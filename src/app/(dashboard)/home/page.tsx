@@ -2,14 +2,12 @@
 
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
-import SurveyPrompt from '@/components/surveys/SurveyPrompt';
 import AppTour from '@/components/ui/AppTour';
 import FadeIn from '@/components/ui/FadeIn';
 import QueryError from '@/components/ui/QueryError';
 import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
 import { citiesService } from '@/services/cities.service';
-import { surveysService } from '@/services/surveys.service';
 import { recommendationsService } from '@/services/users.service';
 import { City } from '@/types';
 import {
@@ -120,21 +118,6 @@ export default function HomePage() {
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: activeSurvey } = useQuery({
-    queryKey: ['active-survey'],
-    queryFn: () => surveysService.getActive(),
-    staleTime: 30 * 60 * 1000,
-    retry: false,
-    enabled: isAuthenticated,
-  });
-
-  const { data: surveyAnsweredData } = useQuery({
-    queryKey: ['survey-has-answered', activeSurvey?.id],
-    queryFn: () => surveysService.hasAnswered(activeSurvey!.id),
-    enabled: !!activeSurvey?.id && isAuthenticated,
-    staleTime: 5 * 60 * 1000,
-  });
-
   const ads = adsData?.data || [];
   const totalPages = adsData?.meta?.last_page || 1;
   const skeletonCount = isMobile ? 4 : 12;
@@ -157,13 +140,6 @@ export default function HomePage() {
   return (
     <Box sx={{ pb: 6 }}>
       <AppTour />
-      {activeSurvey && !surveyAnsweredData?.has_answered && (
-        <SurveyPrompt
-          surveyId={activeSurvey.id}
-          title="Votre avis compte !"
-          description={activeSurvey.description ?? "Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience."}
-        />
-      )}
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <Box
@@ -226,6 +202,7 @@ export default function HomePage() {
           {/* City autocomplete */}
           <Autocomplete<City>
             options={cities}
+            forcePopupIcon={false}
             getOptionLabel={(opt) => opt.name}
             filterOptions={(x) => x}
             loading={isCitiesLoading}
@@ -281,9 +258,10 @@ export default function HomePage() {
                   bgcolor: 'background.paper',
                   borderRadius: '12px',
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: '12px',
+                    borderRadius: '999px',
                     fontSize: { xs: '0.9rem', md: '1rem' },
                     pr: '14px !important',
+                    minHeight: { xs: 54, md: 52 },
                   },
                   '& fieldset': { border: 'none' },
                   boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
@@ -306,7 +284,7 @@ export default function HomePage() {
                 }}
               />
             )}
-            sx={{ width: '100%', maxWidth: 500 }}
+            sx={{ width: '100%', maxWidth: { xs: '100%', sm: 560 }, mx: { xs: 'auto', md: 0 } }}
           />
         </Box>
       </Box>
