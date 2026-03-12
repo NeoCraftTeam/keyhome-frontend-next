@@ -2,12 +2,13 @@
 
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
+import AppLoader from '@/components/ui/AppLoader';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import WelcomeModal from '@/components/ui/WelcomeModal';
 import { useAuth } from '@/providers/AuthProvider';
-import { Box, CircularProgress } from '@mui/material';
+import { Box } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 /** Pages we never want to save as post-login redirect targets */
 const AUTH_PAGES = ['/login', '/register', '/verify-otp', '/verify-email', '/complete-profile'];
@@ -22,8 +23,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { isAuthenticated, isLoading, isLoggingOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [hasCheckedStoredToken, setHasCheckedStoredToken] = useState(false);
+  const [hasStoredToken, setHasStoredToken] = useState(false);
 
   const isPrivatePage = PRIVATE_PATHS.some((p) => pathname?.startsWith(p));
+
+  useEffect(() => {
+    setHasStoredToken(!!localStorage.getItem('kh_sanctum_token'));
+    setHasCheckedStoredToken(true);
+  }, []);
 
   useEffect(() => {
     // Never redirect while the logout overlay is playing
@@ -38,8 +46,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [isAuthenticated, isLoading, isLoggingOut, router, pathname, isPrivatePage]);
 
-  // Show a full-screen spinner while auth state is resolving on private pages
-  if (isLoading && isPrivatePage) {
+  // On first page load, wait until we know whether a persisted token exists.
+  // If one exists, keep waiting until auth finishes hydrating to avoid
+  // guest-first flashes before the authenticated UI appears.
+  const shouldHoldForBootstrap =
+    !hasCheckedStoredToken || (hasStoredToken && isLoading);
+
+  if (!isLoggingOut && (shouldHoldForBootstrap || (isLoading && isPrivatePage))) {
     return (
       <Box
         sx={{
@@ -49,7 +62,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           justifyContent: 'center',
         }}
       >
-        <CircularProgress sx={{ color: 'primary.main' }} />
+        <AppLoader size={48} />
       </Box>
     );
   }

@@ -48,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUserState] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isExchanging, setIsExchanging] = useState(false);
+  const [hasResolvedInitialAuth, setHasResolvedInitialAuth] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
   // Guard against stale async callbacks updating state after unmount or re-run
@@ -99,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .finally(() => {
             if (runId !== authRunRef.current) { return; }
             setIsExchanging(false);
+            setHasResolvedInitialAuth(true);
           });
 
         return;
@@ -107,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Truly unauthenticated — reset everything
       clearSanctumToken();
       setUserState(null);
+      setHasResolvedInitialAuth(true);
       return;
     }
 
@@ -160,12 +163,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => {
         if (runId !== authRunRef.current) { return; }
         setIsExchanging(false);
+        setHasResolvedInitialAuth(true);
       });
   }, [isLoaded, isSignedIn, clerkUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // isAuthenticated requires both a valid token AND a loaded user
   const isAuthenticated = !!token && !!user;
-  const isLoading = !isLoaded || isExchanging;
+  const isLoading = !isLoaded || !hasResolvedInitialAuth || isExchanging;
 
   const setUser = useCallback((u: User) => {
     setUserState(u);
