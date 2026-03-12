@@ -56,124 +56,134 @@ const nextConfig: NextConfig = {
     root: __dirname,
   },
   images: {
-    formats: ['image/avif', 'image/webp'],
+    formats: ["image/avif", "image/webp"],
     // In dev, keyhome.test resolves to 127.0.0.1 which next/image blocks.
     // Skip optimization locally; production uses real domains and works fine.
-    unoptimized: process.env.NODE_ENV === 'development',
+    unoptimized: process.env.NODE_ENV === "development",
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '**.keyhome.app',
+        protocol: "https",
+        hostname: "**.keyhome.app",
       },
       {
-        protocol: 'https',
-        hostname: '**.keyhome.cm',
+        protocol: "https",
+        hostname: "**.keyhome.cm",
       },
       {
-        protocol: 'https',
-        hostname: '**.keyhome.neocraft.dev',
+        protocol: "https",
+        hostname: "**.keyhome.neocraft.dev",
       },
       {
-        protocol: 'https',
-        hostname: 'api.keyhome.neocraft.dev',
+        protocol: "https",
+        hostname: "api.keyhome.neocraft.dev",
       },
       {
-        protocol: 'http',
-        hostname: 'localhost',
+        protocol: "http",
+        hostname: "localhost",
       },
       {
-        protocol: 'https',
-        hostname: 'keyhome.test',
+        protocol: "https",
+        hostname: "keyhome.test",
+      },
+      {
+        protocol: "https",
+        hostname: "**.r2.dev",
       },
     ],
   },
   async headers() {
     return [
       {
-        source: '/:path*',
+        source: "/:path*",
         headers: [
           {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on',
+            key: "X-DNS-Prefetch-Control",
+            value: "on",
           },
           {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
+            key: "X-XSS-Protection",
+            value: "1; mode=block",
           },
           {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
           },
           {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
+            key: "X-Content-Type-Options",
+            value: "nosniff",
           },
           {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
           },
           {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload',
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
           },
           {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self)',
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(self)",
           },
           {
-            key: 'Content-Security-Policy',
+            key: "Content-Security-Policy",
             value: cspHeader,
           },
         ],
       },
       {
-        source: '/images/:path*',
+        source: "/images/:path*",
         headers: [
           {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
       {
-        source: '/fonts/:path*',
+        source: "/fonts/:path*",
         headers: [
           {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
       // Service worker — never cache the SW file itself so updates propagate immediately
       {
-        source: '/sw.js',
+        source: "/sw.js",
         headers: [
-          { key: 'Cache-Control',        value: 'public, max-age=0, must-revalidate' },
-          { key: 'Service-Worker-Allowed', value: '/' },
-          { key: 'Content-Type',          value: 'application/javascript; charset=utf-8' },
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+          {
+            key: "Content-Type",
+            value: "application/javascript; charset=utf-8",
+          },
         ],
       },
       // Web App Manifest — short cache so icon/name updates reach users quickly
       {
-        source: '/manifest.json',
+        source: "/manifest.json",
         headers: [
-          { key: 'Cache-Control', value: 'public, max-age=3600' },
-          { key: 'Content-Type',  value: 'application/manifest+json; charset=utf-8' },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+          {
+            key: "Content-Type",
+            value: "application/manifest+json; charset=utf-8",
+          },
         ],
       },
       // Offline page — revalidated every request so it stays fresh
       {
-        source: '/offline',
+        source: "/offline",
         headers: [
-          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
         ],
       },
       // Digital Asset Links for TWA / Play Store
       {
-        source: '/.well-known/assetlinks.json',
+        source: "/.well-known/assetlinks.json",
         headers: [
-          { key: 'Content-Type',  value: 'application/json' },
-          { key: 'Cache-Control', value: 'public, max-age=3600' },
+          { key: "Content-Type", value: "application/json" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
         ],
       },
     ];
