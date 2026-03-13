@@ -6,8 +6,9 @@ import { Close, ViewInAr } from '@mui/icons-material';
 import { Box, Chip, CircularProgress, IconButton, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const PANNELLUM_CSS = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css';
-const PANNELLUM_JS = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js';
+const PANNELLUM_CSS = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.7/build/pannellum.css';
+const PANNELLUM_JS = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.7/build/pannellum.js';
+const PANNELLUM_JS_FALLBACK = 'https://unpkg.com/pannellum@2.5.7/build/pannellum.js';
 
 function loadPannellum(): Promise<Pannellum> {
   const win = window as unknown as Record<string, unknown>;
@@ -24,31 +25,46 @@ function loadPannellum(): Promise<Pannellum> {
       document.head.appendChild(link);
     }
 
-    // Reuse an existing script tag if one is already in the DOM.
-    let script = document.querySelector(`script[src="${PANNELLUM_JS}"]`) as HTMLScriptElement | null;
-    if (!script) {
-      script = document.createElement('script');
-      script.src = PANNELLUM_JS;
-      document.head.appendChild(script);
-    }
+    const scriptSources = [PANNELLUM_JS, PANNELLUM_JS_FALLBACK];
+    let currentIndex = 0;
 
-    // Re-check: script may have already loaded between the check at the top and now.
-    if (win['pannellum']) {
-      resolve(win['pannellum'] as Pannellum);
-      return;
-    }
+    const tryNext = () => {
+      if (currentIndex >= scriptSources.length) {
+        reject(new Error('Pannellum script could not be loaded from available CDNs.'));
+        return;
+      }
 
-    const timeoutId = setTimeout(() => reject(new Error('Pannellum CDN load timeout (15 s)')), 15_000);
+      const src = scriptSources[currentIndex++];
+      let script = document.querySelector(`script[src="${src}"]`) as HTMLScriptElement | null;
+      if (!script) {
+        script = document.createElement('script');
+        script.src = src;
+        document.head.appendChild(script);
+      }
 
-    script.addEventListener('load', () => {
-      clearTimeout(timeoutId);
-      resolve(win['pannellum'] as Pannellum);
-    }, { once: true });
+      if (win['pannellum']) {
+        resolve(win['pannellum'] as Pannellum);
+        return;
+      }
 
-    script.addEventListener('error', (err) => {
-      clearTimeout(timeoutId);
-      reject(err);
-    }, { once: true });
+      const timeoutId = setTimeout(() => {
+        script?.remove();
+        tryNext();
+      }, 12_000);
+
+      script.addEventListener('load', () => {
+        clearTimeout(timeoutId);
+        resolve(win['pannellum'] as Pannellum);
+      }, { once: true });
+
+      script.addEventListener('error', () => {
+        clearTimeout(timeoutId);
+        script?.remove();
+        tryNext();
+      }, { once: true });
+    };
+
+    tryNext();
   });
 }
 
@@ -59,7 +75,9 @@ interface TourViewerProps {
 
 export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const viewerRef = useRef<PannellumViewer | null>(null);
+  const isMountedRef = useRef(true);
   const loadingRef = useRef(true);
   const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -74,15 +92,29 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
       const pannellum = await loadPannellum();
 
       const scenes: Record<string, PannellumSceneConfig> = {};
+      const validSceneIds = new Set(tourConfig.scenes.map((scene) => scene.id));
+
       for (const scene of tourConfig.scenes) {
-        const hotSpots = (scene.hotspots ?? []).map((h) => ({
-          type: 'scene' as const,
-          pitch: h.pitch,
-          yaw: h.yaw,
-          sceneId: h.target_scene,
-          text: h.label,
-          cssClass: 'kh-tour-hotspot',
-        }));
+        const hotSpots = (scene.hotspots ?? [])
+          .map((h) => {
+            const targetSceneId = h.target_scene ?? h.sceneId;
+            const hotspotText = h.label ?? h.text ?? '';
+
+            if (!targetSceneId) {
+              return null;
+            }
+
+            return {
+              type: 'scene' as const,
+              pitch: h.pitch,
+              yaw: h.yaw,
+              sceneId: targetSceneId,
+              text: hotspotText,
+              cssClass: 'kh-tour-hotspot',
+            };
+          })
+          .filter((h): h is NonNullable<typeof h> => h !== null)
+          .filter((h) => validSceneIds.has(h.sceneId));
         const base = {
           title: scene.title,
           pitch: scene.initial_view?.pitch ?? 0,
@@ -114,7 +146,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
       }
 
       const dismiss = () => {
-        if (!loadingRef.current) return;
+        if (!loadingRef.current || !isMountedRef.current) return;
         loadingRef.current = false;
         setIsLoading(false);
       };
@@ -127,9 +159,17 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
 
       // Fallback to the first scene if default_scene is missing from the config.
       const sceneIds = Object.keys(scenes);
-      const firstSceneId = tourConfig.default_scene && scenes[tourConfig.default_scene]
-        ? tourConfig.default_scene
-        : sceneIds[0];
+      if (sceneIds.length === 0) {
+        setError('Ce tour ne contient aucune scène exploitable pour le moment.');
+        setIsLoading(false);
+        return;
+      }
+      const preferredHotspotSceneId = sceneIds.find((id) => {
+        const s = scenes[id];
+        return Array.isArray(s.hotSpots) && s.hotSpots.length > 0;
+      });
+      const firstSceneId = preferredHotspotSceneId
+        ?? (tourConfig.default_scene && scenes[tourConfig.default_scene] ? tourConfig.default_scene : sceneIds[0]);
 
       viewerRef.current = pannellum.viewer(containerRef.current, {
         default: {
@@ -150,6 +190,9 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
       });
 
       viewerRef.current.on('error', () => {
+        if (!isMountedRef.current) {
+          return;
+        }
         clearTimeout(safetyTimerRef.current ?? undefined);
         safetyTimerRef.current = null;
         loadingRef.current = false;
@@ -158,18 +201,29 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
       });
 
       viewerRef.current.on('scenechange', () => {
+        if (!isMountedRef.current) {
+          return;
+        }
         setCurrentScene(viewerRef.current?.getScene() ?? tourConfig.default_scene);
       });
     } catch {
+      if (!isMountedRef.current) {
+        return;
+      }
       setError('Impossible de charger la visite virtuelle. Vérifiez votre connexion.');
       setIsLoading(false);
     }
   }, [tourConfig]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     loadingRef.current = true;
-    initViewer();
+    const frameId = window.requestAnimationFrame(() => {
+      void initViewer();
+    });
     return () => {
+      window.cancelAnimationFrame(frameId);
+      isMountedRef.current = false;
       if (safetyTimerRef.current) {
         clearTimeout(safetyTimerRef.current);
         safetyTimerRef.current = null;
@@ -188,13 +242,27 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
+  useEffect(() => {
+    const focusId = window.setTimeout(() => {
+      closeButtonRef.current?.focus();
+    }, 80);
+
+    return () => window.clearTimeout(focusId);
+  }, []);
+
   const handleSceneJump = (sceneId: string) => {
+    if (!tourConfig.scenes.some((scene) => scene.id === sceneId)) {
+      return;
+    }
     viewerRef.current?.loadScene(sceneId);
     setCurrentScene(sceneId);
   };
 
   return (
     <Box
+      role="dialog"
+      aria-modal="true"
+      aria-label="Visite virtuelle 3D"
       sx={{
         position: 'fixed',
         inset: 0,
@@ -226,7 +294,13 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
             Visite Virtuelle 3D
           </Typography>
         </Box>
-        <IconButton onClick={onClose} size="small" sx={{ color: '#fff', bgcolor: 'rgba(0,0,0,0.4)', '&:hover': { bgcolor: 'rgba(0,0,0,0.6)' } }}>
+        <IconButton
+          ref={closeButtonRef}
+          onClick={onClose}
+          size="small"
+          aria-label="Fermer la visite 3D"
+          sx={{ color: '#fff', bgcolor: 'rgba(0,0,0,0.4)', '&:hover': { bgcolor: 'rgba(0,0,0,0.6)' } }}
+        >
           <Close />
         </IconButton>
       </Box>
@@ -269,9 +343,26 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
             zIndex: 5,
           }}
         >
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center', px: 4 }}>
-            {error}
-          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, px: 4 }}>
+            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>
+              {error}
+            </Typography>
+            <Chip
+              label="Réessayer"
+              onClick={() => {
+                setError('');
+                setIsLoading(true);
+                initViewer();
+              }}
+              aria-label="Réessayer le chargement de la visite 3D"
+              sx={{
+                cursor: 'pointer',
+                bgcolor: 'rgba(246,71,95,0.9)',
+                color: '#fff',
+                fontWeight: 700,
+              }}
+            />
+          </Box>
         </Box>
       )}
 
@@ -298,6 +389,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
               label={scene.title}
               onClick={() => handleSceneJump(scene.id)}
               size="small"
+              aria-label={`Aller à la scène ${scene.title}`}
               sx={{
                 fontWeight: 600,
                 fontSize: '0.75rem',
@@ -325,7 +417,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
             fontSize: '0.65rem',
           }}
         >
-          Cliquez et faites glisser pour naviguer • Molette pour zoomer • Échap pour quitter
+          Cliquez sur les points pour changer de pièce • Glissez pour naviguer • Molette pour zoomer • Échap pour quitter
         </Typography>
       )}
     </Box>

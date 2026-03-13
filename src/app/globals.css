@@ -479,6 +479,8 @@ img {
 .kh-tour-hotspot {
   width: 36px;
   height: 36px;
+  margin-left: -18px;
+  margin-top: -18px;
   border-radius: 50%;
   background: rgba(246, 71, 95, 0.85);
   border: 3px solid #fff;
@@ -500,7 +502,7 @@ img {
 }
 
 @keyframes kh-hotspot-pulse {
-  0%, 100% { box-shadow: 0 2px 12px rgba(246, 71, 95, 0.5); transform: scale(1); }
-  50% { box-shadow: 0 2px 20px rgba(246, 71, 95, 0.8); transform: scale(1.1); }
+  0%, 100% { box-shadow: 0 2px 12px rgba(246, 71, 95, 0.5); }
+  50% { box-shadow: 0 2px 20px rgba(246, 71, 95, 0.8); }
 }
 

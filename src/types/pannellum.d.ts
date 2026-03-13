@@ -9,6 +9,8 @@ export interface PannellumHotspot {
   sceneId?: string;
   text?: string;
   cssClass?: string;
+  createTooltipFunc?: (hotSpotDiv: HTMLDivElement, args?: { text?: string }) => void;
+  createTooltipArgs?: { text?: string };
 }
 
 export interface PannellumMultiResConfig {
