@@ -475,34 +475,63 @@ img {
   }
 }
 
-/* ===== 3D Tour — Pannellum hotspot overrides ===== */
+/* ===== 3D Tour — Matterport-style hotspot ===== */
 .kh-tour-hotspot {
-  width: 36px;
-  height: 36px;
-  margin-left: -18px;
-  margin-top: -18px;
+  width: 48px;
+  height: 48px;
+  margin-left: -24px;
+  margin-top: -24px;
   border-radius: 50%;
-  background: rgba(246, 71, 95, 0.85);
-  border: 3px solid #fff;
-  box-shadow: 0 2px 12px rgba(246, 71, 95, 0.5);
+  background: rgba(255, 255, 255, 0.95);
+  border: 3px solid rgba(30, 30, 30, 0.85);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   position: relative;
-  animation: kh-hotspot-pulse 2s ease-in-out infinite;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-
+.kh-tour-hotspot:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+}
 .kh-tour-hotspot::after {
-  content: '▶';
-  color: #fff;
-  font-size: 13px;
-  line-height: 1;
-  margin-left: 2px;
+  content: '';
+  display: block;
+  width: 22px;
+  height: 22px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231e1e1e'%3E%3Cpath d='M19 19V4h-4V3H5v16H3v2h12V6h2v15h4v-2h-2zm-6 0H7V5h6v14zm-2-8h2v2h-2v-2z'/%3E%3C/svg%3E") no-repeat center / contain;
 }
 
-@keyframes kh-hotspot-pulse {
-  0%, 100% { box-shadow: 0 2px 12px rgba(246, 71, 95, 0.5); }
-  50% { box-shadow: 0 2px 20px rgba(246, 71, 95, 0.8); }
+/* Tooltip label below the hotspot */
+.kh-tour-hotspot .kh-hotspot-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.82);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.kh-tour-hotspot .kh-hotspot-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: rgba(0, 0, 0, 0.82);
+}
+.kh-tour-hotspot:hover .kh-hotspot-tooltip {
+  opacity: 1;
 }
 

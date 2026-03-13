@@ -172,6 +172,10 @@ export interface TourHotspot {
   target_scene: string;
   label: string;
   type?: 'scene';
+  /** @deprecated Legacy field — use target_scene instead */
+  sceneId?: string;
+  /** @deprecated Legacy field — use label instead */
+  text?: string;
 }
 
 export interface TourScene {
@@ -192,6 +196,14 @@ export interface TourScene {
   /** True while the background conversion job is running */
   processing?: boolean;
   processing_failed?: boolean;
+  /** Horizontal angle of view (degrees) — 360 for full sphere */
+  haov?: number;
+  /** Vertical angle of view (degrees) — 180 for full sphere */
+  vaov?: number;
+  /** Vertical offset to center partial panoramas (degrees) */
+  vOffset?: number;
+  /** True when the image is a partial panorama (e.g. iPhone) */
+  is_partial_pano?: boolean;
 }
 
 export interface TourConfig {

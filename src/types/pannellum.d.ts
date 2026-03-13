@@ -31,6 +31,13 @@ export type PannellumSceneConfig =
       pitch?: number;
       yaw?: number;
       hfov?: number;
+      haov?: number;
+      vaov?: number;
+      vOffset?: number;
+      minPitch?: number;
+      maxPitch?: number;
+      minHfov?: number;
+      maxHfov?: number;
       hotSpots?: PannellumHotspot[];
     }
   | {

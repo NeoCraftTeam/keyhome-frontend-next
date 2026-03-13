@@ -10,6 +10,8 @@ const PANNELLUM_CSS = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.7/build/pannel
 const PANNELLUM_JS = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.7/build/pannellum.js';
 const PANNELLUM_JS_FALLBACK = 'https://unpkg.com/pannellum@2.5.7/build/pannellum.js';
 
+const injectedElements: HTMLElement[] = [];
+
 function loadPannellum(): Promise<Pannellum> {
   const win = window as unknown as Record<string, unknown>;
 
@@ -23,6 +25,7 @@ function loadPannellum(): Promise<Pannellum> {
       link.rel = 'stylesheet';
       link.href = PANNELLUM_CSS;
       document.head.appendChild(link);
+      injectedElements.push(link);
     }
 
     const scriptSources = [PANNELLUM_JS, PANNELLUM_JS_FALLBACK];
@@ -40,6 +43,7 @@ function loadPannellum(): Promise<Pannellum> {
         script = document.createElement('script');
         script.src = src;
         document.head.appendChild(script);
+        injectedElements.push(script);
       }
 
       if (win['pannellum']) {
@@ -68,6 +72,15 @@ function loadPannellum(): Promise<Pannellum> {
   });
 }
 
+function cleanupPannellum(): void {
+  const win = window as unknown as Record<string, unknown>;
+  delete win['pannellum'];
+  for (const el of injectedElements) {
+    el.remove();
+  }
+  injectedElements.length = 0;
+}
+
 interface TourViewerProps {
   tourConfig: TourConfig;
   onClose: () => void;
@@ -94,6 +107,28 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
       const scenes: Record<string, PannellumSceneConfig> = {};
       const validSceneIds = new Set(tourConfig.scenes.map((scene) => scene.id));
 
+      const dimensionCache = new Map<string, { w: number; h: number }>();
+
+      const probePromises = tourConfig.scenes
+        .filter((s) => s.type !== 'cubemap' && s.type !== 'multires' && s.image_url && s.haov == null)
+        .map(
+          (s) =>
+            new Promise<void>((resolve) => {
+              const img = new Image();
+              img.onload = () => {
+                dimensionCache.set(s.id, { w: img.naturalWidth, h: img.naturalHeight });
+                resolve();
+              };
+              img.onerror = () => resolve();
+              img.src = s.image_url!;
+              setTimeout(resolve, 8_000);
+            }),
+        );
+
+      if (probePromises.length > 0) {
+        await Promise.all(probePromises);
+      }
+
       for (const scene of tourConfig.scenes) {
         const hotSpots = (scene.hotspots ?? [])
           .map((h) => {
@@ -111,6 +146,15 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
               sceneId: targetSceneId,
               text: hotspotText,
               cssClass: 'kh-tour-hotspot',
+              createTooltipFunc: (div: HTMLDivElement, args?: { text?: string }) => {
+                if (args?.text) {
+                  const tip = document.createElement('span');
+                  tip.className = 'kh-hotspot-tooltip';
+                  tip.textContent = args.text;
+                  div.appendChild(tip);
+                }
+              },
+              createTooltipArgs: hotspotText ? { text: hotspotText } : undefined,
             };
           })
           .filter((h): h is NonNullable<typeof h> => h !== null)
@@ -140,8 +184,57 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
             },
           };
         } else {
-          // equirectangular — also used as fallback while conversion job is running
-          scenes[scene.id] = { ...base, type: 'equirectangular', panorama: scene.image_url ?? '' };
+          const equiConfig: PannellumSceneConfig = {
+            ...base,
+            type: 'equirectangular',
+            panorama: scene.image_url ?? '',
+          };
+
+          if (equiConfig.type === 'equirectangular') {
+            let haov = scene.haov;
+            let vaov = scene.vaov;
+            let vOff = scene.vOffset;
+
+            if (haov == null || vaov == null) {
+              const dims = dimensionCache.get(scene.id);
+              if (dims && dims.w > 0 && dims.h > 0) {
+                const ratio = dims.w / dims.h;
+                if (ratio >= 1.8 && ratio <= 2.2) {
+                  haov = 360;
+                  vaov = 180;
+                  vOff = 0;
+                } else if (ratio > 2.2) {
+                  haov = 360;
+                  const fullH = dims.w / 2;
+                  vaov = Math.round((dims.h / fullH) * 180 * 10000) / 10000;
+                  vOff = 0;
+                }
+              }
+            }
+
+            if (haov != null && haov > 0 && haov <= 360) {
+              equiConfig.haov = haov;
+            }
+            if (vaov != null && vaov > 0 && vaov <= 180) {
+              equiConfig.vaov = vaov;
+
+              const offset = vOff ?? 0;
+              const halfVaov = vaov / 2;
+              equiConfig.minPitch = -(halfVaov + offset);
+              equiConfig.maxPitch = halfVaov - offset;
+
+              if (vaov < 179) {
+                equiConfig.hfov = Math.min(equiConfig.hfov ?? 100, vaov * 0.9);
+                equiConfig.maxHfov = vaov;
+                equiConfig.pitch = 0;
+              }
+            }
+            if (vOff != null) {
+              equiConfig.vOffset = vOff;
+            }
+          }
+
+          scenes[scene.id] = equiConfig;
         }
       }
 
@@ -230,6 +323,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
       }
       viewerRef.current?.destroy();
       viewerRef.current = null;
+      cleanupPannellum();
     };
   }, [initViewer]);
 
@@ -405,7 +499,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
         </Box>
       )}
 
-      {/* Hint */}
+       {/* Hint */}
       {!isLoading && !error && (
         <Typography
           variant="caption"
@@ -413,8 +507,8 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
             position: 'absolute',
             bottom: 8,
             right: 12,
-            color: 'rgba(255,255,255,0.4)',
-            fontSize: '0.65rem',
+            color: 'rgba(255,255,255,0.55)',
+            fontSize: '0.75rem',
           }}
         >
           Cliquez sur les points pour changer de pièce • Glissez pour naviguer • Molette pour zoomer • Échap pour quitter
