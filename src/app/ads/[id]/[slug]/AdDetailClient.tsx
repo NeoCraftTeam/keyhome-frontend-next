@@ -586,10 +586,20 @@ function AdDetailContent() {
         </Box>
         </FadeIn>
 
-        <FadeIn delay={0.3} direction="up">
-        <Grid container spacing={4}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: 'minmax(0, 1fr) 380px',
+              lg: 'minmax(0, 1fr) 420px',
+            },
+            gap: 4,
+            alignItems: 'start',
+          }}
+        >
           {/* Left column — details */}
-          <Grid size={{ xs: 12, md: 7, lg: 8 }}>
+          <Box>
             <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>
               {ad.title}
             </Typography>
@@ -792,15 +802,20 @@ function AdDetailContent() {
               hasUserReviewed={!!(currentUser && ad.reviews?.some(r => r.user?.id === currentUser.id))}
             />
 
-          </Grid>
+          </Box>
 
           {/* Right column — pricing card */}
-          <Grid size={{ xs: 12, md: 5, lg: 4 }} sx={{ order: { xs: 1, md: 2 } }}>
+          <Box
+            sx={{
+              position: { md: 'sticky' },
+              top: { md: 112, lg: 120 },
+              alignSelf: 'start',
+              zIndex: 1,
+            }}
+          >
             <Paper
               elevation={0}
               sx={{
-                position: { md: 'sticky' },
-                top: { md: 80 },
                 border: '1px solid',
                 borderColor: 'divider',
                 borderRadius: 3,
@@ -1031,11 +1046,11 @@ function AdDetailContent() {
                 </Button>
               </Box>
             </Paper>
-          </Grid>
+          </Box>
 
           {/* Similar ads */}
           {ad.type && similarAds.length > 0 && (
-            <Grid size={{ xs: 12 }}>
+            <Box sx={{ gridColumn: '1 / -1' }}>
               <Box sx={{ mt: { xs: 2, md: 1 } }}>
                 <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
                   Annonces similaires qui pourraient vous plaire
@@ -1105,10 +1120,9 @@ function AdDetailContent() {
                   })}
                 </Box>
               </Box>
-            </Grid>
+            </Box>
           )}
-        </Grid>
-        </FadeIn>
+        </Box>
       </Container>
 
       {/* Unlock / Credits dialog */}

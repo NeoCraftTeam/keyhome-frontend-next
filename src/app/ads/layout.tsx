@@ -12,7 +12,14 @@ import { Box } from '@mui/material';
  */
 export default function AdsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        '--kh-navbar-height': { xs: '56px', md: '64px' },
+      }}
+    >
       <Navbar />
       <Box component="main" sx={{ flex: 1 }}>
         {children}
