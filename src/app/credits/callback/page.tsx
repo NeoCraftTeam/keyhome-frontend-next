@@ -30,7 +30,7 @@ function CreditCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [verifying, setVerifying] = useState(true);
-  const [purchaseStatus, setPurchaseStatus] = useState<'completed' | 'pending' | 'failed' | null>(null);
+  const [purchaseStatus, setPurchaseStatus] = useState<'completed' | 'pending' | 'failed' | 'cancelled' | null>(null);
   const [pointBalance, setPointBalance] = useState<number | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [extendedPolling, setExtendedPolling] = useState(false);
@@ -98,7 +98,13 @@ function CreditCallbackContent() {
   useEffect(() => {
     if (!isApproved || verifiedRef.current) {
       if (!isApproved) {
-        setPurchaseStatus(status === 'declined' ? 'failed' : 'pending');
+        if (status === 'declined' || status === 'failed') {
+          setPurchaseStatus('failed');
+        } else if (status === 'cancelled') {
+          setPurchaseStatus('cancelled');
+        } else {
+          setPurchaseStatus('pending');
+        }
         setVerifying(false);
       }
       return;
@@ -250,32 +256,52 @@ function CreditCallbackContent() {
               )}
             </Box>
           </>
-        ) : purchaseStatus === 'failed' ? (
+        ) : purchaseStatus === 'failed' || purchaseStatus === 'cancelled' ? (
           <>
-            <Box sx={{ width: 80, height: 80, borderRadius: '50%', bgcolor: 'rgba(193,53,21,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3 }}>
-              <ErrorIcon sx={{ fontSize: 48, color: 'error.main' }} />
+            <Box sx={{
+              width: 80, height: 80, borderRadius: '50%',
+              bgcolor: purchaseStatus === 'cancelled' ? 'rgba(100,100,100,0.1)' : 'rgba(193,53,21,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3,
+            }}>
+              <ErrorIcon sx={{ fontSize: 48, color: purchaseStatus === 'cancelled' ? 'text.secondary' : 'error.main' }} />
             </Box>
             <Typography variant="h5" fontWeight={700} gutterBottom>
-              Paiement échoué
+              {purchaseStatus === 'cancelled' ? 'Paiement annulé' : 'Paiement échoué'}
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Le paiement n&apos;a pas abouti. Aucun montant n&apos;a été débité.
+              {purchaseStatus === 'cancelled'
+                ? 'Vous avez annulé le paiement. Aucun montant n\u2019a été débité. Vous pouvez réessayer à tout moment.'
+                : 'Le paiement n&apos;a pas abouti. Aucun montant n&apos;a été débité.'}
             </Typography>
-            <Button
-              variant="contained"
-              size="large"
-              fullWidth
-              onClick={() => adId ? router.push(`/ads/${adId}/annonce`) : router.push('/home')}
-              sx={{
-                py: 1.5,
-                fontWeight: 600,
-                background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-                '&:active': { transform: 'scale(0.97)' },
-              }}
-            >
-              Réessayer
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1.5, flexDirection: 'column' }}>
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                onClick={() => adId ? router.push(`/ads/${adId}/annonce`) : purchaseStatus === 'cancelled' ? router.back() : router.push('/home')}
+                sx={{
+                  py: 1.5,
+                  fontWeight: 600,
+                  background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                  '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                  '&:active': { transform: 'scale(0.97)' },
+                }}
+              >
+                {adId ? 'Retourner à l&apos;annonce' : purchaseStatus === 'cancelled' ? 'Retour' : 'Réessayer'}
+              </Button>
+              {adId && (
+                <Button
+                  variant="text"
+                  size="medium"
+                  fullWidth
+                  startIcon={<HomeIcon />}
+                  onClick={() => router.push('/home')}
+                  sx={{ fontWeight: 600, color: 'text.secondary' }}
+                >
+                  Accueil
+                </Button>
+              )}
+            </Box>
           </>
         ) : (
           <>

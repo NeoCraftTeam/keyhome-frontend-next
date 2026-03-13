@@ -43,6 +43,7 @@ function PaymentSuccessContent() {
   const txRef = searchParams.get('tx_ref');
   const status = searchParams.get('status');
   const isApproved = status === 'approved';
+  const isDeclinedOrCancelled = status === 'declined' || status === 'cancelled';
 
   const attemptVerify = useCallback(async (attempt: number) => {
     if (!adId || !txRef) { return; }
@@ -91,6 +92,11 @@ function PaymentSuccessContent() {
   }, [adId]);
 
   useEffect(() => {
+    // Declined or cancelled — skip verification entirely, show terminal UI
+    if (isDeclinedOrCancelled) {
+      setVerifying(false);
+      return;
+    }
     if (!adId || !isApproved || verifiedRef.current) {
       setVerifying(false);
       return;
@@ -98,7 +104,7 @@ function PaymentSuccessContent() {
     verifiedRef.current = true;
     attemptVerify(0);
     return () => { if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); } };
-  }, [adId, txRef, isApproved, attemptVerify]);
+  }, [adId, txRef, isApproved, isDeclinedOrCancelled, attemptVerify]);
 
   // Start extended polling once initial retries are done and payment was approved
   useEffect(() => {
@@ -235,20 +241,50 @@ function PaymentSuccessContent() {
           </>
         ) : (
           <>
-            {/* ── Declined (real failure) ── */}
-            {status === 'declined' ? (
+            {/* ── Declined or Cancelled (terminal failure) ── */}
+            {isDeclinedOrCancelled ? (
               <>
-                <Box sx={{ width: 80, height: 80, borderRadius: '50%', bgcolor: 'rgba(193,53,21,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3 }}>
-                  <ErrorIcon sx={{ fontSize: 48, color: 'error.main' }} />
+                <Box sx={{
+                  width: 80, height: 80, borderRadius: '50%',
+                  bgcolor: status === 'cancelled' ? 'rgba(100,100,100,0.1)' : 'rgba(193,53,21,0.1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3,
+                }}>
+                  <ErrorIcon sx={{ fontSize: 48, color: status === 'cancelled' ? 'text.secondary' : 'error.main' }} />
                 </Box>
-                <Typography variant="h5" fontWeight={700} gutterBottom>Paiement refusé</Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                  Le paiement n&apos;a pas abouti. Aucun montant n&apos;a été débité.
+                <Typography variant="h5" fontWeight={700} gutterBottom>
+                  {status === 'cancelled' ? 'Paiement annulé' : 'Paiement refusé'}
                 </Typography>
-                <Button variant="contained" size="large" fullWidth onClick={() => router.back()}
-                  sx={{ py: 1.5, fontWeight: 600, background: 'linear-gradient(to right, #F6475F, #D93A50)', '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' }, '&:active': { transform: 'scale(0.97)' } }}>
-                  Réessayer
-                </Button>
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                  {status === 'cancelled'
+                    ? 'Vous avez annulé le paiement. Aucun montant n\u2019a été débité. Vous pouvez réessayer à tout moment.'
+                    : 'Le paiement n\u2019a pas abouti. Aucun montant n\u2019a été débité.'}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1.5, flexDirection: 'column' }}>
+                  {adId && (
+                    <Button
+                      variant="contained"
+                      size="large"
+                      fullWidth
+                      onClick={() => router.push(`/ads/${adId}/annonce`)}
+                      sx={{ py: 1.5, fontWeight: 600, background: 'linear-gradient(to right, #F6475F, #D93A50)', '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' }, '&:active': { transform: 'scale(0.97)' } }}
+                    >
+                      Retourner à l&apos;annonce
+                    </Button>
+                  )}
+                  <Button
+                    variant={adId ? 'text' : 'contained'}
+                    size="large"
+                    fullWidth
+                    startIcon={!adId ? undefined : <HomeIcon />}
+                    onClick={() => router.push('/home')}
+                    sx={adId
+                      ? { fontWeight: 600, color: 'text.secondary' }
+                      : { py: 1.5, fontWeight: 600, background: 'linear-gradient(to right, #F6475F, #D93A50)', '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' }, '&:active': { transform: 'scale(0.97)' } }
+                    }
+                  >
+                    {adId ? 'Accueil' : 'Retour à l\u2019accueil'}
+                  </Button>
+                </Box>
               </>
             ) : (
               /* ── Approved but webhook is slow (not a real error) ── */

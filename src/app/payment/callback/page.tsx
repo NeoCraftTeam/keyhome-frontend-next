@@ -237,11 +237,11 @@ function CallbackContent(): React.ReactElement {
             <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
               <Button
                 variant="outlined"
-                startIcon={<Refresh />}
+                startIcon={pageState !== 'cancelled' ? <Refresh /> : undefined}
                 onClick={() => router.back()}
                 sx={{ borderRadius: 3, px: 3, py: 1.2, fontWeight: 600 }}
               >
-                Réessayer
+                {pageState === 'cancelled' ? 'Retour' : 'Réessayer'}
               </Button>
               <Button
                 variant="text"

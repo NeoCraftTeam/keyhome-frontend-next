@@ -296,56 +296,137 @@ export default function PropertyAttributes({
 
   if (variant === 'list') {
     return (
-      <Box>
-        {showTitle && (
-          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
-            Équipements & Services
-          </Typography>
-        )}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {effectiveSelectedByCategory.map((category) => (
-            <Box key={category.slug}>
-              <Typography variant="body2" fontWeight={700} sx={{ mb: 1 }}>
-                {category.name}
-              </Typography>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                  gap: 1.5,
-                }}
-              >
-                {category.attributes.map((entry) => {
-                  const IconComponent = getIcon(entry.icon);
-                  return (
-                    <Box key={entry.value} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: 36,
-                          height: 36,
-                          borderRadius: 1.5,
-                          bgcolor: 'action.hover',
-                        }}
-                      >
-                        <IconComponent sx={{ fontSize: 20, color: 'text.secondary' }} />
-                      </Box>
-                      <Typography variant="body2">{entry.label}</Typography>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </Box>
-          ))}
+      <>
+        <Box>
+          {showTitle && (
+            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
+              Équipements & Services
+            </Typography>
+          )}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+              gap: 1.5,
+            }}
+          >
+            {displayAttributes.map((entry) => {
+              const IconComponent = getIcon(entry.icon);
+              return (
+                <Box key={entry.value} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 36,
+                      height: 36,
+                      borderRadius: 1.5,
+                      bgcolor: 'action.hover',
+                    }}
+                  >
+                    <IconComponent sx={{ fontSize: 20, color: 'text.secondary' }} />
+                  </Box>
+                  <Typography variant="body2">{entry.label}</Typography>
+                </Box>
+              );
+            })}
+          </Box>
+          {remainingCount > 0 && (
+            <Button
+              onClick={() => setIsExpandedModalOpen(true)}
+              size="small"
+              sx={{
+                mt: 1.5,
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 0.5,
+              }}
+            >
+              Voir les {remainingCount} autre{remainingCount > 1 ? 's' : ''} équipement{remainingCount > 1 ? 's' : ''}
+            </Button>
+          )}
         </Box>
-        {remainingCount > 0 && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Et {remainingCount} autre{remainingCount > 1 ? 's' : ''} équipement{remainingCount > 1 ? 's' : ''}
-          </Typography>
-        )}
-      </Box>
+
+        <Dialog
+          open={isExpandedModalOpen}
+          onClose={() => setIsExpandedModalOpen(false)}
+          fullWidth
+          maxWidth="md"
+          PaperProps={{
+            sx: {
+              borderRadius: { xs: 2, sm: 3 },
+              mx: { xs: 1.5, sm: 2 },
+            },
+          }}
+        >
+          <DialogTitle sx={{ pb: 1.5, fontWeight: 700 }}>
+            Tous les équipements
+          </DialogTitle>
+          <DialogContent
+            sx={{
+              pt: 0.5,
+              pb: 2.5,
+              overflowY: 'auto',
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' },
+            }}
+          >
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {effectiveSelectedByCategory.map((category) => (
+                <Box key={category.slug}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}
+                  >
+                    {category.name}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+                      gap: 1.1,
+                    }}
+                  >
+                    {category.attributes.map((entry) => {
+                      const IconComponent = getIcon(entry.icon);
+                      return (
+                        <Box
+                          key={entry.value}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                            minHeight: 34,
+                            px: 0.25,
+                            py: 0.25,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: 36,
+                              height: 36,
+                              minWidth: 36,
+                              borderRadius: 1.5,
+                              bgcolor: 'action.hover',
+                            }}
+                          >
+                            <IconComponent sx={{ fontSize: 20, color: 'text.secondary' }} />
+                          </Box>
+                          <Typography variant="body2">{entry.label}</Typography>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
