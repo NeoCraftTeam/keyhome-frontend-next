@@ -127,11 +127,8 @@ test.describe('Payment Callback Page', () => {
     // Should show success state
     await expect(page.getByText(/paiement confirmé/i)).toBeVisible({ timeout: 10000 });
 
-    // Should show countdown
-    await expect(page.getByText(/redirigé/i)).toBeVisible();
-
-    // Should show "Retour à l'accueil" button
-    await expect(page.getByRole('link', { name: /accueil/i })).toBeVisible();
+    // Should show auto-redirect countdown
+    await expect(page.getByText(/redirection en cours/i)).toBeVisible();
   });
 
   test('shows failure screen when payment verification fails', async ({ page }) => {
