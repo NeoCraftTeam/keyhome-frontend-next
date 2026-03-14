@@ -24,9 +24,10 @@ import { useState } from 'react';
 interface Props {
   prefill?: Partial<SearchAlertPayload>;
   variant?: 'icon' | 'button';
+  size?: 'small' | 'medium' | 'large';
 }
 
-export default function SearchAlertButton({ prefill = {}, variant = 'button' }: Props) {
+export default function SearchAlertButton({ prefill = {}, variant = 'button', size = 'medium' }: Props) {
   const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState(prefill.label ?? '');
@@ -71,9 +72,10 @@ export default function SearchAlertButton({ prefill = {}, variant = 'button' }: 
       variant="outlined"
       startIcon={<NotificationsNone />}
       onClick={() => setOpen(true)}
-      size="small"
+      size={size}
+      sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 99, whiteSpace: 'nowrap' }}
     >
-      Créer une alerte
+      Sauvegarder la recherche
     </Button>
   );
 
@@ -94,9 +96,14 @@ export default function SearchAlertButton({ prefill = {}, variant = 'button' }: 
             </Box>
           ) : (
             <>
-              <Typography color="text.secondary" mb={3}>
-                Recevez une notification push et email dès qu'une nouvelle annonce correspond à vos critères.
-              </Typography>
+              <Box sx={{ p: 2, bgcolor: 'primary.50', borderRadius: 2, mb: 2.5, border: '1px solid', borderColor: 'primary.100' }}>
+                <Typography variant="body2" fontWeight={600} color="primary.main" mb={0.5}>
+                  Comment ça marche ?
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Dès qu'une nouvelle annonce correspondant à vos critères est publiée, vous recevrez une notification push et un email automatiquement.
+                </Typography>
+              </Box>
 
               {prefill.city_name && (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>

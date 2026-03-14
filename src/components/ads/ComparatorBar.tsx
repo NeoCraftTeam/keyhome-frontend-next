@@ -10,6 +10,7 @@ import {
   Close,
   CompareArrows,
   DirectionsCar,
+  OpenInNew,
   SquareFoot,
 } from '@mui/icons-material';
 import {
@@ -19,23 +20,15 @@ import {
   Chip,
   Dialog,
   DialogContent,
-  DialogTitle,
   Divider,
-  Fab,
-  Grid,
   IconButton,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 const ATTRIBUTE_LABELS: Record<string, string> = {
   wifi: 'Wi-Fi',
@@ -49,216 +42,407 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
   gym: 'Salle de sport',
 };
 
+const CRITERIA = [
+  {
+    label: 'Prix / mois',
+    render: (ad: Ad) => (
+      <Typography fontWeight={800} fontSize={15} color="primary.main">
+        {ad.price ? formatPrice(ad.price) : '—'}
+      </Typography>
+    ),
+  },
+  {
+    label: 'Surface',
+    render: (ad: Ad) => (
+      <Box display="flex" alignItems="center" gap={0.5} justifyContent="center">
+        <SquareFoot sx={{ fontSize: 15, color: 'text.secondary' }} />
+        <Typography variant="body2">{ad.surface_area ? `${ad.surface_area} m²` : '—'}</Typography>
+      </Box>
+    ),
+  },
+  {
+    label: 'Chambres',
+    render: (ad: Ad) => (
+      <Box display="flex" alignItems="center" gap={0.5} justifyContent="center">
+        <Bed sx={{ fontSize: 15, color: 'text.secondary' }} />
+        <Typography variant="body2">{ad.bedrooms ?? '—'}</Typography>
+      </Box>
+    ),
+  },
+  {
+    label: 'Salles de bain',
+    render: (ad: Ad) => (
+      <Box display="flex" alignItems="center" gap={0.5} justifyContent="center">
+        <Bathtub sx={{ fontSize: 15, color: 'text.secondary' }} />
+        <Typography variant="body2">{ad.bathrooms ?? '—'}</Typography>
+      </Box>
+    ),
+  },
+  {
+    label: 'Parking',
+    render: (ad: Ad) => ad.has_parking
+      ? <Chip label="Oui" size="small" color="success" variant="outlined" />
+      : <Chip label="Non" size="small" color="default" variant="outlined" />,
+  },
+  {
+    label: 'Prix / m²',
+    render: (ad: Ad) => (
+      <Typography variant="body2" fontWeight={600}>
+        {ad.price && ad.surface_area
+          ? `${Math.round(ad.price / ad.surface_area).toLocaleString('fr-FR')} FCFA/m²`
+          : '—'}
+      </Typography>
+    ),
+  },
+  {
+    label: 'Visite 360°',
+    render: (ad: Ad) => ad.has_3d_tour
+      ? <Chip label="Disponible" size="small" color="success" variant="outlined" />
+      : <Typography variant="caption" color="text.disabled">—</Typography>,
+  },
+];
+
 export default function ComparatorBar() {
   const { items, remove, clear, isOpen, setOpen } = useComparator();
   const router = useRouter();
-
-  if (items.length === 0) { return null; }
+  const [minimized, setMinimized] = useState(false);
 
   const allAttributes = [...new Set(items.flatMap((ad) => ad.attributes ?? []))];
 
+  const handleViewAd = (ad: Ad) => {
+    setOpen(false);
+    setMinimized(true);
+    router.push(`/ads/${ad.id}/${ad.slug}`);
+  };
+
+  const handleOpenComparator = () => {
+    setMinimized(false);
+    setOpen(true);
+  };
+
+  if (items.length === 0) { return null; }
+
   return (
     <>
-      {/* Floating bar */}
+      {/* Floating bar — always visible when items selected */}
       <AnimatePresence>
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          style={{
-            position: 'fixed',
-            bottom: 24,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1200,
-          }}
-        >
-          <Paper
-            elevation={8}
-            sx={{
-              px: 3,
-              py: 1.5,
-              borderRadius: 99,
+        {!isOpen && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+            style={{
+              position: 'fixed',
+              bottom: 24,
+              left: 0,
+              right: 0,
               display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              bgcolor: 'background.paper',
-              border: '1px solid',
-              borderColor: 'primary.main',
+              justifyContent: 'center',
+              zIndex: 1200,
+              pointerEvents: 'none',
             }}
           >
-            <CompareArrows color="primary" />
-            <Typography fontWeight={600} fontSize={14}>
-              {items.length} bien{items.length > 1 ? 's' : ''} sélectionné{items.length > 1 ? 's' : ''}
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              {items.map((ad) => (
-                <Tooltip key={ad.id} title={ad.title}>
-                  <Box sx={{ position: 'relative' }}>
-                    <Avatar
-                      src={ad.images[0]?.thumb}
-                      sx={{ width: 32, height: 32, cursor: 'pointer' }}
-                      onClick={() => remove(ad.id)}
-                    />
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        top: -4,
-                        right: -4,
-                        width: 14,
-                        height: 14,
-                        borderRadius: '50%',
-                        bgcolor: 'error.main',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                      }}
-                      onClick={() => remove(ad.id)}
-                    >
-                      <Close sx={{ fontSize: 10, color: 'white' }} />
-                    </Box>
-                  </Box>
-                </Tooltip>
-              ))}
-            </Box>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={() => setOpen(true)}
-              disabled={items.length < 2}
-              sx={{ borderRadius: 99 }}
+            <Box sx={{ pointerEvents: 'auto' }}>
+            <Paper
+              elevation={12}
+              sx={{
+                px: 2.5,
+                py: 1.25,
+                borderRadius: 99,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                bgcolor: 'background.paper',
+                border: '2px solid',
+                borderColor: 'primary.main',
+                boxShadow: '0 8px 32px rgba(246,71,95,0.18)',
+              }}
             >
-              Comparer
-            </Button>
-            <IconButton size="small" onClick={clear}>
-              <Close fontSize="small" />
-            </IconButton>
-          </Paper>
-        </motion.div>
+              <CompareArrows color="primary" sx={{ fontSize: 20 }} />
+              <Typography fontWeight={700} fontSize={13}>
+                {items.length} bien{items.length > 1 ? 's' : ''} sélectionné{items.length > 1 ? 's' : ''}
+              </Typography>
+
+              {/* Avatars */}
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                {items.map((ad) => (
+                  <Tooltip key={ad.id} title={`Retirer : ${ad.title}`}>
+                    <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => remove(ad.id)}>
+                      <Avatar
+                        src={ad.images?.[0]?.thumb}
+                        sx={{ width: 30, height: 30, border: '2px solid white' }}
+                      >
+                        {ad.title[0]}
+                      </Avatar>
+                      <Box
+                        sx={{
+                          position: 'absolute', top: -3, right: -3,
+                          width: 13, height: 13, borderRadius: '50%',
+                          bgcolor: 'error.main', display: 'flex',
+                          alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        <Close sx={{ fontSize: 9, color: 'white' }} />
+                      </Box>
+                    </Box>
+                  </Tooltip>
+                ))}
+              </Box>
+
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleOpenComparator}
+                disabled={items.length < 2}
+                sx={{
+                  borderRadius: 99,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  px: 2,
+                  background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                  '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                }}
+              >
+                Comparer
+              </Button>
+
+              <IconButton size="small" onClick={clear} sx={{ color: 'text.disabled' }}>
+                <Close fontSize="small" />
+              </IconButton>
+            </Paper>
+              </Box>
+          </motion.div>
+        )}
       </AnimatePresence>
 
-      {/* Comparison Dialog */}
-      <Dialog open={isOpen} onClose={() => setOpen(false)} maxWidth="lg" fullWidth>
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" fontWeight={700}>
-            <CompareArrows sx={{ mr: 1, verticalAlign: 'middle' }} />
-            Comparaison de biens
-          </Typography>
-          <IconButton onClick={() => setOpen(false)}><Close /></IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ overflowX: 'auto' }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Critère</TableCell>
-                  {items.map((ad) => (
-                    <TableCell key={ad.id} align="center" sx={{ minWidth: 200 }}>
-                      <Box>
-                        {ad.images[0] && (
-                          <Box
-                            component="img"
-                            src={ad.images[0].thumb}
-                            alt={ad.title}
-                            sx={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 2, mb: 1 }}
-                          />
-                        )}
-                        <Typography variant="body2" fontWeight={700} noWrap>{ad.title}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {ad.quarter?.name}, {ad.quarter?.city_name}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {[
-                  {
-                    label: 'Prix / mois',
-                    render: (ad: Ad) => (
-                      <Typography fontWeight={700} color="primary">
-                        {ad.price ? formatPrice(ad.price) : '—'}
-                      </Typography>
-                    ),
-                  },
-                  {
-                    label: 'Surface',
-                    render: (ad: Ad) => `${ad.surface_area} m²`,
-                  },
-                  {
-                    label: 'Chambres',
-                    render: (ad: Ad) => (
-                      <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
-                        <Bed fontSize="small" /> {ad.bedrooms}
-                      </Box>
-                    ),
-                  },
-                  {
-                    label: 'Salles de bain',
-                    render: (ad: Ad) => (
-                      <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
-                        <Bathtub fontSize="small" /> {ad.bathrooms}
-                      </Box>
-                    ),
-                  },
-                  {
-                    label: 'Parking',
-                    render: (ad: Ad) => ad.has_parking
-                      ? <Check color="success" />
-                      : <Close color="error" />,
-                  },
-                  {
-                    label: 'Prix/m²',
-                    render: (ad: Ad) => ad.price && ad.surface_area
-                      ? `${Math.round(ad.price / ad.surface_area).toLocaleString('fr-FR')} FCFA/m²`
-                      : '—',
-                  },
-                  {
-                    label: 'Visite 360°',
-                    render: (ad: Ad) => ad.has_3d_tour
-                      ? <Check color="success" />
-                      : <Close color="disabled" />,
-                  },
-                  ...allAttributes.map((attr) => ({
-                    label: ATTRIBUTE_LABELS[attr] ?? attr,
-                    render: (ad: Ad) => (ad.attributes ?? []).includes(attr as PropertyAttribute)
-                      ? <Check color="success" />
-                      : <Close color="disabled" />,
-                  })),
-                ].map(({ label, render }) => (
-                  <TableRow key={label} hover>
-                    <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: 13 }}>
-                      {label}
-                    </TableCell>
-                    {items.map((ad) => (
-                      <TableCell key={ad.id} align="center">
-                        {render(ad)}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-
-                {/* CTA row */}
-                <TableRow>
-                  <TableCell />
-                  {items.map((ad) => (
-                    <TableCell key={ad.id} align="center">
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => router.push(`/ads/${ad.id}/${ad.slug}`)}
-                      >
-                        Voir l'annonce
-                      </Button>
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableBody>
-            </Table>
+      {/* Comparison Dialog — full redesign */}
+      <Dialog
+        open={isOpen}
+        onClose={() => setOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            overflow: 'hidden',
+            maxHeight: '90vh',
+          },
+        }}
+      >
+        {/* Header */}
+        <Box
+          sx={{
+            px: 3,
+            py: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            position: 'sticky',
+            top: 0,
+            zIndex: 1,
+          }}
+        >
+          <Box display="flex" alignItems="center" gap={1}>
+            <CompareArrows color="primary" />
+            <Typography variant="h6" fontWeight={700}>
+              Comparaison de biens
+            </Typography>
+            <Chip
+              label={`${items.length} bien${items.length > 1 ? 's' : ''}`}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
           </Box>
+          <IconButton onClick={() => setOpen(false)} size="small">
+            <Close />
+          </IconButton>
+        </Box>
+
+        <DialogContent sx={{ p: 0, overflowX: 'auto' }}>
+          {/* Property cards header */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: `180px repeat(${items.length}, 1fr)`,
+              gap: 0,
+              borderBottom: '2px solid',
+              borderColor: 'divider',
+              bgcolor: 'grey.50',
+            }}
+          >
+            {/* Empty corner */}
+            <Box sx={{ p: 2 }} />
+
+            {/* Ad header cards */}
+            {items.map((ad) => {
+              const cover = ad.images?.find((i) => i.is_primary) ?? ad.images?.[0];
+              return (
+                <Box
+                  key={ad.id}
+                  sx={{
+                    p: 2,
+                    borderLeft: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
+                  }}
+                >
+                  {/* Cover image */}
+                  <Box
+                    sx={{
+                      width: '100%',
+                      aspectRatio: '16/9',
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      bgcolor: 'grey.200',
+                      position: 'relative',
+                    }}
+                  >
+                    {cover && (
+                      <Box
+                        component="img"
+                        src={cover.thumb ?? cover.url}
+                        alt={ad.title}
+                        sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    )}
+                    {/* Remove button */}
+                    <IconButton
+                      size="small"
+                      onClick={() => remove(ad.id)}
+                      sx={{
+                        position: 'absolute', top: 4, right: 4,
+                        bgcolor: 'rgba(0,0,0,0.5)', color: 'white',
+                        width: 22, height: 22,
+                        '&:hover': { bgcolor: 'rgba(0,0,0,0.75)' },
+                      }}
+                    >
+                      <Close sx={{ fontSize: 12 }} />
+                    </IconButton>
+                  </Box>
+
+                  <Box>
+                    <Typography variant="body2" fontWeight={700} sx={{ lineHeight: 1.3 }}>
+                      {ad.title}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {ad.quarter?.name}{ad.quarter?.city_name ? `, ${ad.quarter.city_name}` : ''}
+                    </Typography>
+                  </Box>
+
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    endIcon={<OpenInNew sx={{ fontSize: 13 }} />}
+                    onClick={() => handleViewAd(ad)}
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      borderRadius: 2,
+                      fontSize: 12,
+                      borderColor: 'primary.main',
+                      color: 'primary.main',
+                      '&:hover': { bgcolor: 'primary.50' },
+                    }}
+                  >
+                    Voir l&apos;annonce
+                  </Button>
+                </Box>
+              );
+            })}
+          </Box>
+
+          {/* Criteria rows */}
+          {[...CRITERIA, ...allAttributes.map((attr) => ({
+            label: ATTRIBUTE_LABELS[attr] ?? attr,
+            render: (ad: Ad) => (ad.attributes ?? []).includes(attr as PropertyAttribute)
+              ? <Check color="success" sx={{ fontSize: 18 }} />
+              : <Typography variant="caption" color="text.disabled">—</Typography>,
+          }))].map(({ label, render }, idx) => (
+            <Box
+              key={label}
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: `180px repeat(${items.length}, 1fr)`,
+                bgcolor: idx % 2 === 0 ? 'background.paper' : 'grey.50',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                '&:last-child': { borderBottom: 'none' },
+              }}
+            >
+              {/* Label */}
+              <Box
+                sx={{
+                  px: 2.5,
+                  py: 1.75,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <Typography variant="body2" fontWeight={600} color="text.secondary" fontSize={13}>
+                  {label}
+                </Typography>
+              </Box>
+
+              {/* Values */}
+              {items.map((ad) => (
+                <Box
+                  key={ad.id}
+                  sx={{
+                    px: 2,
+                    py: 1.75,
+                    borderLeft: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                  }}
+                >
+                  {render(ad)}
+                </Box>
+              ))}
+            </Box>
+          ))}
         </DialogContent>
+
+        {/* Footer */}
+        <Box
+          sx={{
+            px: 3,
+            py: 2,
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Button
+            variant="text"
+            size="small"
+            startIcon={<Close fontSize="small" />}
+            onClick={clear}
+            sx={{ textTransform: 'none', color: 'text.secondary' }}
+          >
+            Tout effacer
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setOpen(false)}
+            sx={{ textTransform: 'none', borderRadius: 2 }}
+          >
+            Fermer
+          </Button>
+        </Box>
       </Dialog>
     </>
   );

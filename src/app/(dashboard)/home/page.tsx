@@ -2,10 +2,10 @@
 
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
+import HeroSearch from '@/components/ads/HeroSearch';
 import AppTour from '@/components/ui/AppTour';
 import FadeIn from '@/components/ui/FadeIn';
 import QueryError from '@/components/ui/QueryError';
-import NaturalSearchBar from '@/components/ads/NaturalSearchBar';
 import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
 import { citiesService } from '@/services/cities.service';
@@ -15,14 +15,11 @@ import {
     Apartment,
     Home as HomeIcon,
     Landscape,
-    LocationOn,
     MapsHomeWork,
-    Search as SearchIcon,
     Store,
     Villa,
 } from '@mui/icons-material';
 import {
-    Autocomplete,
     Box,
     Button,
     Chip,
@@ -32,9 +29,7 @@ import {
     DialogContent,
     Divider,
     Grid,
-    InputAdornment,
     Pagination,
-    TextField,
     Typography,
     useMediaQuery,
     useTheme,
@@ -200,92 +195,13 @@ export default function HomePage() {
             Acheter.{'\u00a0'}Louer.{'\u00a0'}Vendre.
           </Typography>
 
-          {/* City autocomplete */}
-          <Autocomplete<City>
-            options={cities}
-            forcePopupIcon={false}
-            getOptionLabel={(opt) => opt.name}
-            filterOptions={(x) => x}
-            loading={isCitiesLoading}
-            inputValue={cityInput}
-            onInputChange={(_, val) => setCityInput(val)}
-            onChange={handleCitySelect}
-            noOptionsText={null}
-            open={cityInput.length >= 2 && cities.length > 0}
-            slotProps={{
-              paper: {
-                sx: {
-                  borderRadius: '14px',
-                  boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  mt: 1,
-                  overflow: 'hidden',
-                },
-              },
-              listbox: {
-                sx: {
-                  py: 0.5,
-                  '& .MuiAutocomplete-option': {
-                    px: 2.5,
-                    py: 1.5,
-                    gap: 1.5,
-                    fontSize: '0.9rem',
-                    borderRadius: 0,
-                    transition: 'background 0.15s',
-                    '&[aria-selected="true"]': {
-                      bgcolor: 'rgba(246,71,95,0.08)',
-                      color: 'primary.main',
-                      fontWeight: 600,
-                    },
-                    '&.Mui-focused': {
-                      bgcolor: 'rgba(246,71,95,0.06)',
-                    },
-                  },
-                },
-              },
-            }}
-            renderOption={({ key, ...props }, option) => (
-              <li key={key} {...props}>
-                <LocationOn sx={{ fontSize: 16, color: 'text.disabled', mr: 0.5 }} />
-                {option.name}
-              </li>
-            )}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Entrez une ville, un quartier…"
-                sx={{
-                  bgcolor: 'background.paper',
-                  borderRadius: '12px',
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '999px',
-                    fontSize: { xs: '0.9rem', md: '1rem' },
-                    pr: '14px !important',
-                    minHeight: { xs: 54, md: 52 },
-                  },
-                  '& fieldset': { border: 'none' },
-                  boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-                }}
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ color: 'text.secondary', fontSize: 22 }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <>
-                      {isCitiesLoading ? (
-                        <CircularProgress color="inherit" size={18} />
-                      ) : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                }}
-              />
-            )}
-            sx={{ width: '100%', maxWidth: { xs: '100%', sm: 560 }, mx: { xs: 'auto', md: 0 } }}
+          {/* Search — tabs: by city OR natural language */}
+          <HeroSearch
+            cities={cities}
+            cityInput={cityInput}
+            setCityInput={setCityInput}
+            isCitiesLoading={isCitiesLoading}
+            onCitySelect={handleCitySelect}
           />
         </Box>
       </Box>
@@ -371,11 +287,6 @@ export default function HomePage() {
           </Box>
         </DialogContent>
       </Dialog>
-
-      {/* ── AI Search bar ─────────────────────────────────────────────────── */}
-      <Container maxWidth="md" sx={{ pt: 4, pb: 2 }}>
-        <NaturalSearchBar />
-      </Container>
 
       {/* ── Category pills ─────────────────────────────────────────────────── */}
       <Container maxWidth="lg" sx={{ pt: 2, pb: 1 }}>

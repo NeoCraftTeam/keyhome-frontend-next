@@ -2,6 +2,7 @@
 
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
+import SearchAlertButton from '@/components/ads/SearchAlertButton';
 import AppLoader from '@/components/ui/AppLoader';
 import QueryError from '@/components/ui/QueryError';
 import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
@@ -761,6 +762,21 @@ function SearchContent() {
           {query && (
             <Chip label={`"${query}"`} onDelete={() => { setQuery(''); }} size="small" variant="outlined" />
           )}
+          {/* Save search alert — prefilled with active filters */}
+          <Box sx={{ ml: 'auto' }}>
+            <SearchAlertButton
+              prefill={{
+                city_id: selectedCity?.id,
+                city_name: selectedCity?.name,
+                type_id: selectedType?.id,
+                type_name: selectedType?.name,
+                bedrooms_min: bedrooms,
+                has_parking: hasParking || undefined,
+                query: query || undefined,
+              }}
+              size="small"
+            />
+          </Box>
         </Box>
       )}
 

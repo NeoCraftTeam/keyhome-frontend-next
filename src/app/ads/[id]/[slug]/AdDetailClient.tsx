@@ -13,7 +13,7 @@ import FadeIn from '@/components/ui/FadeIn';
 import AdReportModal from '@/components/ads/AdReportModal';
 import SimilarAds from '@/components/ads/SimilarAds';
 import KeyScoreBadge from '@/components/ads/KeyScoreBadge';
-import MessagingDrawer from '@/components/messaging/MessagingDrawer';
+import KeyScoreSection from '@/components/ads/KeyScoreSection';
 import { useComparator } from '@/providers/ComparatorProvider';
 import { formatPrice, formatRelativeDate } from '@/lib/constants';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -82,7 +82,6 @@ function AdDetailContent() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showTour, setShowTour] = useState(false);
-  const [messagingOpen, setMessagingOpen] = useState(false);
   const { add: addToComparator, remove: removeFromComparator, isSelected: isInComparator } = useComparator();
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [isPackageLoading, setIsPackageLoading] = useState<string | null>(null);
@@ -125,7 +124,11 @@ function AdDetailContent() {
   // Prevent a guest fetch flash on refresh when a token exists in storage
   // but AuthProvider has not finished hydrating the authenticated user yet.
   useEffect(() => {
-    setHasStoredSanctumToken(!!localStorage.getItem('kh_sanctum_token'));
+    try {
+      setHasStoredSanctumToken(!!localStorage.getItem('kh_sanctum_token'));
+    } catch {
+      setHasStoredSanctumToken(false);
+    }
   }, []);
 
   const { data: ad, isLoading, isError, refetch } = useQuery({
@@ -602,17 +605,7 @@ function AdDetailContent() {
           >
             {isInComparator(ad.id) ? '✓ Comparé' : 'Comparer'}
           </Button>
-          {isAuthenticated && ad.user?.id !== currentUser?.id && (
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setMessagingOpen(true)}
-              sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: 'text.primary' }}
-            >
-              💬 Message
-            </Button>
-          )}
-          <KeyScoreBadge adId={ad.id} size="small" />
+          {!isLocked && <KeyScoreBadge adId={ad.id} size="small" />}
         </Box>
         </FadeIn>
 
@@ -1076,6 +1069,9 @@ function AdDetailContent() {
                 </Button>
               </Box>
             </Paper>
+
+            {/* KeyScore section — only when unlocked */}
+            {!isLocked && <Box sx={{ mt: 2 }}><KeyScoreSection adId={ad.id} /></Box>}
           </Box>
 
           {/* Similar ads */}
@@ -1443,15 +1439,6 @@ function AdDetailContent() {
       <Container maxWidth="lg" sx={{ pb: 6 }}>
         <SimilarAds currentAdId={adId} />
       </Container>
-
-      {/* Messaging drawer */}
-      {ad && messagingOpen && (
-        <MessagingDrawer
-          ad={ad}
-          open={messagingOpen}
-          onClose={() => setMessagingOpen(false)}
-        />
-      )}
 
       {/* Snackbar */}
       <Snackbar

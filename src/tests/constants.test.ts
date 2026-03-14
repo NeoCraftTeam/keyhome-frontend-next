@@ -148,7 +148,8 @@ describe('formatRelativeDate', () => {
     const result = formatRelativeDate(fortyDaysAgo);
     // Should be a full date like "19 janvier 2026" (not "Il y a X semaines")
     expect(result).not.toContain('Il y a');
-    expect(result).toMatch(/\d{1,2}\s+\w+\s+\d{4}/);
+    // French date format: "2 février 2026" (day, month with accents, year)
+    expect(result).toMatch(/\d{1,2}\s+\S+\s+\d{4}/);
   });
 
   // BUG CATCH: 6 days ago should still be in "days" range, not "weeks".

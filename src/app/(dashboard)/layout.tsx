@@ -2,7 +2,8 @@
 
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
-import SurveyPrompt from '@/components/surveys/SurveyPrompt';
+import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
+import { getSurveyPostponed } from '@/components/surveys/SurveyBanner';
 import AppLoader from '@/components/ui/AppLoader';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import WelcomeModal from '@/components/ui/WelcomeModal';
@@ -27,12 +28,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [hasStoredToken] = useState(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined') return false;
+    try {
+      return !!window.localStorage.getItem('kh_sanctum_token');
+    } catch {
       return false;
     }
-
-    return !!window.localStorage.getItem('kh_sanctum_token');
   });
+  const [surveyPostponed, setSurveyPostponed] = useState<Record<string, boolean>>({});
+  const [surveyMounted, setSurveyMounted] = useState(false);
+
+  useEffect(() => {
+    setSurveyMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (activeSurvey?.id && surveyMounted && getSurveyPostponed(activeSurvey.id)) {
+      setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
+    }
+  }, [activeSurvey?.id, surveyMounted]);
 
   const isPrivatePage = PRIVATE_PATHS.some((p) => pathname?.startsWith(p));
   const isSurveyPage = pathname?.startsWith('/surveys') || pathname?.startsWith('/sondage');
@@ -99,12 +113,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </Box>
       <Footer />
-      {isAuthenticated && !isSurveyPage && activeSurvey && (surveyAnsweredError || surveyAnsweredData?.has_answered !== true) && (
-        <SurveyPrompt
+      {surveyMounted && isAuthenticated && !isSurveyPage && activeSurvey && surveyAnsweredData?.has_answered === false && (
+        <SurveyPromptOrBanner
           surveyId={activeSurvey.id}
           surveySlug={activeSurvey.slug}
           title="Votre avis compte !"
           description={activeSurvey.description ?? "Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience."}
+          onPostponed={() => setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }))}
+          isPostponed={surveyPostponed[activeSurvey.id] ?? getSurveyPostponed(activeSurvey.id)}
         />
       )}
       <WelcomeModal />

@@ -7,7 +7,6 @@ import {
   AddCircleOutline as AddCircleOutlineIcon,
   BarChart as BarChartIcon,
   CalendarMonth as CalendarMonthIcon,
-  Chat as ChatIcon,
   Close as CloseIcon,
   Explore as ExploreIcon,
   HelpOutline as HelpOutlineIcon,
@@ -281,15 +280,6 @@ export default function Navbar() {
                         </MenuItem>
                       ))}
                       <Divider />
-                      <MenuItem
-                        onClick={() => {
-                          setAnchorEl(null);
-                          router.push('/messages');
-                        }}
-                      >
-                        <ListItemIcon><ChatIcon /></ListItemIcon>
-                        <ListItemText>Messages</ListItemText>
-                      </MenuItem>
                       <MenuItem
                         onClick={() => {
                           setAnchorEl(null);

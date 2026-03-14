@@ -4,6 +4,7 @@ import { Box, Button, Paper, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { AssignmentOutlined, Close } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
+import { getSurveyPostponed } from './SurveyBanner';
 
 interface SurveyPromptProps {
   surveyId: string;
@@ -12,11 +13,17 @@ interface SurveyPromptProps {
   description: string;
 }
 
+/**
+ * Affiche le prompt flottant uniquement si l'utilisateur a déjà cliqué "Plus tard"
+ * (stocké dans localStorage). Au prochain login, il réapparaît jusqu'à ce qu'il remplisse le sondage.
+ */
 export default function SurveyPrompt({ surveyId, surveySlug, title, description }: SurveyPromptProps) {
   const router = useRouter();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (!getSurveyPostponed(surveyId)) return;
+    if (typeof window === 'undefined') return;
     const dismissed = sessionStorage.getItem(`survey_dismissed_${surveyId}`);
     if (!dismissed) {
       const timer = setTimeout(() => setVisible(true), 2000);
@@ -25,7 +32,9 @@ export default function SurveyPrompt({ surveyId, surveySlug, title, description 
   }, [surveyId]);
 
   const handleDismiss = () => {
-    sessionStorage.setItem(`survey_dismissed_${surveyId}`, 'true');
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(`survey_dismissed_${surveyId}`, 'true');
+    }
     setVisible(false);
   };
 

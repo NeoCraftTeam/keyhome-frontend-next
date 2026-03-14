@@ -150,29 +150,22 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
           </Box>
         ))}
 
-        {/* Compare button */}
-        <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 2 }}>
-          <Tooltip title={isInComparator(ad.id) ? 'Retirer de la comparaison' : 'Ajouter à la comparaison'}>
-            <IconButton
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (isInComparator(ad.id)) { removeFromComparator(ad.id); } else { addToComparator(ad); }
-              }}
-              size="small"
-              sx={{
-                bgcolor: isInComparator(ad.id) ? 'primary.main' : 'rgba(255,255,255,0.2)',
-                backdropFilter: 'blur(4px)',
-                color: 'white',
-                width: 28,
-                height: 28,
-                '&:hover': { bgcolor: isInComparator(ad.id) ? 'primary.dark' : 'rgba(255,255,255,0.35)' },
-              }}
-            >
-              <CompareArrows sx={{ fontSize: 14 }} />
-            </IconButton>
-          </Tooltip>
-        </Box>
+        {/* Compare badge — top left */}
+        {isInComparator(ad.id) && (
+          <Box
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFromComparator(ad.id); }}
+            sx={{
+              position: 'absolute', top: 8, left: 8, zIndex: 2,
+              px: 1, py: 0.25, borderRadius: 99,
+              bgcolor: 'primary.main', color: 'white',
+              fontSize: 10, fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 0.5,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            }}
+          >
+            <CompareArrows sx={{ fontSize: 11 }} /> Comparé ✓
+          </Box>
+        )}
 
         {/* Heart button with burst animation */}
         <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
@@ -420,20 +413,43 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
           </Box>
         )}
 
-        {/* Price — own row, bold, Airbnb-style */}
-        <Typography
-          variant="body2"
-          fontWeight={700}
-          sx={{
-            mt: 0.5,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            fontSize: { xs: '0.82rem', sm: '0.875rem' },
-          }}
-        >
-          {formatPrice(ad.price)}
-        </Typography>
+        {/* Price + Compare — same row */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5, gap: 0.5 }}>
+          <Typography
+            variant="body2"
+            fontWeight={700}
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              fontSize: { xs: '0.82rem', sm: '0.875rem' },
+            }}
+          >
+            {formatPrice(ad.price)}
+          </Typography>
+          <Tooltip title={isInComparator(ad.id) ? 'Retirer de la comparaison' : 'Comparer ce bien'}>
+            <Box
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (isInComparator(ad.id)) { removeFromComparator(ad.id); } else { addToComparator(ad); }
+              }}
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 0.25,
+                px: 0.75, py: 0.25, borderRadius: 1, cursor: 'pointer',
+                border: '1px solid',
+                borderColor: isInComparator(ad.id) ? 'primary.main' : 'divider',
+                color: isInComparator(ad.id) ? 'primary.main' : 'text.disabled',
+                fontSize: 10, fontWeight: 600, flexShrink: 0,
+                transition: 'all 0.15s',
+                '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'primary.50' },
+              }}
+            >
+              <CompareArrows sx={{ fontSize: 11 }} />
+              {isInComparator(ad.id) ? '✓' : '+'}
+            </Box>
+          </Tooltip>
+        </Box>
       </Box>
     </Box>
     </motion.a>

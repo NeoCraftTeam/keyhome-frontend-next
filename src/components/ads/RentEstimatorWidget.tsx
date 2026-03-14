@@ -3,9 +3,11 @@
 import { estimatorService } from '@/services/estimator.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { formatPrice } from '@/lib/constants';
+import { City, AdType } from '@/types';
 import { Calculate, TrendingDown, TrendingFlat, TrendingUp } from '@mui/icons-material';
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   CircularProgress,
@@ -20,32 +22,42 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 export default function RentEstimatorWidget() {
-  const [cityId, setCityId] = useState('');
+  const [cityInput, setCityInput] = useState('');
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [typeId, setTypeId] = useState('');
   const [surface, setSurface] = useState(50);
-  const [bedrooms, setBedrooms] = useState<number | undefined>(undefined);
   const [enabled, setEnabled] = useState(false);
 
-  const { data: cities } = useQuery({
-    queryKey: ['cities-estimator'],
-    queryFn: () => citiesService.list(),
-    staleTime: 10 * 60 * 1000,
+  const { data: citiesData, isFetching: loadingCities } = useQuery({
+    queryKey: ['cities-estimator', cityInput],
+    queryFn: () => citiesService.list({ q: cityInput, per_page: 20 }),
+    enabled: cityInput.length >= 1,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const { data: types } = useQuery<import('@/types').AdType[]>({
+  const { data: types } = useQuery<AdType[]>({
     queryKey: ['types-estimator'],
     queryFn: () => adTypesService.list(),
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['rent-estimate', cityId, typeId, surface, bedrooms],
-    queryFn: () => estimatorService.estimate({ city_id: cityId, type_id: typeId, surface, bedrooms }),
-    enabled: enabled && !!cityId && !!typeId,
+  const { data, isLoading } = useQuery({
+    queryKey: ['rent-estimate', selectedCity?.id, typeId, surface],
+    queryFn: () => estimatorService.estimate({
+      city_id: selectedCity!.id,
+      type_id: typeId,
+      surface,
+    }),
+    enabled: enabled && !!selectedCity?.id && !!typeId,
     staleTime: 60 * 60 * 1000,
   });
 
-  const handleEstimate = () => setEnabled(true);
+  const canEstimate = !!selectedCity && !!typeId && !isLoading;
+
+  const handleEstimate = () => {
+    setEnabled(false);
+    setTimeout(() => setEnabled(true), 50);
+  };
 
   return (
     <Paper
@@ -61,16 +73,14 @@ export default function RentEstimatorWidget() {
             : 'linear-gradient(135deg, #fff7ed 0%, #fff 100%)',
       }}
     >
+      {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
         <Box
           sx={{
-            width: 44,
-            height: 44,
-            borderRadius: 2,
+            width: 44, height: 44, borderRadius: 2,
             bgcolor: 'primary.main',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
           }}
         >
           <Calculate sx={{ color: 'white', fontSize: 24 }} />
@@ -83,20 +93,36 @@ export default function RentEstimatorWidget() {
         </Box>
       </Box>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <TextField
-          select
-          label="Ville"
-          size="small"
-          fullWidth
-          value={cityId}
-          onChange={(e) => { setCityId(e.target.value); setEnabled(false); }}
-        >
-          {cities?.data?.map((c) => (
-            <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
-          ))}
-        </TextField>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        {/* City autocomplete */}
+        <Autocomplete<City>
+          options={citiesData?.data ?? []}
+          getOptionLabel={(c) => c.name}
+          value={selectedCity}
+          onChange={(_, val) => { setSelectedCity(val); setEnabled(false); }}
+          inputValue={cityInput}
+          onInputChange={(_, val) => { setCityInput(val); }}
+          loading={loadingCities}
+          noOptionsText={cityInput.length < 1 ? 'Tapez une ville…' : 'Aucune ville trouvée'}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Ville"
+              size="small"
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {loadingCities ? <CircularProgress size={14} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+        />
 
+        {/* Type select */}
         <TextField
           select
           label="Type de bien"
@@ -110,6 +136,7 @@ export default function RentEstimatorWidget() {
           ))}
         </TextField>
 
+        {/* Surface slider */}
         <Box>
           <Typography variant="body2" gutterBottom>
             Surface : <strong>{surface} m²</strong>
@@ -122,54 +149,49 @@ export default function RentEstimatorWidget() {
             step={5}
             valueLabelDisplay="auto"
             valueLabelFormat={(v) => `${v} m²`}
+            color="primary"
           />
         </Box>
 
         <Button
           variant="contained"
           onClick={handleEstimate}
-          disabled={!cityId || !typeId || isLoading}
+          disabled={!canEstimate}
           startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <Calculate />}
           fullWidth
+          sx={{ py: 1.25, fontWeight: 700 }}
         >
-          {isLoading ? 'Calcul en cours...' : 'Estimer le loyer'}
+          {isLoading ? 'Calcul en cours…' : 'Estimer le loyer'}
         </Button>
       </Box>
 
+      {/* Results */}
       {data && !data.error && (
         <>
           <Divider sx={{ my: 3 }} />
           <Typography variant="subtitle2" color="text.secondary" mb={2}>
-            Fourchette estimée pour {surface} m²
+            Fourchette estimée pour <strong>{surface} m²</strong> à <strong>{selectedCity?.name}</strong>
           </Typography>
 
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr 1fr',
-              gap: 1,
-              textAlign: 'center',
-            }}
-          >
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1, textAlign: 'center' }}>
             {[
-              { label: 'Bas du marché', value: data.estimated_min, icon: <TrendingDown color="success" /> },
+              { label: 'Bas du marché', value: data.estimated_min, icon: <TrendingDown color="success" />, highlight: false },
               { label: 'Prix médian', value: data.estimated_median, icon: <TrendingFlat color="primary" />, highlight: true },
-              { label: 'Haut du marché', value: data.estimated_max, icon: <TrendingUp color="error" /> },
+              { label: 'Haut du marché', value: data.estimated_max, icon: <TrendingUp color="error" />, highlight: false },
             ].map(({ label, value, icon, highlight }) => (
               <Box
                 key={label}
                 sx={{
-                  p: 1.5,
-                  borderRadius: 2,
+                  p: 1.5, borderRadius: 2,
                   bgcolor: highlight ? 'primary.main' : 'action.hover',
                   color: highlight ? 'white' : 'text.primary',
                 }}
               >
                 {icon}
-                <Typography variant="h6" fontWeight={700} fontSize={14}>
+                <Typography variant="h6" fontWeight={700} fontSize={13} mt={0.5}>
                   {formatPrice(value)}
                 </Typography>
-                <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                <Typography variant="caption" sx={{ opacity: 0.75, fontSize: 10 }}>
                   {label}
                 </Typography>
               </Box>
@@ -177,13 +199,13 @@ export default function RentEstimatorWidget() {
           </Box>
 
           <Typography variant="caption" color="text.secondary" mt={2} display="block" textAlign="center">
-            Basé sur {data.sample_count} annonce(s) similaire(s)
+            Basé sur {data.sample_count} annonce{data.sample_count > 1 ? 's' : ''} similaire{data.sample_count > 1 ? 's' : ''}
           </Typography>
         </>
       )}
 
       {data?.error && (
-        <Alert severity="info" sx={{ mt: 2 }}>
+        <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
           {data.error}
         </Alert>
       )}

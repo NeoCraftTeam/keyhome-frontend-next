@@ -11,6 +11,7 @@ import { Analytics } from "@vercel/analytics/next";
 import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
 import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import NetworkStatus from '@/components/pwa/NetworkStatus';
+import CookieBanner from '@/components/ui/CookieBanner';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -162,6 +163,7 @@ export default function RootLayout({
             <ServiceWorkerRegistrar />
             <PWAInstallPrompt />
             <NetworkStatus />
+            <CookieBanner />
           </Providers>
         </body>
       </html>
