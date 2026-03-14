@@ -14,7 +14,7 @@ export const citiesService = {
 };
 
 export const quartersService = {
-  async list(params?: { page?: number }): Promise<PaginatedResponse<Quarter>> {
+  async list(params?: { page?: number; city_id?: string }): Promise<PaginatedResponse<Quarter>> {
     const { data } = await api.get('/quarters', { params });
     return data;
   },

@@ -1,0 +1,177 @@
+'use client';
+
+import { useAuth } from '@/providers/AuthProvider';
+import { searchAlertsService, SearchAlertPayload } from '@/services/searchAlerts.service';
+import { NotificationsActive, NotificationsNone } from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  MenuItem,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+
+interface Props {
+  prefill?: Partial<SearchAlertPayload>;
+  variant?: 'icon' | 'button';
+}
+
+export default function SearchAlertButton({ prefill = {}, variant = 'button' }: Props) {
+  const { isAuthenticated } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [label, setLabel] = useState(prefill.label ?? '');
+  const [saved, setSaved] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: alertsData } = useQuery({
+    queryKey: ['search-alerts'],
+    queryFn: () => searchAlertsService.list(),
+    enabled: isAuthenticated && open,
+    staleTime: 60 * 1000,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (payload: SearchAlertPayload) => searchAlertsService.create(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['search-alerts'] });
+      setSaved(true);
+      setTimeout(() => { setOpen(false); setSaved(false); }, 1500);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => searchAlertsService.remove(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['search-alerts'] }),
+  });
+
+  const handleSave = () => {
+    createMutation.mutate({ ...prefill, label: label || undefined });
+  };
+
+  if (!isAuthenticated) { return null; }
+
+  const trigger = variant === 'icon' ? (
+    <Tooltip title="Créer une alerte pour cette recherche">
+      <IconButton onClick={() => setOpen(true)} color="primary">
+        <NotificationsNone />
+      </IconButton>
+    </Tooltip>
+  ) : (
+    <Button
+      variant="outlined"
+      startIcon={<NotificationsNone />}
+      onClick={() => setOpen(true)}
+      size="small"
+    >
+      Créer une alerte
+    </Button>
+  );
+
+  return (
+    <>
+      {trigger}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          <NotificationsActive color="primary" sx={{ mr: 1, verticalAlign: 'middle' }} />
+          Alertes de recherche
+        </DialogTitle>
+        <DialogContent>
+          {saved ? (
+            <Box textAlign="center" py={3}>
+              <NotificationsActive color="success" sx={{ fontSize: 48 }} />
+              <Typography variant="h6" mt={1}>Alerte créée !</Typography>
+              <Typography color="text.secondary">Vous serez notifié dès qu'une annonce correspond.</Typography>
+            </Box>
+          ) : (
+            <>
+              <Typography color="text.secondary" mb={3}>
+                Recevez une notification push et email dès qu'une nouvelle annonce correspond à vos critères.
+              </Typography>
+
+              {prefill.city_name && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                  {prefill.city_name && <Chip label={`Ville : ${prefill.city_name}`} size="small" color="primary" variant="outlined" />}
+                  {prefill.type_name && <Chip label={`Type : ${prefill.type_name}`} size="small" color="primary" variant="outlined" />}
+                  {prefill.price_max && <Chip label={`Max : ${prefill.price_max.toLocaleString('fr-FR')} FCFA`} size="small" color="primary" variant="outlined" />}
+                  {prefill.bedrooms_min && <Chip label={`${prefill.bedrooms_min}+ ch.`} size="small" color="primary" variant="outlined" />}
+                </Box>
+              )}
+
+              <TextField
+                label="Nom de l'alerte (optionnel)"
+                fullWidth
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="Ex: Appartement Bastos budget 150k"
+                size="small"
+              />
+
+              {/* Existing alerts */}
+              {alertsData?.data && alertsData.data.length > 0 && (
+                <Box mt={3}>
+                  <Typography variant="subtitle2" fontWeight={600} mb={1}>
+                    Mes alertes actives ({alertsData.data.length}/10)
+                  </Typography>
+                  {alertsData.data.map((alert) => (
+                    <Box
+                      key={alert.id}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        py: 1,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="body2" fontWeight={600}>
+                          {alert.label ?? 'Alerte sans nom'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {[alert.city_name, alert.type_name].filter(Boolean).join(' · ')}
+                          {alert.price_max ? ` · Max ${alert.price_max.toLocaleString('fr-FR')} FCFA` : ''}
+                        </Typography>
+                      </Box>
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={() => deleteMutation.mutate(alert.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        Supprimer
+                      </Button>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </>
+          )}
+        </DialogContent>
+        {!saved && (
+          <DialogActions sx={{ px: 3, pb: 3 }}>
+            <Button onClick={() => setOpen(false)}>Annuler</Button>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={createMutation.isPending}
+              startIcon={createMutation.isPending ? <CircularProgress size={16} color="inherit" /> : <NotificationsActive />}
+            >
+              Enregistrer l'alerte
+            </Button>
+          </DialogActions>
+        )}
+      </Dialog>
+    </>
+  );
+}

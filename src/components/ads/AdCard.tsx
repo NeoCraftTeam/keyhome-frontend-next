@@ -2,18 +2,20 @@
 
 import { formatPrice } from '@/lib/constants';
 import { useFavorites } from '@/providers/FavoritesProvider';
+import { useComparator } from '@/providers/ComparatorProvider';
 import { Ad } from '@/types';
 import {
     BathtubOutlined,
     BedOutlined,
     ChevronLeft,
     ChevronRight,
+    CompareArrows,
     Favorite,
     FavoriteBorder,
     SquareFootOutlined,
     Star as StarIcon,
 } from '@mui/icons-material';
-import { Box, Chip, IconButton, Typography } from '@mui/material';
+import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/material';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -41,6 +43,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
   const router = useRouter();
   const [currentImage, setCurrentImage] = useState(0);
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
+  const { add: addToComparator, remove: removeFromComparator, isSelected: isInComparator } = useComparator();
   const touchStartX = useRef<number | null>(null);
 
   const isFavorite = checkFav(ad.id);
@@ -146,6 +149,30 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
             />
           </Box>
         ))}
+
+        {/* Compare button */}
+        <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 2 }}>
+          <Tooltip title={isInComparator(ad.id) ? 'Retirer de la comparaison' : 'Ajouter à la comparaison'}>
+            <IconButton
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (isInComparator(ad.id)) { removeFromComparator(ad.id); } else { addToComparator(ad); }
+              }}
+              size="small"
+              sx={{
+                bgcolor: isInComparator(ad.id) ? 'primary.main' : 'rgba(255,255,255,0.2)',
+                backdropFilter: 'blur(4px)',
+                color: 'white',
+                width: 28,
+                height: 28,
+                '&:hover': { bgcolor: isInComparator(ad.id) ? 'primary.dark' : 'rgba(255,255,255,0.35)' },
+              }}
+            >
+              <CompareArrows sx={{ fontSize: 14 }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
 
         {/* Heart button with burst animation */}
         <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>

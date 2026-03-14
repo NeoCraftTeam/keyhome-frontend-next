@@ -11,6 +11,10 @@ import ViewingBookingPanel from '@/components/viewing/ViewingBookingPanel';
 import QueryError from '@/components/ui/QueryError';
 import FadeIn from '@/components/ui/FadeIn';
 import AdReportModal from '@/components/ads/AdReportModal';
+import SimilarAds from '@/components/ads/SimilarAds';
+import KeyScoreBadge from '@/components/ads/KeyScoreBadge';
+import MessagingDrawer from '@/components/messaging/MessagingDrawer';
+import { useComparator } from '@/providers/ComparatorProvider';
 import { formatPrice, formatRelativeDate } from '@/lib/constants';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
@@ -78,6 +82,8 @@ function AdDetailContent() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showTour, setShowTour] = useState(false);
+  const [messagingOpen, setMessagingOpen] = useState(false);
+  const { add: addToComparator, remove: removeFromComparator, isSelected: isInComparator } = useComparator();
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [isPackageLoading, setIsPackageLoading] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState('');
@@ -564,7 +570,7 @@ function AdDetailContent() {
 
         {/* Action buttons */}
         <FadeIn delay={0.2} direction="up">
-        <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
           <Button
             variant="outlined"
             size="small"
@@ -583,6 +589,30 @@ function AdDetailContent() {
           >
             {checkFav(ad.id) ? 'Sauvegardé' : 'Sauvegarder'}
           </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => isInComparator(ad.id) ? removeFromComparator(ad.id) : addToComparator(ad)}
+            sx={{
+              borderRadius: '20px',
+              textTransform: 'none',
+              borderColor: isInComparator(ad.id) ? 'primary.main' : 'divider',
+              color: isInComparator(ad.id) ? 'primary.main' : 'text.primary',
+            }}
+          >
+            {isInComparator(ad.id) ? '✓ Comparé' : 'Comparer'}
+          </Button>
+          {isAuthenticated && ad.user?.id !== currentUser?.id && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setMessagingOpen(true)}
+              sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: 'text.primary' }}
+            >
+              💬 Message
+            </Button>
+          )}
+          <KeyScoreBadge adId={ad.id} size="small" />
         </Box>
         </FadeIn>
 
@@ -1406,6 +1436,20 @@ function AdDetailContent() {
               window.location.href = `tel:${publisherPhone}`;
             }
           }}
+        />
+      )}
+
+      {/* Similar ads */}
+      <Container maxWidth="lg" sx={{ pb: 6 }}>
+        <SimilarAds currentAdId={adId} />
+      </Container>
+
+      {/* Messaging drawer */}
+      {ad && messagingOpen && (
+        <MessagingDrawer
+          ad={ad}
+          open={messagingOpen}
+          onClose={() => setMessagingOpen(false)}
         />
       )}
 

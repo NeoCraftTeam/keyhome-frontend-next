@@ -5,7 +5,9 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
 import {
   AddCircleOutline as AddCircleOutlineIcon,
+  BarChart as BarChartIcon,
   CalendarMonth as CalendarMonthIcon,
+  Chat as ChatIcon,
   Close as CloseIcon,
   Explore as ExploreIcon,
   HelpOutline as HelpOutlineIcon,
@@ -49,6 +51,7 @@ const NAV_LINKS = [
   { label: 'Accueil', href: '/home', icon: <HomeIcon /> },
   { label: 'Rechercher', href: '/search', icon: <SearchIcon /> },
   { label: 'Explorer la carte', href: '/nearby', icon: <ExploreIcon /> },
+  { label: 'Prix du marché', href: '/prix-marche', icon: <BarChartIcon /> },
   { label: 'Aide', href: '/aide', icon: <HelpOutlineIcon /> },
 ];
 
@@ -198,6 +201,18 @@ export default function Navbar() {
 
             {isAuthenticated ? (
               <>
+                {/* Publish CTA for agents */}
+                {(user?.role === 'agent' || user?.role === 'admin') && !isMobile && (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<AddCircleOutlineIcon />}
+                    onClick={() => router.push('/publish')}
+                    sx={{ borderRadius: 99, fontWeight: 600, mr: 0.5 }}
+                  >
+                    Publier
+                  </Button>
+                )}
                 <CreditsWidget />
 
                 {/* Avatar menu — desktop only; mobile uses the drawer */}
@@ -266,6 +281,15 @@ export default function Navbar() {
                         </MenuItem>
                       ))}
                       <Divider />
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorEl(null);
+                          router.push('/messages');
+                        }}
+                      >
+                        <ListItemIcon><ChatIcon /></ListItemIcon>
+                        <ListItemText>Messages</ListItemText>
+                      </MenuItem>
                       <MenuItem
                         onClick={() => {
                           setAnchorEl(null);

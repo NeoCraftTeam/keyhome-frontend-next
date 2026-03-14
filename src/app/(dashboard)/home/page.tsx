@@ -5,6 +5,7 @@ import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import AppTour from '@/components/ui/AppTour';
 import FadeIn from '@/components/ui/FadeIn';
 import QueryError from '@/components/ui/QueryError';
+import NaturalSearchBar from '@/components/ads/NaturalSearchBar';
 import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
 import { citiesService } from '@/services/cities.service';
@@ -370,6 +371,11 @@ export default function HomePage() {
           </Box>
         </DialogContent>
       </Dialog>
+
+      {/* ── AI Search bar ─────────────────────────────────────────────────── */}
+      <Container maxWidth="md" sx={{ pt: 4, pb: 2 }}>
+        <NaturalSearchBar />
+      </Container>
 
       {/* ── Category pills ─────────────────────────────────────────────────── */}
       <Container maxWidth="lg" sx={{ pt: 2, pb: 1 }}>
