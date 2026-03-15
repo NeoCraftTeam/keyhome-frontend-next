@@ -375,7 +375,7 @@ function SearchContent() {
         overflowY: { md: 'auto' },
         px: { xs: 2, md: 2.5 },
         pt: 1.5,
-        pb: 4,
+        pb: { xs: 12, md: 4 },
         '&::-webkit-scrollbar': { width: 6 },
         '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 3 },
       }}

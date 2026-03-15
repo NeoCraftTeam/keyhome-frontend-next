@@ -174,6 +174,7 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
           textTransform: 'none',
           fontSize: '0.95rem',
           boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)',
+          mb: { xs: 2, md: 0 },
         }}
         startIcon={mutation.isPending ? <CircularProgress size={18} color="inherit" /> : null}
       >

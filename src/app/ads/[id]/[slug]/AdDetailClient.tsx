@@ -306,7 +306,7 @@ function AdDetailContent() {
 
   return (
     <>
-      <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
+      <Container maxWidth="lg" sx={{ pt: { xs: 2, md: 3 }, pb: { xs: 14, md: 3 } }}>
         {/* Back navigation */}
         <Button
           onClick={() => router.back()}
@@ -1467,7 +1467,7 @@ function AdDetailContent() {
       )}
 
       {/* Similar ads */}
-      <Container maxWidth="lg" sx={{ pb: 6 }}>
+      <Container maxWidth="lg" sx={{ pb: { xs: 14, md: 6 } }}>
         <SimilarAds currentAdId={adId} />
       </Container>
 

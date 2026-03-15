@@ -134,17 +134,18 @@ export default function HomePage() {
   };
 
   return (
-    <Box sx={{ pb: 6 }}>
+    <Box sx={{ pb: { xs: 12, sm: 6 } }}>
       <AppTour />
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <Box
         sx={{
           position: 'relative',
-          height: { xs: 320, sm: 400, md: 480 },
+          minHeight: { xs: 340, sm: 400, md: 480 },
           display: 'flex',
           alignItems: 'center',
           overflow: 'hidden',
+          py: { xs: 4, sm: 0 },
         }}
       >
         {/* Background */}
