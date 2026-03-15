@@ -47,7 +47,7 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -211,6 +211,17 @@ export default function ProfilePage() {
 
   const cities = citiesData?.data || [];
 
+  // Sync city state when user loads (e.g. after refresh) so "Ville" displays correctly
+  useEffect(() => {
+    if (!user) return;
+    if (user.city_name) {
+      setCityInput(user.city_name);
+    }
+    if (user.city_id && user.city_name && !isEditing) {
+      setSelectedCity({ id: user.city_id, name: user.city_name });
+    }
+  }, [user?.id, user?.city_id, user?.city_name, isEditing]);
+
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
       {/* Profile header */}
@@ -294,7 +305,11 @@ export default function ProfilePage() {
                   lastname: user.lastname,
                   phone_number: user.phone_number || '',
                 });
-                setSelectedCity(null);
+                setSelectedCity(
+                  user.city_id && user.city_name
+                    ? { id: user.city_id, name: user.city_name }
+                    : null
+                );
                 setIsEditing(true);
               }}
               sx={{ textTransform: 'none' }}
@@ -317,7 +332,9 @@ export default function ProfilePage() {
         sx={{
           borderBottom: '1px solid',
           borderColor: 'divider',
+          minHeight: 48,
           '& .MuiTab-root': { fontWeight: 600, textTransform: 'none', minHeight: 48 },
+          '& .MuiTabs-indicator': { height: 3, borderRadius: '3px 3px 0 0' },
         }}
       >
         <Tab icon={<EditIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Informations" />

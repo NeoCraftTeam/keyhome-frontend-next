@@ -43,7 +43,7 @@ const STEPS: TourStep[] = [
     Icon: MapsHomeWork,
     title: 'Bienvenue sur KeyHome',
     description:
-      "La plateforme immobilière N°1 en Afrique Centrale. Trouvez votre logement idéal parmi des milliers d'annonces vérifiées.",
+      "Trouvez votre logement idéal parmi des milliers d'annonces vérifiées.",
     color: '#F6475F',
     highlight: 'Nouvelle version',
   },
@@ -399,7 +399,7 @@ export default function AppTour({ onDone }: AppTourProps) {
               boxShadow: `0 4px 20px ${current.color}44`,
             }}
           >
-            {isLast ? "C'est parti 🚀" : 'Suivant'}
+            {isLast ? "C'est parti " : 'Suivant'}
           </Button>
         </Box>
       </DialogContent>

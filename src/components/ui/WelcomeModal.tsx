@@ -9,7 +9,7 @@ import {
   Dialog,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Welcome modal shown once to newly registered users on their very first login.
@@ -24,6 +24,7 @@ import { useEffect, useState } from 'react';
 export default function WelcomeModal() {
   const { user, isAuthenticated, refreshUser } = useAuth();
   const [open, setOpen] = useState(false);
+  const hasShown = useRef(false);
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
@@ -34,6 +35,12 @@ export default function WelcomeModal() {
     if (user.onboarding_completed_at != null) {
       return;
     }
+
+    // Prevent showing twice when user object reference changes
+    if (hasShown.current) {
+      return;
+    }
+    hasShown.current = true;
 
     // Small delay so the dashboard page renders first
     const timer = setTimeout(() => setOpen(true), 600);

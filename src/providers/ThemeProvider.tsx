@@ -25,19 +25,34 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('theme') as ThemeMode | null;
-    if (saved === 'dark' || saved === 'light') {
-      setMode(saved);
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setMode('dark');
-    }
+    const applySaved = () => {
+      try {
+        const saved = localStorage.getItem('theme') as ThemeMode | null;
+        if (saved === 'dark' || saved === 'light') {
+          setMode(saved);
+        }
+      } catch {
+        // localStorage may be unavailable
+      }
+    };
+    applySaved();
     setMounted(true);
+    const handleThemeChange = (e: CustomEvent<ThemeMode>) => {
+      if (e.detail === 'dark' || e.detail === 'light') setMode(e.detail);
+    };
+    window.addEventListener('theme-change' as never, handleThemeChange as EventListener);
+    return () => window.removeEventListener('theme-change' as never, handleThemeChange as EventListener);
   }, []);
 
   const toggleTheme = useCallback(() => {
     setMode((prev) => {
       const next = prev === 'light' ? 'dark' : 'light';
-      localStorage.setItem('theme', next);
+      try {
+        localStorage.setItem('theme', next);
+        window.dispatchEvent(new CustomEvent('theme-change', { detail: next }));
+      } catch {
+        // ignore
+      }
       return next;
     });
   }, []);

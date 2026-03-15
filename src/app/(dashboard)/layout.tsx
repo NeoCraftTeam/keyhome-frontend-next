@@ -38,6 +38,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [surveyPostponed, setSurveyPostponed] = useState<Record<string, boolean>>({});
   const [surveyMounted, setSurveyMounted] = useState(false);
 
+  const { data: activeSurvey, isError: activeSurveyError } = useQuery({
+    queryKey: ['active-survey-global', isAuthenticated],
+    queryFn: () => surveysService.getActive(),
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const activeSurveyId = activeSurvey?.id ?? null;
+
+  const { data: surveyAnsweredData, isError: surveyAnsweredError } = useQuery({
+    queryKey: ['survey-has-answered-global', activeSurveyId, isAuthenticated],
+    queryFn: () => surveysService.hasAnswered(activeSurveyId!),
+    enabled: isAuthenticated && !!activeSurveyId,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+
   useEffect(() => {
     setSurveyMounted(true);
   }, []);
@@ -50,22 +68,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isPrivatePage = PRIVATE_PATHS.some((p) => pathname?.startsWith(p));
   const isSurveyPage = pathname?.startsWith('/surveys') || pathname?.startsWith('/sondage');
-
-  const { data: activeSurvey } = useQuery({
-    queryKey: ['active-survey-global', isAuthenticated],
-    queryFn: () => surveysService.getActive(),
-    enabled: isAuthenticated,
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
-  });
-
-  const { data: surveyAnsweredData, isError: surveyAnsweredError } = useQuery({
-    queryKey: ['survey-has-answered-global', activeSurvey?.id, isAuthenticated],
-    queryFn: () => surveysService.hasAnswered(activeSurvey!.id),
-    enabled: isAuthenticated && !!activeSurvey?.id,
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
-  });
 
   useEffect(() => {
     // Never redirect while the logout overlay is playing
@@ -113,7 +115,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </Box>
       <Footer />
-      {surveyMounted && isAuthenticated && !isSurveyPage && activeSurvey && surveyAnsweredData?.has_answered === false && (
+      {surveyMounted && isAuthenticated && !isSurveyPage && !activeSurveyError && activeSurvey && surveyAnsweredData?.has_answered === false && (
         <SurveyPromptOrBanner
           surveyId={activeSurvey.id}
           surveySlug={activeSurvey.slug}

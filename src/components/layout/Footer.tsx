@@ -65,8 +65,8 @@ export default function Footer() {
           ))}
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.2 }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, whiteSpace: 'nowrap' }}>
             Français (CM)
           </Typography>
           <Typography variant="caption" color="text.disabled">

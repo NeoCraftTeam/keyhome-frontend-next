@@ -622,8 +622,17 @@ function AdDetailContent() {
           }}
         >
           {/* Left column — details */}
-          <Box>
-            <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="h4"
+              fontWeight={700}
+              sx={{
+                fontSize: { xs: '1.5rem', md: '2rem' },
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                minWidth: 0,
+              }}
+            >
               {ad.title}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, mb: 2, flexWrap: 'wrap' }}>
@@ -635,7 +644,7 @@ function AdDetailContent() {
               </Typography>
             </Box>
             {/* Features pills */}
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3, minWidth: 0 }}>
               {features.map((f, idx) => (
                 <Chip key={idx} icon={f.icon as React.ReactElement} label={f.label} variant="outlined" sx={{ borderRadius: 2 }} />
               ))}
@@ -777,7 +786,18 @@ function AdDetailContent() {
             <Typography variant="h6" fontWeight={600} gutterBottom>
               Description
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line', mb: 3, lineHeight: 1.8 }}>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{
+                whiteSpace: 'pre-line',
+                mb: 3,
+                lineHeight: 1.8,
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                minWidth: 0,
+              }}
+            >
               {visibleDescription}
             </Typography>
             {hasExpandableDescription && (
@@ -1129,8 +1149,19 @@ function AdDetailContent() {
                             />
                           ) : null}
                         </Box>
-                        <Box sx={{ p: 1.5 }}>
-                          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }} noWrap>
+                        <Box sx={{ p: 1.5, minWidth: 0 }}>
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight={700}
+                            sx={{
+                              mb: 0.5,
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              wordBreak: 'break-word',
+                            }}
+                          >
                             {similarAd.title}
                           </Typography>
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }} noWrap>

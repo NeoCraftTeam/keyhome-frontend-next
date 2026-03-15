@@ -62,23 +62,36 @@ const LIGHT: Omit<LandingThemeTokens, 'isDark' | 'toggle'> = {
 };
 
 const LandingThemeContext = createContext<LandingThemeTokens>({
-  ...DARK,
-  isDark: true,
+  ...LIGHT,
+  isDark: false,
   toggle: () => {},
 });
 
+const STORAGE_KEY = 'theme';
+
 export function LandingThemeProvider({ children }: { children: ReactNode }) {
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('keyhome-theme');
-    if (saved === 'light') setIsDark(false);
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved === 'dark') setIsDark(true);
+      else if (saved === 'light') setIsDark(false);
+    } catch {
+      // localStorage may be unavailable
+    }
   }, []);
 
   const toggle = () => {
     setIsDark((d) => {
       const next = !d;
-      localStorage.setItem('keyhome-theme', next ? 'dark' : 'light');
+      const value = next ? 'dark' : 'light';
+      try {
+        localStorage.setItem(STORAGE_KEY, value);
+        window.dispatchEvent(new CustomEvent('theme-change', { detail: value }));
+      } catch {
+        // ignore
+      }
       return next;
     });
   };

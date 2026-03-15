@@ -12,6 +12,15 @@ const PANNELLUM_JS_FALLBACK = 'https://unpkg.com/pannellum@2.5.7/build/pannellum
 
 const injectedElements: HTMLElement[] = [];
 
+/** Resolve tour asset URL — prepend backend origin when relative (cross-origin). */
+function resolveTourUrl(url: string | undefined): string {
+  if (!url || typeof url !== 'string') return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+  const origin = apiUrl.replace(/\/api\/v1\/?$/, '') || 'http://localhost:8000';
+  return `${origin}${url.startsWith('/') ? url : `/${url}`}`;
+}
+
 function loadPannellum(): Promise<Pannellum> {
   const win = window as unknown as Record<string, unknown>;
 
@@ -120,7 +129,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
                 resolve();
               };
               img.onerror = () => resolve();
-              img.src = s.image_url!;
+              img.src = resolveTourUrl(s.image_url);
               setTimeout(resolve, 8_000);
             }),
         );
@@ -168,15 +177,19 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
         };
 
         if (scene.type === 'cubemap' && scene.cube_map?.length === 6 && !scene.processing) {
-          scenes[scene.id] = { ...base, type: 'cubemap', cubeMap: scene.cube_map };
+          scenes[scene.id] = {
+            ...base,
+            type: 'cubemap',
+            cubeMap: scene.cube_map.map((u) => resolveTourUrl(u)),
+          };
         } else if (scene.type === 'multires' && scene.tiles_base_url && !scene.processing) {
           scenes[scene.id] = {
             ...base,
             type: 'multires',
             multiRes: {
-              basePath: scene.tiles_base_url,
+              basePath: resolveTourUrl(scene.tiles_base_url),
               path: '/%l/%s%y_%x',
-              fallbackPath: scene.fallback_base_url ? `${scene.fallback_base_url}/%s` : undefined,
+              fallbackPath: scene.fallback_base_url ? `${resolveTourUrl(scene.fallback_base_url)}/%s` : undefined,
               extension: 'webp',
               tileResolution: 512,
               maxLevel: scene.tiles_max_level ?? 3,
@@ -187,7 +200,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
           const equiConfig: PannellumSceneConfig = {
             ...base,
             type: 'equirectangular',
-            panorama: scene.image_url ?? '',
+            panorama: resolveTourUrl(scene.image_url),
           };
 
           if (equiConfig.type === 'equirectangular') {

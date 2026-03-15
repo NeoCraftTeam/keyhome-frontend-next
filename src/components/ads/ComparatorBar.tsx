@@ -14,6 +14,7 @@ import {
   SquareFoot,
 } from '@mui/icons-material';
 import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -23,6 +24,7 @@ import {
   Divider,
   IconButton,
   Paper,
+  Snackbar,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -103,7 +105,7 @@ const CRITERIA = [
 ];
 
 export default function ComparatorBar() {
-  const { items, remove, clear, isOpen, setOpen } = useComparator();
+  const { items, remove, clear, isOpen, setOpen, maxReached, clearMaxReached } = useComparator();
   const router = useRouter();
   const [minimized, setMinimized] = useState(false);
 
@@ -216,6 +218,18 @@ export default function ComparatorBar() {
         )}
       </AnimatePresence>
 
+      {/* Max reached snackbar */}
+      <Snackbar
+        open={maxReached}
+        autoHideDuration={3000}
+        onClose={clearMaxReached}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={clearMaxReached} severity="warning" variant="filled" sx={{ width: '100%' }}>
+          Vous ne pouvez pas comparer plus de 3 biens à la fois.
+        </Alert>
+      </Snackbar>
+
       {/* Comparison Dialog — full redesign */}
       <Dialog
         open={isOpen}
@@ -225,7 +239,6 @@ export default function ComparatorBar() {
         PaperProps={{
           sx: {
             borderRadius: 4,
-            overflow: 'hidden',
             maxHeight: '90vh',
           },
         }}
@@ -327,7 +340,7 @@ export default function ComparatorBar() {
                     </IconButton>
                   </Box>
 
-                  <Box>
+                  <Box sx={{ flex: 1 }}>
                     <Typography variant="body2" fontWeight={700} sx={{ lineHeight: 1.3 }}>
                       {ad.title}
                     </Typography>

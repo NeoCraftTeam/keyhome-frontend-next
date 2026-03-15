@@ -15,7 +15,7 @@ export const adsService = {
     order_by?: string;
     direction?: 'asc' | 'desc';
     type?: string;
-    exclude_ids?: number[];
+    exclude_ids?: string[];
   }): Promise<PaginatedResponse<Ad>> {
     const { data } = await api.get('/ads', { params });
     return data;

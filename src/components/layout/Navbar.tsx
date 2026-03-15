@@ -8,9 +8,11 @@ import {
   BarChart as BarChartIcon,
   CalendarMonth as CalendarMonthIcon,
   Close as CloseIcon,
+  DarkMode as DarkModeIcon,
   Explore as ExploreIcon,
   HelpOutline as HelpOutlineIcon,
   Home as HomeIcon,
+  LightMode as LightModeIcon,
   Logout as LogoutIcon,
   Menu as MenuIcon,
   Person as PersonIcon,
@@ -329,40 +331,61 @@ export default function Navbar() {
                 )}
               </>
             ) : (
-              // On mobile: just show a compact icon button for login
-              isMobile ? (
+              <>
+                {/* Theme toggle for guests */}
                 <IconButton
+                  onClick={toggleTheme}
+                  aria-label={mode === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
                   size="small"
-                  onClick={() => router.push('/login')}
-                  aria-label="Se connecter"
                   sx={{
                     border: '1px solid',
                     borderColor: 'divider',
                     borderRadius: '50%',
-                    width: 34,
-                    height: 34,
+                    width: 36,
+                    height: 36,
                   }}
                 >
-                  <PersonIcon sx={{ fontSize: 18 }} />
+                  {mode === 'dark' ? (
+                    <LightModeIcon sx={{ fontSize: 18 }} />
+                  ) : (
+                    <DarkModeIcon sx={{ fontSize: 18 }} />
+                  )}
                 </IconButton>
-              ) : (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => router.push('/login')}
-                  sx={{
-                    borderRadius: '20px',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    borderColor: 'divider',
-                    color: 'text.primary',
-                    whiteSpace: 'nowrap',
-                    '&:hover': { borderColor: 'primary.main', color: 'primary.main' },
-                  }}
-                >
-                  Se connecter
-                </Button>
-              )
+                {/* On mobile: compact login icon */}
+                {isMobile ? (
+                  <IconButton
+                    size="small"
+                    onClick={() => router.push('/login')}
+                    aria-label="Se connecter"
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: '50%',
+                      width: 34,
+                      height: 34,
+                    }}
+                  >
+                    <PersonIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                ) : (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => router.push('/login')}
+                    sx={{
+                      borderRadius: '20px',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      borderColor: 'divider',
+                      color: 'text.primary',
+                      whiteSpace: 'nowrap',
+                      '&:hover': { borderColor: 'primary.main', color: 'primary.main' },
+                    }}
+                  >
+                    Se connecter
+                  </Button>
+                )}
+              </>
             )}
           </Box>
         </Toolbar>
@@ -470,6 +493,28 @@ export default function Navbar() {
             </ListItemButton>
           </ListItem>
           <Divider sx={{ my: 1.5, mx: 2 }} />
+
+          {/* Theme toggle — mobile drawer (guests only) */}
+          {!isAuthenticated && (
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={toggleTheme}
+                sx={{ borderRadius: 2, mx: 1 }}
+              >
+                <ListItemIcon>
+                  {mode === 'dark' ? (
+                    <LightModeIcon />
+                  ) : (
+                    <DarkModeIcon />
+                  )}
+                </ListItemIcon>
+                <ListItemText
+                  primary={mode === 'dark' ? 'Mode clair' : 'Mode sombre'}
+                  primaryTypographyProps={{ fontWeight: 600 }}
+                />
+              </ListItemButton>
+            </ListItem>
+          )}
 
           <Typography variant="overline" color="text.secondary" sx={{ px: 2, mb: 1, display: 'block', fontWeight: 700, letterSpacing: 1.2 }}>
             Compte

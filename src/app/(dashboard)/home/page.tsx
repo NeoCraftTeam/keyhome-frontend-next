@@ -97,7 +97,7 @@ export default function HomePage() {
 
   const recommendations = recommendationsData?.data || [];
   const recommendedIds = useMemo(
-    () => (recommendationsData?.data ?? []).map((r) => Number(r.id)),
+    () => (recommendationsData?.data ?? []).map((r) => String(r.id)),
     [recommendationsData],
   );
 
