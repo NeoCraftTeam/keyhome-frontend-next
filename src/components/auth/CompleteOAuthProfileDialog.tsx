@@ -17,6 +17,8 @@ import {
     InputAdornment,
     TextField,
     Typography,
+    useMediaQuery,
+    useTheme,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -40,6 +42,8 @@ interface Props {
 }
 
 export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }: Props) {
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [cityInput, setCityInput] = useState('');
@@ -101,8 +105,9 @@ export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }
       open={open}
       maxWidth="xs"
       fullWidth
+      fullScreen={isMobile}
       disableEscapeKeyDown
-      PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+      PaperProps={{ sx: { borderRadius: isMobile ? 0 : 3, p: 1 } }}
     >
       <DialogTitle sx={{ pb: 0 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, pt: 1 }}>

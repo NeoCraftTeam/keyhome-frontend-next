@@ -11,6 +11,8 @@ import {
   Paper,
   Switch,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Close, CookieOutlined, Shield } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -47,6 +49,8 @@ export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [prefs, setPrefs] = useState<CookiePreferences>(DEFAULT_PREFS);
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
 
   useEffect(() => {
     if (loadPrefs() === null) {
@@ -156,7 +160,8 @@ export default function CookieBanner() {
         onClose={() => setCustomizeOpen(false)}
         maxWidth="xs"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        fullScreen={isMobile}
+        PaperProps={{ sx: { borderRadius: isMobile ? 0 : 3 } }}
       >
         <Box
           sx={{

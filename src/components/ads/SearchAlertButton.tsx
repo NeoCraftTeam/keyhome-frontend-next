@@ -17,6 +17,8 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -33,6 +35,8 @@ export default function SearchAlertButton({ prefill = {}, variant = 'button', si
   const [label, setLabel] = useState(prefill.label ?? '');
   const [saved, setSaved] = useState(false);
   const queryClient = useQueryClient();
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
 
   const { data: alertsData } = useQuery({
     queryKey: ['search-alerts'],
@@ -82,7 +86,7 @@ export default function SearchAlertButton({ prefill = {}, variant = 'button', si
   return (
     <>
       {trigger}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth fullScreen={isMobile} PaperProps={{ sx: { borderRadius: isMobile ? 0 : undefined } }}>
         <DialogTitle sx={{ fontWeight: 700 }}>
           <NotificationsActive color="primary" sx={{ mr: 1, verticalAlign: 'middle' }} />
           Alertes de recherche

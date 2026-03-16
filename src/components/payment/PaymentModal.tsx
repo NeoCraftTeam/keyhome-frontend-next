@@ -12,6 +12,7 @@ import {
   IconButton,
   TextField,
   Typography,
+  useMediaQuery,
   useTheme,
 } from '@mui/material';
 import Image from 'next/image';
@@ -60,6 +61,7 @@ export default function PaymentModal({
 }: PaymentModalProps): React.ReactElement {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [step, setStep] = useState<Step>('select-method');
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
@@ -129,12 +131,13 @@ export default function PaymentModal({
       onClose={handleClose}
       maxWidth="xs"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
         sx: {
-          borderRadius: 5,
+          borderRadius: isMobile ? 0 : 5,
           overflow: 'hidden',
           background: 'transparent',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.28)',
+          boxShadow: isMobile ? 'none' : '0 32px 80px rgba(0,0,0,0.28)',
         },
       }}
     >

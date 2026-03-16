@@ -34,6 +34,8 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -102,6 +104,8 @@ interface Props {
 export default function ViewingBookingPanel({ adId, adTitle }: Props) {
   const { isAuthenticated, user } = useAuth();
   const queryClient = useQueryClient();
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
 
   // Dialog open
   const [open, setOpen] = useState(false);
@@ -401,7 +405,7 @@ export default function ViewingBookingPanel({ adId, adTitle }: Props) {
                 <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', fontWeight: 500 }}>
                   Créneaux disponibles ({available.length})
                 </Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.75, mb: booked.length > 0 ? 2 : 0 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, gap: 0.75, mb: booked.length > 0 ? 2 : 0 }}>
                   {available.map((s) => {
                     const isSel = selectedSlot?.starts_at === s.starts_at;
                     return (
@@ -774,11 +778,12 @@ export default function ViewingBookingPanel({ adId, adTitle }: Props) {
         onClose={() => setOpen(false)}
         maxWidth="xs"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        fullScreen={isMobile}
+        PaperProps={{ sx: { borderRadius: isMobile ? 0 : 3 } }}
       >
         {/* Header */}
-        <Box sx={{ px: 3, pt: 2.5, pb: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6" fontWeight={700} noWrap sx={{ flex: 1 }}>
+        <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2.5, pb: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6" fontWeight={700} sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             Visite · <span style={{ fontWeight: 400, fontSize: '0.9em', opacity: 0.8 }}>{adTitle}</span>
           </Typography>
           <IconButton size="small" onClick={() => setOpen(false)} aria-label="Fermer">
@@ -829,7 +834,8 @@ export default function ViewingBookingPanel({ adId, adTitle }: Props) {
         onClose={() => { if (!isCancelling) { setCancelTarget(null); setCancelError(''); } }}
         maxWidth="xs"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        fullScreen={isMobile}
+        PaperProps={{ sx: { borderRadius: isMobile ? 0 : 3 } }}
       >
         <Box sx={{ p: 3 }}>
           <Typography variant="h6" fontWeight={700} gutterBottom>

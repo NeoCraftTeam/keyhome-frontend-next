@@ -12,6 +12,7 @@ import {
   IconButton,
   Skeleton,
   Typography,
+  useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -28,6 +29,7 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
   const queryClient = useQueryClient();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const { data: balance, isLoading: balanceLoading } = useQuery({
     queryKey: ['credits-balance'],
@@ -74,13 +76,14 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
       onClose={handleClose}
       maxWidth="md"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
         sx: {
-          borderRadius: 5,
+          borderRadius: isMobile ? 0 : 5,
           overflow: 'hidden',
-          maxHeight: '92vh',
+          maxHeight: isMobile ? '100vh' : '92vh',
           background: 'transparent',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.28)',
+          boxShadow: isMobile ? 'none' : '0 32px 80px rgba(0,0,0,0.28)',
         },
       }}
     >
