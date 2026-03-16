@@ -398,7 +398,7 @@ export default function Navbar() {
         anchor="left"
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        PaperProps={{ sx: { width: 300 } }}
+        PaperProps={{ sx: { width: { xs: '85vw', sm: 300 }, maxWidth: 320 } }}
       >
         <Box
           sx={{

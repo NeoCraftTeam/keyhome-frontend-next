@@ -145,7 +145,7 @@ export default function PaymentHistoryTable({ perPage = 15 }: PaymentHistoryTabl
           borderRadius: 3,
           border: '1px solid',
           borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'divider',
-          overflow: 'hidden',
+          overflowX: 'auto',
         }}
       >
         <Table>
