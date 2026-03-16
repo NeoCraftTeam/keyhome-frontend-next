@@ -21,6 +21,8 @@ export default function PrixMarcheClient() {
       <Tabs
         value={tab}
         onChange={(_, v) => setTab(v)}
+        variant="scrollable"
+        scrollButtons="auto"
         sx={{ mb: 4, borderBottom: '1px solid', borderColor: 'divider' }}
       >
         <Tab icon={<Layers />} iconPosition="start" label="Carte thermique" />
