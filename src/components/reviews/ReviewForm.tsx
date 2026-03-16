@@ -103,7 +103,7 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
       </Typography>
 
       {/* Star rating */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, mb: 2, flexWrap: 'wrap' }}>
         <Rating
           size="large"
           value={rating}
@@ -112,7 +112,7 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
           sx={{
             '& .MuiRating-iconFilled': { color: '#F6475F' },
             '& .MuiRating-iconHover': { color: '#F6475F' },
-            '& .MuiRating-icon': { fontSize: 32 },
+            '& .MuiRating-icon': { fontSize: { xs: 28, sm: 32 } },
           }}
         />
         <Collapse in={activeRating != null && activeRating > 0} orientation="horizontal">
@@ -126,6 +126,7 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
               py: 0.5,
               borderRadius: 1,
               whiteSpace: 'nowrap',
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
             }}
           >
             {activeRating != null && activeRating > 0 ? labels[activeRating] : ''}
@@ -136,7 +137,8 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
       {/* Comment field */}
       <TextField
         multiline
-        rows={3}
+        minRows={2}
+        maxRows={5}
         fullWidth
         label="Votre commentaire"
         placeholder="Partagez votre expérience (optionnel)..."
@@ -162,6 +164,7 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
       {/* Submit button */}
       <Button
         variant="contained"
+        fullWidth
         disabled={!rating || mutation.isPending}
         onClick={() => mutation.mutate()}
         sx={{
@@ -175,6 +178,7 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
           fontSize: '0.95rem',
           boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)',
           mb: { xs: 2, md: 0 },
+          maxWidth: { md: 'fit-content' },
         }}
         startIcon={mutation.isPending ? <CircularProgress size={18} color="inherit" /> : null}
       >

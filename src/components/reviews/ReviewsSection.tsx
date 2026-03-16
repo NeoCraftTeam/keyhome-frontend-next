@@ -12,6 +12,8 @@ import {
   Grid,
   IconButton,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 
@@ -28,6 +30,8 @@ export default function ReviewsSection({
 }: ReviewsSectionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [reviewSearch, setReviewSearch] = useState('');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const reviewsCount = reviewsCountProp ?? reviews.length;
 
@@ -99,9 +103,10 @@ export default function ReviewsSection({
         onClose={() => setIsDialogOpen(false)}
         maxWidth="lg"
         fullWidth
+        fullScreen={isMobile}
         disableScrollLock={false}
         scroll="paper"
-        PaperProps={{ sx: { borderRadius: 4, overflow: 'hidden' } }}
+        PaperProps={{ sx: { borderRadius: isMobile ? 0 : 4, overflow: 'hidden' } }}
       >
         <Box sx={{ p: { xs: 2, md: 3 }, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end' }}>
           <IconButton aria-label="Fermer les commentaires" onClick={() => setIsDialogOpen(false)}>
@@ -111,7 +116,7 @@ export default function ReviewsSection({
         <Box sx={{ p: { xs: 2, md: 4 } }}>
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 4 }}>
-              <Typography sx={{ fontSize: { xs: '2rem', md: '2.2rem' }, fontWeight: 700, mb: 2 }}>
+              <Typography sx={{ fontSize: { xs: '1.6rem', sm: '2rem', md: '2.2rem' }, fontWeight: 700, mb: 2 }}>
                 ★ {averageRating?.toFixed(2).replace('.', ',') ?? '—'}
               </Typography>
               <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
@@ -205,7 +210,7 @@ export default function ReviewsSection({
                       ))}
                     </Box>
                     {review.comment && (
-                      <Typography variant="body1" sx={{ lineHeight: 1.55 }}>
+                      <Typography variant="body1" sx={{ lineHeight: 1.55, wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                         {review.comment}
                       </Typography>
                     )}
