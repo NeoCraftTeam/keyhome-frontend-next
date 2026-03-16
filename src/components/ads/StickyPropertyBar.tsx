@@ -59,21 +59,22 @@ export default function StickyPropertyBar({
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 2,
-          px: 2,
-          py: 1.5,
+          px: 2.5,
+          py: 2.5,
+          pt: 2,
+          pb: 'max(1.25rem, env(safe-area-inset-bottom))',
           bgcolor: 'background.paper',
-          borderTop: '1px solid',
-          borderColor: 'divider',
-          boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
+          borderRadius: '20px 20px 0 0',
+          boxShadow: '0 -8px 32px rgba(0,0,0,0.12)',
           backdropFilter: 'blur(12px)',
         }}
       >
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography
             variant="h6"
             fontWeight={800}
             sx={{
-              fontSize: '1.1rem',
+              fontSize: '1.25rem',
               lineHeight: 1.2,
               letterSpacing: '-0.02em',
               color: 'text.primary',
@@ -82,14 +83,15 @@ export default function StickyPropertyBar({
             {formatPrice(price)}
           </Typography>
           <Typography
-            variant="caption"
+            variant="body2"
             color="text.secondary"
             sx={{
               display: 'block',
+              mt: 0.25,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              fontSize: '0.72rem',
+              fontSize: '0.8rem',
             }}
           >
             {title}
@@ -99,16 +101,17 @@ export default function StickyPropertyBar({
         <Button
           variant="contained"
           color="primary"
-          size="medium"
-          startIcon={<PhoneIcon sx={{ fontSize: 18 }} />}
+          size="large"
+          startIcon={<PhoneIcon sx={{ fontSize: 20 }} />}
           onClick={onContact}
           sx={{
             flexShrink: 0,
-            borderRadius: '10px',
+            borderRadius: '12px',
             px: 2.5,
-            py: 1,
+            py: 1.5,
+            minHeight: 48,
             fontWeight: 700,
-            fontSize: '0.875rem',
+            fontSize: '0.95rem',
             boxShadow: 'none',
             '&:hover': { boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)' },
           }}

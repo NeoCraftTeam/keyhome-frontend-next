@@ -223,7 +223,13 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
       <Box sx={{ position: 'relative' }}>
         <Box
           ref={mapContainerRef}
-          sx={{ height: { xs: Math.min(height, 300), sm: Math.min(height, 400), md: height }, borderRadius: 3, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}
+          sx={{
+            height: { xs: 'min(70vh, 480px)', sm: 'min(65vh, 450px)', md: height },
+            borderRadius: 3,
+            overflow: 'hidden',
+            border: '1px solid',
+            borderColor: 'divider',
+          }}
         />
 
         {/* Legend */}

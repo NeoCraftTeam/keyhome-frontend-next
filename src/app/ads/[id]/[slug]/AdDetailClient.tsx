@@ -303,25 +303,164 @@ function AdDetailContent() {
 
   return (
     <>
-      <Container maxWidth="lg" sx={{ pt: { xs: 2, md: 3 }, pb: { xs: 14, md: 3 }, overflow: 'hidden', px: { xs: 2, sm: 3, md: 4 } }}>
-        {/* Back navigation */}
-        <Button
-          onClick={() => router.back()}
-          startIcon={<ChevronLeft />}
+      <Box sx={{ position: 'relative', overflowX: 'hidden' }}>
+        {/* Mobile: full-bleed photo hero + floating back button */}
+        <Box
+          onClick={() => !isLocked && openLightbox(0)}
           sx={{
-            mb: 1.5,
-            color: 'text.secondary',
-            textTransform: 'none',
-            fontWeight: 500,
-            '&:hover': { bgcolor: 'action.hover' },
+            display: { xs: 'block', md: 'none' },
+            position: 'relative',
+            width: '100vw',
+            maxWidth: '100vw',
+            marginLeft: 'calc(-50vw + 50%)',
+            height: '55vh',
+            minHeight: 320,
+            maxHeight: 500,
+            cursor: isLocked ? 'default' : 'pointer',
+            borderRadius: '0 0 24px 24px',
+            overflow: 'hidden',
           }}
         >
-          Retour aux annonces
-        </Button>
+          {primaryImage && (
+            <Image
+              src={primaryImage.large || primaryImage.url}
+              alt={ad.title}
+              fill
+              priority
+              sizes="100vw"
+              style={{
+                objectFit: 'cover',
+                filter: isLocked ? 'blur(4px) brightness(0.92)' : 'none',
+              }}
+            />
+          )}
+          {!primaryImage && (
+            <Box sx={{ width: '100%', height: '100%', bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography color="text.secondary">Aucune photo</Typography>
+            </Box>
+          )}
+          {/* Lock overlay — mobile, when locked */}
+          {isLocked && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(to bottom, rgba(0,0,0,0.0) 30%, rgba(0,0,0,0.28) 100%)',
+                zIndex: 3,
+                px: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 1,
+                  bgcolor: 'rgba(255,255,255,0.14)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: 4,
+                  px: 3,
+                  py: 2,
+                  maxWidth: 340,
+                  width: '100%',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: '50%',
+                    bgcolor: 'rgba(246,71,95,0.88)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 16px rgba(246,71,95,0.4)',
+                  }}
+                >
+                  <Lock sx={{ fontSize: 26, color: '#fff' }} />
+                </Box>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ color: '#fff', fontWeight: 700, textAlign: 'center', textShadow: '0 1px 4px rgba(0,0,0,0.4)', fontSize: '0.9rem' }}
+                >
+                  {totalImageCount} photo{totalImageCount > 1 ? 's' : ''} disponible{totalImageCount > 1 ? 's' : ''}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ color: 'rgba(255,255,255,0.9)', textAlign: 'center', lineHeight: 1.4, textShadow: '0 1px 3px rgba(0,0,0,0.2)', fontSize: '0.8rem' }}
+                >
+                  Déverrouillez pour voir toutes les photos
+                </Typography>
+              </Box>
+            </Box>
+          )}
+          {/* Photo pagination badge — hidden when locked (lock overlay shows count) */}
+          {images.length > 1 && !isLocked && (
+            <Box
+              onClick={() => openLightbox(0)}
+              sx={{
+                position: 'absolute',
+                bottom: 16,
+                right: 16,
+                zIndex: 2,
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 2,
+                bgcolor: 'rgba(0,0,0,0.6)',
+                color: '#fff',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+              }}
+            >
+              1/{images.length}
+            </Box>
+          )}
+          {/* Floating back button */}
+          <IconButton
+            onClick={() => router.back()}
+            aria-label="Retour"
+            sx={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              zIndex: 3,
+              bgcolor: 'rgba(255,255,255,0.95)',
+              color: 'text.primary',
+              '&:hover': { bgcolor: '#fff' },
+              boxShadow: 1,
+            }}
+          >
+            <ChevronLeft />
+          </IconButton>
+        </Box>
 
-        {/* Image gallery */}
-        <FadeIn delay={0.1} direction="none">
+        <Container maxWidth="xl" sx={{ pt: { xs: 0, md: 3 }, pb: { xs: 14, md: 3 }, overflow: { xs: 'visible', md: 'hidden' }, overflowX: 'hidden', px: { xs: 2.5, sm: 3, md: 4 } }}>
+          {/* Back navigation — desktop only */}
+          <Button
+            onClick={() => router.back()}
+            startIcon={<ChevronLeft />}
+            sx={{
+              display: { xs: 'none', md: 'inline-flex' },
+              mb: 1.5,
+              color: 'text.secondary',
+              textTransform: 'none',
+              fontWeight: 500,
+              '&:hover': { bgcolor: 'action.hover' },
+            }}
+          >
+            Retour aux annonces
+          </Button>
 
+          {/* Image gallery — desktop only (mobile uses hero above) */}
+          <FadeIn delay={0.1} direction="none">
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
         {/* ── LOCKED state : simple Box — not a CSS Grid ────────────────────────
              CSS Grid containers do NOT reliably clip their children using
              overflow:hidden + border-radius in Chrome / Safari.
@@ -542,35 +681,68 @@ function AdDetailContent() {
           </Box>
         )}
 
-        {/* Mobile image count + tap to view */}
-        {images.length > 1 && (
-          <Box
-            onClick={() => openLightbox(0)}
-            sx={{
-              display: { xs: 'flex', md: 'none' },
-              justifyContent: 'center',
-              mt: -2,
-              mb: 2,
-            }}
-          >
-            <Chip
-              label={`Voir les ${images.length} photos`}
-              size="small"
-              clickable
-              sx={{
-                fontWeight: 600,
-                bgcolor: 'rgba(0,0,0,0.7)',
-                color: '#fff',
-                '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
-              }}
-            />
           </Box>
-        )}
         </FadeIn>
 
-        {/* Action buttons */}
+        {/* White rounded card — mobile (Airbnb-style); desktop uses display:contents so children flow through */}
+        <Paper
+          elevation={0}
+          sx={{
+            display: { xs: 'block', md: 'contents' },
+            width: { xs: '100vw', md: 'auto' },
+            maxWidth: { xs: '100vw', md: 'none' },
+            marginLeft: { xs: 'calc(50% - 50vw)', md: 0 },
+            borderRadius: { xs: '24px 24px 0 0', md: 0 },
+            mt: { xs: '-28px', md: 0 },
+            position: { xs: 'relative', md: 'static' },
+            zIndex: { xs: 10, md: 0 },
+            px: { xs: 2.5, md: 0 },
+            pt: { xs: 2.5, md: 0 },
+            pb: { xs: 2, md: 0 },
+            bgcolor: { xs: 'background.paper', md: 'transparent' },
+            boxShadow: { xs: '0 -4px 24px rgba(0,0,0,0.08)', md: 'none' },
+            overflow: { xs: 'hidden', md: 'visible' },
+          }}
+        >
+          {/* Action buttons — mobile, inside white card */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, gap: 1, mb: 2, flexWrap: 'wrap' }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Share sx={{ fontSize: 16 }} />}
+              onClick={handleShare}
+              sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: 'text.primary' }}
+            >
+              Partager
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={checkFav(ad.id) ? <Favorite sx={{ color: '#F6475F' }} /> : <FavoriteBorder />}
+              onClick={() => toggleFav(ad)}
+              sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: checkFav(ad.id) ? '#F6475F' : 'text.primary' }}
+            >
+              {checkFav(ad.id) ? 'Sauvegardé' : 'Sauvegarder'}
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => isInComparator(ad.id) ? removeFromComparator(ad.id) : addToComparator(ad)}
+              sx={{
+                borderRadius: '20px',
+                textTransform: 'none',
+                borderColor: isInComparator(ad.id) ? 'primary.main' : 'divider',
+                color: isInComparator(ad.id) ? 'primary.main' : 'text.primary',
+              }}
+            >
+              {isInComparator(ad.id) ? '✓ Comparé' : 'Comparer'}
+            </Button>
+            {!isLocked && <KeyScoreBadge adId={ad.id} size="small" />}
+          </Box>
+
+        {/* Action buttons — desktop only */}
         <FadeIn delay={0.2} direction="up">
-        <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
           <Button
             variant="outlined"
             size="small"
@@ -613,13 +785,14 @@ function AdDetailContent() {
               xs: '1fr',
               md: 'minmax(0, 1fr) 380px',
               lg: 'minmax(0, 1fr) 420px',
+              xl: 'minmax(0, 1fr) 420px 300px',
             },
             gap: { xs: 2, md: 4 },
             alignItems: 'start',
           }}
         >
           {/* Left column — details */}
-          <Box sx={{ minWidth: 0, overflow: 'hidden', maxWidth: '100%' }}>
+          <Box sx={{ minWidth: 0, overflow: 'visible', overflowWrap: 'break-word', maxWidth: '100%' }}>
             <Typography
               variant="h4"
               fontWeight={700}
@@ -1421,8 +1594,23 @@ function AdDetailContent() {
             {!isLocked && <Box sx={{ mt: 2 }}><KeyScoreSection adId={ad.id} /></Box>}
           </Box>
 
+          {/* Third column — similar ads sidebar (xl only) */}
+          <Box
+            sx={{
+              display: { xs: 'none', md: 'none', lg: 'none', xl: 'block' },
+              position: 'sticky',
+              top: 120,
+              alignSelf: 'start',
+              maxHeight: 'calc(100vh - 140px)',
+              overflowY: 'auto',
+            }}
+          >
+            <SimilarAds currentAdId={adId} variant="sidebar" />
+          </Box>
         </Box>
+        </Paper>
       </Container>
+      </Box>
 
       {/* Unlock / Credits dialog */}
       <Dialog
@@ -1708,8 +1896,14 @@ function AdDetailContent() {
         />
       )}
 
-      {/* Similar ads */}
-      <Container maxWidth="lg" sx={{ pb: { xs: 14, md: 6 } }}>
+      {/* Similar ads — bottom section (hidden on xl, shown in sidebar instead) */}
+      <Container
+        maxWidth="xl"
+        sx={{
+          pb: { xs: 14, md: 6 },
+          display: { xs: 'block', md: 'block', lg: 'block', xl: 'none' },
+        }}
+      >
         <SimilarAds currentAdId={adId} />
       </Container>
 

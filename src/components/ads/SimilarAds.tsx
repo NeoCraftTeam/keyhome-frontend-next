@@ -8,26 +8,48 @@ import { useQuery } from '@tanstack/react-query';
 
 interface Props {
   currentAdId: string;
+  /** Sidebar variant: vertical list for narrow column (e.g. xl sidebar) */
+  variant?: 'default' | 'sidebar';
 }
 
-export default function SimilarAds({ currentAdId }: Props) {
+export default function SimilarAds({ currentAdId, variant = 'default' }: Props) {
   const { data, isLoading } = useQuery({
     queryKey: ['similar-ads', currentAdId],
     queryFn: () => recommendationsService.list(),
     staleTime: 5 * 60 * 1000,
   });
 
-  const ads: Ad[] = (data?.data ?? []).filter((ad: Ad) => ad.id !== currentAdId).slice(0, 8);
+  const limit = variant === 'sidebar' ? 4 : 8;
+  const ads: Ad[] = (data?.data ?? []).filter((ad: Ad) => ad.id !== currentAdId).slice(0, limit);
 
   if (!isLoading && ads.length === 0) { return null; }
 
+  const isSidebar = variant === 'sidebar';
+
   return (
-    <Box mt={6}>
-      <Typography variant="h5" fontWeight={700} mb={3}>
+    <Box mt={isSidebar ? 0 : 6}>
+      <Typography variant="h5" fontWeight={700} mb={3} sx={{ fontSize: isSidebar ? '1rem' : undefined }}>
         Annonces similaires
       </Typography>
 
-      {/* Mobile: horizontal scroll */}
+      {/* Sidebar: vertical list */}
+      {isSidebar && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {isLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} variant="rounded" height={120} sx={{ borderRadius: 2 }} />
+              ))
+            : ads.map((ad) => (
+                <Box key={ad.id} sx={{ flexShrink: 0 }}>
+                  <AdCard ad={ad} />
+                </Box>
+              ))}
+        </Box>
+      )}
+
+      {/* Mobile + Desktop (default layout) */}
+      {!isSidebar && (
+      <>
       <Box
         sx={{
           display: { xs: 'flex', md: 'none' },
@@ -66,6 +88,8 @@ export default function SimilarAds({ currentAdId }: Props) {
               </Grid>
             ))}
       </Grid>
+      </>
+      )}
     </Box>
   );
 }
