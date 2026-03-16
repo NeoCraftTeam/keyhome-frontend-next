@@ -173,7 +173,7 @@ export default function RentEstimatorWidget() {
             Fourchette estimée pour <strong>{surface} m²</strong> à <strong>{selectedCity?.name}</strong>
           </Typography>
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1, textAlign: 'center' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 1, textAlign: 'center' }}>
             {[
               { label: 'Bas du marché', value: data.estimated_min, icon: <TrendingDown color="success" />, highlight: false },
               { label: 'Prix médian', value: data.estimated_median, icon: <TrendingFlat color="primary" />, highlight: true },
@@ -185,15 +185,20 @@ export default function RentEstimatorWidget() {
                   p: 1.5, borderRadius: 2,
                   bgcolor: highlight ? 'primary.main' : 'action.hover',
                   color: highlight ? 'white' : 'text.primary',
+                  display: { xs: 'flex', sm: 'block' },
+                  alignItems: 'center',
+                  gap: { xs: 1.5, sm: 0 },
                 }}
               >
                 {icon}
-                <Typography variant="h6" fontWeight={700} fontSize={13} mt={0.5}>
-                  {formatPrice(value)}
-                </Typography>
-                <Typography variant="caption" sx={{ opacity: 0.75, fontSize: 10 }}>
-                  {label}
-                </Typography>
+                <Box sx={{ flex: { xs: 1, sm: 'unset' }, minWidth: 0 }}>
+                  <Typography variant="h6" fontWeight={700} fontSize={13} mt={{ xs: 0, sm: 0.5 }}>
+                    {formatPrice(value)}
+                  </Typography>
+                  <Typography variant="caption" sx={{ opacity: 0.75, fontSize: 10 }}>
+                    {label}
+                  </Typography>
+                </Box>
               </Box>
             ))}
           </Box>

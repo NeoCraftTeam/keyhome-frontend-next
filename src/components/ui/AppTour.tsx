@@ -188,7 +188,7 @@ export default function AppTour({ onDone }: AppTourProps) {
       <Box
         key={step}
         sx={{
-          height: 210,
+          height: { xs: 170, sm: 210 },
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -211,16 +211,17 @@ export default function AppTour({ onDone }: AppTourProps) {
       >
         {/* Deco circles */}
         <Box sx={{
-          position: 'absolute', width: 220, height: 220, borderRadius: '50%',
-          border: '44px solid rgba(255,255,255,0.07)', top: -70, right: -70,
+          position: 'absolute', width: { xs: 160, sm: 220 }, height: { xs: 160, sm: 220 }, borderRadius: '50%',
+          border: { xs: '30px solid rgba(255,255,255,0.07)', sm: '44px solid rgba(255,255,255,0.07)' }, top: -70, right: -70,
         }} />
         <Box sx={{
-          position: 'absolute', width: 130, height: 130, borderRadius: '50%',
-          border: '28px solid rgba(255,255,255,0.05)', bottom: -35, left: -35,
+          position: 'absolute', width: { xs: 90, sm: 130 }, height: { xs: 90, sm: 130 }, borderRadius: '50%',
+          border: { xs: '20px solid rgba(255,255,255,0.05)', sm: '28px solid rgba(255,255,255,0.05)' }, bottom: -35, left: -35,
         }} />
         <Box sx={{
-          position: 'absolute', width: 80, height: 80, borderRadius: '50%',
+          position: 'absolute', width: { xs: 60, sm: 80 }, height: { xs: 60, sm: 80 }, borderRadius: '50%',
           border: '18px solid rgba(255,255,255,0.07)', top: 20, left: '20%',
+          display: { xs: 'none', sm: 'block' },
         }} />
 
         {/* Badge */}
@@ -254,7 +255,7 @@ export default function AppTour({ onDone }: AppTourProps) {
         {/* Icon */}
         <Box
           sx={{
-            width: 88, height: 88, borderRadius: '50%',
+            width: { xs: 64, sm: 88 }, height: { xs: 64, sm: 88 }, borderRadius: '50%',
             bgcolor: 'rgba(255,255,255,0.2)',
             backdropFilter: 'blur(8px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -266,7 +267,7 @@ export default function AppTour({ onDone }: AppTourProps) {
             },
           }}
         >
-          <StepIcon sx={{ fontSize: 44, color: '#fff' }} />
+          <StepIcon sx={{ fontSize: { xs: 32, sm: 44 }, color: '#fff' }} />
         </Box>
 
         {/* Step count */}
