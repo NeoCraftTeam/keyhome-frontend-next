@@ -66,7 +66,7 @@ export default async function BlogPostPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <article style={{ maxWidth: 760, margin: '0 auto', padding: '48px 20px 80px' }}>
+      <article style={{ maxWidth: 760, margin: '0 auto', padding: '48px 16px 80px' }}>
         {/* Breadcrumb */}
         <nav style={{ fontSize: 14, color: '#888', marginBottom: 32 }}>
           <Link href="/" style={{ color: '#888', textDecoration: 'none' }}>Accueil</Link>
@@ -77,7 +77,7 @@ export default async function BlogPostPage({
         </nav>
 
         {/* Article meta */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 20, fontSize: 13, color: '#888' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20, fontSize: 13, color: '#888' }}>
           <span style={{ background: 'rgba(246,71,95,0.1)', color: '#F6475F', padding: '3px 10px', borderRadius: 100, fontWeight: 600 }}>
             {post.category}
           </span>
