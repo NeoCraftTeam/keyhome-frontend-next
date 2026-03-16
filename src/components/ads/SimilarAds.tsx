@@ -17,7 +17,7 @@ export default function SimilarAds({ currentAdId }: Props) {
     staleTime: 5 * 60 * 1000,
   });
 
-  const ads: Ad[] = (data?.data ?? []).filter((ad: Ad) => ad.id !== currentAdId).slice(0, 4);
+  const ads: Ad[] = (data?.data ?? []).filter((ad: Ad) => ad.id !== currentAdId).slice(0, 8);
 
   if (!isLoading && ads.length === 0) { return null; }
 
@@ -26,15 +26,42 @@ export default function SimilarAds({ currentAdId }: Props) {
       <Typography variant="h5" fontWeight={700} mb={3}>
         Annonces similaires
       </Typography>
-      <Grid container spacing={3}>
+
+      {/* Mobile: horizontal scroll */}
+      <Box
+        sx={{
+          display: { xs: 'flex', md: 'none' },
+          gap: 2,
+          overflowX: 'auto',
+          pb: 1,
+          scrollSnapType: 'x mandatory',
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+        }}
+      >
         {isLoading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
+              <Box key={i} sx={{ minWidth: 260, maxWidth: 260, flexShrink: 0, scrollSnapAlign: 'start' }}>
+                <Skeleton variant="rounded" height={280} sx={{ borderRadius: 3 }} />
+              </Box>
+            ))
+          : ads.map((ad) => (
+              <Box key={ad.id} sx={{ minWidth: 260, maxWidth: 260, flexShrink: 0, scrollSnapAlign: 'start' }}>
+                <AdCard ad={ad} />
+              </Box>
+            ))}
+      </Box>
+
+      {/* Desktop: grid */}
+      <Grid container spacing={3} sx={{ display: { xs: 'none', md: 'flex' } }}>
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <Grid key={i} size={{ md: 3 }}>
                 <Skeleton variant="rounded" height={280} sx={{ borderRadius: 3 }} />
               </Grid>
             ))
           : ads.map((ad) => (
-              <Grid key={ad.id} size={{ xs: 12, sm: 6, md: 3 }}>
+              <Grid key={ad.id} size={{ md: 3 }}>
                 <AdCard ad={ad} />
               </Grid>
             ))}

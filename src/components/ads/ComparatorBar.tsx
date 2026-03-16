@@ -27,6 +27,8 @@ import {
   Snackbar,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -108,6 +110,8 @@ export default function ComparatorBar() {
   const { items, remove, clear, isOpen, setOpen, maxReached, clearMaxReached } = useComparator();
   const router = useRouter();
   const [minimized, setMinimized] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const allAttributes = [...new Set(items.flatMap((ad) => ad.attributes ?? []))];
 
@@ -136,44 +140,47 @@ export default function ComparatorBar() {
             transition={{ type: 'spring', stiffness: 300, damping: 28 }}
             style={{
               position: 'fixed',
-              bottom: 24,
+              bottom: isMobile ? 72 : 24,
               left: 0,
               right: 0,
               display: 'flex',
               justifyContent: 'center',
               zIndex: 1200,
               pointerEvents: 'none',
+              padding: isMobile ? '0 8px' : 0,
             }}
           >
-            <Box sx={{ pointerEvents: 'auto' }}>
+            <Box sx={{ pointerEvents: 'auto', maxWidth: '100%' }}>
             <Paper
               elevation={12}
               sx={{
-                px: 2.5,
+                px: { xs: 1.5, sm: 2.5 },
                 py: 1.25,
                 borderRadius: 99,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1.5,
+                gap: { xs: 0.75, sm: 1.5 },
                 bgcolor: 'background.paper',
                 border: '2px solid',
                 borderColor: 'primary.main',
                 boxShadow: '0 8px 32px rgba(246,71,95,0.18)',
+                maxWidth: '100%',
+                overflow: 'hidden',
               }}
             >
-              <CompareArrows color="primary" sx={{ fontSize: 20 }} />
-              <Typography fontWeight={700} fontSize={13}>
-                {items.length} bien{items.length > 1 ? 's' : ''} sélectionné{items.length > 1 ? 's' : ''}
+              <CompareArrows color="primary" sx={{ fontSize: { xs: 16, sm: 20 }, flexShrink: 0 }} />
+              <Typography fontWeight={700} fontSize={{ xs: 11, sm: 13 }} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+                {items.length} bien{items.length > 1 ? 's' : ''}
               </Typography>
 
               {/* Avatars */}
-              <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
                 {items.map((ad) => (
                   <Tooltip key={ad.id} title={`Retirer : ${ad.title}`}>
                     <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => remove(ad.id)}>
                       <Avatar
                         src={ad.images?.[0]?.thumb}
-                        sx={{ width: 30, height: 30, border: '2px solid white' }}
+                        sx={{ width: { xs: 24, sm: 30 }, height: { xs: 24, sm: 30 }, border: '2px solid white' }}
                       >
                         {ad.title[0]}
                       </Avatar>
@@ -201,15 +208,17 @@ export default function ComparatorBar() {
                   borderRadius: 99,
                   textTransform: 'none',
                   fontWeight: 700,
-                  px: 2,
+                  px: { xs: 1.5, sm: 2 },
+                  fontSize: { xs: '0.7rem', sm: '0.8125rem' },
                   background: 'linear-gradient(to right, #F6475F, #D93A50)',
                   '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                  flexShrink: 0,
                 }}
               >
                 Comparer
               </Button>
 
-              <IconButton size="small" onClick={clear} sx={{ color: 'text.disabled' }}>
+              <IconButton size="small" onClick={clear} sx={{ color: 'text.disabled', flexShrink: 0 }}>
                 <Close fontSize="small" />
               </IconButton>
             </Paper>
@@ -236,10 +245,11 @@ export default function ComparatorBar() {
         onClose={() => setOpen(false)}
         maxWidth="md"
         fullWidth
+        fullScreen={isMobile}
         PaperProps={{
           sx: {
-            borderRadius: 4,
-            maxHeight: '90vh',
+            borderRadius: isMobile ? 0 : 4,
+            maxHeight: isMobile ? '100vh' : '90vh',
           },
         }}
       >
@@ -281,15 +291,19 @@ export default function ComparatorBar() {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: `180px repeat(${items.length}, 1fr)`,
+              gridTemplateColumns: {
+                xs: `100px repeat(${items.length}, minmax(140px, 1fr))`,
+                sm: `180px repeat(${items.length}, 1fr)`,
+              },
               gap: 0,
               borderBottom: '2px solid',
               borderColor: 'divider',
               bgcolor: 'grey.50',
+              minWidth: { xs: `${100 + items.length * 140}px`, sm: 'auto' },
             }}
           >
             {/* Empty corner */}
-            <Box sx={{ p: 2 }} />
+            <Box sx={{ p: { xs: 1, sm: 2 } }} />
 
             {/* Ad header cards */}
             {items.map((ad) => {
@@ -298,7 +312,7 @@ export default function ComparatorBar() {
                 <Box
                   key={ad.id}
                   sx={{
-                    p: 2,
+                    p: { xs: 1, sm: 2 },
                     borderLeft: '1px solid',
                     borderColor: 'divider',
                     display: 'flex',
@@ -382,7 +396,11 @@ export default function ComparatorBar() {
               key={label}
               sx={{
                 display: 'grid',
-                gridTemplateColumns: `180px repeat(${items.length}, 1fr)`,
+                gridTemplateColumns: {
+                  xs: `100px repeat(${items.length}, minmax(140px, 1fr))`,
+                  sm: `180px repeat(${items.length}, 1fr)`,
+                },
+                minWidth: { xs: `${100 + items.length * 140}px`, sm: 'auto' },
                 bgcolor: idx % 2 === 0 ? 'background.paper' : 'grey.50',
                 borderBottom: '1px solid',
                 borderColor: 'divider',
@@ -392,13 +410,13 @@ export default function ComparatorBar() {
               {/* Label */}
               <Box
                 sx={{
-                  px: 2.5,
-                  py: 1.75,
+                  px: { xs: 1.5, sm: 2.5 },
+                  py: { xs: 1.25, sm: 1.75 },
                   display: 'flex',
                   alignItems: 'center',
                 }}
               >
-                <Typography variant="body2" fontWeight={600} color="text.secondary" fontSize={13}>
+                <Typography variant="body2" fontWeight={600} color="text.secondary" fontSize={{ xs: 11, sm: 13 }}>
                   {label}
                 </Typography>
               </Box>
@@ -408,8 +426,8 @@ export default function ComparatorBar() {
                 <Box
                   key={ad.id}
                   sx={{
-                    px: 2,
-                    py: 1.75,
+                    px: { xs: 1, sm: 2 },
+                    py: { xs: 1.25, sm: 1.75 },
                     borderLeft: '1px solid',
                     borderColor: 'divider',
                     display: 'flex',

@@ -75,12 +75,12 @@ export default function KeyScoreSection({ adId }: Props) {
       }}
     >
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 }, mb: 3 }}>
         {/* Score circle */}
         <Box
           sx={{
-            width: 72,
-            height: 72,
+            width: { xs: 56, sm: 72 },
+            height: { xs: 56, sm: 72 },
             borderRadius: '50%',
             border: `4px solid ${color}`,
             display: 'flex',
@@ -91,7 +91,7 @@ export default function KeyScoreSection({ adId }: Props) {
             bgcolor: 'white',
           }}
         >
-          <Typography fontWeight={800} fontSize={22} sx={{ color, lineHeight: 1 }}>
+          <Typography fontWeight={800} fontSize={{ xs: 18, sm: 22 }} sx={{ color, lineHeight: 1 }}>
             {data.score}
           </Typography>
           <Typography variant="caption" color="text.disabled" fontSize={10}>

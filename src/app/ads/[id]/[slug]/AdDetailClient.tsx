@@ -1,5 +1,6 @@
 'use client';
 
+import AdLocationMap from '@/components/ads/AdLocationMap';
 import PropertyAttributes from '@/components/ads/PropertyAttributes';
 import StickyPropertyBar from '@/components/ads/StickyPropertyBar';
 import TourViewer from '@/components/ads/TourViewer';
@@ -26,6 +27,7 @@ import { paymentsService } from '@/services/payments.service';
 import type { PointPackage, UnlockResponse } from '@/types';
 import {
   AccountBalanceWallet,
+  ArrowBack,
   BathtubOutlined,
   BedOutlined,
   CalendarMonth,
@@ -63,14 +65,23 @@ import {
   IconButton,
   Paper,
   Skeleton,
+  Slide,
   Snackbar,
   Typography,
 } from '@mui/material';
+import type { TransitionProps } from '@mui/material/transitions';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+
+const SlideUpTransition = forwardRef(function SlideUpTransition(
+  props: TransitionProps & { children: React.ReactElement },
+  ref: React.Ref<unknown>,
+) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
 const MIN_UNLOCK_LOADER_MS = 2000;
 
@@ -147,17 +158,6 @@ function AdDetailContent() {
     queryFn: () => creditsService.getBalance(),
     staleTime: 15_000,
     enabled: isAuthenticated,
-  });
-  const currentType = ad?.type?.name;
-  const { data: similarAdsResponse } = useQuery({
-    queryKey: ['ads-similar', adId, currentType],
-    queryFn: () => adsService.list({
-      per_page: 12,
-      type: currentType,
-      direction: 'desc',
-      order_by: 'created_at',
-    }),
-    enabled: !!currentType,
   });
   const descriptionText = ad?.description ?? '';
   const descriptionParagraphs = useMemo(
@@ -297,16 +297,13 @@ function AdDetailContent() {
     : null);
   const currentBalance = unlockState?.current_balance ?? liveBalance ?? currentUser?.point_balance ?? 0;
   const hasSupplementaryInfo = !!(ad?.deposit_amount || ad?.minimum_lease_duration || ad?.detailed_charges || ad?.property_condition_pdf);
-  const similarAds = (similarAdsResponse?.data ?? [])
-    .filter((item) => item.id !== ad?.id)
-    .slice(0, 10);
 
   // Format phone number for WhatsApp (remove spaces, dashes, etc.)
   const whatsappNumber = publisherPhone?.replace(/[\s\-\(\)]/g, '').replace(/^\+/, '');
 
   return (
     <>
-      <Container maxWidth="lg" sx={{ pt: { xs: 2, md: 3 }, pb: { xs: 14, md: 3 } }}>
+      <Container maxWidth="lg" sx={{ pt: { xs: 2, md: 3 }, pb: { xs: 14, md: 3 }, overflow: 'hidden', px: { xs: 2, sm: 3, md: 4 } }}>
         {/* Back navigation */}
         <Button
           onClick={() => router.back()}
@@ -617,12 +614,12 @@ function AdDetailContent() {
               md: 'minmax(0, 1fr) 380px',
               lg: 'minmax(0, 1fr) 420px',
             },
-            gap: 4,
+            gap: { xs: 2, md: 4 },
             alignItems: 'start',
           }}
         >
           {/* Left column — details */}
-          <Box sx={{ minWidth: 0 }}>
+          <Box sx={{ minWidth: 0, overflow: 'hidden', maxWidth: '100%' }}>
             <Typography
               variant="h4"
               fontWeight={700}
@@ -782,39 +779,128 @@ function AdDetailContent() {
               </Box>
             </Box>
 
-            {/* Description */}
+            {/* Description — Airbnb-style truncated + slide-up panel */}
             <Typography variant="h6" fontWeight={600} gutterBottom>
               Description
             </Typography>
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{
-                whiteSpace: 'pre-line',
-                mb: 3,
-                lineHeight: 1.8,
-                wordBreak: 'break-word',
-                overflowWrap: 'break-word',
-                minWidth: 0,
-              }}
-            >
-              {visibleDescription}
-            </Typography>
-            {hasExpandableDescription && (
-              <Button
-                onClick={() => setShowFullDescription((previous) => !previous)}
-                size="small"
+            <Box sx={{ position: 'relative', mb: 1 }}>
+              <Typography
+                variant="body1"
+                color="text.secondary"
                 sx={{
-                  mt: -2,
-                  mb: 3,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 0.5,
+                  whiteSpace: 'pre-line',
+                  lineHeight: 1.8,
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  minWidth: 0,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 6,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
                 }}
               >
-                {showFullDescription ? 'Voir moins' : 'Voir plus'}
+                {descriptionText}
+              </Typography>
+              {descriptionText.length > 200 && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 48,
+                    background: (theme) =>
+                      `linear-gradient(to bottom, ${theme.palette.mode === 'dark' ? 'rgba(18,18,18,0)' : 'rgba(255,255,255,0)'}, ${theme.palette.mode === 'dark' ? 'rgba(18,18,18,1)' : 'rgba(255,255,255,1)'})`,
+                    pointerEvents: 'none',
+                  }}
+                />
+              )}
+            </Box>
+            {descriptionText.length > 200 && (
+              <Button
+                onClick={() => setShowFullDescription(true)}
+                size="small"
+                sx={{
+                  mb: 3,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  px: 0,
+                  color: 'text.primary',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '3px',
+                  '&:hover': { bgcolor: 'transparent', textDecorationColor: 'primary.main' },
+                }}
+              >
+                Lire la suite ›
               </Button>
             )}
+            {descriptionText.length <= 200 && <Box sx={{ mb: 3 }} />}
+
+            {/* Description full-screen slide-up panel */}
+            <Dialog
+              open={showFullDescription}
+              onClose={() => setShowFullDescription(false)}
+              fullScreen
+              TransitionComponent={SlideUpTransition}
+              PaperProps={{
+                sx: {
+                  bgcolor: 'background.default',
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 10,
+                  bgcolor: 'background.default',
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  px: { xs: 2, sm: 3 },
+                  py: 1.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                }}
+              >
+                <IconButton
+                  onClick={() => setShowFullDescription(false)}
+                  aria-label="Retour"
+                  sx={{
+                    bgcolor: 'action.hover',
+                    '&:hover': { bgcolor: 'action.selected' },
+                  }}
+                >
+                  <ArrowBack />
+                </IconButton>
+                <Typography variant="subtitle1" fontWeight={700} noWrap sx={{ flex: 1 }}>
+                  Description
+                </Typography>
+              </Box>
+              <Box sx={{ px: { xs: 2.5, sm: 4, md: 6 }, py: { xs: 3, sm: 4 }, maxWidth: 720, mx: 'auto', width: '100%' }}>
+                <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
+                  À propos de ce logement
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  {ad.title}
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+                <Typography
+                  variant="body1"
+                  sx={{
+                    whiteSpace: 'pre-line',
+                    lineHeight: 2,
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    color: 'text.secondary',
+                    fontSize: { xs: '0.95rem', sm: '1.05rem' },
+                    letterSpacing: 0.2,
+                  }}
+                >
+                  {descriptionText}
+                </Typography>
+              </Box>
+            </Dialog>
 
             <Divider sx={{ mb: 3 }} />
 
@@ -829,7 +915,20 @@ function AdDetailContent() {
                 />
                 <Divider sx={{ my: 3 }} />
               </>
+            )}
 
+            {/* Location map */}
+            {ad.location && (
+              <>
+                <AdLocationMap
+                  latitude={ad.location.latitude}
+                  longitude={ad.location.longitude}
+                  quartierName={ad.quarter?.name}
+                  cityName={ad.quarter?.city_name}
+                  isLocked={isLocked}
+                />
+                <Divider sx={{ my: 3 }} />
+              </>
             )}
 
             {/* Reviews & ratings */}
@@ -845,11 +944,239 @@ function AdDetailContent() {
               hasUserReviewed={!!(currentUser && ad.reviews?.some(r => r.user?.id === currentUser.id))}
             />
 
+            {/* Mobile-only: contact info + supplementary info + report + KeyScore */}
+            <Box sx={{ display: { xs: 'block', md: 'none' }, mt: 3 }}>
+
+              {/* Contact section — mobile only (desktop has it in the right sidebar) */}
+              {!isLocked && (publisherPhone || publisherEmail) && (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    mb: 3,
+                    p: 2.5,
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                  }}
+                >
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 2 }}>
+                    Contact de l&apos;annonceur
+                  </Typography>
+                  {publisherPhone && (
+                    <Box sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                        <Phone sx={{ fontSize: 18, color: 'primary.main' }} />
+                        <Typography variant="body2" fontWeight={500}>{publisherPhone}</Typography>
+                        <IconButton size="small" aria-label="Copier le numéro" onClick={() => { navigator.clipboard.writeText(publisherPhone); setSnackbar('Numéro copié'); }}>
+                          <ContentCopy sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<Call sx={{ fontSize: 18 }} />}
+                          href={`tel:${publisherPhone}`}
+                          sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            bgcolor: 'primary.main',
+                            '&:hover': { bgcolor: 'primary.dark' },
+                            flex: 1,
+                            minWidth: 0,
+                          }}
+                        >
+                          Appeler
+                        </Button>
+                        {publisherHasWhatsApp && whatsappNumber && (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<WhatsApp sx={{ fontSize: 18 }} />}
+                            href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Bonjour,\n\nJe vous contacte suite à votre annonce *${ad.title}* que j'ai vue sur KeyHome.\n\nJe suis intéressé(e) par ce bien et souhaiterais avoir plus d'informations.\n\nCordialement${currentUser?.firstname ? `, ${currentUser.firstname}` : ''}`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                              textTransform: 'none',
+                              fontWeight: 600,
+                              bgcolor: '#0D9488',
+                              '&:hover': { bgcolor: '#128C7E' },
+                              flex: 1,
+                              minWidth: 0,
+                            }}
+                          >
+                            WhatsApp
+                          </Button>
+                        )}
+                      </Box>
+                    </Box>
+                  )}
+                  {publisherEmail && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: publisherPhone ? 0 : 0 }}>
+                      <Email sx={{ fontSize: 18, color: 'primary.main' }} />
+                      <Typography variant="body2" fontWeight={500} sx={{ wordBreak: 'break-all', minWidth: 0, flex: 1 }}>{publisherEmail}</Typography>
+                      <IconButton size="small" aria-label="Copier l'email" onClick={() => { navigator.clipboard.writeText(publisherEmail); setSnackbar('Email copié'); }}>
+                        <ContentCopy sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Paper>
+              )}
+
+              {/* Unlock CTA — mobile only, when locked */}
+              {isLocked && (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    mb: 3,
+                    p: 2.5,
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Typography variant="h5" fontWeight={700} sx={{ mb: 0.5 }}>
+                    {formatPrice(ad.price)}
+                  </Typography>
+                  {ad.type && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {ad.type.name}
+                    </Typography>
+                  )}
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    size="large"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        sessionStorage.setItem('kh_redirect_after_login', window.location.pathname + window.location.search);
+                        router.push('/login');
+                        return;
+                      }
+                      setPaymentDialogOpen(true);
+                    }}
+                    startIcon={<Lock />}
+                    sx={{
+                      py: 1.5,
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                      '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                    }}
+                  >
+                    Déverrouiller
+                  </Button>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                    Accédez aux coordonnées de l&apos;annonceur
+                  </Typography>
+                </Paper>
+              )}
+
+              {!isLocked && hasSupplementaryInfo && (
+                <Box
+                  sx={{
+                    mb: 2,
+                    p: 2,
+                    borderRadius: 2.5,
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(246,71,95,0.08)' : 'rgba(246,71,95,0.04)',
+                    border: '1px solid',
+                    borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(246,71,95,0.25)' : 'rgba(246,71,95,0.18)',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <Star sx={{ fontSize: 18, color: 'primary.main' }} />
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      Informations supplémentaires
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+                    {ad.deposit_amount && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                        <AccountBalanceWallet sx={{ fontSize: 17, color: 'text.secondary' }} />
+                        <Typography variant="body2">
+                          Dépôt de garantie: <strong>{ad.deposit_amount}</strong>
+                        </Typography>
+                      </Box>
+                    )}
+                    {ad.minimum_lease_duration && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                        <CalendarMonth sx={{ fontSize: 17, color: 'text.secondary' }} />
+                        <Typography variant="body2">
+                          Durée minimum: <strong>{ad.minimum_lease_duration}</strong>
+                        </Typography>
+                      </Box>
+                    )}
+                    {ad.detailed_charges && (
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25 }}>
+                        <ReceiptLong sx={{ fontSize: 17, color: 'text.secondary', mt: 0.3 }} />
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                          Charges: <strong>{ad.detailed_charges}</strong>
+                        </Typography>
+                      </Box>
+                    )}
+                    {ad.property_condition_pdf && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                        <Description sx={{ fontSize: 17, color: 'text.secondary' }} />
+                        <Button
+                          variant="text"
+                          size="small"
+                          href={ad.property_condition_pdf}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            p: 0,
+                            minWidth: 0,
+                            fontWeight: 600,
+                            color: 'primary.main',
+                            textTransform: 'none',
+                            '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
+                          }}
+                        >
+                          Télécharger l&apos;état des lieux
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              )}
+
+              {!isLocked && <KeyScoreSection adId={ad.id} />}
+
+              <Divider sx={{ my: 2 }} />
+              <Button
+                fullWidth
+                variant="text"
+                startIcon={<FlagOutlined />}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    sessionStorage.setItem('kh_redirect_after_login', window.location.pathname + window.location.search);
+                    router.push('/login');
+                    return;
+                  }
+                  setReportModalOpen(true);
+                }}
+                sx={{
+                  justifyContent: 'flex-start',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  color: 'text.secondary',
+                  textDecoration: 'underline',
+                  '&:hover': { bgcolor: 'transparent', color: 'text.primary' },
+                }}
+              >
+                Signaler cette annonce
+              </Button>
+            </Box>
+
           </Box>
 
-          {/* Right column — pricing card */}
+          {/* Right column — pricing card (hidden on mobile, StickyPropertyBar handles it) */}
           <Box
             sx={{
+              display: { xs: 'none', md: 'block' },
               position: { md: 'sticky' },
               top: { md: 112, lg: 120 },
               alignSelf: 'start',
@@ -1094,91 +1421,6 @@ function AdDetailContent() {
             {!isLocked && <Box sx={{ mt: 2 }}><KeyScoreSection adId={ad.id} /></Box>}
           </Box>
 
-          {/* Similar ads */}
-          {ad.type && similarAds.length > 0 && (
-            <Box sx={{ gridColumn: '1 / -1' }}>
-              <Box sx={{ mt: { xs: 2, md: 1 } }}>
-                <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
-                  Annonces similaires qui pourraient vous plaire
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Comparez rapidement avec d&apos;autres biens du même type.
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    gap: 2,
-                    overflowX: 'auto',
-                    pb: 1,
-                    scrollSnapType: 'x mandatory',
-                    scrollbarWidth: 'none',
-                    '&::-webkit-scrollbar': { display: 'none' },
-                  }}
-                >
-                  {similarAds.map((similarAd) => {
-                    const coverImage = similarAd.images?.find((image) => image.is_primary) ?? similarAd.images?.[0];
-                    return (
-                      <Paper
-                        key={similarAd.id}
-                        elevation={0}
-                        onClick={() => router.push(`/ads/${similarAd.id}/${similarAd.slug}`)}
-                        sx={{
-                          minWidth: { xs: 250, sm: 280 },
-                          maxWidth: { xs: 250, sm: 280 },
-                          borderRadius: 3,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          overflow: 'hidden',
-                          cursor: 'pointer',
-                          scrollSnapAlign: 'start',
-                          transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-                          '&:hover': {
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
-                          },
-                        }}
-                      >
-                        <Box sx={{ position: 'relative', height: 150, bgcolor: 'grey.100' }}>
-                          {coverImage ? (
-                            <Image
-                              src={coverImage.large || coverImage.url}
-                              alt={similarAd.title}
-                              fill
-                              sizes="280px"
-                              style={{ objectFit: 'cover' }}
-                            />
-                          ) : null}
-                        </Box>
-                        <Box sx={{ p: 1.5, minWidth: 0 }}>
-                          <Typography
-                            variant="subtitle2"
-                            fontWeight={700}
-                            sx={{
-                              mb: 0.5,
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                              wordBreak: 'break-word',
-                            }}
-                          >
-                            {similarAd.title}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }} noWrap>
-                            {similarAd.quarter?.name}
-                            {similarAd.quarter?.city_name ? `, ${similarAd.quarter.city_name}` : ''}
-                          </Typography>
-                          <Typography variant="subtitle1" fontWeight={800}>
-                            {formatPrice(similarAd.price)}
-                          </Typography>
-                        </Box>
-                      </Paper>
-                    );
-                  })}
-                </Box>
-              </Box>
-            </Box>
-          )}
         </Box>
       </Container>
 
