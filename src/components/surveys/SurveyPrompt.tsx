@@ -50,11 +50,12 @@ export default function SurveyPrompt({ surveyId, surveySlug, title, description 
       className="aura-glass"
       sx={{
         position: 'fixed',
-        bottom: 24,
-        right: 24,
+        bottom: { xs: 80, sm: 24 },
+        right: { xs: 12, sm: 24 },
+        left: { xs: 12, sm: 'auto' },
         zIndex: 1000,
-        maxWidth: 360,
-        p: 3,
+        maxWidth: { xs: 'none', sm: 360 },
+        p: { xs: 2.5, sm: 3 },
         borderRadius: 4,
         border: '1px solid',
         borderColor: 'divider',
