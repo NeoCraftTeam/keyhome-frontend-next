@@ -10,6 +10,7 @@ import {
   Paper,
   Tooltip,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
@@ -25,12 +26,20 @@ const SCORE_COLOR = (score: number): string => {
   return '#ef4444';
 };
 
-const SCORE_BG = (score: number): string => {
+const SCORE_BG_LIGHT = (score: number): string => {
   if (score >= 85) { return '#f0fdf4'; }
   if (score >= 70) { return '#f7fee7'; }
   if (score >= 55) { return '#fffbeb'; }
   if (score >= 40) { return '#fff7ed'; }
   return '#fef2f2';
+};
+
+const SCORE_BG_DARK = (score: number): string => {
+  if (score >= 85) { return 'rgba(34,197,94,0.08)'; }
+  if (score >= 70) { return 'rgba(132,204,22,0.08)'; }
+  if (score >= 55) { return 'rgba(245,158,11,0.08)'; }
+  if (score >= 40) { return 'rgba(249,115,22,0.08)'; }
+  return 'rgba(239,68,68,0.08)';
 };
 
 const CRITERION_TIPS: Record<string, string> = {
@@ -64,10 +73,13 @@ export default function KeyScoreSection({ adId }: Props) {
     );
   }
 
+  const muiTheme = useTheme();
+  const isDark = muiTheme.palette.mode === 'dark';
+
   if (!data) { return null; }
 
   const color = SCORE_COLOR(data.score);
-  const bg = SCORE_BG(data.score);
+  const bg = isDark ? SCORE_BG_DARK(data.score) : SCORE_BG_LIGHT(data.score);
 
   return (
     <Paper
@@ -94,7 +106,7 @@ export default function KeyScoreSection({ adId }: Props) {
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
-            bgcolor: 'white',
+            bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'white',
           }}
         >
           <Typography fontWeight={800} fontSize={{ xs: 18, sm: 22 }} sx={{ color, lineHeight: 1 }}>
@@ -169,7 +181,7 @@ export default function KeyScoreSection({ adId }: Props) {
                 sx={{
                   height: 8,
                   borderRadius: 4,
-                  bgcolor: 'rgba(0,0,0,0.06)',
+                  bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                   '& .MuiLinearProgress-bar': {
                     bgcolor: itemColor,
                     borderRadius: 4,
@@ -186,7 +198,7 @@ export default function KeyScoreSection({ adId }: Props) {
           mt: 2.5,
           p: 1.5,
           borderRadius: 2,
-          bgcolor: 'rgba(0,0,0,0.04)',
+          bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
           display: 'flex',
           alignItems: 'flex-start',
           gap: 1,
