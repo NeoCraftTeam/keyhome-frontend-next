@@ -48,16 +48,17 @@ export function useCityAutocompleteConfig() {
   };
 
   const renderOption = (
-    props: React.HTMLAttributes<HTMLLIElement> & { 'aria-selected'?: boolean; key?: React.Key },
+    props: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key },
     option: City,
   ) => {
     const { key, ...restProps } = props;
+    const isSelected = props['aria-selected'] === true || props['aria-selected'] === 'true';
     return (
       <li key={key ?? option.id} {...restProps}>
         <LocationOn
           sx={{
             fontSize: 16,
-            color: props['aria-selected'] ? 'primary.main' : 'text.disabled',
+            color: isSelected ? 'primary.main' : 'text.disabled',
             mr: 0.5,
           }}
         />
@@ -67,16 +68,17 @@ export function useCityAutocompleteConfig() {
   };
 
   const renderOptionFreeSolo = (
-    props: React.HTMLAttributes<HTMLLIElement> & { 'aria-selected'?: boolean; key?: React.Key },
+    props: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key },
     option: City | string,
   ) => {
     const { key, ...restProps } = props;
+    const isSelected = props['aria-selected'] === true || props['aria-selected'] === 'true';
     return (
       <li key={key ?? (typeof option === 'string' ? option : option.id)} {...restProps}>
         <LocationOn
           sx={{
             fontSize: 16,
-            color: props['aria-selected'] ? 'primary.main' : 'text.disabled',
+            color: isSelected ? 'primary.main' : 'text.disabled',
             mr: 0.5,
           }}
         />
