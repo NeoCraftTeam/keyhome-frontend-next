@@ -4,7 +4,7 @@ import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import SearchAlertButton from '@/components/ads/SearchAlertButton';
 import AppLoader from '@/components/ui/AppLoader';
-import QueryError from '@/components/ui/QueryError';
+
 import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
 import { escapeHtml } from '@/lib/sanitize';
 import { adsService } from '@/services/ads.service';
@@ -12,11 +12,12 @@ import { adTypesService, citiesService } from '@/services/cities.service';
 import { AdType, City, SearchParams } from '@/types';
 import {
   Close as CloseIcon,
-  HomeWork as HomeWorkIcon,
   List as ListIcon,
   Map as MapIcon,
   Search as SearchIcon,
+  SearchOff as SearchOffIcon,
   Tune as TuneIcon,
+  WifiOff as WifiOffIcon,
 } from '@mui/icons-material';
 import {
   Autocomplete,
@@ -48,6 +49,32 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
+
+const MAP_POPUP_STYLES = `
+  .kh-map-popup .mapboxgl-popup-content {
+    padding: 0 !important;
+    border-radius: 14px !important;
+    overflow: hidden;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.18) !important;
+    border: none !important;
+  }
+  .kh-map-popup .mapboxgl-popup-tip {
+    border-top-color: #fff !important;
+  }
+  .kh-map-popup-card {
+    animation: kh-popup-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes kh-popup-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0)  scale(1);    }
+  }
+  .kh-map-popup-img {
+    transition: transform 0.35s ease;
+  }
+  .kh-map-popup-card:hover .kh-map-popup-img {
+    transform: scale(1.06);
+  }
+`;
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -83,10 +110,27 @@ function SearchContent() {
       setPage(1);
     }
 
-    // Sync ?city= param → set cityInput so the autocomplete query triggers
     const urlCity = searchParams.get('city') || '';
     if (urlCity && !selectedCity) {
       setCityInput(urlCity);
+    }
+
+    const urlBedrooms = searchParams.get('bedrooms');
+    if (urlBedrooms && !bedrooms) {
+      setBedrooms(Number(urlBedrooms));
+    }
+
+    const urlPriceMin = searchParams.get('price_min');
+    const urlPriceMax = searchParams.get('price_max');
+    if (urlPriceMin || urlPriceMax) {
+      setPriceRange([
+        urlPriceMin ? Number(urlPriceMin) : 0,
+        urlPriceMax ? Number(urlPriceMax) : 5000000,
+      ]);
+    }
+
+    if (searchParams.get('parking') === '1') {
+      setHasParking(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -197,16 +241,45 @@ function SearchContent() {
       if (!ad.location) return;
       hasGeo = true;
 
+      const thumbUrl = ad.images?.[0]?.thumb || ad.images?.[0]?.url || '/placeholder-house.jpg';
+      const adUrl = `/ads/${encodeURIComponent(String(ad.id))}/${encodeURIComponent(ad.slug)}`;
+
+      // SVG star icon (no emoji — works in all browsers)
+      const starSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`;
+      const locationSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="#94a3b8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+
       const ratingHtml = ad.rating
-        ? `<div style="color:#F59E0B;font-size:12px">&#9733; ${ad.rating.toFixed(1)}</div>`
+        ? `<div style="display:flex;align-items:center;gap:3px;margin-top:3px">${starSvg}<span style="font-size:11px;font-weight:700;color:#334155">${ad.rating.toFixed(1)}</span></div>`
+        : '';
+      const locationName = [ad.quarter?.name, ad.quarter?.city_name].filter(Boolean).join(', ');
+      const locationHtml = locationName
+        ? `<div style="display:flex;align-items:center;gap:3px;margin-top:3px">${locationSvg}<span style="font-size:10px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${escapeHtml(locationName)}</span></div>`
         : '';
 
-      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
-        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer;color:#222" onclick="window.location.href='/ads/${encodeURIComponent(String(ad.id))}/${encodeURIComponent(ad.slug)}'">
-          <div>${escapeHtml(ad.title)}</div>
-          <div style="color:#F6475F;font-weight:700">${formatPrice(ad.price)}</div>
-          ${ratingHtml}
-        </div>`
+      const popup = new mapboxgl.Popup({
+        offset: 28,
+        closeButton: false,
+        maxWidth: '210px',
+        className: 'kh-map-popup',
+      }).setHTML(
+        `<a href="${adUrl}" class="kh-map-popup-card" style="display:block;width:210px;border-radius:14px;overflow:hidden;background:#fff;text-decoration:none;cursor:pointer;">
+          <div style="width:100%;height:140px;overflow:hidden;background:#f1f5f9;position:relative;">
+            <img
+              src="${escapeHtml(thumbUrl)}"
+              alt="${escapeHtml(ad.title)}"
+              class="kh-map-popup-img"
+              style="width:100%;height:100%;object-fit:cover;display:block;"
+              loading="lazy"
+            />
+            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.45) 0%,transparent 100%);height:48px;"></div>
+            <div style="position:absolute;bottom:8px;left:10px;font-size:13px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.5);">${formatPrice(ad.price)}</div>
+          </div>
+          <div style="padding:8px 10px 10px;">
+            <div style="font-size:12px;font-weight:700;color:#0f172a;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:2px;">${escapeHtml(ad.title)}</div>
+            ${locationHtml}
+            ${ratingHtml}
+          </div>
+        </a>`
       );
 
       const marker = new mapboxgl.Marker({ color: '#F6475F' })
@@ -371,11 +444,11 @@ function SearchContent() {
   const ResultsList = (
     <Box
       sx={{
-        height: { md: 'calc(100vh - 140px)' },
-        overflowY: { md: 'auto' },
+        height: '100%',
+        overflowY: 'auto',
         px: { xs: 2, md: 2.5 },
         pt: 1.5,
-        pb: { xs: 12, md: 4 },
+        pb: { xs: 4, md: 4 },
         '&::-webkit-scrollbar': { width: 6 },
         '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 3 },
       }}
@@ -425,67 +498,91 @@ function SearchContent() {
         </Menu>
       </Box>
 
-      {isError ? (
-        <QueryError onRetry={() => refetch()} message="Impossible de charger les résultats." />
+      {isLoading ? (
+        <Grid container spacing={1.5}>
+          {Array.from({ length: 8 }).map((_, idx) => (
+            <Grid key={idx} size={{ xs: 6, lg: 6, xl: 4 }}>
+              <AdCardSkeleton />
+            </Grid>
+          ))}
+        </Grid>
+      ) : isError ? (
+        <Box sx={{ textAlign: 'center', py: { xs: 6, md: 10 }, px: 3 }}>
+          <WifiOffIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+            Connexion interrompue
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 340, mx: 'auto', lineHeight: 1.6 }}>
+            Nous n&apos;avons pas pu charger les annonces. Vérifiez votre connexion et réessayez.
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => refetch()}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 99,
+              fontWeight: 700,
+              px: 4,
+              background: 'linear-gradient(to right, #F6475F, #D93A50)',
+            }}
+          >
+            Réessayer
+          </Button>
+        </Box>
+      ) : ads.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: { xs: 6, md: 10 }, px: 3 }}>
+          <SearchOffIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+            Pas encore d&apos;annonces ici
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1, maxWidth: 340, mx: 'auto', lineHeight: 1.6 }}>
+            Aucun bien ne correspond à ces critères pour le moment.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 340, mx: 'auto', lineHeight: 1.6 }}>
+            Créez une <strong>alerte</strong> et soyez notifié dès qu&apos;un bien est publié, ou élargissez votre recherche.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
+              onClick={clearFilters}
+              sx={{
+                textTransform: 'none',
+                borderRadius: 99,
+                fontWeight: 700,
+                px: 3,
+                background: 'linear-gradient(to right, #F6475F, #D93A50)',
+              }}
+            >
+              Voir toutes les annonces
+            </Button>
+            {selectedCity && (
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setCityInput('');
+                  setSelectedCity(null);
+                  setPage(1);
+                }}
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 99,
+                  fontWeight: 600,
+                }}
+              >
+                Changer de ville
+              </Button>
+            )}
+          </Box>
+        </Box>
       ) : (
         <>
           <Grid container spacing={1.5} sx={{ '& .ad-card-title': { color: '#222 !important' } }}>
-            {isLoading
-              ? Array.from({ length: 8 }).map((_, idx) => (
-                  <Grid key={idx} size={{ xs: 6, lg: 6, xl: 4 }}>
-                    <AdCardSkeleton />
-                  </Grid>
-                ))
-              : ads.map((ad) => (
-                  <Grid key={ad.id} size={{ xs: 6, lg: 6, xl: 4 }}>
-                    <AdCard ad={ad} />
-                  </Grid>
-                ))}
+            {ads.map((ad) => (
+              <Grid key={ad.id} size={{ xs: 6, lg: 6, xl: 4 }}>
+                <AdCard ad={ad} />
+              </Grid>
+            ))}
           </Grid>
-
-          {!isLoading && ads.length === 0 && (
-            <Box sx={{ textAlign: 'center', py: 10, px: 3 }}>
-              <HomeWorkIcon sx={{ fontSize: 72, color: 'text.disabled', mb: 2, opacity: 0.5 }} />
-              <Typography variant="h6" fontWeight={700} color="text.secondary" sx={{ mb: 1 }}>
-                Aucun résultat trouvé
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 360, mx: 'auto', lineHeight: 1.6 }}>
-                Nous n&apos;avons pas trouvé de biens correspondant à vos critères actuels. Essayez d&apos;élargir votre zone de recherche ou de réinitialiser vos filtres.
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <Button
-                  variant="contained"
-                  onClick={clearFilters}
-                  sx={{
-                    textTransform: 'none',
-                    borderRadius: '10px',
-                    fontWeight: 700,
-                    px: 3,
-                    boxShadow: '0 4px 14px 0 rgba(246,71,95,0.39)',
-                  }}
-                >
-                  Réinitialiser tout
-                </Button>
-                {selectedCity && (
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      setCityInput('');
-                      setSelectedCity(null);
-                      setPage(1);
-                    }}
-                    sx={{
-                      textTransform: 'none',
-                      borderRadius: '10px',
-                      fontWeight: 600,
-                    }}
-                  >
-                    Changer de ville
-                  </Button>
-                )}
-              </Box>
-            </Box>
-          )}
 
           {totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
@@ -512,6 +609,7 @@ function SearchContent() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <style dangerouslySetInnerHTML={{ __html: MAP_POPUP_STYLES }} />
 
       {/* FILTER BAR */}
       <Box
@@ -523,50 +621,92 @@ function SearchContent() {
           px: { xs: 1.5, md: 2.5 },
           py: 1.25,
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: { xs: 'center', md: 'flex-start' },
-          flexWrap: { xs: 'wrap', md: 'nowrap' },
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
           gap: 1,
-          overflowX: { xs: 'visible', md: 'auto' },
-          scrollbarWidth: 'none',
-          '&::-webkit-scrollbar': { display: 'none' },
           zIndex: 10,
           boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
-        {/* List / Map toggle — mobile first so it's always visible */}
+        {/* Mobile top row: toggle + filter button */}
         {isMobile && (
-          <ToggleButtonGroup
-            value={mobileViewMode}
-            exclusive
-            onChange={(_, val) => val && setMobileViewMode(val)}
-            size="small"
-            sx={{
-              flexShrink: 0,
-              '& .MuiToggleButton-root': {
-                borderRadius: '8px !important',
-                border: '1px solid',
-                borderColor: 'divider',
-                px: 1.5,
-              },
-              '& .Mui-selected': {
-                bgcolor: 'primary.main !important',
-                color: '#fff !important',
-              },
-            }}
-          >
-            <ToggleButton value="list" aria-label="Liste" sx={{ gap: 0.5, fontSize: '0.8rem', fontWeight: 600 }}>
-              <ListIcon sx={{ fontSize: 16 }} />
-              Liste
-            </ToggleButton>
-            <ToggleButton value="map" aria-label="Carte" sx={{ gap: 0.5, fontSize: '0.8rem', fontWeight: 600 }}>
-              <MapIcon sx={{ fontSize: 16 }} />
-              Carte
-            </ToggleButton>
-          </ToggleButtonGroup>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ToggleButtonGroup
+              value={mobileViewMode}
+              exclusive
+              onChange={(_, val) => val && setMobileViewMode(val)}
+              size="small"
+              sx={{
+                flexShrink: 0,
+                '& .MuiToggleButton-root': {
+                  borderRadius: '8px !important',
+                  border: '1.5px solid',
+                  borderColor: 'text.disabled',
+                  px: 1.5,
+                  py: 0.5,
+                  color: 'text.primary',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                },
+                '& .Mui-selected': {
+                  bgcolor: 'primary.main !important',
+                  color: '#fff !important',
+                  borderColor: 'primary.main !important',
+                },
+              }}
+            >
+              <ToggleButton value="list" aria-label="Liste" sx={{ gap: 0.5 }}>
+                <ListIcon sx={{ fontSize: 16 }} />
+                Liste
+              </ToggleButton>
+              <ToggleButton value="map" aria-label="Carte" sx={{ gap: 0.5 }}>
+                <MapIcon sx={{ fontSize: 16 }} />
+                Carte
+              </ToggleButton>
+            </ToggleButtonGroup>
+
+            <Box sx={{ flex: 1 }} />
+
+            <Button
+              size="small"
+              variant={activeFilterCount > 0 ? 'contained' : 'outlined'}
+              startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
+              onClick={() => setMoreFiltersOpen(true)}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                flexShrink: 0,
+                ...(activeFilterCount > 0
+                  ? { bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' } }
+                  : { borderColor: 'text.secondary', color: 'text.primary' }),
+              }}
+            >
+              Filtres
+              {activeFilterCount > 0 && (
+                <Chip
+                  label={activeFilterCount}
+                  size="small"
+                  sx={{ ml: 0.5, height: 18, minWidth: 18, bgcolor: '#fff', color: 'primary.main', fontSize: '0.65rem', fontWeight: 700 }}
+                />
+              )}
+            </Button>
+
+            {activeFilterCount > 0 && (
+              <Button
+                size="small"
+                variant="text"
+                onClick={clearFilters}
+                sx={{ textTransform: 'none', fontSize: '0.75rem', flexShrink: 0, color: 'text.secondary', minWidth: 0, px: 0.5 }}
+              >
+                Reset
+              </Button>
+            )}
+          </Box>
         )}
 
-        {/* City autocomplete */}
+        {/* Search bar — hidden on mobile map view to maximize map space */}
         <Autocomplete
           size="small"
           freeSolo
@@ -674,37 +814,40 @@ function SearchContent() {
             width: { xs: '100%', md: 'auto' },
             maxWidth: { xs: 560, md: 420 },
             mx: { xs: 'auto', md: 0 },
+            display: isMobile && mobileViewMode === 'map' ? 'none' : 'inline-flex',
           }}
         />
         {!isMobile && <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />}
 
-        {/* Filtres */}
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
-          onClick={() => setMoreFiltersOpen(true)}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: '8px',
-            fontSize: '0.825rem',
-            flexShrink: 0,
-            borderColor: activeFilterCount > 0 ? 'primary.main' : 'divider',
-            color: activeFilterCount > 0 ? 'primary.main' : 'text.primary',
-          }}
-        >
-          Filtres
-          {activeFilterCount > 0 && (
-            <Chip
-              label={activeFilterCount}
-              size="small"
-              sx={{ ml: 0.5, height: 18, minWidth: 18, bgcolor: 'primary.main', color: '#fff', fontSize: '0.65rem' }}
-            />
-          )}
-        </Button>
+        {/* Filtres — desktop only (mobile has it in top row) */}
+        {!isMobile && (
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
+            onClick={() => setMoreFiltersOpen(true)}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              borderRadius: '8px',
+              fontSize: '0.825rem',
+              flexShrink: 0,
+              borderColor: activeFilterCount > 0 ? 'primary.main' : 'divider',
+              color: activeFilterCount > 0 ? 'primary.main' : 'text.primary',
+            }}
+          >
+            Filtres
+            {activeFilterCount > 0 && (
+              <Chip
+                label={activeFilterCount}
+                size="small"
+                sx={{ ml: 0.5, height: 18, minWidth: 18, bgcolor: 'primary.main', color: '#fff', fontSize: '0.65rem' }}
+              />
+            )}
+          </Button>
+        )}
 
-        {activeFilterCount > 0 && (
+        {!isMobile && activeFilterCount > 0 && (
           <Button
             size="small"
             variant="text"
@@ -733,8 +876,8 @@ function SearchContent() {
         )}
       </Box>
 
-      {/* Active filter chips */}
-      {activeFilterCount > 0 && (
+      {/* Active filter chips — hidden on mobile map view */}
+      {activeFilterCount > 0 && !(isMobile && mobileViewMode === 'map') && (
         <Box
           sx={{
             display: 'flex',
@@ -805,7 +948,7 @@ function SearchContent() {
         )}
 
         {(!isMobile || mobileViewMode === 'list') && (
-          <Box sx={{ flex: 1, overflow: 'hidden' }}>
+          <Box sx={{ flex: 1, overflow: 'auto' }}>
             {ResultsList}
           </Box>
         )}

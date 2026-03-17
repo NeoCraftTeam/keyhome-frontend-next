@@ -1,6 +1,7 @@
 'use client';
 
 import { formatPrice } from '@/lib/constants';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useFavorites } from '@/providers/FavoritesProvider';
 import { useComparator } from '@/providers/ComparatorProvider';
 import { Ad } from '@/types';
@@ -48,6 +49,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
 
   const isFavorite = checkFav(ad.id);
   const [heartBurst, setHeartBurst] = useState(false);
+  const { play } = useSoundFeedback();
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -55,6 +57,9 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
     if (!isFavorite) {
       setHeartBurst(true);
       setTimeout(() => setHeartBurst(false), 600);
+      play('favorite');
+    } else {
+      play('unfavorite');
     }
     toggleFav(ad);
   };

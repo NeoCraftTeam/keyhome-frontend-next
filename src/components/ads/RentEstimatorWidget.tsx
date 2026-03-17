@@ -26,7 +26,7 @@ export default function RentEstimatorWidget() {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [typeId, setTypeId] = useState('');
   const [surface, setSurface] = useState(50);
-  const [enabled, setEnabled] = useState(false);
+  const [submittedParams, setSubmittedParams] = useState<{ city_id: string; type_id: string; surface: number } | null>(null);
 
   const { data: citiesData, isFetching: loadingCities } = useQuery({
     queryKey: ['cities-estimator', cityInput],
@@ -41,22 +41,18 @@ export default function RentEstimatorWidget() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['rent-estimate', selectedCity?.id, typeId, surface],
-    queryFn: () => estimatorService.estimate({
-      city_id: selectedCity!.id,
-      type_id: typeId,
-      surface,
-    }),
-    enabled: enabled && !!selectedCity?.id && !!typeId,
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['rent-estimate', submittedParams?.city_id, submittedParams?.type_id, submittedParams?.surface],
+    queryFn: () => estimatorService.estimate(submittedParams!),
+    enabled: !!submittedParams,
     staleTime: 60 * 60 * 1000,
   });
 
-  const canEstimate = !!selectedCity && !!typeId && !isLoading;
+  const canEstimate = !!selectedCity && !!typeId && !isFetching;
 
   const handleEstimate = () => {
-    setEnabled(false);
-    setTimeout(() => setEnabled(true), 50);
+    if (!selectedCity || !typeId) return;
+    setSubmittedParams({ city_id: selectedCity.id, type_id: typeId, surface });
   };
 
   return (
@@ -99,7 +95,7 @@ export default function RentEstimatorWidget() {
           options={citiesData?.data ?? []}
           getOptionLabel={(c) => c.name}
           value={selectedCity}
-          onChange={(_, val) => { setSelectedCity(val); setEnabled(false); }}
+          onChange={(_, val) => { setSelectedCity(val); setSubmittedParams(null); }}
           inputValue={cityInput}
           onInputChange={(_, val) => { setCityInput(val); }}
           loading={loadingCities}
@@ -129,7 +125,7 @@ export default function RentEstimatorWidget() {
           size="small"
           fullWidth
           value={typeId}
-          onChange={(e) => { setTypeId(e.target.value); setEnabled(false); }}
+          onChange={(e) => { setTypeId(e.target.value); setSubmittedParams(null); }}
         >
           {types?.map((t) => (
             <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
@@ -143,7 +139,7 @@ export default function RentEstimatorWidget() {
           </Typography>
           <Slider
             value={surface}
-            onChange={(_, v) => { setSurface(v as number); setEnabled(false); }}
+            onChange={(_, v) => { setSurface(v as number); setSubmittedParams(null); }}
             min={10}
             max={500}
             step={5}
@@ -157,11 +153,11 @@ export default function RentEstimatorWidget() {
           variant="contained"
           onClick={handleEstimate}
           disabled={!canEstimate}
-          startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <Calculate />}
+          startIcon={isFetching ? <CircularProgress size={16} color="inherit" /> : <Calculate />}
           fullWidth
           sx={{ py: 1.25, fontWeight: 700 }}
         >
-          {isLoading ? 'Calcul en cours…' : 'Estimer le loyer'}
+          {isFetching ? 'Calcul en cours…' : 'Estimer le loyer'}
         </Button>
       </Box>
 

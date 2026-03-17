@@ -47,7 +47,7 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
       const params = new URLSearchParams();
       if (parsed.q) { params.set('q', parsed.q); }
       if (parsed.city_name) { params.set('city', parsed.city_name); }
-      if (parsed.type_name) { params.set('type_name', parsed.type_name); }
+      if (parsed.type_name) { params.set('type', parsed.type_name); }
       if (parsed.bedrooms) { params.set('bedrooms', String(parsed.bedrooms)); }
       if (parsed.price_max) { params.set('price_max', String(parsed.price_max)); }
       if (parsed.price_min) { params.set('price_min', String(parsed.price_min)); }
@@ -97,7 +97,7 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
         }}
       >
         <Tab icon={<LocationOn sx={{ fontSize: 14 }} />} iconPosition="start" label="Par ville" />
-        <Tab icon={<AutoAwesome sx={{ fontSize: 14 }} />} iconPosition="start" label="Recherche IA ✨" />
+        <Tab icon={<AutoAwesome sx={{ fontSize: 14 }} />} iconPosition="start" label="Recherche IA" />
       </Tabs>
 
       {/* Tab 0 — City search */}
