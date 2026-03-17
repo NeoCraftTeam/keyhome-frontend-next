@@ -216,8 +216,12 @@ export default withSentryConfig(nextConfig, {
     disable: !process.env.SENTRY_AUTH_TOKEN,
   },
 
-  // Tree-shake debug code in production
-  disableLogger: true,
+  // Tree-shake debug code in production (replaces deprecated disableLogger)
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true,
+    },
+  },
 });
 
 
