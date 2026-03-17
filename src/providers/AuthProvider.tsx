@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (runId !== authRunRef.current) { return; }
             clearSanctumToken();
             setUserState(null);
-            router.replace('/login');
+            router.replace('/home');
           })
           .finally(() => {
             if (runId !== authRunRef.current) { return; }
@@ -131,6 +131,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (runId !== authRunRef.current) { return; }
 
           if ('state' in result && result.state === 'otp_required') {
+            // User not found in Laravel DB. If we had a Sanctum token, the user was
+            // previously authenticated (e.g. DB was purged) — sign out and redirect home.
+            if (localStorage.getItem(SANCTUM_TOKEN_KEY)) {
+              clearSanctumToken();
+              setUserState(null);
+              sessionStorage.removeItem('clerk_auth_email_hint');
+              sessionStorage.removeItem('clerk_auth_prefill');
+              await signOut();
+              router.replace('/home');
+              return;
+            }
             sessionStorage.setItem('clerk_auth_email_hint', result.email_hint ?? '');
             router.replace('/verify-otp');
             return;

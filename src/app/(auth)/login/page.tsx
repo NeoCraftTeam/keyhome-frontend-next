@@ -169,6 +169,7 @@ export default function LoginPage() {
                 required
                 autoComplete="email"
                 autoFocus
+                disabled={isSubmitting}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -187,6 +188,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
+                disabled={isSubmitting}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
