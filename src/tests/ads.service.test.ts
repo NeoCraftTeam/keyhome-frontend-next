@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { AxiosError } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -14,6 +15,9 @@ import api from '@/lib/api';
 import { adsService } from '@/services/ads.service';
 
 const mockedApi = vi.mocked(api);
+const mockGet = mockedApi.get as Mock;
+const mockPost = mockedApi.post as Mock;
+const mockDelete = mockedApi.delete as Mock;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -66,27 +70,27 @@ describe('adsService', () => {
   describe('list', () => {
     // BUG CATCH: If list() doesn't pass params, pagination and filtering break.
     it('fetches ads with pagination params', async () => {
-      mockedApi.get.mockResolvedValue({ data: mockPaginatedResponse });
+      mockGet.mockResolvedValue({ data: mockPaginatedResponse });
       const params = { page: 2, per_page: 10, type: 'rent' };
 
       const result = await adsService.list(params);
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/ads', { params });
+      expect(mockGet).toHaveBeenCalledWith('/ads', { params });
       expect(result.data).toHaveLength(1);
       expect(result.meta.total).toBe(42);
     });
 
     // BUG CATCH: list() with no params must still work (homepage default listing).
     it('fetches ads with no params (default listing)', async () => {
-      mockedApi.get.mockResolvedValue({ data: mockPaginatedResponse });
+      mockGet.mockResolvedValue({ data: mockPaginatedResponse });
       await adsService.list();
-      expect(mockedApi.get).toHaveBeenCalledWith('/ads', { params: undefined });
+      expect(mockGet).toHaveBeenCalledWith('/ads', { params: undefined });
     });
 
     // BUG CATCH: If api errors are swallowed, the UI shows empty lists
     // instead of error messages.
     it('propagates API errors', async () => {
-      mockedApi.get.mockRejectedValue(new AxiosError('Network Error'));
+      mockGet.mockRejectedValue(new AxiosError('Network Error'));
       await expect(adsService.list()).rejects.toThrow('Network Error');
     });
   });
@@ -95,17 +99,17 @@ describe('adsService', () => {
     // BUG CATCH: Laravel wraps responses in { data: ... }. If show() returns
     // the wrapper instead of unwrapping, ad detail pages show nothing.
     it('unwraps data.data from Laravel resource response', async () => {
-      mockedApi.get.mockResolvedValue({ data: { data: mockAd } });
+      mockGet.mockResolvedValue({ data: { data: mockAd } });
       const result = await adsService.show('9e5f2a3b-1c4d-4e6f-8a7b-2d3e4f5a6b7c');
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/ads/9e5f2a3b-1c4d-4e6f-8a7b-2d3e4f5a6b7c');
+      expect(mockGet).toHaveBeenCalledWith('/ads/9e5f2a3b-1c4d-4e6f-8a7b-2d3e4f5a6b7c');
       expect(result.title).toBe('Appartement T3 meublé à Bastos');
     });
 
     // BUG CATCH: Some endpoints return raw data (no wrapper). The ?? fallback
     // ensures both response shapes work.
     it('falls back to raw data when data.data is undefined', async () => {
-      mockedApi.get.mockResolvedValue({ data: mockAd });
+      mockGet.mockResolvedValue({ data: mockAd });
       const result = await adsService.show('test-id');
       expect(result.title).toBe('Appartement T3 meublé à Bastos');
     });
@@ -115,7 +119,7 @@ describe('adsService', () => {
     // BUG CATCH: Search must pass all filter params to the API.
     // If params are dropped, users get unfiltered results.
     it('passes search params correctly', async () => {
-      mockedApi.get.mockResolvedValue({ data: mockPaginatedResponse });
+      mockGet.mockResolvedValue({ data: mockPaginatedResponse });
       const searchParams = {
         q: 'appartement',
         city: 'Yaoundé',
@@ -127,19 +131,19 @@ describe('adsService', () => {
 
       await adsService.search(searchParams);
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/ads/search', { params: searchParams });
+      expect(mockGet).toHaveBeenCalledWith('/ads/search', { params: searchParams });
     });
   });
 
   describe('nearby', () => {
     // BUG CATCH: If coordinates aren't passed, the backend returns 422.
     it('passes latitude and longitude params', async () => {
-      mockedApi.get.mockResolvedValue({ data: { data: [mockAd] } });
+      mockGet.mockResolvedValue({ data: { data: [mockAd] } });
       const params = { latitude: 3.848, longitude: 11.502, radius: 5 };
 
       const result = await adsService.nearby(params);
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/ads/nearby', { params });
+      expect(mockGet).toHaveBeenCalledWith('/ads/nearby', { params });
       expect(result).toHaveLength(1);
     });
   });
@@ -147,12 +151,12 @@ describe('adsService', () => {
   describe('nearbyForUser', () => {
     // BUG CATCH: User-specific nearby uses a different endpoint with userId in path.
     it('constructs URL with userId', async () => {
-      mockedApi.get.mockResolvedValue({ data: { data: [mockAd] } });
+      mockGet.mockResolvedValue({ data: { data: [mockAd] } });
       const params = { latitude: 3.848, longitude: 11.502 };
 
       await adsService.nearbyForUser('user-123', params);
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/ads/user-123/nearby', { params });
+      expect(mockGet).toHaveBeenCalledWith('/ads/user-123/nearby', { params });
     });
   });
 
@@ -160,11 +164,11 @@ describe('adsService', () => {
     // BUG CATCH: If field and q params aren't sent, autocomplete returns nothing.
     it('sends field and query parameters', async () => {
       const results = [{ value: 'Yaoundé', count: 15 }, { value: 'Yaounde', count: 3 }];
-      mockedApi.get.mockResolvedValue({ data: { data: results } });
+      mockGet.mockResolvedValue({ data: { data: results } });
 
       const result = await adsService.autocomplete('city', 'Yao');
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/ads/autocomplete', {
+      expect(mockGet).toHaveBeenCalledWith('/ads/autocomplete', {
         params: { field: 'city', q: 'Yao' },
       });
       expect(result).toHaveLength(2);
@@ -183,7 +187,7 @@ describe('adsService', () => {
         surface_range: { min: 20, max: 500 },
         has_parking: { with_parking: 20, without_parking: 22 },
       };
-      mockedApi.get.mockResolvedValue({ data: { data: facets } });
+      mockGet.mockResolvedValue({ data: { data: facets } });
 
       const result = await adsService.facets();
       expect(result.cities).toHaveLength(1);
@@ -199,11 +203,11 @@ describe('adsService', () => {
       formData.append('title', 'Nouvelle annonce');
       formData.append('price', '150000');
 
-      mockedApi.post.mockResolvedValue({ data: { data: mockAd } });
+      mockPost.mockResolvedValue({ data: { data: mockAd } });
 
       await adsService.create(formData);
 
-      expect(mockedApi.post).toHaveBeenCalledWith('/ads', formData, {
+      expect(mockPost).toHaveBeenCalledWith('/ads', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     });
@@ -216,14 +220,14 @@ describe('adsService', () => {
       const formData = new FormData();
       formData.append('title', 'Titre modifié');
 
-      mockedApi.post.mockResolvedValue({ data: { data: mockAd } });
+      mockPost.mockResolvedValue({ data: { data: mockAd } });
 
       await adsService.update('ad-123', formData);
 
       // Verify _method was appended
       expect(formData.get('_method')).toBe('PUT');
       // Verify it uses POST (not PUT) endpoint
-      expect(mockedApi.post).toHaveBeenCalledWith('/ads/ad-123', formData, {
+      expect(mockPost).toHaveBeenCalledWith('/ads/ad-123', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     });
@@ -232,9 +236,9 @@ describe('adsService', () => {
   describe('destroy', () => {
     // BUG CATCH: If destroy doesn't call DELETE, ads are never removed.
     it('calls DELETE endpoint', async () => {
-      mockedApi.delete.mockResolvedValue({ data: {} });
+      mockDelete.mockResolvedValue({ data: {} });
       await adsService.destroy('ad-123');
-      expect(mockedApi.delete).toHaveBeenCalledWith('/ads/ad-123');
+      expect(mockDelete).toHaveBeenCalledWith('/ads/ad-123');
     });
   });
 
@@ -242,17 +246,17 @@ describe('adsService', () => {
     // BUG CATCH: trackView is fire-and-forget. If it threw errors,
     // opening any ad detail page could crash on network issues.
     it('calls POST endpoint and does not throw on error', async () => {
-      mockedApi.post.mockRejectedValue(new Error('Network Error'));
+      mockPost.mockRejectedValue(new Error('Network Error'));
 
       // Should not throw — fire and forget
       expect(() => adsService.trackView('ad-123')).not.toThrow();
-      expect(mockedApi.post).toHaveBeenCalledWith('/ads/ad-123/view');
+      expect(mockPost).toHaveBeenCalledWith('/ads/ad-123/view');
     });
 
     it('calls the correct endpoint for view tracking', () => {
-      mockedApi.post.mockResolvedValue({ data: {} });
+      mockPost.mockResolvedValue({ data: {} });
       adsService.trackView('ad-456');
-      expect(mockedApi.post).toHaveBeenCalledWith('/ads/ad-456/view');
+      expect(mockPost).toHaveBeenCalledWith('/ads/ad-456/view');
     });
   });
 });

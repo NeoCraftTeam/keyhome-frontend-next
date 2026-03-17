@@ -158,26 +158,28 @@ describe('isTrustedRedirectUrl', () => {
     // If localhost HTTP is blocked in dev, the development workflow breaks.
     it('allows http://localhost in development', async () => {
       vi.resetModules();
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'development';
-      mockWindowLocation('http://localhost:3000');
+      vi.stubEnv('NODE_ENV', 'development');
+      try {
+        mockWindowLocation('http://localhost:3000');
 
-      const mod = await import('@/lib/trusted-redirect');
-      expect(mod.isTrustedRedirectUrl('http://localhost:8000/api')).toBe(true);
-
-      process.env.NODE_ENV = originalEnv;
+        const mod = await import('@/lib/trusted-redirect');
+        expect(mod.isTrustedRedirectUrl('http://localhost:8000/api')).toBe(true);
+      } finally {
+        vi.unstubAllEnvs();
+      }
     });
 
     it('allows http://127.0.0.1 in development', async () => {
       vi.resetModules();
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'development';
-      mockWindowLocation('http://localhost:3000');
+      vi.stubEnv('NODE_ENV', 'development');
+      try {
+        mockWindowLocation('http://localhost:3000');
 
-      const mod = await import('@/lib/trusted-redirect');
-      expect(mod.isTrustedRedirectUrl('http://127.0.0.1:8000/api')).toBe(true);
-
-      process.env.NODE_ENV = originalEnv;
+        const mod = await import('@/lib/trusted-redirect');
+        expect(mod.isTrustedRedirectUrl('http://127.0.0.1:8000/api')).toBe(true);
+      } finally {
+        vi.unstubAllEnvs();
+      }
     });
   });
 });

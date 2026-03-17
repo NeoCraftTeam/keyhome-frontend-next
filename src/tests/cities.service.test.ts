@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { AxiosError } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +12,7 @@ import api from '@/lib/api';
 import { adTypesService, citiesService, quartersService } from '@/services/cities.service';
 
 const mockedApi = vi.mocked(api);
+const mockGet = mockedApi.get as Mock;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -29,31 +31,31 @@ describe('citiesService', () => {
         meta: { current_page: 1, last_page: 1, per_page: 50, total: 2, from: 1, to: 2 },
         links: { first: '/cities?page=1', last: '/cities?page=1', prev: null, next: null },
       };
-      mockedApi.get.mockResolvedValue({ data: response });
+      mockGet.mockResolvedValue({ data: response });
 
       const result = await citiesService.list({ q: 'Yao', page: 1 });
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/cities', { params: { q: 'Yao', page: 1 } });
+      expect(mockGet).toHaveBeenCalledWith('/cities', { params: { q: 'Yao', page: 1 } });
       expect(result.data).toHaveLength(2);
     });
 
     it('works without params', async () => {
-      mockedApi.get.mockResolvedValue({ data: { data: [], meta: {}, links: {} } });
+      mockGet.mockResolvedValue({ data: { data: [], meta: {}, links: {} } });
       await citiesService.list();
-      expect(mockedApi.get).toHaveBeenCalledWith('/cities', { params: undefined });
+      expect(mockGet).toHaveBeenCalledWith('/cities', { params: undefined });
     });
   });
 
   describe('show', () => {
     // BUG CATCH: Must unwrap data.data or city detail will be the wrapper object.
     it('unwraps city data from response', async () => {
-      mockedApi.get.mockResolvedValue({ data: { data: { id: '1', name: 'Yaoundé' } } });
+      mockGet.mockResolvedValue({ data: { data: { id: '1', name: 'Yaoundé' } } });
       const city = await citiesService.show('1');
       expect(city.name).toBe('Yaoundé');
     });
 
     it('propagates errors for invalid city ID', async () => {
-      mockedApi.get.mockRejectedValue(new AxiosError('Not Found', '404'));
+      mockGet.mockRejectedValue(new AxiosError('Not Found', '404'));
       await expect(citiesService.show('nonexistent')).rejects.toThrow();
     });
   });
@@ -62,7 +64,7 @@ describe('citiesService', () => {
 describe('quartersService', () => {
   describe('list', () => {
     it('fetches quarters with pagination', async () => {
-      mockedApi.get.mockResolvedValue({
+      mockGet.mockResolvedValue({
         data: {
           data: [{ id: '1', name: 'Bastos', city_id: '1', city_name: 'Yaoundé' }],
           meta: { current_page: 1, last_page: 1, per_page: 50, total: 1, from: 1, to: 1 },
@@ -77,7 +79,7 @@ describe('quartersService', () => {
 
   describe('show', () => {
     it('unwraps quarter data', async () => {
-      mockedApi.get.mockResolvedValue({
+      mockGet.mockResolvedValue({
         data: { data: { id: '1', name: 'Bastos', city_id: '1', city_name: 'Yaoundé' } },
       });
       const quarter = await quartersService.show('1');
@@ -91,7 +93,7 @@ describe('adTypesService', () => {
     // BUG CATCH: Ad types populate the type filter dropdown. If empty,
     // users can't filter by property type.
     it('fetches and unwraps ad types', async () => {
-      mockedApi.get.mockResolvedValue({
+      mockGet.mockResolvedValue({
         data: {
           data: [
             { id: '1', name: 'Appartement', desc: 'Apartment' },
@@ -109,7 +111,7 @@ describe('adTypesService', () => {
 
   describe('show', () => {
     it('unwraps single ad type', async () => {
-      mockedApi.get.mockResolvedValue({
+      mockGet.mockResolvedValue({
         data: { data: { id: '1', name: 'Appartement', desc: 'Apartment' } },
       });
       const adType = await adTypesService.show('1');

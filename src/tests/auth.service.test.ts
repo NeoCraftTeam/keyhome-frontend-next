@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { AxiosError } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,6 +13,8 @@ import api from '@/lib/api';
 import { authService } from '@/services/auth.service';
 
 const mockedApi = vi.mocked(api);
+const mockGet = mockedApi.get as Mock;
+const mockPost = mockedApi.post as Mock;
 
 // Realistic user data matching the Laravel backend
 const mockUser = {
@@ -47,23 +50,23 @@ describe('authService', () => {
     // profile fetch fails because Clerk's interceptor returns null for
     // email/password users.
     it('exchanges credentials and fetches user profile with explicit token', async () => {
-      mockedApi.post.mockResolvedValue({
+      mockPost.mockResolvedValue({
         data: {
           message: 'Connexion réussie',
           access_token: 'sanctum-token-xyz',
           expires_at: '2026-02-28T23:59:59Z',
         },
       });
-      mockedApi.get.mockResolvedValue({ data: { data: mockUser } });
+      mockGet.mockResolvedValue({ data: { data: mockUser } });
 
       const result = await authService.login('jean.dupont@example.cm', 'Str0ngP@ss!');
 
-      expect(mockedApi.post).toHaveBeenCalledWith('/auth/login', {
+      expect(mockPost).toHaveBeenCalledWith('/auth/login', {
         email: 'jean.dupont@example.cm',
         password: 'Str0ngP@ss!',
       });
       // Verify the GET /auth/me uses explicit Bearer token
-      expect(mockedApi.get).toHaveBeenCalledWith('/auth/me', {
+      expect(mockGet).toHaveBeenCalledWith('/auth/me', {
         headers: { Authorization: 'Bearer sanctum-token-xyz' },
       });
       expect(result.token).toBe('sanctum-token-xyz');
@@ -74,7 +77,7 @@ describe('authService', () => {
     // BUG CATCH: If login fails (wrong password), the error must propagate
     // so the UI can show the error message.
     it('propagates login errors', async () => {
-      mockedApi.post.mockRejectedValue(new AxiosError('Unauthorized'));
+      mockPost.mockRejectedValue(new AxiosError('Unauthorized'));
       await expect(authService.login('wrong@email.cm', 'bad')).rejects.toThrow();
     });
   });
@@ -83,7 +86,7 @@ describe('authService', () => {
     // BUG CATCH: Registration must send all required fields. If phone_number
     // is dropped, Laravel returns 422 but the frontend shows a generic error.
     it('sends all required fields and returns token + user', async () => {
-      mockedApi.post.mockResolvedValue({
+      mockPost.mockResolvedValue({
         data: {
           message: 'Inscription réussie',
           user: mockUser,
@@ -104,7 +107,7 @@ describe('authService', () => {
 
       const result = await authService.registerCustomer(payload);
 
-      expect(mockedApi.post).toHaveBeenCalledWith('/auth/registerCustomer', payload);
+      expect(mockPost).toHaveBeenCalledWith('/auth/registerCustomer', payload);
       expect(result.token).toBe('new-customer-token');
       expect(result.user.email).toBe('jean.dupont@example.cm');
     });
@@ -114,7 +117,7 @@ describe('authService', () => {
     // BUG CATCH: Agent registration includes a `type` field (individual/agency).
     // If it's missing, the backend can't distinguish agent types.
     it('sends agent-specific fields including type', async () => {
-      mockedApi.post.mockResolvedValue({
+      mockPost.mockResolvedValue({
         data: {
           message: 'Inscription agent réussie',
           user: { ...mockUser, role: 'agent', type: 'agency' },
@@ -142,14 +145,14 @@ describe('authService', () => {
     // BUG CATCH: Must unwrap data.data correctly or the profile page shows
     // raw response wrapper instead of user fields.
     it('unwraps user data from response', async () => {
-      mockedApi.get.mockResolvedValue({ data: { data: mockUser } });
+      mockGet.mockResolvedValue({ data: { data: mockUser } });
       const user = await authService.me();
       expect(user.firstname).toBe('Jean');
       expect(user.city_name).toBe('Yaoundé');
     });
 
     it('falls back to raw data when not wrapped', async () => {
-      mockedApi.get.mockResolvedValue({ data: mockUser });
+      mockGet.mockResolvedValue({ data: mockUser });
       const user = await authService.me();
       expect(user.firstname).toBe('Jean');
     });
@@ -160,7 +163,7 @@ describe('authService', () => {
     // If the OTP-required state isn't handled, users get stuck in a
     // broken auth state after signing in with a new Clerk account.
     it('handles otp_required state', async () => {
-      mockedApi.post.mockResolvedValue({
+      mockPost.mockResolvedValue({
         data: { state: 'otp_required', email_hint: 'j***@example.cm' },
       });
 
@@ -174,7 +177,7 @@ describe('authService', () => {
     // BUG CATCH: Successful exchange renames `access_token` → `token`.
     // If this mapping is wrong, the AuthProvider can't store the session.
     it('handles successful authentication and renames access_token', async () => {
-      mockedApi.post.mockResolvedValue({
+      mockPost.mockResolvedValue({
         data: {
           access_token: 'clerk-exchange-token',
           user: mockUser,
@@ -193,7 +196,7 @@ describe('authService', () => {
     // BUG CATCH: Two possible states: profile_required or authenticated.
     // Mixing them up redirects users to the wrong screen.
     it('handles profile_required state', async () => {
-      mockedApi.post.mockResolvedValue({
+      mockPost.mockResolvedValue({
         data: {
           state: 'profile_required',
           prefill: { firstname: 'Jean', lastname: 'D', email: 'jean@gmail.com', avatar: null },
@@ -208,7 +211,7 @@ describe('authService', () => {
     });
 
     it('handles authenticated state and renames access_token', async () => {
-      mockedApi.post.mockResolvedValue({
+      mockPost.mockResolvedValue({
         data: {
           state: 'authenticated',
           access_token: 'verified-token',
@@ -230,7 +233,7 @@ describe('authService', () => {
     // BUG CATCH: After OTP verification, users must provide phone_number.
     // The response renames access_token → token.
     it('sends profile data and renames access_token', async () => {
-      mockedApi.post.mockResolvedValue({
+      mockPost.mockResolvedValue({
         data: {
           access_token: 'profile-complete-token',
           user: mockUser,
@@ -250,24 +253,24 @@ describe('authService', () => {
 
   describe('logout', () => {
     it('calls POST /auth/logout', async () => {
-      mockedApi.post.mockResolvedValue({ data: {} });
+      mockPost.mockResolvedValue({ data: {} });
       await authService.logout();
-      expect(mockedApi.post).toHaveBeenCalledWith('/auth/logout');
+      expect(mockPost).toHaveBeenCalledWith('/auth/logout');
     });
   });
 
   describe('forgotPassword', () => {
     it('sends email to forgot-password endpoint', async () => {
-      mockedApi.post.mockResolvedValue({ data: { message: 'Lien envoyé.' } });
+      mockPost.mockResolvedValue({ data: { message: 'Lien envoyé.' } });
       const result = await authService.forgotPassword('jean@example.cm');
-      expect(mockedApi.post).toHaveBeenCalledWith('/auth/forgot-password', { email: 'jean@example.cm' });
+      expect(mockPost).toHaveBeenCalledWith('/auth/forgot-password', { email: 'jean@example.cm' });
       expect(result.message).toBe('Lien envoyé.');
     });
   });
 
   describe('resetPassword', () => {
     it('sends reset payload with token and new password', async () => {
-      mockedApi.post.mockResolvedValue({ data: { message: 'Mot de passe réinitialisé.' } });
+      mockPost.mockResolvedValue({ data: { message: 'Mot de passe réinitialisé.' } });
       const payload = {
         token: 'reset-token-abc',
         email: 'jean@example.cm',
@@ -275,27 +278,27 @@ describe('authService', () => {
         password_confirmation: 'NewP@ss!2026',
       };
       const result = await authService.resetPassword(payload);
-      expect(mockedApi.post).toHaveBeenCalledWith('/auth/reset-password', payload);
+      expect(mockPost).toHaveBeenCalledWith('/auth/reset-password', payload);
       expect(result.message).toBe('Mot de passe réinitialisé.');
     });
   });
 
   describe('updatePassword', () => {
     it('sends current and new password', async () => {
-      mockedApi.post.mockResolvedValue({ data: { message: 'Mot de passe mis à jour.' } });
+      mockPost.mockResolvedValue({ data: { message: 'Mot de passe mis à jour.' } });
       const payload = {
         current_password: 'OldP@ss!',
         new_password: 'NewP@ss!2026',
         new_password_confirmation: 'NewP@ss!2026',
       };
       await authService.updatePassword(payload);
-      expect(mockedApi.post).toHaveBeenCalledWith('/auth/update-password', payload);
+      expect(mockPost).toHaveBeenCalledWith('/auth/update-password', payload);
     });
   });
 
   describe('resendVerification', () => {
     it('calls POST /auth/email/resend', async () => {
-      mockedApi.post.mockResolvedValue({ data: { message: 'Email renvoyé.' } });
+      mockPost.mockResolvedValue({ data: { message: 'Email renvoyé.' } });
       const result = await authService.resendVerification();
       expect(result.message).toBe('Email renvoyé.');
     });
@@ -305,25 +308,25 @@ describe('authService', () => {
     // BUG CATCH: The redirect_uri must be constructed from window.location.origin.
     // If hardcoded, it breaks when deploying to different domains.
     it('constructs redirect_uri from current origin and returns redirect URL', async () => {
-      mockedApi.get.mockResolvedValue({
+      mockGet.mockResolvedValue({
         data: { redirect_url: 'https://accounts.google.com/o/oauth2/auth?...' },
       });
 
       const url = await authService.getOAuthRedirectUrl('google');
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/auth/oauth/google/redirect', {
+      expect(mockGet).toHaveBeenCalledWith('/auth/oauth/google/redirect', {
         params: { redirect_uri: 'https://keyhome.app/auth/callback' },
       });
       expect(url).toBe('https://accounts.google.com/o/oauth2/auth?...');
     });
 
     it('works for facebook provider', async () => {
-      mockedApi.get.mockResolvedValue({
+      mockGet.mockResolvedValue({
         data: { redirect_url: 'https://facebook.com/dialog/oauth?...' },
       });
 
       await authService.getOAuthRedirectUrl('facebook');
-      expect(mockedApi.get).toHaveBeenCalledWith('/auth/oauth/facebook/redirect', expect.any(Object));
+      expect(mockGet).toHaveBeenCalledWith('/auth/oauth/facebook/redirect', expect.any(Object));
     });
   });
 });

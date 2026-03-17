@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { AxiosError } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +12,7 @@ import api from '@/lib/api';
 import { reviewsService } from '@/services/reviews.service';
 
 const mockedApi = vi.mocked(api);
+const mockPost = mockedApi.post as Mock;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -28,7 +30,7 @@ describe('reviewsService', () => {
         user: { id: 'user-1', name: 'Jean D.', avatar: null },
         created_at: '2026-02-28T12:00:00Z',
       };
-      mockedApi.post.mockResolvedValue({ data: reviewResponse });
+      mockPost.mockResolvedValue({ data: reviewResponse });
 
       const payload = {
         rating: 4,
@@ -38,14 +40,14 @@ describe('reviewsService', () => {
 
       const result = await reviewsService.create(payload);
 
-      expect(mockedApi.post).toHaveBeenCalledWith('/reviews', payload);
+      expect(mockPost).toHaveBeenCalledWith('/reviews', payload);
       expect(result.rating).toBe(4);
     });
 
     // BUG CATCH: Comments are optional. If the service breaks without
     // a comment, users can't submit rating-only reviews.
     it('allows review without comment (rating only)', async () => {
-      mockedApi.post.mockResolvedValue({
+      mockPost.mockResolvedValue({
         data: { id: 'review-456', rating: 5, comment: null },
       });
 
@@ -62,7 +64,7 @@ describe('reviewsService', () => {
     // BUG CATCH: If review creation fails (e.g., duplicate review,
     // unauthenticated), the error must propagate to show a toast.
     it('propagates validation errors', async () => {
-      mockedApi.post.mockRejectedValue(
+      mockPost.mockRejectedValue(
         new AxiosError('Unprocessable Entity', '422')
       );
       await expect(
@@ -71,7 +73,7 @@ describe('reviewsService', () => {
     });
 
     it('propagates authentication errors', async () => {
-      mockedApi.post.mockRejectedValue(
+      mockPost.mockRejectedValue(
         new AxiosError('Unauthenticated', '401')
       );
       await expect(
