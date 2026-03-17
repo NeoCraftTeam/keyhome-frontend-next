@@ -18,7 +18,7 @@ interface QueryErrorProps {
  */
 export default function QueryError({
   onRetry,
-  message = 'Une erreur est survenue lors du chargement.',
+  message = "Nous n'avons pas pu charger les données. Réessayez dans un instant.",
   compact = false,
 }: QueryErrorProps) {
   return (
@@ -36,7 +36,7 @@ export default function QueryError({
     >
       <ErrorIcon sx={{ fontSize: compact ? 48 : 64, color: 'error.main', mb: 2 }} />
       <Typography variant={compact ? 'subtitle1' : 'h6'} fontWeight={600} gutterBottom>
-        Quelque chose s&apos;est mal passé
+        Un petit souci de connexion
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 400 }}>
         {message}
