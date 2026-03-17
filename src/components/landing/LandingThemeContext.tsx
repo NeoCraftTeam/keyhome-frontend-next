@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
+import { useThemeMode } from '@/providers/ThemeProvider';
 
 export type LandingThemeTokens = {
   bg: string;
@@ -67,40 +68,14 @@ const LandingThemeContext = createContext<LandingThemeTokens>({
   toggle: () => {},
 });
 
-const STORAGE_KEY = 'theme';
-
 export function LandingThemeProvider({ children }: { children: ReactNode }) {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === 'dark') setIsDark(true);
-      else if (saved === 'light') setIsDark(false);
-    } catch {
-      // localStorage may be unavailable
-    }
-  }, []);
-
-  const toggle = () => {
-    setIsDark((d) => {
-      const next = !d;
-      const value = next ? 'dark' : 'light';
-      try {
-        localStorage.setItem(STORAGE_KEY, value);
-        window.dispatchEvent(new CustomEvent('theme-change', { detail: value }));
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  };
-
+  const { mode, toggleTheme } = useThemeMode();
+  const isDark = mode === 'dark';
   const tokens = isDark ? DARK : LIGHT;
 
   return (
     <LandingThemeContext.Provider
-      value={{ ...tokens, isDark, toggle }}
+      value={{ ...tokens, isDark, toggle: toggleTheme }}
     >
       {children}
     </LandingThemeContext.Provider>

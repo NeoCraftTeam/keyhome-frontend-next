@@ -150,6 +150,11 @@ export default function RootLayout({
     >
       <html lang="fr" suppressHydrationWarning>
         <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){var t=localStorage.getItem("theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.style.colorScheme=d?"dark":"light";})();`,
+            }}
+          />
           <link rel="preconnect" href="https://api.mapbox.com" />
           <link rel="preconnect" href="https://clerk.keyhome.app" />
           <link rel="dns-prefetch" href="https://api.mapbox.com" />
