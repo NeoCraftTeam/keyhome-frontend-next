@@ -1,15 +1,18 @@
 'use client';
 
+import BottomNav, { BOTTOM_NAV_HEIGHT } from '@/components/layout/BottomNav';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
 import { getSurveyPostponed } from '@/components/surveys/SurveyBanner';
 import AppLoader from '@/components/ui/AppLoader';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
+import PageTransition from '@/components/ui/PageTransition';
+import PushPrompt from '@/components/ui/PushPrompt';
 import WelcomeModal from '@/components/ui/WelcomeModal';
 import { useAuth } from '@/providers/AuthProvider';
 import { surveysService } from '@/services/surveys.service';
-import { Box } from '@mui/material';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -27,14 +30,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { isAuthenticated, isLoading, isLoggingOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [hasStoredToken] = useState(() => {
-    if (typeof window === 'undefined') return false;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  // Must start false to match server render — read from localStorage in useEffect to avoid hydration mismatch
+  const [hasStoredToken, setHasStoredToken] = useState(false);
+  useEffect(() => {
     try {
-      return !!window.localStorage.getItem('kh_sanctum_token');
+      setHasStoredToken(!!window.localStorage.getItem('kh_sanctum_token'));
     } catch {
-      return false;
+      setHasStoredToken(false);
     }
-  });
+  }, []);
   const [surveyPostponed, setSurveyPostponed] = useState<Record<string, boolean>>({});
   const [surveyMounted, setSurveyMounted] = useState(false);
 
@@ -111,10 +117,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Navbar />
-      <Box component="main" sx={{ flex: 1 }}>
-        {children}
+      <Box component="main" sx={{ flex: 1, pb: isMobile ? `${BOTTOM_NAV_HEIGHT}px` : 0 }}>
+        <PageTransition>{children}</PageTransition>
       </Box>
-      <Footer />
+      {!isMobile && <Footer />}
+      <BottomNav />
       {surveyMounted && isAuthenticated && !isSurveyPage && !activeSurveyError && activeSurvey && surveyAnsweredData?.has_answered === false && (
         <SurveyPromptOrBanner
           surveyId={activeSurvey.id}
@@ -125,6 +132,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           isPostponed={surveyPostponed[activeSurvey.id] ?? getSurveyPostponed(activeSurvey.id)}
         />
       )}
+      <PushPrompt />
       <WelcomeModal />
       <LogoutOverlay />
     </Box>

@@ -12,6 +12,22 @@ const clerkFrontendApiUrl = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.start
   ? 'https://clerk.neocraft.dev'
   : 'https://*.clerk.accounts.dev';
 
+// In dev, allow both http and https for API/backend origins (e.g. keyhome.test may use either)
+function originsWithAlternateProtocol(origin: string): string[] {
+  if (!origin) return [];
+  try {
+    const url = new URL(origin);
+    const alt = url.protocol === 'https:' ? `http://${url.host}` : `https://${url.host}`;
+    return [origin, alt];
+  } catch {
+    return [origin];
+  }
+}
+
+const devOrigins = process.env.NODE_ENV === 'development'
+  ? [...originsWithAlternateProtocol(apiOrigin), ...originsWithAlternateProtocol(backendOrigin)]
+  : [];
+
 const connectSources = [
   "'self'",
   'https://api.mapbox.com',
@@ -34,7 +50,8 @@ const connectSources = [
   apiOrigin,
   // Laravel backend origin — tour image proxy URLs are generated from APP_URL (may differ from apiOrigin)
   backendOrigin,
-].filter(Boolean).join(' ');
+  ...devOrigins,
+].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' ');
 
 const isDev = process.env.NODE_ENV === 'development';
 
