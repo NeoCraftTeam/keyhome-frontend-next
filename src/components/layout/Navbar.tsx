@@ -10,8 +10,10 @@ import {
   Close as CloseIcon,
   DarkMode as DarkModeIcon,
   Explore as ExploreIcon,
+  Facebook as FacebookIcon,
   HelpOutline as HelpOutlineIcon,
   Home as HomeIcon,
+  Instagram as InstagramIcon,
   LightMode as LightModeIcon,
   Logout as LogoutIcon,
   Menu as MenuIcon,
@@ -19,6 +21,7 @@ import {
   Search as SearchIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
+import { X as XIcon } from '@mui/icons-material';
 import {
   AppBar,
   Avatar,
@@ -32,6 +35,7 @@ import {
   Divider,
   Drawer,
   IconButton,
+  Link,
   List,
   ListItem,
   ListItemButton,
@@ -101,18 +105,9 @@ export default function Navbar() {
             alignItems: 'center',
           }}
         >
-          {/* LEFT — hamburger (mobile) / nav links (desktop) */}
+          {/* LEFT — nav links (desktop only, mobile uses BottomNav) */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            {isMobile ? (
-              <IconButton
-                aria-label="Ouvrir le menu"
-                onClick={() => setMobileOpen(true)}
-                size="medium"
-                sx={{ ml: 0.5 }}
-              >
-                <MenuIcon />
-              </IconButton>
-            ) : (
+            {!isMobile &&
               NAV_LINKS.map((link) => {
                 const isActive =
                   pathname === link.href || pathname?.startsWith(link.href + '/');
@@ -149,8 +144,7 @@ export default function Navbar() {
                     {link.label}
                   </Button>
                 );
-              })
-            )}
+              })}
           </Box>
 
           {/* CENTER — Logo (absolutely centered in grid) */}
@@ -216,7 +210,24 @@ export default function Navbar() {
                 )}
                 <CreditsWidget />
 
-                {/* Avatar menu — desktop only; mobile uses the drawer */}
+                {/* Mobile: avatar opens the drawer for account actions */}
+                {isMobile && (
+                  <IconButton
+                    aria-label="Menu compte"
+                    onClick={() => setMobileOpen(true)}
+                    size="small"
+                    sx={{ ml: 0.5 }}
+                  >
+                    <Avatar
+                      src={user?.avatar || undefined}
+                      sx={{ width: 30, height: 30, bgcolor: 'text.secondary' }}
+                    >
+                      {user?.firstname?.[0] || 'U'}
+                    </Avatar>
+                  </IconButton>
+                )}
+
+                {/* Avatar menu — desktop only */}
                 {!isMobile && (
                   <>
                     <Box
@@ -398,7 +409,7 @@ export default function Navbar() {
         anchor="left"
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        PaperProps={{ sx: { width: { xs: '85vw', sm: 300 }, maxWidth: 320 } }}
+        PaperProps={{ sx: { width: { xs: '85vw', sm: 300 }, maxWidth: 320, display: 'flex', flexDirection: 'column' } }}
       >
         <Box
           sx={{
@@ -446,28 +457,6 @@ export default function Navbar() {
           </>
         )}
         <List sx={{ px: 1 }}>
-          <Typography variant="overline" color="text.secondary" sx={{ px: 2, mb: 1, display: 'block', fontWeight: 700, letterSpacing: 1.2 }}>
-            Navigation
-          </Typography>
-          {NAV_LINKS.map((link) => (
-            <ListItem key={link.href} disablePadding>
-              <ListItemButton
-                onClick={() => {
-                  setMobileOpen(false);
-                  router.push(link.href);
-                }}
-                sx={{
-                  borderRadius: 2,
-                  mx: 1,
-                  '&:hover': { bgcolor: 'action.hover' },
-                }}
-              >
-                <ListItemIcon>{link.icon}</ListItemIcon>
-                <ListItemText primary={link.label} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-
           {/* Devenir hôte — mobile drawer */}
           <ListItem disablePadding>
             <ListItemButton
@@ -493,28 +482,6 @@ export default function Navbar() {
             </ListItemButton>
           </ListItem>
           <Divider sx={{ my: 1.5, mx: 2 }} />
-
-          {/* Theme toggle — mobile drawer (guests only) */}
-          {!isAuthenticated && (
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={toggleTheme}
-                sx={{ borderRadius: 2, mx: 1 }}
-              >
-                <ListItemIcon>
-                  {mode === 'dark' ? (
-                    <LightModeIcon />
-                  ) : (
-                    <DarkModeIcon />
-                  )}
-                </ListItemIcon>
-                <ListItemText
-                  primary={mode === 'dark' ? 'Mode clair' : 'Mode sombre'}
-                  primaryTypographyProps={{ fontWeight: 600 }}
-                />
-              </ListItemButton>
-            </ListItem>
-          )}
 
           <Typography variant="overline" color="text.secondary" sx={{ px: 2, mb: 1, display: 'block', fontWeight: 700, letterSpacing: 1.2 }}>
             Compte
@@ -602,6 +569,48 @@ export default function Navbar() {
             </ListItem>
           )}
         </List>
+
+        {/* Drawer footer */}
+        <Box sx={{ mt: 'auto', borderTop: '1px solid', borderColor: 'divider', px: 2, py: 2, textAlign: 'center' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 1 }}>
+            {[
+              { icon: <FacebookIcon sx={{ fontSize: 16 }} />, href: 'https://www.facebook.com/keyhomeapp', label: 'Facebook' },
+              { icon: <XIcon sx={{ fontSize: 16 }} />, href: 'https://twitter.com/keyhome_app', label: 'X' },
+              { icon: <InstagramIcon sx={{ fontSize: 16 }} />, href: 'https://www.instagram.com/keyhome_app', label: 'Instagram' },
+            ].map((social) => (
+              <Link
+                key={social.label}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={social.label}
+                underline="none"
+                sx={{
+                  color: 'text.disabled',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  transition: 'color 0.2s',
+                  '&:hover': { color: 'text.secondary' },
+                }}
+              >
+                {social.icon}
+              </Link>
+            ))}
+          </Box>
+          <Link
+            href="https://www.neocraft.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            underline="none"
+            sx={{ color: 'text.disabled', fontSize: '0.7rem', '&:hover': { color: 'text.secondary' } }}
+          >
+            Powered by <strong>NeoCraftTeam</strong>
+          </Link>
+        </Box>
       </Drawer>
       {/* Logout confirmation dialog */}
       <Dialog
