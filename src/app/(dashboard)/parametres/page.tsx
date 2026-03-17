@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/providers/AuthProvider';
-import { useThemeMode } from '@/providers/ThemeProvider';
+import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
 import { surveysService } from '@/services/surveys.service';
 import { Survey } from '@/types';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
@@ -146,7 +146,7 @@ function SettingsRow({
 }
 
 export default function ParametresPage() {
-  const { mode, toggleTheme } = useThemeMode();
+  const { choice, setThemeChoice } = useThemeMode();
   const { user, logout, isAuthenticated } = useAuth();
   const router = useRouter();
   const { user: clerkUser } = useClerk();
@@ -225,7 +225,7 @@ export default function ParametresPage() {
     { value: 'dark', label: 'Sombre', icon: <DarkModeIcon sx={{ fontSize: 20 }} /> },
     { value: 'system', label: 'Auto', icon: <SystemIcon sx={{ fontSize: 20 }} /> },
   ];
-  const currentTheme: ThemeChoice = mode === 'dark' ? 'dark' : 'light';
+  const currentTheme: ThemeChoice = choice;
 
   return (
     <Container maxWidth="sm" sx={{ py: { xs: 2, md: 5 }, px: { xs: 2, md: 3 } }}>
@@ -291,13 +291,12 @@ export default function ParametresPage() {
           <Box sx={{ p: 2 }}>
             <Box sx={{ display: 'flex', gap: { xs: 1.5, sm: 1 }, flexWrap: 'wrap' }}>
               {themeOptions.map((opt) => {
-                const isActive = opt.value === 'system' ? false : opt.value === currentTheme;
+                const isActive = opt.value === currentTheme;
                 return (
                   <Box
                     key={opt.value}
                     onClick={() => {
-                      if (opt.value === 'system') return;
-                      if (opt.value !== currentTheme) toggleTheme();
+                      if (opt.value !== currentTheme) setThemeChoice(opt.value);
                     }}
                     sx={{
                       flex: 1,
@@ -312,8 +311,7 @@ export default function ParametresPage() {
                       bgcolor: isActive
                         ? 'rgba(246,71,95,0.06)'
                         : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-                      cursor: opt.value === 'system' ? 'default' : 'pointer',
-                      opacity: opt.value === 'system' ? 0.4 : 1,
+                      cursor: 'pointer',
                       transition: 'all 0.15s ease',
                     }}
                   >

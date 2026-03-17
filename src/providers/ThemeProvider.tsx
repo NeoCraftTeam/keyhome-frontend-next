@@ -11,50 +11,79 @@ import {
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
 import { lightTheme, darkTheme } from '@/theme/theme';
 
-type ThemeMode = 'light' | 'dark';
+export type ThemeChoice = 'light' | 'dark' | 'system';
+type ResolvedMode = 'light' | 'dark';
+
+function getSystemPrefersDark(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
 
 interface ThemeContextType {
-  mode: ThemeMode;
+  mode: ResolvedMode;
+  choice: ThemeChoice;
   toggleTheme: () => void;
+  setThemeChoice: (choice: ThemeChoice) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<ThemeMode>('light');
+  const [choice, setChoiceState] = useState<ThemeChoice>('system');
+  const [systemDark, setSystemDark] = useState(false);
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('theme') as ThemeMode | null;
-      if (saved === 'dark' || saved === 'light') {
-        setMode(saved);
+      const saved = localStorage.getItem('theme') as ThemeChoice | null;
+      if (saved === 'dark' || saved === 'light' || saved === 'system') {
+        setChoiceState(saved);
       }
     } catch {
       // localStorage may be unavailable
     }
-    const handleThemeChange = (e: CustomEvent<ThemeMode>) => {
-      if (e.detail === 'dark' || e.detail === 'light') setMode(e.detail);
+  }, []);
+
+  useEffect(() => {
+    setSystemDark(getSystemPrefersDark());
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = () => setSystemDark(getSystemPrefersDark());
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  useEffect(() => {
+    const handleThemeChange = (e: CustomEvent<ThemeChoice>) => {
+      if (e.detail === 'dark' || e.detail === 'light' || e.detail === 'system') {
+        setChoiceState(e.detail);
+      }
     };
     window.addEventListener('theme-change' as never, handleThemeChange as EventListener);
     return () => window.removeEventListener('theme-change' as never, handleThemeChange as EventListener);
   }, []);
 
-  const toggleTheme = useCallback(() => {
-    setMode((prev) => {
-      const next = prev === 'light' ? 'dark' : 'light';
-      try {
-        localStorage.setItem('theme', next);
-        window.dispatchEvent(new CustomEvent('theme-change', { detail: next }));
-      } catch {
-        // ignore
-      }
-      return next;
-    });
+  const setThemeChoice = useCallback((newChoice: ThemeChoice) => {
+    setChoiceState(newChoice);
+    try {
+      localStorage.setItem('theme', newChoice);
+      window.dispatchEvent(new CustomEvent('theme-change', { detail: newChoice }));
+    } catch {
+      // ignore
+    }
   }, []);
 
-  const theme = mode === 'light' ? lightTheme : darkTheme;
+  const resolvedMode: ResolvedMode =
+    choice === 'system' ? (systemDark ? 'dark' : 'light') : choice;
 
-  const value = useMemo(() => ({ mode, toggleTheme }), [mode, toggleTheme]);
+  const toggleTheme = useCallback(() => {
+    const next: ThemeChoice = resolvedMode === 'light' ? 'dark' : 'light';
+    setThemeChoice(next);
+  }, [resolvedMode, setThemeChoice]);
+  const theme = resolvedMode === 'light' ? lightTheme : darkTheme;
+
+  const value = useMemo(
+    () => ({ mode: resolvedMode, choice, toggleTheme, setThemeChoice }),
+    [resolvedMode, choice, toggleTheme, setThemeChoice],
+  );
 
   return (
     <ThemeContext.Provider value={value}>

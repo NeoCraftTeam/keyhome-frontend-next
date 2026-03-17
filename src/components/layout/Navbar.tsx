@@ -1,55 +1,55 @@
 'use client';
 
 import CreditsWidget from '@/components/layout/CreditsWidget';
+import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
 import { useAuth } from '@/providers/AuthProvider';
 import { useComparator } from '@/providers/ComparatorProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
-import { useIsStandalone } from '@/hooks/useIsStandalone';
 import {
-  AddCircleOutline as AddCircleOutlineIcon,
-  BarChart as BarChartIcon,
-  CalendarMonth as CalendarMonthIcon,
-  CompareArrows as CompareArrowsIcon,
-  Close as CloseIcon,
-  DarkMode as DarkModeIcon,
-  Explore as ExploreIcon,
-  Facebook as FacebookIcon,
-  HelpOutline as HelpOutlineIcon,
-  Instagram as InstagramIcon,
-  LightMode as LightModeIcon,
-  Logout as LogoutIcon,
-  Menu as MenuIcon,
-  Person as PersonIcon,
-  Search as SearchIcon,
-  Settings as SettingsIcon,
+    AddCircleOutline as AddCircleOutlineIcon,
+    BarChart as BarChartIcon,
+    CalendarMonth as CalendarMonthIcon,
+    Close as CloseIcon,
+    CompareArrows as CompareArrowsIcon,
+    DarkMode as DarkModeIcon,
+    Explore as ExploreIcon,
+    Facebook as FacebookIcon,
+    HelpOutline as HelpOutlineIcon,
+    Instagram as InstagramIcon,
+    LightMode as LightModeIcon,
+    Logout as LogoutIcon,
+    Menu as MenuIcon,
+    Person as PersonIcon,
+    Search as SearchIcon,
+    Settings as SettingsIcon,
+    X as XIcon,
 } from '@mui/icons-material';
-import { X as XIcon } from '@mui/icons-material';
 import {
-  AppBar,
-  Avatar,
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Divider,
-  Drawer,
-  IconButton,
-  Link,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-  Toolbar,
-  Typography,
-  useMediaQuery,
-  useTheme,
+    AppBar,
+    Avatar,
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Divider,
+    Drawer,
+    IconButton,
+    Link,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
+    Menu,
+    MenuItem,
+    Toolbar,
+    Typography,
+    useMediaQuery,
+    useTheme,
 } from '@mui/material';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -63,7 +63,7 @@ const NAV_LINKS = [
   { label: 'Aide', href: '/aide', icon: <HelpOutlineIcon /> },
 ];
 
-export default function Navbar() {  
+export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
   const { items: comparatorItems } = useComparator();
   const { mode, toggleTheme } = useThemeMode();
