@@ -4,7 +4,9 @@ import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import SearchAlertButton from '@/components/ads/SearchAlertButton';
 import AppLoader from '@/components/ui/AppLoader';
+import { useAuth } from '@/providers/AuthProvider';
 
+import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
 import { escapeHtml } from '@/lib/sanitize';
 import { adsService } from '@/services/ads.service';
@@ -45,6 +47,7 @@ import {
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -80,6 +83,8 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const theme = useTheme();
+  const { slotProps: citySlotProps, renderOption: renderCityOption, renderOptionFreeSolo, inputSx: cityInputSx } = useCityAutocompleteConfig();
+  const { isAuthenticated } = useAuth();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -131,6 +136,12 @@ function SearchContent() {
 
     if (searchParams.get('parking') === '1') {
       setHasParking(true);
+    }
+
+    const urlSurfaceMin = searchParams.get('surface_min');
+    if (urlSurfaceMin) {
+      const min = Number(urlSurfaceMin);
+      setSurfaceRange((prev) => [min, prev[1]]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -282,7 +293,7 @@ function SearchContent() {
         </a>`
       );
 
-      const marker = new mapboxgl.Marker({ color: '#F6475F' })
+      const marker = new mapboxgl.Marker({ color: theme.palette.primary.main })
         .setPopup(popup)
         .setLngLat([ad.location.longitude, ad.location.latitude])
         .addTo(mapRef.current!);
@@ -350,11 +361,14 @@ function SearchContent() {
         filterOptions={(x) => x}
         loading={isCitiesLoading}
         noOptionsText={cityInput.length < 1 ? 'Tapez pour rechercher…' : 'Aucune ville trouvée'}
+        slotProps={citySlotProps}
+        renderOption={(props, option) => renderCityOption(props, option)}
         renderInput={(params) => (
           <TextField
             {...params}
             label="Ville"
             placeholder="Rechercher une ville…"
+            sx={{ ...cityInputSx, mb: 2 }}
             InputProps={{
               ...params.InputProps,
               endAdornment: (
@@ -364,7 +378,6 @@ function SearchContent() {
                 </>
               ),
             }}
-            sx={{ mb: 2 }}
           />
         )}
       />
@@ -433,7 +446,7 @@ function SearchContent() {
           fullWidth
           variant="contained"
           onClick={() => setMoreFiltersOpen(false)}
-          sx={{ background: 'linear-gradient(to right, #F6475F, #D93A50)' }}
+          sx={{ background: (t) => t.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)' }}
         >
           Voir {total} résultats
         </Button>
@@ -523,7 +536,7 @@ function SearchContent() {
               borderRadius: 99,
               fontWeight: 700,
               px: 4,
-              background: 'linear-gradient(to right, #F6475F, #D93A50)',
+              background: (t) => t.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
             }}
           >
             Réessayer
@@ -542,6 +555,40 @@ function SearchContent() {
             Créez une <strong>alerte</strong> et soyez notifié dès qu&apos;un bien est publié, ou élargissez votre recherche.
           </Typography>
           <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {isAuthenticated ? (
+              <SearchAlertButton
+                prefill={{ city_name: selectedCity?.name }}
+                variant="button"
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 99,
+                  fontWeight: 700,
+                  px: 3,
+                  background: (t) => t.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
+                  color: 'white',
+                  border: 'none',
+                  '&:hover': {
+                    background: (t) => t.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)',
+                    border: 'none',
+                  },
+                }}
+              />
+            ) : (
+              <Button
+                variant="contained"
+                onClick={() => router.push(`/login?redirect=${encodeURIComponent(searchParams.toString() ? `/search?${searchParams.toString()}` : '/search')}`)}
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 99,
+                  fontWeight: 700,
+                  px: 3,
+                  background: (t) => t.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
+                  '&:hover': { background: (t) => t.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
+                }}
+              >
+                Se connecter pour créer une alerte
+              </Button>
+            )}
             <Button
               variant="contained"
               onClick={clearFilters}
@@ -550,7 +597,8 @@ function SearchContent() {
                 borderRadius: 99,
                 fontWeight: 700,
                 px: 3,
-                background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                background: (t) => t.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
+                '&:hover': { background: (t) => t.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
               }}
             >
               Voir toutes les annonces
@@ -577,9 +625,11 @@ function SearchContent() {
       ) : (
         <>
           <Grid container spacing={1.5} sx={{ '& .ad-card-title': { color: '#222 !important' } }}>
-            {ads.map((ad) => (
+            {ads.map((ad, idx) => (
               <Grid key={ad.id} size={{ xs: 6, lg: 6, xl: 4 }}>
-                <AdCard ad={ad} />
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(idx * 0.04, 0.4) }}>
+                  <AdCard ad={ad} />
+                </motion.div>
               </Grid>
             ))}
           </Grid>
@@ -735,20 +785,8 @@ function SearchContent() {
           loading={isCitiesLoading}
           noOptionsText={cityInput.length < 1 ? 'Tapez pour rechercher…' : 'Aucune ville trouvée'}
           loadingText="Recherche…"
-          slotProps={{
-            paper: { sx: { borderRadius: 3, mt: 0.5, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' } },
-            listbox: { sx: { py: 0.5 } },
-          }}
-          renderOption={(props, option) => (
-            <li {...props} key={typeof option === 'string' ? option : option.id}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.25 }}>
-                <SearchIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                <Typography sx={{ fontSize: '0.875rem' }}>
-                  {typeof option === 'string' ? option : option.name}
-                </Typography>
-              </Box>
-            </li>
-          )}
+          slotProps={citySlotProps}
+          renderOption={(props, option) => renderOptionFreeSolo(props, option)}
           renderInput={(params) => (
             <TextField
               {...params}
@@ -792,7 +830,7 @@ function SearchContent() {
                 minWidth: { xs: 0, sm: 220, md: 280 },
                 flex: { xs: 1, md: '0 0 auto' },
                 '& .MuiOutlinedInput-root': {
-                  borderRadius: '999px',
+                  borderRadius: 0,
                   py: '2px',
                   pr: '8px !important',
                   fontSize: '0.875rem',
@@ -802,7 +840,7 @@ function SearchContent() {
                   '&:hover fieldset': { borderColor: 'text.secondary' },
                   '&.Mui-focused fieldset': {
                     borderColor: 'primary.main',
-                    boxShadow: '0 0 0 3px rgba(246,71,95,0.12)',
+                    boxShadow: 'none',
                   },
                 },
               }}
@@ -960,7 +998,7 @@ function SearchContent() {
         onClose={() => setMoreFiltersOpen(false)}
         PaperProps={{
           sx: isMobile
-            ? { borderRadius: '16px 16px 0 0', maxHeight: '85vh' }
+            ? { borderRadius: '16px 16px 0 0', maxHeight: 'min(85vh, 600px)' }
             : { width: 380 },
         }}
       >

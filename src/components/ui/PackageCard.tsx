@@ -2,7 +2,7 @@
 
 import type { PointPackage } from '@/types';
 import { CheckCircleRounded, LocalFireDepartment, Toll, WorkspacePremium } from '@mui/icons-material';
-import { Box, Button, Chip, CircularProgress, Typography } from '@mui/material';
+import { Box, Button, Chip, CircularProgress, Typography, useTheme } from '@mui/material';
 
 export default function PackageCard({
   pkg,
@@ -15,24 +15,30 @@ export default function PackageCard({
   onPurchase: (pkg: PointPackage) => void;
   wouldBeEnough?: boolean;
 }) {
+  const theme = useTheme();
   const isPopular = pkg.is_popular;
   const isPremium = !isPopular && !wouldBeEnough && (pkg.points_awarded ?? 0) >= 100;
+  const isDark = theme.palette.mode === 'dark';
 
   const gradient = wouldBeEnough
-    ? 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%)'
+    ? `linear-gradient(135deg, ${theme.palette.success.main} 0%, #1B5E20 100%)`
     : isPopular
-      ? 'linear-gradient(135deg, #F6475F 0%, #D93A50 60%, #A01030 100%)'
+      ? (theme.palette.gradient?.primary135 ?? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`)
       : isPremium
-        ? 'linear-gradient(135deg, #1A237E 0%, #283593 60%, #3949AB 100%)'
-        : 'linear-gradient(135deg, #1C1C1E 0%, #2C2C2E 100%)';
+        ? `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 60%, ${theme.palette.primary.dark} 100%)`
+        : isDark
+          ? `linear-gradient(135deg, ${theme.palette.grey[800]} 0%, ${theme.palette.grey[900]} 100%)`
+          : `linear-gradient(135deg, ${theme.palette.grey[500]} 0%, ${theme.palette.grey[600]} 100%)`;
 
   const glowColor = wouldBeEnough
-    ? 'rgba(46,125,50,0.35)'
+    ? `${theme.palette.success.main}40`
     : isPopular
-      ? 'rgba(246,71,95,0.35)'
+      ? `${theme.palette.primary.main}50`
       : isPremium
-        ? 'rgba(57,73,171,0.35)'
-        : 'rgba(0,0,0,0.18)';
+        ? `${theme.palette.primary.main}35`
+        : isDark
+          ? 'rgba(255,255,255,0.08)'
+          : 'rgba(0,0,0,0.12)';
 
   return (
     <Box
@@ -63,16 +69,16 @@ export default function PackageCard({
       <Box sx={{ px: 2, pt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           {wouldBeEnough ? (
-            <CheckCircleRounded sx={{ fontSize: 18, color: '#A5D6A7' }} />
+            <CheckCircleRounded sx={{ fontSize: 18, color: 'rgba(255,255,255,0.95)' }} />
           ) : isPopular ? (
-            <LocalFireDepartment sx={{ fontSize: 18, color: '#FFD700' }} />
+            <LocalFireDepartment sx={{ fontSize: 18, color: 'rgba(255,255,255,0.95)' }} />
           ) : isPremium ? (
-            <WorkspacePremium sx={{ fontSize: 18, color: '#9FA8DA' }} />
+            <WorkspacePremium sx={{ fontSize: 18, color: 'rgba(255,255,255,0.9)' }} />
           ) : (
             <Toll sx={{ fontSize: 18, color: 'rgba(255,255,255,0.7)' }} />
           )}
           <Typography variant="caption" fontWeight={800} sx={{
-            color: wouldBeEnough ? '#A5D6A7' : isPopular ? '#FFD700' : isPremium ? '#9FA8DA' : 'rgba(255,255,255,0.6)',
+            color: 'rgba(255,255,255,0.9)',
             textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.62rem',
           }}>
             {wouldBeEnough ? 'Suffisant' : pkg.badge ?? (isPopular ? 'Le + populaire' : isPremium ? 'Meilleur rapport' : 'Starter')}
@@ -114,7 +120,7 @@ export default function PackageCard({
               <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.75 }}>
                 <CheckCircleRounded sx={{
                   fontSize: 14, mt: 0.1, flexShrink: 0,
-                  color: wouldBeEnough ? '#A5D6A7' : isPopular ? '#FFD700' : 'rgba(255,255,255,0.55)',
+                  color: 'rgba(255,255,255,0.85)',
                 }} />
                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.75rem', lineHeight: 1.3 }}>
                   {feature}
@@ -148,9 +154,9 @@ export default function PackageCard({
             onClick={(e) => { e.stopPropagation(); onPurchase(pkg); }}
             sx={{
               borderRadius: 2.5, textTransform: 'none', fontWeight: 800, fontSize: '0.82rem',
-              px: 2.5, py: 0.75, bgcolor: 'rgba(255,255,255,0.18)', color: '#fff',
-              backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)', flexShrink: 0,
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.28)' },
+              px: 2.5, py: 0.75, bgcolor: 'rgba(255,255,255,0.22)', color: '#fff',
+              backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)', flexShrink: 0,
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.35)' },
               '&:disabled': { opacity: 0.5 },
             }}
           >

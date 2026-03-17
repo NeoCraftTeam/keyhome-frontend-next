@@ -22,21 +22,16 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<ThemeMode>('light');
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const applySaved = () => {
-      try {
-        const saved = localStorage.getItem('theme') as ThemeMode | null;
-        if (saved === 'dark' || saved === 'light') {
-          setMode(saved);
-        }
-      } catch {
-        // localStorage may be unavailable
+    try {
+      const saved = localStorage.getItem('theme') as ThemeMode | null;
+      if (saved === 'dark' || saved === 'light') {
+        setMode(saved);
       }
-    };
-    applySaved();
-    setMounted(true);
+    } catch {
+      // localStorage may be unavailable
+    }
     const handleThemeChange = (e: CustomEvent<ThemeMode>) => {
       if (e.detail === 'dark' || e.detail === 'light') setMode(e.detail);
     };
@@ -65,7 +60,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     <ThemeContext.Provider value={value}>
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
-        {mounted ? children : <div style={{ visibility: 'hidden' }}>{children}</div>}
+        <div
+          style={{
+            minHeight: '100vh',
+            backgroundColor: theme.palette.background.default,
+            color: theme.palette.text.primary,
+            transition: 'background-color 0.6s ease, color 0.6s ease',
+          }}
+        >
+          {children}
+        </div>
       </MuiThemeProvider>
     </ThemeContext.Provider>
   );

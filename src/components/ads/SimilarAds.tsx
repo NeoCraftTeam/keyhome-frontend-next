@@ -3,23 +3,29 @@
 import AdCard from '@/components/ads/AdCard';
 import { recommendationsService } from '@/services/users.service';
 import { Ad } from '@/types';
-import { Box, Grid, Skeleton, Typography } from '@mui/material';
+import { KeyboardArrowRight } from '@mui/icons-material';
+import { Box, Button, Grid, Skeleton, Typography } from '@mui/material';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 
 interface Props {
   currentAdId: string;
   /** Sidebar variant: vertical list for narrow column (e.g. xl sidebar) */
   variant?: 'default' | 'sidebar';
+  /** Hide the title (when parent renders it fixed) */
+  hideTitle?: boolean;
+  /** Hide context text (when parent renders it, e.g. sidebar) */
+  hideContext?: boolean;
 }
 
-export default function SimilarAds({ currentAdId, variant = 'default' }: Props) {
+export default function SimilarAds({ currentAdId, variant = 'default', hideTitle = false, hideContext = false }: Props) {
   const { data, isLoading } = useQuery({
     queryKey: ['similar-ads', currentAdId],
     queryFn: () => recommendationsService.list(),
     staleTime: 5 * 60 * 1000,
   });
 
-  const limit = variant === 'sidebar' ? 4 : 8;
+  const limit = variant === 'sidebar' ? 8 : 8;
   const ads: Ad[] = (data?.data ?? []).filter((ad: Ad) => ad.id !== currentAdId).slice(0, limit);
 
   if (!isLoading && ads.length === 0) { return null; }
@@ -28,15 +34,22 @@ export default function SimilarAds({ currentAdId, variant = 'default' }: Props) 
 
   return (
     <Box mt={isSidebar ? 0 : 6}>
-      <Typography variant="h5" fontWeight={700} mb={3} sx={{ fontSize: isSidebar ? '1rem' : undefined }}>
-        Annonces similaires
-      </Typography>
+      {!hideTitle && (
+        <Typography variant="h5" fontWeight={700} mb={1} sx={{ fontSize: isSidebar ? '1rem' : undefined }}>
+          Annonces similaires
+        </Typography>
+      )}
+      {!hideContext && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
+          D&apos;autres biens correspondant à votre recherche
+        </Typography>
+      )}
 
       {/* Sidebar: vertical list */}
       {isSidebar && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 2 }}>
           {isLoading
-            ? Array.from({ length: 4 }).map((_, i) => (
+            ? Array.from({ length: 8 }).map((_, i) => (
                 <Skeleton key={i} variant="rounded" height={120} sx={{ borderRadius: 2 }} />
               ))
             : ads.map((ad) => (
@@ -44,6 +57,21 @@ export default function SimilarAds({ currentAdId, variant = 'default' }: Props) 
                   <AdCard ad={ad} />
                 </Box>
               ))}
+          <Button
+            component={Link}
+            href="/search"
+            variant="text"
+            size="small"
+            endIcon={<KeyboardArrowRight />}
+            sx={{
+              mt: 1,
+              textTransform: 'none',
+              fontWeight: 600,
+              justifyContent: 'flex-start',
+            }}
+          >
+            Voir toutes les annonces similaires
+          </Button>
         </Box>
       )}
 
@@ -88,6 +116,17 @@ export default function SimilarAds({ currentAdId, variant = 'default' }: Props) 
               </Grid>
             ))}
       </Grid>
+      <Box sx={{ mt: 3, textAlign: 'center' }}>
+        <Button
+          component={Link}
+          href="/search"
+          variant="outlined"
+          endIcon={<KeyboardArrowRight />}
+          sx={{ textTransform: 'none', fontWeight: 600 }}
+        >
+          Voir toutes les annonces similaires
+        </Button>
+      </Box>
       </>
       )}
     </Box>

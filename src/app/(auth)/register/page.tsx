@@ -4,6 +4,7 @@ import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
+import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { registerTokenGetter } from '@/lib/auth-token';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
@@ -12,8 +13,8 @@ import { City } from '@/types';
 import {
   Business as BusinessIcon,
   Check as CheckIcon,
-  Close as CloseIcon,
   LocationCity as CityIcon,
+  Close as CloseIcon,
   Email as EmailIcon,
   Lock as LockIcon,
   Person as PersonIcon,
@@ -64,6 +65,7 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { slotProps: citySlotProps, renderOption: renderCityOption, inputSx: cityInputSx } = useCityAutocompleteConfig();
   const [step, setStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -451,11 +453,14 @@ export default function RegisterPage() {
                   filterOptions={(x) => x}
                   loading={isCitiesLoading}
                   noOptionsText="Aucune ville trouvée"
+                  slotProps={citySlotProps}
+                  renderOption={(props, option) => renderCityOption(props, option)}
                   renderInput={(params) => (
                     <TextField
                       {...params}
                       label="Ville"
                       placeholder="Rechercher une ville..."
+                      sx={cityInputSx}
                       InputProps={{
                         ...params.InputProps,
                         startAdornment: (

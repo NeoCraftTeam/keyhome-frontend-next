@@ -43,6 +43,12 @@ const CRITERION_TIPS: Record<string, string> = {
   'Fraîcheur': 'Les annonces récentes sont mieux référencées.',
 };
 
+const POSITIVE_LABELS: Record<string, string> = {
+  'Prix': 'Bon rapport qualité/prix',
+  'Localisation': 'Localisation bien définie',
+  'Équipements': 'Équipements bien détaillés',
+};
+
 export default function KeyScoreSection({ adId }: Props) {
   const { data, isLoading } = useQuery({
     queryKey: ['keyscore', adId],
@@ -121,12 +127,15 @@ export default function KeyScoreSection({ adId }: Props) {
 
       <Divider sx={{ mb: 2.5 }} />
 
-      {/* Criteria */}
+      {/* Criteria — sort by score descending to highlight strengths first */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {Object.values(data.breakdown).map((item) => {
+        {Object.values(data.breakdown)
+          .sort((a, b) => (b.score / b.max) - (a.score / a.max))
+          .map((item) => {
           const pct = Math.round((item.score / item.max) * 100);
           const itemColor = SCORE_COLOR(pct);
           const tip = CRITERION_TIPS[item.label];
+          const displayValue = pct >= 70 && POSITIVE_LABELS[item.label] ? POSITIVE_LABELS[item.label] : item.value;
 
           return (
             <Box key={item.label}>
@@ -143,7 +152,7 @@ export default function KeyScoreSection({ adId }: Props) {
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography variant="caption" color="text.secondary">
-                    {item.value}
+                    {displayValue}
                   </Typography>
                   <Typography
                     variant="caption"

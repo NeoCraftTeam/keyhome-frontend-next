@@ -7,11 +7,14 @@ import { useState } from 'react';
 
 const STORAGE_KEY = (surveyId: string) => `survey_postponed_${surveyId}`;
 
-export function getSurveyPostponed(surveyId: string): boolean {
+/** Check if survey was postponed — uses backend preferences when user is authenticated. */
+export function getSurveyPostponed(surveyId: string, user?: { preferences?: { survey_postponed_ids?: string[] } } | null): boolean {
+  if (user?.preferences?.survey_postponed_ids?.includes(surveyId)) return true;
   if (typeof window === 'undefined') return false;
   return localStorage.getItem(STORAGE_KEY(surveyId)) === 'true';
 }
 
+/** @deprecated Use API via onPostponed callback when authenticated. Kept for guest fallback. */
 export function setSurveyPostponed(surveyId: string): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEY(surveyId), 'true');

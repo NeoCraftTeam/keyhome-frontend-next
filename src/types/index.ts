@@ -136,6 +136,8 @@ export interface User {
   city_name: string | null;
   point_balance?: number;
   onboarding_completed_at?: string | null;
+  last_home_visit_at?: string | null;
+  preferences?: { survey_postponed_ids?: string[] };
 }
 
 export interface City {
@@ -239,6 +241,9 @@ export interface Ad {
   total_images?: number;
   is_favorited?: boolean;
   view_count?: number;
+  views_count_today?: number;
+  views_count_week?: number;
+  is_verified?: boolean;
   rating?: number | null;
   reviews_count?: number;
   expires_at: string | null;

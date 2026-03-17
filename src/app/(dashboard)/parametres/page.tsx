@@ -40,7 +40,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-const BRAND = '#F6475F';
 
 type ThemeChoice = 'light' | 'dark' | 'system';
 
@@ -106,8 +105,9 @@ function SettingsRow({
         px: 2,
         py: 1.5,
         cursor: onClick ? 'pointer' : 'default',
-        transition: 'background 0.12s',
+        transition: 'background 0.12s, transform 0.1s',
         '&:hover': onClick ? { bgcolor: 'action.hover' } : {},
+        '&:active': onClick ? { transform: 'scale(0.99)' } : {},
         '&:not(:last-child)': {
           borderBottom: '1px solid',
           borderColor: 'divider',
@@ -119,7 +119,7 @@ function SettingsRow({
           width: 34,
           height: 34,
           bgcolor: danger ? 'rgba(211,47,47,0.08)' : (iconBg ?? 'rgba(246,71,95,0.08)'),
-          color: danger ? 'error.main' : BRAND,
+          color: danger ? 'error.main' : 'primary.main',
           fontSize: 18,
         }}
       >
@@ -266,7 +266,7 @@ export default function ParametresPage() {
             >
               <Avatar
                 src={user.avatar || undefined}
-                sx={{ width: 48, height: 48, bgcolor: BRAND, fontSize: 18, fontWeight: 700 }}
+                sx={{ width: 48, height: 48, bgcolor: 'primary.main', fontSize: 18, fontWeight: 700 }}
               >
                 {user.firstname?.[0]}
               </Avatar>
@@ -289,7 +289,7 @@ export default function ParametresPage() {
         <SectionTitle>Apparence</SectionTitle>
         <SettingsCard>
           <Box sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', gap: { xs: 1.5, sm: 1 }, flexWrap: 'wrap' }}>
               {themeOptions.map((opt) => {
                 const isActive = opt.value === 'system' ? false : opt.value === currentTheme;
                 return (
@@ -305,10 +305,10 @@ export default function ParametresPage() {
                       flexDirection: 'column',
                       alignItems: 'center',
                       gap: 0.75,
-                      py: 2,
+                      py: { xs: 2.5, sm: 2 },
                       borderRadius: 2.5,
                       border: '2px solid',
-                      borderColor: isActive ? BRAND : 'transparent',
+                      borderColor: isActive ? 'primary.main' : 'transparent',
                       bgcolor: isActive
                         ? 'rgba(246,71,95,0.06)'
                         : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
@@ -317,8 +317,8 @@ export default function ParametresPage() {
                       transition: 'all 0.15s ease',
                     }}
                   >
-                    <Box sx={{ color: isActive ? BRAND : 'text.secondary', lineHeight: 1 }}>{opt.icon}</Box>
-                    <Typography variant="caption" fontWeight={isActive ? 700 : 500} color={isActive ? BRAND : 'text.secondary'}>
+                    <Box sx={{ color: isActive ? 'primary.main' : 'text.secondary', lineHeight: 1 }}>{opt.icon}</Box>
+                    <Typography variant="caption" fontWeight={isActive ? 700 : 500} color={isActive ? 'primary.main' : 'text.secondary'}>
                       {opt.label}
                     </Typography>
                   </Box>
@@ -372,7 +372,7 @@ export default function ParametresPage() {
                           fontWeight: 600,
                           fontSize: '0.75rem',
                           minWidth: 0,
-                          color: BRAND,
+                          color: 'primary.main',
                         }}
                       >
                         {loading ? '...' : 'Lier'}
@@ -400,8 +400,8 @@ export default function ParametresPage() {
                 disabled
                 size="small"
                 sx={{
-                  '& .MuiSwitch-thumb': { bgcolor: BRAND },
-                  '& .Mui-checked + .MuiSwitch-track': { bgcolor: `${BRAND} !important`, opacity: '0.5 !important' },
+                  '& .MuiSwitch-thumb': { bgcolor: 'primary.main' },
+                  '& .Mui-checked + .MuiSwitch-track': { bgcolor: 'primary.main !important', opacity: '0.5 !important' },
                 }}
               />
             }
@@ -421,8 +421,8 @@ export default function ParametresPage() {
                   if (enabled) { play('success'); }
                 }}
                 sx={{
-                  '& .MuiSwitch-thumb': { bgcolor: soundEnabled ? BRAND : undefined },
-                  '& .Mui-checked + .MuiSwitch-track': { bgcolor: `${BRAND} !important`, opacity: '0.5 !important' },
+                  '& .MuiSwitch-thumb': { bgcolor: soundEnabled ? 'primary.main' : undefined },
+                  '& .Mui-checked + .MuiSwitch-track': { bgcolor: 'primary.main !important', opacity: '0.5 !important' },
                 }}
               />
             }

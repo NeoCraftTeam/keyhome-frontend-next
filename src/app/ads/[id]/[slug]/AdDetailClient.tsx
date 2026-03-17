@@ -15,11 +15,12 @@ import ViewingBookingPanel from '@/components/viewing/ViewingBookingPanel';
 import QueryError from '@/components/ui/QueryError';
 import FadeIn from '@/components/ui/FadeIn';
 import AdReportModal from '@/components/ads/AdReportModal';
+import CompareDrawer from '@/components/ads/CompareDrawer';
 import SimilarAds from '@/components/ads/SimilarAds';
 import KeyScoreBadge from '@/components/ads/KeyScoreBadge';
 import KeyScoreSection from '@/components/ads/KeyScoreSection';
-import { useComparator } from '@/providers/ComparatorProvider';
-import { formatPrice, formatRelativeDate } from '@/lib/constants';
+import { COMPARATOR_MAX_ITEMS, useComparator } from '@/providers/ComparatorProvider';
+import { formatDate, formatPrice, formatRelativeDate } from '@/lib/constants';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { useAuth } from '@/providers/AuthProvider';
@@ -36,6 +37,7 @@ import {
   CalendarMonth,
   Call,
   ChevronLeft,
+  CompareArrows,
   ContentCopy,
   Description,
   Email,
@@ -47,10 +49,12 @@ import {
   Lock,
   Phone,
   ReceiptLong,
+  Schedule,
   Share,
   SquareFootOutlined,
   Star,
   Verified,
+  Visibility,
   ViewInAr,
   WhatsApp,
 } from '@mui/icons-material';
@@ -97,6 +101,7 @@ function AdDetailContent() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showTour, setShowTour] = useState(false);
   const { add: addToComparator, remove: removeFromComparator, isSelected: isInComparator } = useComparator();
+  const [compareDrawerOpen, setCompareDrawerOpen] = useState(false);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [isPackageLoading, setIsPackageLoading] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState('');
@@ -255,6 +260,7 @@ function AdDetailContent() {
           const pointsUsed = response.points_used ?? 0;
           queryClient.setQueryData<number>(['credits-balance'], (old) => Math.max(0, (old ?? 0) - pointsUsed));
         }
+        queryClient.invalidateQueries({ queryKey: ['unlocked-ads'] });
         setPaymentDialogOpen(false);
         setSnackbar('Annonce déverrouillée avec succès !');
       }
@@ -343,7 +349,7 @@ function AdDetailContent() {
               sizes="100vw"
               style={{
                 objectFit: 'cover',
-                filter: isLocked ? 'blur(4px) brightness(0.92)' : 'none',
+                filter: isLocked ? 'blur(12px) brightness(0.85)' : 'none',
               }}
             />
           )}
@@ -454,7 +460,7 @@ function AdDetailContent() {
           </IconButton>
         </Box>
 
-        <Container maxWidth="xl" sx={{ pt: { xs: 0, md: 3 }, pb: { xs: 14, md: 3 }, overflow: { xs: 'visible', md: 'hidden' }, overflowX: 'hidden', px: { xs: 2.5, sm: 3, md: 4 } }}>
+        <Container maxWidth="xl" sx={{ pt: { xs: 0, md: 3 }, pb: { xs: 14, md: 3 }, overflow: { xs: 'visible', md: 'hidden', xl: 'visible' }, overflowX: 'hidden', px: { xs: 2.5, sm: 3, md: 4 } }}>
           {/* Breadcrumbs — desktop only (mobile uses floating back button above) */}
           <Box sx={{ display: { xs: 'none', md: 'block' } }}>
             <PageBreadcrumbs
@@ -495,7 +501,7 @@ function AdDetailContent() {
                 sizes="100vw"
                 style={{
                   objectFit: 'cover',
-                  filter: 'blur(1px) brightness(0.92)',
+                  filter: 'blur(12px) brightness(0.85)',
                   borderRadius: 'inherit',
                 }}
               />
@@ -727,16 +733,31 @@ function AdDetailContent() {
             <Button
               variant="outlined"
               size="small"
-              startIcon={checkFav(ad.id) ? <Favorite sx={{ color: '#F6475F' }} /> : <FavoriteBorder />}
-              onClick={() => { playSound(checkFav(ad.id) ? 'unfavorite' : 'favorite'); toggleFav(ad); }}
-              sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: checkFav(ad.id) ? '#F6475F' : 'text.primary' }}
+              startIcon={checkFav(ad.id) ? <Favorite sx={{ color: 'primary.main' }} /> : <FavoriteBorder />}
+              onClick={() => {
+                const wasFav = checkFav(ad.id);
+                playSound(wasFav ? 'unfavorite' : 'favorite');
+                toggleFav(ad);
+                if (!wasFav) { setSnackbar('Annonce sauvegardée. Vous la retrouverez dans vos favoris.'); }
+              }}
+              sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: checkFav(ad.id) ? 'primary.main' : 'text.primary' }}
             >
               {checkFav(ad.id) ? 'Sauvegardé' : 'Sauvegarder'}
             </Button>
             <Button
               variant="outlined"
               size="small"
-              onClick={() => isInComparator(ad.id) ? removeFromComparator(ad.id) : addToComparator(ad)}
+              startIcon={<CompareArrows sx={{ fontSize: 16 }} />}
+              onClick={() => {
+                const wasIn = isInComparator(ad.id);
+                if (wasIn) {
+                  removeFromComparator(ad.id);
+                } else {
+                  addToComparator(ad);
+                  setCompareDrawerOpen(true);
+                  setSnackbar(`Ajouté au comparateur. Comparez jusqu'à ${COMPARATOR_MAX_ITEMS} annonces.`);
+                }
+              }}
               sx={{
                 borderRadius: '20px',
                 textTransform: 'none',
@@ -764,16 +785,31 @@ function AdDetailContent() {
           <Button
             variant="outlined"
             size="small"
-            startIcon={checkFav(ad.id) ? <Favorite sx={{ color: '#F6475F' }} /> : <FavoriteBorder />}
-            onClick={() => { playSound(checkFav(ad.id) ? 'unfavorite' : 'favorite'); toggleFav(ad); }}
-            sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: checkFav(ad.id) ? '#F6475F' : 'text.primary' }}
+            startIcon={checkFav(ad.id) ? <Favorite sx={{ color: 'primary.main' }} /> : <FavoriteBorder />}
+            onClick={() => {
+              const wasFav = checkFav(ad.id);
+              playSound(wasFav ? 'unfavorite' : 'favorite');
+              toggleFav(ad);
+              if (!wasFav) { setSnackbar('Annonce sauvegardée. Vous la retrouverez dans vos favoris.'); }
+            }}
+            sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: checkFav(ad.id) ? 'primary.main' : 'text.primary' }}
           >
             {checkFav(ad.id) ? 'Sauvegardé' : 'Sauvegarder'}
           </Button>
           <Button
             variant="outlined"
             size="small"
-            onClick={() => isInComparator(ad.id) ? removeFromComparator(ad.id) : addToComparator(ad)}
+            startIcon={<CompareArrows sx={{ fontSize: 16 }} />}
+            onClick={() => {
+              const wasIn = isInComparator(ad.id);
+              if (wasIn) {
+                removeFromComparator(ad.id);
+              } else {
+                addToComparator(ad);
+                setCompareDrawerOpen(true);
+                setSnackbar(`Ajouté au comparateur. Comparez jusqu'à ${COMPARATOR_MAX_ITEMS} annonces.`);
+              }
+            }}
             sx={{
               borderRadius: '20px',
               textTransform: 'none',
@@ -802,19 +838,62 @@ function AdDetailContent() {
         >
           {/* Left column — details */}
           <Box sx={{ minWidth: 0, overflow: 'visible', overflowWrap: 'break-word', maxWidth: '100%' }}>
-            <Typography
-              variant="h4"
-              fontWeight={700}
-              sx={{
-                fontSize: { xs: '1.5rem', md: '2rem' },
-                wordBreak: 'break-word',
-                overflowWrap: 'break-word',
-                minWidth: 0,
-              }}
-            >
-              {ad.title}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, mb: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+              <Typography
+                variant="h4"
+                fontWeight={700}
+                sx={{
+                  fontSize: { xs: '1.5rem', md: '2rem' },
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  minWidth: 0,
+                }}
+              >
+                {ad.title}
+              </Typography>
+              {ad.is_verified && (
+                <Chip
+                  icon={<Verified sx={{ fontSize: 16 }} />}
+                  label="Bien vérifié"
+                  size="small"
+                  color="success"
+                  sx={{ fontWeight: 600, borderRadius: 2 }}
+                />
+              )}
+            </Box>
+            {/* Preuve sociale + urgence douce — uniquement si annonce déverrouillée */}
+            {!isLocked && (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2, alignItems: 'center' }}>
+                {(ad.views_count_today ?? 0) > 0 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Visibility sx={{ fontSize: 16 }} />
+                    {ad.views_count_today} personne{(ad.views_count_today ?? 0) > 1 ? 's ont' : ' a'} consulté cette annonce aujourd&apos;hui
+                  </Typography>
+                )}
+                {(ad.views_count_week ?? 0) >= 5 && (ad.views_count_today ?? 0) === 0 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Visibility sx={{ fontSize: 16 }} />
+                    Vu {ad.views_count_week} fois cette semaine
+                  </Typography>
+                )}
+                {(ad.view_count ?? 0) >= 10 && (ad.views_count_today ?? 0) === 0 && (ad.views_count_week ?? 0) < 5 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Visibility sx={{ fontSize: 16 }} />
+                    Annonce très consultée
+                  </Typography>
+                )}
+                {ad.available_from && (
+                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <CalendarMonth sx={{ fontSize: 16 }} />
+                    Disponible à partir du {formatDate(ad.available_from)}
+                  </Typography>
+                )}
+                <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  Mise à jour {formatRelativeDate(ad.updated_at).toLowerCase()}
+                </Typography>
+              </Box>
+            )}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 2, flexWrap: 'wrap' }}>
               <LocationOn sx={{ fontSize: 18, color: 'text.secondary' }} />
               <Typography variant="body2" color="text.secondary">
                 {ad.quarter?.name}
@@ -860,7 +939,7 @@ function AdDetailContent() {
                         flexShrink: 0,
                       }}
                     >
-                      <ViewInAr sx={{ fontSize: 22, color: '#F6475F' }} />
+                      <ViewInAr sx={{ fontSize: 22, color: 'primary.main' }} />
                     </Box>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography variant="subtitle2" fontWeight={700} sx={{ lineHeight: 1.3 }}>
@@ -949,11 +1028,11 @@ function AdDetailContent() {
                 {publisherName[0]}
               </Avatar>
               <Box sx={{ flex: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
                   <Typography variant="subtitle1" fontWeight={600}>
                     Publié par {publisherName}
                   </Typography>
-                  <Verified sx={{ fontSize: 16, color: 'primary.main' }} />
+                  {ad.is_verified && <Verified sx={{ fontSize: 16, color: 'success.main' }} titleAccess="Annonce vérifiée" />}
                 </Box>
                 <Typography variant="caption" color="text.secondary">
                   {formatRelativeDate(ad.created_at)}
@@ -1132,6 +1211,7 @@ function AdDetailContent() {
               {/* Contact section — mobile only (desktop has it in the right sidebar) */}
               {!isLocked && (publisherPhone || publisherEmail) && (
                 <Paper
+                  id="contact-section"
                   elevation={0}
                   sx={{
                     mb: 3,
@@ -1142,35 +1222,32 @@ function AdDetailContent() {
                     bgcolor: 'background.paper',
                   }}
                 >
-                  <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Ne ratez pas cette opportunité — contactez l&apos;annonceur pour réserver une visite.
+                  </Typography>
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>
                     Contact de l&apos;annonceur
                   </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
+                    <Schedule sx={{ fontSize: 14 }} />
+                    Répond généralement en moins de 2 h
+                  </Typography>
+                  {reviewsCount > 0 && averageRating != null && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
+                      <Star sx={{ fontSize: 14, color: 'warning.main' }} />
+                      {averageRating.toFixed(1)}/5 — {reviewsCount} avis
+                    </Typography>
+                  )}
                   {publisherPhone && (
                     <Box sx={{ mb: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                         <Phone sx={{ fontSize: 18, color: 'primary.main' }} />
                         <Typography variant="body2" fontWeight={500}>{publisherPhone}</Typography>
-                        <IconButton size="small" aria-label="Copier le numéro" onClick={() => { navigator.clipboard.writeText(publisherPhone); setSnackbar('Numéro copié'); }}>
+                        <IconButton size="small" aria-label="Copier le numéro" onClick={() => { navigator.clipboard.writeText(publisherPhone); setSnackbar('Numéro copié !'); }}>
                           <ContentCopy sx={{ fontSize: 14 }} />
                         </IconButton>
                       </Box>
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          startIcon={<Call sx={{ fontSize: 18 }} />}
-                          href={`tel:${publisherPhone}`}
-                          sx={{
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            bgcolor: 'primary.main',
-                            '&:hover': { bgcolor: 'primary.dark' },
-                            flex: 1,
-                            minWidth: 0,
-                          }}
-                        >
-                          Appeler
-                        </Button>
                         {publisherHasWhatsApp && whatsappNumber && (
                           <Button
                             variant="contained"
@@ -1191,6 +1268,22 @@ function AdDetailContent() {
                             WhatsApp
                           </Button>
                         )}
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<Call sx={{ fontSize: 18 }} />}
+                          href={`tel:${publisherPhone}`}
+                          sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            bgcolor: 'primary.main',
+                            '&:hover': { bgcolor: 'primary.dark' },
+                            flex: 1,
+                            minWidth: 0,
+                          }}
+                        >
+                          Appeler
+                        </Button>
                       </Box>
                     </Box>
                   )}
@@ -1198,7 +1291,7 @@ function AdDetailContent() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: publisherPhone ? 0 : 0 }}>
                       <Email sx={{ fontSize: 18, color: 'primary.main' }} />
                       <Typography variant="body2" fontWeight={500} sx={{ wordBreak: 'break-all', minWidth: 0, flex: 1 }}>{publisherEmail}</Typography>
-                      <IconButton size="small" aria-label="Copier l'email" onClick={() => { navigator.clipboard.writeText(publisherEmail); setSnackbar('Email copié'); }}>
+                      <IconButton size="small" aria-label="Copier l'email" onClick={() => { navigator.clipboard.writeText(publisherEmail); setSnackbar('Email copié !'); }}>
                         <ContentCopy sx={{ fontSize: 14 }} />
                       </IconButton>
                     </Box>
@@ -1245,8 +1338,8 @@ function AdDetailContent() {
                       py: 1.5,
                       fontWeight: 600,
                       fontSize: '1rem',
-                      background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                      '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                      background: (theme) => theme.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
+                      '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
                     }}
                   >
                     Déverrouiller
@@ -1474,8 +1567,8 @@ function AdDetailContent() {
                       py: 1.5,
                       fontWeight: 600,
                       fontSize: '1rem',
-                      background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                      '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                      background: (theme) => theme.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
+                      '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
                       '&:active': { transform: 'scale(0.97)' },
                     }}
                   >
@@ -1508,33 +1601,32 @@ function AdDetailContent() {
               ) : (
                 <Box>
                   <Divider sx={{ mb: 2 }} />
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Ne ratez pas cette opportunité — contactez l&apos;annonceur pour réserver une visite.
+                  </Typography>
                   <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
                     Contact de l&apos;annonceur
                   </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
+                    <Schedule sx={{ fontSize: 14 }} />
+                    Répond généralement en moins de 2 h
+                  </Typography>
+                  {reviewsCount > 0 && averageRating != null && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
+                      <Star sx={{ fontSize: 14, color: 'warning.main' }} />
+                      {averageRating.toFixed(1)}/5 — {reviewsCount} avis
+                    </Typography>
+                  )}
                   {publisherPhone && (
                     <Box sx={{ mb: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                         <Phone sx={{ fontSize: 18, color: 'primary.main' }} />
                         <Typography variant="body2" fontWeight={500}>{publisherPhone}</Typography>
-                        <IconButton size="small" aria-label="Copier le numéro" onClick={() => { navigator.clipboard.writeText(publisherPhone); setSnackbar('Numéro copié'); }}>
+                        <IconButton size="small" aria-label="Copier le numéro" onClick={() => { navigator.clipboard.writeText(publisherPhone); setSnackbar('Numéro copié !'); }}>
                           <ContentCopy sx={{ fontSize: 14 }} />
                         </IconButton>
                       </Box>
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          startIcon={<Call sx={{ fontSize: 18 }} />}
-                          href={`tel:${publisherPhone}`}
-                          sx={{
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            bgcolor: 'primary.main',
-                            '&:hover': { bgcolor: 'primary.dark' },
-                          }}
-                        >
-                          Appeler
-                        </Button>
                         {publisherHasWhatsApp && whatsappNumber && (
                           <Button
                             variant="contained"
@@ -1550,9 +1642,23 @@ function AdDetailContent() {
                               '&:hover': { bgcolor: '#128C7E' },
                             }}
                           >
-                            WhatsApp
+                            WhatsApp — Contactez en 1 clic
                           </Button>
                         )}
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<Call sx={{ fontSize: 18 }} />}
+                          href={`tel:${publisherPhone}`}
+                          sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            bgcolor: 'primary.main',
+                            '&:hover': { bgcolor: 'primary.dark' },
+                          }}
+                        >
+                          Appeler
+                        </Button>
                       </Box>
                     </Box>
                   )}
@@ -1560,7 +1666,7 @@ function AdDetailContent() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Email sx={{ fontSize: 18, color: 'primary.main' }} />
                       <Typography variant="body2" fontWeight={500} sx={{ wordBreak: 'break-all' }}>{publisherEmail}</Typography>
-                      <IconButton size="small" aria-label="Copier l'email" onClick={() => { navigator.clipboard.writeText(publisherEmail); setSnackbar('Email copié'); }}>
+                      <IconButton size="small" aria-label="Copier l'email" onClick={() => { navigator.clipboard.writeText(publisherEmail); setSnackbar('Email copié !'); }}>
                         <ContentCopy sx={{ fontSize: 14 }} />
                       </IconButton>
                     </Box>
@@ -1568,7 +1674,7 @@ function AdDetailContent() {
 
                   {/* Viewing appointment booking — only when unlocked */}
                   <Divider sx={{ mt: 2.5, mb: 0 }} />
-                  <ViewingBookingPanel adId={ad.id} adTitle={ad.title} />
+                  <ViewingBookingPanel adId={ad.id} adTitle={ad.title} variant="contained" />
                 </Box>
               )}
 
@@ -1606,15 +1712,33 @@ function AdDetailContent() {
           {/* Third column — similar ads sidebar (xl only) */}
           <Box
             sx={{
-              display: { xs: 'none', md: 'none', lg: 'none', xl: 'block' },
+              display: { xs: 'none', md: 'none', lg: 'none', xl: 'flex' },
+              flexDirection: 'column',
               position: 'sticky',
-              top: 120,
+              top: 80,
               alignSelf: 'start',
-              maxHeight: 'calc(100vh - 140px)',
-              overflowY: 'auto',
+              maxHeight: 'calc(100vh - 60px)',
+              minHeight: 400,
             }}
           >
-            <SimilarAds currentAdId={adId} variant="sidebar" />
+            <Typography variant="h5" fontWeight={700} mb={0.5} sx={{ fontSize: '1rem', flexShrink: 0 }}>
+              Annonces similaires
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 2, flexShrink: 0, display: 'block' }}>
+              D&apos;autres biens correspondant à votre recherche
+            </Typography>
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                pb: 6,
+                '&::-webkit-scrollbar': { width: 6 },
+                '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 3 },
+              }}
+            >
+              <SimilarAds currentAdId={adId} variant="sidebar" hideTitle hideContext />
+            </Box>
           </Box>
         </Box>
         </Paper>
@@ -1644,7 +1768,7 @@ function AdDetailContent() {
               width: 72,
               height: 72,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+              background: (theme) => theme.palette.gradient?.primary135 ?? 'linear-gradient(135deg, #F6475F, #D93A50)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1669,7 +1793,7 @@ function AdDetailContent() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 1.5,
+                gap: 2,
                 mb: 2.5,
                 flexWrap: 'wrap',
               }}
@@ -1678,41 +1802,46 @@ function AdDetailContent() {
                 sx={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 0.75,
-                  bgcolor: 'action.hover',
-                  borderRadius: 2,
-                  px: 1.5,
-                  py: 0.75,
-                  border: '1px solid',
-                  borderColor: 'divider',
+                  gap: 1,
+                  borderRadius: 2.5,
+                  px: 2,
+                  py: 1,
+                  background: (t) => t.palette.gradient?.primary135 ?? `linear-gradient(135deg, ${t.palette.primary.main}, ${t.palette.primary.dark})`,
+                  boxShadow: '0 4px 14px rgba(246,71,95,0.25)',
                 }}
               >
-                <Typography variant="body2" color="text.secondary">Solde :</Typography>
-                <Typography
-                  variant="body2"
-                  fontWeight={700}
-                  color={currentBalance > 0 ? 'primary.main' : 'error.main'}
-                >
-                  {currentBalance} crédit{currentBalance > 1 ? 's' : ''}
-                </Typography>
+                <AccountBalanceWallet sx={{ fontSize: 20, color: '#fff' }} />
+                <Box>
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.85)', display: 'block', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    Votre solde
+                  </Typography>
+                  <Typography variant="body1" fontWeight={800} sx={{ color: '#fff', lineHeight: 1.2 }}>
+                    {currentBalance} crédit{currentBalance > 1 ? 's' : ''}
+                  </Typography>
+                </Box>
               </Box>
               <Box
                 sx={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 0.75,
-                  bgcolor: 'action.hover',
-                  borderRadius: 2,
-                  px: 1.5,
-                  py: 0.75,
-                  border: '1px solid',
+                  gap: 1,
+                  borderRadius: 2.5,
+                  px: 2,
+                  py: 1,
+                  bgcolor: 'background.paper',
+                  border: '2px solid',
                   borderColor: 'divider',
                 }}
               >
-                <Typography variant="body2" color="text.secondary">Coût :</Typography>
-                <Typography variant="body2" fontWeight={700} color="text.primary">
-                  {unlockState?.required_points ?? ad.unlock_cost ?? '—'} crédits
-                </Typography>
+                <Lock sx={{ fontSize: 20, color: 'text.secondary' }} />
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    Coût
+                  </Typography>
+                  <Typography variant="body1" fontWeight={800} color="text.primary">
+                    {unlockState?.required_points ?? ad.unlock_cost ?? '—'} crédits
+                  </Typography>
+                </Box>
               </Box>
             </Box>
           )}
@@ -1764,13 +1893,18 @@ function AdDetailContent() {
                           Choisissez un pack de crédits
                         </Typography>
                         <Grid container spacing={1.5} sx={{ mb: 2 }}>
-                          {unlockState.packages.map((pkg) => {
+                          {[...unlockState.packages]
+                            .sort((a, b) => (b.is_popular ? 1 : 0) - (a.is_popular ? 1 : 0))
+                            .map((pkg) => {
+                            const requiredPoints = unlockState.required_points ?? 0;
+                            const wouldBeEnough = (pkg.points_awarded ?? 0) >= requiredPoints;
                             return (
-                              <Grid key={pkg.id} size={{ xs: 12, sm: 6, lg: 4 }}>
+                              <Grid key={pkg.id} size={{ xs: 12, sm: 6, lg: pkg.is_popular ? 12 : 4 }}>
                                 <PackageCard
                                   pkg={pkg}
                                   loading={isPackageLoading === pkg.id}
                                   onPurchase={handlePurchasePackage}
+                                  wouldBeEnough={wouldBeEnough}
                                 />
                               </Grid>
                             );
@@ -1805,8 +1939,8 @@ function AdDetailContent() {
                         fontWeight: 600,
                         mb: 1,
                         borderRadius: 2.5,
-                        background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                        '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                        background: (theme) => theme.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
+                        '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
                         '&:active': { transform: 'scale(0.97)' },
                       }}
                     >
@@ -1839,8 +1973,8 @@ function AdDetailContent() {
                         fontWeight: 600,
                         mb: 1,
                         borderRadius: 2.5,
-                        background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                        '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                        background: (theme) => theme.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
+                        '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
                         '&:active': { transform: 'scale(0.97)' },
                       }}
                     >
@@ -1898,10 +2032,14 @@ function AdDetailContent() {
           onContact={() => {
             if (isLocked) {
               setPaymentDialogOpen(true);
-            } else if (publisherPhone) {
-              window.location.href = `tel:${publisherPhone}`;
+            } else {
+              document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth' });
             }
           }}
+          whatsappUrl={!isLocked && publisherHasWhatsApp && whatsappNumber
+            ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Bonjour,\n\nJe vous contacte suite à votre annonce *${ad.title}* que j'ai vue sur KeyHome.\n\nJe suis intéressé(e) par ce bien et souhaiterais avoir plus d'informations.\n\nCordialement${currentUser?.firstname ? `, ${currentUser.firstname}` : ''}`)}`
+            : undefined}
+          phoneUrl={!isLocked && publisherPhone ? `tel:${publisherPhone}` : undefined}
         />
       )}
 
@@ -1916,13 +2054,24 @@ function AdDetailContent() {
         <SimilarAds currentAdId={adId} />
       </Container>
 
+      {ad && (
+        <CompareDrawer
+          currentAd={ad}
+          open={compareDrawerOpen}
+          onClose={() => setCompareDrawerOpen(false)}
+        />
+      )}
+
       {/* Snackbar */}
       <Snackbar
         open={!!snackbar}
-        autoHideDuration={2500}
+        autoHideDuration={3500}
         onClose={() => setSnackbar('')}
         message={snackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        slotProps={{
+          content: { 'aria-live': 'polite', role: 'status' as const } as Record<string, unknown>,
+        }}
       />
     </>
   );

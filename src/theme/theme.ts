@@ -2,6 +2,16 @@
 
 import { createTheme } from '@mui/material/styles';
 
+/** Standard border radius values (small=8, medium=12, large=16, pill=99) */
+export const radius = { small: 8, medium: 12, large: 16, pill: 99 } as const;
+
+/** CTA gradient for primary buttons — use theme.palette.gradient.primary */
+export const gradientPrimary = {
+  primary: 'linear-gradient(to right, #F6475F, #D93A50)',
+  primaryHover: 'linear-gradient(to right, #E03E54, #C53248)',
+  primary135: 'linear-gradient(135deg, #F6475F, #D93A50)',
+};
+
 const baseTheme = {
   typography: {
     // Inter for body, Plus Jakarta Sans for headings
@@ -59,6 +69,13 @@ const baseTheme = {
     borderRadius: 12,
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          transition: 'background-color 0.6s ease, color 0.6s ease',
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {
@@ -110,9 +127,6 @@ const baseTheme = {
           '& .MuiOutlinedInput-root': {
             borderRadius: 10,
             transition: 'box-shadow 0.2s ease',
-            '&.Mui-focused': {
-              boxShadow: '0 0 0 3px rgba(246, 71, 95, 0.12)',
-            },
           },
         },
       },
@@ -174,6 +188,20 @@ const baseTheme = {
         root: { transition: 'all 0.2s ease' },
       },
     },
+    MuiLink: {
+      styleOverrides: {
+        root: {
+          '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2, borderRadius: 4 },
+        },
+      },
+    },
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
+        },
+      },
+    },
   },
 };
 
@@ -196,7 +224,7 @@ export const lightTheme = createTheme({
     background: {
       // Slightly warmer off-white — less clinical than pure #F7F7F7
       default: '#F8F7F5',
-      paper: '#FFFFFF',
+      paper: '#F8F7F5',
     },
     text: {
       primary: '#1A1A1A',
@@ -214,6 +242,11 @@ export const lightTheme = createTheme({
       500: '#484848',
       600: '#1A1A1A',
     },
+    gradient: {
+      primary: 'linear-gradient(to right, #F6475F, #D93A50)',
+      primaryHover: 'linear-gradient(to right, #E03E54, #C53248)',
+      primary135: 'linear-gradient(135deg, #F6475F, #D93A50)',
+    },
   },
   components: {
     ...baseTheme.components,
@@ -228,7 +261,7 @@ export const lightTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: 'rgba(255,255,255,0.8)',
+          backgroundColor: '#F8F7F5',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
           borderBottom: '1px solid rgba(0,0,0,0.06)',
@@ -276,6 +309,11 @@ export const darkTheme = createTheme({
       500: '#C4C3D4',
       600: '#F0EEF8',
     },
+    gradient: {
+      primary: 'linear-gradient(to right, #F6475F, #D93A50)',
+      primaryHover: 'linear-gradient(to right, #E03E54, #C53248)',
+      primary135: 'linear-gradient(135deg, #F6475F, #D93A50)',
+    },
   },
   components: {
     ...baseTheme.components,
@@ -304,5 +342,22 @@ export const darkTheme = createTheme({
     },
   },
 });
+
+declare module '@mui/material/styles' {
+  interface Palette {
+    gradient?: {
+      primary: string;
+      primaryHover: string;
+      primary135: string;
+    };
+  }
+  interface PaletteOptions {
+    gradient?: {
+      primary: string;
+      primaryHover: string;
+      primary135: string;
+    };
+  }
+}
 
 

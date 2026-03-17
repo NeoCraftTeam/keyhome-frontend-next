@@ -1,5 +1,6 @@
 'use client';
 
+import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
@@ -43,6 +44,7 @@ interface Props {
 
 export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }: Props) {
   const muiTheme = useTheme();
+  const { slotProps: citySlotProps, renderOption: renderCityOption, inputSx: cityInputSx } = useCityAutocompleteConfig();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
@@ -162,10 +164,13 @@ export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }
             onClose={() => setCityDropdownOpen(false)}
             loading={isCitiesLoading}
             noOptionsText="Aucune ville trouvée"
+            slotProps={citySlotProps}
+            renderOption={(props, option) => renderCityOption(props, option)}
             renderInput={(params) => (
               <TextField
                 {...params}
                 label="Ville (optionnel)"
+                sx={cityInputSx}
                 InputProps={{
                   ...params.InputProps,
                   endAdornment: (

@@ -1,18 +1,21 @@
 'use client';
 
 import CreditsWidget from '@/components/layout/CreditsWidget';
+import { BOTTOM_NAV_ITEMS } from '@/lib/nav-config';
 import { useAuth } from '@/providers/AuthProvider';
+import { useComparator } from '@/providers/ComparatorProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
+import { useIsStandalone } from '@/hooks/useIsStandalone';
 import {
   AddCircleOutline as AddCircleOutlineIcon,
   BarChart as BarChartIcon,
   CalendarMonth as CalendarMonthIcon,
+  CompareArrows as CompareArrowsIcon,
   Close as CloseIcon,
   DarkMode as DarkModeIcon,
   Explore as ExploreIcon,
   Facebook as FacebookIcon,
   HelpOutline as HelpOutlineIcon,
-  Home as HomeIcon,
   Instagram as InstagramIcon,
   LightMode as LightModeIcon,
   Logout as LogoutIcon,
@@ -53,20 +56,22 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 const NAV_LINKS = [
-  { label: 'Accueil', href: '/home', icon: <HomeIcon /> },
   { label: 'Rechercher', href: '/search', icon: <SearchIcon /> },
   { label: 'Explorer la carte', href: '/nearby', icon: <ExploreIcon /> },
+  { label: 'Comparaisons', href: '/comparaisons', icon: <CompareArrowsIcon /> },
   { label: 'Prix du marché', href: '/prix-marche', icon: <BarChartIcon /> },
   { label: 'Aide', href: '/aide', icon: <HelpOutlineIcon /> },
 ];
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
+  const { items: comparatorItems } = useComparator();
   const { mode, toggleTheme } = useThemeMode();
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isStandalone = useIsStandalone();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -111,6 +116,7 @@ export default function Navbar() {
               NAV_LINKS.map((link) => {
                 const isActive =
                   pathname === link.href || pathname?.startsWith(link.href + '/');
+                const showBadge = link.href === '/comparaisons' && comparatorItems.length > 0;
                 return (
                   <Button
                     key={link.href}
@@ -141,7 +147,29 @@ export default function Navbar() {
                         : {},
                     }}
                   >
-                    {link.label}
+                    <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {link.label}
+                      {showBadge && (
+                        <Box
+                          component="span"
+                          sx={{
+                            minWidth: 18,
+                            height: 18,
+                            px: 0.5,
+                            borderRadius: '50%',
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          {comparatorItems.length}
+                        </Box>
+                      )}
+                    </Box>
                   </Button>
                 );
               })}
@@ -279,19 +307,6 @@ export default function Navbar() {
                           {user?.email}
                         </Typography>
                       </Box>
-                      <Divider />
-                      {NAV_LINKS.map((link) => (
-                        <MenuItem
-                          key={link.href}
-                          onClick={() => {
-                            setAnchorEl(null);
-                            router.push(link.href);
-                          }}
-                        >
-                          <ListItemIcon>{link.icon}</ListItemIcon>
-                          <ListItemText>{link.label}</ListItemText>
-                        </MenuItem>
-                      ))}
                       <Divider />
                       <MenuItem
                         onClick={() => {
@@ -438,6 +453,7 @@ export default function Navbar() {
           </IconButton>
         </Box>
         <Divider />
+        {/* Avatar en première position */}
         {user && (
           <>
             <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -453,6 +469,39 @@ export default function Navbar() {
                 </Typography>
               </Box>
             </Box>
+            <Divider />
+          </>
+        )}
+        {/* Mobile browser (no BottomNav): Rechercher, Carte, Prix — sans Comparer ni Profil (déjà dans Compte) */}
+        {isMobile && !isStandalone && (
+          <>
+            <List sx={{ px: 1, pt: 0 }}>
+              {BOTTOM_NAV_ITEMS.filter((item) => item.href !== '/comparaisons' && item.href !== '/profile').map((item) => {
+                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                return (
+                  <ListItem key={item.href} disablePadding>
+                    <ListItemButton
+                      onClick={() => {
+                        setMobileOpen(false);
+                        router.push(item.href);
+                      }}
+                      sx={{
+                        borderRadius: 2,
+                        mx: 1,
+                        bgcolor: isActive ? 'rgba(246,71,95,0.08)' : 'transparent',
+                        color: isActive ? 'primary.main' : 'text.primary',
+                        '&:hover': { bgcolor: isActive ? 'rgba(246,71,95,0.12)' : 'action.hover' },
+                      }}
+                    >
+                      <ListItemIcon sx={{ color: isActive ? 'primary.main' : 'text.secondary', minWidth: 40 }}>
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText primary={item.label} />
+                    </ListItemButton>
+                  </ListItem>
+                );
+              })}
+            </List>
             <Divider />
           </>
         )}
@@ -475,10 +524,7 @@ export default function Navbar() {
               <ListItemIcon>
                 <AddCircleOutlineIcon color="primary" />
               </ListItemIcon>
-              <ListItemText
-                primary="Devenir hôte"
-                primaryTypographyProps={{ fontWeight: 600 }}
-              />
+              <ListItemText primary="Devenir hôte" />
             </ListItemButton>
           </ListItem>
           <Divider sx={{ my: 1.5, mx: 2 }} />
@@ -489,6 +535,26 @@ export default function Navbar() {
 
           {isAuthenticated && (
             <>
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    setMobileOpen(false);
+                    router.push('/comparaisons');
+                  }}
+                  sx={{ borderRadius: 2, mx: 1 }}
+                >
+                  <ListItemIcon>
+                    <CompareArrowsIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      comparatorItems.length > 0
+                        ? `Comparaisons (${comparatorItems.length})`
+                        : 'Comparaisons'
+                    }
+                  />
+                </ListItemButton>
+              </ListItem>
               <ListItem disablePadding>
                 <ListItemButton
                   onClick={() => {
@@ -561,7 +627,7 @@ export default function Navbar() {
                   borderRadius: '20px',
                   textTransform: 'none',
                   fontWeight: 600,
-                  background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+                  background: (theme) => theme.palette.gradient?.primary135 ?? 'linear-gradient(135deg, #F6475F, #D93A50)',
                 }}
               >
                 Se connecter

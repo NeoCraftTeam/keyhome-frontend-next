@@ -45,7 +45,7 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
     enabled: open,
   });
   const availableCredits = balance ?? 0;
-  const creditsLabel = availableCredits > 1 ? 'credits disponibles' : 'credit disponible';
+  const creditsLabel = availableCredits > 1 ? 'crédits disponibles' : 'crédit disponible';
 
   const handlePurchase = async (pkg: PointPackage) => {
     setLoadingPkg(pkg.id);
@@ -94,22 +94,22 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
           px: 3,
           pt: 4,
           pb: 3.5,
-          background: 'linear-gradient(135deg, #0A1628 0%, #1a2540 50%, #0D1F3C 100%)',
+          background: (theme) => theme.palette.gradient?.primary135 ?? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
           textAlign: 'center',
           overflow: 'hidden',
         }}
       >
         {/* Background blobs */}
-        <Box sx={{ position: 'absolute', top: -40, left: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(246,71,95,0.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <Box sx={{ position: 'absolute', bottom: -30, right: -30, width: 150, height: 150, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <Box sx={{ position: 'absolute', top: -40, left: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <Box sx={{ position: 'absolute', bottom: -30, right: -30, width: 150, height: 150, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
         <IconButton
           aria-label="Fermer"
           onClick={handleClose}
           sx={{
             position: 'absolute', top: 12, right: 12,
-            color: 'rgba(255,255,255,0.5)',
-            '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.1)' },
+            color: 'rgba(255,255,255,0.9)',
+            '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.2)' },
           }}
         >
           <Close fontSize="small" />
@@ -141,26 +141,26 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
           </Box>
         </Box>
 
-        <Typography variant="h3" fontWeight={900} sx={{ color: '#fff', letterSpacing: -1.5, lineHeight: 1, mb: 0.5 }}>
+        <Typography variant="h2" fontWeight={900} sx={{ color: '#fff', letterSpacing: -1.5, lineHeight: 1, mb: 0.5, fontSize: { xs: '2.5rem', sm: '3rem' } }}>
           {balanceLoading ? (
-            <Skeleton width={80} sx={{ mx: 'auto', bgcolor: 'rgba(255,255,255,0.1)' }} />
+            <Skeleton width={100} height={48} sx={{ mx: 'auto', bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2 }} />
           ) : (
             availableCredits.toLocaleString('fr-FR')
           )}
         </Typography>
-        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', letterSpacing: 0.5 }}>
-          {balanceLoading ? 'credits disponibles' : creditsLabel}
+        <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'rgba(255,255,255,0.95)', letterSpacing: 0.3, fontSize: '1rem' }}>
+          {balanceLoading ? 'crédits disponibles' : creditsLabel}
         </Typography>
 
 
         {/* Trust badge */}
         <Box sx={{
           display: 'inline-flex', alignItems: 'center', gap: 0.75, mt: 2,
-          bgcolor: 'rgba(255,255,255,0.07)', borderRadius: '40px', px: 2, py: 0.75,
-          border: '1px solid rgba(255,255,255,0.1)',
+          bgcolor: 'rgba(255,255,255,0.15)', borderRadius: '40px', px: 2, py: 0.75,
+          border: '1px solid rgba(255,255,255,0.25)',
         }}>
-          <AutoAwesome sx={{ fontSize: 12, color: '#FFD700' }} />
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', fontWeight: 600 }}>
+          <AutoAwesome sx={{ fontSize: 12, color: 'rgba(255,255,255,0.95)' }} />
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.7rem', fontWeight: 600 }}>
             +5 000 utilisateurs en Afrique
           </Typography>
         </Box>
@@ -172,14 +172,14 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
           px: 3,
           pt: 3,
           pb: 2.5,
-          bgcolor: isDark ? '#0F172A' : 'background.paper',
+          bgcolor: 'background.paper',
           overflowY: 'auto',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           '&::-webkit-scrollbar': { display: 'none', width: 0, height: 0 },
         }}
       >
-        <Typography variant="overline" sx={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'text.secondary', letterSpacing: 1.5, fontSize: '0.65rem', fontWeight: 700 }}>
+        <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 1.5, fontSize: '0.65rem', fontWeight: 700 }}>
           Choisir un pack
         </Typography>
 
@@ -202,16 +202,19 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
             ))
           ) : packages && packages.length > 0 ? (
             packages.map((pkg) => (
-              <Grid key={pkg.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                <PackageCard
-                  pkg={pkg}
-                  loading={loadingPkg === pkg.id}
-                  onPurchase={handlePurchase}
-                />
-              </Grid>
-            ))
+                <Grid
+                  key={pkg.id}
+                  size={{ xs: 12, sm: 6, md: 4 }}
+                >
+                  <PackageCard
+                    pkg={pkg}
+                    loading={loadingPkg === pkg.id}
+                    onPurchase={handlePurchase}
+                  />
+                </Grid>
+              ))
           ) : (
-            <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'text.secondary', textAlign: 'center', py: 4, width: '100%' }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 4, width: '100%' }}>
               Aucun pack disponible.
             </Typography>
           )}
@@ -219,8 +222,8 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
       </Box>
 
       {/* ── FOOTER ───────────────────────────────────────── */}
-      <Box sx={{ px: 3, py: 2, bgcolor: isDark ? '#0A0F1E' : 'background.default', borderTop: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'divider' }}>
-        <Typography variant="caption" sx={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'text.disabled', lineHeight: 1.5, display: 'block', textAlign: 'center', fontSize: '0.7rem' }}>
+      <Box sx={{ px: 3, py: 2, bgcolor: 'background.default', borderTop: '1px solid', borderColor: 'divider' }}>
+        <Typography variant="caption" sx={{ color: 'text.disabled', lineHeight: 1.5, display: 'block', textAlign: 'center', fontSize: '0.7rem' }}>
           Les credits permettent de deverrouiller les coordonnees des annonceurs.
           Paiement securise.
         </Typography>

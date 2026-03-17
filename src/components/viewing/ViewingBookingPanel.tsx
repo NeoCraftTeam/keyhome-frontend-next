@@ -70,6 +70,7 @@ const STATUS_CONFIG: Record<
 };
 
 const MAX_BOOKING_DAYS = 90;  // how many days ahead to allow booking
+const DEFAULT_VARIANT = 'outlined' as const;
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -97,11 +98,13 @@ function StatusChip({ status }: { status: ReservationStatus }) {
 interface Props {
   adId: string;
   adTitle: string;
+  /** Use contained variant for higher visibility (e.g. sidebar CTA) */
+  variant?: 'outlined' | 'contained';
 }
 
 // ─── component ────────────────────────────────────────────────────────────────
 
-export default function ViewingBookingPanel({ adId, adTitle }: Props) {
+export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_VARIANT }: Props) {
   const { isAuthenticated, user } = useAuth();
   const queryClient = useQueryClient();
   const muiTheme = useTheme();
@@ -737,33 +740,42 @@ export default function ViewingBookingPanel({ adId, adTitle }: Props) {
   // ─── entry point button ────────────────────────────────────────────────────
 
   const triggerButton = (
-    <Button
-      fullWidth
-      variant="outlined"
-      size="large"
-      onClick={() => {
-        setTab(0);
-        setOpen(true);
-      }}
-      startIcon={<CalendarMonth />}
-      endIcon={<KeyboardArrowRight />}
-      sx={{
-        py: 1.4,
-        mt: 2,
-        borderRadius: 2,
-        fontWeight: 600,
-        fontSize: '0.95rem',
-        textTransform: 'none',
-        borderColor: 'primary.main',
-        color: 'primary.main',
-        '&:hover': {
-          bgcolor: 'primary.50',
-          borderColor: 'primary.dark',
-        },
-      }}
-    >
-      Planifier une visite
-    </Button>
+    <Box sx={{ mt: 2 }}>
+      <Button
+        fullWidth
+        variant={variant}
+        size="large"
+        onClick={() => {
+          setTab(0);
+          setOpen(true);
+        }}
+        startIcon={<CalendarMonth />}
+        endIcon={<KeyboardArrowRight />}
+        sx={{
+          py: 1.4,
+          borderRadius: 2,
+          fontWeight: 700,
+          fontSize: '0.95rem',
+          textTransform: 'none',
+          ...(variant === 'contained'
+            ? {
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                '&:hover': { bgcolor: 'primary.dark' },
+              }
+            : {
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                '&:hover': { bgcolor: 'primary.50', borderColor: 'primary.dark' },
+              }),
+        }}
+      >
+        Planifier une visite
+      </Button>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, textAlign: 'center' }}>
+        Réservez votre créneau en quelques clics
+      </Typography>
+    </Box>
   );
 
   // ─── render ────────────────────────────────────────────────────────────────

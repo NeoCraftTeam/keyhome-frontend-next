@@ -3,6 +3,7 @@
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
+import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
@@ -35,6 +36,7 @@ import { useEffect, useState } from 'react';
  */
 export default function CompleteProfilePage() {
   const { finalizeAuth } = useAuth();
+  const { slotProps: citySlotProps, renderOption: renderCityOption, inputSx: cityInputSx } = useCityAutocompleteConfig();
   const { signUp, setActive } = useSignUp();
   const router = useRouter();
 
@@ -266,11 +268,14 @@ export default function CompleteProfilePage() {
                 onInputChange={(_, newInput) => setCityInput(newInput)}
                 loading={isCitiesLoading}
                 noOptionsText={cityInput.length < 1 ? 'Tapez pour rechercher...' : 'Aucune ville trouvée'}
+                slotProps={citySlotProps}
+                renderOption={(props, option) => renderCityOption(props, option)}
                 renderInput={(params) => (
                   <TextField
                     {...params}
                     label="Ville (optionnel)"
                     placeholder="Ex : Douala, Yaoundé…"
+                    sx={cityInputSx}
                     InputProps={{
                       ...params.InputProps,
                       endAdornment: (
@@ -280,7 +285,6 @@ export default function CompleteProfilePage() {
                         </>
                       ),
                     }}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                   />
                 )}
               />

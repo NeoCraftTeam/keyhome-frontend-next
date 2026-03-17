@@ -16,6 +16,7 @@ import {
     SquareFootOutlined,
     Star as StarIcon,
 } from '@mui/icons-material';
+import KeyScoreBadge from '@/components/ads/KeyScoreBadge';
 import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/material';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
@@ -46,6 +47,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
   const { add: addToComparator, remove: removeFromComparator, isSelected: isInComparator } = useComparator();
   const touchStartX = useRef<number | null>(null);
+  const slideDirection = useRef<1 | -1>(1);
 
   const isFavorite = checkFav(ad.id);
   const [heartBurst, setHeartBurst] = useState(false);
@@ -71,12 +73,14 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
   const nextImage = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    slideDirection.current = 1;
     setCurrentImage((prev) => (prev + 1) % images.length);
   }, [images.length]);
 
   const prevImage = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    slideDirection.current = -1;
     setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
   }, [images.length]);
 
@@ -96,13 +100,15 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
         color: 'inherit',
         display: 'block',
       }}
+      role="link"
       aria-label={ad.title}
     >
       <Box
         sx={{
           '&:hover .image-nav': { opacity: 1 },
           '&:focus-visible': {
-            outline: '2px solid #F6475F',
+            outline: '2px solid',
+            outlineColor: 'primary.main',
             outlineOffset: 4,
             borderRadius: 1,
           },
@@ -115,8 +121,13 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
           if (touchStartX.current === null || images.length <= 1) return;
           const delta = e.changedTouches[0].clientX - touchStartX.current;
           if (Math.abs(delta) > 40) {
-            if (delta < 0) setCurrentImage((prev) => (prev + 1) % images.length);
-            else setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+            if (delta < 0) {
+              slideDirection.current = 1;
+              setCurrentImage((prev) => (prev + 1) % images.length);
+            } else {
+              slideDirection.current = -1;
+              setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+            }
           }
           touchStartX.current = null;
         }}
@@ -130,30 +141,44 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
           bgcolor: 'grey.100',
         }}
       >
-        {/* Images */}
-        {images.map((img, idx) => (
-          <Box
-            key={img.id}
-            sx={{
+        {/* Images — slide transition */}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={currentImage}
+            initial={{
+              opacity: 0,
+              x: slideDirection.current * 24,
+            }}
+            animate={{
+              opacity: 1,
+              x: 0,
+              transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+            }}
+            exit={{
+              opacity: 0,
+              x: -slideDirection.current * 24,
+              transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] },
+            }}
+            style={{
               position: 'absolute',
-              top: 0, left: 0,
-              width: '100%', height: '100%',
-              opacity: idx === currentImage ? 1 : 0,
-              transition: 'opacity 0.3s ease',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
             }}
           >
             <Image
-              src={img.thumb || img.url}
-              alt={`${ad.title}${idx > 0 ? ` ${idx + 1}` : ''}`}
+              src={images[currentImage].thumb || images[currentImage].url}
+              alt={`${ad.title}${currentImage > 0 ? ` ${currentImage + 1}` : ''}`}
               fill
               sizes="(max-width: 600px) 50vw, (max-width: 960px) 33vw, 25vw"
-              priority={idx === 0}
+              priority={currentImage === 0}
               placeholder="blur"
               blurDataURL={BLUR_DATA_URL}
               style={{ objectFit: 'cover' }}
             />
-          </Box>
-        ))}
+          </motion.div>
+        </AnimatePresence>
 
         {/* Compare badge — top left */}
         {isInComparator(ad.id) && (
@@ -185,7 +210,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               sx={{
                 bgcolor: 'rgba(255,255,255,0.2)',
                 backdropFilter: 'blur(4px)',
-                color: isFavorite ? '#F6475F' : '#fff',
+                color: isFavorite ? 'primary.main' : '#fff',
                 width: 32,
                 height: 32,
                 transition: 'background-color 0.2s ease',
@@ -250,7 +275,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                     ? '#F59E0B'
                     : ad.status === 'rent'
                       ? '#3B82F6'
-                      : '#F6475F',
+                      : 'primary.main',
               color: '#fff',
             }}
           />
@@ -272,7 +297,8 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                 bgcolor: 'rgba(255,255,255,0.92)',
                 opacity: 0,
                 transition: 'opacity 0.2s',
-                '&:hover': { bgcolor: '#fff' },
+                '&:hover': { bgcolor: '#fff', transform: 'translateY(-50%)' },
+                '&:active': { transform: 'translateY(-50%)' },
                 '@media (hover: none)': { opacity: 0.85 },
                 zIndex: 2,
                 width: 28,
@@ -295,7 +321,8 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                 bgcolor: 'rgba(255,255,255,0.92)',
                 opacity: 0,
                 transition: 'opacity 0.2s',
-                '&:hover': { bgcolor: '#fff' },
+                '&:hover': { bgcolor: '#fff', transform: 'translateY(-50%)' },
+                '&:active': { transform: 'translateY(-50%)' },
                 '@media (hover: none)': { opacity: 0.85 },
                 zIndex: 2,
                 width: 28,
@@ -339,8 +366,8 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
 
       {/* ── Text content — Airbnb style ────────────────────────────── */}
       <Box sx={{ pt: 1.25, pb: 0.5 }}>
-        {/* Title + Rating  — same row */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 0.5 }}>
+        {/* Title + Rating + KeyScore — same row */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 0.5, flexWrap: 'wrap' }}>
           <Typography
             variant="body2"
             fontWeight={600}
@@ -356,14 +383,21 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
           >
             {ad.title}
           </Typography>
-          {ad.rating != null && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0, ml: 0.5 }}>
-              <StarIcon sx={{ fontSize: 12, color: '#222' }} />
-              <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.75rem', lineHeight: 1 }}>
-                {ad.rating.toFixed(1)}
-              </Typography>
-            </Box>
-          )}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+            {ad.is_unlocked && (
+              <Box onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} sx={{ display: 'flex' }}>
+                <KeyScoreBadge adId={ad.id} size="small" />
+              </Box>
+            )}
+            {ad.rating != null && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0 }}>
+                <StarIcon sx={{ fontSize: 12, color: '#222' }} />
+                <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.75rem', lineHeight: 1 }}>
+                  {ad.rating.toFixed(1)}
+                </Typography>
+              </Box>
+            )}
+          </Box>
         </Box>
 
         {/* Location */}
@@ -433,12 +467,21 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
             {formatPrice(ad.price)}
           </Typography>
           <Tooltip title={isInComparator(ad.id) ? 'Retirer de la comparaison' : 'Comparer ce bien'}>
-            <Box
+            <motion.div
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (isInComparator(ad.id)) { removeFromComparator(ad.id); } else { addToComparator(ad); }
+                if (isInComparator(ad.id)) {
+                  removeFromComparator(ad.id);
+                } else {
+                  addToComparator(ad);
+                }
               }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{ display: 'flex' }}
+            >
+            <Box
               sx={{
                 display: 'flex', alignItems: 'center', gap: 0.25,
                 px: 0.75, py: 0.25, borderRadius: 1, cursor: 'pointer',
@@ -453,6 +496,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               <CompareArrows sx={{ fontSize: 11 }} />
               {isInComparator(ad.id) ? '✓' : '+'}
             </Box>
+            </motion.div>
           </Tooltip>
         </Box>
       </Box>

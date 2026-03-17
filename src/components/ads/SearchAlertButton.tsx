@@ -3,6 +3,7 @@
 import { useAuth } from '@/providers/AuthProvider';
 import { searchAlertsService, SearchAlertPayload } from '@/services/searchAlerts.service';
 import { NotificationsActive, NotificationsNone } from '@mui/icons-material';
+import type { SxProps, Theme } from '@mui/material';
 import {
   Box,
   Button,
@@ -27,9 +28,10 @@ interface Props {
   prefill?: Partial<SearchAlertPayload>;
   variant?: 'icon' | 'button';
   size?: 'small' | 'medium' | 'large';
+  sx?: SxProps<Theme>;
 }
 
-export default function SearchAlertButton({ prefill = {}, variant = 'button', size = 'medium' }: Props) {
+export default function SearchAlertButton({ prefill = {}, variant = 'button', size = 'medium', sx }: Props) {
   const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState(prefill.label ?? '');
@@ -77,9 +79,9 @@ export default function SearchAlertButton({ prefill = {}, variant = 'button', si
       startIcon={<NotificationsNone />}
       onClick={() => setOpen(true)}
       size={size}
-      sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 99, whiteSpace: 'nowrap' }}
+      sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 99, whiteSpace: 'nowrap', ...sx }}
     >
-      Sauvegarder la recherche
+      Créer une alerte
     </Button>
   );
 

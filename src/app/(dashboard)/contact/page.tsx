@@ -236,7 +236,7 @@ export default function ContactPage() {
                                             onChange={(e) => setName(e.target.value)}
                                             fullWidth
                                             autoFocus
-                                            placeholder="Jean Dupont"
+                                            helperText="Ex : Jean Dupont"
                                         />
                                         <TextField
                                             label="Adresse email"
@@ -244,7 +244,6 @@ export default function ContactPage() {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             fullWidth
-                                            placeholder="jean@example.com"
                                         />
                                     </Box>
                                 )}
@@ -274,7 +273,6 @@ export default function ContactPage() {
                                         multiline
                                         rows={6}
                                         autoFocus
-                                        placeholder="Décrivez votre demande en détail…"
                                         helperText={`${message.length} caractères (minimum 10)`}
                                     />
                                 )}

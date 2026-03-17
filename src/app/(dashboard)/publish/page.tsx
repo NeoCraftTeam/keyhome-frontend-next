@@ -349,9 +349,8 @@ export default function PublishPage() {
                   fullWidth
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="Ex: Bel appartement 3 pièces à Bastos"
                   inputProps={{ maxLength: 120 }}
-                  helperText={`${form.title.length}/120`}
+                  helperText={`${form.title.length}/120 — Ex : Bel appartement 3 pièces à Bastos`}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -402,8 +401,7 @@ export default function PublishPage() {
                   rows={5}
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  placeholder="Décrivez votre bien : état, environnement, accès, points forts..."
-                  helperText="Une description détaillée augmente vos chances de location."
+                  helperText="Décrivez votre bien : état, environnement, accès, points forts... Une description détaillée augmente vos chances de location."
                 />
               </Grid>
             </Grid>
@@ -520,7 +518,7 @@ export default function PublishPage() {
               fullWidth
               value={form.adresse}
               onChange={(e) => setForm((f) => ({ ...f, adresse: e.target.value }))}
-              placeholder="Ex: Rue Nachtigal, face au supermarché Score"
+              helperText="Ex : Rue Nachtigal, face au supermarché Score"
               sx={{ mb: 3 }}
             />
             <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>

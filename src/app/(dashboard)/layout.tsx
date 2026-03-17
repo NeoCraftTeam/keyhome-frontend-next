@@ -1,10 +1,12 @@
 'use client';
 
 import BottomNav, { BOTTOM_NAV_HEIGHT } from '@/components/layout/BottomNav';
+import { useIsStandalone } from '@/hooks/useIsStandalone';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
-import { getSurveyPostponed } from '@/components/surveys/SurveyBanner';
+import { getSurveyPostponed, setSurveyPostponed as persistSurveyPostponed } from '@/components/surveys/SurveyBanner';
+import { authService } from '@/services/auth.service';
 import AppLoader from '@/components/ui/AppLoader';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
@@ -27,20 +29,12 @@ const AUTH_PAGES = ['/login', '/register', '/verify-otp', '/verify-email', '/com
 const PRIVATE_PATHS = ['/profile', '/my/reservations'];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, isLoggingOut } = useAuth();
+  const { isAuthenticated, isLoading, isLoggingOut, user, refreshUser } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  // Must start false to match server render — read from localStorage in useEffect to avoid hydration mismatch
-  const [hasStoredToken, setHasStoredToken] = useState(false);
-  useEffect(() => {
-    try {
-      setHasStoredToken(!!window.localStorage.getItem('kh_sanctum_token'));
-    } catch {
-      setHasStoredToken(false);
-    }
-  }, []);
+  const isStandalone = useIsStandalone();
   const [surveyPostponed, setSurveyPostponed] = useState<Record<string, boolean>>({});
   const [surveyMounted, setSurveyMounted] = useState(false);
 
@@ -67,10 +61,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
-    if (activeSurvey?.id && surveyMounted && getSurveyPostponed(activeSurvey.id)) {
+    if (activeSurvey?.id && surveyMounted && getSurveyPostponed(activeSurvey.id, user)) {
       setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
     }
-  }, [activeSurvey?.id, surveyMounted]);
+  }, [activeSurvey?.id, surveyMounted, user?.preferences?.survey_postponed_ids]);
 
   const isPrivatePage = PRIVATE_PATHS.some((p) => pathname?.startsWith(p));
   const isSurveyPage = pathname?.startsWith('/surveys') || pathname?.startsWith('/sondage');
@@ -88,12 +82,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [isAuthenticated, isLoading, isLoggingOut, router, pathname, isPrivatePage]);
 
-  // On first page load, wait until we know whether a persisted token exists.
-  // If one exists, keep waiting until auth finishes hydrating to avoid
-  // guest-first flashes before the authenticated UI appears.
-  const shouldHoldForBootstrap = hasStoredToken && isLoading;
+  // On first page load, wait until auth has fully resolved before rendering.
+  // This prevents the flash of guest content (navbar, etc.) when a logged-in
+  // user refreshes the page — we show loader until auth + user + balance are ready.
+  const shouldHoldForAuth = isLoading;
 
-  if (!isLoggingOut && (shouldHoldForBootstrap || (isLoading && isPrivatePage))) {
+  if (!isLoggingOut && shouldHoldForAuth) {
     return (
       <Box
         sx={{
@@ -117,7 +111,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Navbar />
-      <Box component="main" sx={{ flex: 1, pb: isMobile ? `${BOTTOM_NAV_HEIGHT}px` : 0 }}>
+      <Box component="main" id="main-content" tabIndex={-1} sx={{ flex: 1, pb: isMobile && isStandalone ? `${BOTTOM_NAV_HEIGHT}px` : 0 }}>
         <PageTransition>{children}</PageTransition>
       </Box>
       {!isMobile && <Footer />}
@@ -128,8 +122,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           surveySlug={activeSurvey.slug}
           title="Votre avis compte !"
           description={activeSurvey.description ?? "Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience."}
-          onPostponed={() => setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }))}
-          isPostponed={surveyPostponed[activeSurvey.id] ?? getSurveyPostponed(activeSurvey.id)}
+          onPostponed={async () => {
+            setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
+            if (user) {
+              const ids = user.preferences?.survey_postponed_ids ?? [];
+              if (!ids.includes(activeSurvey.id)) {
+                try {
+                  await authService.updatePreferences({
+                    survey_postponed_ids: [...ids, activeSurvey.id],
+                  });
+                  await refreshUser();
+                } catch { /* ignore */ }
+              }
+            } else {
+              persistSurveyPostponed(activeSurvey.id);
+            }
+          }}
+          isPostponed={surveyPostponed[activeSurvey.id] ?? getSurveyPostponed(activeSurvey.id, user)}
         />
       )}
       <PushPrompt />

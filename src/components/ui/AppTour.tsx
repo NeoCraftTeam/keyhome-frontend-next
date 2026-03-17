@@ -1,5 +1,6 @@
 'use client';
 
+import { authService } from '@/services/auth.service';
 import { useAuth } from '@/providers/AuthProvider';
 import { useState, useEffect } from 'react';
 import {
@@ -25,8 +26,6 @@ import {
   FavoriteBorderRounded,
 } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
-
-const TOUR_KEY = 'keyhome_tour_v2_done';
 
 interface TourStep {
   Icon: SvgIconComponent;
@@ -105,16 +104,12 @@ interface AppTourProps {
 }
 
 export default function AppTour({ onDone }: AppTourProps) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, refreshUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [animDir, setAnimDir] = useState<'forward' | 'back'>('forward');
 
   useEffect(() => {
-    if (typeof window === 'undefined') { return; }
-    try {
-      if (localStorage.getItem(TOUR_KEY)) { return; }
-    } catch { return; }
     if (!isAuthenticated || !user) { return; }
     if (user.onboarding_completed_at != null) { return; }
 
@@ -127,11 +122,11 @@ export default function AppTour({ onDone }: AppTourProps) {
   }, [isAuthenticated, user]);
 
   const handleClose = () => {
-    try {
-      if (typeof window !== 'undefined') localStorage.setItem(TOUR_KEY, '1');
-    } catch { /* localStorage disabled */ }
     setOpen(false);
     onDone?.();
+    authService.completeOnboarding()
+      .then(() => refreshUser())
+      .catch(() => { /* ignore */ });
   };
 
   const handleNext = () => {

@@ -2,6 +2,7 @@
 
 import { estimatorService } from '@/services/estimator.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
+import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { formatPrice } from '@/lib/constants';
 import { City, AdType } from '@/types';
 import { Calculate, TrendingDown, TrendingFlat, TrendingUp } from '@mui/icons-material';
@@ -22,6 +23,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 export default function RentEstimatorWidget() {
+  const { slotProps: citySlotProps, renderOption: renderCityOption, inputSx: cityInputSx } = useCityAutocompleteConfig();
   const [cityInput, setCityInput] = useState('');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [typeId, setTypeId] = useState('');
@@ -100,11 +102,14 @@ export default function RentEstimatorWidget() {
           onInputChange={(_, val) => { setCityInput(val); }}
           loading={loadingCities}
           noOptionsText={cityInput.length < 1 ? 'Tapez une ville…' : 'Aucune ville trouvée'}
+          slotProps={citySlotProps}
+          renderOption={(props, option) => renderCityOption(props, option)}
           renderInput={(params) => (
             <TextField
               {...params}
               label="Ville"
               size="small"
+              sx={cityInputSx}
               InputProps={{
                 ...params.InputProps,
                 endAdornment: (

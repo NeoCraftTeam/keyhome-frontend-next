@@ -168,6 +168,16 @@ export const authService = {
     await api.post('/auth/onboarding-complete');
   },
 
+  async trackHomeVisit(): Promise<{ last_home_visit_at: string }> {
+    const { data } = await api.post<{ last_home_visit_at: string }>('/auth/track-home-visit');
+    return data;
+  },
+
+  async updatePreferences(prefs: { survey_postponed_ids?: string[] }): Promise<{ preferences: { survey_postponed_ids?: string[] } }> {
+    const { data } = await api.patch<{ preferences: { survey_postponed_ids?: string[] } }>('/auth/preferences', prefs);
+    return data;
+  },
+
   /**
    * Get OAuth redirect URL for a provider.
    * The backend will handle the callback and redirect back to /auth/callback with the token.

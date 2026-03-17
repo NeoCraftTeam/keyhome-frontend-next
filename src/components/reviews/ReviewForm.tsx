@@ -1,5 +1,6 @@
 'use client';
 
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { reviewsService } from '@/services/reviews.service';
 import {
@@ -14,7 +15,6 @@ import {
     Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useState } from 'react';
 
 interface ReviewFormProps {

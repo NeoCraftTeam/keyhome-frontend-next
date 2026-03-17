@@ -4,15 +4,19 @@ import { formatPrice } from '@/lib/constants';
 import { motion, useMotionValueEvent, useScroll } from 'framer-motion';
 import { useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
-import { Phone as PhoneIcon } from '@mui/icons-material';
+import { Phone as PhoneIcon, WhatsApp } from '@mui/icons-material';
 
 interface StickyPropertyBarProps {
   price: number;
   title: string;
-  /** Called when user taps the contact CTA */
+  /** Called when user taps the contact CTA (e.g. when locked, scroll to unlock) */
   onContact: () => void;
   /** Hide on desktop (md+) when sidebar contact panel is already visible */
   hideOnDesktop?: boolean;
+  /** When unlocked: direct WhatsApp link. When set, shows WhatsApp + Appeler. */
+  whatsappUrl?: string;
+  /** When unlocked: direct tel: link. When set with whatsappUrl, shows both buttons. */
+  phoneUrl?: string;
 }
 
 /**
@@ -27,7 +31,10 @@ export default function StickyPropertyBar({
   title,
   onContact,
   hideOnDesktop = true,
+  whatsappUrl,
+  phoneUrl,
 }: StickyPropertyBarProps) {
+  const hasDirectButtons = !!(whatsappUrl || phoneUrl);
   const [isVisible, setIsVisible] = useState(false);
   const { scrollY } = useScroll();
 
@@ -98,26 +105,75 @@ export default function StickyPropertyBar({
           </Typography>
         </Box>
 
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          startIcon={<PhoneIcon sx={{ fontSize: 20 }} />}
-          onClick={onContact}
-          sx={{
-            flexShrink: 0,
-            borderRadius: '12px',
-            px: 2.5,
-            py: 1.5,
-            minHeight: 48,
-            fontWeight: 700,
-            fontSize: '0.95rem',
-            boxShadow: 'none',
-            '&:hover': { boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)' },
-          }}
-        >
-          Contacter
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+          {hasDirectButtons ? (
+            <>
+              {whatsappUrl && (
+                <Button
+                  variant="contained"
+                  size="large"
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  startIcon={<WhatsApp sx={{ fontSize: 20 }} />}
+                  sx={{
+                    borderRadius: '12px',
+                    px: 2,
+                    py: 1.5,
+                    minHeight: 48,
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    bgcolor: '#0D9488',
+                    '&:hover': { bgcolor: '#128C7E' },
+                  }}
+                >
+                  WhatsApp
+                </Button>
+              )}
+              {phoneUrl && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  href={phoneUrl}
+                  startIcon={<PhoneIcon sx={{ fontSize: 20 }} />}
+                  sx={{
+                    borderRadius: '12px',
+                    px: 2,
+                    py: 1.5,
+                    minHeight: 48,
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    boxShadow: 'none',
+                    '&:hover': { boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)' },
+                  }}
+                >
+                  Appeler
+                </Button>
+              )}
+            </>
+          ) : (
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              startIcon={<PhoneIcon sx={{ fontSize: 20 }} />}
+              onClick={onContact}
+              sx={{
+                borderRadius: '12px',
+                px: 2.5,
+                py: 1.5,
+                minHeight: 48,
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                boxShadow: 'none',
+                '&:hover': { boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)' },
+              }}
+            >
+              Contacter
+            </Button>
+          )}
+        </Box>
       </Box>
     </motion.div>
   );

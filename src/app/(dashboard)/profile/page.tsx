@@ -4,6 +4,7 @@ import AdCard from '@/components/ads/AdCard';
 import PaymentHistoryTable from '@/components/payment/PaymentHistoryTable';
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
+import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { useFavorites } from '@/providers/FavoritesProvider';
@@ -110,6 +111,7 @@ export default function ProfilePage() {
   });
 
   const router = useRouter();
+  const { slotProps: citySlotProps, renderOption: renderCityOption, inputSx: cityInputSx } = useCityAutocompleteConfig();
 
   // Active survey + has-answered check
   const { data: activeSurvey, isLoading: isSurveyLoading } = useQuery({
@@ -129,6 +131,7 @@ export default function ProfilePage() {
   const { data: unlockedAds = [] } = useQuery({
     queryKey: ['unlocked-ads'],
     queryFn: () => unlockedAdsService.list(),
+    enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -391,11 +394,14 @@ export default function ProfilePage() {
                 filterOptions={(x) => x}
                 loading={isCitiesLoading}
                 noOptionsText="Aucune ville trouvée"
+                slotProps={citySlotProps}
+                renderOption={(props, option) => renderCityOption(props, option)}
                 renderInput={(params) => (
                   <TextField
                     {...params}
                     label="Ville"
                     placeholder="Rechercher une ville..."
+                    sx={cityInputSx}
                     slotProps={{
                       input: {
                         ...params.InputProps,

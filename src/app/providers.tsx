@@ -1,6 +1,7 @@
 'use client';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import SkipLink from '@/components/ui/SkipLink';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { ComparatorProvider } from '@/providers/ComparatorProvider';
 import { FavoritesProvider } from '@/providers/FavoritesProvider';
@@ -12,6 +13,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryProvider>
       <ThemeProvider>
+        <SkipLink />
         <ErrorBoundary>
           <AuthProvider>
             <FavoritesProvider>

@@ -6,6 +6,7 @@ import HeroSearch from '@/components/ads/HeroSearch';
 import AppTour from '@/components/ui/AppTour';
 import FadeIn from '@/components/ui/FadeIn';
 import QueryError from '@/components/ui/QueryError';
+import { useGreeting } from '@/hooks/useGreeting';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
@@ -38,6 +39,7 @@ import {
     useTheme,
 } from '@mui/material';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
 
@@ -51,6 +53,7 @@ const CATEGORIES = [
 ];
 
 export default function HomePage() {
+  const prefersReducedMotion = useReducedMotion();
   const [page, setPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState('');
   const theme = useTheme();
@@ -59,6 +62,7 @@ export default function HomePage() {
   const [isPending, startTransition] = useTransition();
   const { isAuthenticated, user } = useAuth();
   const { items: recentlyViewed } = useRecentlyViewed();
+  const greeting = useGreeting();
   const router = useRouter();
 
   // Hero search autocomplete state
@@ -152,23 +156,36 @@ export default function HomePage() {
           py: { xs: 4, sm: 0 },
         }}
       >
-        {/* Background */}
-        <Box
-          component="img"
-          src="/images/maison-blanche.webp"
-          alt="Maison moderne avec jardin — KeyHome"
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
-          sx={{
+        {/* Background — Ken Burns zoom (respects prefers-reduced-motion) */}
+        <motion.div
+          style={{
             position: 'absolute',
             inset: 0,
             width: '100%',
             height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center 60%',
           }}
-        />
+          initial={{ scale: 1 }}
+          animate={{ scale: prefersReducedMotion ? 1 : 1.06 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 8, ease: 'easeInOut' }}
+        >
+          <Box
+            component="img"
+            src="/images/maison-blanche.webp"
+            alt="Maison moderne avec jardin — KeyHome"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center 60%',
+              willChange: 'transform',
+            }}
+          />
+        </motion.div>
         {/* Overlay */}
         <Box
           sx={{
@@ -179,7 +196,7 @@ export default function HomePage() {
           }}
         />
 
-        {/* Content — left-aligned like Zillow */}
+        {/* Content — staggered entrance */}
         <Box
           sx={{
             position: 'relative',
@@ -188,29 +205,40 @@ export default function HomePage() {
             maxWidth: 640,
           }}
         >
-          <Typography
-            component="h1"
-            sx={{
-              fontSize: { xs: '2rem', sm: '2.8rem', md: '3.6rem' },
-              fontWeight: 800,
-              color: '#fff',
-              lineHeight: 1.1,
-              letterSpacing: -1,
-              mb: { xs: 2.5, md: 3 },
-              textShadow: '0 2px 16px rgba(0,0,0,0.4)',
-            }}
+          <motion.div
+            initial={{ opacity: prefersReducedMotion ? 1 : 0, y: prefersReducedMotion ? 0 : 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: [0.22, 1, 0.36, 1], delay: prefersReducedMotion ? 0 : 0.15 }}
           >
-            Un toit qui vous ressemble.
-          </Typography>
+            <Typography
+              component="h1"
+              sx={{
+                fontSize: { xs: '2rem', sm: '2.8rem', md: '3.6rem' },
+                fontWeight: 800,
+                color: '#F8F7F5',
+                lineHeight: 1.1,
+                letterSpacing: -1,
+                mb: { xs: 2.5, md: 3 },
+                textShadow: '0 2px 16px rgba(0,0,0,0.4)',
+              }}
+            >
+              Un toit qui vous ressemble.
+            </Typography>
+          </motion.div>
 
-          {/* Search — tabs: by city OR natural language */}
-          <HeroSearch
-            cities={cities}
-            cityInput={cityInput}
-            setCityInput={setCityInput}
-            isCitiesLoading={isCitiesLoading}
-            onCitySelect={handleCitySelect}
-          />
+          <motion.div
+            initial={{ opacity: prefersReducedMotion ? 1 : 0, y: prefersReducedMotion ? 0 : 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.5, ease: [0.22, 1, 0.36, 1], delay: prefersReducedMotion ? 0 : 0.35 }}
+          >
+            <HeroSearch
+              cities={cities}
+              cityInput={cityInput}
+              setCityInput={setCityInput}
+              isCitiesLoading={isCitiesLoading}
+              onCitySelect={handleCitySelect}
+            />
+          </motion.div>
         </Box>
       </Box>
 
@@ -314,7 +342,7 @@ export default function HomePage() {
                 fontWeight={700}
                 sx={{ fontSize: { xs: '1rem', md: '1.15rem' } }}
               >
-                Bonjour,{' '}
+                {greeting},{' '}
                 <Box component="span" sx={{ color: 'primary.main' }}>
                   {user.firstname}
                 </Box>{' '}
@@ -350,6 +378,8 @@ export default function HomePage() {
                 sx={{
                   flexShrink: 0,
                   fontWeight: isActive ? 700 : 500,
+                  transition: 'all 0.2s ease',
+                  '&:active': { transform: 'scale(0.96)' },
                   ...(isActive
                     ? {
                         bgcolor: 'primary.main',
@@ -365,85 +395,250 @@ export default function HomePage() {
       </Container>
 
       <Container maxWidth="xl" sx={{ mt: 1, px: { xs: 2, sm: 3, md: 4 } }}>
-        {/* Recommendations */}
-        {recommendations.length > 0 && (
-          <FadeIn delay={0.1} direction="up">
-            <Box sx={{ mb: { xs: 3, md: 4 } }}>
-              <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700} gutterBottom>
-                Recommandé pour vous
-              </Typography>
+        {/* When a category is selected: main grid first so filtered results are immediately visible */}
+        {selectedCategory ? (
+          <>
+            {/* Main grid — en premier quand un filtre est actif */}
+            <FadeIn delay={0.1} direction="up">
               <Box
+                ref={gridRef}
                 sx={{
                   display: 'flex',
-                  gap: { xs: 1.5, md: 2 },
-                  overflowX: 'auto',
-                  pb: 1,
-                  scrollbarWidth: 'none',
-                  '&::-webkit-scrollbar': { display: 'none' },
-                  mx: { xs: -2, sm: 0 },
-                  px: { xs: 2, sm: 0 },
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  mb: 2,
+                  scrollMarginTop: '80px',
                 }}
               >
-                {recommendations.slice(0, 8).map((ad) => (
-                  <Box
-                    key={ad.id}
-                    sx={{
-                      minWidth: { xs: 220, sm: 260, md: 280 },
-                      maxWidth: { xs: 220, sm: 260, md: 280 },
-                      flexShrink: 0,
-                    }}
-                  >
-                    <AdCard ad={ad} />
-                  </Box>
-                ))}
-              </Box>
-              <Divider sx={{ mt: { xs: 2, md: 3 } }} />
-            </Box>
-          </FadeIn>
-        )}
-
-        {/* Recently viewed */}
-        {recentlyViewed.length > 0 && (
-          <FadeIn delay={0.15} direction="up">
-            <Box sx={{ mb: { xs: 3, md: 4 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                <AccessTimeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                 <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
-                  Récemment consultés
+                  {CATEGORIES.find((c) => c.value === selectedCategory)?.label || selectedCategory}
                 </Typography>
+                {isFetching && !showShimmer && (
+                  <Typography variant="caption" color="text.secondary">
+                    Mise à jour...
+                  </Typography>
+                )}
               </Box>
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: { xs: 1.5, md: 2 },
-                  overflowX: 'auto',
-                  pb: 1,
-                  scrollbarWidth: 'none',
-                  '&::-webkit-scrollbar': { display: 'none' },
-                  mx: { xs: -2, sm: 0 },
-                  px: { xs: 2, sm: 0 },
-                }}
-              >
-                {recentlyViewed.slice(0, 8).map((ad) => (
-                  <Box
-                    key={ad.id}
+
+              {isError && !showShimmer && (
+                <QueryError
+                  onRetry={() => refetch()}
+                  message="Impossible de charger les annonces. Vérifiez votre connexion et réessayez."
+                />
+              )}
+
+              {!isError && (
+                <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
+                  {showShimmer
+                    ? Array.from({ length: skeletonCount }).map((_, idx) => (
+                        <Grid key={idx} size={{ xs: 6, sm: 6, md: 4, lg: 3 }}>
+                          <AdCardSkeleton />
+                        </Grid>
+                      ))
+                    : ads.map((ad, idx) => (
+                        <Grid
+                          key={ad.id}
+                          size={{ xs: 6, sm: 6, md: 4, lg: 3 }}
+                          sx={{
+                            animation: `fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) ${idx * 0.03}s both`,
+                          }}
+                        >
+                          <AdCard ad={ad} />
+                        </Grid>
+                      ))}
+                </Grid>
+              )}
+
+              {!showShimmer && ads.length === 0 && (
+                <Box sx={{ textAlign: 'center', py: 8 }}>
+                  <MapsHomeWork sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary">
+                    Aucune annonce trouvée
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Essayez de modifier vos filtres ou revenez plus tard
+                  </Typography>
+                </Box>
+              )}
+
+              {totalPages > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                  <Pagination
+                    count={totalPages}
+                    page={page}
+                    onChange={handlePageChange}
+                    shape="rounded"
+                    size={isMobile ? 'small' : 'medium'}
+                    siblingCount={isMobile ? 0 : 1}
                     sx={{
-                      minWidth: { xs: 220, sm: 260, md: 280 },
-                      maxWidth: { xs: 220, sm: 260, md: 280 },
-                      flexShrink: 0,
+                      '& .MuiPaginationItem-root.Mui-selected': {
+                        bgcolor: 'primary.main',
+                        color: '#fff',
+                        '&:hover': { bgcolor: 'primary.dark' },
+                      },
+                    }}
+                  />
+                </Box>
+              )}
+            </FadeIn>
+
+            <Divider sx={{ my: { xs: 3, md: 4 } }} />
+
+            {/* Recommendations — en dessous quand filtre actif */}
+            {recommendations.length > 0 && (
+              <FadeIn delay={0.15} direction="up">
+                <Box sx={{ mb: { xs: 3, md: 4 } }}>
+                  <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700} gutterBottom>
+                    Recommandé pour vous
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      gap: { xs: 1.5, md: 2 },
+                      overflowX: 'auto',
+                      pb: 1,
+                      scrollbarWidth: 'none',
+                      '&::-webkit-scrollbar': { display: 'none' },
+                      mx: { xs: -2, sm: 0 },
+                      px: { xs: 2, sm: 0 },
                     }}
                   >
-                    <AdCard ad={ad} />
+                    {recommendations.slice(0, 8).map((ad) => (
+                      <Box
+                        key={ad.id}
+                        sx={{
+                          minWidth: { xs: 220, sm: 260, md: 280 },
+                          maxWidth: { xs: 220, sm: 260, md: 280 },
+                          flexShrink: 0,
+                        }}
+                      >
+                        <AdCard ad={ad} />
+                      </Box>
+                    ))}
                   </Box>
-                ))}
-              </Box>
-              <Divider sx={{ mt: { xs: 2, md: 3 } }} />
-            </Box>
-          </FadeIn>
-        )}
+                </Box>
+              </FadeIn>
+            )}
 
-        {/* Main grid */}
-        <FadeIn delay={0.2} direction="up">
+            {/* Recently viewed */}
+            {recentlyViewed.length > 0 && (
+              <FadeIn delay={0.2} direction="up">
+                <Box sx={{ mb: { xs: 3, md: 4 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <AccessTimeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                    <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
+                      Récemment consultés
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      gap: { xs: 1.5, md: 2 },
+                      overflowX: 'auto',
+                      pb: 1,
+                      scrollbarWidth: 'none',
+                      '&::-webkit-scrollbar': { display: 'none' },
+                      mx: { xs: -2, sm: 0 },
+                      px: { xs: 2, sm: 0 },
+                    }}
+                  >
+                    {recentlyViewed.slice(0, 8).map((ad) => (
+                      <Box
+                        key={ad.id}
+                        sx={{
+                          minWidth: { xs: 220, sm: 260, md: 280 },
+                          maxWidth: { xs: 220, sm: 260, md: 280 },
+                          flexShrink: 0,
+                        }}
+                      >
+                        <AdCard ad={ad} />
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              </FadeIn>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Default (Tous): Recommendations et Récemment consultés en premier */}
+            {recommendations.length > 0 && (
+              <FadeIn delay={0.1} direction="up">
+                <Box sx={{ mb: { xs: 3, md: 4 } }}>
+                  <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700} gutterBottom>
+                    Recommandé pour vous
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      gap: { xs: 1.5, md: 2 },
+                      overflowX: 'auto',
+                      pb: 1,
+                      scrollbarWidth: 'none',
+                      '&::-webkit-scrollbar': { display: 'none' },
+                      mx: { xs: -2, sm: 0 },
+                      px: { xs: 2, sm: 0 },
+                    }}
+                  >
+                    {recommendations.slice(0, 8).map((ad) => (
+                      <Box
+                        key={ad.id}
+                        sx={{
+                          minWidth: { xs: 220, sm: 260, md: 280 },
+                          maxWidth: { xs: 220, sm: 260, md: 280 },
+                          flexShrink: 0,
+                        }}
+                      >
+                        <AdCard ad={ad} />
+                      </Box>
+                    ))}
+                  </Box>
+                  <Divider sx={{ mt: { xs: 2, md: 3 } }} />
+                </Box>
+              </FadeIn>
+            )}
+
+            {recentlyViewed.length > 0 && (
+              <FadeIn delay={0.15} direction="up">
+                <Box sx={{ mb: { xs: 3, md: 4 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <AccessTimeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                    <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
+                      Récemment consultés
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      gap: { xs: 1.5, md: 2 },
+                      overflowX: 'auto',
+                      pb: 1,
+                      scrollbarWidth: 'none',
+                      '&::-webkit-scrollbar': { display: 'none' },
+                      mx: { xs: -2, sm: 0 },
+                      px: { xs: 2, sm: 0 },
+                    }}
+                  >
+                    {recentlyViewed.slice(0, 8).map((ad) => (
+                      <Box
+                        key={ad.id}
+                        sx={{
+                          minWidth: { xs: 220, sm: 260, md: 280 },
+                          maxWidth: { xs: 220, sm: 260, md: 280 },
+                          flexShrink: 0,
+                        }}
+                      >
+                        <AdCard ad={ad} />
+                      </Box>
+                    ))}
+                  </Box>
+                  <Divider sx={{ mt: { xs: 2, md: 3 } }} />
+                </Box>
+              </FadeIn>
+            )}
+
+            {/* Main grid — Annonces récentes */}
+            <FadeIn delay={0.2} direction="up">
           <Box
             ref={gridRef}
             sx={{
@@ -494,40 +689,40 @@ export default function HomePage() {
                   ))}
             </Grid>
           )}
+
+          {!showShimmer && ads.length === 0 && (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <MapsHomeWork sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary">
+                Aucune annonce trouvée
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Essayez de modifier vos filtres ou revenez plus tard
+              </Typography>
+            </Box>
+          )}
+
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={handlePageChange}
+                shape="rounded"
+                size={isMobile ? 'small' : 'medium'}
+                siblingCount={isMobile ? 0 : 1}
+                sx={{
+                  '& .MuiPaginationItem-root.Mui-selected': {
+                    bgcolor: 'primary.main',
+                    color: '#fff',
+                    '&:hover': { bgcolor: 'primary.dark' },
+                  },
+                }}
+              />
+            </Box>
+          )}
         </FadeIn>
-
-        {/* Empty state */}
-        {!showShimmer && ads.length === 0 && (
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <MapsHomeWork sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
-              Aucune annonce trouvée
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Essayez de modifier vos filtres ou revenez plus tard
-            </Typography>
-          </Box>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={handlePageChange}
-              shape="rounded"
-              size={isMobile ? 'small' : 'medium'}
-              siblingCount={isMobile ? 0 : 1}
-              sx={{
-                '& .MuiPaginationItem-root.Mui-selected': {
-                  bgcolor: 'primary.main',
-                  color: '#fff',
-                  '&:hover': { bgcolor: 'primary.dark' },
-                },
-              }}
-            />
-          </Box>
+          </>
         )}
       </Container>
     </Box>
