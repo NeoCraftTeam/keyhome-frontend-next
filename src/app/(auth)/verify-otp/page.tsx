@@ -24,12 +24,45 @@ export default function VerifyOtpPage() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendMessage, setResendMessage] = useState('');
 
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const otpInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const hint = sessionStorage.getItem('clerk_auth_email_hint') ?? '';
     setEmailHint(hint);
-    inputRefs.current[0]?.focus();
+    otpInputRef.current?.focus();
+  }, []);
+
+  // Web OTP API (Android Chrome) — récupère le code SMS automatiquement
+  useEffect(() => {
+    if (!('OTPCredential' in window)) return;
+
+    const ac = new AbortController();
+    const id = setTimeout(() => {
+      const input = otpInputRef.current;
+      if (!input) return;
+
+      const form = input.closest('form');
+      if (form) {
+        form.addEventListener('submit', () => ac.abort(), { once: true });
+      }
+
+      navigator.credentials
+        .get({ otp: { transport: ['sms'] }, signal: ac.signal } as CredentialRequestOptions)
+        .then((cred) => {
+          const otpCred = cred as { code?: string };
+          if (otpCred?.code) {
+            const code = otpCred.code.replace(/\D/g, '').slice(0, 6);
+            const newDigits = code.split('').concat(Array(6).fill('')).slice(0, 6);
+            setDigits(newDigits);
+          }
+        })
+        .catch(() => {});
+    }, 100);
+
+    return () => {
+      clearTimeout(id);
+      ac.abort();
+    };
   }, []);
 
   // Resend cooldown timer
@@ -43,30 +76,6 @@ export default function VerifyOtpPage() {
 
   const otp = digits.join('');
   const isComplete = otp.length === 6 && digits.every((d) => d !== '');
-
-  const handleChange = (index: number, value: string) => {
-    const char = value.replace(/\D/g, '').slice(-1);
-    const newDigits = [...digits];
-    newDigits[index] = char;
-    setDigits(newDigits);
-    if (char && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !digits[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    const newDigits = pasted.split('').concat(Array(6).fill('')).slice(0, 6);
-    setDigits(newDigits);
-    inputRefs.current[Math.min(pasted.length, 5)]?.focus();
-  };
 
   const handleSubmit = async () => {
     if (!isComplete) return;
@@ -83,7 +92,7 @@ export default function VerifyOtpPage() {
     } catch (err) {
       setError(getSafeErrorMessage(err, 'Code invalide ou expiré. Veuillez réessayer.'));
       setDigits(['', '', '', '', '', '']);
-      inputRefs.current[0]?.focus();
+      otpInputRef.current?.focus();
     } finally {
       setIsSubmitting(false);
     }
@@ -100,7 +109,7 @@ export default function VerifyOtpPage() {
       setResendMessage('Un nouveau code a été envoyé à votre adresse email.');
       setResendCooldown(RESEND_COOLDOWN);
       setDigits(['', '', '', '', '', '']);
-      inputRefs.current[0]?.focus();
+      otpInputRef.current?.focus();
     } catch (err) {
       setError(getSafeErrorMessage(err, "Impossible de renvoyer le code. Veuillez réessayer."));
     }
@@ -237,39 +246,76 @@ export default function VerifyOtpPage() {
               onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}
               autoComplete="on"
             >
-              <Box sx={{ display: 'flex', gap: { xs: 0.75, sm: 1.5 }, mb: 3 }}>
+              {/* Champ unique pour autofill (iOS) et Web OTP (Android) — superposé aux 6 cases */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: { xs: 0.75, sm: 1.5 },
+                  mb: 3,
+                  position: 'relative',
+                  cursor: 'text',
+                }}
+                onClick={() => otpInputRef.current?.focus()}
+              >
+                <input
+                  ref={otpInputRef}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  pattern="\d{6}"
+                  maxLength={6}
+                  value={digits.join('')}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    const newDigits = raw.split('').concat(Array(6).fill('')).slice(0, 6);
+                    setDigits(newDigits);
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                    const newDigits = pasted.split('').concat(Array(6).fill('')).slice(0, 6);
+                    setDigits(newDigits);
+                  }}
+                  aria-label="Code de vérification à 6 chiffres"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    opacity: 0,
+                    caretColor: 'transparent',
+                    cursor: 'text',
+                    fontSize: 'clamp(18px, 5vw, 28px)',
+                    letterSpacing: '0.5em',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                  }}
+                />
                 {digits.map((digit, index) => (
-                  <input
+                  <Box
                     key={index}
-                    ref={(el) => { inputRefs.current[index] = el; }}
-                    value={digit}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
-                    onPaste={handlePaste}
-                    maxLength={1}
-                    inputMode="numeric"
-                    type="text"
-                    // Only the FIRST box gets one-time-code — browsers/OS use it
-                    // to detect an OTP field. Setting it on all 6 breaks autofill.
-                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
-                    style={{
+                    component="span"
+                    sx={{
                       flex: 1,
                       minWidth: 0,
                       width: 'clamp(36px, 12vw, 56px)',
                       height: 'clamp(44px, 13vw, 64px)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       fontSize: 'clamp(18px, 5vw, 28px)',
                       fontWeight: 700,
-                      textAlign: 'center',
                       border: `2px solid ${digit ? '#F6475F' : '#e2e8f0'}`,
                       borderRadius: 10,
-                      outline: 'none',
                       background: digit ? 'rgba(246,71,95,0.04)' : '#fff',
                       color: '#0f172a',
                       transition: 'border-color 0.15s, background 0.15s',
-                      cursor: 'text',
-                      boxSizing: 'border-box',
+                      pointerEvents: 'none',
                     }}
-                  />
+                  >
+                    {digit}
+                  </Box>
                 ))}
               </Box>
 

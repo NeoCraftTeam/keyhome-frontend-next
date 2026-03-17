@@ -109,7 +109,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+      }}
+    >
       <Navbar />
       <Box component="main" id="main-content" tabIndex={-1} sx={{ flex: 1, pb: isMobile && isStandalone ? `${BOTTOM_NAV_HEIGHT}px` : 0 }}>
         <PageTransition>{children}</PageTransition>

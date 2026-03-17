@@ -51,103 +51,103 @@ export default function PushPrompt() {
           width: { xs: 'auto', sm: 420 },
           maxWidth: 420,
           zIndex: 1400,
-          bgcolor: 'background.paper',
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-          border: '1px solid',
-          borderColor: 'divider',
-          p: { xs: 1.5, sm: 2.5 },
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          gap: { xs: 1.5, sm: 2 },
         }}
       >
         <Box
           sx={{
-            width: { xs: 40, sm: 44 },
-            height: { xs: 40, sm: 44 },
-            borderRadius: '50%',
-            bgcolor: 'primary.main',
             display: 'flex',
+            flexWrap: 'wrap',
+            flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
+            gap: { xs: 1.5, sm: 2 },
+            bgcolor: 'background.paper',
+            borderRadius: 3,
+            p: { xs: 1.5, sm: 2.5 },
+            boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            border: '1px solid',
+            borderColor: 'divider',
           }}
         >
-          <BellIcon sx={{ color: '#fff', fontSize: { xs: 20, sm: 22 } }} />
-        </Box>
-
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography
-            variant="subtitle2"
-            fontWeight={700}
-            sx={{ mb: 0.5, wordBreak: 'break-word', lineHeight: 1.3 }}
-          >
-            Restez informé
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mb: 1.5, lineHeight: 1.4, wordBreak: 'break-word' }}
-          >
-            Recevez des alertes pour les nouvelles annonces, réservations et messages importants.
-          </Typography>
-        </Box>
-
-        <IconButton
-          size="small"
-          onClick={handleDismiss}
-          aria-label="Fermer"
-          sx={{
-            color: 'text.secondary',
-            flexShrink: 0,
-            alignSelf: { xs: 'flex-start', sm: 'center' },
-            order: { xs: 3, sm: 4 },
-          }}
-        >
-          <CloseIcon sx={{ fontSize: 18 }} />
-        </IconButton>
-
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 1,
-            flexBasis: { xs: '100%', sm: 'auto' },
-            flexShrink: 0,
-            order: { xs: 4, sm: 3 },
-          }}
-        >
-          <Button
-            size="small"
-            variant="contained"
-            onClick={handleAccept}
-            disabled={loading}
+          <Box
             sx={{
-              borderRadius: 99,
-              textTransform: 'none',
-              fontWeight: 600,
-              fontSize: '0.8rem',
-              px: 2,
-              flex: { xs: 1, sm: '0 0 auto' },
+              width: { xs: 40, sm: 44 },
+              height: { xs: 40, sm: 44 },
+              borderRadius: '50%',
+              bgcolor: 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
-            {loading ? 'Activation...' : 'Activer'}
-          </Button>
-          <Button
+            <BellIcon sx={{ color: '#fff', fontSize: { xs: 20, sm: 22 } }} />
+          </Box>
+
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              variant="subtitle2"
+              fontWeight={700}
+              sx={{ wordBreak: 'break-word', lineHeight: 1.3 }}
+            >
+              Restez informé
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ lineHeight: 1.4, wordBreak: 'break-word', display: 'block' }}
+            >
+              Recevez des alertes pour les nouvelles annonces, réservations et messages importants.
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 1,
+              flexBasis: { xs: '100%', sm: 'auto' },
+              flexShrink: 0,
+            }}
+          >
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleAccept}
+              disabled={loading}
+              sx={{
+                borderRadius: 99,
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.8rem',
+                px: 2,
+                flex: { xs: 1, sm: '0 0 auto' },
+              }}
+            >
+              {loading ? 'Activation...' : 'Activer'}
+            </Button>
+            <Button
+              size="small"
+              variant="text"
+              onClick={handleDismiss}
+              sx={{
+                borderRadius: 99,
+                textTransform: 'none',
+                fontWeight: 500,
+                fontSize: '0.8rem',
+                color: 'text.secondary',
+              }}
+            >
+              Plus tard
+            </Button>
+          </Box>
+
+          <IconButton
             size="small"
-            variant="text"
             onClick={handleDismiss}
-            sx={{
-              borderRadius: 99,
-              textTransform: 'none',
-              fontWeight: 500,
-              fontSize: '0.8rem',
-              color: 'text.secondary',
-            }}
+            aria-label="Fermer"
+            sx={{ color: 'text.secondary', flexShrink: 0, ml: { xs: 'auto', sm: -0.5 } }}
           >
-            Plus tard
-          </Button>
+            <CloseIcon sx={{ fontSize: 18 }} />
+          </IconButton>
         </Box>
       </Box>
     </Slide>

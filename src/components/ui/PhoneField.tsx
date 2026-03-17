@@ -161,7 +161,8 @@ export default function PhoneField({
         error={error}
         helperText={helperText}
         required={required}
-        inputMode="tel"
+        type="tel"
+        inputProps={{ inputMode: 'tel' }}
         slotProps={{
           input: {
             startAdornment: (

@@ -1,7 +1,7 @@
 'use client';
 
 import CreditsWidget from '@/components/layout/CreditsWidget';
-import { BOTTOM_NAV_ITEMS } from '@/lib/nav-config';
+import { SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
 import { useAuth } from '@/providers/AuthProvider';
 import { useComparator } from '@/providers/ComparatorProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
@@ -59,11 +59,11 @@ const NAV_LINKS = [
   { label: 'Rechercher', href: '/search', icon: <SearchIcon /> },
   { label: 'Explorer la carte', href: '/nearby', icon: <ExploreIcon /> },
   { label: 'Comparaisons', href: '/comparaisons', icon: <CompareArrowsIcon /> },
-  { label: 'Prix du marché', href: '/prix-marche', icon: <BarChartIcon /> },
+  { label: 'Estimer le loyer', href: '/prix-marche', icon: <BarChartIcon /> },
   { label: 'Aide', href: '/aide', icon: <HelpOutlineIcon /> },
 ];
 
-export default function Navbar() {
+export default function Navbar() {  
   const { user, logout, isAuthenticated } = useAuth();
   const { items: comparatorItems } = useComparator();
   const { mode, toggleTheme } = useThemeMode();
@@ -89,6 +89,7 @@ export default function Navbar() {
           top: 0,
           left: 0,
           right: 0,
+          pt: 'env(safe-area-inset-top, 0px)',
           zIndex: (theme) => theme.zIndex.drawer + 10,
         }}
       >
@@ -416,8 +417,15 @@ export default function Navbar() {
           </Box>
         </Toolbar>
       </AppBar>
-      {/* Keep content from being hidden behind fixed navbar */}
-      <Toolbar sx={{ minHeight: { xs: 56, md: 64 } }} />
+      {/* Keep content from being hidden behind fixed navbar + Dynamic Island */}
+      <Toolbar
+        sx={{
+          minHeight: {
+            xs: 'calc(56px + env(safe-area-inset-top, 0px))',
+            md: 'calc(64px + env(safe-area-inset-top, 0px))',
+          },
+        }}
+      />
 
       {/* Mobile Drawer */}
       <Drawer
@@ -472,11 +480,11 @@ export default function Navbar() {
             <Divider />
           </>
         )}
-        {/* Mobile browser (no BottomNav): Rechercher, Carte, Prix — sans Comparer ni Profil (déjà dans Compte) */}
+        {/* Mobile browser (no BottomNav): Rechercher, Explorer la carte, Estimer le loyer */}
         {isMobile && !isStandalone && (
           <>
             <List sx={{ px: 1, pt: 0 }}>
-              {BOTTOM_NAV_ITEMS.filter((item) => item.href !== '/comparaisons' && item.href !== '/profile').map((item) => {
+              {SIDEBAR_NAV_ITEMS.map((item) => {
                 const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
                 return (
                   <ListItem key={item.href} disablePadding>
