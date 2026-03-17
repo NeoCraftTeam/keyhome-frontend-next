@@ -1,6 +1,9 @@
 'use client';
 
 import AdLocationMap from '@/components/ads/AdLocationMap';
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import PropertyAttributes from '@/components/ads/PropertyAttributes';
 import StickyPropertyBar from '@/components/ads/StickyPropertyBar';
 import TourViewer from '@/components/ads/TourViewer';
@@ -150,6 +153,16 @@ function AdDetailContent() {
       && !isAuthLoading
       && (isAuthenticated || !hasStoredSanctumToken),
   });
+
+  const { addRecentlyViewed } = useRecentlyViewed();
+  const { play: playSound } = useSoundFeedback();
+
+  // Track the ad in recently viewed once it loads
+  useEffect(() => {
+    if (ad) {
+      addRecentlyViewed(ad);
+    }
+  }, [ad, addRecentlyViewed]);
 
   // Live balance query — shares the same cache key as CreditsWidget so both
   // always display the same value and a single fetch satisfies both consumers.
@@ -442,21 +455,17 @@ function AdDetailContent() {
         </Box>
 
         <Container maxWidth="xl" sx={{ pt: { xs: 0, md: 3 }, pb: { xs: 14, md: 3 }, overflow: { xs: 'visible', md: 'hidden' }, overflowX: 'hidden', px: { xs: 2.5, sm: 3, md: 4 } }}>
-          {/* Back navigation — desktop only */}
-          <Button
-            onClick={() => router.back()}
-            startIcon={<ChevronLeft />}
-            sx={{
-              display: { xs: 'none', md: 'inline-flex' },
-              mb: 1.5,
-              color: 'text.secondary',
-              textTransform: 'none',
-              fontWeight: 500,
-              '&:hover': { bgcolor: 'action.hover' },
-            }}
-          >
-            Retour aux annonces
-          </Button>
+          {/* Breadcrumbs — desktop only (mobile uses floating back button above) */}
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+            <PageBreadcrumbs
+              items={[
+                { label: 'Accueil', href: '/home' },
+                { label: 'Rechercher', href: '/search' },
+                { label: ad?.title ?? 'Annonce' },
+              ]}
+              showBack={false}
+            />
+          </Box>
 
           {/* Image gallery — desktop only (mobile uses hero above) */}
           <FadeIn delay={0.1} direction="none">
@@ -719,7 +728,7 @@ function AdDetailContent() {
               variant="outlined"
               size="small"
               startIcon={checkFav(ad.id) ? <Favorite sx={{ color: '#F6475F' }} /> : <FavoriteBorder />}
-              onClick={() => toggleFav(ad)}
+              onClick={() => { playSound(checkFav(ad.id) ? 'unfavorite' : 'favorite'); toggleFav(ad); }}
               sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: checkFav(ad.id) ? '#F6475F' : 'text.primary' }}
             >
               {checkFav(ad.id) ? 'Sauvegardé' : 'Sauvegarder'}
@@ -735,7 +744,7 @@ function AdDetailContent() {
                 color: isInComparator(ad.id) ? 'primary.main' : 'text.primary',
               }}
             >
-              {isInComparator(ad.id) ? '✓ Comparé' : 'Comparer'}
+              Comparer
             </Button>
             {!isLocked && <KeyScoreBadge adId={ad.id} size="small" />}
           </Box>
@@ -756,7 +765,7 @@ function AdDetailContent() {
             variant="outlined"
             size="small"
             startIcon={checkFav(ad.id) ? <Favorite sx={{ color: '#F6475F' }} /> : <FavoriteBorder />}
-            onClick={() => toggleFav(ad)}
+            onClick={() => { playSound(checkFav(ad.id) ? 'unfavorite' : 'favorite'); toggleFav(ad); }}
             sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: checkFav(ad.id) ? '#F6475F' : 'text.primary' }}
           >
             {checkFav(ad.id) ? 'Sauvegardé' : 'Sauvegarder'}

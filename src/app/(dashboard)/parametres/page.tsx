@@ -4,40 +4,37 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
 import { surveysService } from '@/services/surveys.service';
 import { Survey } from '@/types';
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import {
   Apple,
-  ArrowForward as ArrowForwardIcon,
+  ArrowForwardIos as ArrowIcon,
   Assignment as AssignmentIcon,
   ChevronLeft as ChevronLeftIcon,
   DarkMode as DarkModeIcon,
   Facebook,
   Google,
+  HelpOutline as HelpIcon,
   LightMode as LightModeIcon,
   Link as LinkIcon,
   Logout as LogoutIcon,
-  MonitorWeight as MonitorIcon,
+  MusicNote as SoundIcon,
   NotificationsNone as NotificationsIcon,
   Person as PersonIcon,
-  Security as SecurityIcon,
   SettingsBrightness as SystemIcon,
 } from '@mui/icons-material';
 import {
   Alert,
+  Avatar,
   Box,
   Button,
-  Card,
-  CardContent,
   Chip,
   Container,
-  Divider,
   IconButton,
-  Paper,
   Skeleton,
   Switch,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
+import { useSoundFeedback, SOUND_ENABLED_KEY } from '@/hooks/useSoundFeedback';
 import { useClerk } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -47,16 +44,127 @@ const BRAND = '#F6475F';
 
 type ThemeChoice = 'light' | 'dark' | 'system';
 
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <Typography
+      variant="caption"
+      sx={{
+        color: 'text.secondary',
+        fontSize: '0.72rem',
+        letterSpacing: 0.8,
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        px: 1,
+        mb: 1,
+        display: 'block',
+      }}
+    >
+      {children}
+    </Typography>
+  );
+}
+
+function SettingsCard({ children }: { children: React.ReactNode }) {
+  return (
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        borderRadius: 3,
+        overflow: 'hidden',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)',
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
+function SettingsRow({
+  icon,
+  iconBg,
+  label,
+  sublabel,
+  onClick,
+  trailing,
+  danger,
+}: {
+  icon: React.ReactNode;
+  iconBg?: string;
+  label: string;
+  sublabel?: string;
+  onClick?: () => void;
+  trailing?: React.ReactNode;
+  danger?: boolean;
+}) {
+  return (
+    <Box
+      onClick={onClick}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        px: 2,
+        py: 1.5,
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'background 0.12s',
+        '&:hover': onClick ? { bgcolor: 'action.hover' } : {},
+        '&:not(:last-child)': {
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        },
+      }}
+    >
+      <Avatar
+        sx={{
+          width: 34,
+          height: 34,
+          bgcolor: danger ? 'rgba(211,47,47,0.08)' : (iconBg ?? 'rgba(246,71,95,0.08)'),
+          color: danger ? 'error.main' : BRAND,
+          fontSize: 18,
+        }}
+      >
+        {icon}
+      </Avatar>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography
+          variant="body2"
+          fontWeight={600}
+          color={danger ? 'error.main' : 'text.primary'}
+          noWrap
+        >
+          {label}
+        </Typography>
+        {sublabel && (
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {sublabel}
+          </Typography>
+        )}
+      </Box>
+      {trailing ?? (onClick && <ArrowIcon sx={{ fontSize: 14, color: 'text.disabled' }} />)}
+    </Box>
+  );
+}
+
 export default function ParametresPage() {
   const { mode, toggleTheme } = useThemeMode();
   const { user, logout, isAuthenticated } = useAuth();
   const router = useRouter();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user: clerkUser } = useClerk();
 
-  const [linkedAccountsLoading, setLinkedAccountsLoading] = useState<string | null>(null);
-  const [linkedAccountsError, setLinkedAccountsError] = useState('');
+  const [linkedLoading, setLinkedLoading] = useState<string | null>(null);
+  const [linkedError, setLinkedError] = useState('');
+  const { play } = useSoundFeedback();
+  const [soundEnabled, setSoundEnabledState] = useState<boolean>(() => {
+    if (typeof window === 'undefined') {
+      return true;
+    }
+    try {
+      const stored = localStorage.getItem(SOUND_ENABLED_KEY);
+      return stored === null ? true : stored === 'true';
+    } catch {
+      return true;
+    }
+  });
 
   const { data: activeSurvey, isLoading: isSurveyLoading } = useQuery<Survey>({
     queryKey: ['active-survey'],
@@ -75,174 +183,142 @@ export default function ParametresPage() {
   const surveyAnswered = surveyAnsweredData?.has_answered ?? false;
 
   const socialProviders = [
-    { key: 'google', label: 'Google', icon: <Google sx={{ fontSize: 22 }} />, strategy: 'oauth_google' as const },
-    { key: 'facebook', label: 'Facebook', icon: <Facebook sx={{ fontSize: 22 }} />, strategy: 'oauth_facebook' as const },
-    { key: 'apple', label: 'Apple', icon: <Apple sx={{ fontSize: 22 }} />, strategy: 'oauth_apple' as const },
+    { key: 'google', label: 'Google', icon: <Google sx={{ fontSize: 18 }} />, strategy: 'oauth_google' as const },
+    { key: 'facebook', label: 'Facebook', icon: <Facebook sx={{ fontSize: 18 }} />, strategy: 'oauth_facebook' as const },
+    { key: 'apple', label: 'Apple', icon: <Apple sx={{ fontSize: 18 }} />, strategy: 'oauth_apple' as const },
   ];
 
-  const isProviderLinked = (strategy: string) => {
-    if (!clerkUser) { return false; }
-    return clerkUser.externalAccounts?.some((acc) => acc.provider === strategy) ?? false;
-  };
+  const isProviderLinked = (strategy: string) =>
+    clerkUser?.externalAccounts?.some((acc) => acc.provider === strategy) ?? false;
 
-  const getLinkedEmail = (strategy: string): string | null => {
-    if (!clerkUser) { return null; }
-    const acc = clerkUser.externalAccounts?.find((a) => a.provider === strategy);
-    return acc?.emailAddress ?? null;
-  };
+  const getLinkedEmail = (strategy: string): string | null =>
+    clerkUser?.externalAccounts?.find((a) => a.provider === strategy)?.emailAddress ?? null;
 
-  const handleConnectProvider = async (strategy: 'oauth_google' | 'oauth_facebook' | 'oauth_apple') => {
-    if (!clerkUser) { return; }
-    setLinkedAccountsLoading(strategy);
-    setLinkedAccountsError('');
+  const handleConnect = async (strategy: 'oauth_google' | 'oauth_facebook' | 'oauth_apple') => {
+    if (!clerkUser) return;
+    setLinkedLoading(strategy);
+    setLinkedError('');
     try {
       await clerkUser.createExternalAccount({ strategy, redirectUrl: '/parametres' });
     } catch {
-      setLinkedAccountsError(
-        'La liaison de comptes sociaux nécessite une connexion via Google, Facebook ou Apple. ' +
-        'Connectez-vous d\'abord avec un compte social, puis liez les autres ici.'
-      );
+      setLinkedError('Connectez-vous d\'abord avec un compte social pour lier les autres ici.');
     } finally {
-      setLinkedAccountsLoading(null);
+      setLinkedLoading(null);
     }
   };
 
-  const handleDisconnectProvider = async (strategy: 'oauth_google' | 'oauth_facebook' | 'oauth_apple') => {
-    if (!clerkUser) { return; }
-    setLinkedAccountsLoading(strategy);
+  const handleDisconnect = async (strategy: 'oauth_google' | 'oauth_facebook' | 'oauth_apple') => {
+    if (!clerkUser) return;
+    setLinkedLoading(strategy);
     try {
       const acc = clerkUser.externalAccounts?.find((a) => (a.provider as string) === strategy);
-      if (acc) { await acc.destroy(); }
+      if (acc) await acc.destroy();
     } catch {
-      setLinkedAccountsError('Impossible de déconnecter ce compte pour le moment.');
+      setLinkedError('Impossible de déconnecter ce compte.');
     } finally {
-      setLinkedAccountsLoading(null);
+      setLinkedLoading(null);
     }
   };
 
   const themeOptions: { value: ThemeChoice; label: string; icon: React.ReactNode }[] = [
     { value: 'light', label: 'Clair', icon: <LightModeIcon sx={{ fontSize: 20 }} /> },
     { value: 'dark', label: 'Sombre', icon: <DarkModeIcon sx={{ fontSize: 20 }} /> },
-    { value: 'system', label: 'Système', icon: <SystemIcon sx={{ fontSize: 20 }} /> },
+    { value: 'system', label: 'Auto', icon: <SystemIcon sx={{ fontSize: 20 }} /> },
   ];
-
   const currentTheme: ThemeChoice = mode === 'dark' ? 'dark' : 'light';
 
-  const sectionLabel = (label: string) => (
-    <Typography
-      variant="overline"
-      sx={{
-        color: 'text.secondary',
-        fontSize: '0.7rem',
-        letterSpacing: 1.2,
-        fontWeight: 700,
-        px: 0.5,
-        mb: 0.5,
-        display: 'block',
-      }}
-    >
-      {label}
-    </Typography>
-  );
-
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, md: 3 } }}>
+    <Container maxWidth="sm" sx={{ py: { xs: 2, md: 5 }, px: { xs: 2, md: 3 } }}>
+      {/* Breadcrumb navigation */}
+      <PageBreadcrumbs
+        items={[
+          { label: 'Accueil', href: '/home' },
+          { label: 'Paramètres' },
+        ]}
+      />
+
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4 }}>
-        <IconButton onClick={() => router.back()} size="small" sx={{ mr: 0.5 }}>
-          <ChevronLeftIcon />
-        </IconButton>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
         <Box>
-          <Typography variant="h5" fontWeight={800} sx={{ lineHeight: 1.2, letterSpacing: -0.5 }}>
+          <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
             Paramètres
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Personnalisez votre expérience KeyHome
+          <Typography variant="caption" color="text.secondary">
+            Personnalisez votre experience
           </Typography>
         </Box>
       </Box>
 
-      {/* ── Apparence ── */}
-      <Box sx={{ mb: 3 }}>
-        {sectionLabel('Apparence')}
-        <Paper
-          elevation={0}
-          sx={{
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 3,
-            overflow: 'hidden',
-          }}
-        >
-          <Box sx={{ p: 2.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Box
-                sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 2,
-                  bgcolor: 'rgba(246,71,95,0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+      {/* User card */}
+      {isAuthenticated && user && (
+        <Box sx={{ mb: 3 }}>
+          <SettingsCard>
+            <Box
+              onClick={() => router.push('/profile')}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                p: 2,
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'action.hover' },
+              }}
+            >
+              <Avatar
+                src={user.avatar || undefined}
+                sx={{ width: 48, height: 48, bgcolor: BRAND, fontSize: 18, fontWeight: 700 }}
               >
-                {mode === 'dark' ? (
-                  <DarkModeIcon sx={{ fontSize: 18, color: BRAND }} />
-                ) : (
-                  <LightModeIcon sx={{ fontSize: 18, color: BRAND }} />
-                )}
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" fontWeight={700}>
-                  Thème
+                {user.firstname?.[0]}
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="subtitle1" fontWeight={700} noWrap>
+                  {user.firstname} {user.lastname}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Choisissez l&apos;apparence de l&apos;application
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  {user.email}
                 </Typography>
               </Box>
+              <ArrowIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
             </Box>
+          </SettingsCard>
+        </Box>
+      )}
 
+      {/* Theme */}
+      <Box sx={{ mb: 3 }}>
+        <SectionTitle>Apparence</SectionTitle>
+        <SettingsCard>
+          <Box sx={{ p: 2 }}>
             <Box sx={{ display: 'flex', gap: 1 }}>
               {themeOptions.map((opt) => {
-                const isActive =
-                  opt.value === 'system'
-                    ? false
-                    : opt.value === currentTheme;
+                const isActive = opt.value === 'system' ? false : opt.value === currentTheme;
                 return (
                   <Box
                     key={opt.value}
                     onClick={() => {
-                      if (opt.value === 'system') { return; }
-                      if (opt.value !== currentTheme) { toggleTheme(); }
+                      if (opt.value === 'system') return;
+                      if (opt.value !== currentTheme) toggleTheme();
                     }}
                     sx={{
                       flex: 1,
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: 0.5,
-                      py: 1.5,
-                      px: 1,
-                      borderRadius: 2,
-                      border: '1.5px solid',
-                      borderColor: isActive ? BRAND : 'divider',
-                      bgcolor: isActive ? 'rgba(246,71,95,0.06)' : 'transparent',
+                      gap: 0.75,
+                      py: 2,
+                      borderRadius: 2.5,
+                      border: '2px solid',
+                      borderColor: isActive ? BRAND : 'transparent',
+                      bgcolor: isActive
+                        ? 'rgba(246,71,95,0.06)'
+                        : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
                       cursor: opt.value === 'system' ? 'default' : 'pointer',
-                      opacity: opt.value === 'system' ? 0.45 : 1,
-                      transition: 'all 0.18s ease',
-                      '&:hover': opt.value !== 'system' ? {
-                        borderColor: BRAND,
-                        bgcolor: 'rgba(246,71,95,0.04)',
-                      } : {},
+                      opacity: opt.value === 'system' ? 0.4 : 1,
+                      transition: 'all 0.15s ease',
                     }}
                   >
-                    <Box sx={{ color: isActive ? BRAND : 'text.secondary' }}>{opt.icon}</Box>
-                    <Typography
-                      variant="caption"
-                      fontWeight={isActive ? 700 : 500}
-                      sx={{ color: isActive ? BRAND : 'text.secondary' }}
-                    >
+                    <Box sx={{ color: isActive ? BRAND : 'text.secondary', lineHeight: 1 }}>{opt.icon}</Box>
+                    <Typography variant="caption" fontWeight={isActive ? 700 : 500} color={isActive ? BRAND : 'text.secondary'}>
                       {opt.label}
                     </Typography>
                   </Box>
@@ -250,339 +326,180 @@ export default function ParametresPage() {
               })}
             </Box>
           </Box>
-        </Paper>
+        </SettingsCard>
       </Box>
 
-      {/* ── Comptes liés ── */}
+      {/* Linked accounts */}
       {isAuthenticated && (
         <Box sx={{ mb: 3 }}>
-          {sectionLabel('Comptes liés')}
-          <Paper
-            elevation={0}
-            sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}
-          >
-            <Box sx={{ p: 2, pb: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-                <Box
-                  sx={{
-                    width: 36, height: 36, borderRadius: 2,
-                    bgcolor: 'rgba(246,71,95,0.1)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  <LinkIcon sx={{ fontSize: 18, color: BRAND }} />
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" fontWeight={700}>Comptes sociaux</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Connectez-vous en un clic, sans mot de passe
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-
-            {linkedAccountsError && (
-              <Alert severity="info" sx={{ mx: 2, mb: 1, borderRadius: 2, fontSize: '0.8rem' }}>
-                {linkedAccountsError}
+          <SectionTitle>Comptes lies</SectionTitle>
+          <SettingsCard>
+            {linkedError && (
+              <Alert severity="info" sx={{ m: 1.5, borderRadius: 2, fontSize: '0.78rem' }}>
+                {linkedError}
               </Alert>
             )}
-
-            {socialProviders.map((provider, idx) => {
+            {socialProviders.map((provider) => {
               const linked = isProviderLinked(provider.strategy);
-              const linkedEmail = getLinkedEmail(provider.strategy);
-              const isLoading = linkedAccountsLoading === provider.strategy;
+              const email = getLinkedEmail(provider.strategy);
+              const loading = linkedLoading === provider.strategy;
 
               return (
-                <Box key={provider.key}>
-                  {idx > 0 && <Divider sx={{ mx: 2 }} />}
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1.5,
-                      px: 2,
-                      py: 1.5,
-                    }}
-                  >
-                    <Box sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
-                      {provider.icon}
-                    </Box>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" fontWeight={600}>
-                        {provider.label}
-                      </Typography>
-                      {linked ? (
-                        <Typography variant="caption" color="success.main" noWrap>
-                          {linkedEmail ?? 'Connecté'}
-                        </Typography>
-                      ) : (
-                        <Typography variant="caption" color="text.disabled">
-                          Non connecté
-                        </Typography>
-                      )}
-                    </Box>
-                    {linked ? (
+                <SettingsRow
+                  key={provider.key}
+                  icon={provider.icon}
+                  iconBg={linked ? 'rgba(46,125,50,0.08)' : undefined}
+                  label={provider.label}
+                  sublabel={linked ? (email ?? 'Connecte') : 'Non connecte'}
+                  trailing={
+                    linked ? (
                       <Button
                         size="small"
-                        variant="outlined"
                         color="error"
-                        disabled={isLoading}
-                        onClick={() => handleDisconnectProvider(provider.strategy)}
-                        sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.75rem', flexShrink: 0 }}
+                        disabled={loading}
+                        onClick={() => handleDisconnect(provider.strategy)}
+                        sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.75rem', minWidth: 0 }}
                       >
-                        {isLoading ? '…' : 'Déconnecter'}
+                        {loading ? '...' : 'Retirer'}
                       </Button>
                     ) : (
                       <Button
                         size="small"
-                        variant="outlined"
-                        disabled={isLoading}
-                        onClick={() => handleConnectProvider(provider.strategy)}
+                        disabled={loading}
+                        onClick={() => handleConnect(provider.strategy)}
                         sx={{
-                          borderRadius: '8px',
                           textTransform: 'none',
                           fontWeight: 600,
                           fontSize: '0.75rem',
-                          flexShrink: 0,
-                          borderColor: BRAND,
+                          minWidth: 0,
                           color: BRAND,
-                          '&:hover': { bgcolor: 'rgba(246,71,95,0.06)', borderColor: BRAND },
                         }}
                       >
-                        {isLoading ? '…' : 'Connecter'}
+                        {loading ? '...' : 'Lier'}
                       </Button>
-                    )}
-                  </Box>
-                </Box>
+                    )
+                  }
+                />
               );
             })}
-            <Box sx={{ pb: 1 }} />
-          </Paper>
+          </SettingsCard>
         </Box>
       )}
 
-      {/* ── Sondage actif ── */}
+      {/* Preferences */}
       <Box sx={{ mb: 3 }}>
-        {sectionLabel('Votre avis')}
-        <Paper
-          elevation={0}
-          sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}
-        >
+        <SectionTitle>Notifications</SectionTitle>
+        <SettingsCard>
+          <SettingsRow
+            icon={<NotificationsIcon sx={{ fontSize: 18 }} />}
+            label="Notifications push"
+            sublabel="Nouvelles annonces et messages"
+            trailing={
+              <Switch
+                defaultChecked
+                disabled
+                size="small"
+                sx={{
+                  '& .MuiSwitch-thumb': { bgcolor: BRAND },
+                  '& .Mui-checked + .MuiSwitch-track': { bgcolor: `${BRAND} !important`, opacity: '0.5 !important' },
+                }}
+              />
+            }
+          />
+          <SettingsRow
+            icon={<SoundIcon sx={{ fontSize: 18 }} />}
+            label="Sons de l'interface"
+            sublabel="Retours sonores discrets (favoris, actions)"
+            trailing={
+              <Switch
+                checked={soundEnabled}
+                size="small"
+                onChange={(e) => {
+                  const enabled = e.target.checked;
+                  setSoundEnabledState(enabled);
+                  try { localStorage.setItem(SOUND_ENABLED_KEY, String(enabled)); } catch { /* ignore */ }
+                  if (enabled) { play('success'); }
+                }}
+                sx={{
+                  '& .MuiSwitch-thumb': { bgcolor: soundEnabled ? BRAND : undefined },
+                  '& .Mui-checked + .MuiSwitch-track': { bgcolor: `${BRAND} !important`, opacity: '0.5 !important' },
+                }}
+              />
+            }
+          />
+        </SettingsCard>
+      </Box>
+
+      {/* Survey */}
+      <Box sx={{ mb: 3 }}>
+        <SectionTitle>Votre avis</SectionTitle>
+        <SettingsCard>
           {isSurveyLoading ? (
-            <Box sx={{ p: 2.5 }}>
+            <Box sx={{ p: 2 }}>
               <Skeleton variant="text" width="60%" />
               <Skeleton variant="text" width="40%" />
             </Box>
           ) : activeSurvey ? (
-            <Box
-              sx={{
-                p: 2.5,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                cursor: surveyAnswered ? 'default' : 'pointer',
-                transition: 'background 0.15s',
-                '&:hover': surveyAnswered ? {} : { bgcolor: 'action.hover' },
-              }}
-              onClick={() => {
-                if (!surveyAnswered) { router.push(`/sondage/${activeSurvey.id}`); }
-              }}
-            >
-              <Box
-                sx={{
-                  width: 36, height: 36, borderRadius: 2,
-                  bgcolor: surveyAnswered ? 'rgba(0,138,5,0.1)' : 'rgba(246,71,95,0.1)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}
-              >
-                <AssignmentIcon sx={{ fontSize: 18, color: surveyAnswered ? 'success.main' : BRAND }} />
-              </Box>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="subtitle2" fontWeight={700} noWrap>
-                    {activeSurvey.title}
-                  </Typography>
-                  {surveyAnswered && (
-                    <Chip label="Complété" size="small" color="success" sx={{ height: 18, fontSize: '0.65rem' }} />
-                  )}
-                </Box>
-                <Typography variant="caption" color="text.secondary">
-                  {surveyAnswered ? 'Merci pour votre participation !' : 'Donnez votre avis — 2 min'}
-                </Typography>
-              </Box>
-              {!surveyAnswered && (
-                <ArrowForwardIcon sx={{ fontSize: 18, color: 'text.disabled', flexShrink: 0 }} />
-              )}
-            </Box>
+            <SettingsRow
+              icon={<AssignmentIcon sx={{ fontSize: 18 }} />}
+              iconBg={surveyAnswered ? 'rgba(46,125,50,0.08)' : undefined}
+              label={activeSurvey.title}
+              sublabel={surveyAnswered ? 'Merci pour votre participation !' : '2 min — Donnez votre avis'}
+              onClick={surveyAnswered ? undefined : () => router.push(`/sondage/${activeSurvey.id}`)}
+              trailing={
+                surveyAnswered
+                  ? <Chip label="Fait" size="small" color="success" sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }} />
+                  : undefined
+              }
+            />
           ) : (
-            <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 36, height: 36, borderRadius: 2,
-                  bgcolor: 'action.hover',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <AssignmentIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                Aucun sondage actif pour le moment
-              </Typography>
-            </Box>
+            <SettingsRow
+              icon={<AssignmentIcon sx={{ fontSize: 18 }} />}
+              iconBg="rgba(0,0,0,0.04)"
+              label="Aucun sondage actif"
+              sublabel="Revenez bientot"
+            />
           )}
-        </Paper>
+        </SettingsCard>
       </Box>
 
-      {/* ── Préférences app ── */}
+      {/* About */}
       <Box sx={{ mb: 3 }}>
-        {sectionLabel('Préférences')}
-        <Paper
-          elevation={0}
-          sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}
-        >
+        <SectionTitle>A propos</SectionTitle>
+        <SettingsCard>
           {[
-            {
-              icon: <NotificationsIcon sx={{ fontSize: 18, color: BRAND }} />,
-              label: 'Notifications push',
-              description: 'Nouvelles annonces et messages',
-              defaultOn: true,
-              disabled: true,
-            },
-            {
-              icon: <MonitorIcon sx={{ fontSize: 18, color: BRAND }} />,
-              label: 'Statistiques anonymes',
-              description: "Aide à améliorer l'application",
-              defaultOn: true,
-              disabled: true,
-            },
-          ].map((pref, idx) => (
-            <Box key={idx}>
-              {idx > 0 && <Divider />}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.75 }}>
-                <Box
-                  sx={{
-                    width: 36, height: 36, borderRadius: 2,
-                    bgcolor: 'rgba(246,71,95,0.1)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}
-                >
-                  {pref.icon}
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" fontWeight={600}>{pref.label}</Typography>
-                  <Typography variant="caption" color="text.secondary">{pref.description}</Typography>
-                </Box>
-                <Switch
-                  defaultChecked={pref.defaultOn}
-                  disabled={pref.disabled}
-                  size="small"
-                  sx={{
-                    '& .MuiSwitch-thumb': { bgcolor: BRAND },
-                    '& .Mui-checked + .MuiSwitch-track': { bgcolor: `${BRAND} !important`, opacity: '0.5 !important' },
-                  }}
-                />
-              </Box>
-            </Box>
+            { label: 'Aide & FAQ', href: '/aide' },
+            { label: 'Conditions d\'utilisation', href: '/conditions' },
+            { label: 'Confidentialite', href: '/confidentialite' },
+            { label: 'Nous contacter', href: '/contact' },
+          ].map((item) => (
+            <SettingsRow
+              key={item.href}
+              icon={<HelpIcon sx={{ fontSize: 18 }} />}
+              iconBg="rgba(0,0,0,0.04)"
+              label={item.label}
+              onClick={() => router.push(item.href)}
+            />
           ))}
-        </Paper>
+        </SettingsCard>
       </Box>
 
-      {/* ── Compte ── */}
+      {/* Logout */}
       {isAuthenticated && (
         <Box sx={{ mb: 3 }}>
-          {sectionLabel('Compte')}
-          <Paper
-            elevation={0}
-            sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}
-          >
-            <Box
-              sx={{
-                display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.75,
-                cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' },
-              }}
-              onClick={() => router.push('/profile')}
-            >
-              <Box
-                sx={{
-                  width: 36, height: 36, borderRadius: 2,
-                  bgcolor: 'rgba(246,71,95,0.1)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <PersonIcon sx={{ fontSize: 18, color: BRAND }} />
-              </Box>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="body2" fontWeight={600}>Mon profil</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {user?.firstname} {user?.lastname}
-                </Typography>
-              </Box>
-              <ArrowForwardIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
-            </Box>
-            <Divider />
-            <Box
-              sx={{
-                display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.75,
-                cursor: 'pointer',
-                '&:hover': { bgcolor: 'rgba(211,47,47,0.04)' },
-              }}
+          <SettingsCard>
+            <SettingsRow
+              icon={<LogoutIcon sx={{ fontSize: 18 }} />}
+              label="Deconnexion"
+              danger
               onClick={() => logout()}
-            >
-              <Box
-                sx={{
-                  width: 36, height: 36, borderRadius: 2,
-                  bgcolor: 'rgba(211,47,47,0.08)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <LogoutIcon sx={{ fontSize: 18, color: 'error.main' }} />
-              </Box>
-              <Typography variant="body2" fontWeight={600} color="error.main">
-                Déconnexion
-              </Typography>
-            </Box>
-          </Paper>
+            />
+          </SettingsCard>
         </Box>
       )}
 
-      {/* ── À propos ── */}
-      <Box sx={{ mb: 2 }}>
-        {sectionLabel('À propos')}
-        <Paper
-          elevation={0}
-          sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}
-        >
-          {[
-            { label: 'Conditions d\'utilisation', href: '/conditions' },
-            { label: 'Politique de confidentialité', href: '/confidentialite' },
-            { label: 'Aide & FAQ', href: '/aide' },
-            { label: 'Nous contacter', href: '/contact' },
-          ].map((item, idx, arr) => (
-            <Box key={item.href}>
-              {idx > 0 && <Divider />}
-              <Box
-                sx={{
-                  display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5,
-                  cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' },
-                }}
-                onClick={() => router.push(item.href)}
-              >
-                <Typography variant="body2" fontWeight={500} sx={{ flex: 1 }}>
-                  {item.label}
-                </Typography>
-                <ArrowForwardIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-              </Box>
-            </Box>
-          ))}
-        </Paper>
-      </Box>
-
-      <Typography
-        variant="caption"
-        color="text.disabled"
-        sx={{ display: 'block', textAlign: 'center', mt: 3, mb: 1 }}
-      >
-        KeyHome v1.0 — Propulsé par NeoCraftTeam
+      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'center', mt: 2, mb: 1 }}>
+        KeyHome v1.0 — Propulse par NeoCraftTeam
       </Typography>
     </Container>
   );

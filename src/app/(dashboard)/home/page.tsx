@@ -6,18 +6,21 @@ import HeroSearch from '@/components/ads/HeroSearch';
 import AppTour from '@/components/ui/AppTour';
 import FadeIn from '@/components/ui/FadeIn';
 import QueryError from '@/components/ui/QueryError';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
 import { citiesService } from '@/services/cities.service';
 import { recommendationsService } from '@/services/users.service';
 import { City } from '@/types';
 import {
+    AccessTime as AccessTimeIcon,
     Apartment,
     Home as HomeIcon,
     Landscape,
     MapsHomeWork,
     Store,
     Villa,
+    WavingHand as WavingHandIcon,
 } from '@mui/icons-material';
 import {
     Box,
@@ -54,7 +57,8 @@ export default function HomePage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const gridRef = useRef<HTMLDivElement>(null);
   const [isPending, startTransition] = useTransition();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const { items: recentlyViewed } = useRecentlyViewed();
   const router = useRouter();
 
   // Hero search autocomplete state
@@ -152,7 +156,10 @@ export default function HomePage() {
         <Box
           component="img"
           src="/images/maison-blanche.webp"
-          alt="Hero"
+          alt="Maison moderne avec jardin — KeyHome"
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
           sx={{
             position: 'absolute',
             inset: 0,
@@ -193,7 +200,7 @@ export default function HomePage() {
               textShadow: '0 2px 16px rgba(0,0,0,0.4)',
             }}
           >
-            Acheter.{'\u00a0'}Louer.{'\u00a0'}Vendre.
+            Un toit qui vous ressemble.
           </Typography>
 
           {/* Search — tabs: by city OR natural language */}
@@ -224,7 +231,7 @@ export default function HomePage() {
       >
         <DialogContent sx={{ p: 0 }}>
           {/* Illustration */}
-          <Box sx={{ fontSize: 64, mb: 1.5 }}>🏠</Box>
+          <MapsHomeWork sx={{ fontSize: 64, color: 'primary.main', mb: 1.5 }} />
           <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5 }}>
             Que recherchez-vous à{' '}
             <Box component="span" sx={{ color: 'primary.main' }}>
@@ -289,6 +296,35 @@ export default function HomePage() {
         </DialogContent>
       </Dialog>
 
+      {/* ── Personalized greeting ─────────────────────────────────────────── */}
+      {isAuthenticated && user?.firstname && (
+        <Container maxWidth="xl" sx={{ pt: 2.5, pb: 0, px: { xs: 2, sm: 3, md: 4 } }}>
+          <FadeIn delay={0.05} direction="up">
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                px: { xs: 0.5, md: 0 },
+              }}
+            >
+              <WavingHandIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+              <Typography
+                variant="h6"
+                fontWeight={700}
+                sx={{ fontSize: { xs: '1rem', md: '1.15rem' } }}
+              >
+                Bonjour,{' '}
+                <Box component="span" sx={{ color: 'primary.main' }}>
+                  {user.firstname}
+                </Box>{' '}
+                !
+              </Typography>
+            </Box>
+          </FadeIn>
+        </Container>
+      )}
+
       {/* ── Category pills ─────────────────────────────────────────────────── */}
       <Container maxWidth="lg" sx={{ pt: 2, pb: 1 }}>
         <Box
@@ -349,6 +385,46 @@ export default function HomePage() {
                 }}
               >
                 {recommendations.slice(0, 8).map((ad) => (
+                  <Box
+                    key={ad.id}
+                    sx={{
+                      minWidth: { xs: 220, sm: 260, md: 280 },
+                      maxWidth: { xs: 220, sm: 260, md: 280 },
+                      flexShrink: 0,
+                    }}
+                  >
+                    <AdCard ad={ad} />
+                  </Box>
+                ))}
+              </Box>
+              <Divider sx={{ mt: { xs: 2, md: 3 } }} />
+            </Box>
+          </FadeIn>
+        )}
+
+        {/* Recently viewed */}
+        {recentlyViewed.length > 0 && (
+          <FadeIn delay={0.15} direction="up">
+            <Box sx={{ mb: { xs: 3, md: 4 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <AccessTimeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
+                  Récemment consultés
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: { xs: 1.5, md: 2 },
+                  overflowX: 'auto',
+                  pb: 1,
+                  scrollbarWidth: 'none',
+                  '&::-webkit-scrollbar': { display: 'none' },
+                  mx: { xs: -2, sm: 0 },
+                  px: { xs: 2, sm: 0 },
+                }}
+              >
+                {recentlyViewed.slice(0, 8).map((ad) => (
                   <Box
                     key={ad.id}
                     sx={{
