@@ -96,9 +96,11 @@ export default function NearbyPage() {
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [coords.lng, coords.lat],
       zoom: 12,
+      attributionControl: false,
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
     // User position marker
     new mapboxgl.Marker({ color: '#F6475F' })

@@ -232,8 +232,10 @@ function SearchContent() {
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [DEFAULT_CENTER[1], DEFAULT_CENTER[0]],
       zoom: 11,
+      attributionControl: false,
     });
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
     mapRef.current = map;
 
     return () => { map.remove(); mapRef.current = null; };

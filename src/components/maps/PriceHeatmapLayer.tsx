@@ -15,6 +15,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import mapboxgl from 'mapbox-gl';
@@ -28,6 +29,12 @@ interface Props {
 }
 
 export default function PriceHeatmapLayer({ height = 500 }: Props) {
+  const muiTheme = useTheme();
+  const isDarkMode = muiTheme.palette.mode === 'dark';
+  const mapStyle = isDarkMode
+    ? 'mapbox://styles/mapbox/dark-v11'
+    : 'mapbox://styles/mapbox/light-v11';
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [cityId, setCityId] = useState('');
@@ -52,25 +59,31 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
     staleTime: 30 * 60 * 1000,
   });
 
-  // Init map
+  // Init map — recreate when theme changes
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) { return; }
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+    if (!mapContainerRef.current) { return; }
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: mapStyle,
       center: DEFAULT_CENTER,
       zoom: 11,
+      attributionControl: false,
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
     mapRef.current = map;
 
     return () => {
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [mapStyle]);
 
   // Update heatmap data
   useEffect(() => {
@@ -242,23 +255,27 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
               left: 16,
               p: 1.5,
               borderRadius: 2,
-              minWidth: 160,
+              width: 200,
             }}
           >
-            <Typography variant="caption" fontWeight={700} display="block" mb={1}>
+            <Typography variant="caption" fontWeight={700} display="block" mb={0.75}>
               Prix médian / mois
             </Typography>
             <Box
               sx={{
-                height: 12,
-                borderRadius: 6,
+                height: 10,
+                borderRadius: 5,
                 background: 'linear-gradient(to right, #3b82f6, #f59e0b, #ef4444)',
-                mb: 0.5,
+                mb: 0.75,
               }}
             />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="caption" color="text.secondary">{formatPrice(priceMin)}</Typography>
-              <Typography variant="caption" color="text.secondary">{formatPrice(priceMax)}</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                {formatPrice(priceMin)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                {formatPrice(priceMax)}
+              </Typography>
             </Box>
           </Paper>
         )}

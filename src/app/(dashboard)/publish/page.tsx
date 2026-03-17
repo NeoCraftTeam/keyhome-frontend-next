@@ -168,9 +168,11 @@ export default function PublishPage() {
       style: 'mapbox://styles/mapbox/streets-v12',
       center,
       zoom: 13,
+      attributionControl: false,
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
     const marker = new mapboxgl.Marker({ color: '#F6475F', draggable: true })
       .setLngLat(center)
