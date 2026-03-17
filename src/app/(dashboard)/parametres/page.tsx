@@ -41,8 +41,6 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 
-type ThemeChoice = 'light' | 'dark' | 'system';
-
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <Typography
