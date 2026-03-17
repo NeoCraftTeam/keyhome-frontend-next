@@ -449,7 +449,7 @@ export default function HomePage() {
                 </Grid>
               )}
 
-              {!showShimmer && ads.length === 0 && (
+              {!showShimmer && !isError && ads.length === 0 && (
                 <Box sx={{ textAlign: 'center', py: 8 }}>
                   <MapsHomeWork sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
                   <Typography variant="h6" color="text.secondary">
@@ -690,7 +690,7 @@ export default function HomePage() {
             </Grid>
           )}
 
-          {!showShimmer && ads.length === 0 && (
+          {!showShimmer && !isError && ads.length === 0 && (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <MapsHomeWork sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" color="text.secondary">
