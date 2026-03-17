@@ -76,7 +76,8 @@ export function usePushNotifications() {
         registrationRef.current = registration;
       }
 
-      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      const rawKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      const applicationServerKey = new Uint8Array(rawKey.buffer.slice(0));
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey,
