@@ -4,6 +4,7 @@ import AdLocationMap from '@/components/ads/AdLocationMap';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useUserLocation } from '@/hooks/useUserLocation';
 import PropertyAttributes from '@/components/ads/PropertyAttributes';
 import StickyPropertyBar from '@/components/ads/StickyPropertyBar';
 import TourViewer from '@/components/ads/TourViewer';
@@ -161,6 +162,7 @@ function AdDetailContent() {
 
   const { addRecentlyViewed } = useRecentlyViewed();
   const { play: playSound } = useSoundFeedback();
+  const { location: userLocation, error: locationError } = useUserLocation();
 
   // Track the ad in recently viewed once it loads
   useEffect(() => {
@@ -223,6 +225,7 @@ function AdDetailContent() {
   const isLocked = ad.is_unlocked === false;
   // When locked, only show the primary image
   const images = isLocked ? (primaryImage ? [primaryImage] : []) : allImages;
+
   const totalImageCount = ad.total_images || allImages.length;
 
   const handleShare = async () => {
@@ -1187,6 +1190,8 @@ function AdDetailContent() {
                   quartierName={ad.quarter?.name}
                   cityName={ad.quarter?.city_name}
                   isLocked={isLocked}
+                  userLocation={userLocation}
+                  locationError={locationError}
                 />
                 <Divider sx={{ my: 3 }} />
               </>
