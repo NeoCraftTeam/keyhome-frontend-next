@@ -41,27 +41,32 @@ export default function PushPrompt() {
       <Box
         sx={{
           position: 'fixed',
-          bottom: { xs: 72, md: 24 },
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1400,
-          width: { xs: 'calc(100% - 32px)', sm: 420 },
+          bottom: {
+            xs: 'max(72px, calc(72px + env(safe-area-inset-bottom, 0px)))',
+            md: 24,
+          },
+          left: { xs: 12, sm: '50%' },
+          right: { xs: 12, sm: 'auto' },
+          transform: { xs: 'none', sm: 'translateX(-50%)' },
+          width: { xs: 'auto', sm: 420 },
           maxWidth: 420,
+          zIndex: 1400,
           bgcolor: 'background.paper',
           borderRadius: 3,
           boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
           border: '1px solid',
           borderColor: 'divider',
-          p: 2.5,
+          p: { xs: 1.5, sm: 2.5 },
           display: 'flex',
-          alignItems: 'flex-start',
-          gap: 2,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: { xs: 1.5, sm: 2 },
         }}
       >
         <Box
           sx={{
-            width: 44,
-            height: 44,
+            width: { xs: 40, sm: 44 },
+            height: { xs: 40, sm: 44 },
             borderRadius: '50%',
             bgcolor: 'primary.main',
             display: 'flex',
@@ -70,57 +75,80 @@ export default function PushPrompt() {
             flexShrink: 0,
           }}
         >
-          <BellIcon sx={{ color: '#fff', fontSize: 22 }} />
+          <BellIcon sx={{ color: '#fff', fontSize: { xs: 20, sm: 22 } }} />
         </Box>
 
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            variant="subtitle2"
+            fontWeight={700}
+            sx={{ mb: 0.5, wordBreak: 'break-word', lineHeight: 1.3 }}
+          >
             Restez informé
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, lineHeight: 1.4 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 1.5, lineHeight: 1.4, wordBreak: 'break-word' }}
+          >
             Recevez des alertes pour les nouvelles annonces, réservations et messages importants.
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              size="small"
-              variant="contained"
-              onClick={handleAccept}
-              disabled={loading}
-              sx={{
-                borderRadius: 99,
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                px: 2,
-              }}
-            >
-              {loading ? 'Activation...' : 'Activer'}
-            </Button>
-            <Button
-              size="small"
-              variant="text"
-              onClick={handleDismiss}
-              sx={{
-                borderRadius: 99,
-                textTransform: 'none',
-                fontWeight: 500,
-                fontSize: '0.8rem',
-                color: 'text.secondary',
-              }}
-            >
-              Plus tard
-            </Button>
-          </Box>
         </Box>
 
         <IconButton
           size="small"
           onClick={handleDismiss}
           aria-label="Fermer"
-          sx={{ mt: -0.5, mr: -0.5 }}
+          sx={{
+            color: 'text.secondary',
+            flexShrink: 0,
+            alignSelf: { xs: 'flex-start', sm: 'center' },
+            order: { xs: 3, sm: 4 },
+          }}
         >
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
+
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            flexBasis: { xs: '100%', sm: 'auto' },
+            flexShrink: 0,
+            order: { xs: 4, sm: 3 },
+          }}
+        >
+          <Button
+            size="small"
+            variant="contained"
+            onClick={handleAccept}
+            disabled={loading}
+            sx={{
+              borderRadius: 99,
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.8rem',
+              px: 2,
+              flex: { xs: 1, sm: '0 0 auto' },
+            }}
+          >
+            {loading ? 'Activation...' : 'Activer'}
+          </Button>
+          <Button
+            size="small"
+            variant="text"
+            onClick={handleDismiss}
+            sx={{
+              borderRadius: 99,
+              textTransform: 'none',
+              fontWeight: 500,
+              fontSize: '0.8rem',
+              color: 'text.secondary',
+            }}
+          >
+            Plus tard
+          </Button>
+        </Box>
       </Box>
     </Slide>
   );

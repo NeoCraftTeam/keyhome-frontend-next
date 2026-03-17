@@ -81,22 +81,28 @@ export default function PWAInstallPrompt() {
         <Box
           sx={{
             position: 'fixed',
-            bottom: { xs: 16, sm: 24 },
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 9999,
-            width: { xs: 'calc(100% - 32px)', sm: 420 },
+            bottom: {
+              xs: 'max(16px, env(safe-area-inset-bottom, 16px))',
+              sm: 24,
+            },
+            left: { xs: 12, sm: '50%' },
+            right: { xs: 12, sm: 'auto' },
+            transform: { xs: 'none', sm: 'translateX(-50%)' },
+            width: { xs: 'auto', sm: 420 },
             maxWidth: 420,
+            zIndex: 9999,
           }}
         >
           <Box
             sx={{
               display: 'flex',
+              flexWrap: 'wrap',
+              flexDirection: 'row',
               alignItems: 'center',
-              gap: 2,
+              gap: { xs: 1.5, sm: 2 },
               bgcolor: 'background.paper',
               borderRadius: 3,
-              p: 2,
+              p: { xs: 1.5, sm: 2 },
               boxShadow: '0 16px 48px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.06)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
@@ -104,8 +110,8 @@ export default function PWAInstallPrompt() {
           >
             <Box
               sx={{
-                width: 44,
-                height: 44,
+                width: { xs: 40, sm: 44 },
+                height: { xs: 40, sm: 44 },
                 borderRadius: 2,
                 bgcolor: 'rgba(246,71,95,0.1)',
                 display: 'flex',
@@ -114,13 +120,21 @@ export default function PWAInstallPrompt() {
                 flexShrink: 0,
               }}
             >
-              <GetApp sx={{ color: 'primary.main', fontSize: 24 }} />
+              <GetApp sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="subtitle2" fontWeight={700} noWrap>
+              <Typography
+                variant="subtitle2"
+                fontWeight={700}
+                sx={{ wordBreak: 'break-word', lineHeight: 1.3 }}
+              >
                 Installer KeyHome
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ lineHeight: 1.3, display: 'block' }}
+              >
                 Accès rapide depuis votre écran d&apos;accueil
               </Typography>
             </Box>
@@ -137,7 +151,8 @@ export default function PWAInstallPrompt() {
                 fontSize: '0.8rem',
                 background: 'linear-gradient(to right, #F6475F, #D93A50)',
                 '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-                whiteSpace: 'nowrap',
+                flexBasis: { xs: '100%', sm: 'auto' },
+                flexShrink: 0,
               }}
             >
               Installer
@@ -146,7 +161,7 @@ export default function PWAInstallPrompt() {
               size="small"
               aria-label="Fermer"
               onClick={handleDismiss}
-              sx={{ color: 'text.secondary', ml: -0.5 }}
+              sx={{ color: 'text.secondary', flexShrink: 0, ml: { xs: 'auto', sm: -0.5 } }}
             >
               <Close sx={{ fontSize: 18 }} />
             </IconButton>

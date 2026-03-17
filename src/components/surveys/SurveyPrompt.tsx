@@ -50,7 +50,10 @@ export default function SurveyPrompt({ surveyId, surveySlug, title, description 
       className="aura-glass"
       sx={{
         position: 'fixed',
-        bottom: { xs: 80, sm: 24 },
+        bottom: {
+          xs: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+          sm: 24,
+        },
         right: { xs: 12, sm: 24 },
         left: { xs: 12, sm: 'auto' },
         zIndex: 1000,
@@ -84,10 +87,19 @@ export default function SurveyPrompt({ surveyId, surveySlug, title, description 
         />
       </Box>
 
-      <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+      <Typography
+        variant="subtitle1"
+        fontWeight={700}
+        gutterBottom
+        sx={{ wordBreak: 'break-word' }}
+      >
         {title}
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.5 }}>
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mb: 3, lineHeight: 1.5, wordBreak: 'break-word' }}
+      >
         {description}
       </Typography>
 

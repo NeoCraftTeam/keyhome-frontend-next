@@ -349,7 +349,7 @@ export default function AppTour({ onDone }: AppTourProps) {
             <Typography
               variant="caption"
               fontWeight={700}
-              sx={{ color: current.color, fontSize: 11.5 }}
+              sx={{ color: current.color, fontSize: 11.5, wordBreak: 'break-word' }}
             >
               {current.highlight}
             </Typography>

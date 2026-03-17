@@ -50,7 +50,10 @@ export default function SurveyBanner({ surveyId, surveySlug, title, description,
       className="aura-glass"
       sx={{
         position: 'fixed',
-        bottom: { xs: 80, sm: 24 },
+        bottom: {
+          xs: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+          sm: 24,
+        },
         left: { xs: 12, sm: 24 },
         right: { xs: 12, sm: 24 },
         zIndex: 1000,
@@ -81,10 +84,18 @@ export default function SurveyBanner({ surveyId, surveySlug, title, description,
           <AssignmentOutlined />
         </Box>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+          <Typography
+            variant="subtitle1"
+            fontWeight={700}
+            sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, wordBreak: 'break-word' }}
+          >
             {title}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' }, wordBreak: 'break-word' }}
+          >
             {description}
           </Typography>
         </Box>

@@ -73,6 +73,7 @@ export default function WelcomeModal() {
           borderRadius: 4,
           overflow: 'hidden',
           textAlign: 'center',
+          m: { xs: 2, sm: 'auto' },
         },
       }}
     >
