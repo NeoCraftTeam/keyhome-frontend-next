@@ -319,6 +319,17 @@ img {
   transition: opacity 0.3s ease;
 }
 
+/*
+  Prevent Tailwind v4 preflight (height: auto; max-width: 100%) from
+  conflicting with Next.js Image intrinsic width/height attributes.
+  The data-nimg attribute is set by next/image on every <img> it generates.
+  Fill images use inline styles (width:100%;height:100%) which override this.
+*/
+img[data-nimg] {
+  max-width: unset;
+  height: unset;
+}
+
 /* ===================================================
    LANDING PAGE — RESPONSIVE
    Breakpoints:

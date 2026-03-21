@@ -12,7 +12,7 @@ export const gradientPrimary = {
   primary135: "linear-gradient(135deg, #F6475F, #D93A50)",
 };
 
-const baseTheme = {
+export const baseTheme = {
   typography: {
     // Inter for body, Plus Jakarta Sans for headings
     fontFamily: '"Inter", "Helvetica Neue", Arial, sans-serif',

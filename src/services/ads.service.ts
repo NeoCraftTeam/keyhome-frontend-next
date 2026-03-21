@@ -63,7 +63,8 @@ export const adsService = {
     const { data } = await api.post('/ads', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return data.data ?? data;
+    const body = data.data ?? data;
+    return body.ad ?? body;
   },
 
   async update(id: string, formData: FormData): Promise<Ad> {
@@ -72,11 +73,40 @@ export const adsService = {
     const { data } = await api.post(`/ads/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return data.data ?? data;
+    const body = data.data ?? data;
+    return body.ad ?? body;
   },
 
   async destroy(id: string): Promise<void> {
     await api.delete(`/ads/${id}`);
+  },
+
+  async toggleVisibility(adId: string): Promise<{ is_visible: boolean }> {
+    const { data } = await api.post<{ data?: { is_visible: boolean }; is_visible?: boolean }>(
+      `/ads/${adId}/toggle-visibility`
+    );
+    const visible = data.data?.is_visible ?? data.is_visible ?? true;
+    return { is_visible: visible };
+  },
+
+  async enhanceDescription(description: string): Promise<{ enhanced: string }> {
+    const { data } = await api.post<{ enhanced: string }>('/ads/ai/enhance-description', {
+      description,
+    });
+    return data;
+  },
+
+  async setStatus(adId: string, status: string): Promise<{ old_status: string; new_status: string }> {
+    const { data } = await api.post<{
+      old_status: string;
+      new_status: string;
+      data?: { old_status: string; new_status: string };
+    }>(`/ads/${adId}/set-status`, { status });
+    const d = data?.data ?? data;
+    return {
+      old_status: d?.old_status ?? status,
+      new_status: d?.new_status ?? status,
+    };
   },
 
   async getStats(): Promise<{ ads_count: number; cities_count: number; users_count: number }> {
@@ -93,5 +123,54 @@ export const adsService = {
     api.post(`/ads/${id}/view`).catch(() => {
       // Silently ignore — non-critical telemetry
     });
+  },
+
+  // ── 3D Tour Management ──────────────────────────
+
+  async getTour(adId: string): Promise<{
+    has_tour: boolean;
+    scenes_count: number;
+    tour_published_at: string | null;
+    config: Record<string, unknown>;
+  }> {
+    const { data } = await api.get(`/ads/${adId}/tour`);
+    return data;
+  },
+
+  async uploadTourScenes(
+    adId: string,
+    scenes: { title: string; image: File; hotspots?: Array<{ pitch: number; yaw: number; target_scene: string; label: string }> }[],
+  ): Promise<{ message: string; scenes_count: number; config: Record<string, unknown> }> {
+    const formData = new FormData();
+    scenes.forEach((scene, i) => {
+      formData.append(`scenes[${i}][title]`, scene.title);
+      formData.append(`scenes[${i}][image]`, scene.image);
+      if (scene.hotspots) {
+        scene.hotspots.forEach((h, j) => {
+          formData.append(`scenes[${i}][hotspots][${j}][pitch]`, String(h.pitch));
+          formData.append(`scenes[${i}][hotspots][${j}][yaw]`, String(h.yaw));
+          formData.append(`scenes[${i}][hotspots][${j}][target_scene]`, h.target_scene);
+          formData.append(`scenes[${i}][hotspots][${j}][label]`, h.label);
+        });
+      }
+    });
+    const { data } = await api.post(`/ads/${adId}/tour/scenes`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
+
+  async updateHotspots(
+    adId: string,
+    sceneId: string,
+    hotspots: Array<{ pitch: number; yaw: number; target_scene: string; label: string }>,
+  ): Promise<{ message: string }> {
+    const { data } = await api.patch(`/ads/${adId}/tour/scenes/${sceneId}/hotspots`, { hotspots });
+    return data;
+  },
+
+  async deleteTour(adId: string): Promise<{ message: string }> {
+    const { data } = await api.delete(`/ads/${adId}/tour`);
+    return data;
   },
 };

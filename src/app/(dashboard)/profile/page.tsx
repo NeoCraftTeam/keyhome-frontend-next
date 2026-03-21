@@ -6,6 +6,7 @@ import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
+import { normalizePhoneLikeBackend, shouldSendPhoneNumberForUserUpdate } from '@/lib/profile-phone';
 import { useAuth } from '@/providers/AuthProvider';
 import { useFavorites } from '@/providers/FavoritesProvider';
 import { authService } from '@/services/auth.service';
@@ -175,7 +176,9 @@ export default function ProfilePage() {
       const formData = new FormData();
       formData.append('firstname', editForm.firstname);
       formData.append('lastname', editForm.lastname);
-      formData.append('phone_number', editForm.phone_number);
+      if (shouldSendPhoneNumberForUserUpdate(editForm.phone_number)) {
+        formData.append('phone_number', normalizePhoneLikeBackend(editForm.phone_number));
+      }
       if (selectedCity) {
         formData.append('city_id', selectedCity.id);
       }

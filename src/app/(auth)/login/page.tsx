@@ -3,7 +3,9 @@
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
 import { useLandingStats } from '@/hooks/useLandingStats';
+import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { getSafeErrorMessage } from '@/lib/error-messages';
+import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { useAuth } from '@/providers/AuthProvider';
 import {
     Email as EmailIcon,
@@ -33,6 +35,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const emailLabelShrink = useOutlinedInputLabelShrink(email.length > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,6 +169,8 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={emailLabelShrink.onFocus}
+                onBlur={emailLabelShrink.onBlur}
                 required
                 autoComplete="email"
                 autoFocus
@@ -177,6 +182,7 @@ export default function LoginPage() {
                     </InputAdornment>
                   ),
                 }}
+                InputLabelProps={outlinedStartIconInputLabelProps(emailLabelShrink.shrink)}
                 sx={{ mb: 2 }}
               />
 

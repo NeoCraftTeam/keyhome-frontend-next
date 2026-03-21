@@ -1,9 +1,20 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
+// Allow Next.js rewrites to reach local Valet HTTPS (self-signed certs) in dev.
+if (process.env.NODE_ENV === 'development') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
 // Build CSP connect-src from environment — no hardcoded dev origins
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-const apiOrigin = apiUrl ? new URL(apiUrl).origin : '';
+let apiOrigin = '';
+try {
+  apiOrigin = apiUrl ? new URL(apiUrl).origin : '';
+} catch {
+  apiOrigin = '';
+}
+
 // The Laravel backend may be served from a different subdomain (e.g. owner.keyhome.test).
 // Tour image proxy URLs are generated from APP_URL, so we need that origin in the CSP too.
 const ownerUrl = process.env.NEXT_PUBLIC_OWNER_URL || '';
@@ -30,6 +41,9 @@ const devOrigins = process.env.NODE_ENV === 'development'
 
 const connectSources = [
   "'self'",
+  // blob: / data: — Photo Sphere Viewer loads panorama images; new uploads use blob: URLs
+  'blob:',
+  'data:',
   'https://api.mapbox.com',
   'https://events.mapbox.com',
   'https://*.tiles.mapbox.com',
@@ -45,7 +59,7 @@ const connectSources = [
   'https://*.googletagmanager.com',
   // Flutterwave
   'https://api.flutterwave.com',
-  // Cloudflare R2 public CDN — Pannellum fetches panorama images via XHR (needs connect-src)
+  // Cloudflare R2 public CDN — panorama viewer fetches images via XHR (needs connect-src)
   'https://*.r2.dev',
   apiOrigin,
   // Laravel backend origin — tour image proxy URLs are generated from APP_URL (may differ from apiOrigin)
@@ -57,9 +71,9 @@ const isDev = process.env.NODE_ENV === 'development';
 
 const cspHeader = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://cdn.jsdelivr.net blob:`,
+  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live blob:`,
   `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://clerk.neocraft.dev https://cdn.jsdelivr.net`,
-  `font-src 'self' https://fonts.gstatic.com https://ray.st https://clerk.neocraft.dev https://cdn.jsdelivr.net`,
+  `font-src 'self' https://fonts.gstatic.com https://ray.st https://clerk.neocraft.dev`,
   `worker-src 'self' blob:`,
   `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev ${apiOrigin} ${backendOrigin}`,
   `connect-src ${connectSources}`,
@@ -72,8 +86,21 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // /tour-proxy is handled by app/tour-proxy/[[...path]]/route.ts so Authorization (Bearer)
+  // is forwarded to Laravel. Plain rewrites do not pass the client Authorization header.
+  async rewrites() {
+    return [];
+  },
+  experimental: {
+    // Rewrite barrel imports to direct module paths for much smaller bundles.
+    // Particularly important for @mui/icons-material which has 3 000+ icons.
+    optimizePackageImports: ['@mui/material', '@mui/icons-material', '@mui/lab'],
+  },
   images: {
     formats: ["image/avif", "image/webp"],
+    // Tighter responsive sizes — avoids serving 1920-wide images for mobile cards.
+    deviceSizes: [390, 640, 768, 1024, 1280, 1920],
+    imageSizes: [64, 128, 256, 384],
     // In dev, keyhome.test resolves to 127.0.0.1 which next/image blocks.
     // Skip optimization locally; production uses real domains and works fine.
     unoptimized: process.env.NODE_ENV === "development",

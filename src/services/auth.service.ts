@@ -70,6 +70,7 @@ export const authService = {
 
   async clerkExchange(
     bearerToken?: string | null,
+    options?: { registration_intent?: 'customer' | 'agent' },
   ): Promise<
     | { state: 'otp_required'; email_hint: string | null }
     | { token: string; user: User; panel_sso_url: string | null }
@@ -77,10 +78,14 @@ export const authService = {
     const config = bearerToken
       ? { headers: { Authorization: `Bearer ${bearerToken}` } }
       : undefined;
+    const body =
+      options?.registration_intent != null
+        ? { registration_intent: options.registration_intent }
+        : {};
     const { data } = await api.post<
       | { state: 'otp_required'; email_hint: string | null }
       | { access_token: string; user: User; panel_sso_url: string | null }
-    >('/auth/clerk/exchange', {}, config);
+    >('/auth/clerk/exchange', body, config);
 
     if ('state' in data && data.state === 'otp_required') {
       return data;

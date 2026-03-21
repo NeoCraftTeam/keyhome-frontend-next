@@ -1,5 +1,6 @@
 'use client';
 
+import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
@@ -7,6 +8,12 @@ import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { registerTokenGetter } from '@/lib/auth-token';
 import { getSafeErrorMessage } from '@/lib/error-messages';
+import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
+import {
+  mergeOutlinedStartIconInputLabelProps,
+  outlinedStartIconInputLabelProps,
+} from '@/lib/mui-outlined-input-label-start-icon';
+import { getRegisterThemeTokens, REGISTER_AGENT_HERO_SRC, type RegisterAccountVisual } from '@/lib/register-theme';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { City } from '@/types';
@@ -34,18 +41,18 @@ import {
   InputAdornment,
   LinearProgress,
   Link,
-  Step,
-  StepLabel,
-  Stepper,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
+import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import NextLink from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { type FocusEvent, useEffect, useMemo, useState } from 'react';
 
 type AccountRole = 'customer' | 'agent';
 type AgentType = 'individual' | 'agency';
@@ -65,6 +72,7 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { slotProps: citySlotProps, renderOption: renderCityOption, inputSx: cityInputSx } = useCityAutocompleteConfig();
   const [step, setStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
@@ -76,6 +84,66 @@ export default function RegisterPage() {
   const [accountRole, setAccountRole] = useState<AccountRole>('customer');
   const [agentType, setAgentType] = useState<AgentType>('individual');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  useEffect(() => {
+    const role = searchParams.get('role');
+    const intent = searchParams.get('intent');
+    if (role === 'agent' || role === 'bailleur' || intent === 'owner') {
+      setAccountRole('agent');
+    }
+  }, [searchParams]);
+
+  const visual: RegisterAccountVisual = accountRole === 'agent' ? 'agent' : 'customer';
+  const tokens = useMemo(() => getRegisterThemeTokens(visual), [visual]);
+
+  const registerMuiTheme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          primary: {
+            main: tokens.primary,
+            dark: tokens.primaryDark,
+            light: tokens.primaryLight,
+          },
+        },
+      }),
+    [tokens.primary, tokens.primaryDark, tokens.primaryLight],
+  );
+
+  const registerActionRadius = '14px';
+
+  const outlinedActionSx = useMemo(
+    () => ({
+      py: 1.5,
+      fontWeight: 600,
+      borderRadius: registerActionRadius,
+      textTransform: 'none' as const,
+      transition: 'border-color 0.35s ease, color 0.35s ease',
+    }),
+    [],
+  );
+
+  const containedGradientSx = useMemo(
+    () => ({
+      py: 1.5,
+      fontWeight: 600,
+      borderRadius: registerActionRadius,
+      textTransform: 'none' as const,
+      background: tokens.gradient,
+      transition: 'background 0.45s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s ease, box-shadow 0.35s ease',
+      '&:hover': { background: tokens.gradientHover },
+      '&:active': { transform: 'scale(0.97)' },
+    }),
+    [tokens.gradient, tokens.gradientHover],
+  );
+
+  const loginHref = accountRole === 'agent' ? '/owner/login' : '/login';
+
+  useEffect(() => {
+    if (accountRole === 'agent' && agentType === 'agency') {
+      setAgentType('individual');
+    }
+  }, [accountRole, agentType]);
 
   const [form, setForm] = useState({
     firstname: '',
@@ -89,8 +157,14 @@ export default function RegisterPage() {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [cityInput, setCityInput] = useState('');
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+  const [cityLabelFocused, setCityLabelFocused] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const markTouched = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
+
+  const firstnameLabelShrink = useOutlinedInputLabelShrink(form.firstname.length > 0);
+  const emailLabelShrink = useOutlinedInputLabelShrink(form.email.length > 0);
+  const passwordLabelShrink = useOutlinedInputLabelShrink(form.password.length > 0);
+  const confirmPasswordLabelShrink = useOutlinedInputLabelShrink(form.confirm_password.length > 0);
 
   const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
     queryKey: ['register-cities', cityInput],
@@ -186,46 +260,103 @@ export default function RegisterPage() {
   }
 
   return (
-    <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>
-      {/* Left side — image */}
-      <Box
-        sx={{
-          display: { xs: 'none', md: 'block' },
-          flex: 1,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <Image
-          src="/images/02Register.webp"
-          alt="Rejoignez KeyHome"
-          fill
-          priority
-          sizes="50vw"
-          style={{ objectFit: 'cover' }}
-        />
+    <ThemeProvider theme={registerMuiTheme}>
+      <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>
+        {/* Left side — image (crossfade particulier / agent) */}
         <Box
           sx={{
-            position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(to bottom, rgba(34,34,34,0.15) 0%, rgba(34,34,34,0.6) 100%)',
-            zIndex: 1,
+            display: { xs: 'none', md: 'block' },
+            flex: 1,
+            position: 'relative',
+            overflow: 'hidden',
+            bgcolor: 'grey.900',
           }}
-        />
-        <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 6, zIndex: 2 }}>
-          <FadeIn delay={0.2} direction="up">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Image src="/images/logo.png" alt="KeyHome — Inscription" width={42} height={42} />
-              <Typography variant="h4" fontWeight={700} color="#fff">KeyHome</Typography>
-            </Box>
-          </FadeIn>
-          <FadeIn delay={0.4} direction="up">
-            <Typography variant="h5" color="rgba(255,255,255,0.9)" fontWeight={400} sx={{ maxWidth: 360 }}>
-              Trouvez votre prochain chez-vous
-            </Typography>
-          </FadeIn>
+        >
+          <Box
+            aria-hidden={visual !== 'customer'}
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              opacity: visual === 'customer' ? 1 : 0,
+              transform: visual === 'customer' ? 'scale(1)' : 'scale(1.04)',
+              transition: 'opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1), transform 0.65s cubic-bezier(0.4, 0, 0.2, 1)',
+              pointerEvents: 'none',
+            }}
+          >
+            <Image
+              src="/images/02Register.webp"
+              alt=""
+              fill
+              priority
+              sizes="50vw"
+              style={{ objectFit: 'cover' }}
+            />
+          </Box>
+          <Box
+            aria-hidden={visual !== 'agent'}
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              opacity: visual === 'agent' ? 1 : 0,
+              transform: visual === 'agent' ? 'scale(1)' : 'scale(1.04)',
+              transition: 'opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1), transform 0.65s cubic-bezier(0.4, 0, 0.2, 1)',
+              pointerEvents: 'none',
+            }}
+          >
+            <Image
+              src={REGISTER_AGENT_HERO_SRC}
+              alt=""
+              fill
+              sizes="50vw"
+              style={{ objectFit: 'cover' }}
+            />
+          </Box>
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              background: tokens.overlayGradient,
+              zIndex: 1,
+              transition: 'background 0.55s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+          />
+          <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 6, zIndex: 2 }}>
+            <FadeIn delay={0.2} direction="up">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    width: 42,
+                    height: 42,
+                    transition: 'opacity 0.35s ease',
+                  }}
+                >
+                  <Image src={tokens.logoSrc} alt="KeyHome — Inscription" width={42} height={42} />
+                </Box>
+                <Typography variant="h4" fontWeight={700} color="#fff">
+                  KeyHome
+                </Typography>
+              </Box>
+            </FadeIn>
+            <FadeIn delay={0.4} direction="up">
+              <Box sx={{ minHeight: 88, maxWidth: 400 }}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={visual}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+                  >
+                    <Typography variant="h5" color="rgba(255,255,255,0.92)" fontWeight={400} sx={{ maxWidth: 360 }}>
+                      {tokens.tagline}
+                    </Typography>
+                  </motion.div>
+                </AnimatePresence>
+              </Box>
+            </FadeIn>
+          </Box>
         </Box>
-      </Box>
 
       {/* Right side — form */}
       <Box
@@ -243,25 +374,46 @@ export default function RegisterPage() {
         <Box sx={{ width: '100%', maxWidth: 440 }}>
           {/* Mobile logo */}
           <FadeIn direction="none">
-            <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1, mb: 3, justifyContent: 'center' }}>
-              <Image src="/images/logo.png" alt="KeyHome — Inscription" width={36} height={36} priority />
-              <Typography variant="h6" fontWeight={700} color="primary.main">KeyHome</Typography>
+            <Box
+              sx={{
+                display: { xs: 'flex', md: 'none' },
+                alignItems: 'center',
+                gap: 1,
+                mb: 3,
+                justifyContent: 'center',
+                transition: 'opacity 0.35s ease',
+              }}
+            >
+              <Image src={tokens.logoSrc} alt="KeyHome — Inscription" width={36} height={36} priority />
+              <Typography variant="h6" fontWeight={700} color="primary.main">
+                KeyHome
+              </Typography>
             </Box>
           </FadeIn>
 
           <FadeIn delay={0.1} direction="up">
-            <Typography variant="h4" fontWeight={700} gutterBottom>Créer un compte</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Inscrivez-vous pour accéder aux annonces immobilières
+            <Typography variant="h4" fontWeight={700} gutterBottom>
+              Créer un compte
             </Typography>
+            <Box sx={{ minHeight: 44, mb: 2 }}>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={visual}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    {tokens.formSubtitle}
+                  </Typography>
+                </motion.div>
+              </AnimatePresence>
+            </Box>
           </FadeIn>
 
           <FadeIn delay={0.15} direction="up">
-            <Stepper activeStep={step} sx={{ mb: 3 }} alternativeLabel>
-              {steps.map((label) => (
-                <Step key={label}><StepLabel>{label}</StepLabel></Step>
-              ))}
-            </Stepper>
+            <AuthFlowStepper labels={steps} activeStep={step} />
           </FadeIn>
 
           {error && (
@@ -320,13 +472,15 @@ export default function RegisterPage() {
 
                 {accountRole === 'agent' && (
                   <FadeIn direction="up" duration={0.3}>
-                    <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>Précisez votre profil :</Typography>
+                    <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                      Précisez votre profil :
+                    </Typography>
                     <ToggleButtonGroup
                       value={agentType}
                       exclusive
                       onChange={(_, val) => val && setAgentType(val)}
                       fullWidth
-                      sx={{ mb: 3 }}
+                      sx={{ mb: 1 }}
                     >
                       <ToggleButton
                         value="individual"
@@ -334,7 +488,12 @@ export default function RegisterPage() {
                           py: 1.5,
                           borderRadius: '8px !important',
                           textTransform: 'none',
-                          '&.Mui-selected': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'rgba(246,71,95,0.08)' },
+                          transition: 'background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease',
+                          '&.Mui-selected': {
+                            borderColor: 'primary.main',
+                            color: 'primary.main',
+                            bgcolor: tokens.selectedBgAlpha,
+                          },
                         }}
                       >
                         <PersonOutline sx={{ mr: 1 }} />
@@ -342,43 +501,56 @@ export default function RegisterPage() {
                       </ToggleButton>
                       <ToggleButton
                         value="agency"
+                        disabled
+                        title="Bientôt disponible — inscription en tant qu'agence"
+                        aria-label="Agence — bientôt disponible"
                         sx={{
                           py: 1.5,
                           borderRadius: '8px !important',
                           textTransform: 'none',
                           ml: '8px !important',
-                          '&.Mui-selected': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'rgba(246,71,95,0.08)' },
+                          cursor: 'not-allowed',
+                          borderStyle: 'dashed',
+                          opacity: 0.7,
+                          '&.Mui-disabled': {
+                            opacity: 0.7,
+                            borderColor: 'divider',
+                            color: 'text.disabled',
+                          },
                         }}
                       >
                         <BusinessIcon sx={{ mr: 1 }} />
                         Agence
                       </ToggleButton>
                     </ToggleButtonGroup>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2, fontStyle: 'italic' }}>
+                      L&apos;inscription en tant qu&apos;agence sera bientôt disponible — pour l&apos;instant, choisissez « Indépendant ».
+                    </Typography>
                   </FadeIn>
                 )}
 
-                <Button
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  onClick={() => setStep(1)}
-                  sx={{
-                    py: 1.5,
-                    fontWeight: 600,
-                    background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                    '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-                    '&:active': { transform: 'scale(0.97)' },
-                  }}
-                >
-                  Continuer
-                </Button>
+                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                  <Button
+                    component={NextLink}
+                    href={loginHref}
+                    fullWidth
+                    variant="outlined"
+                    color="primary"
+                    size="large"
+                    sx={outlinedActionSx}
+                  >
+                    Retour
+                  </Button>
+                  <Button fullWidth variant="contained" size="large" onClick={() => setStep(1)} sx={containedGradientSx}>
+                    Continuer
+                  </Button>
+                </Box>
 
-                {accountRole === 'customer' && (
-                  <SocialLoginButtons
-                    onError={(err) => setError(err)}
-                    disabled={isSubmitting}
-                  />
-                )}
+                <SocialLoginButtons
+                  onError={(err) => setError(err)}
+                  disabled={isSubmitting}
+                  registrationIntent={accountRole === 'agent' ? 'agent' : 'customer'}
+                />
               </Box>
             </FadeIn>
           )}
@@ -393,7 +565,11 @@ export default function RegisterPage() {
                     label="Prénom"
                     value={form.firstname}
                     onChange={(e) => updateField('firstname', e.target.value)}
-                    onBlur={() => markTouched('firstname')}
+                    onFocus={firstnameLabelShrink.onFocus}
+                    onBlur={() => {
+                      markTouched('firstname');
+                      firstnameLabelShrink.onBlur();
+                    }}
                     required
                     autoFocus
                     error={touched.firstname && form.firstname.trim().length < 2}
@@ -401,6 +577,7 @@ export default function RegisterPage() {
                     InputProps={{
                       startAdornment: <InputAdornment position="start"><PersonIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
                     }}
+                    InputLabelProps={outlinedStartIconInputLabelProps(firstnameLabelShrink.shrink)}
                   />
                   <TextField
                     fullWidth
@@ -419,13 +596,18 @@ export default function RegisterPage() {
                   type="email"
                   value={form.email}
                   onChange={(e) => updateField('email', e.target.value)}
-                  onBlur={() => markTouched('email')}
+                  onFocus={emailLabelShrink.onFocus}
+                  onBlur={() => {
+                    markTouched('email');
+                    emailLabelShrink.onBlur();
+                  }}
                   required
                   error={touched.email && !form.email.includes('@')}
                   helperText={touched.email && !form.email.includes('@') ? 'Veuillez entrer une adresse email valide' : ''}
                   InputProps={{
                     startAdornment: <InputAdornment position="start"><EmailIcon sx={{ color: 'text.secondary', fontSize: 20 }} /></InputAdornment>,
                   }}
+                  InputLabelProps={outlinedStartIconInputLabelProps(emailLabelShrink.shrink)}
                   sx={{ mb: 2 }}
                 />
                 <Box sx={{ mb: 2 }}>
@@ -461,6 +643,21 @@ export default function RegisterPage() {
                       label="Ville"
                       placeholder="Rechercher une ville..."
                       sx={cityInputSx}
+                      InputLabelProps={mergeOutlinedStartIconInputLabelProps(
+                        params.InputLabelProps,
+                        selectedCity != null || cityLabelFocused,
+                      )}
+                      inputProps={{
+                        ...params.inputProps,
+                        onFocus: (e: FocusEvent<HTMLInputElement>) => {
+                          setCityLabelFocused(true);
+                          params.inputProps?.onFocus?.(e);
+                        },
+                        onBlur: (e: FocusEvent<HTMLInputElement>) => {
+                          setCityLabelFocused(false);
+                          params.inputProps?.onBlur?.(e);
+                        },
+                      }}
                       InputProps={{
                         ...params.InputProps,
                         startAdornment: (
@@ -484,9 +681,10 @@ export default function RegisterPage() {
                   <Button
                     fullWidth
                     variant="outlined"
+                    color="primary"
                     size="large"
                     onClick={() => setStep(0)}
-                    sx={{ py: 1.5, fontWeight: 600 }}
+                    sx={outlinedActionSx}
                   >
                     Retour
                   </Button>
@@ -496,13 +694,7 @@ export default function RegisterPage() {
                     size="large"
                     disabled={!canProceedStep1}
                     onClick={() => setStep(2)}
-                    sx={{
-                      py: 1.5,
-                      fontWeight: 600,
-                      background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                      '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-                      '&:active': { transform: 'scale(0.97)' },
-                    }}
+                    sx={containedGradientSx}
                   >
                     Continuer
                   </Button>
@@ -521,6 +713,8 @@ export default function RegisterPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={form.password}
                   onChange={(e) => updateField('password', e.target.value)}
+                  onFocus={passwordLabelShrink.onFocus}
+                  onBlur={passwordLabelShrink.onBlur}
                   required
                   autoFocus
                   InputProps={{
@@ -533,6 +727,7 @@ export default function RegisterPage() {
                       </InputAdornment>
                     ),
                   }}
+                  InputLabelProps={outlinedStartIconInputLabelProps(passwordLabelShrink.shrink)}
                   sx={{ mb: 1 }}
                 />
 
@@ -583,6 +778,8 @@ export default function RegisterPage() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={form.confirm_password}
                   onChange={(e) => updateField('confirm_password', e.target.value)}
+                  onFocus={confirmPasswordLabelShrink.onFocus}
+                  onBlur={confirmPasswordLabelShrink.onBlur}
                   required
                   error={form.confirm_password.length > 0 && form.password !== form.confirm_password}
                   helperText={
@@ -600,6 +797,7 @@ export default function RegisterPage() {
                       </InputAdornment>
                     ),
                   }}
+                  InputLabelProps={outlinedStartIconInputLabelProps(confirmPasswordLabelShrink.shrink)}
                   sx={{ mb: 2 }}
                 />
 
@@ -608,7 +806,10 @@ export default function RegisterPage() {
                     <Checkbox
                       checked={acceptedTerms}
                       onChange={(e) => setAcceptedTerms(e.target.checked)}
-                      sx={{ '&.Mui-checked': { color: '#F6475F' } }}
+                      sx={{
+                        transition: 'color 0.35s ease',
+                        '&.Mui-checked': { color: 'primary.main' },
+                      }}
                     />
                   }
                   label={
@@ -626,9 +827,10 @@ export default function RegisterPage() {
                   <Button
                     fullWidth
                     variant="outlined"
+                    color="primary"
                     size="large"
                     onClick={() => setStep(1)}
-                    sx={{ py: 1.5, fontWeight: 600 }}
+                    sx={outlinedActionSx}
                   >
                     Retour
                   </Button>
@@ -638,13 +840,7 @@ export default function RegisterPage() {
                     size="large"
                     disabled={!canSubmit || isSubmitting}
                     onClick={handleSubmit}
-                    sx={{
-                      py: 1.5,
-                      fontWeight: 600,
-                      background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                      '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
-                      '&:active': { transform: 'scale(0.97)' },
-                    }}
+                    sx={containedGradientSx}
                   >
                     {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : "S'inscrire"}
                   </Button>
@@ -656,7 +852,12 @@ export default function RegisterPage() {
           <FadeIn delay={0.5} direction="up">
             <Typography variant="body2" color="text.secondary" sx={{ mt: 3, textAlign: 'center' }}>
               Déjà un compte ?{' '}
-              <Link href="/login" underline="hover" sx={{ fontWeight: 600, color: 'primary.main' }}>
+              <Link
+                component={NextLink}
+                href={loginHref}
+                underline="hover"
+                sx={{ fontWeight: 600, color: 'primary.main' }}
+              >
                 Se connecter
               </Link>
             </Typography>
@@ -664,5 +865,6 @@ export default function RegisterPage() {
         </Box>
       </Box>
     </Box>
+    </ThemeProvider>
   );
 }

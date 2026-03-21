@@ -6,36 +6,41 @@ import type { City } from '@/types';
 
 /**
  * Shared config for city Autocomplete components across the app.
- * Ensures consistent styling: no rounded corners, flush dropdown, LocationOn icon.
+ * Rounded inputs match standard MUI TextField (Keyhome “premium” feel); list panel is softly rounded.
  */
 export function useCityAutocompleteConfig() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  /** Same radius as `theme.ts` → MuiTextField → MuiOutlinedInput-root (10px). */
+  const inputRadiusPx = 10;
+  const panelRadiusPx = 12;
 
   const slotProps = {
     popper: {
-      modifiers: [{ name: 'offset', options: { offset: [0, 0] } }],
+      modifiers: [{ name: 'offset', options: { offset: [0, 6] } }],
     },
     paper: {
       sx: {
-        borderRadius: 0,
-        boxShadow: '0 12px 32px rgba(0,0,0,0.12)',
+        borderRadius: `${panelRadiusPx}px`,
+        boxShadow: '0 12px 40px rgba(0,0,0,0.1)',
         border: '1px solid',
         borderColor: 'divider',
-        borderTop: 'none',
-        mt: 0,
+        mt: 0.5,
         overflow: 'hidden',
         bgcolor: isDark ? theme.palette.background.paper : '#fff',
       },
     },
     listbox: {
       sx: {
-        py: 0,
+        py: 0.5,
         '& .MuiAutocomplete-option': {
           px: 2.5,
           py: 1.5,
           gap: 1.25,
           fontSize: 14,
+          borderRadius: `${Math.max(panelRadiusPx - 6, 6)}px`,
+          mx: 0.5,
+          my: 0.25,
           '&[aria-selected="true"]': {
             bgcolor: alpha(theme.palette.primary.main, isDark ? 0.12 : 0.06),
             color: 'primary.main',
@@ -91,10 +96,8 @@ export function useCityAutocompleteConfig() {
 
   const inputSx = {
     '& .MuiOutlinedInput-root': {
-      borderRadius: 0,
-      '&.Mui-focused fieldset': {
-        boxShadow: 'none',
-      },
+      borderRadius: `${inputRadiusPx}px`,
+      overflow: 'hidden',
     },
   };
 

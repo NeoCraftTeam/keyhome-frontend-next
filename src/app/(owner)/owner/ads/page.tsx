@@ -1,0 +1,628 @@
+'use client';
+
+import OwnerAdCard from '@/components/owner/OwnerAdCard';
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Description as ContractIcon,
+  Edit as EditIcon,
+  MoreVert as MoreIcon,
+  Visibility as VisibleIcon,
+  VisibilityOff as HiddenIcon,
+} from '@mui/icons-material';
+import {
+  Avatar,
+  AvatarGroup,
+  Box,
+  Button,
+  Chip,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Menu,
+  MenuItem,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { adsService } from '@/services/ads.service';
+import { ownerService } from '@/services/owner.service';
+import { Ad } from '@/types';
+import { formatPrice } from '@/lib/constants';
+import { AdStatus } from '@/types';
+import { adTypesService, citiesService } from '@/services/cities.service';
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  Skeleton,
+  TableSortLabel,
+} from '@mui/material';
+import { City } from '@/types';
+import { AdType } from '@/types';
+
+const STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: 'available', label: 'Disponible' },
+  { value: 'reserved', label: 'Réservé' },
+  { value: 'rent', label: 'En location' },
+  { value: 'pending', label: 'En attente' },
+  { value: 'sold', label: 'Vendu' },
+  { value: 'declined', label: 'Refusé' },
+];
+
+export default function OwnerAdsPage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [cityFilter, setCityFilter] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [sort, setSort] = useState<string>('created_at');
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedAd, setSelectedAd] = useState<Ad | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: [
+      'owner-ads',
+      page + 1,
+      rowsPerPage,
+      search,
+      statusFilter,
+      cityFilter,
+      typeFilter,
+      sort,
+      order,
+    ],
+    queryFn: () =>
+      ownerService.getMyAds({
+        page: page + 1,
+        per_page: rowsPerPage,
+        q: search || undefined,
+        status: statusFilter || undefined,
+        city_id: cityFilter || undefined,
+        type_id: typeFilter || undefined,
+        sort,
+        order,
+      }),
+  });
+
+  const { data: citiesData } = useQuery({
+    queryKey: ['cities-list'],
+    queryFn: () => citiesService.list({ per_page: 200 }),
+  });
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const { data: adTypesData } = useQuery({
+    queryKey: ['ad-types'],
+    queryFn: () => adTypesService.list(),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: (adId: string) => adsService.toggleVisibility(adId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
+      setAnchorEl(null);
+      setSelectedAd(null);
+    },
+  });
+
+  const setStatusMutation = useMutation({
+    mutationFn: ({ adId, status }: { adId: string; status: string }) =>
+      adsService.setStatus(adId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
+      setAnchorEl(null);
+      setSelectedAd(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (adId: string) => adsService.destroy(adId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
+      setAnchorEl(null);
+      setSelectedAd(null);
+    },
+  });
+
+  const handleSort = useCallback(
+    (field: string) => {
+      if (sort === field) {
+        setOrder(order === 'asc' ? 'desc' : 'asc');
+      } else {
+        setSort(field);
+        setOrder('desc');
+      }
+    },
+    [sort, order]
+  );
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, ad: Ad) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedAd(ad);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedAd(null);
+  };
+
+  const ads = (data?.data ?? []) as Ad[];
+  const meta = data?.meta;
+  const cities = (citiesData?.data ?? []) as City[];
+  const adTypes = (adTypesData ?? []) as AdType[];
+
+  return (
+    <Box sx={{ py: { xs: 2, md: 4 } }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: 2,
+          mb: 4,
+        }}
+      >
+        <Typography variant="h4" fontWeight={700}>
+          Mes Annonces
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => router.push('/owner/ads/new')}
+          sx={{ borderRadius: 3, fontWeight: 600, textTransform: 'none' }}
+        >
+          Nouvelle annonce
+        </Button>
+      </Box>
+
+      <Paper sx={{ overflow: 'hidden', mb: 4 }}>
+        <Box
+          sx={{
+            p: 2,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+            alignItems: 'center',
+          }}
+        >
+          <TextField
+            size="small"
+            placeholder="Rechercher titre, adresse…"
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              setPage(0);
+            }}
+            sx={{ minWidth: 220 }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">🔍</InputAdornment>
+                ),
+              },
+            }}
+          />
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <InputLabel>Statut</InputLabel>
+            <Select
+              value={statusFilter}
+              label="Statut"
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(0);
+              }}
+            >
+              <MenuItem value="">Tous</MenuItem>
+              {STATUS_OPTIONS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Ville</InputLabel>
+            <Select
+              value={cityFilter}
+              label="Ville"
+              onChange={(e) => {
+                setCityFilter(e.target.value);
+                setPage(0);
+              }}
+            >
+              <MenuItem value="">Toutes</MenuItem>
+              {cities.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Type</InputLabel>
+            <Select
+              value={typeFilter}
+              label="Type"
+              onChange={(e) => {
+                setTypeFilter(e.target.value);
+                setPage(0);
+              }}
+            >
+              <MenuItem value="">Tous</MenuItem>
+              {adTypes.map((t) => (
+                <MenuItem key={t.id} value={t.id}>
+                  {t.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        {isLoading ? (
+          <Box sx={{ p: 4 }}>
+            <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 1 }} />
+          </Box>
+        ) : ads.length === 0 ? (
+          <Box
+            sx={{
+              textAlign: 'center',
+              py: 8,
+              px: 2,
+              borderTop: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              {search || statusFilter || cityFilter || typeFilter
+                ? 'Aucun résultat pour ces critères'
+                : 'Aucune annonce'}
+            </Typography>
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
+              {search || statusFilter || cityFilter || typeFilter
+                ? 'Modifiez vos filtres ou créez une nouvelle annonce.'
+                : "Vous n'avez pas encore publié d'annonce. Créez votre première annonce pour la mettre en location."}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {(search || statusFilter || cityFilter || typeFilter) && (
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setSearchInput('');
+                    setSearch('');
+                    setStatusFilter('');
+                    setCityFilter('');
+                    setTypeFilter('');
+                    setPage(0);
+                  }}
+                  sx={{ borderRadius: 3 }}
+                >
+                  Réinitialiser les filtres
+                </Button>
+              )}
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => router.push('/owner/ads/new')}
+                sx={{ borderRadius: 3, fontWeight: 600 }}
+              >
+                Créer une annonce
+              </Button>
+            </Box>
+          </Box>
+        ) : isMobile ? (
+          <Box sx={{ p: 2 }}>
+            <Grid container spacing={2}>
+              {ads.map((ad) => (
+                <Grid key={ad.id} size={{ xs: 6 }}>
+                  <OwnerAdCard
+                    ad={ad}
+                    onToggleVisibility={(a) => toggleMutation.mutate(a.id)}
+                    isToggling={toggleMutation.isPending}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+            {meta && meta.last_page > 1 && (
+              <TablePagination
+                component="div"
+                count={meta.total}
+                page={page}
+                onPageChange={(_, p) => setPage(p)}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(0);
+                }}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                labelRowsPerPage="Lignes par page"
+              />
+            )}
+          </Box>
+        ) : (
+          <>
+            <TableContainer>
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ width: 120 }}>Photos</TableCell>
+                    <TableCell>
+                      <TableSortLabel
+                        active={sort === 'title'}
+                        direction={sort === 'title' ? order : 'desc'}
+                        onClick={() => handleSort('title')}
+                      >
+                        Titre
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell>Adresse</TableCell>
+                    <TableCell align="right">
+                      <TableSortLabel
+                        active={sort === 'price'}
+                        direction={sort === 'price' ? order : 'desc'}
+                        onClick={() => handleSort('price')}
+                      >
+                        Prix
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell align="right">
+                      <TableSortLabel
+                        active={sort === 'surface_area'}
+                        direction={sort === 'surface_area' ? order : 'desc'}
+                        onClick={() => handleSort('surface_area')}
+                      >
+                        m²
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell>Statut</TableCell>
+                    <TableCell align="center">Visible</TableCell>
+                    <TableCell align="center" sx={{ width: 56 }}>
+                      Actions
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {ads.map((ad) => {
+                    const images = ad.images ?? [];
+                    return (
+                      <TableRow
+                        key={ad.id}
+                        hover
+                        sx={{
+                          cursor: 'pointer',
+                          '&:hover': { bgcolor: 'action.hover' },
+                        }}
+                        onClick={() => router.push(`/owner/ads/${ad.id}`)}
+                      >
+                        <TableCell sx={{ py: 1, width: 72 }}>
+                          <AvatarGroup
+                            max={3}
+                            sx={{
+                              '& .MuiAvatar-root': {
+                                width: 36,
+                                height: 36,
+                                fontSize: '0.75rem',
+                                border: '2px solid',
+                                borderColor: 'background.paper',
+                              },
+                            }}
+                          >
+                            {images.length > 0 ? (
+                              images.map((img, idx) => (
+                                <Avatar
+                                  key={img.id ?? idx}
+                                  src={img.thumb || img.url}
+                                  alt={`${ad.title} ${idx + 1}`}
+                                  variant="rounded"
+                                />
+                              ))
+                            ) : (
+                              <Avatar variant="rounded" src="/images/placeholder-ad.jpg" alt={ad.title} />
+                            )}
+                          </AvatarGroup>
+                        </TableCell>
+                        <TableCell>
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            noWrap
+                            sx={{ maxWidth: 200 }}
+                          >
+                            {ad.title}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 160 }}>
+                            {ad.adresse}
+                          </Typography>
+                          {ad.quarter?.city_name && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              {ad.quarter.city_name}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" fontWeight={600} color="primary.main">
+                            {ad.price != null ? formatPrice(ad.price) : '—'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2">{ad.surface_area}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={ad.status_label || ad.status}
+                            size="small"
+                            color={
+                              ad.status === AdStatus.AVAILABLE
+                                ? 'success'
+                                : ad.status === AdStatus.RESERVED || ad.status === AdStatus.PENDING
+                                  ? 'warning'
+                                  : ad.status === AdStatus.RENT || ad.status === AdStatus.SOLD
+                                    ? 'info'
+                                    : 'default'
+                            }
+                            sx={{ fontWeight: 600 }}
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          {ad.is_visible !== false ? (
+                            <VisibleIcon fontSize="small" color="action" />
+                          ) : (
+                            <HiddenIcon fontSize="small" color="disabled" />
+                          )}
+                        </TableCell>
+                        <TableCell align="center" onClick={(e) => e.stopPropagation()}>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMenuOpen(e, ad);
+                            }}
+                          >
+                            <MoreIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            {meta && (
+              <TablePagination
+                component="div"
+                count={meta.total}
+                page={page}
+                onPageChange={(_, p) => setPage(p)}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(0);
+                }}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                labelRowsPerPage="Lignes par page"
+              />
+            )}
+          </>
+        )}
+      </Paper>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+      >
+        {selectedAd && (
+          <>
+            <MenuItem
+              onClick={() => {
+                router.push(`/owner/ads/${selectedAd.id}`);
+                handleMenuClose();
+              }}
+            >
+              <EditIcon fontSize="small" sx={{ mr: 1 }} />
+              Modifier
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                toggleMutation.mutate(selectedAd.id);
+              }}
+              disabled={toggleMutation.isPending}
+            >
+              {selectedAd.is_visible !== false ? (
+                <>
+                  <HiddenIcon fontSize="small" sx={{ mr: 1 }} />
+                  Masquer
+                </>
+              ) : (
+                <>
+                  <VisibleIcon fontSize="small" sx={{ mr: 1 }} />
+                  Afficher
+                </>
+              )}
+            </MenuItem>
+            {selectedAd.status !== AdStatus.PENDING && selectedAd.status !== AdStatus.DECLINED && (
+              <>
+                {selectedAd.status !== AdStatus.RESERVED && (
+                  <MenuItem
+                    onClick={() => {
+                      setStatusMutation.mutate({
+                        adId: selectedAd.id,
+                        status: AdStatus.RESERVED,
+                      });
+                    }}
+                    disabled={setStatusMutation.isPending}
+                  >
+                    Marquer réservé
+                  </MenuItem>
+                )}
+                {selectedAd.status !== AdStatus.AVAILABLE && (
+                  <MenuItem
+                    onClick={() => {
+                      setStatusMutation.mutate({
+                        adId: selectedAd.id,
+                        status: AdStatus.AVAILABLE,
+                      });
+                    }}
+                    disabled={setStatusMutation.isPending}
+                  >
+                    Marquer disponible
+                  </MenuItem>
+                )}
+              </>
+            )}
+            {(selectedAd.status === AdStatus.AVAILABLE || selectedAd.status === AdStatus.RESERVED) && (
+              <MenuItem
+                onClick={() => {
+                  handleMenuClose();
+                  router.push(`/owner/ads/${selectedAd.id}`);
+                }}
+              >
+                <ContractIcon fontSize="small" sx={{ mr: 1 }} />
+                Générer un contrat
+              </MenuItem>
+            )}
+            <MenuItem
+              onClick={() => {
+                if (confirm('Supprimer cette annonce ?')) {
+                  deleteMutation.mutate(selectedAd.id);
+                }
+              }}
+              disabled={deleteMutation.isPending}
+              sx={{ color: 'error.main' }}
+            >
+              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+              Supprimer
+            </MenuItem>
+          </>
+        )}
+      </Menu>
+    </Box>
+  );
+}

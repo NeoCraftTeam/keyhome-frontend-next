@@ -1,11 +1,13 @@
 'use client';
 
+import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
 import { Alert, Box, Button, CircularProgress, IconButton, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -197,28 +199,10 @@ export default function VerifyEmailPage() {
         <Box sx={{ width: '100%', maxWidth: 400 }}>
           {/* Progress stepper */}
           <FadeIn delay={0.05} direction="none">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-              {['Inscription', 'Vérification', 'Terminé'].map((label, idx) => (
-                <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: idx < 2 ? 1 : 'none' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Box sx={{
-                      width: 22, height: 22, borderRadius: '50%', fontSize: 12, fontWeight: 700,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      bgcolor: idx <= 1 ? 'primary.main' : 'grey.300',
-                      color: idx <= 1 ? '#fff' : 'text.disabled',
-                    }}>
-                      {idx < 1 ? '✓' : idx + 1}
-                    </Box>
-                    <Typography variant="caption" fontWeight={idx === 1 ? 700 : 400} color={idx <= 1 ? 'text.primary' : 'text.disabled'}>
-                      {label}
-                    </Typography>
-                  </Box>
-                  {idx < 2 && (
-                    <Box sx={{ flex: 1, height: 2, bgcolor: idx < 1 ? 'primary.main' : 'grey.300', borderRadius: 1 }} />
-                  )}
-                </Box>
-              ))}
-            </Box>
+            <AuthFlowStepper
+              labels={['Inscription', 'Vérification', 'Terminé']}
+              activeStep={1}
+            />
           </FadeIn>
 
           <FadeIn delay={0.1} direction="up">
@@ -240,18 +224,20 @@ export default function VerifyEmailPage() {
           <FadeIn delay={0.2} direction="up">
             <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
               {digits.map((digit, index) => (
-                <input
+                <Box
                   key={index}
-                  ref={(el) => { inputRefs.current[index] = el; }}
+                  component="input"
+                  ref={(el: HTMLInputElement | null) => {
+                    inputRefs.current[index] = el;
+                  }}
                   value={digit}
-                  onChange={(e) => handleChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(index, e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => handleKeyDown(index, e)}
                   onPaste={handlePaste}
                   maxLength={1}
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  style={{
-                    width: undefined,
+                  sx={(theme) => ({
                     minWidth: 42,
                     maxWidth: 52,
                     flex: 1,
@@ -259,14 +245,26 @@ export default function VerifyEmailPage() {
                     fontSize: 26,
                     fontWeight: 700,
                     textAlign: 'center',
-                    border: `2px solid ${digit ? '#F6475F' : '#e2e8f0'}`,
-                    borderRadius: 10,
+                    borderRadius: '10px',
+                    border: '2px solid',
+                    borderColor: digit ? 'primary.main' : 'divider',
                     outline: 'none',
-                    background: digit ? 'rgba(246,71,95,0.04)' : '#fff',
-                    color: '#0f172a',
-                    transition: 'border-color 0.15s, background 0.15s',
+                    bgcolor: digit
+                      ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.08)
+                      : theme.palette.mode === 'dark'
+                        ? theme.palette.grey[900]
+                        : theme.palette.background.paper,
+                    color: 'text.primary',
+                    transition: 'border-color 0.15s, background-color 0.15s',
                     cursor: 'text',
-                  }}
+                    boxSizing: 'border-box',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'textfield',
+                    '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                      WebkitAppearance: 'none',
+                      margin: 0,
+                    },
+                  })}
                 />
               ))}
             </Box>
@@ -294,8 +292,18 @@ export default function VerifyEmailPage() {
                 py: 1.5,
                 fontSize: '1rem',
                 fontWeight: 600,
-                background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                borderRadius: '14px',
+                textTransform: 'none',
+                background: (t) =>
+                  t.palette.mode === 'dark'
+                    ? `linear-gradient(to right, ${t.palette.primary.dark}, ${t.palette.primary.main})`
+                    : 'linear-gradient(to right, #F6475F, #D93A50)',
+                '&:hover': {
+                  background: (t) =>
+                    t.palette.mode === 'dark'
+                      ? `linear-gradient(to right, ${t.palette.primary.main}, ${t.palette.primary.light})`
+                      : 'linear-gradient(to right, #E03E54, #C53248)',
+                },
                 '&:active': { transform: 'scale(0.97)' },
               }}
             >

@@ -185,9 +185,11 @@ export interface TourScene {
   title: string;
   type?: 'equirectangular' | 'cubemap' | 'multires';
   image_url?: string;
+  /** Vignette pour la galerie PSV (recommandé si plusieurs scènes) */
+  thumbnail_url?: string;
   initial_view: { pitch: number; yaw: number; hfov: number };
   hotspots: TourHotspot[];
-  /** Cubemap: 6 proxy URLs in Pannellum order [f, r, b, l, u, d] */
+  /** Cubemap: 6 face URLs [f, r, b, l, u, d] */
   cube_map?: string[];
   /** Multires tile pyramid base URL (up to the /tiles segment) */
   tiles_base_url?: string;
@@ -244,6 +246,8 @@ export interface Ad {
   views_count_today?: number;
   views_count_week?: number;
   is_verified?: boolean;
+  is_boosted?: boolean;
+  boost_expires_at?: string | null;
   rating?: number | null;
   reviews_count?: number;
   expires_at: string | null;
@@ -268,6 +272,11 @@ export interface Ad {
   minimum_lease_duration?: string | null;
   detailed_charges?: string | null;
   property_condition_pdf?: string | null;
+  charges_forfaitaires?: boolean;
+  charges_montant_forfait?: string | null;
+  charges_eau?: string | null;
+  charges_electricite?: string | null;
+  charges_autres?: string | null;
 }
 
 export interface Review {

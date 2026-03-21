@@ -75,13 +75,12 @@ describe('getSafeErrorMessage', () => {
     expect(getSafeErrorMessage('string error', 'Fallback')).toBe('Fallback');
   });
 
-  // BUG CATCH: Network errors (no internet) have no response object.
-  // AxiosError extends Error, so error.message is returned via the
-  // `instanceof Error` branch — NOT the custom fallback.
-  it('returns AxiosError.message for network errors (no response)', () => {
+  // Network / timeout without response: dedicated French copy for UX (not raw Axios message).
+  it('returns French guidance for Axios network errors (no response)', () => {
     const error = new AxiosError('Network Error', 'ERR_NETWORK');
-    // No response attached — falls through to instanceof Error branch
-    expect(getSafeErrorMessage(error, 'Réseau indisponible')).toBe('Network Error');
+    const msg = getSafeErrorMessage(error, 'Réseau indisponible');
+    expect(msg).toContain('Impossible de joindre le serveur');
+    expect(msg).toContain('NEXT_PUBLIC_API_URL');
   });
 
   // BUG CATCH: 422 with empty errors object should fall through to

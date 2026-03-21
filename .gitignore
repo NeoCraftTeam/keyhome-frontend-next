@@ -45,3 +45,5 @@ yarn-error.log*
 next-env.d.ts
 data.mspackage-lock.json
 .idea/
+
+.pnpm-store/

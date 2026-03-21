@@ -1,5 +1,15 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+const OWNER_PUBLIC_PATHS = ['/owner/login', '/owner/register', '/owner/forgot-password'];
+
+function isOwnerPublicPath(pathname: string): boolean {
+  return OWNER_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+}
+
+function isOwnerProtectedPath(pathname: string): boolean {
+  return (pathname === '/owner' || pathname.startsWith('/owner/')) && !isOwnerPublicPath(pathname);
+}
 
 /**
  * Clerk proxy — runs on every request.
@@ -11,11 +21,23 @@ import { NextResponse } from 'next/server';
  * (dashboard)/layout.tsx via useAuth(), which supports both
  * email/password users (Laravel Sanctum) and OAuth users (Clerk).
  */
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware(async (auth, req: NextRequest) => {
   const { userId } = await auth();
+  const { pathname } = req.nextUrl;
+
+  // Owner panel edge guard: block customers and unauthenticated users
+  if (isOwnerProtectedPath(pathname)) {
+    const role = req.cookies.get('kh_role')?.value;
+    if (!role) {
+      return NextResponse.redirect(new URL('/owner/login', req.url));
+    }
+    if (role === 'customer') {
+      return NextResponse.redirect(new URL('/home', req.url));
+    }
+  }
 
   // Authenticated users on the landing page → redirect to dashboard
-  if (userId && req.nextUrl.pathname === '/') {
+  if (userId && pathname === '/') {
     return NextResponse.redirect(new URL('/home', req.url));
   }
 });

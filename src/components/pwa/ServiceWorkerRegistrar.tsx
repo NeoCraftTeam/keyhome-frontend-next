@@ -14,10 +14,10 @@ import { useEffect } from 'react';
 export default function ServiceWorkerRegistrar() {
   useEffect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
-    if (
-      process.env.NODE_ENV !== 'production' &&
-      !process.env.NEXT_PUBLIC_ENABLE_SW
-    ) return;
+    // En dev, le SW n’est pas enregistré sauf NEXT_PUBLIC_ENABLE_SW=1 (test PWA / push en local).
+    if (process.env.NODE_ENV !== 'production' && !process.env.NEXT_PUBLIC_ENABLE_SW) {
+      return;
+    }
 
     let refreshing = false;
 

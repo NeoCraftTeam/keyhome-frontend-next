@@ -7,7 +7,11 @@ import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import PropertyAttributes from '@/components/ads/PropertyAttributes';
 import StickyPropertyBar from '@/components/ads/StickyPropertyBar';
-import TourViewer from '@/components/ads/TourViewer';
+import dynamic from 'next/dynamic';
+const TourViewer = dynamic(() => import('@/components/ads/TourViewerPSV'), {
+  ssr: false,
+  loading: () => null,
+});
 import ReviewForm from '@/components/reviews/ReviewForm';
 import ReviewsSection from '@/components/reviews/ReviewsSection';
 import PackageCard from '@/components/ui/PackageCard';
@@ -82,7 +86,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { forwardRef, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, startTransition, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 const SlideUpTransition = forwardRef(function SlideUpTransition(
   props: TransitionProps & { children: React.ReactElement },
@@ -962,7 +966,7 @@ function AdDetailContent() {
                       variant="outlined"
                       size="medium"
                       startIcon={<ViewInAr sx={{ fontSize: 22 }} />}
-                      onClick={() => setShowTour(true)}
+                      onClick={() => startTransition(() => setShowTour(true))}
                       sx={{
                         width: { xs: '100%', sm: 'fit-content' },
                         minWidth: { sm: 250 },

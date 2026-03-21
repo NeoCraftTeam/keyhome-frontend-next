@@ -2,6 +2,7 @@
 
 import { Box, Button, Typography } from '@mui/material';
 import Image from 'next/image';
+import { useEffect } from 'react';
 
 interface WelcomeOverlayProps {
   firstName?: string | null;
@@ -10,6 +11,18 @@ interface WelcomeOverlayProps {
 
 /** Celebratory full-screen overlay shown after registration / OAuth completion. */
 export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProps) {
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('kh:welcome-dismissed'));
+    }, 3200);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  const handleSkip = () => {
+    window.dispatchEvent(new CustomEvent('kh:welcome-dismissed'));
+    onSkip?.();
+  };
+
   return (
     <Box
       sx={{
@@ -210,7 +223,7 @@ export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProp
       {/* Skip button */}
       {onSkip && (
         <Button
-          onClick={onSkip}
+          onClick={handleSkip}
           variant="text"
           sx={{
             position: 'absolute',

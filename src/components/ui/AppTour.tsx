@@ -2,7 +2,8 @@
 
 import { authService } from '@/services/auth.service';
 import { useAuth } from '@/providers/AuthProvider';
-import { useState, useEffect } from 'react';
+import { UserRole } from '@/types';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -24,6 +25,9 @@ import {
   Notifications,
   LockOpenRounded,
   FavoriteBorderRounded,
+  Dashboard as DashboardIcon,
+  BarChart,
+  RateReview,
 } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 
@@ -99,27 +103,90 @@ const STEPS: TourStep[] = [
   },
 ];
 
+const OWNER_STEPS: TourStep[] = [
+  {
+    Icon: DashboardIcon,
+    title: 'Bienvenue dans votre espace bailleur',
+    description:
+      'Publiez vos annonces, suivez les statistiques et gérez vos visites depuis un tableau de bord dédié.',
+    color: '#14b8a6',
+    highlight: 'Teal · interface pensée pour les pros',
+  },
+  {
+    Icon: BarChart,
+    title: 'Suivez vos performances',
+    description:
+      'Visualisez les vues, favoris et tendances sur vos biens pour ajuster votre stratégie de mise en ligne.',
+    color: '#0d9488',
+    badge: 'Analytics',
+  },
+  {
+    Icon: Notifications,
+    title: 'Restez réactif',
+    description:
+      'Notifications pour les visites, messages et actions importantes sur vos annonces.',
+    color: '#0f766e',
+  },
+  {
+    Icon: RateReview,
+    title: 'Votre réputation',
+    description:
+      'Les avis locataires renforcent la confiance : encouragez les retours après une location réussie.',
+    color: '#115e59',
+  },
+];
+
 interface AppTourProps {
   onDone?: () => void;
+  /** Parcours client (défaut) ou bailleur (dashboard propriétaire). */
+  variant?: 'client' | 'owner';
 }
 
-export default function AppTour({ onDone }: AppTourProps) {
+export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
   const { user, isAuthenticated, refreshUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [animDir, setAnimDir] = useState<'forward' | 'back'>('forward');
+  const openedRef = useRef(false);
+
+  const steps = variant === 'owner' ? OWNER_STEPS : STEPS;
 
   useEffect(() => {
-    if (!isAuthenticated || !user) { return; }
-    if (user.onboarding_completed_at != null) { return; }
+    if (!isAuthenticated || !user) {
+      return;
+    }
+    if (user.onboarding_completed_at != null) {
+      return;
+    }
 
-    const handler = () => {
-      setTimeout(() => setOpen(true), 600);
-      window.removeEventListener('kh:welcome-dismissed', handler);
+    if (variant === 'owner') {
+      const allowed = user.role === UserRole.AGENT || user.role === UserRole.ADMIN;
+      if (!allowed) {
+        return;
+      }
+    } else {
+      if (user.role !== UserRole.CUSTOMER) {
+        return;
+      }
+    }
+
+    const tryOpen = () => {
+      if (openedRef.current) {
+        return;
+      }
+      openedRef.current = true;
+      window.setTimeout(() => setOpen(true), 600);
     };
-    window.addEventListener('kh:welcome-dismissed', handler);
-    return () => { window.removeEventListener('kh:welcome-dismissed', handler); };
-  }, [isAuthenticated, user]);
+
+    const onWelcome = () => tryOpen();
+    window.addEventListener('kh:welcome-dismissed', onWelcome);
+    const fallback = window.setTimeout(() => tryOpen(), 4500);
+
+    return () => {
+      window.removeEventListener('kh:welcome-dismissed', onWelcome);
+      window.clearTimeout(fallback);
+    };
+  }, [isAuthenticated, user, variant]);
 
   const handleClose = () => {
     setOpen(false);
@@ -130,7 +197,7 @@ export default function AppTour({ onDone }: AppTourProps) {
   };
 
   const handleNext = () => {
-    if (step < STEPS.length - 1) {
+    if (step < steps.length - 1) {
       setAnimDir('forward');
       setStep((s) => s + 1);
     } else {
@@ -145,10 +212,10 @@ export default function AppTour({ onDone }: AppTourProps) {
 
   if (!open) { return null; }
 
-  const current = STEPS[step];
+  const current = steps[step];
   const { Icon: StepIcon } = current;
-  const isLast = step === STEPS.length - 1;
-  const progress = ((step + 1) / STEPS.length) * 100;
+  const isLast = step === steps.length - 1;
+  const progress = ((step + 1) / steps.length) * 100;
 
   return (
     <Dialog
@@ -270,14 +337,14 @@ export default function AppTour({ onDone }: AppTourProps) {
           variant="caption"
           sx={{ color: 'rgba(255,255,255,0.7)', mt: 1.5, fontWeight: 600, fontSize: 11 }}
         >
-          {step + 1} / {STEPS.length}
+          {step + 1} / {steps.length}
         </Typography>
       </Box>
 
       <DialogContent sx={{ px: 3.5, pb: 3.5, pt: 2.5 }}>
         {/* Dots */}
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5, mb: 2.5 }}>
-          {STEPS.map((_, i) => (
+          {steps.map((_, i) => (
             <Box
               key={i}
               onClick={() => { setAnimDir(i > step ? 'forward' : 'back'); setStep(i); }}

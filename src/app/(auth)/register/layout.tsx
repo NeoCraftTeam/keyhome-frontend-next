@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'Inscription gratuite — Trouvez votre logement en Afrique',
@@ -16,5 +17,5 @@ export const metadata: Metadata = {
 };
 
 export default function RegisterLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <Suspense fallback={null}>{children}</Suspense>;
 }

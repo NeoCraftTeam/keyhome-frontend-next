@@ -5,8 +5,8 @@ self.addEventListener("push", (event) => {
   let data = {
     title: "KeyHome",
     body: "Vous avez une nouvelle notification.",
-    icon: "/images/logo.png",
-    badge: "/images/logo.png",
+    icon: "/images/logo-teal.png",
+    badge: "/images/logo-teal.png",
     tag: "keyhome-notification",
     data: { url: "/home" },
   };
@@ -37,24 +37,33 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const targetPath = event.notification.data?.url || "/home";
-  const targetUrl = new URL(targetPath, self.location.origin).href;
+  const rawPath = event.notification.data?.url || "/home";
+  const targetUrl = new URL(rawPath, self.location.origin).href;
 
   event.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clients) => {
-        for (const client of clients) {
-          if ("focus" in client) {
-            return client.focus().then((focused) => {
-              if ("navigate" in focused) {
-                return focused.navigate(targetUrl);
-              }
-              return focused;
-            });
+    (async () => {
+      const allClients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+
+      for (const client of allClients) {
+        if (!client.url.startsWith(self.location.origin)) {
+          continue;
+        }
+        await client.focus();
+        // navigate() est supporté sur Chromium ; Safari / Firefox : on ouvre l’URL.
+        if ("navigate" in client && typeof client.navigate === "function") {
+          try {
+            return await client.navigate(targetUrl);
+          } catch {
+            /* fall through */
           }
         }
         return self.clients.openWindow(targetUrl);
-      }),
+      }
+
+      return self.clients.openWindow(targetUrl);
+    })(),
   );
 });

@@ -517,8 +517,8 @@ export default function Navbar() {
           {/* Devenir hôte — mobile drawer */}
           <ListItem disablePadding>
             <ListItemButton
-              component="a"
-              href={process.env.NEXT_PUBLIC_OWNER_URL || '/owner'}
+                component="a"
+                href="/owner"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setMobileOpen(false)}

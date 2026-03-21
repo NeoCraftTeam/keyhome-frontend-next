@@ -11,6 +11,8 @@ interface SocialLoginButtonsProps {
   disabled?: boolean;
   showDivider?: boolean;
   providers?: OAuthProvider[];
+  /** Inscription : indique au backend le rôle visé (compte Laravel après OTP + profil). */
+  registrationIntent?: 'customer' | 'agent';
 }
 
 const providerConfig: Record<
@@ -36,17 +38,21 @@ export default function SocialLoginButtons({
   disabled = false,
   showDivider = true,
   providers = ['google', 'facebook', 'apple'],
+  registrationIntent,
 }: SocialLoginButtonsProps) {
   const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(null);
 
   const { loginWithOAuth } = useAuth();
+  const isAgentIntent = registrationIntent === 'agent';
+  const accentBg = isAgentIntent ? '#0d9488' : '#F6475F';
+  const accentHover = isAgentIntent ? '#0f766e' : '#D93A50';
 
   const handleOAuthLogin = async (provider: OAuthProvider) => {
     if (disabled || loadingProvider) return;
 
     setLoadingProvider(provider);
     try {
-      await loginWithOAuth(provider);
+      await loginWithOAuth(provider, registrationIntent ? { registrationIntent } : undefined);
     } catch (err) {
       console.error(`OAuth ${provider} error:`, err);
       onError?.(`Erreur lors de la connexion avec ${providerConfig[provider].label}`);
@@ -78,13 +84,14 @@ export default function SocialLoginButtons({
                 sx={{
                   width: 52,
                   height: 52,
-                  bgcolor: '#F6475F',
+                  bgcolor: accentBg,
                   color: '#ffffff',
+                  transition: 'background-color 0.35s ease',
                   '&:hover': {
-                    bgcolor: '#D93A50',
+                    bgcolor: accentHover,
                   },
                   '&:disabled': {
-                    bgcolor: '#F6475F',
+                    bgcolor: accentBg,
                     opacity: 0.6,
                   },
                 }}

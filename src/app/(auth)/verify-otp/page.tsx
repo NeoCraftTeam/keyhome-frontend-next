@@ -1,11 +1,13 @@
 'use client';
 
+import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
 import { Alert, Box, Button, CircularProgress, IconButton, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -105,7 +107,9 @@ export default function VerifyOtpPage() {
     setResendMessage('');
     try {
       const freshToken = await getClerkToken();
-      await authService.clerkExchange(freshToken);
+      const intentRaw = sessionStorage.getItem('kh_registration_intent');
+      const registration_intent = intentRaw === 'agent' ? 'agent' : 'customer';
+      await authService.clerkExchange(freshToken, { registration_intent });
       setResendMessage('Un nouveau code a été envoyé à votre adresse email.');
       setResendCooldown(RESEND_COOLDOWN);
       setDigits(['', '', '', '', '', '']);
@@ -197,30 +201,10 @@ export default function VerifyOtpPage() {
         <Box sx={{ width: '100%', maxWidth: 400 }}>
           {/* Compact OAuth flow progress */}
           <FadeIn delay={0.05} direction="none">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-              {['Connexion', 'Vérification', 'Terminé'].map((label, idx) => (
-                <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: idx < 2 ? 1 : 'none' }}>
-                  <Box sx={{
-                    display: 'flex', alignItems: 'center', gap: 0.5,
-                  }}>
-                    <Box sx={{
-                      width: 22, height: 22, borderRadius: '50%', fontSize: 12, fontWeight: 700,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      bgcolor: idx <= 1 ? 'primary.main' : 'grey.300',
-                      color: idx <= 1 ? '#fff' : 'text.disabled',
-                    }}>
-                      {idx < 1 ? '✓' : idx + 1}
-                    </Box>
-                    <Typography variant="caption" fontWeight={idx === 1 ? 700 : 400} color={idx <= 1 ? 'text.primary' : 'text.disabled'}>
-                      {label}
-                    </Typography>
-                  </Box>
-                  {idx < 2 && (
-                    <Box sx={{ flex: 1, height: 2, bgcolor: idx < 1 ? 'primary.main' : 'grey.300', borderRadius: 1 }} />
-                  )}
-                </Box>
-              ))}
-            </Box>
+            <AuthFlowStepper
+              labels={['Connexion', 'Vérification', 'Terminé']}
+              activeStep={1}
+            />
           </FadeIn>
 
           <FadeIn delay={0.1} direction="up">
@@ -296,7 +280,7 @@ export default function VerifyOtpPage() {
                   <Box
                     key={index}
                     component="span"
-                    sx={{
+                    sx={(theme) => ({
                       flex: 1,
                       minWidth: 0,
                       width: 'clamp(36px, 12vw, 56px)',
@@ -306,13 +290,20 @@ export default function VerifyOtpPage() {
                       justifyContent: 'center',
                       fontSize: 'clamp(18px, 5vw, 28px)',
                       fontWeight: 700,
-                      border: `2px solid ${digit ? '#F6475F' : '#e2e8f0'}`,
-                      borderRadius: 10,
-                      background: digit ? 'rgba(246,71,95,0.04)' : '#fff',
-                      color: '#0f172a',
-                      transition: 'border-color 0.15s, background 0.15s',
+                      fontVariantNumeric: 'tabular-nums',
+                      lineHeight: 1,
+                      border: '2px solid',
+                      borderColor: digit ? 'primary.main' : 'divider',
+                      borderRadius: '10px',
+                      bgcolor: digit
+                        ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.08)
+                        : theme.palette.mode === 'dark'
+                          ? theme.palette.grey[900]
+                          : theme.palette.background.paper,
+                      color: 'text.primary',
+                      transition: 'border-color 0.15s, background-color 0.15s',
                       pointerEvents: 'none',
-                    }}
+                    })}
                   >
                     {digit}
                   </Box>
@@ -341,8 +332,18 @@ export default function VerifyOtpPage() {
                     py: 1.5,
                     fontSize: '1rem',
                     fontWeight: 600,
-                    background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                    '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                    borderRadius: '14px',
+                    textTransform: 'none',
+                    background: (t) =>
+                      t.palette.mode === 'dark'
+                        ? `linear-gradient(to right, ${t.palette.primary.dark}, ${t.palette.primary.main})`
+                        : 'linear-gradient(to right, #F6475F, #D93A50)',
+                    '&:hover': {
+                      background: (t) =>
+                        t.palette.mode === 'dark'
+                          ? `linear-gradient(to right, ${t.palette.primary.main}, ${t.palette.primary.light})`
+                          : 'linear-gradient(to right, #E03E54, #C53248)',
+                    },
                     '&:active': { transform: 'scale(0.97)' },
                   }}
                 >

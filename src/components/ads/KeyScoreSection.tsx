@@ -59,11 +59,14 @@ const POSITIVE_LABELS: Record<string, string> = {
 };
 
 export default function KeyScoreSection({ adId }: Props) {
+  const muiTheme = useTheme();
   const { data, isLoading } = useQuery({
     queryKey: ['keyscore', adId],
     queryFn: () => keyScoreService.get(adId),
     staleTime: 10 * 60 * 1000,
   });
+
+  const isDark = muiTheme.palette.mode === 'dark';
 
   if (isLoading) {
     return (
@@ -73,10 +76,9 @@ export default function KeyScoreSection({ adId }: Props) {
     );
   }
 
-  const muiTheme = useTheme();
-  const isDark = muiTheme.palette.mode === 'dark';
-
-  if (!data) { return null; }
+  if (!data) {
+    return null;
+  }
 
   const color = SCORE_COLOR(data.score);
   const bg = isDark ? SCORE_BG_DARK(data.score) : SCORE_BG_LIGHT(data.score);

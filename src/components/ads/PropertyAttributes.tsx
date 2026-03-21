@@ -64,7 +64,7 @@ export default function PropertyAttributes({
     return null;
   }
 
-  const bySlug = metadata?.data ?? {};
+  const bySlug: Record<string, any> = metadata?.data ?? {};
   const grouped = metadata?.grouped ?? [];
   const fallbackSelectedByCategory = [
     {

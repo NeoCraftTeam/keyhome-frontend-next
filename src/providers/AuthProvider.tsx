@@ -5,19 +5,84 @@ import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
 import { useClerk, useAuth as useClerkAuth, useSignIn, useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
 } from 'react';
 
-/** localStorage key for persisting the Sanctum token between page refreshes */
-const SANCTUM_TOKEN_KEY = 'kh_sanctum_token';
+const SANCTUM_TOKEN_KEY_CLIENT = 'kh_sanctum_token_client';
+const SANCTUM_TOKEN_KEY_OWNER = 'kh_sanctum_token_owner';
+/** Legacy single key — migrated once to scoped keys */
+const LEGACY_SANCTUM_TOKEN_KEY = 'kh_sanctum_token';
+
+/** Cookie used by the edge proxy to gate /owner routes */
+const ROLE_COOKIE = 'kh_role';
+const ROLE_COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days
+
+function setRoleCookie(role: string): void {
+  if (typeof document === 'undefined') {
+    return;
+  }
+  document.cookie = `${ROLE_COOKIE}=${encodeURIComponent(role)}; path=/; SameSite=Lax; Max-Age=${ROLE_COOKIE_MAX_AGE}`;
+}
+
+function clearRoleCookie(): void {
+  if (typeof document === 'undefined') {
+    return;
+  }
+  document.cookie = `${ROLE_COOKIE}=; path=/; Max-Age=0; SameSite=Lax`;
+}
+
+function storageScopeForRole(role: UserRole | null | undefined): 'client' | 'owner' {
+  return role === UserRole.CUSTOMER ? 'client' : 'owner';
+}
+
+function sanctumKeyForScope(scope: 'client' | 'owner'): string {
+  return scope === 'owner' ? SANCTUM_TOKEN_KEY_OWNER : SANCTUM_TOKEN_KEY_CLIENT;
+}
+
+function hasAnySanctumInStorage(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return Boolean(
+    localStorage.getItem(SANCTUM_TOKEN_KEY_CLIENT)
+      || localStorage.getItem(SANCTUM_TOKEN_KEY_OWNER)
+      || localStorage.getItem(LEGACY_SANCTUM_TOKEN_KEY)
+  );
+}
+
+async function migrateLegacySanctumToken(): Promise<void> {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const legacy = localStorage.getItem(LEGACY_SANCTUM_TOKEN_KEY);
+  if (!legacy) {
+    return;
+  }
+
+  registerTokenGetter(() => Promise.resolve(legacy));
+
+  try {
+    const laravelUser = await authService.me();
+    const key = sanctumKeyForScope(storageScopeForRole(laravelUser.role));
+    localStorage.setItem(key, legacy);
+  } catch {
+    // Invalid legacy token — dropped when key is removed below
+  } finally {
+    localStorage.removeItem(LEGACY_SANCTUM_TOKEN_KEY);
+  }
+}
+
 const LOGOUT_OVERLAY_DURATION_MS = 3500;
 const CLERK_SIGN_OUT_FALLBACK_MS = 1200;
 
@@ -28,8 +93,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoggingOut: boolean;
   login: (email: string, password: string) => Promise<void>;
-  loginWithOAuth: (provider: OAuthProvider) => Promise<void>;
-  logout: () => Promise<void>;
+  loginOwner: (email: string, password: string) => Promise<void>;
+  loginWithOAuth: (
+    provider: OAuthProvider,
+    options?: { registrationIntent?: 'customer' | 'agent' },
+  ) => Promise<void>;
+  logout: (redirectTo?: string) => Promise<void>;
   setUser: (user: User) => void;
   refreshUser: () => Promise<void>;
   /** Called by /verify-email and /complete-profile after successful auth */
@@ -45,75 +114,138 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user: clerkUser } = useUser();
   const { signIn } = useSignIn();
   const { signOut } = useClerk();
+  const pathname = usePathname();
   const [user, setUserState] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isExchanging, setIsExchanging] = useState(false);
   const [hasResolvedInitialAuth, setHasResolvedInitialAuth] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
-  // Guard against stale async callbacks updating state after unmount or re-run
   const authRunRef = useRef(0);
+  const pathnameRef = useRef<string | null>(null);
 
-  /** Persist a Sanctum token and register it as the API token getter */
-  const activateSanctumToken = useCallback((sanctumToken: string) => {
-    localStorage.setItem(SANCTUM_TOKEN_KEY, sanctumToken);
+  useLayoutEffect(() => {
+    pathnameRef.current = pathname ?? null;
+  }, [pathname]);
+
+  const registerPathAwareTokenGetter = useCallback(() => {
+    registerTokenGetter(async () => {
+      if (typeof window === 'undefined') {
+        return null;
+      }
+      const p = pathnameRef.current ?? '';
+      const key = p.startsWith('/owner') ? SANCTUM_TOKEN_KEY_OWNER : SANCTUM_TOKEN_KEY_CLIENT;
+
+      return localStorage.getItem(key);
+    });
+  }, []);
+
+  const persistPasswordSession = useCallback(
+    (sanctumToken: string, scope: 'client' | 'owner') => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(sanctumKeyForScope(scope), sanctumToken);
+      }
+      registerPathAwareTokenGetter();
+      setToken(sanctumToken);
+    },
+    [registerPathAwareTokenGetter]
+  );
+
+  const persistClerkSession = useCallback((sanctumToken: string, scope: 'client' | 'owner') => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(sanctumKeyForScope(scope), sanctumToken);
+    }
     registerTokenGetter(() => Promise.resolve(sanctumToken));
     setToken(sanctumToken);
   }, []);
 
-  /** Clear any persisted Sanctum token */
-  const clearSanctumToken = useCallback(() => {
-    localStorage.removeItem(SANCTUM_TOKEN_KEY);
-    registerTokenGetter(() => Promise.resolve(null));
-    setToken(null);
-  }, []);
+  const clearSanctumTokens = useCallback(
+    (scope: 'client' | 'owner' | 'all') => {
+      if (typeof window !== 'undefined') {
+        if (scope === 'all' || scope === 'client') {
+          localStorage.removeItem(SANCTUM_TOKEN_KEY_CLIENT);
+        }
+        if (scope === 'all' || scope === 'owner') {
+          localStorage.removeItem(SANCTUM_TOKEN_KEY_OWNER);
+        }
+        if (scope === 'all') {
+          localStorage.removeItem(LEGACY_SANCTUM_TOKEN_KEY);
+        }
+      }
 
-  // Main auth sync effect — runs when Clerk's load state or sign-in state changes
+      registerPathAwareTokenGetter();
+      const p = pathnameRef.current ?? '';
+      const activeKey = p.startsWith('/owner') ? SANCTUM_TOKEN_KEY_OWNER : SANCTUM_TOKEN_KEY_CLIENT;
+      const activeStill = typeof window !== 'undefined' ? localStorage.getItem(activeKey) : null;
+      setToken(activeStill);
+    },
+    [registerPathAwareTokenGetter]
+  );
+
   useEffect(() => {
     if (!isLoaded) {
       return;
     }
 
-    // Stamp this run so stale closures from previous runs are ignored
     const runId = ++authRunRef.current;
 
-    // ── Email/password path: no Clerk session ──────────────────────────────
     if (!isSignedIn) {
-      const storedToken = localStorage.getItem(SANCTUM_TOKEN_KEY);
+      setIsExchanging(true);
 
-      if (storedToken) {
-        setIsExchanging(true);
-        registerTokenGetter(() => Promise.resolve(storedToken));
+      void (async () => {
+        await migrateLegacySanctumToken();
+
+        if (runId !== authRunRef.current) {
+          return;
+        }
+
+        const ownerArea = (pathname ?? '').startsWith('/owner');
+        const storageKey = ownerArea ? SANCTUM_TOKEN_KEY_OWNER : SANCTUM_TOKEN_KEY_CLIENT;
+        const storedToken = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null;
+
+        registerPathAwareTokenGetter();
+
+        if (!storedToken) {
+          setToken(null);
+          setUserState(null);
+          clearRoleCookie();
+          setIsExchanging(false);
+          setHasResolvedInitialAuth(true);
+
+          return;
+        }
+
         setToken(storedToken);
 
-        authService.me()
-          .then((laravelUser) => {
-            if (runId !== authRunRef.current) { return; }
-            setUserState(laravelUser);
-          })
-          .catch(() => {
-            if (runId !== authRunRef.current) { return; }
-            clearSanctumToken();
-            setUserState(null);
-            router.replace('/home');
-          })
-          .finally(() => {
-            if (runId !== authRunRef.current) { return; }
-            setIsExchanging(false);
-            setHasResolvedInitialAuth(true);
-          });
+        try {
+          const laravelUser = await authService.me();
+          if (runId !== authRunRef.current) {
+            return;
+          }
+          setUserState(laravelUser);
+          setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
+        } catch {
+          if (runId !== authRunRef.current) {
+            return;
+          }
+          localStorage.removeItem(storageKey);
+          registerPathAwareTokenGetter();
+          setToken(null);
+          setUserState(null);
+          clearRoleCookie();
+          router.replace(ownerArea ? '/owner/login' : '/home');
+        } finally {
+          if (runId !== authRunRef.current) {
+            return;
+          }
+          setIsExchanging(false);
+          setHasResolvedInitialAuth(true);
+        }
+      })();
 
-        return;
-      }
-
-      // Truly unauthenticated — reset everything
-      clearSanctumToken();
-      setUserState(null);
-      setHasResolvedInitialAuth(true);
       return;
     }
 
-    // ── OAuth / Clerk path ─────────────────────────────────────────────────
     setIsExchanging(true);
     getToken()
       .then(async (clerkToken) => {
@@ -121,29 +253,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // Register Clerk token getter so the Axios interceptor picks it up
-        // for the clerkExchange call below
         registerTokenGetter(() => getToken());
 
         try {
-          const result = await authService.clerkExchange(clerkToken);
+          const intentRaw = typeof window !== 'undefined' ? sessionStorage.getItem('kh_registration_intent') : null;
+          const registrationIntent = intentRaw === 'agent' ? 'agent' : 'customer';
+          const result = await authService.clerkExchange(clerkToken, { registration_intent: registrationIntent });
 
-          if (runId !== authRunRef.current) { return; }
+          if (runId !== authRunRef.current) {
+            return;
+          }
 
           if ('state' in result && result.state === 'otp_required') {
-            // User not found in Laravel DB. If we had a Sanctum token, the user was
-            // previously authenticated (e.g. DB was purged) — sign out and redirect home.
-            if (localStorage.getItem(SANCTUM_TOKEN_KEY)) {
-              clearSanctumToken();
+            if (hasAnySanctumInStorage()) {
+              clearSanctumTokens('all');
               setUserState(null);
               sessionStorage.removeItem('clerk_auth_email_hint');
               sessionStorage.removeItem('clerk_auth_prefill');
+              sessionStorage.removeItem('kh_registration_intent');
               await signOut();
               router.replace('/home');
+
               return;
             }
             sessionStorage.setItem('clerk_auth_email_hint', result.email_hint ?? '');
             router.replace('/verify-otp');
+
             return;
           }
 
@@ -153,32 +288,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             panel_sso_url: string | null;
           };
 
-          if (panel_sso_url) {
-            if (!redirectToTrustedUrl(panel_sso_url)) {
-              clearSanctumToken();
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('kh_registration_intent');
+          }
+
+          const panelUrl =
+            laravelUser.role === UserRole.AGENT ? null : panel_sso_url;
+
+          if (panelUrl) {
+            if (!redirectToTrustedUrl(panelUrl)) {
+              clearSanctumTokens('all');
               setUserState(null);
               router.replace('/login');
             }
+
             return;
           }
 
-          activateSanctumToken(sanctumToken);
+          persistClerkSession(sanctumToken, storageScopeForRole(laravelUser.role));
           setUserState(laravelUser);
+          setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
+
+          const path = pathnameRef.current ?? '';
+          if (
+            laravelUser.role === UserRole.AGENT
+            || laravelUser.role === UserRole.ADMIN
+          ) {
+            if (!path.startsWith('/owner')) {
+              router.replace('/owner/dashboard');
+            }
+          } else if (path.startsWith('/owner')) {
+            router.replace('/home');
+          }
         } catch {
-          // clerkExchange failed — do NOT set isAuthenticated, just log out cleanly
-          if (runId !== authRunRef.current) { return; }
-          clearSanctumToken();
+          if (runId !== authRunRef.current) {
+            return;
+          }
+          clearSanctumTokens('all');
           setUserState(null);
         }
       })
       .finally(() => {
-        if (runId !== authRunRef.current) { return; }
+        if (runId !== authRunRef.current) {
+          return;
+        }
         setIsExchanging(false);
         setHasResolvedInitialAuth(true);
       });
-  }, [isLoaded, isSignedIn, clerkUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isLoaded, isSignedIn, clerkUser?.id, pathname, clearSanctumTokens, persistClerkSession, registerPathAwareTokenGetter, router, signOut, getToken]);
 
-  // isAuthenticated requires both a valid token AND a loaded user
   const isAuthenticated = !!token && !!user;
   const isLoading = !isLoaded || !hasResolvedInitialAuth || isExchanging;
 
@@ -186,33 +344,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserState(u);
   }, []);
 
-  /** Finalize auth after OTP + profile completion — called by child pages */
   const finalizeAuth = useCallback(
     (sanctumToken: string, laravelUser: User, panelSsoUrl: string | null) => {
-      if (panelSsoUrl) {
-        if (!redirectToTrustedUrl(panelSsoUrl)) {
-          clearSanctumToken();
+      const panelUrl = laravelUser.role === UserRole.AGENT ? null : panelSsoUrl;
+
+      if (panelUrl) {
+        if (!redirectToTrustedUrl(panelUrl)) {
+          clearSanctumTokens('all');
           setUserState(null);
           router.replace('/login');
         }
+
         return;
       }
 
-      activateSanctumToken(sanctumToken);
+      persistPasswordSession(sanctumToken, storageScopeForRole(laravelUser.role));
       setUserState(laravelUser);
+      setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
       sessionStorage.removeItem('clerk_auth_email_hint');
       sessionStorage.removeItem('clerk_auth_prefill');
+      sessionStorage.removeItem('kh_registration_intent');
 
-      // Restore the page the user was on before being bounced to /login
       const returnTo = sessionStorage.getItem('kh_redirect_after_login');
       if (returnTo) {
         sessionStorage.removeItem('kh_redirect_after_login');
         router.replace(returnTo);
+      } else if (storageScopeForRole(laravelUser.role) === 'owner') {
+        router.replace('/owner/dashboard');
       } else {
         router.replace('/home');
       }
     },
-    [activateSanctumToken, clearSanctumToken, router]
+    [clearSanctumTokens, persistPasswordSession, router]
   );
 
   const login = useCallback(
@@ -220,13 +383,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { token: sanctumToken, user: laravelUser } = await authService.login(email, password);
 
       if (laravelUser.role !== UserRole.CUSTOMER) {
-        throw new Error("Accès réservé aux clients. Utilisez le panneau d'administration.");
+        throw new Error('Accès réservé aux clients. Utilisez le panneau propriétaire.');
       }
 
-      activateSanctumToken(sanctumToken);
+      persistPasswordSession(sanctumToken, 'client');
       setUserState(laravelUser);
+      setRoleCookie(UserRole.CUSTOMER);
 
-      // Restore the page the user was on before being bounced to /login
       const returnTo = sessionStorage.getItem('kh_redirect_after_login');
       if (returnTo) {
         sessionStorage.removeItem('kh_redirect_after_login');
@@ -235,11 +398,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace('/home');
       }
     },
-    [activateSanctumToken, router]
+    [persistPasswordSession, router]
+  );
+
+  const loginOwner = useCallback(
+    async (email: string, password: string) => {
+      const { token: sanctumToken, user: laravelUser } = await authService.login(email, password);
+
+      if (laravelUser.role !== UserRole.AGENT && laravelUser.role !== UserRole.ADMIN) {
+        throw new Error('Accès réservé aux propriétaires et agences. Créez un compte bailleur.');
+      }
+
+      persistPasswordSession(sanctumToken, 'owner');
+      setUserState(laravelUser);
+      setRoleCookie(laravelUser.role ?? UserRole.AGENT);
+
+      const returnTo = sessionStorage.getItem('kh_owner_redirect');
+      if (returnTo) {
+        sessionStorage.removeItem('kh_owner_redirect');
+        router.replace(returnTo);
+      } else {
+        router.replace('/owner/dashboard');
+      }
+    },
+    [persistPasswordSession, router]
   );
 
   const loginWithOAuth = useCallback(
-    async (provider: OAuthProvider) => {
+    async (provider: OAuthProvider, options?: { registrationIntent?: 'customer' | 'agent' }) => {
       if (!signIn) {
         return;
       }
@@ -250,8 +436,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         apple: 'oauth_apple',
       } as const;
 
-      // Sign out any existing Clerk session first so the OAuth provider
-      // always presents the account selection prompt.
+      if (typeof window !== 'undefined') {
+        if (options?.registrationIntent != null) {
+          sessionStorage.setItem('kh_registration_intent', options.registrationIntent);
+        } else {
+          sessionStorage.removeItem('kh_registration_intent');
+        }
+      }
+
       if (isSignedIn) {
         await signOut();
       }
@@ -265,8 +457,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [signIn, isSignedIn, signOut]
   );
 
-  const logout = useCallback(async () => {
-    ++authRunRef.current; // Invalidate any in-flight auth callbacks
+  const logout = useCallback(async (redirectTo = '/home') => {
+    ++authRunRef.current;
     setIsLoggingOut(true);
 
     sessionStorage.removeItem('clerk_auth_email_hint');
@@ -275,7 +467,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     sessionStorage.removeItem('kh_flw_reference');
     sessionStorage.removeItem('kh_just_unlocked');
     sessionStorage.removeItem('kh_redirect_after_login');
-    clearSanctumToken();
+    sessionStorage.removeItem('kh_registration_intent');
+    clearRoleCookie();
+
+    if (isSignedIn) {
+      clearSanctumTokens('all');
+    } else {
+      const scope = pathnameRef.current?.startsWith('/owner') ? 'owner' : 'client';
+      clearSanctumTokens(scope);
+    }
     setUserState(null);
 
     await new Promise((resolve) => setTimeout(resolve, LOGOUT_OVERLAY_DURATION_MS));
@@ -284,7 +484,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await Promise.race([
           signOut({
-            redirectUrl: `${window.location.origin}/home`,
+            redirectUrl: `${window.location.origin}${redirectTo.startsWith('/') ? redirectTo : '/home'}`,
           }),
           new Promise((resolve) => setTimeout(resolve, CLERK_SIGN_OUT_FALLBACK_MS)),
         ]);
@@ -292,28 +492,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Fall through to hard redirect fallback.
       }
 
-      window.location.replace('/home');
+      window.location.replace(redirectTo.startsWith('/') ? redirectTo : '/home');
+
       return;
     }
 
     setIsLoggingOut(false);
-    router.replace('/home');
-  }, [isSignedIn, signOut, clearSanctumToken, router]);
+    router.replace(redirectTo.startsWith('/') ? redirectTo : '/home');
+  }, [isSignedIn, signOut, clearSanctumTokens, router]);
 
   const refreshUser = useCallback(async () => {
     try {
       const freshUser = await authService.me();
       setUserState(freshUser);
     } catch {
-      // Token invalid — clear state without calling logout() to avoid loops
-      clearSanctumToken();
-      setUserState(null);
       if (isSignedIn) {
+        clearSanctumTokens('all');
+        setUserState(null);
         await signOut();
+        router.push('/home');
+
+        return;
       }
+      const scope = pathnameRef.current?.startsWith('/owner') ? 'owner' : 'client';
+      clearSanctumTokens(scope);
+      setUserState(null);
       router.push('/home');
     }
-  }, [isSignedIn, signOut, clearSanctumToken, router]);
+  }, [isSignedIn, signOut, clearSanctumTokens, router]);
 
   const value = useMemo(
     () => ({
@@ -323,6 +529,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated,
       isLoggingOut,
       login,
+      loginOwner,
       loginWithOAuth,
       logout,
       setUser,
@@ -330,7 +537,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       finalizeAuth,
       getClerkToken: getToken,
     }),
-    [user, token, isLoading, isAuthenticated, isLoggingOut, login, loginWithOAuth, logout, setUser, refreshUser, finalizeAuth, getToken]
+    [user, token, isLoading, isAuthenticated, isLoggingOut, login, loginOwner, loginWithOAuth, logout, setUser, refreshUser, finalizeAuth, getToken]
   );
 
   return (
@@ -345,7 +552,6 @@ export function useAuth(): AuthContextType {
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
+
   return context;
 }
-
-

@@ -20,10 +20,29 @@ function getValidationErrors(error: AxiosError<{ message?: string; errors?: Reco
  * For 422 (validation), returns specific field errors from Laravel.
  * For all other codes, returns the response `message` field as-is.
  */
+const NETWORK_TIMEOUT_FR =
+  "Impossible de joindre le serveur (délai dépassé). Vérifiez que l'API Laravel tourne, que NEXT_PUBLIC_API_URL dans .env.local pointe vers la bonne adresse (ex. http://127.0.0.1:8000/api/v1 plutôt que localhost si la connexion reste bloquée), puis réessayez.";
+
+function isAxiosNetworkOrTimeout(error: unknown): boolean {
+  if (!(error instanceof AxiosError) || error.response) {
+    return false;
+  }
+  const code = error.code;
+  if (code === 'ECONNABORTED' || code === 'ERR_NETWORK' || code === 'ETIMEDOUT') {
+    return true;
+  }
+  const msg = (error.message || '').toLowerCase();
+  return msg.includes('timeout') || msg.includes('network error');
+}
+
 export function getSafeErrorMessage(
   error: unknown,
   fallback: string = DEFAULT_ERROR
 ): string {
+  if (isAxiosNetworkOrTimeout(error)) {
+    return NETWORK_TIMEOUT_FR;
+  }
+
   if (!(error instanceof AxiosError) || !error.response) {
     // Propagate plain Error messages (e.g. thrown by AuthProvider for role restrictions)
     if (error instanceof Error && error.message) {
