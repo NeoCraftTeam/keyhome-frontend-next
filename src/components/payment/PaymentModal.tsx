@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
+import { brand } from '@/theme/tokens';
 
 type Step = 'select-method' | 'enter-phone' | 'loading' | 'done';
 
@@ -171,13 +172,13 @@ export default function PaymentModal({
         )}
 
         <Box sx={{ width: 56, height: 56, borderRadius: '50%', bgcolor: 'rgba(246,71,95,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 1.5 }}>
-          <Lock sx={{ color: '#F6475F', fontSize: 26 }} />
+          <Lock sx={{ color: brand.primary, fontSize: 26 }} />
         </Box>
 
         <Typography variant="h6" fontWeight={800} sx={{ color: '#fff', letterSpacing: -0.5, lineHeight: 1.2, mb: 0.5 }}>
           {label ?? 'Paiement sécurisé'}
         </Typography>
-        <Typography variant="h5" fontWeight={900} sx={{ color: '#F6475F', letterSpacing: -1 }}>
+        <Typography variant="h5" fontWeight={900} sx={{ color: brand.primary, letterSpacing: -1 }}>
           {formatAmount(amount)}
         </Typography>
       </Box>
@@ -198,7 +199,7 @@ export default function PaymentModal({
             <Button
               fullWidth
               variant="contained"
-              disabled={!selectedMethod}
+              disabled={!selectedMethod || isLoading}
               onClick={handleMethodConfirm}
               sx={{
                 mt: 3,
@@ -206,12 +207,12 @@ export default function PaymentModal({
                 borderRadius: 3,
                 fontWeight: 700,
                 fontSize: '0.95rem',
-                bgcolor: '#F6475F',
-                '&:hover': { bgcolor: '#D93A50' },
-                '&:disabled': { bgcolor: 'rgba(246,71,95,0.3)', color: 'rgba(255,255,255,0.5)' },
+                bgcolor: brand.primary,
+                '&:hover': { bgcolor: brand.primaryDark },
+                '&:disabled': { bgcolor: brand.primaryAlpha30, color: 'rgba(255,255,255,0.5)' },
               }}
             >
-              Continuer
+              {isLoading ? <CircularProgress size={22} sx={{ color: 'rgba(255,255,255,0.5)' }} /> : 'Continuer'}
             </Button>
           </>
         )}
@@ -255,19 +256,19 @@ export default function PaymentModal({
               </Button>
               <Button
                 variant="contained"
-                disabled={phone.length !== 9}
+                disabled={phone.length !== 9 || isLoading}
                 onClick={handlePhoneConfirm}
                 sx={{
                   flex: 2,
                   py: 1.4,
                   borderRadius: 3,
                   fontWeight: 700,
-                  bgcolor: '#F6475F',
-                  '&:hover': { bgcolor: '#D93A50' },
-                  '&:disabled': { bgcolor: 'rgba(246,71,95,0.3)', color: 'rgba(255,255,255,0.5)' },
+                  bgcolor: brand.primary,
+                  '&:hover': { bgcolor: brand.primaryDark },
+                  '&:disabled': { bgcolor: brand.primaryAlpha30, color: 'rgba(255,255,255,0.5)' },
                 }}
               >
-                Payer maintenant
+                {isLoading ? <CircularProgress size={20} sx={{ color: 'rgba(255,255,255,0.5)' }} /> : 'Payer maintenant'}
               </Button>
             </Box>
           </>
@@ -275,7 +276,7 @@ export default function PaymentModal({
 
         {step === 'loading' && (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <CircularProgress sx={{ color: '#F6475F', mb: 2 }} size={48} />
+            <CircularProgress sx={{ color: brand.primary, mb: 2 }} size={48} />
             <Typography variant="body1" fontWeight={600}>
               Redirection en cours...
             </Typography>
