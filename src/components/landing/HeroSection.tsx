@@ -1,16 +1,20 @@
 'use client';
 
 import api from '@/lib/api';
-import { citiesService } from '@/services/cities.service';
-import type { City } from '@/types';
-import { LocationOn, Search } from '@mui/icons-material';
+import { AutoAwesome, Search } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
 import { useLandingStats } from '@/hooks/useLandingStats';
+import { brand } from '@/theme/tokens';
+
+const HeroVideoBackground = dynamic(() => import('./HeroVideoBackground'), {
+  ssr: false,
+  loading: () => null,
+});
 
 const ThreeCanvas = dynamic(() => import('./ThreeCanvas'), {
   ssr: false,
@@ -33,10 +37,26 @@ const itemVariants = {
 
 const CITIES = ['Douala', 'Garoua', 'Accra', 'Cotonou', 'Lomé', 'Bafoussam'];
 
+const PLACEHOLDER_EXAMPLES = [
+  'Appartement 3 pièces à Douala moins de 100 000 FCFA...',
+  'Villa avec piscine à Abidjan Cocody...',
+  'Studio meublé à Yaoundé avec parking...',
+  'Maison 4 chambres à Lomé pas cher...',
+  'Terrain 500m² à Cotonou proche centre...',
+];
+
+const QUICK_SUGGESTIONS = [
+  'Maison à Douala moins de 50 000',
+  'Appartement meublé à Yaoundé',
+  'Villa avec piscine à Abidjan',
+  'Studio à Cotonou pas cher',
+];
+
 export default function HeroSection() {
   const { isDark, text, textSub, textMuted, bg, surface, border } = useLandingTheme();
   const router = useRouter();
   const { stats, isLoading: statsLoading } = useLandingStats();
+  const [, startTransition] = useTransition();
 
   // Skip heavy Three.js canvas on mobile for better LCP / performance
   const [isMobile, setIsMobile] = useState(false);
@@ -44,79 +64,86 @@ export default function HeroSection() {
     setIsMobile(window.innerWidth < 768);
   }, []);
 
-  // City autocomplete state
+  // AI search state
   const [query, setQuery] = useState('');
-  const [cities, setCities] = useState<City[]>([]);
-  const [highlightIdx, setHighlightIdx] = useState(-1);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
+  const [isSearching, setIsSearching] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchCities = useCallback(async (q: string) => {
-    if (q.length < 1) { setCities([]); return; }
-    setIsLoading(true);
-    try {
-      const res = await citiesService.list({ q, per_page: 8 });
-      setCities(res.data || []);
-    } catch { setCities([]); }
-    finally { setIsLoading(false); }
-  }, []);
+  // Animated placeholder
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+  const [displayedPlaceholder, setDisplayedPlaceholder] = useState('');
+  const [isTyping, setIsTyping] = useState(true);
 
-  const handleInputChange = (val: string) => {
-    setQuery(val);
-    setHighlightIdx(-1);
-    setShowDropdown(true);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchCities(val), 250);
-  };
+  useEffect(() => {
+    if (isFocused || query) return;
 
-  const navigateToSearch = (cityName?: string) => {
-    const target = cityName || query.trim();
-    if (target) {
-      router.push(`/search?city=${encodeURIComponent(target)}`);
-    } else {
-      router.push('/search');
+    const fullText = PLACEHOLDER_EXAMPLES[placeholderIdx];
+
+    if (isTyping) {
+      if (displayedPlaceholder.length < fullText.length) {
+        const timer = setTimeout(() => {
+          setDisplayedPlaceholder(fullText.slice(0, displayedPlaceholder.length + 1));
+        }, 35);
+        return () => clearTimeout(timer);
+      }
+      // Pause at full text before deleting
+      const timer = setTimeout(() => setIsTyping(false), 2000);
+      return () => clearTimeout(timer);
     }
-  };
 
-  const handleSelect = (city: City) => {
-    setQuery(city.name);
-    setShowDropdown(false);
-    navigateToSearch(city.name);
-  };
+    // Deleting
+    if (displayedPlaceholder.length > 0) {
+      const timer = setTimeout(() => {
+        setDisplayedPlaceholder(displayedPlaceholder.slice(0, -1));
+      }, 20);
+      return () => clearTimeout(timer);
+    }
+    // Move to next example
+    setPlaceholderIdx((prev) => (prev + 1) % PLACEHOLDER_EXAMPLES.length);
+    setIsTyping(true);
+  }, [displayedPlaceholder, isTyping, placeholderIdx, isFocused, query]);
+
+  const handleAISearch = useCallback(async (q?: string) => {
+    const searchQuery = (q ?? query).trim();
+    if (!searchQuery) {
+      router.push('/search');
+      return;
+    }
+
+    setIsSearching(true);
+    setError(null);
+
+    try {
+      const res = await api.post('/search/parse', { q: searchQuery });
+      const parsed = res.data;
+      const params = new URLSearchParams();
+      if (parsed.q) params.set('q', parsed.q);
+      if (parsed.city_id) params.set('city', parsed.city_id);
+      if (parsed.type_id) params.set('type', parsed.type_id);
+      if (parsed.bedrooms) params.set('bedrooms', String(parsed.bedrooms));
+      if (parsed.price_max) params.set('price_max', String(parsed.price_max));
+      if (parsed.price_min) params.set('price_min', String(parsed.price_min));
+      if (parsed.has_parking) params.set('parking', '1');
+      if (parsed.surface_min) params.set('surface_min', String(parsed.surface_min));
+
+      startTransition(() => {
+        router.push(`/search?${params.toString()}`);
+      });
+    } catch {
+      setError('Impossible de traiter votre recherche. Réessayez.');
+    } finally {
+      setIsSearching(false);
+    }
+  }, [query, router, startTransition]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      setHighlightIdx((p) => Math.min(p + 1, cities.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setHighlightIdx((p) => Math.max(p - 1, -1));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (highlightIdx >= 0 && cities[highlightIdx]) {
-        handleSelect(cities[highlightIdx]);
-      } else {
-        navigateToSearch();
-      }
-    } else if (e.key === 'Escape') {
-      setShowDropdown(false);
+      handleAISearch();
     }
   };
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) && e.target !== inputRef.current) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   const heroBg = isDark
     ? 'linear-gradient(135deg, #0A0A0F 0%, #12121A 50%, #0F0A15 100%)'
@@ -135,7 +162,10 @@ export default function HeroSection() {
         transition: 'background 0.4s ease',
       }}
     >
-      {/* Three.js animated particle background — skipped on mobile for better LCP */}
+      {/* Property video/image showcase background — skipped on mobile */}
+      {!isMobile && <HeroVideoBackground isDark={isDark} />}
+
+      {/* Canvas2D animated particle overlay — skipped on mobile for better LCP */}
       {!isMobile && <ThreeCanvas />}
 
       {/* Radial gradient overlay */}
@@ -164,7 +194,7 @@ export default function HeroSection() {
       />
 
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: 'clamp(72px, 10vh, 140px) clamp(16px, 5vw, 40px) clamp(48px, 8vh, 100px)', maxWidth: 860, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+      <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: 'clamp(72px, 10vh, 140px) clamp(16px, 5vw, 40px) clamp(48px, 8vh, 100px)', maxWidth: 1400, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
 
           {/* Badge */}
@@ -178,13 +208,13 @@ export default function HeroSection() {
                 borderRadius: 100,
                 background: 'rgba(246, 71, 95, 0.12)',
                 border: '1px solid rgba(246, 71, 95, 0.25)',
-                color: '#F6475F',
+                color: brand.primary,
                 fontSize: 13,
                 fontWeight: 600,
                 letterSpacing: '0.3px',
               }}
             >
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#F6475F', display: 'inline-block', animation: 'pulseGlow 2s infinite' }} />
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: brand.primary, display: 'inline-block', animation: 'pulseGlow 2s infinite' }} />
               Plateforme immobilière panafricaine
             </span>
           </motion.div>
@@ -206,7 +236,7 @@ export default function HeroSection() {
             Trouvez votre{' '}
             <span
               style={{
-                background: 'linear-gradient(135deg, #F6475F 20%, #FF8C94 80%)',
+                background: `linear-gradient(135deg, ${brand.primary} 20%, #FF8C94 80%)`,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
@@ -231,157 +261,241 @@ export default function HeroSection() {
             Des milliers d&apos;annonces immobilières vérifiées à travers l&apos;Afrique. Maisons, appartements, terrains et villas — accédez aux coordonnées en toute sécurité.
           </motion.p>
 
-          {/* CTA bar — real city autocomplete */}
+          {/* AI Search bar */}
           <motion.div variants={itemVariants}>
-            <div style={{ position: 'relative', maxWidth: 560, margin: '0 auto', width: '100%' }}>
+            <div style={{ position: 'relative', maxWidth: 860, margin: '0 auto', width: '100%' }}>
+              {/* Main search container */}
               <div
                 className="hero-search-bar"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0,
-                  background: surface,
-                  border: `1px solid ${showDropdown && cities.length > 0 ? 'rgba(246,71,95,0.4)' : border}`,
-                  borderRadius: showDropdown && cities.length > 0 ? '16px 16px 0 0' : 16,
-                  padding: '5px 5px 5px 14px',
-                  transition: 'border-color 0.2s, background 0.2s, border-radius 0.2s',
-                  backdropFilter: 'blur(10px)',
+                  background: isFocused
+                    ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.95)')
+                    : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.8)'),
+                  border: `1.5px solid ${isFocused ? 'rgba(246,71,95,0.5)' : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)')}`,
+                  borderRadius: 24,
+                  padding: '8px 10px 8px 24px',
+                  transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+                  backdropFilter: 'blur(20px)',
                   width: '100%',
                   boxSizing: 'border-box',
-                  overflow: 'hidden',
+                  boxShadow: isFocused
+                    ? '0 8px 40px rgba(246,71,95,0.15), 0 0 0 1px rgba(246,71,95,0.1)'
+                    : '0 4px 24px rgba(0,0,0,0.12)',
                 }}
               >
-                <Search style={{ color: textMuted, fontSize: 19, flexShrink: 0 }} />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={query}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  onFocus={() => { if (cities.length > 0 || query.length >= 1) setShowDropdown(true); }}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Ville, quartier..."
-                  aria-label="Rechercher une ville ou un quartier"
-                  role="combobox"
-                  aria-expanded={showDropdown && cities.length > 0}
-                  aria-autocomplete="list"
-                  aria-haspopup="listbox"
-                  aria-controls="hero-cities-listbox"
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    padding: '10px 8px',
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    color: text,
-                    fontSize: 14,
-                    fontFamily: 'inherit',
-                  }}
-                />
-                {isLoading && (
-                  <div style={{ width: 16, height: 16, marginRight: 6, border: '2px solid rgba(246,71,95,0.3)', borderTopColor: '#F6475F', borderRadius: '50%', animation: 'spin 0.6s linear infinite', flexShrink: 0 }} />
+                <AutoAwesome style={{ color: isFocused ? brand.primary : textMuted, fontSize: 22, flexShrink: 0, transition: 'color 0.3s' }} />
+                <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    onChange={(e) => { setQuery(e.target.value); setError(null); }}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+                    onKeyDown={handleKeyDown}
+                    placeholder=""
+                    aria-label="Décrivez le bien que vous recherchez"
+                    style={{
+                      width: '100%',
+                      padding: '18px 14px',
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      color: text,
+                      fontSize: 'clamp(16px, 2.2vw, 19px)',
+                      fontFamily: 'inherit',
+                      lineHeight: 1.4,
+                    }}
+                  />
+                  {/* Animated placeholder overlay */}
+                  {!query && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 12,
+                        right: 0,
+                        bottom: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        pointerEvents: 'none',
+                        color: textMuted,
+                        fontSize: 'clamp(16px, 2.2vw, 19px)',
+                        fontFamily: 'inherit',
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {displayedPlaceholder}
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          width: 2,
+                          height: '1.2em',
+                          background: brand.primary,
+                          marginLeft: 1,
+                          animation: 'blink 1s step-end infinite',
+                          opacity: 0.7,
+                          verticalAlign: 'middle',
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+                {isSearching ? (
+                  <div style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 22, height: 22, border: '2.5px solid rgba(246,71,95,0.2)', borderTopColor: brand.primary, borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleAISearch()}
+                    aria-label="Rechercher"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 48,
+                      height: 48,
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: 14,
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      transition: 'transform 0.2s, color 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.transform = 'scale(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                    }}
+                  >
+                    <Search style={{ color: textMuted, fontSize: 24, transition: 'color 0.2s' }} />
+                  </button>
                 )}
-                <button
-                  onClick={() => navigateToSearch()}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    background: 'linear-gradient(135deg, #F6475F, #D93A50)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 12,
-                    padding: '11px 16px',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                    boxShadow: '0 4px 16px rgba(246,71,95,0.4)',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Rechercher
-                </button>
               </div>
 
-              {/* Autocomplete dropdown */}
-              {showDropdown && cities.length > 0 && (
-                <div
-                  ref={dropdownRef}
-                  role="listbox"
-                  aria-label="Suggestions de villes"
+              {/* Quick suggestions — shown on focus without text */}
+              {isFocused && !query && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
                   style={{
                     position: 'absolute',
-                    top: '100%',
+                    top: 'calc(100% + 6px)',
                     left: 0,
                     right: 0,
-                    background: surface,
-                    border: `1px solid ${border}`,
-                    borderTop: 'none',
-                    borderRadius: '0 0 16px 16px',
+                    background: isDark ? 'rgba(18,18,26,0.95)' : 'rgba(255,255,255,0.98)',
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                    borderRadius: 16,
                     overflow: 'hidden',
                     zIndex: 50,
-                    backdropFilter: 'blur(10px)',
-                    boxShadow: '0 12px 32px rgba(0,0,0,0.12)',
+                    backdropFilter: 'blur(20px)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+                    padding: '8px 0',
                   }}
                 >
-                  {cities.map((city, idx) => (
-                    <div
-                      key={city.id}
-                      onClick={() => handleSelect(city)}
-                      onMouseEnter={() => setHighlightIdx(idx)}
+                  <div style={{ padding: '6px 16px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <AutoAwesome style={{ fontSize: 13, color: brand.primary }} />
+                    <span style={{ fontSize: 11, color: textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Essayez par exemple
+                    </span>
+                  </div>
+                  {QUICK_SUGGESTIONS.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setQuery(suggestion);
+                        handleAISearch(suggestion);
+                      }}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 10,
-                        padding: '12px 20px',
+                        width: '100%',
+                        padding: '10px 16px',
+                        background: 'transparent',
+                        border: 'none',
                         cursor: 'pointer',
+                        color: text,
+                        fontSize: 14,
+                        fontFamily: 'inherit',
+                        textAlign: 'left',
                         transition: 'background 0.15s',
-                        background: highlightIdx === idx ? (isDark ? 'rgba(246,71,95,0.12)' : 'rgba(246,71,95,0.06)') : 'transparent',
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(246,71,95,0.1)' : 'rgba(246,71,95,0.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = 'transparent';
                       }}
                     >
-                      <LocationOn style={{ fontSize: 16, color: highlightIdx === idx ? '#F6475F' : textMuted, transition: 'color 0.15s' }} />
-                      <span style={{ fontSize: 14, fontWeight: highlightIdx === idx ? 600 : 400, color: highlightIdx === idx ? '#F6475F' : text, transition: 'color 0.15s' }}>
-                        {city.name}
-                      </span>
-                    </div>
+                      <Search style={{ fontSize: 15, color: textMuted }} />
+                      <span>{suggestion}</span>
+                    </button>
                   ))}
-                </div>
+                </motion.div>
+              )}
+
+              {/* Error message */}
+              {error && (
+                <p style={{ color: '#F87070', fontSize: 13, marginTop: 8, textAlign: 'center' }}>{error}</p>
               )}
             </div>
 
-            {/* City chips */}
-            <div className="hero-chips">
-              <span style={{ color: textMuted, fontSize: 13, alignSelf: 'center', transition: 'color 0.4s ease' }}>Populaires :</span>
+            {/* AI badge + city chips */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16, flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '3px 10px',
+                  borderRadius: 100,
+                  background: 'rgba(246,71,95,0.1)',
+                  border: '1px solid rgba(246,71,95,0.2)',
+                  color: brand.primary,
+                  fontSize: 11,
+                  fontWeight: 600,
+                }}
+              >
+                <AutoAwesome style={{ fontSize: 11 }} />
+                Recherche IA
+              </span>
+              <span style={{ color: textMuted, fontSize: 12, margin: '0 4px' }}>•</span>
+              <span style={{ color: textMuted, fontSize: 12 }}>Populaires :</span>
               {CITIES.map((city) => (
                 <Link key={city} href={`/search?city=${city.toLowerCase()}`} style={{ textDecoration: 'none' }}>
                   <span
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 4,
-                      padding: '5px 12px',
+                      gap: 3,
+                      padding: '3px 10px',
                       borderRadius: 100,
-                    background: surface,
-                    border: `1px solid ${border}`,
-                    color: textSub,
-                      fontSize: 13,
+                      background: 'transparent',
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                      color: textSub,
+                      fontSize: 12,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                     }}
                     onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(246,71,95,0.12)';
-                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(246,71,95,0.3)';
-                      (e.currentTarget as HTMLElement).style.color = '#F6475F';
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(246,71,95,0.1)';
+                      (e.currentTarget as HTMLElement).style.borderColor = brand.primaryAlpha30;
+                      (e.currentTarget as HTMLElement).style.color = brand.primary;
                     }}
                     onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.background = surface;
-                      (e.currentTarget as HTMLElement).style.borderColor = border;
+                      (e.currentTarget as HTMLElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLElement).style.borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
                       (e.currentTarget as HTMLElement).style.color = textSub;
                     }}
                   >
-                    <LocationOn style={{ fontSize: 12 }} />
                     {city}
                   </span>
                 </Link>

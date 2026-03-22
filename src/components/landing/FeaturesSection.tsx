@@ -1,5 +1,6 @@
 'use client';
 
+import { brand } from '@/theme/tokens';
 import { motion } from 'framer-motion';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
@@ -33,8 +34,8 @@ const features = [
   },
   {
     icon: <LockOpenOutlined style={{ fontSize: 28 }} />,
-    color: '#F6475F',
-    bg: 'rgba(246,71,95,0.1)',
+    color: brand.primary,
+    bg: brand.primaryAlpha10,
     border: 'rgba(246,71,95,0.2)',
     title: 'Accès sécurisé',
     description: 'Débloquez les coordonnées du propriétaire instantanément avec un micro-paiement sécurisé. 100% vérifié.',
@@ -104,9 +105,9 @@ export default function FeaturesSection() {
               display: 'inline-block',
               padding: '5px 14px',
               borderRadius: 100,
-              background: 'rgba(246,71,95,0.1)',
+              background: brand.primaryAlpha10,
               border: '1px solid rgba(246,71,95,0.2)',
-              color: '#F6475F',
+              color: brand.primary,
               fontSize: 13,
               fontWeight: 600,
               marginBottom: 20,

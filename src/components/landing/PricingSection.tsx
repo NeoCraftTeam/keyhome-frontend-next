@@ -1,5 +1,6 @@
 'use client';
 
+import { brand } from '@/theme/tokens';
 import { creditsService } from '@/services/credits.service';
 import { PointPackage } from '@/types';
 import { useQuery } from '@tanstack/react-query';
@@ -137,9 +138,9 @@ export default function PricingSection() {
               display: 'inline-block',
               padding: '5px 14px',
               borderRadius: 100,
-              background: 'rgba(246,71,95,0.1)',
+              background: brand.primaryAlpha10,
               border: '1px solid rgba(246,71,95,0.2)',
-              color: '#F6475F',
+              color: brand.primary,
               fontSize: 13,
               fontWeight: 600,
               marginBottom: 20,
@@ -180,7 +181,7 @@ export default function PricingSection() {
               transition={{ duration: 0.65, delay: i * 0.1, ease: EASE }}
               style={{
                 background: pkg.isPopular
-                  ? 'linear-gradient(145deg, #F6475F 0%, #D93A50 100%)'
+                  ? `linear-gradient(145deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`
                   : surface,
                 border: pkg.isPopular ? 'none' : `1px solid ${border}`,
                 borderRadius: 24,
@@ -203,8 +204,8 @@ export default function PricingSection() {
                 gap: 6,
                 padding: '4px 12px',
                 borderRadius: 100,
-                background: pkg.isPopular ? 'rgba(255,255,255,0.2)' : 'rgba(246,71,95,0.1)',
-                color: pkg.isPopular ? '#fff' : '#F6475F',
+                background: pkg.isPopular ? 'rgba(255,255,255,0.2)' : brand.primaryAlpha10,
+                color: pkg.isPopular ? '#fff' : brand.primary,
                 fontSize: 11,
                 fontWeight: 800,
                 textTransform: 'uppercase',
@@ -278,8 +279,8 @@ export default function PricingSection() {
                     width: '100%',
                     padding: '16px',
                     borderRadius: 14,
-                    background: pkg.isPopular ? '#fff' : '#F6475F',
-                    color: pkg.isPopular ? '#F6475F' : '#fff',
+                    background: pkg.isPopular ? '#fff' : brand.primary,
+                    color: pkg.isPopular ? brand.primary : '#fff',
                     border: 'none',
                     fontSize: 16,
                     fontWeight: 700,
@@ -313,7 +314,7 @@ export default function PricingSection() {
         >
           <div style={{ display: 'flex', justifyContent: 'center', gap: 32, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <CreditCard style={{ color: '#F6475F' }} />
+              <CreditCard style={{ color: brand.primary }} />
               <span style={{ fontSize: 14, fontWeight: 600, color: textSub }}>Mobile Money (Orange, MTN, Wave, Moov...)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

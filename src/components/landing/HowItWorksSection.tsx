@@ -1,5 +1,6 @@
 'use client';
 
+import { brand } from '@/theme/tokens';
 import { motion } from 'framer-motion';
 import { useLandingTheme } from './LandingThemeContext';
 import {
@@ -13,7 +14,7 @@ const steps = [
   {
     number: '01',
     icon: <PersonAddOutlined style={{ fontSize: 26 }} />,
-    color: '#F6475F',
+    color: brand.primary,
     title: 'Créez votre compte',
     description: 'Inscription gratuite en 30 secondes. Aucune carte bancaire requise pour parcourir les annonces.',
   },
@@ -82,9 +83,9 @@ export default function HowItWorksSection() {
               display: 'inline-block',
               padding: '5px 14px',
               borderRadius: 100,
-              background: 'rgba(246,71,95,0.1)',
+              background: brand.primaryAlpha10,
               border: '1px solid rgba(246,71,95,0.2)',
-              color: '#F6475F',
+              color: brand.primary,
               fontSize: 13,
               fontWeight: 600,
               marginBottom: 20,

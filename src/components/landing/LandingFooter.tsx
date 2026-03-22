@@ -4,6 +4,7 @@ import { Code } from '@mui/icons-material';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLandingTheme } from './LandingThemeContext';
+import { brand } from '@/theme/tokens';
 
 const links = {
   Plateforme: [
@@ -56,7 +57,7 @@ export default function LandingFooter() {
             <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 20 }}>
               <Image src="/images/logo.png" alt="KeyHome — Immobilier en Afrique" width={36} height={36} style={{ borderRadius: 8 }} />
               <span style={{ color: text, fontWeight: 700, fontSize: 20, letterSpacing: '-0.5px' }}>
-                Key<span style={{ color: '#F6475F' }}>Home</span>
+                Key<span style={{ color: brand.primary }}>Home</span>
               </span>
             </Link>
             <p style={{ fontSize: 14, color: textMuted, lineHeight: 1.7, maxWidth: 280, margin: '0 0 24px' }}>
@@ -90,8 +91,8 @@ export default function LandingFooter() {
                   }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLElement).style.background = 'rgba(246,71,95,0.15)';
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(246,71,95,0.3)';
-                    (e.currentTarget as HTMLElement).style.color = '#F6475F';
+                    (e.currentTarget as HTMLElement).style.borderColor = brand.primaryAlpha30;
+                    (e.currentTarget as HTMLElement).style.color = brand.primary;
                   }}
                   onMouseLeave={(e) => {
                     (e.currentTarget as HTMLElement).style.background = surface;
@@ -173,7 +174,7 @@ export default function LandingFooter() {
                 textDecoration: 'none',
                 transition: 'color 0.2s',
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#F6475F'; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = brand.primary; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = textSub; }}
             >
               <Code style={{ fontSize: 14 }} />

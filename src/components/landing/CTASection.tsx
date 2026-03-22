@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowForward, PhoneIphoneOutlined } from '@mui/icons-material';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
+import { brand, gradient } from '@/theme/tokens';
 
 export default function CTASection() {
   const { bgAlt, text, textSub, surface, surfaceHover, border } = useLandingTheme();
@@ -61,9 +62,9 @@ export default function CTASection() {
               gap: 8,
               padding: '5px 14px',
               borderRadius: 100,
-              background: 'rgba(246,71,95,0.1)',
+              background: brand.primaryAlpha10,
               border: '1px solid rgba(246,71,95,0.2)',
-              color: '#F6475F',
+              color: brand.primary,
               fontSize: 13,
               fontWeight: 600,
               marginBottom: 28,
@@ -87,7 +88,7 @@ export default function CTASection() {
             Prêt à trouver votre{' '}
             <span
               style={{
-                background: 'linear-gradient(135deg, #F6475F, #FF8C94)',
+                background: `linear-gradient(135deg, ${brand.primary}, #FF8C94)`,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
@@ -120,7 +121,7 @@ export default function CTASection() {
                   gap: 10,
                   padding: '16px 32px',
                   borderRadius: 14,
-                  background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+                  background: gradient.primary135,
                   color: '#fff',
                   fontSize: 17,
                   fontWeight: 700,

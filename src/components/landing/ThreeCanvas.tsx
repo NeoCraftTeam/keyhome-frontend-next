@@ -27,7 +27,7 @@ export default function ThreeCanvas() {
     // Configuration
     const PARTICLE_COUNT = 80;
     const MAX_DIST = 120;
-    const BRAND_COLOR = { r: 246, g: 71, b: 95 }; // #F6475F
+    const BRAND_COLOR = { r: 246, g: 71, b: 95 }; // brand.primary (#F6475F)
 
     // Mouse tracking for parallax
     const mouse = { x: 0, y: 0 };

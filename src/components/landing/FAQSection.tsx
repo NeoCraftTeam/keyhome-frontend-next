@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Add, Remove } from '@mui/icons-material';
 import { useLandingTheme } from './LandingThemeContext';
+import { brand } from '@/theme/tokens';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
@@ -68,9 +69,9 @@ export default function FAQSection() {
               display: 'inline-block',
               padding: '5px 14px',
               borderRadius: 100,
-              background: 'rgba(246,71,95,0.1)',
+              background: brand.primaryAlpha10,
               border: '1px solid rgba(246,71,95,0.2)',
-              color: '#F6475F',
+              color: brand.primary,
               fontSize: 13,
               fontWeight: 600,
               marginBottom: 20,
@@ -111,7 +112,7 @@ export default function FAQSection() {
                   style={{
                     borderRadius: 16,
                     background: surface,
-                    border: `1px solid ${isOpen ? 'rgba(246,71,95,0.3)' : border}`,
+                    border: `1px solid ${isOpen ? brand.primaryAlpha30 : border}`,
                     overflow: 'hidden',
                     transition: 'border-color 0.3s ease',
                   }}
@@ -135,7 +136,7 @@ export default function FAQSection() {
                       style={{
                         fontSize: 16,
                         fontWeight: 600,
-                        color: isOpen ? '#F6475F' : text,
+                        color: isOpen ? brand.primary : text,
                         transition: 'color 0.3s ease',
                         lineHeight: 1.4,
                       }}
@@ -148,7 +149,7 @@ export default function FAQSection() {
                         width: 32,
                         height: 32,
                         borderRadius: 8,
-                        background: isOpen ? 'rgba(246,71,95,0.1)' : 'transparent',
+                        background: isOpen ? brand.primaryAlpha10 : 'transparent',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -156,7 +157,7 @@ export default function FAQSection() {
                       }}
                     >
                       {isOpen ? (
-                        <Remove style={{ fontSize: 20, color: '#F6475F' }} />
+                        <Remove style={{ fontSize: 20, color: brand.primary }} />
                       ) : (
                         <Add style={{ fontSize: 20, color: textMuted }} />
                       )}

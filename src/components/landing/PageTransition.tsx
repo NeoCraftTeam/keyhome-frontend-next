@@ -1,5 +1,6 @@
 'use client';
 
+import { gradient } from '@/theme/tokens';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
@@ -73,7 +74,7 @@ export function PageTransitionOverlay() {
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'linear-gradient(135deg, #F6475F 0%, #C0302A 100%)',
+              background: gradient.pageTransition,
               zIndex: 9999,
               transformOrigin: 'bottom center',
             }}

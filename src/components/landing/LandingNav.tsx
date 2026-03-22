@@ -5,6 +5,64 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
+import { brand, gradient } from '@/theme/tokens';
+
+/**
+ * Whether the bailleur panel is this Next app (`/owner/*`) vs Laravel Filament.
+ * - `next` (default): always link to `/owner/login` on the **current** host (avoids 404 when
+ *   `NEXT_PUBLIC_OWNER_URL` points at a subdomain that does not serve this Next build).
+ * - `laravel`: build an absolute URL from `NEXT_PUBLIC_OWNER_URL` (Filament `/owner/login`).
+ */
+function isLaravelOwnerPanel(): boolean {
+  const panel = process.env.NEXT_PUBLIC_OWNER_PANEL?.toLowerCase();
+  if (panel === 'laravel') {
+    return true;
+  }
+  if (panel === 'next') {
+    return false;
+  }
+  const raw = process.env.NEXT_PUBLIC_OWNER_URL?.trim() || '';
+  // Back-compat: .env.example uses Laravel on :8000 for local Filament
+  return /:8000\b/.test(raw) || /127\.0\.0\.1:8000/.test(raw) || /localhost:8000/.test(raw);
+}
+
+/**
+ * Filament bailleur login URL from `NEXT_PUBLIC_OWNER_URL`.
+ */
+function ownerLaravelLoginFromEnv(): string {
+  const raw = process.env.NEXT_PUBLIC_OWNER_URL?.trim();
+  if (!raw) {
+    return '/owner/login';
+  }
+  const trimmed = raw.replace(/\/$/, '');
+  if (trimmed.endsWith('/login')) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+    if (trimmed === '/owner' || trimmed.endsWith('/owner')) {
+      return `${trimmed}/login`;
+    }
+    return `${trimmed}/owner/login`;
+  }
+  try {
+    const url = new URL(trimmed);
+    const path = url.pathname.replace(/\/$/, '') || '';
+    if (path === '' || path === '/') {
+      url.pathname = '/owner/login';
+    } else if (path.endsWith('/owner')) {
+      url.pathname = `${path}/login`;
+    } else {
+      url.pathname = `${path}/login`;
+    }
+    return url.toString();
+  } catch {
+    return '/owner/login';
+  }
+}
+
+function getOwnerLoginHref(): string {
+  return isLaravelOwnerPanel() ? ownerLaravelLoginFromEnv() : '/owner/login';
+}
 
 const NAV_LINKS = [
   { label: 'Fonctionnalités', href: '#features' },
@@ -57,7 +115,7 @@ export default function LandingNav() {
           <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', zIndex: 101 }}>
             <Image src="/images/logo.png" alt="KeyHome — Logo plateforme immobilière en Afrique" width={36} height={36} style={{ borderRadius: 8 }} />
             <span style={{ color: text, fontWeight: 700, fontSize: 20, letterSpacing: '-0.5px', transition: 'color 0.35s' }}>
-              Key<span style={{ color: '#F6475F' }}>Home</span>
+              Key<span style={{ color: brand.primary }}>Home</span>
             </span>
           </a>
 
@@ -68,7 +126,7 @@ export default function LandingNav() {
                 key={item.href}
                 href={item.href}
                 style={{ color: textNav, textDecoration: 'none', fontSize: 15, fontWeight: 500, transition: 'color 0.2s' }}
-                onMouseEnter={(e) => { (e.target as HTMLElement).style.color = '#F6475F'; }}
+                onMouseEnter={(e) => { (e.target as HTMLElement).style.color = brand.primary; }}
                 onMouseLeave={(e) => { (e.target as HTMLElement).style.color = textNav; }}
               >
                 {item.label}
@@ -96,10 +154,9 @@ export default function LandingNav() {
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 style={{
                   width: 18, height: 18, borderRadius: '50%',
-                  background: isDark ? 'linear-gradient(135deg, #8080b0, #5050a0)' : 'linear-gradient(135deg, #FFc040, #F6475F)',
+                  background: isDark ? 'linear-gradient(135deg, #8080b0, #5050a0)' : `linear-gradient(135deg, #FFc040, ${brand.primary})`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0,
-                }}
-              >
+                }}>
                 <motion.span
                   key={isDark ? 'moon' : 'sun'}
                   initial={{ scale: 0, rotate: -90, opacity: 0 }}
@@ -120,8 +177,8 @@ export default function LandingNav() {
             </PageTransitionLink>
 
             <PageTransitionLink
-              href={process.env.NEXT_PUBLIC_OWNER_URL || '/owner'}
-              style={{ color: '#fff', textDecoration: 'none', fontSize: 15, fontWeight: 600, padding: '8px 20px', borderRadius: 10, background: 'linear-gradient(135deg, #F6475F, #D93A50)', boxShadow: '0 4px 20px rgba(246,71,95,0.35)', display: 'inline-block' }}
+              href={getOwnerLoginHref()}
+              style={{ color: '#fff', textDecoration: 'none', fontSize: 15, fontWeight: 600, padding: '8px 20px', borderRadius: 10, background: gradient.primary135, boxShadow: '0 4px 20px rgba(246,71,95,0.35)', display: 'inline-block' }}
             >
               Annoncer
             </PageTransitionLink>
@@ -147,7 +204,7 @@ export default function LandingNav() {
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 style={{
                   width: 16, height: 16, borderRadius: '50%',
-                  background: isDark ? 'linear-gradient(135deg, #8080b0, #5050a0)' : 'linear-gradient(135deg, #FFc040, #F6475F)',
+                  background: isDark ? 'linear-gradient(135deg, #8080b0, #5050a0)' : `linear-gradient(135deg, #FFc040, ${brand.primary})`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, flexShrink: 0,
                 }}
               >
@@ -220,7 +277,7 @@ export default function LandingNav() {
                   background: surface, border: `1px solid ${border}`,
                   display: 'block', transition: 'color 0.2s, background 0.2s',
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#F6475F'; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = brand.primary; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = text; }}
               >
                 {item.label}
@@ -248,12 +305,12 @@ export default function LandingNav() {
                 Visiter
               </PageTransitionLink>
               <PageTransitionLink
-                href={process.env.NEXT_PUBLIC_OWNER_URL || '/owner'}
+                href={getOwnerLoginHref()}
                 onClick={() => setMenuOpen(false)}
                 style={{
                   color: '#fff', textDecoration: 'none', fontSize: 16, fontWeight: 700,
                   padding: '14px 20px', borderRadius: 12,
-                  background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+                  background: gradient.primary135,
                   boxShadow: '0 4px 24px rgba(246,71,95,0.4)',
                   display: 'block', textAlign: 'center',
                 }}

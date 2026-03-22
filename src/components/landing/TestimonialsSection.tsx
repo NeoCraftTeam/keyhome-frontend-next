@@ -3,47 +3,60 @@
 import { motion } from 'framer-motion';
 import { Star, StarHalf, StarBorder, Verified } from '@mui/icons-material';
 import { useLandingTheme } from './LandingThemeContext';
+import { brand, semantic } from '@/theme/tokens';
+import { useLandingTestimonials } from '@/hooks/useLandingTestimonials';
 
-const testimonials = [
+/** Avatar colour palette — cycles through semantic colours */
+const AVATAR_COLORS = [
+  brand.primary,
+  semantic.info,
+  semantic.successBright,
+  semantic.purple,
+  '#F59E0B',
+  '#EC4899',
+];
+
+/** Static fallback — shown when the API has no data yet */
+const FALLBACK_TESTIMONIALS = [
   {
-    name: 'Aliou Diarra',
-    role: 'Locataire · Abidjan, CI',
-    avatar: 'AD',
-    color: '#F6475F',
+    id: 'fallback-1',
+    display_name: 'Aliou D.',
+    initials: 'AD',
+    role: 'Client · Abidjan',
     rating: 5,
-    verified: true,
-    date: 'Février 2026',
-    quote: 'J\'ai trouvé mon appartement en 2 jours ! Le système de déblocage est brillant — payer pour les vrais contacts évite les arnaques. Je recommande à 100%.',
+    comment:
+      "J'ai trouvé mon appartement en 2 jours ! Le système de déblocage est brillant — payer pour les vrais contacts évite les arnaques. Je recommande à 100%.",
+    created_at: 'Février 2026',
   },
   {
-    name: 'Marie-Claire Hounkpe',
-    role: 'Propriétaire · Yaoundé, CM',
-    avatar: 'MH',
-    color: '#3B82F6',
+    id: 'fallback-2',
+    display_name: 'Marie-Claire H.',
+    initials: 'MH',
+    role: 'Propriétaire · Yaoundé',
     rating: 4,
-    verified: true,
-    date: 'Janvier 2026',
-    quote: 'En tant que propriétaire, je reçois uniquement des contacts sérieux. Mon bien a été loué en moins d\'une semaine. J\'aurais aimé plus d\'options pour gérer mes annonces, mais l\'essentiel est là.',
+    comment:
+      "En tant que propriétaire, je reçois uniquement des contacts sérieux. Mon bien a été loué en moins d'une semaine.",
+    created_at: 'Janvier 2026',
   },
   {
-    name: 'Kofi Mensah',
-    role: 'Acheteur · Lomé, TG',
-    avatar: 'KM',
-    color: '#10B981',
+    id: 'fallback-3',
+    display_name: 'Kofi M.',
+    initials: 'KM',
+    role: 'Client · Lomé',
     rating: 4.5,
-    verified: true,
-    date: 'Décembre 2025',
-    quote: 'La carte interactive est incroyable pour explorer les quartiers. Les annonces sont vérifiées et les photos correspondent toujours à la réalité.',
+    comment:
+      'La carte interactive est incroyable pour explorer les quartiers. Les annonces sont vérifiées et les photos correspondent toujours à la réalité.',
+    created_at: 'Décembre 2025',
   },
   {
-    name: 'Fatou Balde',
-    role: 'Agent immobilier · Bamako, ML',
-    avatar: 'FB',
-    color: '#8B5CF6',
+    id: 'fallback-4',
+    display_name: 'Fatou B.',
+    initials: 'FB',
+    role: 'Agent Immobilier · Bamako',
     rating: 5,
-    verified: true,
-    date: 'Novembre 2025',
-    quote: 'KeyHome a révolutionné ma façon de travailler. Je gère toutes mes annonces depuis le tableau de bord. Mes clients trouvent exactement ce qu\'ils cherchent.',
+    comment:
+      'KeyHome a révolutionné ma façon de travailler. Je gère toutes mes annonces depuis le tableau de bord.',
+    created_at: 'Novembre 2025',
   },
 ];
 
@@ -61,8 +74,47 @@ function RatingStars({ rating }: { rating: number }) {
   return <>{stars}</>;
 }
 
+function SkeletonCard({ surface, border }: { surface: string; border: string }) {
+  return (
+    <div
+      style={{
+        padding: '28px',
+        borderRadius: 20,
+        background: surface,
+        border: `1px solid ${border}`,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+        opacity: 0.6,
+        animation: 'pulse 1.5s ease-in-out infinite',
+      }}
+    >
+      <div style={{ height: 16, borderRadius: 8, background: border, width: '40%' }} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ height: 12, borderRadius: 6, background: border }} />
+        <div style={{ height: 12, borderRadius: 6, background: border }} />
+        <div style={{ height: 12, borderRadius: 6, background: border, width: '70%' }} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 42, height: 42, borderRadius: '50%', background: border }} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ height: 12, borderRadius: 6, background: border, width: '60%' }} />
+          <div style={{ height: 10, borderRadius: 5, background: border, width: '45%' }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TestimonialsSection() {
   const { bg, surface, border, text, textSub, quote, textMuted } = useLandingTheme();
+  const { testimonials: apiTestimonials, averageRating, totalCount, isLoading } = useLandingTestimonials();
+
+  const testimonials = apiTestimonials.length >= 4 ? apiTestimonials.slice(0, 8) : FALLBACK_TESTIMONIALS;
+
+  const displayRating = averageRating?.toFixed(1) ?? '4.6';
+  const displayCount = totalCount && totalCount >= 10 ? `${totalCount}+` : '120+';
+
   return (
     <section
       id="testimonials"
@@ -84,9 +136,9 @@ export default function TestimonialsSection() {
               display: 'inline-block',
               padding: '5px 14px',
               borderRadius: 100,
-              background: 'rgba(246,71,95,0.1)',
+              background: brand.primaryAlpha10,
               border: '1px solid rgba(246,71,95,0.2)',
-              color: '#F6475F',
+              color: brand.primary,
               fontSize: 13,
               fontWeight: 600,
               marginBottom: 20,
@@ -127,84 +179,92 @@ export default function TestimonialsSection() {
               ))}
               <StarHalf style={{ fontSize: 16, color: '#F59E0B' }} />
             </div>
-            <span style={{ fontSize: 14, fontWeight: 700, color: text }}>4.6/5</span>
-            <span style={{ fontSize: 13, color: textSub }}>basé sur 120+ avis</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: text }}>{displayRating}/5</span>
+            <span style={{ fontSize: 13, color: textSub }}>basé sur {displayCount} avis</span>
           </div>
         </motion.div>
 
         {/* Cards */}
         <div className="testimonials-grid">
-          {testimonials.map((t, i) => (
-            <motion.div
-              key={t.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              style={{
-                padding: '28px',
-                borderRadius: 20,
-                background: surface,
-                border: `1px solid ${border}`,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 20,
-                cursor: 'default',
-              }}
-            >
-              {/* Stars */}
-              <div style={{ display: 'flex', gap: 3 }}>
-                <RatingStars rating={t.rating} />
-              </div>
+          {isLoading
+            ? FALLBACK_TESTIMONIALS.map((_, i) => (
+                <SkeletonCard key={i} surface={surface} border={border} />
+              ))
+            : testimonials.map((t, i) => {
+                const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length];
+                return (
+                  <motion.div
+                    key={t.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-40px' }}
+                    transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    style={{
+                      padding: '28px',
+                      borderRadius: 20,
+                      background: surface,
+                      border: `1px solid ${border}`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 20,
+                      cursor: 'default',
+                    }}
+                  >
+                    {/* Stars */}
+                    <div style={{ display: 'flex', gap: 3 }}>
+                      <RatingStars rating={t.rating} />
+                    </div>
 
-              {/* Quote */}
-              <p
-                style={{
-                  fontSize: 15,
-                  color: quote,
-                  lineHeight: 1.7,
-                  margin: 0,
-                  flex: 1,
-                  fontStyle: 'italic',
-                }}
-              >
-                &ldquo;{t.quote}&rdquo;
-              </p>
+                    {/* Quote */}
+                    <p
+                      style={{
+                        fontSize: 15,
+                        color: quote,
+                        lineHeight: 1.7,
+                        margin: 0,
+                        flex: 1,
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      &ldquo;{t.comment}&rdquo;
+                    </p>
 
-              {/* Author */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div
-                  style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: '50%',
-                    background: `linear-gradient(135deg, ${t.color}50, ${t.color}20)`,
-                    border: `1px solid ${t.color}40`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: t.color,
-                    flexShrink: 0,
-                  }}
-                >
-                  {t.avatar}
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: text }}>{t.name}</span>
-                    {t.verified && <Verified titleAccess="Profil vérifié" style={{ fontSize: 14, color: '#3B82F6' }} />}
-                  </div>
-                  <div style={{ fontSize: 12, color: textMuted }}>{t.role}</div>
-                  <div style={{ fontSize: 11, color: textMuted, marginTop: 2 }}>{t.date}</div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+                    {/* Author */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div
+                        style={{
+                          width: 42,
+                          height: 42,
+                          borderRadius: '50%',
+                          background: `linear-gradient(135deg, ${avatarColor}50, ${avatarColor}20)`,
+                          border: `1px solid ${avatarColor}40`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: avatarColor,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {t.initials}
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: text }}>{t.display_name}</span>
+                          <Verified titleAccess="Profil vérifié" style={{ fontSize: 14, color: semantic.info }} />
+                        </div>
+                        <div style={{ fontSize: 12, color: textMuted }}>{t.role}</div>
+                        <div style={{ fontSize: 11, color: textMuted, marginTop: 2 }}>{t.created_at}</div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
         </div>
       </div>
     </section>
   );
 }
+
