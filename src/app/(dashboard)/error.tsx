@@ -2,6 +2,7 @@
 
 import { Box, Button, Container, Typography } from '@mui/material';
 import { ErrorOutline as ErrorIcon } from '@mui/icons-material';
+import { gradient } from '@/theme/tokens';
 
 export default function DashboardError({
   error,
@@ -37,8 +38,8 @@ export default function DashboardError({
             sx={{
               borderRadius: 2,
               fontWeight: 600,
-              background: 'linear-gradient(to right, #F6475F, #D93A50)',
-              '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+              background: gradient.primary,
+              '&:hover': { background: gradient.primaryHover },
             }}
           >
             Réessayer

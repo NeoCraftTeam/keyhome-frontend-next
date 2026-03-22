@@ -48,7 +48,7 @@ import {
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import Image from 'next/image';
 import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -260,6 +260,7 @@ export default function RegisterPage() {
   }
 
   return (
+    <MotionConfig reducedMotion="user">
     <ThemeProvider theme={registerMuiTheme}>
       <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>
         {/* Left side — image (crossfade particulier / agent) */}
@@ -866,5 +867,6 @@ export default function RegisterPage() {
       </Box>
     </Box>
     </ThemeProvider>
+    </MotionConfig>
   );
 }

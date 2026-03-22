@@ -3,6 +3,7 @@
 import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
+import { gradient } from '@/theme/tokens';
 import { ArrowBack } from '@mui/icons-material';
 import {
     Alert,
@@ -98,8 +99,8 @@ export default function ForgotPasswordPage() {
               disabled={isSubmitting || !email.trim()}
               sx={{
                 py: 1.5,
-                background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                background: gradient.primary,
+                '&:hover': { background: gradient.primaryHover },
                 '&:active': { transform: 'scale(0.97)' },
               }}
             >

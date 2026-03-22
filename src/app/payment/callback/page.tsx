@@ -37,7 +37,7 @@ function CallbackContent(): React.ReactElement {
   const status = searchParams.get('status'); // Flutterwave sends: successful | cancelled | failed
 
   const verify = useCallback(async (): Promise<void> => {
-    const ref = txRef ?? sessionStorage.getItem('kh_flw_tx_ref');
+    const ref = txRef;
 
     if (!ref) {
       setPageState('error');
@@ -52,8 +52,6 @@ function CallbackContent(): React.ReactElement {
         // Best-effort — backend may already have marked it
       }
       setPageState('cancelled');
-      sessionStorage.removeItem('kh_flw_tx_ref');
-      sessionStorage.removeItem('kh_flw_reference');
       return;
     }
 
@@ -94,9 +92,6 @@ function CallbackContent(): React.ReactElement {
     } else {
       setPageState('error');
     }
-
-    sessionStorage.removeItem('kh_flw_tx_ref');
-    sessionStorage.removeItem('kh_flw_reference');
   }, [txRef, status]);
 
   // Run verify once on mount

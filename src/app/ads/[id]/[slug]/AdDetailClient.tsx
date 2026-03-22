@@ -87,6 +87,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { forwardRef, startTransition, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { brand, gradient } from '@/theme/tokens';
 
 const SlideUpTransition = forwardRef(function SlideUpTransition(
   props: TransitionProps & { children: React.ReactElement },
@@ -939,7 +940,7 @@ function AdDetailContent() {
                         width: 44,
                         height: 44,
                         borderRadius: '50%',
-                        bgcolor: 'rgba(246,71,95,0.1)',
+                        bgcolor: brand.primaryAlpha10,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -1347,8 +1348,8 @@ function AdDetailContent() {
                       py: 1.5,
                       fontWeight: 600,
                       fontSize: '1rem',
-                      background: (theme) => theme.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
-                      '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
+                      background: (theme) => theme.palette.gradient?.primary ?? gradient.primary,
+                      '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? gradient.primaryHover },
                     }}
                   >
                     Déverrouiller
@@ -1576,8 +1577,8 @@ function AdDetailContent() {
                       py: 1.5,
                       fontWeight: 600,
                       fontSize: '1rem',
-                      background: (theme) => theme.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
-                      '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
+                      background: (theme) => theme.palette.gradient?.primary ?? gradient.primary,
+                      '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? gradient.primaryHover },
                       '&:active': { transform: 'scale(0.97)' },
                     }}
                   >
@@ -1777,7 +1778,7 @@ function AdDetailContent() {
               width: 72,
               height: 72,
               borderRadius: '50%',
-              background: (theme) => theme.palette.gradient?.primary135 ?? 'linear-gradient(135deg, #F6475F, #D93A50)',
+              background: (theme) => theme.palette.gradient?.primary135 ?? gradient.primary135,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1948,8 +1949,8 @@ function AdDetailContent() {
                         fontWeight: 600,
                         mb: 1,
                         borderRadius: 2.5,
-                        background: (theme) => theme.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
-                        '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
+                        background: (theme) => theme.palette.gradient?.primary ?? gradient.primary,
+                        '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? gradient.primaryHover },
                         '&:active': { transform: 'scale(0.97)' },
                       }}
                     >
@@ -1982,8 +1983,8 @@ function AdDetailContent() {
                         fontWeight: 600,
                         mb: 1,
                         borderRadius: 2.5,
-                        background: (theme) => theme.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
-                        '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
+                        background: (theme) => theme.palette.gradient?.primary ?? gradient.primary,
+                        '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? gradient.primaryHover },
                         '&:active': { transform: 'scale(0.97)' },
                       }}
                     >

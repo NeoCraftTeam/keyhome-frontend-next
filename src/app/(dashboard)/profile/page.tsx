@@ -9,6 +9,7 @@ import { getSafeErrorMessage } from '@/lib/error-messages';
 import { normalizePhoneLikeBackend, shouldSendPhoneNumberForUserUpdate } from '@/lib/profile-phone';
 import { useAuth } from '@/providers/AuthProvider';
 import { useFavorites } from '@/providers/FavoritesProvider';
+import { gradient } from '@/theme/tokens';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { surveysService } from '@/services/surveys.service';
@@ -434,7 +435,7 @@ export default function ProfilePage() {
               disabled={isSaving}
               sx={{
                 textTransform: 'none',
-                background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                background: gradient.primary,
                 '&:active': { transform: 'scale(0.97)' },
               }}
             >
@@ -618,8 +619,8 @@ export default function ProfilePage() {
             sx={{
               textTransform: 'none',
               fontWeight: 600,
-              background: 'linear-gradient(to right, #F6475F, #D93A50)',
-              '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+              background: gradient.primary,
+              '&:hover': { background: gradient.primaryHover },
               '&:active': { transform: 'scale(0.97)' },
             }}
           >

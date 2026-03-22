@@ -25,6 +25,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { brand, gradient } from '@/theme/tokens';
 
 export default function SurveySlugPage() {
   const params = useParams();
@@ -172,7 +173,7 @@ export default function SurveySlugPage() {
               textTransform: 'none',
               fontWeight: 600,
               color: 'text.secondary',
-              '&:hover': { color: 'primary.main', bgcolor: 'rgba(246,71,95,0.05)' },
+              '&:hover': { color: 'primary.main', bgcolor: brand.primaryAlpha5 },
             }}
           >
             Tous les sondages
@@ -285,7 +286,7 @@ export default function SurveySlugPage() {
                 px: 3,
                 py: 2,
                 borderRadius: 2.5,
-                bgcolor: 'rgba(246,71,95,0.05)',
+                bgcolor: brand.primaryAlpha5,
                 border: '1px solid rgba(246,71,95,0.15)',
               }}
             >
@@ -305,7 +306,7 @@ export default function SurveySlugPage() {
                 borderRadius: 3,
                 py: 1.5,
                 fontWeight: 700,
-                background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 100%)',
+                background: gradient.primary135Stops,
                 boxShadow: '0 6px 20px rgba(246,71,95,0.30)',
                 '&:hover': {
                   background: 'linear-gradient(135deg, #E83D55 0%, #C93248 100%)',

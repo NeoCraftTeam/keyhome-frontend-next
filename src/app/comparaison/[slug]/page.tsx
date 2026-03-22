@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { COMPARISONS } from '../comparisons';
+import { brand, gradient } from '@/theme/tokens';
 
 export function generateStaticParams() {
   return Object.keys(COMPARISONS).map((slug) => ({ slug }));
@@ -101,7 +102,7 @@ export default async function ComparisonPage({
           <div
             style={{
               padding: '16px',
-              background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+              background: gradient.primary135,
               color: '#fff',
               fontSize: 15,
               fontWeight: 700,
@@ -132,7 +133,7 @@ export default async function ComparisonPage({
               style={{
                 background: '#F8F8FF',
                 padding: '10px 16px',
-                borderLeft: '4px solid #F6475F',
+                borderLeft: `4px solid ${brand.primary}`,
                 fontSize: 13,
                 fontWeight: 700,
                 color: '#444',
@@ -171,10 +172,10 @@ export default async function ComparisonPage({
             padding: '28px 32px',
             background: 'linear-gradient(135deg, #FFF0F2, #FFF5F6)',
             borderRadius: 16,
-            borderLeft: '4px solid #F6475F',
+            borderLeft: `4px solid ${brand.primary}`,
           }}
         >
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#D93A50', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: brand.primaryDark, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
             <EmojiEventsIcon style={{ fontSize: 22 }} />
             Notre verdict
           </h2>
@@ -194,7 +195,7 @@ export default async function ComparisonPage({
                 style={{
                   padding: '12px 22px',
                   borderRadius: 100,
-                  background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+                  background: gradient.primary135,
                   color: '#fff',
                   fontWeight: 600,
                   fontSize: 14,

@@ -5,6 +5,7 @@ import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
+import { gradient } from '@/theme/tokens';
 import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
 import { Alert, Box, Button, CircularProgress, IconButton, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
@@ -297,12 +298,12 @@ export default function VerifyEmailPage() {
                 background: (t) =>
                   t.palette.mode === 'dark'
                     ? `linear-gradient(to right, ${t.palette.primary.dark}, ${t.palette.primary.main})`
-                    : 'linear-gradient(to right, #F6475F, #D93A50)',
+                    : gradient.primary,
                 '&:hover': {
                   background: (t) =>
                     t.palette.mode === 'dark'
                       ? `linear-gradient(to right, ${t.palette.primary.main}, ${t.palette.primary.light})`
-                      : 'linear-gradient(to right, #E03E54, #C53248)',
+                      : gradient.primaryHover,
                 },
                 '&:active': { transform: 'scale(0.97)' },
               }}

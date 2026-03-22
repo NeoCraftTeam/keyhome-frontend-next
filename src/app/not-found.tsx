@@ -3,6 +3,7 @@
 import { Box, Button, Container, Typography } from '@mui/material';
 import { SearchOff } from '@mui/icons-material';
 import Link from 'next/link';
+import { gradient } from '@/theme/tokens';
 
 export default function NotFound() {
   return (
@@ -36,8 +37,8 @@ export default function NotFound() {
             size="large"
             sx={{
               fontWeight: 600,
-              background: 'linear-gradient(to right, #F6475F, #D93A50)',
-              '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+              background: gradient.primary,
+              '&:hover': { background: gradient.primaryHover },
               '&:active': { transform: 'scale(0.97)' },
             }}
           >

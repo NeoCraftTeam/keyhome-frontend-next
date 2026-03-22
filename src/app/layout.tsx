@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { Viewport } from 'next';
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
+import { headers } from 'next/headers';
 import './globals.css';
 import { Providers } from './providers';
 import { ClerkProvider } from '@clerk/nextjs';
@@ -135,11 +136,13 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get('x-nonce') ?? '';
+
   return (
     <ClerkProvider
       localization={frFR}
@@ -147,10 +150,14 @@ export default function RootLayout({
       signUpUrl="/register"
       signInFallbackRedirectUrl="/home"
       signUpFallbackRedirectUrl="/home"
+      nonce={nonce}
     >
       <html lang="fr" suppressHydrationWarning>
         <head>
+          {/* suppressHydrationWarning: browser redacts nonce after parsing, causing mismatch */}
           <script
+            suppressHydrationWarning
+            nonce={nonce}
             dangerouslySetInnerHTML={{
               __html: `(function(){var t=localStorage.getItem("theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.style.colorScheme=d?"dark":"light";})();`,
             }}

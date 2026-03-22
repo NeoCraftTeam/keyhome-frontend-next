@@ -18,6 +18,7 @@ import {
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { brand, gradient } from '@/theme/tokens';
 
 const MAX_RETRIES = 20;
 const INITIAL_RETRY_MS = 800;
@@ -151,7 +152,7 @@ function PaymentSuccessContent() {
               height: 6,
               borderRadius: 3,
               bgcolor: 'grey.200',
-              '& .MuiLinearProgress-bar': { bgcolor: '#F6475F', borderRadius: 3 },
+              '& .MuiLinearProgress-bar': { bgcolor: brand.primary, borderRadius: 3 },
             }}
           />
         </Box>
@@ -231,8 +232,8 @@ function PaymentSuccessContent() {
               sx={{
                 py: 1.5,
                 fontWeight: 600,
-                background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                background: gradient.primary,
+                '&:hover': { background: gradient.primaryHover },
                 '&:active': { transform: 'scale(0.97)' },
               }}
             >
@@ -266,7 +267,7 @@ function PaymentSuccessContent() {
                       size="large"
                       fullWidth
                       onClick={() => router.push(`/ads/${adId}/annonce`)}
-                      sx={{ py: 1.5, fontWeight: 600, background: 'linear-gradient(to right, #F6475F, #D93A50)', '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' }, '&:active': { transform: 'scale(0.97)' } }}
+                      sx={{ py: 1.5, fontWeight: 600, background: gradient.primary, '&:hover': { background: gradient.primaryHover }, '&:active': { transform: 'scale(0.97)' } }}
                     >
                       Retourner à l&apos;annonce
                     </Button>
@@ -279,7 +280,7 @@ function PaymentSuccessContent() {
                     onClick={() => router.push('/home')}
                     sx={adId
                       ? { fontWeight: 600, color: 'text.secondary' }
-                      : { py: 1.5, fontWeight: 600, background: 'linear-gradient(to right, #F6475F, #D93A50)', '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' }, '&:active': { transform: 'scale(0.97)' } }
+                      : { py: 1.5, fontWeight: 600, background: gradient.primary, '&:hover': { background: gradient.primaryHover }, '&:active': { transform: 'scale(0.97)' } }
                     }
                   >
                     {adId ? 'Accueil' : 'Retour à l\u2019accueil'}
@@ -292,7 +293,7 @@ function PaymentSuccessContent() {
                 <Box
                   sx={{
                     width: 80, height: 80, borderRadius: '50%',
-                    bgcolor: 'rgba(246, 71, 95, 0.1)',
+                    bgcolor: brand.primaryAlpha10,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     mx: 'auto', mb: 3,
                     animation: 'pulse 2s ease-in-out infinite',
@@ -302,7 +303,7 @@ function PaymentSuccessContent() {
                     },
                   }}
                 >
-                  <HourglassIcon sx={{ fontSize: 44, color: '#F6475F' }} />
+                  <HourglassIcon sx={{ fontSize: 44, color: brand.primary }} />
                 </Box>
 
                 <Typography variant="h5" fontWeight={700} gutterBottom>
@@ -324,7 +325,7 @@ function PaymentSuccessContent() {
                       height: 4,
                       borderRadius: 2,
                       bgcolor: 'rgba(246,71,95,0.12)',
-                      '& .MuiLinearProgress-bar': { bgcolor: '#F6475F', borderRadius: 2 },
+                      '& .MuiLinearProgress-bar': { bgcolor: brand.primary, borderRadius: 2 },
                     }}
                   />
                 </Box>
@@ -336,7 +337,7 @@ function PaymentSuccessContent() {
                       size="large"
                       fullWidth
                       onClick={() => router.push(`/ads/${adId}/annonce`)}
-                      sx={{ py: 1.5, fontWeight: 600, borderColor: '#F6475F', color: '#F6475F', '&:hover': { borderColor: '#D93A50', color: '#D93A50', bgcolor: 'rgba(246,71,95,0.05)' } }}
+                      sx={{ py: 1.5, fontWeight: 600, borderColor: brand.primary, color: brand.primary, '&:hover': { borderColor: brand.primaryDark, color: brand.primaryDark, bgcolor: brand.primaryAlpha5 } }}
                     >
                       Retourner à l&apos;annonce
                     </Button>

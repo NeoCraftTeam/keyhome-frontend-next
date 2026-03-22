@@ -6,6 +6,7 @@ import ShareOutlinedIcon from '@mui/icons-material/ShareOutlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import FadeIn from '@/components/ui/FadeIn';
 import { useParams, useRouter } from 'next/navigation';
+import { brand, gradient } from '@/theme/tokens';
 
 export default function SurveyMerciPage() {
   const router = useRouter();
@@ -84,7 +85,7 @@ export default function SurveyMerciPage() {
               px: 3,
               py: 2,
               borderRadius: 2.5,
-              bgcolor: 'rgba(246,71,95,0.05)',
+              bgcolor: brand.primaryAlpha5,
               border: '1px solid rgba(246,71,95,0.15)',
             }}
           >
@@ -103,7 +104,7 @@ export default function SurveyMerciPage() {
                 borderRadius: 2.5,
                 py: 1.5,
                 fontWeight: 700,
-                background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 100%)',
+                background: gradient.primary135Stops,
                 boxShadow: '0 6px 20px rgba(246,71,95,0.28)',
                 '&:hover': {
                   boxShadow: '0 8px 28px rgba(246,71,95,0.38)',

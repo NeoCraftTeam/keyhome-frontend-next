@@ -44,6 +44,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Ad } from '@/types';
+import { brand } from '@/theme/tokens';
 
 const TEAL = '#14b8a6';
 const BLUE = '#3b82f6';
@@ -574,8 +575,8 @@ export default function OwnerDashboardPage() {
             <Grid container spacing={3} alignItems="center">
               <Grid size={{ xs: 12, md: 8 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                  <BoostIcon sx={{ color: '#F6475F' }} />
-                  <Typography variant="h6" fontWeight={800} color="#F6475F">
+                  <BoostIcon sx={{ color: brand.primary }} />
+                  <Typography variant="h6" fontWeight={800} color={brand.primary}>
                     Boostez vos performances
                   </Typography>
                 </Box>
@@ -599,14 +600,14 @@ export default function OwnerDashboardPage() {
                   variant="contained"
                   onClick={() => router.push('/owner/pro-services')}
                   sx={{
-                    bgcolor: '#F6475F',
+                    bgcolor: brand.primary,
                     color: 'white',
                     fontWeight: 700,
                     borderRadius: 3,
                     px: 4,
                     py: 1.5,
                     textTransform: 'none',
-                    '&:hover': { bgcolor: '#D93A50' },
+                    '&:hover': { bgcolor: brand.primaryDark },
                     boxShadow: '0 8px 16px rgba(246, 71, 95, 0.2)',
                   }}
                 >

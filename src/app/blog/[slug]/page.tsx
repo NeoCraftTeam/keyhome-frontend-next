@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BLOG_POSTS } from '../posts';
+import { brand, gradient } from '@/theme/tokens';
 import { notFound } from 'next/navigation';
 
 export function generateStaticParams() {
@@ -78,7 +79,7 @@ export default async function BlogPostPage({
 
         {/* Article meta */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20, fontSize: 13, color: '#888' }}>
-          <span style={{ background: 'rgba(246,71,95,0.1)', color: '#F6475F', padding: '3px 10px', borderRadius: 100, fontWeight: 600 }}>
+          <span style={{ background: brand.primaryAlpha10, color: brand.primary, padding: '3px 10px', borderRadius: 100, fontWeight: 600 }}>
             {post.category}
           </span>
           <span>{new Date(post.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
@@ -112,7 +113,7 @@ export default async function BlogPostPage({
               href="/search"
               style={{
                 display: 'inline-flex', padding: '10px 20px', borderRadius: 10,
-                background: 'linear-gradient(135deg, #F6475F, #D93A50)', color: '#fff',
+                background: gradient.primary135, color: '#fff',
                 fontWeight: 600, fontSize: 14, textDecoration: 'none',
               }}
             >
@@ -134,7 +135,7 @@ export default async function BlogPostPage({
         </div>
 
         {/* Back to blog */}
-        <Link href="/blog" style={{ color: '#F6475F', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
+        <Link href="/blog" style={{ color: brand.primary, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
           ← Retour au blog
         </Link>
       </article>

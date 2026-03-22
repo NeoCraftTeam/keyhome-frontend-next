@@ -1,11 +1,13 @@
 'use client';
 
+import { gradient } from '@/theme/tokens';
+
 export default function RetryButton() {
   return (
     <button
       onClick={() => window.location.reload()}
       style={{
-        background: 'linear-gradient(to right, #F6475F, #D93A50)',
+        background: gradient.primary,
         color: '#fff',
         border: 'none',
         borderRadius: 12,

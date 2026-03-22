@@ -18,12 +18,13 @@ import {
   Chip,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
+import { brand } from '@/theme/tokens';
 
 const SERVICES = [
   {
     title: 'Boost de visibilité',
     description: 'Remontez votre annonce en tête de liste et multipliez vos contacts par 3.',
-    icon: <BoostIcon sx={{ fontSize: 40, color: '#F6475F' }} />,
+    icon: <BoostIcon sx={{ fontSize: 40, color: brand.primary }} />,
     price: 'À partir de 1 500 FCFA',
     benefits: ['Position prioritaire', 'Badge exclusif', 'Statistiques détaillées'],
     cta: 'Booster une annonce',

@@ -25,6 +25,7 @@ import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { gradient } from '@/theme/tokens';
 
 /**
  * Shown when a new OAuth user (Google, etc.) has missing required fields.
@@ -299,8 +300,8 @@ export default function CompleteProfilePage() {
                   py: 1.5,
                   fontSize: '1rem',
                   fontWeight: 600,
-                  background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                  '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                  background: gradient.primary,
+                  '&:hover': { background: gradient.primaryHover },
                   '&:active': { transform: 'scale(0.97)' },
                 }}
               >

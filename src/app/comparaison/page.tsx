@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { COMPARISONS } from './comparisons';
+import { brand, gradient } from '@/theme/tokens';
 
 export const metadata: Metadata = {
   title: 'Comparaisons immobilières en Afrique — KeyHome',
@@ -27,7 +28,7 @@ export default function ComparaisonIndexPage() {
       </nav>
 
       <h1 style={{ fontSize: 'clamp(28px, 5vw, 40px)', fontWeight: 800, marginBottom: 12 }}>
-        Comparaisons <span style={{ color: '#F6475F' }}>immobilières</span>
+        Comparaisons <span style={{ color: brand.primary }}>immobilières</span>
       </h1>
       <p style={{ fontSize: 17, color: '#666', lineHeight: 1.7, marginBottom: 48, maxWidth: 640 }}>
         Louer ou acheter ? Douala ou Yaoundé ? Appartement ou maison ? Découvrez nos analyses détaillées pour prendre les meilleures décisions immobilières en Afrique.
@@ -46,7 +47,7 @@ export default function ComparaisonIndexPage() {
             <div style={{ display: 'flex', gap: 12, marginBottom: 14, alignItems: 'center' }}>
               <span
                 style={{
-                  background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+                  background: gradient.primary135,
                   color: '#fff',
                   padding: '4px 14px',
                   borderRadius: 100,
@@ -83,7 +84,7 @@ export default function ComparaisonIndexPage() {
 
             <Link
               href={`/comparaison/${comp.slug}`}
-              style={{ color: '#F6475F', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}
+              style={{ color: brand.primary, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}
             >
               Voir la comparaison →
             </Link>

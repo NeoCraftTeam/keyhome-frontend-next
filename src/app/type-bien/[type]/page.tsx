@@ -10,6 +10,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { brand, gradient } from '@/theme/tokens';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -194,11 +195,11 @@ export default async function PropertyTypePage({
         {/* Hero */}
         <div style={{ marginBottom: 40 }}>
           <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.2, marginBottom: 16, color: '#111', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <data.Icon style={{ fontSize: 36, color: '#F6475F' }} />
+            <data.Icon style={{ fontSize: 36, color: brand.primary }} />
             {data.plural} en Afrique de l&apos;Ouest
           </h1>
           {total > 0 && (
-            <p style={{ color: '#F6475F', fontWeight: 600, fontSize: 15, marginBottom: 12 }}>
+            <p style={{ color: brand.primary, fontWeight: 600, fontSize: 15, marginBottom: 12 }}>
               {total.toLocaleString('fr-FR')} annonce{total > 1 ? 's' : ''} disponible{total > 1 ? 's' : ''}
             </p>
           )}
@@ -214,7 +215,7 @@ export default async function PropertyTypePage({
               key={f}
               style={{
                 background: '#FFF0F2',
-                color: '#D93A50',
+                color: brand.primaryDark,
                 padding: '6px 14px',
                 borderRadius: 100,
                 fontSize: 13,
@@ -232,7 +233,7 @@ export default async function PropertyTypePage({
             href={`/search?type=${encodeURIComponent(data.apiParam)}`}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+              background: gradient.primary135,
               color: '#fff', padding: '14px 28px', borderRadius: 12,
               fontWeight: 600, fontSize: 15, textDecoration: 'none',
               boxShadow: '0 4px 16px rgba(246,71,95,0.3)',
@@ -245,8 +246,8 @@ export default async function PropertyTypePage({
             href="/register"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'transparent', color: '#F6475F',
-              padding: '14px 28px', borderRadius: 12, border: '1px solid #F6475F',
+              background: 'transparent', color: brand.primary,
+              padding: '14px 28px', borderRadius: 12, border: `1px solid ${brand.primary}`,
               fontWeight: 600, fontSize: 15, textDecoration: 'none',
             }}
           >
@@ -300,7 +301,7 @@ export default async function PropertyTypePage({
                         </div>
                       )}
                       {ad.price && (
-                        <div style={{ fontWeight: 700, color: '#F6475F', fontSize: 15 }}>
+                        <div style={{ fontWeight: 700, color: brand.primary, fontSize: 15 }}>
                           {Number(ad.price).toLocaleString('fr-FR')} FCFA
                         </div>
                       )}
@@ -353,7 +354,7 @@ export default async function PropertyTypePage({
             Notre moteur de recherche avancé vous permet de filtrer les{' '}
             <strong>{data.plural.toLowerCase()}</strong> par ville, quartier, prix, surface et nombre de pièces,{' '}
             avec une{' '}
-            <Link href={`/search?type=${encodeURIComponent(data.apiParam)}`} style={{ color: '#F6475F' }}>
+            <Link href={`/search?type=${encodeURIComponent(data.apiParam)}`} style={{ color: brand.primary }}>
               carte interactive
             </Link>{' '}
             pour visualiser toutes les annonces en temps réel.

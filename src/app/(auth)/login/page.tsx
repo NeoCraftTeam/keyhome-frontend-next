@@ -7,6 +7,7 @@ import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { useAuth } from '@/providers/AuthProvider';
+import { gradient } from '@/theme/tokens';
 import {
     Email as EmailIcon,
     Visibility,
@@ -227,8 +228,8 @@ export default function LoginPage() {
                   py: 1.5,
                   fontSize: '1rem',
                   fontWeight: 600,
-                  background: (theme) => theme.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
-                  '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
+                  background: (theme) => theme.palette.gradient?.primary ?? gradient.primary,
+                  '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? gradient.primaryHover },
                   transition: 'transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s',
                   '&:active': { transform: 'scale(0.97)' },
                 }}

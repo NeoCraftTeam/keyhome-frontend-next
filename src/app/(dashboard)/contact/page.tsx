@@ -27,9 +27,10 @@ import {
     useMediaQuery,
     useTheme,
 } from '@mui/material';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { brand, gradient } from '@/theme/tokens';
 
 const SUBJECTS = [
     'Question générale',
@@ -107,10 +108,10 @@ export default function ContactPage() {
                 >
                     <Box sx={{
                         width: 100, height: 100, borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+                        background: gradient.primary135,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         mx: 'auto', mb: 3,
-                        boxShadow: '0 20px 60px rgba(246,71,95,0.3)',
+                        boxShadow: `0 20px 60px ${brand.primaryAlpha30}`,
                     }}>
                         <CheckCircleIcon sx={{ fontSize: 52, color: '#fff' }} />
                     </Box>
@@ -150,10 +151,11 @@ export default function ContactPage() {
     }
 
     return (
+        <MotionConfig reducedMotion="user">
         <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
             {/* ── Hero header ── */}
             <Box sx={{
-                background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 50%, #A01030 100%)',
+                background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 50%, #A01030 100%)`,
                 pt: { xs: 10, md: 12 }, pb: { xs: 7, md: 9 },
                 textAlign: 'center', position: 'relative', overflow: 'hidden',
             }}>
@@ -195,7 +197,7 @@ export default function ContactPage() {
                                 height: 3,
                                 bgcolor: 'divider',
                                 '& .MuiLinearProgress-bar': {
-                                    background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                                    background: gradient.primary,
                                 },
                             }}
                         />
@@ -292,7 +294,7 @@ export default function ContactPage() {
                                     fullWidth={step === 0}
                                     sx={{
                                         borderRadius: 2.5, px: 4, py: 1.25, fontWeight: 700,
-                                        background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                                        background: gradient.primary,
                                         flex: step > 0 ? 1 : undefined,
                                         '&:disabled': { opacity: 0.4 },
                                     }}>
@@ -303,7 +305,7 @@ export default function ContactPage() {
                                     startIcon={<SendIcon />}
                                     sx={{
                                         borderRadius: 2.5, px: 4, py: 1.25, fontWeight: 700, flex: 1,
-                                        background: 'linear-gradient(to right, #F6475F, #D93A50)',
+                                        background: gradient.primary,
                                         '&:disabled': { opacity: 0.4 },
                                     }}>
                                     Envoyer le message
@@ -328,7 +330,7 @@ export default function ContactPage() {
                                 <Box
                                     sx={{
                                         p: 3,
-                                        background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 100%)',
+                                        background: gradient.primary135Stops,
                                         color: '#fff',
                                     }}
                                 >
@@ -408,7 +410,7 @@ export default function ContactPage() {
                                                 width: 40,
                                                 height: 40,
                                                 borderRadius: '50%',
-                                                bgcolor: 'rgba(246,71,95,0.1)',
+                                                bgcolor: brand.primaryAlpha10,
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
@@ -450,7 +452,7 @@ export default function ContactPage() {
                                                 width: 40,
                                                 height: 40,
                                                 borderRadius: '50%',
-                                                bgcolor: 'rgba(246,71,95,0.1)',
+                                                bgcolor: brand.primaryAlpha10,
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
@@ -524,5 +526,6 @@ export default function ContactPage() {
                 )}
             </Container>
         </Box>
+        </MotionConfig>
     );
 }

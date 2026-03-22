@@ -337,7 +337,7 @@ export default function OwnerAdsPage() {
           <Box sx={{ p: 2 }}>
             <Grid container spacing={2}>
               {ads.map((ad) => (
-                <Grid key={ad.id} size={{ xs: 6 }}>
+                <Grid key={ad.id} size={{ xs: 6, md: 4 }}>
                   <OwnerAdCard
                     ad={ad}
                     onToggleVisibility={(a) => toggleMutation.mutate(a.id)}

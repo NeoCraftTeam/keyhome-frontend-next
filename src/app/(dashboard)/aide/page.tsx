@@ -1,6 +1,7 @@
 'use client';
 
 import { useThemeMode } from '@/providers/ThemeProvider';
+import { brand } from '@/theme/tokens';
 import {
     ArrowForward as ArrowForwardIcon,
     ChevronLeft as ChevronLeftIcon,
@@ -32,7 +33,7 @@ import {
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const BRAND = '#F6475F';
+const BRAND = brand.primary;
 const BRAND_DARK = '#C73048';
 const NAVY = '#0A1628';
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { brand, gradient } from '@/theme/tokens';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -110,7 +111,7 @@ export default async function CityPage({
         {/* Hero */}
         <h1 style={{ fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 800, margin: '0 0 16px', lineHeight: 1.15 }}>
           Immobilier à{' '}
-          <span style={{ color: '#F6475F' }}>{name}</span>
+          <span style={{ color: brand.primary }}>{name}</span>
           {city && <span style={{ fontWeight: 400, fontSize: '0.6em', color: '#888' }}> — {city.country}</span>}
         </h1>
 
@@ -127,7 +128,7 @@ export default async function CityPage({
             href={`/search?city=${encodeURIComponent(name.toLowerCase())}`}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+              background: gradient.primary135,
               color: '#fff', padding: '14px 28px', borderRadius: 12,
               fontWeight: 600, fontSize: 15, textDecoration: 'none',
               boxShadow: '0 4px 16px rgba(246,71,95,0.3)',
@@ -139,8 +140,8 @@ export default async function CityPage({
             href="/register"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'transparent', color: '#F6475F',
-              padding: '14px 28px', borderRadius: 12, border: '1px solid #F6475F',
+              background: 'transparent', color: brand.primary,
+              padding: '14px 28px', borderRadius: 12, border: `1px solid ${brand.primary}`,
               fontWeight: 600, fontSize: 15, textDecoration: 'none',
             }}
           >
@@ -180,7 +181,7 @@ export default async function CityPage({
                         <div style={{ fontSize: 13, color: '#888', marginBottom: 6 }}>📍 {ad.quarter.name}</div>
                       )}
                       {ad.price && (
-                        <div style={{ fontWeight: 700, color: '#F6475F', fontSize: 15 }}>
+                        <div style={{ fontWeight: 700, color: brand.primary, fontSize: 15 }}>
                           {Number(ad.price).toLocaleString('fr-FR')} FCFA
                         </div>
                       )}
@@ -208,7 +209,7 @@ export default async function CityPage({
             des annonces fiables avec contact direct — sans intermédiaire, sans commission cachée.
           </p>
           <p>
-            Utilisez notre <Link href={`/search?city=${encodeURIComponent(name.toLowerCase())}`} style={{ color: '#F6475F' }}>carte interactive</Link> pour
+            Utilisez notre <Link href={`/search?city=${encodeURIComponent(name.toLowerCase())}`} style={{ color: brand.primary }}>carte interactive</Link> pour
             explorer les quartiers de {name}, filtrer par budget et superficie, et contacter les propriétaires
             en un clic grâce à un micro-paiement sécurisé par Mobile Money.
           </p>

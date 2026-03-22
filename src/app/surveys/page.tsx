@@ -20,6 +20,7 @@ import QuizOutlinedIcon from '@mui/icons-material/QuizOutlined';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import FadeIn from '@/components/ui/FadeIn';
+import { gradient } from '@/theme/tokens';
 
 export default function SurveysIndexPage() {
   const router = useRouter();
@@ -124,7 +125,7 @@ export default function SurveysIndexPage() {
                         height: 48,
                         shrink: 0,
                         borderRadius: 2.5,
-                        background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 100%)',
+                        background: gradient.primary135Stops,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
