@@ -17,6 +17,9 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
+if (process.env.NODE_ENV === 'development') {
+  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', { value: '', writable: false });
+}
 
 interface MapPickerProps {
   latitude: number | null;

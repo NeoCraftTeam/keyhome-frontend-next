@@ -23,6 +23,9 @@ import { useEffect, useRef, useState } from 'react';
 import { MAPBOX_TOKEN, DEFAULT_CENTER } from '@/lib/constants';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
+if (process.env.NODE_ENV === 'development') {
+  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', { value: '', writable: false });
+}
 
 interface Props {
   height?: number;

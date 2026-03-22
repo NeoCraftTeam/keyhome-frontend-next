@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/providers/AuthProvider';
+import { brand } from '@/theme/tokens';
 import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService, quartersService } from '@/services/cities.service';
 import { PropertyAttribute } from '@/types';
@@ -48,6 +49,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { MAPBOX_TOKEN, DEFAULT_CENTER } from '@/lib/constants';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
+if (process.env.NODE_ENV === 'development') {
+  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', { value: '', writable: false });
+}
 
 const STEPS = ['Informations', 'Détails & Prix', 'Localisation', 'Photos', 'Confirmation'];
 
@@ -174,7 +178,7 @@ export default function PublishPage() {
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
-    const marker = new mapboxgl.Marker({ color: '#F6475F', draggable: true })
+    const marker = new mapboxgl.Marker({ color: brand.primary, draggable: true })
       .setLngLat(center)
       .addTo(map);
 

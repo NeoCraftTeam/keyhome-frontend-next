@@ -6,6 +6,7 @@ import AppLoader from '@/components/ui/AppLoader';
 import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
 import { escapeHtml } from '@/lib/sanitize';
 import { useAuth } from '@/providers/AuthProvider';
+import { brand } from '@/theme/tokens';
 import { adsService } from '@/services/ads.service';
 import {
   Close as CloseIcon,
@@ -26,7 +27,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -34,6 +35,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
+if (process.env.NODE_ENV === 'development') {
+  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', { value: '', writable: false });
+}
 
 const typeFilters = [
   { label: 'Tous', value: '' },
@@ -103,7 +107,7 @@ export default function NearbyPage() {
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
     // User position marker
-    new mapboxgl.Marker({ color: '#F6475F' })
+    new mapboxgl.Marker({ color: brand.primary })
       .setLngLat([coords.lng, coords.lat])
       .setPopup(new mapboxgl.Popup().setHTML('<strong>Votre position</strong>'))
       .addTo(map);
@@ -155,11 +159,11 @@ export default function NearbyPage() {
       const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
         `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${encodeURIComponent(ad.id)}/${encodeURIComponent(ad.slug)}'">
           <div>${escapeHtml(ad.title)}</div>
-          <div style="color:#F6475F;font-weight:700">${formatPrice(ad.price)}</div>
+          <div style="color:${brand.primary};font-weight:700">${formatPrice(ad.price)}</div>
         </div>`
       );
 
-      const marker = new mapboxgl.Marker({ color: '#F6475F' })
+      const marker = new mapboxgl.Marker({ color: brand.primary })
         .setPopup(popup)
         .setLngLat([ad.location.longitude, ad.location.latitude])
         .addTo(mapRef.current!);
@@ -211,7 +215,7 @@ export default function NearbyPage() {
               fontSize: '0.72rem',
               height: 24,
               ...(selectedType === t.value
-                ? { bgcolor: '#F6475F', color: '#fff', fontWeight: 600 }
+                ? { bgcolor: brand.primary, color: '#fff', fontWeight: 600 }
                 : { fontWeight: 500 }),
             }}
           />
@@ -254,6 +258,7 @@ export default function NearbyPage() {
   );
 
   return (
+    <MotionConfig reducedMotion="user">
     <Box sx={{ display: 'flex', height: 'calc(100vh - 64px)', position: 'relative' }}>
       {/* Map */}
       <Box sx={{ flex: 1, position: 'relative' }}>
@@ -351,11 +356,11 @@ export default function NearbyPage() {
               position: 'absolute',
               top: 16,
               left: 16,
-              bgcolor: showFilter ? '#F6475F' : 'background.paper',
+              bgcolor: showFilter ? brand.primary : 'background.paper',
               color: showFilter ? '#fff' : 'text.primary',
               boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
               transition: 'all 0.25s ease',
-              '&:hover': { bgcolor: showFilter ? '#D93A50' : 'action.hover' },
+              '&:hover': { bgcolor: showFilter ? brand.primaryDark : 'action.hover' },
             }}
           >
             <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -369,8 +374,8 @@ export default function NearbyPage() {
                     width: 14,
                     height: 14,
                     borderRadius: '50%',
-                    bgcolor: showFilter ? '#fff' : '#F6475F',
-                    color: showFilter ? '#F6475F' : '#fff',
+                    bgcolor: showFilter ? '#fff' : brand.primary,
+                    color: showFilter ? brand.primary : '#fff',
                     fontSize: 9,
                     fontWeight: 800,
                     display: 'flex',
@@ -461,5 +466,6 @@ export default function NearbyPage() {
         </Box>
       </Drawer>
     </Box>
+    </MotionConfig>
   );
 }

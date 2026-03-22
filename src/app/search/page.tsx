@@ -47,11 +47,15 @@ import {
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { motion } from 'framer-motion';
+import { motion, MotionConfig } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { gradient } from '@/theme/tokens';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
+if (process.env.NODE_ENV === 'development') {
+  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', { value: '', writable: false });
+}
 
 const MAP_POPUP_STYLES = `
   .kh-map-popup .mapboxgl-popup-content {
@@ -448,7 +452,7 @@ function SearchContent() {
           fullWidth
           variant="contained"
           onClick={() => setMoreFiltersOpen(false)}
-          sx={{ background: (t) => t.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)' }}
+          sx={{ background: (t) => t.palette.gradient?.primary ?? gradient.primary }}
         >
           Voir {total} résultats
         </Button>
@@ -516,7 +520,7 @@ function SearchContent() {
       {isLoading ? (
         <Grid container spacing={1.5}>
           {Array.from({ length: 8 }).map((_, idx) => (
-            <Grid key={idx} size={{ xs: 6, lg: 6, xl: 4 }}>
+            <Grid key={idx} size={{ xs: 6, lg: 4, xl: 3 }}>
               <AdCardSkeleton />
             </Grid>
           ))}
@@ -538,7 +542,7 @@ function SearchContent() {
               borderRadius: 99,
               fontWeight: 700,
               px: 4,
-              background: (t) => t.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
+              background: (t) => t.palette.gradient?.primary ?? gradient.primary,
             }}
           >
             Réessayer
@@ -566,11 +570,11 @@ function SearchContent() {
                   borderRadius: 99,
                   fontWeight: 700,
                   px: 3,
-                  background: (t) => t.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
+                  background: (t) => t.palette.gradient?.primary ?? gradient.primary,
                   color: 'white',
                   border: 'none',
                   '&:hover': {
-                    background: (t) => t.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)',
+                    background: (t) => t.palette.gradient?.primaryHover ?? gradient.primaryHover,
                     border: 'none',
                   },
                 }}
@@ -584,8 +588,8 @@ function SearchContent() {
                   borderRadius: 99,
                   fontWeight: 700,
                   px: 3,
-                  background: (t) => t.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
-                  '&:hover': { background: (t) => t.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
+                  background: (t) => t.palette.gradient?.primary ?? gradient.primary,
+                  '&:hover': { background: (t) => t.palette.gradient?.primaryHover ?? gradient.primaryHover },
                 }}
               >
                 Se connecter pour créer une alerte
@@ -599,8 +603,8 @@ function SearchContent() {
                 borderRadius: 99,
                 fontWeight: 700,
                 px: 3,
-                background: (t) => t.palette.gradient?.primary ?? 'linear-gradient(to right, #F6475F, #D93A50)',
-                '&:hover': { background: (t) => t.palette.gradient?.primaryHover ?? 'linear-gradient(to right, #E03E54, #C53248)' },
+                background: (t) => t.palette.gradient?.primary ?? gradient.primary,
+                '&:hover': { background: (t) => t.palette.gradient?.primaryHover ?? gradient.primaryHover },
               }}
             >
               Voir toutes les annonces
@@ -628,7 +632,7 @@ function SearchContent() {
         <>
           <Grid container spacing={1.5} sx={{ '& .ad-card-title': { color: '#222 !important' } }}>
             {ads.map((ad, idx) => (
-              <Grid key={ad.id} size={{ xs: 6, lg: 6, xl: 4 }}>
+              <Grid key={ad.id} size={{ xs: 6, lg: 4, xl: 3 }}>
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(idx * 0.04, 0.4) }}>
                   <AdCard ad={ad} />
                 </motion.div>
@@ -660,6 +664,7 @@ function SearchContent() {
   );
 
   return (
+    <MotionConfig reducedMotion="user">
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <style dangerouslySetInnerHTML={{ __html: MAP_POPUP_STYLES }} />
 
@@ -1008,6 +1013,7 @@ function SearchContent() {
       </Drawer>
 
     </Box>
+    </MotionConfig>
   );
 }
 

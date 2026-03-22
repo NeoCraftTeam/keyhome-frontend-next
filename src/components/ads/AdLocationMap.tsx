@@ -7,8 +7,12 @@ import { Box, Typography, useTheme } from '@mui/material';
 import { PlaceOutlined, InfoOutlined } from '@mui/icons-material';
 import mapboxgl from 'mapbox-gl';
 import { useEffect, useMemo, useRef } from 'react';
+import { brand } from '@/theme/tokens';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
+if (process.env.NODE_ENV === 'development') {
+  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', { value: '', writable: false });
+}
 
 interface Props {
   latitude: number;
@@ -28,7 +32,7 @@ function fuzzyCoords(lat: number, lng: number): [number, number] {
 }
 
 const APPROX_RADIUS_PX = 120;
-const PRIMARY_RED = '#F6475F';
+const PRIMARY_RED = brand.primary;
 
 function getDistanceLabel(km: number): { text: string; color: string } {
   if (km < 5) return { text: 'À proximité', color: '#16a34a' };
@@ -346,7 +350,7 @@ export default function AdLocationMap({
                 width: 36,
                 height: 36,
                 borderRadius: '50%',
-                bgcolor: 'rgba(246,71,95,0.1)',
+                bgcolor: brand.primaryAlpha10,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
