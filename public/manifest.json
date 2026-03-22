@@ -8,7 +8,7 @@
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#0A0A0F",
   "theme_color": "#F6475F",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "lang": "fr",
   "dir": "ltr",
   "categories": ["real estate", "lifestyle", "business"],
