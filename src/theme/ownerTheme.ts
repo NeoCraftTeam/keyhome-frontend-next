@@ -2,12 +2,13 @@
 
 import { createTheme } from "@mui/material/styles";
 import { baseTheme } from "./theme";
+import { brandAgent, light, dark, neutral, semantic } from "./tokens";
 
-/** Owner panel primary: Teal #0D9488 (vs customer pink #F6475F) */
+/** Owner panel primary: Teal (brandAgent.primary) — vs customer pink (brand.primary) */
 export const ownerGradientPrimary = {
-  primary: "linear-gradient(to right, #0D9488, #0F766E)",
-  primaryHover: "linear-gradient(to right, #14B8A6, #0D9488)",
-  primary135: "linear-gradient(135deg, #0D9488, #0F766E)",
+  primary: `linear-gradient(to right, ${brandAgent.primary}, ${brandAgent.primaryDark})`,
+  primaryHover: `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`,
+  primary135: `linear-gradient(135deg, ${brandAgent.primary}, ${brandAgent.primaryDark})`,
 };
 
 export const ownerLightTheme = createTheme({
@@ -15,37 +16,29 @@ export const ownerLightTheme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: "#0D9488",
-      light: "#14B8A6",
-      dark: "#0F766E",
-      contrastText: "#FFFFFF",
+      main: brandAgent.primary,
+      light: brandAgent.primaryLight,
+      dark: brandAgent.primaryDark,
+      contrastText: neutral.white,
     },
     secondary: {
       main: "#222222",
-      light: "#484848",
-      dark: "#000000",
-      contrastText: "#FFFFFF",
+      light: light.grey[500],
+      dark: neutral.black,
+      contrastText: neutral.white,
     },
     background: {
-      default: "#F8F7F5",
-      paper: "#F8F7F5",
+      default: light.bg,
+      paper: light.paper,
     },
     text: {
-      primary: "#1A1A1A",
-      secondary: "#717171",
+      primary: light.text,
+      secondary: light.textSecondary,
     },
-    divider: "rgba(0,0,0,0.07)",
-    error: { main: "#C13515" },
-    success: { main: "#008A05" },
-    grey: {
-      50: "#F8F7F5",
-      100: "#EFEDEA",
-      200: "#E2DFDB",
-      300: "#B0B0B0",
-      400: "#717171",
-      500: "#484848",
-      600: "#1A1A1A",
-    },
+    divider: light.divider,
+    error: { main: semantic.error },
+    success: { main: semantic.success },
+    grey: light.grey,
     gradient: {
       primary: ownerGradientPrimary.primary,
       primaryHover: ownerGradientPrimary.primaryHover,
@@ -58,7 +51,7 @@ export const ownerLightTheme = createTheme({
       styleOverrides: {
         root: {
           ...baseTheme.components?.MuiCard?.styleOverrides?.root,
-          borderColor: "rgba(0,0,0,0.07)",
+          borderColor: light.divider,
         },
       },
     },
@@ -77,10 +70,10 @@ export const ownerLightTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: "#F8F7F5",
+          backgroundColor: light.bg,
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
+          borderBottom: `1px solid ${light.border}`,
           boxShadow: "none",
         },
       },
@@ -93,10 +86,10 @@ export const ownerDarkTheme = createTheme({
   palette: {
     mode: "dark",
     primary: {
-      main: "#0D9488",
-      light: "#14B8A6",
-      dark: "#0F766E",
-      contrastText: "#FFFFFF",
+      main: brandAgent.primary,
+      light: brandAgent.primaryLight,
+      dark: brandAgent.primaryDark,
+      contrastText: neutral.white,
     },
     secondary: {
       main: "#E0E0E0",
@@ -105,25 +98,17 @@ export const ownerDarkTheme = createTheme({
       contrastText: "#000000",
     },
     background: {
-      default: "#0A0A0F",
-      paper: "#13131A",
+      default: dark.bg,
+      paper: dark.paper,
     },
     text: {
-      primary: "#F0EEF8",
-      secondary: "#9190A4",
+      primary: dark.text,
+      secondary: dark.textSecondary,
     },
-    divider: "rgba(255,255,255,0.07)",
-    error: { main: "#FF6B6B" },
-    success: { main: "#4CAF50" },
-    grey: {
-      50: "#0A0A0F",
-      100: "#13131A",
-      200: "#1C1C27",
-      300: "#2C2C3E",
-      400: "#9190A4",
-      500: "#C4C3D4",
-      600: "#F0EEF8",
-    },
+    divider: dark.divider,
+    error: { main: dark.errorBright },
+    success: { main: dark.successBright },
+    grey: dark.grey,
     gradient: {
       primary: ownerGradientPrimary.primary,
       primaryHover: ownerGradientPrimary.primaryHover,
@@ -136,7 +121,7 @@ export const ownerDarkTheme = createTheme({
       styleOverrides: {
         root: {
           ...baseTheme.components?.MuiCard?.styleOverrides?.root,
-          borderColor: "rgba(255,255,255,0.07)",
+          borderColor: dark.divider,
           "&:hover": {
             boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
             transform: "translateY(-3px)",
@@ -162,7 +147,7 @@ export const ownerDarkTheme = createTheme({
           backgroundColor: "rgba(10,10,15,0.8)",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: `1px solid ${dark.border}`,
           boxShadow: "none",
         },
       },

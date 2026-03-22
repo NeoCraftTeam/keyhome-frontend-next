@@ -90,6 +90,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
         <div
+          suppressHydrationWarning
           style={{
             minHeight: '100vh',
             backgroundColor: theme.palette.background.default,

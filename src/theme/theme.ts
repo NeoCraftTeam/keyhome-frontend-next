@@ -1,15 +1,16 @@
 "use client";
 
 import { createTheme } from "@mui/material/styles";
+import { brand, gradient, light, dark, neutral, semantic } from "./tokens";
 
 /** Standard border radius values (small=8, medium=12, large=16, pill=99) */
 export const radius = { small: 8, medium: 12, large: 16, pill: 99 } as const;
 
 /** CTA gradient for primary buttons — use theme.palette.gradient.primary */
 export const gradientPrimary = {
-  primary: "linear-gradient(to right, #F6475F, #D93A50)",
-  primaryHover: "linear-gradient(to right, #E03E54, #C53248)",
-  primary135: "linear-gradient(135deg, #F6475F, #D93A50)",
+  primary: gradient.primary,
+  primaryHover: gradient.primaryHover,
+  primary135: gradient.primary135,
 };
 
 export const baseTheme = {
@@ -96,7 +97,7 @@ export const baseTheme = {
         containedPrimary: {
           boxShadow: "none",
           "&:hover": {
-            boxShadow: "0 6px 20px rgba(246, 71, 95, 0.3)",
+            boxShadow: `0 6px 20px ${brand.primaryAlpha30}`,
             transform: "translateY(-1px)",
           },
         },
@@ -225,42 +226,34 @@ export const lightTheme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: "#F6475F",
-      light: "#F87080",
-      dark: "#D93A50",
-      contrastText: "#FFFFFF",
+      main: brand.primary,
+      light: brand.primaryLight,
+      dark: brand.primaryDark,
+      contrastText: neutral.white,
     },
     secondary: {
       main: "#222222",
-      light: "#484848",
-      dark: "#000000",
-      contrastText: "#FFFFFF",
+      light: light.grey[500],
+      dark: neutral.black,
+      contrastText: neutral.white,
     },
     background: {
       // Slightly warmer off-white — less clinical than pure #F7F7F7
-      default: "#F8F7F5",
-      paper: "#F8F7F5",
+      default: light.bg,
+      paper: light.paper,
     },
     text: {
-      primary: "#1A1A1A",
-      secondary: "#717171",
+      primary: light.text,
+      secondary: light.textSecondary,
     },
-    divider: "rgba(0,0,0,0.07)",
-    error: { main: "#C13515" },
-    success: { main: "#008A05" },
-    grey: {
-      50: "#F8F7F5",
-      100: "#EFEDEA",
-      200: "#E2DFDB",
-      300: "#B0B0B0",
-      400: "#717171",
-      500: "#484848",
-      600: "#1A1A1A",
-    },
+    divider: light.divider,
+    error: { main: semantic.error },
+    success: { main: semantic.success },
+    grey: light.grey,
     gradient: {
-      primary: "linear-gradient(to right, #F6475F, #D93A50)",
-      primaryHover: "linear-gradient(to right, #E03E54, #C53248)",
-      primary135: "linear-gradient(135deg, #F6475F, #D93A50)",
+      primary: gradient.primary,
+      primaryHover: gradient.primaryHover,
+      primary135: gradient.primary135,
     },
   },
   components: {
@@ -269,17 +262,17 @@ export const lightTheme = createTheme({
       styleOverrides: {
         root: {
           ...baseTheme.components?.MuiCard?.styleOverrides?.root,
-          borderColor: "rgba(0,0,0,0.07)",
+          borderColor: light.divider,
         },
       },
     },
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: "#F8F7F5",
+          backgroundColor: light.bg,
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
+          borderBottom: `1px solid ${light.border}`,
           boxShadow: "none",
         },
       },
@@ -292,42 +285,34 @@ export const darkTheme = createTheme({
   palette: {
     mode: "dark",
     primary: {
-      main: "#F6475F",
-      light: "#F87080",
-      dark: "#D93A50",
-      contrastText: "#FFFFFF",
+      main: brand.primary,
+      light: brand.primaryLight,
+      dark: brand.primaryDark,
+      contrastText: neutral.white,
     },
     secondary: {
       main: "#E0E0E0",
       light: "#F5F5F5",
       dark: "#B0B0B0",
-      contrastText: "#000000",
+      contrastText: neutral.black,
     },
     background: {
       // Deep midnight — not pure black, premium OLED feel
-      default: "#0A0A0F",
-      paper: "#13131A",
+      default: dark.bg,
+      paper: dark.paper,
     },
     text: {
-      primary: "#F0EEF8",
-      secondary: "#9190A4",
+      primary: dark.text,
+      secondary: dark.textSecondary,
     },
-    divider: "rgba(255,255,255,0.07)",
-    error: { main: "#FF6B6B" },
-    success: { main: "#4CAF50" },
-    grey: {
-      50: "#0A0A0F",
-      100: "#13131A",
-      200: "#1C1C27",
-      300: "#2C2C3E",
-      400: "#9190A4",
-      500: "#C4C3D4",
-      600: "#F0EEF8",
-    },
+    divider: dark.divider,
+    error: { main: dark.errorBright },
+    success: { main: dark.successBright },
+    grey: dark.grey,
     gradient: {
-      primary: "linear-gradient(to right, #F6475F, #D93A50)",
-      primaryHover: "linear-gradient(to right, #E03E54, #C53248)",
-      primary135: "linear-gradient(135deg, #F6475F, #D93A50)",
+      primary: gradient.primary,
+      primaryHover: gradient.primaryHover,
+      primary135: gradient.primary135,
     },
   },
   components: {
@@ -336,7 +321,7 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           ...baseTheme.components?.MuiCard?.styleOverrides?.root,
-          borderColor: "rgba(255,255,255,0.07)",
+          borderColor: dark.divider,
           "&:hover": {
             boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
             transform: "translateY(-3px)",
@@ -347,10 +332,10 @@ export const darkTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: "rgba(10,10,15,0.8)",
+          backgroundColor: `rgba(10,10,15,0.8)`,
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: `1px solid ${dark.border}`,
           boxShadow: "none",
         },
       },
