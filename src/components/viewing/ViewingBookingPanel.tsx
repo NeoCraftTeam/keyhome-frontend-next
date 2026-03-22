@@ -1,5 +1,6 @@
 'use client';
 
+import { gradient } from '@/theme/tokens';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { viewingsService } from '@/services/viewings.service';
@@ -540,8 +541,8 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
             py: 1.5,
             borderRadius: 2,
             fontWeight: 600,
-            background: 'linear-gradient(to right,#F6475F,#D93A50)',
-            '&:hover': { background: 'linear-gradient(to right,#E03E54,#C53248)' },
+            background: gradient.primary,
+            '&:hover': { background: gradient.primaryHover },
           }}
         >
           {isCreating ? 'Réservation en cours…' : 'Confirmer la visite'}
@@ -593,7 +594,7 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
             onClick={() => {
               setOpen(false);
             }}
-            sx={{ background: 'linear-gradient(to right,#F6475F,#D93A50)', '&:hover': { background: 'linear-gradient(to right,#E03E54,#C53248)' } }}
+            sx={{ background: gradient.primary, '&:hover': { background: gradient.primaryHover } }}
           >
             Fermer
           </Button>

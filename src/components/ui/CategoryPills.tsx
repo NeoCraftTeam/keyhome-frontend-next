@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { Box, Chip, IconButton } from '@mui/material';
 import { useRef } from 'react';
+import { brand } from '@/theme/tokens';
 
 interface CategoryPillsProps {
   categories: { label: string; value: string; icon?: React.ReactNode }[];
@@ -69,10 +70,10 @@ export default function CategoryPills({ categories, selected, onChange }: Catego
               px: 1,
               ...(selected === cat.value
                 ? {
-                    bgcolor: '#F6475F',
+                    bgcolor: brand.primary,
                     color: '#fff',
-                    borderColor: '#F6475F',
-                    '&:hover': { bgcolor: '#D93A50' },
+                    borderColor: brand.primary,
+                    '&:hover': { bgcolor: brand.primaryDark },
                   }
                 : {
                     borderColor: 'divider',

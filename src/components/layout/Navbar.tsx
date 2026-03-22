@@ -54,6 +54,7 @@ import {
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { gradient } from '@/theme/tokens';
 
 const NAV_LINKS = [
   { label: 'Rechercher', href: '/search', icon: <SearchIcon /> },
@@ -635,7 +636,7 @@ export default function Navbar() {
                   borderRadius: '20px',
                   textTransform: 'none',
                   fontWeight: 600,
-                  background: (theme) => theme.palette.gradient?.primary135 ?? 'linear-gradient(135deg, #F6475F, #D93A50)',
+                  background: (theme) => theme.palette.gradient?.primary135 ?? gradient.primary135,
                 }}
               >
                 Se connecter

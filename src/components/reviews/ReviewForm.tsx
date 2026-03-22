@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { brand } from '@/theme/tokens';
 
 interface ReviewFormProps {
   adId: string;
@@ -110,8 +111,8 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
           onChange={(_, newValue) => setRating(newValue)}
           onChangeActive={(_, newHover) => setHoverRating(newHover)}
           sx={{
-            '& .MuiRating-iconFilled': { color: '#F6475F' },
-            '& .MuiRating-iconHover': { color: '#F6475F' },
+            '& .MuiRating-iconFilled': { color: brand.primary },
+            '& .MuiRating-iconHover': { color: brand.primary },
             '& .MuiRating-icon': { fontSize: { xs: 28, sm: 32 } },
           }}
         />
@@ -168,7 +169,7 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
         disabled={!rating || mutation.isPending}
         onClick={() => mutation.mutate()}
         sx={{
-          bgcolor: '#F6475F',
+          bgcolor: brand.primary,
           '&:hover': { bgcolor: '#D5384E' },
           borderRadius: 2,
           px: 4,

@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
+import { brand, gradient } from '@/theme/tokens';
 
 /**
  * Welcome modal shown once to newly registered users on their very first login.
@@ -80,7 +81,7 @@ export default function WelcomeModal() {
       {/* Header gradient */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 60%, #A01030 100%)',
+          background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 60%, #A01030 100%)`,
           pt: 4,
           pb: 3,
           px: 3,
@@ -157,8 +158,8 @@ export default function WelcomeModal() {
             borderRadius: 2,
             fontWeight: 700,
             fontSize: '1rem',
-            background: 'linear-gradient(to right, #F6475F, #D93A50)',
-            '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+            background: gradient.primary,
+            '&:hover': { background: gradient.primaryHover },
           }}
         >
           C&apos;est parti !

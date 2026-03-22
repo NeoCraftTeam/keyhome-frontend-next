@@ -18,7 +18,7 @@ import {
 } from '@mui/icons-material';
 import KeyScoreBadge from '@/components/ads/KeyScoreBadge';
 import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/material';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useRef, useState } from 'react';
@@ -85,6 +85,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
   }, [images.length]);
 
   return (
+    <MotionConfig reducedMotion="user">
     <motion.a
       href={`/ads/${ad.id}/${ad.slug}`}
       onClick={(e: React.MouseEvent) => {
@@ -502,5 +503,6 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
       </Box>
     </Box>
     </motion.a>
+    </MotionConfig>
   );
 }

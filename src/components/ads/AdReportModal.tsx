@@ -10,8 +10,9 @@ import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import { Alert, Box, Button, Chip, Dialog, DialogContent, DialogTitle, Divider, IconButton, Radio, Stack, TextField, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { brand } from '@/theme/tokens';
 
 type Props = {
   adId: string;
@@ -204,6 +205,7 @@ export default function AdReportModal({
   };
 
   return (
+    <MotionConfig reducedMotion="user">
     <Dialog
       open={open}
       onClose={submitting ? undefined : onClose}
@@ -263,14 +265,14 @@ export default function AdReportModal({
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-                      <Box sx={{ color: reason === option.value ? '#F6475F' : 'text.secondary', lineHeight: 0 }}>
+                      <Box sx={{ color: reason === option.value ? brand.primary : 'text.secondary', lineHeight: 0 }}>
                         {option.icon}
                       </Box>
                       <Typography variant="h6" sx={{ fontWeight: 500, fontSize: { xs: '1.05rem', md: '1.45rem' } }}>
                         {option.label}
                       </Typography>
                     </Box>
-                    <Radio size="small" checked={reason === option.value} sx={{ color: '#F6475F', '&.Mui-checked': { color: '#F6475F' } }} />
+                    <Radio size="small" checked={reason === option.value} sx={{ color: brand.primary, '&.Mui-checked': { color: brand.primary } }} />
                   </Box>
                 ))}
               </Stack>
@@ -312,7 +314,7 @@ export default function AdReportModal({
                     sx={{ py: { xs: 1.6, md: 1.9 }, cursor: 'pointer', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.25 }}
                   >
                     <Box sx={{ display: 'flex', gap: 1.25, minWidth: 0 }}>
-                      <Box sx={{ color: scamReason === option.value ? '#F6475F' : 'text.secondary', lineHeight: 0, pt: 0.2 }}>
+                      <Box sx={{ color: scamReason === option.value ? brand.primary : 'text.secondary', lineHeight: 0, pt: 0.2 }}>
                         {option.icon}
                       </Box>
                       <Box>
@@ -326,7 +328,7 @@ export default function AdReportModal({
                         )}
                       </Box>
                     </Box>
-                    <Radio size="small" checked={scamReason === option.value} sx={{ color: '#F6475F', '&.Mui-checked': { color: '#F6475F' } }} />
+                    <Radio size="small" checked={scamReason === option.value} sx={{ color: brand.primary, '&.Mui-checked': { color: brand.primary } }} />
                   </Box>
                 ))}
               </Stack>
@@ -349,8 +351,8 @@ export default function AdReportModal({
                       borderRadius: 999,
                       px: 0.5,
                       bgcolor: selectedPaymentMethods.includes(method.value) ? 'rgba(246,71,95,0.12)' : undefined,
-                      borderColor: selectedPaymentMethods.includes(method.value) ? '#F6475F' : undefined,
-                      color: selectedPaymentMethods.includes(method.value) ? '#F6475F' : undefined,
+                      borderColor: selectedPaymentMethods.includes(method.value) ? brand.primary : undefined,
+                      color: selectedPaymentMethods.includes(method.value) ? brand.primary : undefined,
                       fontWeight: 600,
                     }}
                   />
@@ -412,7 +414,7 @@ export default function AdReportModal({
                   minWidth: { xs: 108, md: 120 },
                   textTransform: 'none',
                   fontWeight: 700,
-                  background: 'linear-gradient(90deg, #F6475F 0%, #D9007A 100%)',
+                  background: `linear-gradient(90deg, ${brand.primary} 0%, #D9007A 100%)`,
                   '&:hover': { background: 'linear-gradient(90deg, #e33e56 0%, #be006b 100%)' },
                 }}
               >
@@ -437,6 +439,7 @@ export default function AdReportModal({
         </Box>
       </DialogContent>
     </Dialog>
+    </MotionConfig>
   );
 }
 

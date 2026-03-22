@@ -15,8 +15,9 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { gradient } from '@/theme/tokens';
 
 export default function ComparatorBar() {
   const { items, remove, clear, maxReached, clearMaxReached } = useComparator();
@@ -31,7 +32,7 @@ export default function ComparatorBar() {
   if (items.length === 0) { return null; }
 
   return (
-    <>
+    <MotionConfig reducedMotion="user">
       {/* Floating bar — always visible when items selected */}
       <AnimatePresence>
         <motion.div
@@ -111,8 +112,8 @@ export default function ComparatorBar() {
                   fontWeight: 700,
                   px: { xs: 1.5, sm: 2 },
                   fontSize: { xs: '0.7rem', sm: '0.8125rem' },
-                  background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                  '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                  background: gradient.primary,
+                  '&:hover': { background: gradient.primaryHover },
                   flexShrink: 0,
                 }}
               >
@@ -138,6 +139,6 @@ export default function ComparatorBar() {
           Vous ne pouvez pas comparer plus de {COMPARATOR_MAX_ITEMS} biens à la fois.
         </Alert>
       </Snackbar>
-    </>
+    </MotionConfig>
   );
 }

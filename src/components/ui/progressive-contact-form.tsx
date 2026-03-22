@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getCalApi } from "@calcom/embed-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import {
   ArrowRight,
   Calendar,
@@ -139,6 +139,7 @@ export default function ProgressiveContactForm() {
   };
 
   return (
+    <MotionConfig reducedMotion="user">
     <section ref={sectionRef} id="contact" className="py-32 relative overflow-hidden bg-background">
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center mb-20">
@@ -363,6 +364,7 @@ export default function ProgressiveContactForm() {
         </div>
       </div>
     </section>
+    </MotionConfig>
   );
 }
 

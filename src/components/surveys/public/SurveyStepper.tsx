@@ -5,9 +5,10 @@ import { Box, Button, CircularProgress, LinearProgress, Typography, Paper } from
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SendIcon from '@mui/icons-material/Send';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { useState } from 'react';
 import PublicQuestionRenderer from './PublicQuestionRenderer';
+import { brand, gradient } from '@/theme/tokens';
 
 interface SurveyStepperProps {
   survey: PublicSurvey;
@@ -64,6 +65,7 @@ export default function SurveyStepper({ survey, onSubmit, isSubmitting }: Survey
   };
 
   return (
+    <MotionConfig reducedMotion="user">
     <Box>
       {/* ── Progress bar + step counter ── */}
       <Box sx={{ mb: 4 }}>
@@ -84,7 +86,7 @@ export default function SurveyStepper({ survey, onSubmit, isSubmitting }: Survey
             bgcolor: 'rgba(246,71,95,0.10)',
             '& .MuiLinearProgress-bar': {
               borderRadius: 3,
-              background: 'linear-gradient(90deg, #F6475F 0%, #D93A50 100%)',
+              background: `linear-gradient(90deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
               transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1)',
             },
           }}
@@ -141,7 +143,7 @@ export default function SurveyStepper({ survey, onSubmit, isSubmitting }: Survey
                   width: 32,
                   height: 32,
                   borderRadius: 2,
-                  background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 100%)',
+                  background: gradient.primary135Stops,
                   mb: 2,
                   boxShadow: '0 4px 12px rgba(246,71,95,0.25)',
                 }}
@@ -214,7 +216,7 @@ export default function SurveyStepper({ survey, onSubmit, isSubmitting }: Survey
               px: 5,
               py: 1.25,
               fontWeight: 700,
-              background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 100%)',
+              background: gradient.primary135Stops,
               boxShadow: '0 6px 20px rgba(246,71,95,0.30)',
               '&:hover': { boxShadow: '0 8px 28px rgba(246,71,95,0.40)', transform: 'translateY(-1px)' },
               '&:disabled': { background: '#E5E7EB', boxShadow: 'none' },
@@ -235,7 +237,7 @@ export default function SurveyStepper({ survey, onSubmit, isSubmitting }: Survey
               px: 4,
               py: 1.25,
               fontWeight: 700,
-              background: 'linear-gradient(135deg, #F6475F 0%, #D93A50 100%)',
+              background: gradient.primary135Stops,
               boxShadow: '0 6px 20px rgba(246,71,95,0.30)',
               '&:hover': { boxShadow: '0 8px 28px rgba(246,71,95,0.40)', transform: 'translateY(-1px)' },
               '&:disabled': { background: '#E5E7EB', boxShadow: 'none' },
@@ -247,5 +249,6 @@ export default function SurveyStepper({ survey, onSubmit, isSubmitting }: Survey
         )}
       </Box>
     </Box>
+    </MotionConfig>
   );
 }

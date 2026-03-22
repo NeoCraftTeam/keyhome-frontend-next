@@ -1,6 +1,7 @@
 'use client';
 
 import { Box } from '@mui/material';
+import { brand } from '@/theme/tokens';
 
 /**
  * App-branded spinner using the loading.svg animation.
@@ -32,9 +33,9 @@ export default function AppLoader({
       >
         <g transform="translate(0, 0)">
           <g className="nc-loop-bars-anim-3-icon-f">
-            <path d="M59,35H5a3,3,0,0,1,0-6H59a3,3,0,0,1,0,6Z" fill="#F6475F" />
-            <path d="M59,35H5a3,3,0,0,1,0-6H59a3,3,0,0,1,0,6Z" fill="#F6475F" opacity="0.7" />
-            <path d="M59,35H5a3,3,0,0,1,0-6H59a3,3,0,0,1,0,6Z" fill="#F6475F" opacity="0.4" />
+            <path d="M59,35H5a3,3,0,0,1,0-6H59a3,3,0,0,1,0,6Z" fill={brand.primary} />
+            <path d="M59,35H5a3,3,0,0,1,0-6H59a3,3,0,0,1,0,6Z" fill={brand.primary} opacity="0.7" />
+            <path d="M59,35H5a3,3,0,0,1,0-6H59a3,3,0,0,1,0,6Z" fill={brand.primary} opacity="0.4" />
           </g>
           <style>{`
             .nc-loop-bars-anim-3-icon-f,

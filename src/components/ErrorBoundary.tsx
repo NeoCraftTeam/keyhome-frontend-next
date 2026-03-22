@@ -3,6 +3,7 @@
 import { ErrorOutline as ErrorIcon } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { gradient } from '@/theme/tokens';
 
 interface Props {
   children: ReactNode;
@@ -68,8 +69,8 @@ export class ErrorBoundary extends Component<Props, State> {
               onClick={this.handleReset}
               sx={{
                 borderRadius: 2,
-                background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                background: gradient.primary,
+                '&:hover': { background: gradient.primaryHover },
               }}
             >
               Réessayer

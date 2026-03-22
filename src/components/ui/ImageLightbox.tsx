@@ -10,7 +10,7 @@ import {
   ZoomOutMap,
 } from '@mui/icons-material';
 import { Box, Dialog, IconButton, Typography } from '@mui/material';
-import { AnimatePresence, motion, type PanInfo } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig, type PanInfo } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
@@ -117,6 +117,7 @@ export default function ImageLightbox({ images, open, initialIndex = 0, onClose 
   const image = images[currentIndex];
 
   return (
+    <MotionConfig reducedMotion="user">
     <Dialog
       open={open}
       onClose={onClose}
@@ -363,5 +364,6 @@ export default function ImageLightbox({ images, open, initialIndex = 0, onClose 
         </Box>
       )}
     </Dialog>
+    </MotionConfig>
   );
 }

@@ -30,6 +30,7 @@ import {
   RateReview,
 } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
+import { brand } from '@/theme/tokens';
 
 interface TourStep {
   Icon: SvgIconComponent;
@@ -47,7 +48,7 @@ const STEPS: TourStep[] = [
     title: 'Bienvenue sur KeyHome',
     description:
       "Trouvez votre logement idéal parmi des milliers d'annonces vérifiées.",
-    color: '#F6475F',
+    color: brand.primary,
     highlight: 'Nouvelle version',
   },
   {

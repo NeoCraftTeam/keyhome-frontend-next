@@ -12,6 +12,7 @@ import {
 import { Box, Chip, IconButton, Typography, Tooltip, Button } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { brand } from '@/theme/tokens';
 
 interface OwnerAdCardProps {
   ad: Ad;
@@ -71,7 +72,7 @@ export default function OwnerAdCard({ ad, onToggleVisibility, isToggling }: Owne
               label="Boosté"
               size="small"
               sx={{
-                bgcolor: '#F6475F',
+                bgcolor: brand.primary,
                 color: 'white',
                 fontWeight: 800,
                 '& .MuiChip-icon': { color: 'white' }
@@ -137,7 +138,7 @@ export default function OwnerAdCard({ ad, onToggleVisibility, isToggling }: Owne
                 p: '2px 8px',
                 fontSize: 11,
                 fontWeight: 700,
-                color: '#F6475F',
+                color: brand.primary,
                 textTransform: 'none',
                 '&:hover': { bgcolor: 'rgba(246, 71, 95, 0.08)' }
               }}

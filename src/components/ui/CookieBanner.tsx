@@ -15,7 +15,8 @@ import {
   useTheme,
 } from '@mui/material';
 import { Close, CookieOutlined, Shield } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
+import { brand, gradient } from '@/theme/tokens';
 
 const COOKIE_KEY = 'keyhome_cookie_consent_v1';
 
@@ -66,7 +67,7 @@ export default function CookieBanner() {
   if (!visible) { return null; }
 
   return (
-    <>
+    <MotionConfig reducedMotion="user">
       <AnimatePresence>
         <motion.div
           initial={{ y: 80, opacity: 0 }}
@@ -87,7 +88,7 @@ export default function CookieBanner() {
               overflow: 'hidden',
             }}
           >
-            <Box sx={{ height: 3, background: 'linear-gradient(to right, #F6475F, #6c5ce7)' }} />
+            <Box sx={{ height: 3, background: `linear-gradient(to right, ${brand.primary}, #6c5ce7)` }} />
 
             <Box
               sx={{
@@ -142,8 +143,8 @@ export default function CookieBanner() {
                   onClick={acceptAll}
                   sx={{
                     textTransform: 'none', fontWeight: 700, borderRadius: 2, whiteSpace: 'nowrap',
-                    background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                    '&:hover': { filter: 'brightness(0.9)', background: 'linear-gradient(to right, #F6475F, #D93A50)' },
+                    background: gradient.primary,
+                    '&:hover': { filter: 'brightness(0.9)', background: gradient.primary },
                   }}
                 >
                   Tout accepter
@@ -232,8 +233,8 @@ export default function CookieBanner() {
               onClick={saveCustom}
               sx={{
                 textTransform: 'none', fontWeight: 700, borderRadius: 2, flex: 2,
-                background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                '&:hover': { filter: 'brightness(0.9)', background: 'linear-gradient(to right, #F6475F, #D93A50)' },
+                background: gradient.primary,
+                '&:hover': { filter: 'brightness(0.9)', background: gradient.primary },
               }}
             >
               Sauvegarder
@@ -241,6 +242,6 @@ export default function CookieBanner() {
           </Box>
         </DialogContent>
       </Dialog>
-    </>
+    </MotionConfig>
   );
 }

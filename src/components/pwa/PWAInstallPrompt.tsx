@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Close, GetApp, SystemUpdate } from '@mui/icons-material';
+import { brand, gradient } from '@/theme/tokens';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -113,7 +114,7 @@ export default function PWAInstallPrompt() {
                 width: { xs: 40, sm: 44 },
                 height: { xs: 40, sm: 44 },
                 borderRadius: 2,
-                bgcolor: 'rgba(246,71,95,0.1)',
+                bgcolor: brand.primaryAlpha10,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -149,8 +150,8 @@ export default function PWAInstallPrompt() {
                 px: 2,
                 py: 0.75,
                 fontSize: '0.8rem',
-                background: 'linear-gradient(to right, #F6475F, #D93A50)',
-                '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+                background: gradient.primary,
+                '&:hover': { background: gradient.primaryHover },
                 flexBasis: { xs: '100%', sm: 'auto' },
                 flexShrink: 0,
               }}

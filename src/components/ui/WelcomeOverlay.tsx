@@ -3,6 +3,7 @@
 import { Box, Button, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useEffect } from 'react';
+import { brand } from '@/theme/tokens';
 
 interface WelcomeOverlayProps {
   firstName?: string | null;
@@ -42,7 +43,7 @@ export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProp
         },
 
         /* purple→red sweep background */
-        background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 40%, #8b1a2e 75%, #F6475F 100%)',
+        background: `linear-gradient(135deg, #0f0c29 0%, #302b63 40%, #8b1a2e 75%, ${brand.primary} 100%)`,
       }}
     >
       {/* Floating confetti dots */}
@@ -55,9 +56,9 @@ export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProp
             height: i % 3 === 0 ? 10 : i % 3 === 1 ? 7 : 5,
             borderRadius: '50%',
             bgcolor: [
-              '#F6475F', '#ffffff', '#FFD700', '#ff9f43',
+              brand.primary, '#ffffff', '#FFD700', '#ff9f43',
               '#48dbfb', '#ff6b6b', '#ffeaa7', '#a29bfe',
-              '#fd79a8', '#55efc4', '#F6475F', '#ffffff',
+              '#fd79a8', '#55efc4', brand.primary, '#ffffff',
               '#FFD700', '#ff9f43', '#48dbfb', '#ff6b6b',
               '#a29bfe', '#55efc4',
             ][i],

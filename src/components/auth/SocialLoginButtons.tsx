@@ -5,6 +5,7 @@ import { OAuthProvider } from '@/services/auth.service';
 import { Apple, Facebook, Google } from '@mui/icons-material';
 import { Box, CircularProgress, Divider, IconButton, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
+import { brand } from '@/theme/tokens';
 
 interface SocialLoginButtonsProps {
   onError?: (error: string) => void;
@@ -44,8 +45,8 @@ export default function SocialLoginButtons({
 
   const { loginWithOAuth } = useAuth();
   const isAgentIntent = registrationIntent === 'agent';
-  const accentBg = isAgentIntent ? '#0d9488' : '#F6475F';
-  const accentHover = isAgentIntent ? '#0f766e' : '#D93A50';
+  const accentBg = isAgentIntent ? '#0d9488' : brand.primary;
+  const accentHover = isAgentIntent ? '#0f766e' : brand.primaryDark;
 
   const handleOAuthLogin = async (provider: OAuthProvider) => {
     if (disabled || loadingProvider) return;

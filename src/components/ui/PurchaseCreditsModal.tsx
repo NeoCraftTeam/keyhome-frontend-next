@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { gradient } from '@/theme/tokens';
 
 interface PurchaseCreditsModalProps {
   open: boolean;
@@ -130,7 +131,7 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
               width: 72,
               height: 72,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #F6475F, #D93A50)',
+              background: gradient.primary135,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

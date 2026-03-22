@@ -1,7 +1,7 @@
 'use client';
 
 import { formatPrice } from '@/lib/constants';
-import { motion, useMotionValueEvent, useScroll } from 'framer-motion';
+import { motion, useMotionValueEvent, useReducedMotion, useScroll } from 'framer-motion';
 import { useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import { Phone as PhoneIcon, WhatsApp } from '@mui/icons-material';
@@ -37,6 +37,7 @@ export default function StickyPropertyBar({
   const hasDirectButtons = !!(whatsappUrl || phoneUrl);
   const [isVisible, setIsVisible] = useState(false);
   const { scrollY } = useScroll();
+  const shouldReduce = useReducedMotion();
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
     setIsVisible(latest > 300);
@@ -44,9 +45,9 @@ export default function StickyPropertyBar({
 
   return (
     <motion.div
-      initial={{ y: 100, opacity: 0 }}
+      initial={shouldReduce ? false : { y: 100, opacity: 0 }}
       animate={isVisible ? { y: 0, opacity: 1 } : { y: 100, opacity: 0 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      transition={shouldReduce ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
       style={{
         position: 'fixed',
         bottom: 0,

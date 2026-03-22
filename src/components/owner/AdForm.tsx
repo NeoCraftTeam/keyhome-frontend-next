@@ -91,6 +91,7 @@ import { adTypesService, citiesService, quartersService } from '@/services/citie
 import { propertyAttributesService } from '@/services/property-attributes.service';
 import { adsService } from '@/services/ads.service';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
+import { brand } from '@/theme/tokens';
 
 const DEFAULT_LAT = 4.0511;
 const DEFAULT_LNG = 9.7679;
@@ -1306,8 +1307,8 @@ export default function AdForm({
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-            <BoostIcon sx={{ color: '#F6475F' }} />
-            <Typography variant="subtitle1" fontWeight={800} color="#F6475F">
+            <BoostIcon sx={{ color: brand.primary }} />
+            <Typography variant="subtitle1" fontWeight={800} color={brand.primary}>
               Booster cette annonce (Recommandé)
             </Typography>
           </Box>

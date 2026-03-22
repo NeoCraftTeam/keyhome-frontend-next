@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { gradient } from '@/theme/tokens';
 
 interface City {
   id: string;
@@ -201,8 +202,8 @@ export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }
               py: 1.5,
               borderRadius: 2,
               fontWeight: 600,
-              background: 'linear-gradient(to right, #F6475F, #D93A50)',
-              '&:hover': { background: 'linear-gradient(to right, #E03E54, #C53248)' },
+              background: gradient.primary,
+              '&:hover': { background: gradient.primaryHover },
             }}
           >
             {isSubmitting ? <CircularProgress size={22} color="inherit" /> : 'Créer mon compte'}
