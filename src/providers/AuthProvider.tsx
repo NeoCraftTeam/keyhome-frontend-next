@@ -1,6 +1,7 @@
 'use client';
 
 import { registerTokenGetter } from '@/lib/auth-token';
+import { resetCsrfState } from '@/lib/api';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
@@ -141,21 +142,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const persistPasswordSession = useCallback(
-    (sanctumToken: string, scope: 'client' | 'owner') => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(sanctumKeyForScope(scope), sanctumToken);
-      }
-      registerPathAwareTokenGetter();
+    (sanctumToken: string, _scope: 'client' | 'owner') => {
+      // httpOnly session cookie is now the primary auth mechanism.
+      // No localStorage write — the backend session handles authentication.
+      registerTokenGetter(() => Promise.resolve(null));
       setToken(sanctumToken);
     },
-    [registerPathAwareTokenGetter]
+    []
   );
 
-  const persistClerkSession = useCallback((sanctumToken: string, scope: 'client' | 'owner') => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(sanctumKeyForScope(scope), sanctumToken);
-    }
-    registerTokenGetter(() => Promise.resolve(sanctumToken));
+  const persistClerkSession = useCallback((sanctumToken: string, _scope: 'client' | 'owner') => {
+    // httpOnly session cookie is now the primary auth mechanism.
+    // No localStorage write — the backend session handles authentication.
+    registerTokenGetter(() => Promise.resolve(null));
     setToken(sanctumToken);
   }, []);
 
@@ -173,13 +172,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      registerPathAwareTokenGetter();
-      const p = pathnameRef.current ?? '';
-      const activeKey = p.startsWith('/owner') ? SANCTUM_TOKEN_KEY_OWNER : SANCTUM_TOKEN_KEY_CLIENT;
-      const activeStill = typeof window !== 'undefined' ? localStorage.getItem(activeKey) : null;
-      setToken(activeStill);
+      registerTokenGetter(() => Promise.resolve(null));
+      setToken(null);
     },
-    [registerPathAwareTokenGetter]
+    []
   );
 
   useEffect(() => {
@@ -201,6 +197,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const ownerArea = (pathname ?? '').startsWith('/owner');
         const storageKey = ownerArea ? SANCTUM_TOKEN_KEY_OWNER : SANCTUM_TOKEN_KEY_CLIENT;
+
+        // --- Session-first authentication (httpOnly cookie) ---
+        // Try to authenticate via session cookie before falling back to localStorage token.
+        // If a valid session exists, the cookie is sent automatically (withCredentials: true).
+        try {
+          registerTokenGetter(() => Promise.resolve(null));
+          const sessionUser = await authService.me();
+          if (runId !== authRunRef.current) {
+            return;
+          }
+          setUserState(sessionUser);
+          setRoleCookie(sessionUser.role ?? UserRole.CUSTOMER);
+          // Session auth succeeded — clear any leftover localStorage token
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(storageKey);
+          }
+          registerTokenGetter(() => Promise.resolve(null));
+          setToken(null);
+          setIsExchanging(false);
+          setHasResolvedInitialAuth(true);
+          return;
+        } catch {
+          if (runId !== authRunRef.current) {
+            return;
+          }
+          // No active session — fall through to localStorage token
+        }
+
+        // --- Fallback: localStorage Bearer token (migration path) ---
         const storedToken = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null;
 
         registerPathAwareTokenGetter();
@@ -224,12 +249,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           setUserState(laravelUser);
           setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
+          // Migration complete: clear localStorage token, session cookie now handles auth
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(storageKey);
+          }
+          registerTokenGetter(() => Promise.resolve(null));
         } catch {
           if (runId !== authRunRef.current) {
             return;
           }
           localStorage.removeItem(storageKey);
-          registerPathAwareTokenGetter();
+          registerTokenGetter(() => Promise.resolve(null));
           setToken(null);
           setUserState(null);
           clearRoleCookie();
@@ -337,7 +367,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
   }, [isLoaded, isSignedIn, clerkUser?.id, pathname, clearSanctumTokens, persistClerkSession, registerPathAwareTokenGetter, router, signOut, getToken]);
 
-  const isAuthenticated = !!token && !!user;
+  const isAuthenticated = !!user;
   const isLoading = !isLoaded || !hasResolvedInitialAuth || isExchanging;
 
   const setUser = useCallback((u: User) => {
@@ -460,6 +490,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async (redirectTo = '/home') => {
     ++authRunRef.current;
     setIsLoggingOut(true);
+    resetCsrfState();
 
     sessionStorage.removeItem('clerk_auth_email_hint');
     sessionStorage.removeItem('clerk_auth_prefill');
