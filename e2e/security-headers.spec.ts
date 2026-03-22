@@ -25,11 +25,18 @@ test.describe('Security Headers', () => {
   });
 
   // BUG CATCH: CSP must allow self, mapbox (maps), clerk (auth), and the API.
+  // Nonce-based CSP is now set via src/proxy.ts with 'strict-dynamic'.
   test('CSP allows required sources', () => {
     const csp = headers['content-security-policy'] ?? '';
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain('api.mapbox.com');
     expect(csp).toContain('clerk');
+  });
+
+  test('CSP uses nonce-based script-src', () => {
+    const csp = headers['content-security-policy'] ?? '';
+    expect(csp).toMatch(/'nonce-[A-Za-z0-9+/=]+'/);
+    expect(csp).toMatch(/'strict-dynamic'|'unsafe-eval'/);
   });
 
   // BUG CATCH: CSP img-src must include keyhome.app for the new domain.

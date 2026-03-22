@@ -69,18 +69,8 @@ const connectSources = [
 
 const isDev = process.env.NODE_ENV === 'development';
 
-const cspHeader = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live blob:`,
-  `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://clerk.neocraft.dev https://cdn.jsdelivr.net`,
-  `font-src 'self' https://fonts.gstatic.com https://ray.st https://clerk.neocraft.dev`,
-  `worker-src 'self' blob:`,
-  `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev ${apiOrigin} ${backendOrigin}`,
-  `connect-src ${connectSources}`,
-
-  `frame-src https://*.clerk.accounts.dev https://clerk.neocraft.dev https://*.clerk.com https://challenges.cloudflare.com https://checkout.flutterwave.com https://vercel.live`,
-  `frame-ancestors 'none'`,
-].join('; ');
+// CSP is now built dynamically in src/proxy.ts with per-request nonces.
+// The environment origin variables above are still used by the proxy at runtime.
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -168,10 +158,7 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(self)",
           },
-          {
-            key: "Content-Security-Policy",
-            value: cspHeader,
-          },
+          // CSP is now set dynamically via src/proxy.ts with per-request nonces
         ],
       },
       {
