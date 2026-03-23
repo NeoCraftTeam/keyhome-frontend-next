@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { BLOG_POSTS } from './blog/posts';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -70,11 +71,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // ── Blog pages ───────────────────────────────────────────────
-  const blogSlugs = ['eviter-arnaques-immobilieres-cameroun', 'prix-loyers-douala-2026', 'location-appartement-abidjan-guide'];
   const blogPages: MetadataRoute.Sitemap = [
     { url: `${baseUrl}/blog`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.7 },
-    ...blogSlugs.map((slug) => ({
-      url: `${baseUrl}/blog/${slug}`,
+    ...BLOG_POSTS.map((post) => ({
+      url: `${baseUrl}/blog/${post.slug}`,
       lastModified: now,
       changeFrequency: 'monthly' as const,
       priority: 0.6,

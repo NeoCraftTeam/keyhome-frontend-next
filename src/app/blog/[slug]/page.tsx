@@ -94,13 +94,37 @@ export default async function BlogPostPage({
           {post.excerpt}
         </p>
 
-        {/* Placeholder content — to be replaced with MDX or CMS content */}
-        <div style={{ padding: 40, background: '#f9f9f9', borderRadius: 16, textAlign: 'center', color: '#999', marginBottom: 40 }}>
-          <p style={{ fontSize: 16, marginBottom: 8 }}>📝 Contenu complet à venir</p>
-          <p style={{ fontSize: 14 }}>
-            Cet article est en cours de rédaction. Revenez bientôt pour le guide complet !
-          </p>
-        </div>
+        {/* Article content — rendered from static content field */}
+        {post.content ? (
+          <div
+            style={{
+              fontSize: 16,
+              lineHeight: 1.9,
+              color: '#333',
+              marginBottom: 40,
+            }}
+            dangerouslySetInnerHTML={{
+              __html: post.content
+                .trim()
+                .replace(/^### (.+)$/gm, '<h3 style="font-size:20px;font-weight:700;margin:32px 0 12px">$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2 style="font-size:26px;font-weight:800;margin:40px 0 16px">$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1 style="font-size:32px;font-weight:800;margin:0 0 24px">$1</h1>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #eee;margin:32px 0">')
+                .replace(/^- \[ \] (.+)$/gm, '<li style="list-style:none;margin:6px 0">&#9744; $1</li>')
+                .replace(/^- (.+)$/gm, '<li style="margin:6px 0 6px 20px">$1</li>')
+                .replace(/^\d+\. (.+)$/gm, '<li style="margin:6px 0 6px 20px">$1</li>')
+                .replace(/\n\n/g, '</p><p style="margin:16px 0">'),
+            }}
+          />
+        ) : (
+          <div style={{ padding: 40, background: '#f9f9f9', borderRadius: 16, textAlign: 'center', color: '#999', marginBottom: 40 }}>
+            <p style={{ fontSize: 16, marginBottom: 8 }}>&#128221; Contenu complet à venir</p>
+            <p style={{ fontSize: 14 }}>
+              Cet article est en cours de rédaction. Revenez bientôt pour le guide complet !
+            </p>
+          </div>
+        )}
 
         {/* Internal links CTA */}
         <div style={{ padding: 28, border: '1px solid #eee', borderRadius: 16, marginBottom: 40 }}>
