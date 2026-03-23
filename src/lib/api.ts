@@ -6,6 +6,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1
 /** Base URL without /api/v1 — used for /sanctum/csrf-cookie */
 const API_BASE = API_URL.replace(/\/api\/v1\/?$/, '');
 
+/** Routes that should NOT trigger the 401 auth-expired event */
+const AUTH_ROUTES = ['/auth/login', '/auth/register', '/auth/clerk/', '/auth/me'];
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -86,9 +89,20 @@ api.interceptors.request.use(
   (error: AxiosError) => Promise.reject(error),
 );
 
+/* ---------- Response interceptors ---------- */
+
 api.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => Promise.reject(error),
+  (error: AxiosError) => {
+    if (
+      error.response?.status === 401 &&
+      typeof window !== 'undefined' &&
+      !AUTH_ROUTES.some((r) => error.config?.url?.includes(r))
+    ) {
+      window.dispatchEvent(new CustomEvent('kh:auth-expired'));
+    }
+    return Promise.reject(error);
+  },
 );
 
 export default api;

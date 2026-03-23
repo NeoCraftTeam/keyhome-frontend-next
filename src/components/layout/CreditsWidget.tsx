@@ -21,15 +21,17 @@ import { useEffect, useState } from 'react';
  * - Never reappears on subsequent logins (tracked via localStorage).
  */
 export default function CreditsWidget() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [bouncing, setBouncing] = useState(false);
 
   const { data: balance, isLoading: balanceLoading } = useQuery({
     queryKey: ['credits-balance'],
     queryFn: () => creditsService.getBalance(),
-    refetchInterval: 30_000,
+    refetchInterval: (query) => (query.state.status === 'error' ? false : 30_000),
     staleTime: 15_000,
+    enabled: isAuthenticated,
+    retry: false,
   });
 
   // Determine if we should bounce on mount

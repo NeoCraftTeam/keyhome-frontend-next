@@ -35,8 +35,10 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
   const { data: balance, isLoading: balanceLoading } = useQuery({
     queryKey: ['credits-balance'],
     queryFn: () => creditsService.getBalance(),
-    refetchInterval: 30_000,
+    refetchInterval: (query) => (query.state.status === 'error' ? false : 30_000),
     staleTime: 15_000,
+    enabled: open,
+    retry: false,
   });
 
   const { data: packages, isLoading: packagesLoading } = useQuery({

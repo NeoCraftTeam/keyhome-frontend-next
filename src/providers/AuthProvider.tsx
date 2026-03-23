@@ -124,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const authRunRef = useRef(0);
   const pathnameRef = useRef<string | null>(null);
+  const clerkExchangeDoneRef = useRef(false);
 
   useLayoutEffect(() => {
     pathnameRef.current = pathname ?? null;
@@ -143,18 +144,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const persistPasswordSession = useCallback(
     (sanctumToken: string, _scope: 'client' | 'owner') => {
-      // httpOnly session cookie is now the primary auth mechanism.
-      // No localStorage write — the backend session handles authentication.
-      registerTokenGetter(() => Promise.resolve(null));
+      // httpOnly session cookie is the primary auth mechanism.
+      // Keep the Sanctum token as Bearer fallback for environments where
+      // third-party cookies are blocked (cross-origin SPA → API).
+      registerTokenGetter(() => Promise.resolve(sanctumToken));
       setToken(sanctumToken);
     },
     []
   );
 
   const persistClerkSession = useCallback((sanctumToken: string, _scope: 'client' | 'owner') => {
-    // httpOnly session cookie is now the primary auth mechanism.
-    // No localStorage write — the backend session handles authentication.
-    registerTokenGetter(() => Promise.resolve(null));
+    // httpOnly session cookie is the primary auth mechanism.
+    // Keep the Sanctum token as Bearer fallback for environments where
+    // third-party cookies are blocked (cross-origin SPA → API).
+    registerTokenGetter(() => Promise.resolve(sanctumToken));
     setToken(sanctumToken);
   }, []);
 
@@ -186,6 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const runId = ++authRunRef.current;
 
     if (!isSignedIn) {
+      clerkExchangeDoneRef.current = false;
       setIsExchanging(true);
 
       void (async () => {
@@ -195,7 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        const ownerArea = (pathname ?? '').startsWith('/owner');
+        const ownerArea = (pathnameRef.current ?? '').startsWith('/owner');
         const storageKey = ownerArea ? SANCTUM_TOKEN_KEY_OWNER : SANCTUM_TOKEN_KEY_CLIENT;
 
         // --- Session-first authentication (httpOnly cookie) ---
@@ -249,11 +253,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           setUserState(laravelUser);
           setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
-          // Migration complete: clear localStorage token, session cookie now handles auth
+          // Migration: clear localStorage, keep token as Bearer fallback
           if (typeof window !== 'undefined') {
             localStorage.removeItem(storageKey);
           }
-          registerTokenGetter(() => Promise.resolve(null));
+          registerTokenGetter(() => Promise.resolve(storedToken));
         } catch {
           if (runId !== authRunRef.current) {
             return;
@@ -277,6 +281,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setIsExchanging(true);
+
+    if (clerkExchangeDoneRef.current) {
+      setIsExchanging(false);
+      return;
+    }
+
     getToken()
       .then(async (clerkToken) => {
         if (runId !== authRunRef.current || !clerkToken) {
@@ -295,6 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
 
           if ('state' in result && result.state === 'otp_required') {
+            clerkExchangeDoneRef.current = true;
             if (hasAnySanctumInStorage()) {
               clearSanctumTokens('all');
               setUserState(null);
@@ -317,6 +328,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             user: User;
             panel_sso_url: string | null;
           };
+
+          clerkExchangeDoneRef.current = true;
 
           if (typeof window !== 'undefined') {
             sessionStorage.removeItem('kh_registration_intent');
@@ -365,10 +378,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsExchanging(false);
         setHasResolvedInitialAuth(true);
       });
-  }, [isLoaded, isSignedIn, clerkUser?.id, pathname, clearSanctumTokens, persistClerkSession, registerPathAwareTokenGetter, router, signOut, getToken]);
+  }, [isLoaded, isSignedIn, clerkUser?.id, clearSanctumTokens, persistClerkSession, registerPathAwareTokenGetter, router, signOut, getToken]);
 
   const isAuthenticated = !!user;
   const isLoading = !isLoaded || !hasResolvedInitialAuth || isExchanging;
+
+  // Listen for 401 responses on non-auth endpoints and clear local auth state
+  // so components stop making authenticated requests with stale credentials.
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      if (!user) {
+        return;
+      }
+      registerTokenGetter(() => Promise.resolve(null));
+      setToken(null);
+      setUserState(null);
+      clearRoleCookie();
+    };
+    window.addEventListener('kh:auth-expired', handleAuthExpired);
+    return () => window.removeEventListener('kh:auth-expired', handleAuthExpired);
+  }, [user]);
 
   const setUser = useCallback((u: User) => {
     setUserState(u);
@@ -489,6 +518,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async (redirectTo = '/home') => {
     ++authRunRef.current;
+    clerkExchangeDoneRef.current = false;
     setIsLoggingOut(true);
     resetCsrfState();
 
