@@ -1,6 +1,7 @@
 'use client';
 
 import OwnerPushNotificationCard from '@/components/owner/OwnerPushNotificationCard';
+import { ownerService, type NotificationPreferences } from '@/services/owner.service';
 import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
 import {
@@ -10,30 +11,75 @@ import {
   SettingsBrightness as SystemIcon,
 } from '@mui/icons-material';
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
+  CircularProgress,
   Container,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Divider,
+  FormControlLabel,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Snackbar,
+  Switch,
   Typography,
 } from '@mui/material';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+
+const NOTIFICATION_TOGGLES: { key: keyof NotificationPreferences; label: string }[] = [
+  { key: 'new_viewing_request', label: 'Nouvelles demandes de visite' },
+  { key: 'viewing_confirmed', label: 'Visite confirmée' },
+  { key: 'new_review', label: 'Nouvel avis' },
+  { key: 'payment_received', label: 'Paiement reçu' },
+  { key: 'ad_expired', label: 'Annonce expirée' },
+  { key: 'lease_expiring', label: 'Bail expirant' },
+  { key: 'new_message', label: 'Nouveau message' },
+];
+
+const CHANNEL_TOGGLES: { key: keyof NotificationPreferences; label: string }[] = [
+  { key: 'email_enabled', label: 'Email' },
+  { key: 'push_enabled', label: 'Push' },
+  { key: 'sms_enabled', label: 'SMS' },
+];
 
 export default function OwnerParametresPage() {
   const { logout } = useAuth();
   const { choice, setThemeChoice } = useThemeMode();
   const router = useRouter();
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const [prefSnackbar, setPrefSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+
+  const { data: notifPrefs, isLoading: prefsLoading } = useQuery({
+    queryKey: ['notification-preferences'],
+    queryFn: () => ownerService.getNotificationPreferences(),
+  });
+
+  const updatePrefsMutation = useMutation({
+    mutationFn: (prefs: Partial<NotificationPreferences>) =>
+      ownerService.updateNotificationPreferences(prefs),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notification-preferences'] });
+    },
+    onError: () => {
+      setPrefSnackbar({ message: 'Erreur lors de la mise à jour des préférences', severity: 'error' });
+    },
+  });
+
+  const handlePrefToggle = (key: keyof NotificationPreferences, value: boolean) => {
+    updatePrefsMutation.mutate({ [key]: value });
+  };
 
   const themeOptions: { value: ThemeChoice; label: string; icon: React.ReactNode }[] = [
     { value: 'light', label: 'Clair', icon: <LightModeIcon /> },
@@ -75,6 +121,71 @@ export default function OwnerParametresPage() {
 
       <OwnerPushNotificationCard />
 
+      {/* Notification Preferences */}
+      <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', mt: 3 }}>
+        <CardContent sx={{ p: 0 }}>
+          <Typography variant="overline" color="text.secondary" sx={{ px: 2, pt: 2, display: 'block', fontWeight: 700 }}>
+            Préférences de notifications
+          </Typography>
+          {prefsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress size={28} />
+            </Box>
+          ) : (
+            <Box sx={{ px: 2, pb: 2 }}>
+              {NOTIFICATION_TOGGLES.map((item) => (
+                <FormControlLabel
+                  key={item.key}
+                  control={
+                    <Switch
+                      checked={Boolean(notifPrefs?.[item.key])}
+                      onChange={(e) => handlePrefToggle(item.key, e.target.checked)}
+                      disabled={updatePrefsMutation.isPending}
+                      size="small"
+                    />
+                  }
+                  label={item.label}
+                  labelPlacement="start"
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    ml: 0,
+                    py: 0.75,
+                    '& .MuiFormControlLabel-label': { fontSize: '0.875rem' },
+                  }}
+                />
+              ))}
+              <Divider sx={{ my: 1.5 }} />
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
+                Canaux
+              </Typography>
+              {CHANNEL_TOGGLES.map((item) => (
+                <FormControlLabel
+                  key={item.key}
+                  control={
+                    <Switch
+                      checked={Boolean(notifPrefs?.[item.key])}
+                      onChange={(e) => handlePrefToggle(item.key, e.target.checked)}
+                      disabled={updatePrefsMutation.isPending}
+                      size="small"
+                    />
+                  }
+                  label={item.label}
+                  labelPlacement="start"
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    ml: 0,
+                    py: 0.75,
+                    '& .MuiFormControlLabel-label': { fontSize: '0.875rem' },
+                  }}
+                />
+              ))}
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+
       <Box sx={{ mt: 3 }}>
         <Button
           variant="outlined"
@@ -112,6 +223,17 @@ export default function OwnerParametresPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={Boolean(prefSnackbar)}
+        autoHideDuration={4000}
+        onClose={() => setPrefSnackbar(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity={prefSnackbar?.severity} onClose={() => setPrefSnackbar(null)} sx={{ borderRadius: 2 }}>
+          {prefSnackbar?.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

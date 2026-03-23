@@ -105,6 +105,101 @@ export interface OwnerViewingReservation {
   created_at: string;
 }
 
+export interface Tenant {
+  id: string;
+  user_id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  id_number: string | null;
+  notes: string | null;
+  lease_contracts_count?: number;
+  lease_contracts?: LeaseContract[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TenantPayload {
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  id_number?: string | null;
+  notes?: string | null;
+}
+
+export interface Expense {
+  id: string;
+  ad_id: string;
+  amount: number;
+  category: 'maintenance' | 'tax' | 'insurance' | 'utilities' | 'renovation' | 'other';
+  description: string | null;
+  expense_date: string;
+  receipt_path: string | null;
+  created_at: string;
+}
+
+export interface ExpensePayload {
+  amount: number;
+  category: Expense['category'];
+  description?: string | null;
+  expense_date: string;
+}
+
+export interface ProfitLoss {
+  total_expenses: number;
+  contract_revenue: number;
+  net_income: number;
+  expenses_by_category: Record<string, number>;
+}
+
+export interface OwnerDocument {
+  id: string;
+  ad_id: string;
+  type: string;
+  name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  created_at: string;
+}
+
+export interface BoostStatus {
+  is_boosted: boolean;
+  boost_score: number | null;
+  boost_expires_at: string | null;
+  boosted_at: string | null;
+}
+
+export interface BoostPlan {
+  id: string;
+  name: string;
+  price: number;
+  boost_score: number;
+  boost_duration_days: number;
+  description: string | null;
+}
+
+export interface NotificationPreferences {
+  id?: string;
+  new_viewing_request: boolean;
+  viewing_confirmed: boolean;
+  new_review: boolean;
+  payment_received: boolean;
+  ad_expired: boolean;
+  lease_expiring: boolean;
+  new_message: boolean;
+  email_enabled: boolean;
+  push_enabled: boolean;
+  sms_enabled: boolean;
+}
+
+export interface PaginatedMeta {
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
 export const ownerService = {
   async getAnalytics(period: '7d' | '30d' | '90d' = '30d'): Promise<OwnerAnalyticsOverview> {
     const { data } = await api.get<{ data: OwnerAnalyticsOverview }>('/my/ads/analytics', {
@@ -276,6 +371,122 @@ export const ownerService = {
 
   async getAvailabilityCalendar(adId: string, from: string, to: string) {
     const { data } = await api.get(`/ads/${adId}/availability/calendar`, { params: { from, to } });
+    return data.data ?? data;
+  },
+
+  // ─── Boost (owner self-service) ───
+
+  async getBoostStatus(adId: string): Promise<BoostStatus> {
+    const { data } = await api.get<{ data: BoostStatus }>(`/my/ads/${adId}/boost-status`);
+    return data.data ?? data;
+  },
+
+  async selfBoostAd(adId: string, durationDays?: number): Promise<{ is_boosted: boolean; boost_expires_at: string | null }> {
+    const { data } = await api.post(`/my/ads/${adId}/boost`, { duration_days: durationDays });
+    return data.data ?? data;
+  },
+
+  async unboostAd(adId: string): Promise<void> {
+    await api.delete(`/my/ads/${adId}/boost`);
+  },
+
+  async duplicateAd(adId: string): Promise<{ id: string; slug: string }> {
+    const { data } = await api.post<{ data: { id: string; slug: string } }>(`/my/ads/${adId}/duplicate`);
+    return data.data ?? data;
+  },
+
+  async bulkUpdateAdStatus(ids: string[], status: string): Promise<{ updated: number; failed: string[] }> {
+    const { data } = await api.put('/my/ads/bulk-update', { ids, status });
+    return data;
+  },
+
+  async bulkDeleteAds(ids: string[]): Promise<{ deleted: number }> {
+    const { data } = await api.post('/my/ads/bulk-delete', { ids });
+    return data;
+  },
+
+  // ─── Tenants ───
+
+  async getTenants(params?: { page?: number; per_page?: number }): Promise<{ data: Tenant[]; meta: PaginatedMeta }> {
+    const { data } = await api.get('/my/tenants', { params });
+    return data;
+  },
+
+  async getTenant(id: string): Promise<Tenant> {
+    const { data } = await api.get<{ data: Tenant }>(`/my/tenants/${id}`);
+    return data.data ?? data;
+  },
+
+  async createTenant(payload: TenantPayload): Promise<Tenant> {
+    const { data } = await api.post<{ data: Tenant }>('/my/tenants', payload);
+    return data.data ?? data;
+  },
+
+  async updateTenant(id: string, payload: Partial<TenantPayload>): Promise<Tenant> {
+    const { data } = await api.put<{ data: Tenant }>(`/my/tenants/${id}`, payload);
+    return data.data ?? data;
+  },
+
+  async deleteTenant(id: string): Promise<void> {
+    await api.delete(`/my/tenants/${id}`);
+  },
+
+  // ─── Expenses & Profit / Loss ───
+
+  async getExpenses(adId: string, params?: { page?: number }): Promise<{ data: Expense[]; meta: PaginatedMeta }> {
+    const { data } = await api.get(`/my/ads/${adId}/expenses`, { params });
+    return data;
+  },
+
+  async createExpense(adId: string, payload: ExpensePayload): Promise<Expense> {
+    const { data } = await api.post<{ data: Expense }>(`/my/ads/${adId}/expenses`, payload);
+    return data.data ?? data;
+  },
+
+  async deleteExpense(expenseId: string): Promise<void> {
+    await api.delete(`/my/expenses/${expenseId}`);
+  },
+
+  async getProfitLoss(adId: string): Promise<ProfitLoss> {
+    const { data } = await api.get<{ data: ProfitLoss }>(`/my/ads/${adId}/profit-loss`);
+    return data.data ?? data;
+  },
+
+  // ─── Documents ───
+
+  async getDocuments(adId: string, type?: string): Promise<{ data: OwnerDocument[] }> {
+    const { data } = await api.get(`/my/ads/${adId}/documents`, { params: type ? { type } : undefined });
+    return data;
+  },
+
+  async uploadDocument(adId: string, file: File, type: string): Promise<OwnerDocument> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+    const { data } = await api.post<{ data: OwnerDocument }>(`/my/ads/${adId}/documents`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data.data ?? data;
+  },
+
+  async downloadDocument(documentId: string): Promise<Blob> {
+    const { data } = await api.get(`/my/documents/${documentId}/download`, { responseType: 'blob' });
+    return data;
+  },
+
+  async deleteDocument(documentId: string): Promise<void> {
+    await api.delete(`/my/documents/${documentId}`);
+  },
+
+  // ─── Notification Preferences ───
+
+  async getNotificationPreferences(): Promise<NotificationPreferences> {
+    const { data } = await api.get<{ data: NotificationPreferences }>('/my/notification-preferences');
+    return data.data ?? data;
+  },
+
+  async updateNotificationPreferences(prefs: Partial<NotificationPreferences>): Promise<NotificationPreferences> {
+    const { data } = await api.put<{ data: NotificationPreferences }>('/my/notification-preferences', prefs);
     return data.data ?? data;
   },
 };

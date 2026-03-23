@@ -2,12 +2,14 @@
 
 import { ownerService } from '@/services/owner.service';
 import {
+  AccountBalance as AccountBalanceIcon,
   AddCircleOutline as AddCircleOutlineIcon,
   CalendarMonth as CalendarMonthIcon,
   Dashboard as DashboardIcon,
   Description as DescriptionIcon,
   Home as HomeIcon,
   Payment as PaymentIcon,
+  PeopleAlt as PeopleAltIcon,
   Person as PersonIcon,
   RateReview as RateReviewIcon,
   Settings as SettingsIcon,
@@ -51,6 +53,8 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       { label: 'Mes Annonces', href: '/owner/ads', icon: <HomeIcon fontSize="small" /> },
       { label: 'Visites', href: '/owner/viewings', icon: <VisibilityIcon fontSize="small" />, badgeKey: 'viewings' },
       { label: 'Disponibilités', href: '/owner/availability', icon: <CalendarMonthIcon fontSize="small" /> },
+      { label: 'Locataires', href: '/owner/tenants', icon: <PeopleAltIcon fontSize="small" /> },
+      { label: 'Finances', href: '/owner/financials', icon: <AccountBalanceIcon fontSize="small" /> },
       { label: 'Contrats', href: '/owner/lease-contracts', icon: <DescriptionIcon fontSize="small" /> },
       { label: 'Avis', href: '/owner/reviews', icon: <RateReviewIcon fontSize="small" /> },
     ],

@@ -1,6 +1,7 @@
 import type { User } from './user';
 
 export enum AdStatus {
+  DRAFT = 'draft',
   AVAILABLE = 'available',
   RESERVED = 'reserved',
   RENT = 'rent',
