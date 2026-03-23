@@ -17,8 +17,24 @@ try {
 
 // The Laravel backend may be served from a different subdomain (e.g. owner.keyhome.test).
 // Tour image proxy URLs are generated from APP_URL, so we need that origin in the CSP too.
+// NEXT_PUBLIC_OWNER_URL may be a path only (e.g. `/owner`) for same-origin Next bailleur — not valid for `new URL()`.
+function originFromEnvUrl(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.startsWith('/')) {
+    return '';
+  }
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return '';
+  }
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return '';
+  }
+}
+
 const ownerUrl = process.env.NEXT_PUBLIC_OWNER_URL || '';
-const backendOrigin = ownerUrl ? new URL(ownerUrl).origin : apiOrigin;
+const backendOrigin = originFromEnvUrl(ownerUrl) || apiOrigin;
 const clerkFrontendApiUrl = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_live_')
   ? 'https://clerk.neocraft.dev'
   : 'https://*.clerk.accounts.dev';
