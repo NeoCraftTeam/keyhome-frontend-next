@@ -3,6 +3,7 @@
 import AdLocationMap from '@/components/ads/AdLocationMap';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import PropertyAttributes from '@/components/ads/PropertyAttributes';
@@ -166,6 +167,7 @@ function AdDetailContent() {
   });
 
   const { addRecentlyViewed } = useRecentlyViewed();
+  const { track } = useAnalytics();
   const { play: playSound } = useSoundFeedback();
   const { location: userLocation, error: locationError } = useUserLocation();
 
@@ -173,8 +175,19 @@ function AdDetailContent() {
   useEffect(() => {
     if (ad) {
       addRecentlyViewed(ad);
+      track('ad_view', {
+        ad_id: ad.id,
+        city: ad.quarter?.city_name ?? '',
+        type: ad.type?.name ?? '',
+        price: ad.price ?? 0,
+        has_3d_tour: ad.has_3d_tour ? 1 : 0,
+      });
+      // Notify PWAInstallPrompt of a high-engagement moment
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kh-ad-viewed'));
+      }
     }
-  }, [ad, addRecentlyViewed]);
+  }, [ad, addRecentlyViewed, track]);
 
   // Live balance query — shares the same cache key as CreditsWidget so both
   // always display the same value and a single fetch satisfies both consumers.
@@ -260,7 +273,7 @@ function AdDetailContent() {
         // Refresh the ad to show unlocked content
         await queryClient.invalidateQueries({ queryKey: ['ad', adId, isAuthenticated] });
         // Immediately write the server-confirmed balance into the shared cache.
-        // setQueryData is synchronous \u2014 the Navbar widget and dialog both update
+        // setQueryData is synchronous — the Navbar widget and dialog both update
         // in the same render cycle with zero network wait.
         if (response.points_balance !== undefined) {
           queryClient.setQueryData<number>(['credits-balance'], response.points_balance);
@@ -271,6 +284,7 @@ function AdDetailContent() {
         queryClient.invalidateQueries({ queryKey: ['unlocked-ads'] });
         setPaymentDialogOpen(false);
         setSnackbar('Annonce déverrouillée avec succès !');
+        track('contact_click', { ad_id: ad.id, unlock_status: response.status });
       }
       // For 'insufficient_points' → modal stays open and shows packages
     } catch (err) {

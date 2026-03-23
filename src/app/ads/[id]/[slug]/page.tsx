@@ -133,6 +133,25 @@ export default async function AdDetailPage({
           },
         }),
         ...(ad.bedrooms && { numberOfRooms: ad.bedrooms }),
+        ...((ad.rating != null && (ad.reviews_count ?? 0) > 0) && {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: Number(ad.rating).toFixed(1),
+            reviewCount: ad.reviews_count,
+            bestRating: '5',
+            worstRating: '1',
+          },
+        }),
+        ...(ad.has_3d_tour && ad.tour_config?.scenes?.length && {
+          video: {
+            '@type': 'VideoObject',
+            name: `Visite 360° — ${ad.title}`,
+            description: `Visitez virtuellement ce bien immobilier : ${ad.title}`,
+            thumbnailUrl: images[0] ?? '/images/og-cover.png',
+            contentUrl: ad.tour_config.scenes[0]?.image_url ?? images[0] ?? '/images/og-cover.png',
+            uploadDate: ad.created_at,
+          },
+        }),
       };
 
       adJsonLd = (
