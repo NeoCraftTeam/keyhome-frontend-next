@@ -34,6 +34,10 @@ export default function PWAInstallPrompt() {
   // Dismiss key — don't re-show until next session
   const DISMISS_KEY = 'kh_pwa_dismissed';
 
+  /** Track how many ad detail pages the user has viewed in this session. */
+  const AD_VIEW_COUNT_KEY = 'kh_pwa_ad_views';
+  const INSTALL_THRESHOLD = 3;
+
   useEffect(() => {
     const dismissed = sessionStorage.getItem(DISMISS_KEY);
     if (dismissed) return;
@@ -41,12 +45,35 @@ export default function PWAInstallPrompt() {
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShowBanner(true);
+
+      // Increment ad view counter and only show after INSTALL_THRESHOLD views
+      const views = parseInt(sessionStorage.getItem(AD_VIEW_COUNT_KEY) ?? '0', 10) + 1;
+      sessionStorage.setItem(AD_VIEW_COUNT_KEY, String(views));
+
+      if (views >= INSTALL_THRESHOLD) {
+        setShowBanner(true);
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
+
+    // Also listen for a custom event fired by AdDetailClient on each ad page load
+    const onAdView = () => {
+      if (!sessionStorage.getItem(DISMISS_KEY) && deferredPrompt) {
+        const views = parseInt(sessionStorage.getItem(AD_VIEW_COUNT_KEY) ?? '0', 10) + 1;
+        sessionStorage.setItem(AD_VIEW_COUNT_KEY, String(views));
+        if (views >= INSTALL_THRESHOLD) {
+          setShowBanner(true);
+        }
+      }
+    };
+    window.addEventListener('kh-ad-viewed', onAdView);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('kh-ad-viewed', onAdView);
+    };
+  }, [deferredPrompt]);
 
   // Listen for SW update event
   useEffect(() => {
