@@ -4,6 +4,7 @@ import FadeIn from '@/components/ui/FadeIn';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
+import { writeStoredRegisterAccountRole } from '@/lib/register-intent';
 import { OWNER_LOGIN_HERO_SRC, OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { useAuth } from '@/providers/AuthProvider';
 import {
@@ -288,7 +289,8 @@ export default function OwnerLoginPage() {
             >
               Pas encore de compte ?{' '}
               <Link
-                href="/register?role=agent"
+                href="/register"
+                onClick={() => writeStoredRegisterAccountRole('agent')}
                 underline="hover"
                 sx={{ fontWeight: 600, color: 'primary.main' }}
               >

@@ -7,6 +7,13 @@ import PhoneField from '@/components/ui/PhoneField';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { registerTokenGetter } from '@/lib/auth-token';
+import {
+  clearStoredRegisterAccountRole,
+  deriveRegisterRoleFromQuery,
+  readStoredRegisterAccountRole,
+  registerUrlHasRoleIntent,
+  writeStoredRegisterAccountRole,
+} from '@/lib/register-intent';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import {
@@ -51,8 +58,8 @@ import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import Image from 'next/image';
 import NextLink from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { type FocusEvent, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { type FocusEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 
 type AccountRole = 'customer' | 'agent';
 type AgentType = 'individual' | 'agency';
@@ -72,7 +79,9 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 
 export default function RegisterPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const searchQueryKey = searchParams.toString();
   const { slotProps: citySlotProps, renderOption: renderCityOption, inputSx: cityInputSx } = useCityAutocompleteConfig();
   const [step, setStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
@@ -81,17 +90,33 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [showWelcome, setShowWelcome] = useState(false);
-  const [accountRole, setAccountRole] = useState<AccountRole>('customer');
+  const [accountRole, setAccountRole] = useState<AccountRole>(
+    () => readStoredRegisterAccountRole() ?? 'customer',
+  );
   const [agentType, setAgentType] = useState<AgentType>('individual');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-  useEffect(() => {
-    const role = searchParams.get('role');
-    const intent = searchParams.get('intent');
-    if (role === 'agent' || role === 'bailleur' || intent === 'owner') {
-      setAccountRole('agent');
+  /**
+   * Apply ?role= / ?intent= once, persist in sessionStorage, then strip the query string
+   * so the account type is not visible or shareable via URL (API still authorizes the real role).
+   */
+  useLayoutEffect(() => {
+    if (!registerUrlHasRoleIntent(searchParams)) {
+      return;
     }
-  }, [searchParams]);
+    const resolved = deriveRegisterRoleFromQuery(searchParams.get('role'), searchParams.get('intent'));
+    setAccountRole(resolved);
+    writeStoredRegisterAccountRole(resolved);
+    router.replace(pathname ?? '/register', { scroll: false });
+  }, [pathname, router, searchParams, searchQueryKey]);
+
+  const handleAccountRoleChange = useCallback((_: unknown, value: AccountRole | null) => {
+    if (!value) {
+      return;
+    }
+    setAccountRole(value);
+    writeStoredRegisterAccountRole(value);
+  }, []);
 
   const visual: RegisterAccountVisual = accountRole === 'agent' ? 'agent' : 'customer';
   const tokens = useMemo(() => getRegisterThemeTokens(visual), [visual]);
@@ -239,6 +264,7 @@ export default function RegisterPage() {
         }
       }
 
+      clearStoredRegisterAccountRole();
       setShowWelcome(true);
       setTimeout(() => {
         router.push('/verify-email');
@@ -434,7 +460,7 @@ export default function RegisterPage() {
                 <ToggleButtonGroup
                   value={accountRole}
                   exclusive
-                  onChange={(_, val) => val && setAccountRole(val)}
+                  onChange={handleAccountRoleChange}
                   fullWidth
                   sx={{ mb: 3 }}
                 >

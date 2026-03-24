@@ -1,5 +1,6 @@
 'use client';
 
+import type { SyntheticEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -18,6 +19,23 @@ const SHOWCASE_IMAGES = [
 ];
 
 const SLIDE_DURATION = 5000;
+const CROSSFADE_MS = 1000;
+
+/** Slower hero motion; must be re-applied after `load()` (browsers reset rate to 1). */
+const VIDEO_PLAYBACK_SPEED = 0.8;
+
+function applyHeroPlaybackRate(el: HTMLVideoElement): void {
+  el.defaultPlaybackRate = VIDEO_PLAYBACK_SPEED;
+  el.playbackRate = VIDEO_PLAYBACK_SPEED;
+}
+
+function handleVideoPlaybackRateSync(e: SyntheticEvent<HTMLVideoElement>): void {
+  applyHeroPlaybackRate(e.currentTarget);
+}
+
+function slotElement(slot: 0 | 1, a: HTMLVideoElement | null, b: HTMLVideoElement | null): HTMLVideoElement | null {
+  return slot === 0 ? a : b;
+}
 
 /** Returns true if the user has requested reduced motion at the OS level. */
 function usePrefersReducedMotion(): boolean {
@@ -38,16 +56,37 @@ function usePrefersReducedMotion(): boolean {
  * Hero background: cycles through optimized hero videos with crossfade,
  * falling back to an animated property image slideshow on error.
  * When the user prefers reduced motion, a static image is shown instead.
+ *
+ * Uses two decoders (A/B): the inactive slot always preloads the *next* clip.
+ * After a crossfade we only swap which slot is visible — we never `load()` the
+ * same file again on the visible element, so playback does not restart from 0.
  */
 export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const nextVideoRef = useRef<HTMLVideoElement>(null);
-  const [currentVideo, setCurrentVideo] = useState(0);
+
+  /** Index of the clip currently playing on `activeSlot`. */
+  const [leadIndex, setLeadIndex] = useState(0);
+  /** Which `<video>` (0 = videoRef, 1 = nextVideoRef) is the visible player. */
+  const [activeSlot, setActiveSlot] = useState<0 | 1>(0);
+  const [crossfadeTo, setCrossfadeTo] = useState<0 | 1 | null>(null);
+  const [isCrossfading, setIsCrossfading] = useState(false);
+
   const [videoReady, setVideoReady] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isCrossfading, setIsCrossfading] = useState(false);
   const prefersReducedMotion = usePrefersReducedMotion();
+
+  const activeSlotRef = useRef<0 | 1>(0);
+  const leadIndexRef = useRef(0);
+
+  useEffect(() => {
+    activeSlotRef.current = activeSlot;
+  }, [activeSlot]);
+
+  useEffect(() => {
+    leadIndexRef.current = leadIndex;
+  }, [leadIndex]);
 
   const handleVideoCanPlay = useCallback(() => {
     setVideoReady(true);
@@ -57,36 +96,95 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
     setVideoError(true);
   }, []);
 
-  // Advance to the next video with crossfade when the current one finishes.
-  const handleVideoEnded = useCallback(() => {
-    const nextIdx = (currentVideo + 1) % HERO_VIDEOS.length;
-    const nextVid = nextVideoRef.current;
-    if (nextVid) {
-      nextVid.src = HERO_VIDEOS[nextIdx];
-      nextVid.load();
-      nextVid.play().catch(() => {});
-    }
-    setIsCrossfading(true);
-    setTimeout(() => {
-      setCurrentVideo(nextIdx);
-      setIsCrossfading(false);
-    }, 1000);
-  }, [currentVideo]);
-
-  // Load video whenever currentVideo changes.
+  /** First clip on slot 0 (once). */
   useEffect(() => {
-    if (videoError) return;
-    const video = videoRef.current;
-    if (!video) return;
+    if (videoError) {
+      return;
+    }
+    const el = videoRef.current;
+    if (!el || el.src) {
+      return;
+    }
+    el.src = HERO_VIDEOS[0];
+    el.load();
+    applyHeroPlaybackRate(el);
+    void el.play().catch(() => {});
+  }, [videoError]);
 
-    video.src = HERO_VIDEOS[currentVideo];
-    video.load();
-  }, [currentVideo, videoError]);
+  /**
+   * Inactive slot preloads the following clip (paused) so `ended` can crossfade
+   * without assigning `src` at the last moment.
+   */
+  useEffect(() => {
+    if (videoError || isCrossfading) {
+      return;
+    }
+    const inactive: 0 | 1 = activeSlot === 0 ? 1 : 0;
+    const el = slotElement(inactive, videoRef.current, nextVideoRef.current);
+    if (!el) {
+      return;
+    }
+    const nextIdx = (leadIndex + 1) % HERO_VIDEOS.length;
+    const url = HERO_VIDEOS[nextIdx];
+    if (el.src.endsWith(url)) {
+      return;
+    }
+    el.src = url;
+    el.load();
+    applyHeroPlaybackRate(el);
+  }, [leadIndex, activeSlot, videoError, isCrossfading]);
+
+  const handleSlotEnded = useCallback(
+    (endedSlot: 0 | 1) => {
+      if (endedSlot !== activeSlotRef.current || videoError) {
+        return;
+      }
+      const incoming: 0 | 1 = endedSlot === 0 ? 1 : 0;
+      const nextEl = slotElement(incoming, videoRef.current, nextVideoRef.current);
+      if (!nextEl) {
+        return;
+      }
+      const nextIdx = (leadIndexRef.current + 1) % HERO_VIDEOS.length;
+      const url = HERO_VIDEOS[nextIdx];
+      if (!nextEl.src.endsWith(url)) {
+        nextEl.src = url;
+        nextEl.load();
+        applyHeroPlaybackRate(nextEl);
+      }
+      void nextEl.play().catch(() => {});
+
+      setCrossfadeTo(incoming);
+      setIsCrossfading(true);
+
+      window.setTimeout(() => {
+        const oldSlot = endedSlot;
+        const oldEl = slotElement(oldSlot, videoRef.current, nextVideoRef.current);
+        oldEl?.pause();
+
+        setActiveSlot(incoming);
+        setLeadIndex(nextIdx);
+        setIsCrossfading(false);
+        setCrossfadeTo(null);
+      }, CROSSFADE_MS);
+    },
+    [videoError],
+  );
+
+  function slotOpacity(slot: 0 | 1): number {
+    if (isCrossfading && crossfadeTo !== null) {
+      return slot === crossfadeTo ? 1 : 0;
+    }
+    return slot === activeSlot && videoReady ? 1 : 0;
+  }
 
   // Image slideshow fallback when videos fail.
   useEffect(() => {
-    if (!videoError) return;
-    if (prefersReducedMotion) return;
+    if (!videoError) {
+      return;
+    }
+    if (prefersReducedMotion) {
+      return;
+    }
 
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % SHOWCASE_IMAGES.length);
@@ -99,7 +197,6 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
     ? 'rgba(10, 10, 15, 0.7)'
     : 'rgba(240, 242, 250, 0.75)';
 
-  // When reduced motion is preferred, show only a static image — no video, no slideshow.
   if (prefersReducedMotion) {
     return (
       <>
@@ -129,19 +226,19 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
 
   return (
     <>
-      {/* Video layer — cycles through optimized hero clips with crossfade */}
       {!videoError && (
         <>
           <video
             ref={videoRef}
-            autoPlay
             muted
             playsInline
             preload="auto"
             poster="/images/maison-blanche.webp"
+            onLoadedMetadata={handleVideoPlaybackRateSync}
+            onPlaying={handleVideoPlaybackRateSync}
             onCanPlayThrough={handleVideoCanPlay}
             onError={handleVideoError}
-            onEnded={handleVideoEnded}
+            onEnded={() => handleSlotEnded(0)}
             style={{
               position: 'absolute',
               inset: 0,
@@ -149,16 +246,19 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
               height: '100%',
               objectFit: 'cover',
               zIndex: 0,
-              opacity: videoReady && !isCrossfading ? 1 : 0,
-              transition: 'opacity 1s ease',
+              opacity: slotOpacity(0),
+              transition: `opacity ${CROSSFADE_MS}ms ease`,
             }}
           />
-          {/* Next video — preloaded and fades in during crossfade */}
           <video
             ref={nextVideoRef}
             muted
             playsInline
             preload="auto"
+            onLoadedMetadata={handleVideoPlaybackRateSync}
+            onPlaying={handleVideoPlaybackRateSync}
+            onError={handleVideoError}
+            onEnded={() => handleSlotEnded(1)}
             style={{
               position: 'absolute',
               inset: 0,
@@ -166,14 +266,13 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
               height: '100%',
               objectFit: 'cover',
               zIndex: 0,
-              opacity: isCrossfading ? 1 : 0,
-              transition: 'opacity 1s ease',
+              opacity: slotOpacity(1),
+              transition: `opacity ${CROSSFADE_MS}ms ease`,
             }}
           />
         </>
       )}
 
-      {/* Image slideshow fallback — shown when videos fail to load */}
       {(videoError || !videoReady) && (
         <div
           style={{
@@ -204,7 +303,6 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
         </div>
       )}
 
-      {/* Dark overlay for text readability over video/images */}
       <div
         style={{
           position: 'absolute',
