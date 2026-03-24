@@ -46,20 +46,28 @@ function buildCsp(nonce: string): string {
     "'self'",
     'blob:',
     'data:',
+    // Mapbox
     'https://api.mapbox.com',
     'https://events.mapbox.com',
     'https://*.tiles.mapbox.com',
+    // Clerk
     'https://*.clerk.accounts.dev',
-    'https://clerk.neocraft.dev',
     'https://*.clerk.com',
     'https://clerk.shared.global',
     'https://clerk-telemetry.com',
+    // Cloudflare
     'https://challenges.cloudflare.com',
+    // Analytics
     'https://www.google-analytics.com',
     'https://analytics.google.com',
     'https://*.googletagmanager.com',
+    // Payments
     'https://api.flutterwave.com',
+    // Storage
     'https://*.r2.dev',
+    // App domains — catch-all for keyhome.app and neocraft.dev subdomains
+    'https://*.keyhome.app',
+    'https://*.neocraft.dev',
     apiOrigin,
     backendOrigin,
   ]
@@ -69,13 +77,15 @@ function buildCsp(nonce: string): string {
 
   const directives = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' ${isDev ? "'unsafe-eval'" : "'strict-dynamic'"} https://api.mapbox.com https://*.clerk.accounts.dev ${clerkFrontendApiUrl} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live blob:`,
-    `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://clerk.neocraft.dev https://cdn.jsdelivr.net`,
-    "font-src 'self' https://fonts.gstatic.com https://ray.st https://clerk.neocraft.dev",
+    // script-src: nonce gated; wildcards for Clerk, Mapbox and app domains
+    `script-src 'self' 'nonce-${nonce}' ${isDev ? "'unsafe-eval'" : "'strict-dynamic'"} https://api.mapbox.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://*.keyhome.app https://*.neocraft.dev blob:`,
+    // style-src: unsafe-inline needed for MUI emotion; app domains added
+    `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://*.keyhome.app https://*.neocraft.dev`,
+    `font-src 'self' https://fonts.gstatic.com https://ray.st https://*.keyhome.app https://*.neocraft.dev`,
     "worker-src 'self' blob:",
-    `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev ${apiOrigin} ${backendOrigin}`,
+    `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev ${apiOrigin} ${backendOrigin}`,
     `connect-src ${connectSources}`,
-    `frame-src https://*.clerk.accounts.dev https://clerk.neocraft.dev https://*.clerk.com https://challenges.cloudflare.com https://checkout.flutterwave.com https://vercel.live`,
+    `frame-src https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://checkout.flutterwave.com https://vercel.live https://*.keyhome.app https://*.neocraft.dev`,
     "frame-ancestors 'none'",
   ];
 

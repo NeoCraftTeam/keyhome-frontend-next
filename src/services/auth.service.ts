@@ -1,5 +1,13 @@
 import api from '@/lib/api';
+import { clearUtmParamsAfterRegistration, getAttributionBodyForApi } from '@/lib/utm';
 import { AuthResponse, User } from '@/types';
+
+function mergeAttribution(body: Record<string, unknown>): Record<string, unknown> {
+  if (typeof window === 'undefined') {
+    return body;
+  }
+  return { ...getAttributionBodyForApi(), ...body };
+}
 
 interface LoginApiResponse {
   message: string;
@@ -45,7 +53,11 @@ export const authService = {
     confirm_password: string;
     city_id?: string;
   }): Promise<AuthResponse> {
-    const { data } = await api.post<RegisterApiResponse>('/auth/registerCustomer', payload);
+    const { data } = await api.post<RegisterApiResponse>(
+      '/auth/registerCustomer',
+      mergeAttribution({ ...payload }),
+    );
+    clearUtmParamsAfterRegistration();
     return { token: data.access_token, user: data.user, expires_at: '' };
   },
 
@@ -59,7 +71,8 @@ export const authService = {
     type: 'individual' | 'agency';
     city_id?: string;
   }): Promise<AuthResponse> {
-    const { data } = await api.post<RegisterApiResponse>('/auth/registerAgent', payload);
+    const { data } = await api.post<RegisterApiResponse>('/auth/registerAgent', mergeAttribution({ ...payload }));
+    clearUtmParamsAfterRegistration();
     return { token: data.access_token, user: data.user, expires_at: '' };
   },
 
@@ -78,10 +91,9 @@ export const authService = {
     const config = bearerToken
       ? { headers: { Authorization: `Bearer ${bearerToken}` } }
       : undefined;
-    const body =
-      options?.registration_intent != null
-        ? { registration_intent: options.registration_intent }
-        : {};
+    const body = mergeAttribution(
+      options?.registration_intent != null ? { registration_intent: options.registration_intent } : {},
+    );
     const { data } = await api.post<
       | { state: 'otp_required'; email_hint: string | null }
       | { access_token: string; user: User; panel_sso_url: string | null }
@@ -117,8 +129,9 @@ export const authService = {
   }): Promise<{ token: string; user: User; panel_sso_url: string | null }> {
     const { data } = await api.post<{ access_token: string; user: User; panel_sso_url: string | null }>(
       '/auth/clerk/complete-profile',
-      profile,
+      mergeAttribution({ ...profile }),
     );
+    clearUtmParamsAfterRegistration();
     return { token: data.access_token, user: data.user, panel_sso_url: data.panel_sso_url };
   },
 

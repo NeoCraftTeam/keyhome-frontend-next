@@ -1,6 +1,7 @@
 'use client';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { UtmCaptureProvider } from '@/components/utm/UtmCaptureProvider';
 import SkipLink from '@/components/ui/SkipLink';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { ComparatorProvider } from '@/providers/ComparatorProvider';
@@ -13,17 +14,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryProvider>
       <ThemeProvider>
-        <SkipLink />
-        <ErrorBoundary>
-          <AuthProvider>
-            <FavoritesProvider>
-              <ComparatorProvider>
-                {children}
-                <ComparatorBar />
-              </ComparatorProvider>
-            </FavoritesProvider>
-          </AuthProvider>
-        </ErrorBoundary>
+        <UtmCaptureProvider>
+          <SkipLink />
+          <ErrorBoundary>
+            <AuthProvider>
+              <FavoritesProvider>
+                <ComparatorProvider>
+                  {children}
+                  <ComparatorBar />
+                </ComparatorProvider>
+              </FavoritesProvider>
+            </AuthProvider>
+          </ErrorBoundary>
+        </UtmCaptureProvider>
       </ThemeProvider>
     </QueryProvider>
   );

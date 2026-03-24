@@ -107,7 +107,7 @@ describe('authService', () => {
 
       const result = await authService.registerCustomer(payload);
 
-      expect(mockPost).toHaveBeenCalledWith('/auth/registerCustomer', payload);
+      expect(mockPost).toHaveBeenCalledWith('/auth/registerCustomer', expect.objectContaining(payload));
       expect(result.token).toBe('new-customer-token');
       expect(result.user.email).toBe('jean.dupont@example.cm');
     });
@@ -168,6 +168,7 @@ describe('authService', () => {
       });
 
       const result = await authService.clerkExchange();
+      expect(mockPost).toHaveBeenCalledWith('/auth/clerk/exchange', expect.any(Object), undefined);
       expect(result).toHaveProperty('state', 'otp_required');
       if ('email_hint' in result) {
         expect(result.email_hint).toBe('j***@example.cm');
