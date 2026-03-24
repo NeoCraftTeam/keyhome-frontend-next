@@ -2,7 +2,7 @@
 
 import OwnerBottomNav, { OWNER_BOTTOM_NAV_HEIGHT } from '@/components/owner/OwnerBottomNav';
 import OwnerNavbar from '@/components/owner/OwnerNavbar';
-import { SIDEBAR_WIDTH } from '@/components/owner/owner-constants';
+import { SIDEBAR_COLLAPSED_WIDTH, SIDEBAR_WIDTH } from '@/components/owner/owner-constants';
 import OwnerSidebar from '@/components/owner/OwnerSidebar';
 import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
 import { getSurveyPostponed, setSurveyPostponed as persistSurveyPostponed } from '@/components/surveys/SurveyBanner';
@@ -17,7 +17,7 @@ import { Add as AddIcon } from '@mui/icons-material';
 import { Box, Drawer, Fab, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 const OWNER_PUBLIC_PATHS = ['/owner/login', '/owner/register', '/owner/forgot-password'];
 
@@ -34,6 +34,19 @@ export default function OwnerLayoutClient({ children }: { children: React.ReactN
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [surveyPostponed, setSurveyPostponed] = useState<Record<string, boolean>>({});
   const [surveyMounted, setSurveyMounted] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    setSidebarCollapsed(localStorage.getItem('owner-sidebar-collapsed') === 'true');
+  }, []);
+
+  const handleSidebarToggle = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('owner-sidebar-collapsed', String(next));
+      return next;
+    });
+  }, []);
 
   const publicRoute = isPublicPath(pathname);
   const isSurveyPage = pathname?.startsWith('/surveys') || pathname?.startsWith('/sondage');
@@ -124,20 +137,23 @@ export default function OwnerLayoutClient({ children }: { children: React.ReactN
         variant="permanent"
         sx={{
           display: { xs: 'none', md: 'block' },
-          width: SIDEBAR_WIDTH,
+          width: sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
           flexShrink: 0,
+          transition: 'width 0.2s ease',
           '& .MuiDrawer-paper': {
-            width: SIDEBAR_WIDTH,
+            width: sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
             boxSizing: 'border-box',
             borderRight: '1px solid',
             borderColor: 'divider',
             mt: 0,
             top: 0,
             height: '100vh',
+            transition: 'width 0.2s ease',
+            overflowX: 'hidden',
           },
         }}
       >
-        <OwnerSidebar />
+        <OwnerSidebar collapsed={sidebarCollapsed} onToggle={handleSidebarToggle} />
       </Drawer>
 
       {/* Main content area */}

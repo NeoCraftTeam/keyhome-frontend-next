@@ -1,7 +1,8 @@
 'use client';
 
-import { Box, Button, CircularProgress } from '@mui/material';
+import { Box, Button, CircularProgress, Typography } from '@mui/material';
 import ImageLightbox from '@/components/ui/ImageLightbox';
+import { useAutoSave } from '@/hooks/useAutoSave';
 import type { Ad, AdImage, AdType, City, Quarter } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -25,6 +26,7 @@ import { initialValues } from './ad-form/types';
 
 export type { AdFormValues, TourScene } from './ad-form/types';
 import type { AdFormValues, TourScene } from './ad-form/types';
+import AdFormPriceAdvisor from './ad-form/AdFormPriceAdvisor';
 
 const DEFAULT_LAT = 4.0511;
 const DEFAULT_LNG = 9.7679;
@@ -68,6 +70,13 @@ export default function AdForm({
   const [propertyConditionPdf, setPropertyConditionPdf] = useState<File | null>(null);
   const [photoLightboxOpen, setPhotoLightboxOpen] = useState(false);
   const [photoLightboxIndex, setPhotoLightboxIndex] = useState(0);
+
+  const autoSaveKey = ad?.id ? `ad-edit-${ad.id}` : 'ad-new';
+  const { savedAt, clearDraft } = useAutoSave({
+    key: autoSaveKey,
+    data: values,
+    enabled: !isSubmitting,
+  });
 
   // 3D Tour state
   const [tourScenes, setTourScenes] = useState<TourScene[]>(() => {
@@ -287,6 +296,7 @@ export default function AdForm({
       tourScenes: tourScenes.length > 0 ? tourScenes : undefined,
       propertyConditionPdf,
     });
+    clearDraft();
   };
 
   const handleCityChange = useCallback((city: City | null) => {
@@ -364,6 +374,8 @@ export default function AdForm({
           onRemoveScene={removeTourScene}
         />
 
+        <AdFormPriceAdvisor values={values} cityId={selectedCity?.id} />
+
         <AdFormBoost values={values} update={update} />
 
         <AdFormMapLocation values={values} update={update} />
@@ -379,6 +391,15 @@ export default function AdForm({
             borderColor: 'divider',
           }}
         >
+          {savedAt && (
+            <Typography
+              variant="caption"
+              color="text.disabled"
+              sx={{ mr: 'auto', alignSelf: 'center' }}
+            >
+              Brouillon sauvegardé à {savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            </Typography>
+          )}
           {onCancel && (
             <Button onClick={onCancel} disabled={isSubmitting} sx={{ borderRadius: 2 }}>
               Annuler

@@ -1,5 +1,6 @@
 'use client';
 
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import {
   RocketLaunch as BoostIcon,
   Verified as VerifiedIcon,
@@ -64,6 +65,7 @@ export default function ProServicesPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      <PageBreadcrumbs items={[{ label: 'Tableau de bord', href: '/owner/dashboard' }, { label: 'Services Pro' }]} />
       <Box sx={{ mb: 6, textAlign: 'center' }}>
         <Typography variant="h3" fontWeight={800} gutterBottom>
           Services Pro KeyHome

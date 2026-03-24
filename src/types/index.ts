@@ -16,6 +16,7 @@ export enum UserType {
 }
 
 export enum AdStatus {
+  DRAFT = 'draft',
   AVAILABLE = 'available',
   RESERVED = 'reserved',
   RENT = 'rent',

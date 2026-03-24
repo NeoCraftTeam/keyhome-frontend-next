@@ -1,5 +1,18 @@
 import api from '@/lib/api';
 
+const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1';
+
+async function publicFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${PUBLIC_API_URL}${path}`, {
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    ...options,
+  });
+  if (!res.ok) {
+    throw new Error(`${res.status} ${res.statusText}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 export interface AvailabilityPeriod {
   id?: string;
   starts_at: string;
@@ -198,6 +211,54 @@ export interface PaginatedMeta {
   last_page: number;
   total: number;
   per_page: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginatedMeta;
+}
+
+export interface LoginHistoryEntry {
+  id: string;
+  ip_address: string;
+  device_type: string | null;
+  browser: string | null;
+  platform: string | null;
+  country: string | null;
+  city: string | null;
+  guard: string;
+  successful: boolean;
+  created_at: string;
+}
+
+export interface TeamMember {
+  id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  role: string;
+  created_at: string;
+}
+
+export interface TeamInvitation {
+  id: string;
+  email: string;
+  role: 'manager' | 'viewer';
+  token: string;
+  expires_at: string;
+}
+
+export interface SignatureRequest {
+  id: string;
+  signer_email: string;
+  signer_name: string;
+  status: string;
+  viewed_at: string | null;
+  signed_at: string | null;
+  declined_at: string | null;
+  decline_reason: string | null;
+  expires_at: string | null;
+  created_at: string;
 }
 
 export const ownerService = {
@@ -488,5 +549,92 @@ export const ownerService = {
   async updateNotificationPreferences(prefs: Partial<NotificationPreferences>): Promise<NotificationPreferences> {
     const { data } = await api.put<{ data: NotificationPreferences }>('/my/notification-preferences', prefs);
     return data.data ?? data;
+  },
+
+  // ─── Login History ───
+
+  async getLoginHistory(page = 1): Promise<PaginatedResponse<LoginHistoryEntry>> {
+    const { data } = await api.get('/my/login-history', { params: { page } });
+    return data;
+  },
+
+  async clearLoginHistory(): Promise<void> {
+    await api.delete('/my/login-history');
+  },
+
+  // ─── Team ───
+
+  async getTeam(): Promise<{ members: TeamMember[]; invitations: TeamInvitation[] }> {
+    const { data } = await api.get('/my/team');
+    return data.data ?? data;
+  },
+
+  async inviteTeamMember(payload: { email: string; role: 'manager' | 'viewer' }): Promise<TeamInvitation> {
+    const { data } = await api.post<{ data: TeamInvitation }>('/my/team/invite', payload);
+    return data.data ?? data;
+  },
+
+  async acceptTeamInvitation(token: string): Promise<void> {
+    await api.post(`/my/team/invitations/${token}/accept`);
+  },
+
+  async revokeTeamInvitation(invitationId: string): Promise<void> {
+    await api.delete(`/my/team/invitations/${invitationId}`);
+  },
+
+  async removeTeamMember(userId: string): Promise<void> {
+    await api.delete(`/my/team/members/${userId}`);
+  },
+
+  // ─── E-Signature ───
+
+  async getSignatureRequests(leaseContractId: string): Promise<SignatureRequest[]> {
+    const { data } = await api.get<{ data: SignatureRequest[] }>(
+      `/my/lease-contracts/${leaseContractId}/signatures`,
+    );
+    return data.data ?? data;
+  },
+
+  async createSignatureRequest(
+    leaseContractId: string,
+    payload: { signer_email: string; signer_name: string },
+  ): Promise<SignatureRequest> {
+    const { data } = await api.post<{ data: SignatureRequest }>(
+      `/my/lease-contracts/${leaseContractId}/signatures`,
+      payload,
+    );
+    return data.data ?? data;
+  },
+
+  async getPublicSignatureRequest(
+    token: string,
+  ): Promise<{ request: SignatureRequest & { contract: LeaseContract } }> {
+    return publicFetch(`/signatures/${token}`);
+  },
+
+  async signSignatureRequest(token: string): Promise<void> {
+    await publicFetch(`/signatures/${token}/sign`, { method: 'POST' });
+  },
+
+  async declineSignatureRequest(token: string, reason?: string): Promise<void> {
+    await publicFetch(`/signatures/${token}/decline`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  async getRentEstimate(params: {
+    city_id: string;
+    type_id: string;
+    surface: number;
+    bedrooms?: number;
+  }): Promise<{
+    estimated_min: number;
+    estimated_median: number;
+    estimated_max: number;
+    sample_count: number;
+  }> {
+    const { data } = await api.get('/rent-estimate', { params });
+    return data;
   },
 };

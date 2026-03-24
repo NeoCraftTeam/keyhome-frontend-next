@@ -1,5 +1,6 @@
 'use client';
 
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ownerService, type AvailabilitySchedule, type AvailabilityPayload } from '@/services/owner.service';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -213,6 +214,7 @@ export default function OwnerAvailabilityPage() {
       localeText={frFR.components.MuiLocalizationProvider.defaultProps.localeText}
     >
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+      <PageBreadcrumbs items={[{ label: 'Tableau de bord', href: '/owner/dashboard' }, { label: 'Disponibilités' }]} />
       <Typography variant="h4" fontWeight={700} gutterBottom>
         Disponibilités de visite
       </Typography>

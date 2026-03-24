@@ -1,11 +1,14 @@
 'use client';
 
-import { ownerService, type LeaseContract } from '@/services/owner.service';
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import { ownerService, type LeaseContract, type SignatureRequest } from '@/services/owner.service';
 import {
   AutoAwesome as AiIcon,
   Close as CloseIcon,
   Download as DownloadIcon,
+  Draw as DrawIcon,
   Edit as EditIcon,
+  ExpandMore as ExpandMoreIcon,
   Visibility as ViewIcon,
 } from '@mui/icons-material';
 import {
@@ -16,6 +19,7 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Collapse,
   Container,
   Dialog,
   DialogActions,
@@ -61,6 +65,9 @@ export default function OwnerLeaseContractsPage() {
   });
   const [snackbar, setSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
   const [enhancingConditions, setEnhancingConditions] = useState(false);
+  const [signatureContract, setSignatureContract] = useState<LeaseContract | null>(null);
+  const [signatureForm, setSignatureForm] = useState({ signer_email: '', signer_name: '' });
+  const [expandedSignatureIds, setExpandedSignatureIds] = useState<Set<string>>(new Set());
 
   const { data, isLoading } = useQuery({
     queryKey: ['owner-lease-contracts', page],
@@ -86,6 +93,35 @@ export default function OwnerLeaseContractsPage() {
       setSnackbar({ message: 'Erreur lors de la mise à jour', severity: 'error' });
     },
   });
+
+  const createSignMutation = useMutation({
+    mutationFn: () =>
+      ownerService.createSignatureRequest(signatureContract!.id, {
+        signer_email: signatureForm.signer_email,
+        signer_name: signatureForm.signer_name,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contract-signatures', signatureContract!.id] });
+      setSignatureContract(null);
+      setSignatureForm({ signer_email: '', signer_name: '' });
+      setSnackbar({ message: 'Demande de signature envoyée par email', severity: 'success' });
+    },
+    onError: () => {
+      setSnackbar({ message: "Erreur lors de l'envoi de la demande", severity: 'error' });
+    },
+  });
+
+  const toggleSignatureExpand = (id: string) => {
+    setExpandedSignatureIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   const contracts = (data?.data ?? []) as LeaseContract[];
   const meta = data?.meta;
@@ -119,6 +155,12 @@ export default function OwnerLeaseContractsPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+      <PageBreadcrumbs
+        items={[
+          { label: 'Tableau de bord', href: '/owner/dashboard' },
+          { label: 'Contrats de bail' },
+        ]}
+      />
       <Typography variant="h4" fontWeight={700} gutterBottom>
         Contrats de bail
       </Typography>
@@ -241,7 +283,45 @@ export default function OwnerLeaseContractsPage() {
                       >
                         PDF
                       </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="secondary"
+                        startIcon={<DrawIcon />}
+                        onClick={() => {
+                          setSignatureForm({ signer_email: '', signer_name: '' });
+                          setSignatureContract(c);
+                        }}
+                        fullWidth
+                        sx={{ borderRadius: 2, textTransform: 'none', flex: { sm: 1 } }}
+                      >
+                        Signature
+                      </Button>
+                      <Tooltip title={expandedSignatureIds.has(c.id) ? 'Masquer statut' : 'Statut signature'}>
+                        <IconButton
+                          size="small"
+                          onClick={() => toggleSignatureExpand(c.id)}
+                          sx={{
+                            transform: expandedSignatureIds.has(c.id) ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 2,
+                            alignSelf: { xs: 'flex-end', sm: 'auto' },
+                          }}
+                        >
+                          <ExpandMoreIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </Stack>
+                    <Collapse in={expandedSignatureIds.has(c.id)} unmountOnExit>
+                      <Box sx={{ pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 1, display: 'block' }}>
+                          Statut de la signature électronique
+                        </Typography>
+                        <SignatureStatusSection contractId={c.id} />
+                      </Box>
+                    </Collapse>
                   </Stack>
                 </CardContent>
               </Card>
@@ -419,6 +499,60 @@ export default function OwnerLeaseContractsPage() {
         </DialogActions>
       </Dialog>
 
+      {/* ═══ Signature Request Dialog ═══ */}
+      <Dialog
+        open={!!signatureContract}
+        onClose={() => setSignatureContract(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle fontWeight={700}>Demande de signature électronique</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '8px !important' }}>
+          <Typography variant="body2" color="text.secondary">
+            Un email sera envoyé au signataire avec un lien sécurisé pour signer le contrat{' '}
+            <strong>{signatureContract?.contract_number}</strong>.
+          </Typography>
+          <TextField
+            label="Email du signataire"
+            type="email"
+            size="small"
+            required
+            value={signatureForm.signer_email}
+            onChange={(e) => setSignatureForm((f) => ({ ...f, signer_email: e.target.value }))}
+          />
+          <TextField
+            label="Nom du signataire"
+            size="small"
+            required
+            value={signatureForm.signer_name}
+            onChange={(e) => setSignatureForm((f) => ({ ...f, signer_name: e.target.value }))}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setSignatureContract(null)}
+            variant="outlined"
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={() => createSignMutation.mutate()}
+            variant="contained"
+            disabled={
+              createSignMutation.isPending ||
+              !signatureForm.signer_email ||
+              !signatureForm.signer_name
+            }
+            startIcon={<DrawIcon />}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+          >
+            {createSignMutation.isPending ? 'Envoi…' : 'Envoyer'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={!!snackbar}
         autoHideDuration={4000}
@@ -444,5 +578,59 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <Typography variant="body2" color="text.secondary">{label}</Typography>
       <Typography variant="body2" fontWeight={600} sx={{ textAlign: 'right', maxWidth: '60%' }}>{value}</Typography>
     </Box>
+  );
+}
+
+const SIG_STATUS_CHIP: Record<string, { label: string; color: 'warning' | 'success' | 'error' | 'info' | 'default' }> = {
+  pending: { label: 'En attente', color: 'warning' },
+  viewed: { label: 'Lu', color: 'info' },
+  signed: { label: 'Signé ✓', color: 'success' },
+  declined: { label: 'Refusé ✗', color: 'error' },
+};
+
+function SignatureStatusSection({ contractId }: { contractId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['contract-signatures', contractId],
+    queryFn: () => ownerService.getSignatureRequests(contractId),
+  });
+
+  const signatures = (data ?? []) as SignatureRequest[];
+
+  if (isLoading) {
+    return <CircularProgress size={16} />;
+  }
+
+  if (signatures.length === 0) {
+    return (
+      <Typography variant="caption" color="text.secondary">
+        Aucune demande de signature envoyée.
+      </Typography>
+    );
+  }
+
+  return (
+    <Stack spacing={1}>
+      {signatures.map((sig) => {
+        const chipConfig = SIG_STATUS_CHIP[sig.status] ?? { label: sig.status, color: 'default' as const };
+        return (
+          <Box key={sig.id} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="caption" fontWeight={600} noWrap display="block">
+                {sig.signer_name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" noWrap>
+                {sig.signer_email}
+              </Typography>
+            </Box>
+            <Chip
+              label={chipConfig.label}
+              color={chipConfig.color}
+              size="small"
+              sx={{ fontWeight: 700, flexShrink: 0 }}
+            />
+          </Box>
+        );
+      })}
+    </Stack>
   );
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import MiniMetricSparkline from '@/components/owner/dashboard/MiniMetricSparkline';
-import { Box, Card, CardContent, Skeleton, Typography } from '@mui/material';
+import { TrendingDown as DownIcon, TrendingUp as UpIcon } from '@mui/icons-material';
+import { Box, Card, CardContent, Chip, Skeleton, Typography } from '@mui/material';
 
 export default function DashboardHeroStatCard({
   title,
@@ -11,6 +12,7 @@ export default function DashboardHeroStatCard({
   accentColor,
   sparklineData,
   loading,
+  change,
 }: {
   title: string;
   value: string | number;
@@ -19,6 +21,7 @@ export default function DashboardHeroStatCard({
   accentColor: string;
   sparklineData: number[];
   loading?: boolean;
+  change?: number | null;
 }) {
   return (
     <Card
@@ -98,6 +101,16 @@ export default function DashboardHeroStatCard({
             >
               {subtitle}
             </Typography>
+          )}
+          {change != null && !loading && change !== 0 && (
+            <Chip
+              icon={change > 0 ? <UpIcon sx={{ fontSize: 14 }} /> : <DownIcon sx={{ fontSize: 14 }} />}
+              label={`${change > 0 ? '+' : ''}${change.toFixed(0)}%`}
+              size="small"
+              color={change > 0 ? 'success' : 'error'}
+              variant="outlined"
+              sx={{ mt: 0.5, height: 20, fontSize: '0.65rem', fontWeight: 700 }}
+            />
           )}
         </Box>
         <Box

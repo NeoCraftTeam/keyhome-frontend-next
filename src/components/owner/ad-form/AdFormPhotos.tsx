@@ -1,5 +1,6 @@
-import { Delete as DeleteIcon, PhotoCamera as PhotoCameraIcon } from '@mui/icons-material';
+import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, PhotoCamera as PhotoCameraIcon } from '@mui/icons-material';
 import { Box, Button, IconButton, Paper, Typography } from '@mui/material';
+import { useCallback, useRef, useState } from 'react';
 import type { AdImage } from '@/types';
 import { sectionSx, sectionTitleSx } from './types';
 
@@ -28,8 +29,46 @@ export default function AdFormPhotos({
   onDeleteExistingImage,
   onOpenLightbox,
 }: AdFormPhotosProps) {
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const visibleExisting = existingImages?.filter((img) => !imagesToDelete.includes(img.id));
   const totalCount = imageCount + (visibleExisting?.length ?? 0);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+      const files = e.dataTransfer.files;
+      if (!files.length || !fileInputRef.current) {
+        return;
+      }
+      const dt = new DataTransfer();
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      for (let i = 0; i < files.length; i++) {
+        if (allowedTypes.includes(files[i].type)) {
+          dt.items.add(files[i]);
+        }
+      }
+      if (dt.files.length > 0) {
+        fileInputRef.current.files = dt.files;
+        fileInputRef.current.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    },
+    [],
+  );
 
   return (
     <Paper elevation={0} sx={sectionSx}>
@@ -143,6 +182,7 @@ export default function AdFormPhotos({
           >
             <Typography variant="caption" fontWeight={600}>+ Photo</Typography>
             <input
+              ref={fileInputRef}
               type="file"
               hidden
               multiple
@@ -152,6 +192,34 @@ export default function AdFormPhotos({
           </Button>
         )}
       </Box>
+      {totalCount < 10 && (
+        <Box
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          sx={{
+            mt: 1.5,
+            p: 3,
+            border: '2px dashed',
+            borderColor: isDragOver ? 'primary.main' : 'divider',
+            borderRadius: 2,
+            bgcolor: isDragOver ? 'primary.50' : 'transparent',
+            textAlign: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            '&:hover': { borderColor: 'primary.light', bgcolor: 'action.hover' },
+          }}
+        >
+          <CloudUploadIcon sx={{ fontSize: 32, color: isDragOver ? 'primary.main' : 'text.disabled', mb: 0.5 }} />
+          <Typography variant="body2" color={isDragOver ? 'primary.main' : 'text.secondary'}>
+            Glissez-déposez vos photos ici
+          </Typography>
+          <Typography variant="caption" color="text.disabled">
+            ou cliquez pour parcourir
+          </Typography>
+        </Box>
+      )}
       {errors.images && (
         <Typography variant="caption" color="error">{errors.images}</Typography>
       )}

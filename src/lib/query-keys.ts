@@ -79,7 +79,26 @@ export const notificationKeys = {
   recent: (scope: string) => ['notifications', scope, 'recent'] as const,
 } as const;
 
-// ── Ad Form ───────────────────────────────────────────────────────────────────
+// ── Login History ───────────────────────────────────────────────────────────
+
+export const loginHistoryKeys = {
+  all: ['login-history'] as const,
+  list: (page: number) => ['login-history', page] as const,
+} as const;
+
+// ── Team ─────────────────────────────────────────────────────────────────────
+
+export const teamKeys = {
+  all: ['team'] as const,
+} as const;
+
+// ── E-Signature ───────────────────────────────────────────────────────────────
+
+export const signatureRequestKeys = {
+  list: (leaseContractId: string) => ['signature-requests', leaseContractId] as const,
+} as const;
+
+// ── Ad Form ───────────────────────────────────────────────────────────────────────
 
 export const adFormKeys = {
   cities: (input: string) => ['ad-form-cities', input] as const,

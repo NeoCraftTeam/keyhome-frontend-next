@@ -1,5 +1,6 @@
 'use client';
 
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ownerService, type Expense, type ExpensePayload } from '@/services/owner.service';
 import {
   AccountBalance as AccountBalanceIcon,
@@ -130,6 +131,12 @@ export default function OwnerFinancialsPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+      <PageBreadcrumbs
+        items={[
+          { label: 'Tableau de bord', href: '/owner/dashboard' },
+          { label: 'Finances' },
+        ]}
+      />
       <Typography variant="h4" fontWeight={700} gutterBottom>
         Finances
       </Typography>

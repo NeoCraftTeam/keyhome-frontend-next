@@ -1,5 +1,6 @@
 'use client';
 
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ownerService, type Tenant, type TenantPayload } from '@/services/owner.service';
 import {
   Add as AddIcon,
@@ -141,6 +142,12 @@ export default function OwnerTenantsPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+      <PageBreadcrumbs
+        items={[
+          { label: 'Tableau de bord', href: '/owner/dashboard' },
+          { label: 'Mes locataires' },
+        ]}
+      />
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
         <Typography variant="h4" fontWeight={700}>
           Locataires

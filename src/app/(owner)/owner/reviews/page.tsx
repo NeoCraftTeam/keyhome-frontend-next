@@ -1,5 +1,6 @@
 'use client';
 
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ownerService, type OwnerReview } from '@/services/owner.service';
 import { Star as StarIcon } from '@mui/icons-material';
 import {
@@ -56,6 +57,12 @@ export default function OwnerReviewsPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+      <PageBreadcrumbs
+        items={[
+          { label: 'Tableau de bord', href: '/owner/dashboard' },
+          { label: 'Avis' },
+        ]}
+      />
       <Typography variant="h4" fontWeight={700} gutterBottom>
         Avis clients
       </Typography>

@@ -1,12 +1,15 @@
 'use client';
 
+import ShareAdButtons from '@/components/owner/ShareAdButtons';
 import OwnerAdCard from '@/components/owner/OwnerAdCard';
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Description as ContractIcon,
   Edit as EditIcon,
   MoreVert as MoreIcon,
+  Share as ShareIcon,
   Visibility as VisibleIcon,
   VisibilityOff as HiddenIcon,
 } from '@mui/icons-material';
@@ -54,6 +57,7 @@ import { City } from '@/types';
 import { AdType } from '@/types';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: 'draft', label: 'Brouillon' },
   { value: 'available', label: 'Disponible' },
   { value: 'reserved', label: 'Réservé' },
   { value: 'rent', label: 'En location' },
@@ -176,6 +180,12 @@ export default function OwnerAdsPage() {
 
   return (
     <Box sx={{ py: { xs: 2, md: 4 } }}>
+      <PageBreadcrumbs
+        items={[
+          { label: 'Tableau de bord', href: '/owner/dashboard' },
+          { label: 'Mes annonces' },
+        ]}
+      />
       <Box
         sx={{
           display: 'flex',
@@ -474,7 +484,7 @@ export default function OwnerAdsPage() {
                         </TableCell>
                         <TableCell>
                           <Chip
-                            label={ad.status_label || ad.status}
+                            label={ad.status === AdStatus.DRAFT ? 'Brouillon' : (ad.status_label || ad.status)}
                             size="small"
                             color={
                               ad.status === AdStatus.AVAILABLE
@@ -483,7 +493,9 @@ export default function OwnerAdsPage() {
                                   ? 'warning'
                                   : ad.status === AdStatus.RENT || ad.status === AdStatus.SOLD
                                     ? 'info'
-                                    : 'default'
+                                    : ad.status === AdStatus.DRAFT
+                                      ? 'secondary'
+                                      : 'default'
                             }
                             sx={{ fontWeight: 600 }}
                           />
@@ -547,7 +559,7 @@ export default function OwnerAdsPage() {
               }}
             >
               <EditIcon fontSize="small" sx={{ mr: 1 }} />
-              Modifier
+              {selectedAd.status === AdStatus.DRAFT ? "Continuer l'édition" : 'Modifier'}
             </MenuItem>
             <MenuItem
               onClick={() => {
@@ -620,6 +632,9 @@ export default function OwnerAdsPage() {
               <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
               Supprimer
             </MenuItem>
+            <Box sx={{ px: 2, py: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+              <ShareAdButtons adTitle={selectedAd.title} adUrl={`/annonces/${selectedAd.slug || selectedAd.id}`} />
+            </Box>
           </>
         )}
       </Menu>

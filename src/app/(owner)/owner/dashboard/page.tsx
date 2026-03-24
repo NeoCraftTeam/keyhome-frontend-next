@@ -3,6 +3,7 @@
 import DashboardHeroStatCard from '@/components/owner/dashboard/DashboardHeroStatCard';
 import OwnerTopAdsTable from '@/components/owner/dashboard/OwnerTopAdsTable';
 import OwnerViewsFavoritesAreaChart from '@/components/owner/dashboard/OwnerViewsFavoritesAreaChart';
+import ProfileCompletionCard from '@/components/owner/dashboard/ProfileCompletionCard';
 import {
   extractMetricSeries,
   mergeViewsAndFavoritesSeries,
@@ -16,6 +17,7 @@ import { useGreeting } from '@/hooks/useGreeting';
 import {
   CalendarMonth as CalendarIcon,
   CheckCircle as CheckIcon,
+  Download as DownloadIcon,
   Favorite as FavoriteIcon,
   BarChart as EngagementIcon,
   Home as HomeIcon,
@@ -42,7 +44,7 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Ad } from '@/types';
 import { brand } from '@/theme/tokens';
 
@@ -50,6 +52,14 @@ const TEAL = '#14b8a6';
 const BLUE = '#3b82f6';
 const ROSE = '#ef4444';
 type AnalyticsPeriod = '7d' | '30d' | '90d';
+const PREV_PERIOD: Record<AnalyticsPeriod, AnalyticsPeriod> = { '7d': '30d', '30d': '90d', '90d': '90d' };
+
+function pctChange(current: number, previous: number): number | null {
+  if (previous === 0) {
+    return current > 0 ? 100 : null;
+  }
+  return ((current - previous) / previous) * 100;
+}
 
 function formatDate(s: string) {
   try {
@@ -111,6 +121,12 @@ export default function OwnerDashboardPage() {
     queryFn: () => ownerService.getAnalytics(period),
   });
 
+  const { data: prevAnalyticsData } = useQuery({
+    queryKey: ['owner-analytics', PREV_PERIOD[period]],
+    queryFn: () => ownerService.getAnalytics(PREV_PERIOD[period]),
+    enabled: PREV_PERIOD[period] !== period,
+  });
+
   const { data: adsCountData, isLoading: adsCountLoading } = useQuery({
     queryKey: ['owner-ads-total'],
     queryFn: () => ownerService.getMyAds({ page: 1, per_page: 1 }),
@@ -157,6 +173,28 @@ export default function OwnerDashboardPage() {
   const engagementRate = analytics?.totals?.engagement_rate ?? 0;
   const engagementSubtitle =
     engagementRate < 1 ? 'Engagement faible' : engagementRate < 4 ? 'Engagement modéré' : 'Bon engagement';
+
+  const prevAnalytics = prevAnalyticsData as OwnerAnalyticsOverview | undefined;
+  const viewsChange = prevAnalytics ? pctChange(analytics?.totals?.views ?? 0, prevAnalytics.totals.views) : null;
+  const favoritesChange = prevAnalytics ? pctChange(analytics?.totals?.favorites ?? 0, prevAnalytics.totals.favorites) : null;
+  const engagementChange = prevAnalytics ? pctChange(engagementRate, prevAnalytics.totals.engagement_rate) : null;
+
+  const handleExportCSV = useCallback(() => {
+    if (!analytics?.top_ads?.length) {
+      return;
+    }
+    const header = 'Annonce,Vues,Favoris,Déverrouillages,Taux de conversion\n';
+    const rows = analytics.top_ads
+      .map((a) => `"${a.title.replace(/"/g, '""')}",${a.views},${a.favorites},${a.unlocks},${(a.conversion_rate ?? 0).toFixed(1)}%`)
+      .join('\n');
+    const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `analytics-${period}-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [analytics, period]);
 
   return (
     <>
@@ -269,6 +307,7 @@ export default function OwnerDashboardPage() {
             accentColor={TEAL}
             sparklineData={viewsSpark.length ? viewsSpark : Array(chartDays).fill(0)}
             loading={analyticsLoading}
+            change={viewsChange}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -280,6 +319,7 @@ export default function OwnerDashboardPage() {
             accentColor={ROSE}
             sparklineData={favoritesSpark.length ? favoritesSpark : Array(chartDays).fill(0)}
             loading={analyticsLoading}
+            change={favoritesChange}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -291,6 +331,7 @@ export default function OwnerDashboardPage() {
             accentColor={BLUE}
             sparklineData={engagementSpark.length ? engagementSpark : Array(chartDays).fill(0)}
             loading={analyticsLoading}
+            change={engagementChange}
           />
         </Grid>
       </Grid>
@@ -307,9 +348,20 @@ export default function OwnerDashboardPage() {
         }}
       >
         <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
-          <Typography variant="h6" fontWeight={800} sx={{ mb: 2 }}>
-            Vues sur mes annonces
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" fontWeight={800}>
+              Vues sur mes annonces
+            </Typography>
+            <Button
+              size="small"
+              startIcon={<DownloadIcon />}
+              onClick={handleExportCSV}
+              disabled={!analytics?.top_ads?.length}
+              sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+            >
+              CSV
+            </Button>
+          </Box>
           {analyticsLoading ? (
             <Skeleton
               variant="rectangular"
@@ -320,6 +372,9 @@ export default function OwnerDashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* ═══ Profile completion widget ═══ */}
+      <ProfileCompletionCard />
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 6 }}>

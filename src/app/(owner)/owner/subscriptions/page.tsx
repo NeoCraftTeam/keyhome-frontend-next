@@ -1,5 +1,6 @@
 'use client';
 
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { subscriptionsService, type SubscriptionPlan } from '@/services/subscriptions.service';
 import {
   CalendarMonth as CalendarIcon,
@@ -45,6 +46,7 @@ export default function OwnerSubscriptionsPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
+      <PageBreadcrumbs items={[{ label: 'Tableau de bord', href: '/owner/dashboard' }, { label: 'Abonnements' }]} />
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight={700} gutterBottom>

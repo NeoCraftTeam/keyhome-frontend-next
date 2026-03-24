@@ -1,5 +1,6 @@
 'use client';
 
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ownerService, type OwnerViewingReservation } from '@/services/owner.service';
 import {
   CalendarMonth as CalendarIcon,
@@ -179,6 +180,12 @@ export default function OwnerViewingsPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
+      <PageBreadcrumbs
+        items={[
+          { label: 'Tableau de bord', href: '/owner/dashboard' },
+          { label: 'Visites' },
+        ]}
+      />
       {/* Header */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}

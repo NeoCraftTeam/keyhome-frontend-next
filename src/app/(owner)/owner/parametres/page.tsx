@@ -1,6 +1,7 @@
 'use client';
 
 import OwnerPushNotificationCard from '@/components/owner/OwnerPushNotificationCard';
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ownerService, type NotificationPreferences } from '@/services/owner.service';
 import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
@@ -61,6 +62,21 @@ export default function OwnerParametresPage() {
   const queryClient = useQueryClient();
   const [prefSnackbar, setPrefSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
 
+  const [automations, setAutomations] = useState<Record<string, boolean>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      return JSON.parse(localStorage.getItem('kh_automations') ?? '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleAutomation = (key: string, value: boolean): void => {
+    const next = { ...automations, [key]: value };
+    setAutomations(next);
+    localStorage.setItem('kh_automations', JSON.stringify(next));
+  };
+
   const { data: notifPrefs, isLoading: prefsLoading } = useQuery({
     queryKey: ['notification-preferences'],
     queryFn: () => ownerService.getNotificationPreferences(),
@@ -89,6 +105,7 @@ export default function OwnerParametresPage() {
 
   return (
     <Container maxWidth="sm" sx={{ py: { xs: 2, md: 4 } }}>
+      <PageBreadcrumbs items={[{ label: 'Tableau de bord', href: '/owner/dashboard' }, { label: 'Paramètres' }]} />
       <Typography variant="h4" fontWeight={700} gutterBottom>
         Paramètres
       </Typography>
@@ -183,6 +200,54 @@ export default function OwnerParametresPage() {
               ))}
             </Box>
           )}
+        </CardContent>
+      </Card>
+
+      <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', mt: 2 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <Typography variant="subtitle1" fontWeight={700}>
+              Automatisations
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                px: 1,
+                py: 0.25,
+                borderRadius: 1,
+                bgcolor: 'warning.main',
+                color: 'warning.contrastText',
+                fontWeight: 700,
+                fontSize: '0.65rem',
+              }}
+            >
+              BÊTA
+            </Typography>
+          </Box>
+          <List disablePadding>
+            {([
+              { key: 'auto_hide_stale_ads', label: 'Masquer les annonces sans activité depuis 30 jours', defaultOn: false },
+              { key: 'auto_thankyou_after_visit', label: 'Envoyer un message de remerciement après une visite', defaultOn: true },
+              { key: 'monthly_email_report', label: 'Recevoir un rapport mensuel par email', defaultOn: true },
+            ] as { key: string; label: string; defaultOn: boolean }[]).map((item) => (
+              <Box
+                key={item.key}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  py: 0.75,
+                }}
+              >
+                <Typography variant="body2">{item.label}</Typography>
+                <Switch
+                  checked={automations[item.key] ?? item.defaultOn}
+                  onChange={(e) => toggleAutomation(item.key, e.target.checked)}
+                  size="small"
+                />
+              </Box>
+            ))}
+          </List>
         </CardContent>
       </Card>
 

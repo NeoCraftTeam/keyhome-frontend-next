@@ -2,6 +2,7 @@
 
 import PaymentHistoryTable from '@/components/payment/PaymentHistoryTable';
 import FadeIn from '@/components/ui/FadeIn';
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import PhoneField from '@/components/ui/PhoneField';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -249,6 +250,7 @@ export default function OwnerProfilePage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
+      <PageBreadcrumbs items={[{ label: 'Tableau de bord', href: '/owner/dashboard' }, { label: 'Mon profil' }]} />
       {/* En-tête — aligné sur le profil client */}
       <FadeIn delay={0.1} direction="up">
         <Paper
