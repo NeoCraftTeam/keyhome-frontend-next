@@ -36,9 +36,8 @@ function buildCsp(nonce: string): string {
     backendOrigin = apiOrigin;
   }
 
-  const clerkFrontendApiUrl = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_live_')
-    ? 'https://clerk.neocraft.dev'
-    : 'https://*.clerk.accounts.dev';
+  const isLiveClerk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_live_') ?? false;
+  const clerkScriptHost = isLiveClerk ? 'https://clerk.neocraft.dev' : '';
 
   const isDev = process.env.NODE_ENV === 'development';
 
@@ -52,6 +51,7 @@ function buildCsp(nonce: string): string {
     'https://*.tiles.mapbox.com',
     // Clerk
     'https://*.clerk.accounts.dev',
+    clerkScriptHost,
     'https://*.clerk.com',
     'https://clerk.shared.global',
     'https://clerk-telemetry.com',
@@ -75,10 +75,15 @@ function buildCsp(nonce: string): string {
     .filter((v, i, a) => a.indexOf(v) === i)
     .join(' ');
 
+  // Avoid 'strict-dynamic' in production: in CSP3 it disables host-based script-src
+  // allowlists, which blocks Clerk's FAPI script (e.g. clerk.neocraft.dev) in Firefox
+  // even when *.neocraft.dev is listed. Nonce still gates inline / hydration scripts.
+  const scriptSrcEvalOrStrict = isDev ? "'unsafe-eval'" : '';
+
   const directives = [
     "default-src 'self'",
-    // script-src: nonce gated; wildcards for Clerk, Mapbox and app domains
-    `script-src 'self' 'nonce-${nonce}' ${isDev ? "'unsafe-eval'" : "'strict-dynamic'"} https://api.mapbox.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://*.keyhome.app https://*.neocraft.dev blob:`,
+    // script-src: nonce + explicit third-party origins (Clerk live host when pk_live_)
+    `script-src 'self' 'nonce-${nonce}'${scriptSrcEvalOrStrict ? ` ${scriptSrcEvalOrStrict}` : ''} https://api.mapbox.com https://*.clerk.accounts.dev${clerkScriptHost ? ` ${clerkScriptHost}` : ''} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://*.keyhome.app https://*.neocraft.dev blob:`,
     // style-src: unsafe-inline needed for MUI emotion; app domains added
     `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://*.keyhome.app https://*.neocraft.dev`,
     `font-src 'self' https://fonts.gstatic.com https://ray.st https://*.keyhome.app https://*.neocraft.dev`,
