@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import type { Viewport } from 'next';
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import { headers } from 'next/headers';
@@ -176,6 +177,7 @@ export default async function RootLayout({
             <PWAInstallPrompt />
             <NetworkStatus />
             <CookieBanner />
+            <SpeedInsights />
           </Providers>
         </body>
       </html>
