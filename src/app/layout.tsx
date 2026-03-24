@@ -14,6 +14,7 @@ import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
 import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import NetworkStatus from '@/components/pwa/NetworkStatus';
 import CookieBanner from '@/components/ui/CookieBanner';
+import { getClerkPreconnectOrigin } from '@/lib/clerk-frontend-origins';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -143,6 +144,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const nonce = (await headers()).get('x-nonce') ?? '';
+  const clerkOrigin = getClerkPreconnectOrigin();
 
   return (
     <ClerkProvider
@@ -164,9 +166,13 @@ export default async function RootLayout({
             }}
           />
           <link rel="preconnect" href="https://api.mapbox.com" />
-          <link rel="preconnect" href="https://clerk.keyhome.app" />
+          {clerkOrigin ? (
+            <>
+              <link rel="preconnect" href={clerkOrigin} />
+              <link rel="dns-prefetch" href={clerkOrigin} />
+            </>
+          ) : null}
           <link rel="dns-prefetch" href="https://api.mapbox.com" />
-          <link rel="dns-prefetch" href="https://clerk.keyhome.app" />
           <JsonLd />
         </head>
         <body className={`${inter.variable} ${jakarta.variable} antialiased`}>
