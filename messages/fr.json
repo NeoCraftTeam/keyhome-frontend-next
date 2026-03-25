@@ -1,0 +1,203 @@
+{
+  "common": {
+    "appName": "KeyHome",
+    "currency": "XAF",
+    "loading": "Chargement…",
+    "error": "Une erreur est survenue. Veuillez réessayer.",
+    "retry": "Réessayer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "sort": "Trier",
+    "all": "Tous",
+    "none": "Aucun",
+    "yes": "Oui",
+    "no": "Non",
+    "or": "ou",
+    "and": "et",
+    "from": "De",
+    "to": "À",
+    "of": "sur",
+    "perPage": "par page",
+    "page": "Page",
+    "results": "{count, plural, =0 {Aucun résultat} =1 {1 résultat} other {{count} résultats}}",
+    "noResults": "Aucun résultat trouvé.",
+    "support": "Contacter le support"
+  },
+
+  "auth": {
+    "login": "Se connecter",
+    "logout": "Se déconnecter",
+    "register": "Créer un compte",
+    "email": "Adresse email",
+    "password": "Mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "continueWith": "Continuer avec",
+    "alreadyHaveAccount": "Déjà un compte ?",
+    "noAccount": "Pas encore de compte ?",
+    "authExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+    "loginRequired": "Vous devez être connecté pour accéder à cette page."
+  },
+
+  "navigation": {
+    "home": "Accueil",
+    "search": "Rechercher",
+    "favorites": "Favoris",
+    "notifications": "Notifications",
+    "profile": "Mon profil",
+    "messages": "Messages",
+    "searchAlerts": "Alertes de recherche",
+    "unlockedAds": "Annonces débloquées",
+    "myReservations": "Mes visites"
+  },
+
+  "ads": {
+    "title": "Annonces",
+    "newAd": "Nouvelle annonce",
+    "myAds": "Mes annonces",
+    "status": {
+      "draft": "Brouillon",
+      "available": "Disponible",
+      "reserved": "Réservé",
+      "rent": "En location",
+      "pending": "En attente",
+      "sold": "Vendu",
+      "declined": "Refusé"
+    },
+    "bedrooms": "{count, plural, =1 {1 chambre} other {{count} chambres}}",
+    "bathrooms": "{count, plural, =1 {1 salle de bain} other {{count} salles de bain}}",
+    "surface": "{value} m²",
+    "parking": "Parking",
+    "verified": "Vérifié",
+    "boosted": "Mis en avant",
+    "unlockCost": "Débloquer ({cost} pts)",
+    "alreadyUnlocked": "Débloqué",
+    "viewDetails": "Voir les détails",
+    "shareAd": "Partager l'annonce",
+    "reportAd": "Signaler",
+    "addFavorite": "Ajouter aux favoris",
+    "removeFavorite": "Retirer des favoris",
+    "has3dTour": "Visite virtuelle 3D",
+    "noAdsFound": "Aucune annonce ne correspond à vos critères.",
+    "deleteConfirm": "Supprimer cette annonce ?",
+    "deleteConfirmBody": "L'annonce \"{title}\" sera définitivement supprimée. Cette action est irréversible.",
+    "deleteSuccess": "Annonce supprimée avec succès.",
+    "visibilityOn": "Visible",
+    "visibilityOff": "Masquée"
+  },
+
+  "owner": {
+    "dashboard": "Tableau de bord",
+    "ads": "Mes annonces",
+    "leaseContracts": "Contrats de bail",
+    "financials": "Finances",
+    "viewings": "Visites",
+    "profile": "Mon profil bailleur",
+    "subscription": "Abonnement",
+    "analytics": {
+      "totalViews": "Vues totales",
+      "totalInquiries": "Contacts reçus",
+      "activeAds": "Annonces actives",
+      "pendingViewings": "Visites en attente"
+    },
+    "profileCompletion": "Complétion du profil",
+    "profileCompletionTip": "Complétez votre profil pour inspirer confiance aux locataires."
+  },
+
+  "search": {
+    "placeholder": "Ville, quartier, type de bien…",
+    "city": "Ville",
+    "quarter": "Quartier",
+    "type": "Type de bien",
+    "priceMin": "Prix min",
+    "priceMax": "Prix max",
+    "surfaceMin": "Surface min",
+    "surfaceMax": "Surface max",
+    "bedrooms": "Chambres",
+    "bathrooms": "Salles de bain",
+    "hasParking": "Avec parking",
+    "has3dTour": "Visite 3D",
+    "isVerified": "Annonces vérifiées",
+    "nearby": "Près de moi",
+    "sortBy": "Trier par",
+    "sortOptions": {
+      "relevance": "Pertinence",
+      "priceAsc": "Prix croissant",
+      "priceDesc": "Prix décroissant",
+      "newest": "Plus récents",
+      "surface": "Surface"
+    }
+  },
+
+  "notifications": {
+    "title": "Notifications",
+    "all": "Toutes",
+    "unread": "Non lues",
+    "markAllRead": "Tout marquer comme lu",
+    "markRead": "Marquer comme lu",
+    "delete": "Supprimer",
+    "noNotifications": "Vous n'avez aucune notification.",
+    "noUnread": "Aucune notification non lue."
+  },
+
+  "searchAlerts": {
+    "title": "Alertes de recherche",
+    "create": "Créer une alerte",
+    "edit": "Modifier l'alerte",
+    "delete": "Supprimer l'alerte",
+    "active": "Active",
+    "inactive": "Inactive",
+    "noAlerts": "Vous n'avez pas encore d'alerte de recherche.",
+    "maxReached": "Vous avez atteint le maximum de {max} alertes.",
+    "deleteConfirm": "Supprimer cette alerte de recherche ?"
+  },
+
+  "reservations": {
+    "book": "Réserver une visite",
+    "date": "Date",
+    "time": "Heure",
+    "message": "Message (optionnel)",
+    "confirm": "Confirmer la visite",
+    "cancel": "Annuler la visite",
+    "status": {
+      "pending": "En attente",
+      "confirmed": "Confirmée",
+      "cancelled": "Annulée",
+      "expired": "Expirée"
+    }
+  },
+
+  "errors": {
+    "network": "Impossible de joindre le serveur. Vérifiez votre connexion.",
+    "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action.",
+    "notFound": "La ressource demandée est introuvable.",
+    "serverError": "Erreur serveur. Veuillez réessayer plus tard.",
+    "rateLimited": "Trop de requêtes. Veuillez patienter avant de réessayer.",
+    "rateLimitedRetry": "Trop de requêtes. Réessayez dans {seconds} secondes.",
+    "validationFailed": "Veuillez corriger les erreurs dans le formulaire.",
+    "boundary": "Quelque chose s'est mal passé",
+    "boundaryDescription": "Une erreur inattendue est survenue. Veuillez réessayer ou recharger la page.",
+    "reload": "Recharger la page"
+  },
+
+  "payments": {
+    "unlock": "Débloquer",
+    "unlocking": "Déverrouillage…",
+    "insufficientPoints": "Crédits insuffisants",
+    "buyCredits": "Acheter des crédits",
+    "pointBalance": "{count} pts",
+    "methods": {
+      "mobileMoney": "Mobile Money",
+      "orangeMoney": "Orange Money",
+      "card": "Carte bancaire"
+    }
+  }
+}

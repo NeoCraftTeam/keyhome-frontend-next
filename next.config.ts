@@ -1,5 +1,8 @@
 import { withSentryConfig } from '@sentry/nextjs';
+import createNextIntlPlugin from 'next-intl/plugin';
 import type { NextConfig } from 'next';
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 // Allow Next.js rewrites to reach local Valet HTTPS (self-signed certs) in dev.
 if (process.env.NODE_ENV === 'development') {
@@ -237,7 +240,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+export default withSentryConfig(withNextIntl(nextConfig), {
   // Only upload source maps when SENTRY_AUTH_TOKEN is set (CI/CD)
   silent: !process.env.SENTRY_AUTH_TOKEN,
 
