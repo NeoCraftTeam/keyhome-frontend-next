@@ -18,11 +18,16 @@ export interface SearchParams {
   type?: string;
   quarter?: string;
   bedrooms?: number;
+  bathrooms?: number;
   price_min?: number;
   price_max?: number;
   surface_min?: number;
   surface_max?: number;
   has_parking?: boolean;
+  has_3d_tour?: boolean;
+  is_verified?: boolean;
+  latitude?: number;
+  longitude?: number;
   sort?: string;
   order?: 'asc' | 'desc';
   page?: number;

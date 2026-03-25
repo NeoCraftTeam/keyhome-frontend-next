@@ -11,16 +11,23 @@ import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
 import { escapeHtml } from '@/lib/sanitize';
 import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
-import { AdType, City, SearchParams } from '@/types';
+import { AdType, City, FacetsResponse, SearchParams } from '@/types';
 import {
   Close as CloseIcon,
+  History as HistoryIcon,
+  Layers as LayersIcon,
   List as ListIcon,
   Map as MapIcon,
   Search as SearchIcon,
   SearchOff as SearchOffIcon,
   Tune as TuneIcon,
+  Verified as VerifiedIcon,
+  ViewInAr as ViewInArIcon,
+  Whatshot as WhatshotIcon,
   WifiOff as WifiOffIcon,
 } from '@mui/icons-material';
+import { useSearchHistory } from '@/hooks/useSearchHistory';
+import { propertyAttributesService } from '@/services/property-attributes.service';
 import {
   Autocomplete,
   Box,
@@ -40,6 +47,7 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -89,10 +97,12 @@ function SearchContent() {
   const theme = useTheme();
   const { slotProps: citySlotProps, renderOption: renderCityOption, renderOptionFreeSolo, inputSx: cityInputSx } = useCityAutocompleteConfig();
   const { isAuthenticated } = useAuth();
+  const { history: searchHistory, addSearch, removeSearch, clearHistory } = useSearchHistory();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const popupRef = useRef<mapboxgl.Popup | null>(null);
 
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
@@ -107,9 +117,28 @@ function SearchContent() {
   const [bedrooms, setBedrooms] = useState<number | undefined>();
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]);
   const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 1000]);
+  const [bathrooms, setBathrooms] = useState<number | undefined>();
   const [hasParking, setHasParking] = useState(false);
+  const [has3dTour, setHas3dTour] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [mapStyle, setMapStyle] = useState<'streets' | 'satellite' | 'dark'>('streets');
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const [sortAnchor, setSortAnchor] = useState<null | HTMLElement>(null);
+
+  // Request geolocation when distance sort is selected
+  useEffect(() => {
+    if (sortBy === '_geoPoint' && !userLocation && typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => { /* fallback: revert sort if denied */ setSortBy('created_at'); setSortOrder('desc'); },
+        { enableHighAccuracy: false, timeout: 8000 }
+      );
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy]);
 
   // Sync URL params on mount and navigation
   useEffect(() => {
@@ -163,6 +192,18 @@ function SearchContent() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: propertyAttributes } = useQuery({
+    queryKey: ['property-attributes-grouped'],
+    queryFn: () => propertyAttributesService.list(),
+    staleTime: 30 * 60 * 1000,
+  });
+
+  const { data: facets } = useQuery<FacetsResponse>({
+    queryKey: ['facets'],
+    queryFn: () => adsService.facets(),
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Auto-select city from URL param when cities load
   useEffect(() => {
     const urlCity = searchParams.get('city') || '';
@@ -197,11 +238,17 @@ function SearchContent() {
     city: selectedCity?.name || undefined,
     type: selectedType?.name || undefined,
     bedrooms: bedrooms || undefined,
+    bathrooms: bathrooms || undefined,
     price_min: priceRange[0] > 0 ? priceRange[0] : undefined,
     price_max: priceRange[1] < 5000000 ? priceRange[1] : undefined,
     surface_min: surfaceRange[0] > 0 ? surfaceRange[0] : undefined,
     surface_max: surfaceRange[1] < 1000 ? surfaceRange[1] : undefined,
     has_parking: hasParking || undefined,
+    has_3d_tour: has3dTour || undefined,
+    is_verified: isVerified || undefined,
+    attributes: selectedAmenities.length > 0 ? selectedAmenities : undefined,
+    latitude: sortBy === '_geoPoint' && userLocation ? userLocation.lat : undefined,
+    longitude: sortBy === '_geoPoint' && userLocation ? userLocation.lng : undefined,
     sort: sortBy,
     order: sortOrder,
     page,
@@ -209,14 +256,14 @@ function SearchContent() {
   });
 
   const { data, isLoading, isFetching, isError, refetch } = useQuery({
-    queryKey: ['search', query, selectedCity?.id, selectedType?.id, bedrooms, priceRange, surfaceRange, hasParking, sortBy, sortOrder, page],
+    queryKey: ['search', query, selectedCity?.id, selectedType?.id, bedrooms, bathrooms, priceRange, surfaceRange, hasParking, has3dTour, isVerified, selectedAmenities, sortBy, sortOrder, page, userLocation?.lat, userLocation?.lng],
     queryFn: () => adsService.search(buildParams()),
     placeholderData: keepPreviousData,
     staleTime: 60 * 1000,
   });
 
   const { data: allAdsData } = useQuery({
-    queryKey: ['search-map-all', query, selectedCity?.id, selectedType?.id, bedrooms, priceRange, surfaceRange, hasParking],
+    queryKey: ['search-map-all', query, selectedCity?.id, selectedType?.id, bedrooms, bathrooms, priceRange, surfaceRange, hasParking, has3dTour, isVerified, selectedAmenities, userLocation?.lat, userLocation?.lng],
     queryFn: () => adsService.search({ ...buildParams(), page: 1, per_page: 200 }),
     staleTime: 2 * 60 * 1000,
     enabled: !isMobile || mobileViewMode === 'map',
@@ -227,91 +274,243 @@ function SearchContent() {
   const totalPages = data?.meta?.last_page || 1;
   const total = data?.meta?.total || 0;
 
+  const mapStyleUrl = mapStyle === 'satellite'
+    ? 'mapbox://styles/mapbox/satellite-streets-v12'
+    : mapStyle === 'dark'
+      ? 'mapbox://styles/mapbox/dark-v11'
+      : 'mapbox://styles/mapbox/streets-v12';
+
   useEffect(() => {
     const showMap = !isMobile || mobileViewMode === 'map';
-    if (!showMap || !mapContainerRef.current || !MAPBOX_TOKEN || mapRef.current) return;
+    if (!showMap || !mapContainerRef.current || !MAPBOX_TOKEN) return;
+
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style: mapStyleUrl,
       center: [DEFAULT_CENTER[1], DEFAULT_CENTER[0]],
       zoom: 11,
       attributionControl: false,
     });
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
     mapRef.current = map;
 
     return () => { map.remove(); mapRef.current = null; };
-  }, [isMobile, mobileViewMode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile, mobileViewMode, mapStyleUrl]);
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    const map = mapRef.current;
+    if (!map) return;
 
+    // Remove old individual markers (legacy cleanup)
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
+    if (popupRef.current) { popupRef.current.remove(); popupRef.current = null; }
 
-    const bounds = new mapboxgl.LngLatBounds();
-    let hasGeo = false;
+    const primaryColor = theme.palette.primary.main;
 
-    mapAds.forEach((ad) => {
-      if (!ad.location) return;
-      hasGeo = true;
+    // Build GeoJSON from ads
+    const features: GeoJSON.Feature[] = mapAds
+      .filter((ad) => ad.location)
+      .map((ad) => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [ad.location!.longitude, ad.location!.latitude] },
+        properties: {
+          id: ad.id,
+          title: ad.title,
+          slug: ad.slug,
+          price: ad.price,
+          thumb: ad.images?.[0]?.thumb || ad.images?.[0]?.url || '/placeholder-house.jpg',
+          rating: ad.rating || 0,
+          quarter: ad.quarter?.name || '',
+          city: ad.quarter?.city_name || '',
+        },
+      }));
 
-      const thumbUrl = ad.images?.[0]?.thumb || ad.images?.[0]?.url || '/placeholder-house.jpg';
-      const adUrl = `/ads/${encodeURIComponent(String(ad.id))}/${encodeURIComponent(ad.slug)}`;
+    const geojson: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features };
 
-      // SVG star icon (no emoji — works in all browsers)
-      const starSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`;
-      const locationSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="#94a3b8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+    const setupLayers = () => {
+      // Remove old source/layers if they exist (heatmap first — it has no dependent layers)
+      if (map.getLayer('price-heatmap')) map.removeLayer('price-heatmap');
+      if (map.getSource('search-ads-heatmap')) map.removeSource('search-ads-heatmap');
+      if (map.getLayer('unclustered-point')) map.removeLayer('unclustered-point');
+      if (map.getLayer('cluster-count')) map.removeLayer('cluster-count');
+      if (map.getLayer('clusters')) map.removeLayer('clusters');
+      if (map.getSource('search-ads')) map.removeSource('search-ads');
 
-      const ratingHtml = ad.rating
-        ? `<div style="display:flex;align-items:center;gap:3px;margin-top:3px">${starSvg}<span style="font-size:11px;font-weight:700;color:#334155">${ad.rating.toFixed(1)}</span></div>`
-        : '';
-      const locationName = [ad.quarter?.name, ad.quarter?.city_name].filter(Boolean).join(', ');
-      const locationHtml = locationName
-        ? `<div style="display:flex;align-items:center;gap:3px;margin-top:3px">${locationSvg}<span style="font-size:10px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${escapeHtml(locationName)}</span></div>`
-        : '';
+      map.addSource('search-ads', {
+        type: 'geojson',
+        data: geojson,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
+      });
 
-      const popup = new mapboxgl.Popup({
-        offset: 28,
-        closeButton: false,
-        maxWidth: '210px',
-        className: 'kh-map-popup',
-      }).setHTML(
-        `<a href="${adUrl}" class="kh-map-popup-card" style="display:block;width:210px;border-radius:14px;overflow:hidden;background:#fff;text-decoration:none;cursor:pointer;">
-          <div style="width:100%;height:140px;overflow:hidden;background:#f1f5f9;position:relative;">
-            <img
-              src="${escapeHtml(thumbUrl)}"
-              alt="${escapeHtml(ad.title)}"
-              class="kh-map-popup-img"
-              style="width:100%;height:100%;object-fit:cover;display:block;"
-              loading="lazy"
-            />
-            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.45) 0%,transparent 100%);height:48px;"></div>
-            <div style="position:absolute;bottom:8px;left:10px;font-size:13px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.5);">${formatPrice(ad.price)}</div>
-          </div>
-          <div style="padding:8px 10px 10px;">
-            <div style="font-size:12px;font-weight:700;color:#0f172a;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:2px;">${escapeHtml(ad.title)}</div>
-            ${locationHtml}
-            ${ratingHtml}
-          </div>
-        </a>`
-      );
+      // Cluster circles
+      map.addLayer({
+        id: 'clusters',
+        type: 'circle',
+        source: 'search-ads',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': [
+            'step', ['get', 'point_count'],
+            primaryColor, 10,
+            '#e53935', 30,
+            '#b71c1c',
+          ],
+          'circle-radius': ['step', ['get', 'point_count'], 18, 10, 24, 30, 32],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff',
+        },
+      });
 
-      const marker = new mapboxgl.Marker({ color: theme.palette.primary.main })
-        .setPopup(popup)
-        .setLngLat([ad.location.longitude, ad.location.latitude])
-        .addTo(mapRef.current!);
+      // Cluster count labels
+      map.addLayer({
+        id: 'cluster-count',
+        type: 'symbol',
+        source: 'search-ads',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+          'text-size': 13,
+        },
+        paint: { 'text-color': '#ffffff' },
+      });
 
-      markersRef.current.push(marker);
-      bounds.extend([ad.location.longitude, ad.location.latitude]);
-    });
+      // Individual (unclustered) points
+      map.addLayer({
+        id: 'unclustered-point',
+        type: 'circle',
+        source: 'search-ads',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': primaryColor,
+          'circle-radius': 8,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff',
+        },
+      });
 
-    if (hasGeo) {
-      mapRef.current.fitBounds(bounds, { padding: 50, maxZoom: 14 });
+      // Heatmap layer (initially hidden)
+      map.addSource('search-ads-heatmap', { type: 'geojson', data: geojson });
+      map.addLayer({
+        id: 'price-heatmap',
+        type: 'heatmap',
+        source: 'search-ads-heatmap',
+        paint: {
+          'heatmap-weight': ['interpolate', ['linear'], ['get', 'price'], 0, 0, 5000000, 1],
+          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 15, 3],
+          'heatmap-color': [
+            'interpolate', ['linear'], ['heatmap-density'],
+            0, 'rgba(33,102,172,0)',
+            0.2, 'rgb(103,169,207)',
+            0.4, 'rgb(209,229,240)',
+            0.6, 'rgb(253,219,199)',
+            0.8, 'rgb(239,138,98)',
+            1, 'rgb(178,24,43)',
+          ],
+          'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 2, 15, 30],
+          'heatmap-opacity': 0.7,
+        },
+        layout: { visibility: 'none' },
+      });
+
+      // Click cluster → zoom in
+      map.on('click', 'clusters', (e) => {
+        const feat = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+        if (!feat.length) return;
+        const clusterId = feat[0].properties?.cluster_id;
+        (map.getSource('search-ads') as mapboxgl.GeoJSONSource).getClusterExpansionZoom(clusterId, (err, zoom) => {
+          if (err || zoom == null) return;
+          map.easeTo({ center: (feat[0].geometry as GeoJSON.Point).coordinates as [number, number], zoom });
+        });
+      });
+
+      // Click individual point → show popup
+      map.on('click', 'unclustered-point', (e) => {
+        const feat = e.features?.[0];
+        if (!feat || feat.geometry.type !== 'Point') return;
+        const props = feat.properties!;
+        const coords = (feat.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
+
+        const adUrl = `/ads/${encodeURIComponent(String(props.id))}/${encodeURIComponent(props.slug)}`;
+        const starSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`;
+        const locationSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="#94a3b8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+        const locName = [props.quarter, props.city].filter(Boolean).join(', ');
+        const ratingHtml = props.rating > 0 ? `<div style="display:flex;align-items:center;gap:3px;margin-top:3px">${starSvg}<span style="font-size:11px;font-weight:700;color:#334155">${Number(props.rating).toFixed(1)}</span></div>` : '';
+        const locationHtml = locName ? `<div style="display:flex;align-items:center;gap:3px;margin-top:3px">${locationSvg}<span style="font-size:10px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${escapeHtml(locName)}</span></div>` : '';
+
+        if (popupRef.current) popupRef.current.remove();
+        popupRef.current = new mapboxgl.Popup({ offset: 14, closeButton: false, maxWidth: '210px', className: 'kh-map-popup' })
+          .setLngLat(coords)
+          .setHTML(
+            `<a href="${adUrl}" class="kh-map-popup-card" style="display:block;width:210px;border-radius:14px;overflow:hidden;background:#fff;text-decoration:none;cursor:pointer;">
+              <div style="width:100%;height:140px;overflow:hidden;background:#f1f5f9;position:relative;">
+                <img src="${escapeHtml(props.thumb)}" alt="${escapeHtml(props.title)}" class="kh-map-popup-img" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" />
+                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.45) 0%,transparent 100%);height:48px;"></div>
+                <div style="position:absolute;bottom:8px;left:10px;font-size:13px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.5);">${formatPrice(props.price)}</div>
+              </div>
+              <div style="padding:8px 10px 10px;">
+                <div style="font-size:12px;font-weight:700;color:#0f172a;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:2px;">${escapeHtml(props.title)}</div>
+                ${locationHtml}
+                ${ratingHtml}
+              </div>
+            </a>`
+          )
+          .addTo(map);
+      });
+
+      // Cursor styles
+      map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = ''; });
+      map.on('mouseenter', 'unclustered-point', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'unclustered-point', () => { map.getCanvas().style.cursor = ''; });
+    };
+
+    if (map.isStyleLoaded()) {
+      setupLayers();
+    } else {
+      map.once('load', setupLayers);
     }
-  }, [mapAds, router]);
+
+    // Fit bounds
+    if (features.length > 0) {
+      const bounds = new mapboxgl.LngLatBounds();
+      features.forEach((f) => {
+        const coords = (f.geometry as GeoJSON.Point).coordinates;
+        bounds.extend(coords as [number, number]);
+      });
+      map.fitBounds(bounds, { padding: 50, maxZoom: 14 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapAds, mapStyleUrl]);
+
+  // Toggle heatmap layer visibility
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    try {
+      if (map.getLayer('price-heatmap')) {
+        map.setLayoutProperty('price-heatmap', 'visibility', showHeatmap ? 'visible' : 'none');
+      }
+      // Hide/show cluster layers when heatmap is on
+      ['clusters', 'cluster-count', 'unclustered-point'].forEach((layerId) => {
+        if (map.getLayer(layerId)) {
+          map.setLayoutProperty(layerId, 'visibility', showHeatmap ? 'none' : 'visible');
+        }
+      });
+    } catch { /* layer not ready yet */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showHeatmap, mapStyleUrl]);
 
   const clearFilters = () => {
     setQuery('');
@@ -322,6 +521,10 @@ function SearchContent() {
     setPriceRange([0, 5000000]);
     setSurfaceRange([0, 1000]);
     setHasParking(false);
+    setHas3dTour(false);
+    setIsVerified(false);
+    setBathrooms(undefined);
+    setSelectedAmenities([]);
     setSortBy('created_at');
     setSortOrder('desc');
     setPage(1);
@@ -331,19 +534,28 @@ function SearchContent() {
     selectedCity,
     selectedType,
     bedrooms,
+    bathrooms,
     priceRange[0] > 0,
     priceRange[1] < 5000000,
     surfaceRange[0] > 0,
     surfaceRange[1] < 1000,
     hasParking,
+    has3dTour,
+    isVerified,
+    ...selectedAmenities,
   ].filter(Boolean).length;
 
   const cities = citiesData?.data || [];
 
   const sortLabel =
-    sortBy === 'price' && sortOrder === 'asc' ? 'Prix ↑'
+    sortBy === 'boost_score' ? 'Pertinence'
+    : sortBy === 'price' && sortOrder === 'asc' ? 'Prix ↑'
     : sortBy === 'price' && sortOrder === 'desc' ? 'Prix ↓'
-    : sortBy === 'surface_area' ? 'Surface'
+    : sortBy === 'surface_area' && sortOrder === 'asc' ? 'Surface ↑'
+    : sortBy === 'surface_area' && sortOrder === 'desc' ? 'Surface ↓'
+    : sortBy === 'reviews_avg_rating' ? 'Mieux notés'
+    : sortBy === '_geoPoint' ? 'Distance'
+    : sortBy === 'views_count' ? 'Populaires'
     : 'Plus récents';
 
   const MoreFiltersDrawer = (
@@ -391,7 +603,10 @@ function SearchContent() {
       <Autocomplete
         size="small"
         options={adTypes || []}
-        getOptionLabel={(opt) => opt.name}
+        getOptionLabel={(opt) => {
+          const fc = facets?.types?.find((t) => t.name.toLowerCase() === opt.name.toLowerCase());
+          return fc ? `${opt.name} (${fc.count})` : opt.name;
+        }}
         value={selectedType}
         onChange={(_, val) => { setSelectedType(val); setPage(1); }}
         noOptionsText="Aucun type"
@@ -415,14 +630,32 @@ function SearchContent() {
 
       <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>Chambres</Typography>
       <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 2.5 }}>
-        {[undefined, 1, 2, 3, 4, 5].map((val) => (
+        {[undefined, 1, 2, 3, 4, 5].map((val) => {
+          const fc = val !== undefined ? facets?.bedrooms?.find((b) => b.value === val) : undefined;
+          const label = val === undefined ? 'Tous' : fc ? `${val}+ (${fc.count})` : `${val}+`;
+          return (
+            <Chip
+              key={val ?? 'all'}
+              label={label}
+              size="small"
+              onClick={() => { setBedrooms(val); setPage(1); }}
+              variant={bedrooms === val ? 'filled' : 'outlined'}
+              sx={bedrooms === val ? { bgcolor: 'primary.main', color: '#fff' } : {}}
+            />
+          );
+        })}
+      </Box>
+
+      <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>Salles de bain</Typography>
+      <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 2.5 }}>
+        {[undefined, 1, 2, 3, 4].map((val) => (
           <Chip
             key={val ?? 'all'}
             label={val === undefined ? 'Tous' : `${val}+`}
             size="small"
-            onClick={() => { setBedrooms(val); setPage(1); }}
-            variant={bedrooms === val ? 'filled' : 'outlined'}
-            sx={bedrooms === val ? { bgcolor: 'primary.main', color: '#fff' } : {}}
+            onClick={() => { setBathrooms(val); setPage(1); }}
+            variant={bathrooms === val ? 'filled' : 'outlined'}
+            sx={bathrooms === val ? { bgcolor: 'primary.main', color: '#fff' } : {}}
           />
         ))}
       </Box>
@@ -439,9 +672,69 @@ function SearchContent() {
 
       <FormControlLabel
         control={<Switch checked={hasParking} onChange={(e) => { setHasParking(e.target.checked); setPage(1); }} />}
-        label="Parking inclus"
+        label={facets?.has_parking ? `Parking inclus (${facets.has_parking.with_parking})` : 'Parking inclus'}
+        sx={{ mb: 1 }}
+      />
+
+      <FormControlLabel
+        control={<Switch checked={has3dTour} onChange={(e) => { setHas3dTour(e.target.checked); setPage(1); }} />}
+        label={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <ViewInArIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+            Visite 3D disponible
+          </Box>
+        }
+        sx={{ mb: 1 }}
+      />
+
+      <FormControlLabel
+        control={<Switch checked={isVerified} onChange={(e) => { setIsVerified(e.target.checked); setPage(1); }} />}
+        label={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <VerifiedIcon sx={{ fontSize: 16, color: 'success.main' }} />
+            Annonce vérifiée
+          </Box>
+        }
         sx={{ mb: 2 }}
       />
+
+      {propertyAttributes?.grouped && propertyAttributes.grouped.length > 0 && (
+        <>
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>
+            Équipements
+          </Typography>
+          {propertyAttributes.grouped.map((group) => (
+            <Box key={group.slug} sx={{ mb: 2 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.75 }}>
+                {group.name}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+                {group.attributes.map((attr) => {
+                  const active = selectedAmenities.includes(attr.value);
+                  return (
+                    <Chip
+                      key={attr.value}
+                      label={attr.label}
+                      size="small"
+                      onClick={() => {
+                        setSelectedAmenities((prev) =>
+                          prev.includes(attr.value)
+                            ? prev.filter((v) => v !== attr.value)
+                            : [...prev, attr.value]
+                        );
+                        setPage(1);
+                      }}
+                      variant={active ? 'filled' : 'outlined'}
+                      sx={active ? { bgcolor: 'primary.main', color: '#fff', fontWeight: 600 } : {}}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
+          ))}
+        </>
+      )}
 
       <Divider sx={{ my: 2 }} />
       <Box sx={{ display: 'flex', gap: 1 }}>
@@ -473,7 +766,7 @@ function SearchContent() {
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, pt: 0.5 }}>
-        <Typography variant="subtitle2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
+        <Typography variant="subtitle2" color="text.secondary" sx={{ fontSize: '0.85rem' }} aria-live="polite" aria-atomic="true">
           {isFetching && !isLoading ? (
             'Mise à jour…'
           ) : (
@@ -501,10 +794,15 @@ function SearchContent() {
         </Button>
         <Menu anchorEl={sortAnchor} open={Boolean(sortAnchor)} onClose={() => setSortAnchor(null)}>
           {[
+            { label: 'Pertinence', sb: 'boost_score', so: 'desc' },
             { label: 'Plus récents', sb: 'created_at', so: 'desc' },
             { label: 'Prix croissant', sb: 'price', so: 'asc' },
             { label: 'Prix décroissant', sb: 'price', so: 'desc' },
             { label: 'Surface croissante', sb: 'surface_area', so: 'asc' },
+            { label: 'Surface décroissante', sb: 'surface_area', so: 'desc' },
+            { label: 'Mieux notés', sb: 'reviews_avg_rating', so: 'desc' },
+            { label: 'Populaires', sb: 'views_count', so: 'desc' },
+            { label: 'Distance', sb: '_geoPoint', so: 'asc' },
           ].map((opt) => (
             <MenuItem
               key={opt.label}
@@ -768,14 +1066,30 @@ function SearchContent() {
           size="small"
           freeSolo
           forcePopupIcon={false}
-          options={citiesData?.data || []}
+          options={(() => {
+            const cities = citiesData?.data || [];
+            if (cityInput.length >= 1 && cities.length > 0) return cities;
+            // Show recent searches when input is empty
+            if (searchHistory.length > 0 && cityInput.length < 1) {
+              return searchHistory.map((h) => ({ id: `history-${h.query}`, name: h.query, _isHistory: true })) as unknown as City[];
+            }
+            return cities;
+          })()}
           getOptionLabel={(opt) => typeof opt === 'string' ? opt : opt.name}
           value={selectedCity}
           onChange={(_, val) => {
             if (typeof val === 'string') {
+              addSearch(val);
               setQuery(val);
               setSelectedCity(null);
+            } else if (val && (val as unknown as { _isHistory?: boolean })._isHistory) {
+              const historyVal = val.name;
+              addSearch(historyVal);
+              setCityInput(historyVal);
+              setQuery(historyVal);
+              setSelectedCity(null);
             } else {
+              if (val) addSearch(val.name);
               setSelectedCity(val);
               setCityInput(val?.name || '');
               setQuery('');
@@ -790,10 +1104,33 @@ function SearchContent() {
           }}
           filterOptions={(x) => x}
           loading={isCitiesLoading}
-          noOptionsText={cityInput.length < 1 ? 'Tapez pour rechercher…' : 'Aucune ville trouvée'}
+          noOptionsText={cityInput.length < 1 ? (searchHistory.length > 0 ? 'Recherches récentes' : 'Tapez pour rechercher…') : 'Aucune ville trouvée'}
           loadingText="Recherche…"
           slotProps={citySlotProps}
-          renderOption={(props, option) => renderOptionFreeSolo(props, option)}
+          renderOption={(props, option) => {
+            if ((option as unknown as { _isHistory?: boolean })._isHistory) {
+              return (
+                <Box
+                  component="li"
+                  {...props}
+                  key={option.name}
+                  sx={{ display: 'flex', alignItems: 'center', gap: 1, '&.MuiAutocomplete-option': { py: 0.75 } }}
+                >
+                  <HistoryIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                  <Typography variant="body2" sx={{ flex: 1 }}>{option.name}</Typography>
+                  <IconButton
+                    size="small"
+                    aria-label={`Supprimer "${option.name}" de l'historique`}
+                    onClick={(e) => { e.stopPropagation(); removeSearch(option.name); }}
+                    sx={{ p: 0.25 }}
+                  >
+                    <CloseIcon sx={{ fontSize: 12 }} />
+                  </IconButton>
+                </Box>
+              );
+            }
+            return renderOptionFreeSolo(props, option);
+          }}
           renderInput={(params) => (
             <TextField
               {...params}
@@ -802,6 +1139,7 @@ function SearchContent() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !selectedCity && cityInput.trim()) {
                   e.preventDefault();
+                  addSearch(cityInput.trim());
                   setQuery(cityInput.trim());
                   setPage(1);
                 }
@@ -947,6 +1285,12 @@ function SearchContent() {
           {hasParking && (
             <Chip label="Parking" onDelete={() => setHasParking(false)} size="small" variant="outlined" />
           )}
+          {has3dTour && (
+            <Chip icon={<ViewInArIcon sx={{ fontSize: 14 }} />} label="Visite 3D" onDelete={() => setHas3dTour(false)} size="small" variant="outlined" />
+          )}
+          {isVerified && (
+            <Chip icon={<VerifiedIcon sx={{ fontSize: 14 }} />} label="Vérifiée" onDelete={() => setIsVerified(false)} size="small" variant="outlined" />
+          )}
           {query && (
             <Chip label={`"${query}"`} onDelete={() => { setQuery(''); }} size="small" variant="outlined" />
           )}
@@ -987,7 +1331,72 @@ function SearchContent() {
                 <Typography color="text.secondary">Configurez NEXT_PUBLIC_MAPBOX_TOKEN</Typography>
               </Box>
             ) : (
-              <Box ref={mapContainerRef} sx={{ width: '100%', height: '100%' }} />
+              <>
+                <Box ref={mapContainerRef} sx={{ width: '100%', height: '100%' }} />
+                {/* Map style toggle */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 10,
+                    left: 10,
+                    zIndex: 2,
+                    display: 'flex',
+                    bgcolor: 'background.paper',
+                    borderRadius: 2,
+                    boxShadow: 2,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Tooltip title="Plan">
+                    <ToggleButton
+                      value="streets"
+                      selected={mapStyle === 'streets'}
+                      onChange={() => setMapStyle('streets')}
+                      size="small"
+                      aria-label="Vue plan"
+                      sx={{ px: 1.25, py: 0.5, fontSize: '0.7rem', fontWeight: 600, border: 'none', borderRadius: '0 !important' }}
+                    >
+                      Plan
+                    </ToggleButton>
+                  </Tooltip>
+                  <Tooltip title="Satellite">
+                    <ToggleButton
+                      value="satellite"
+                      selected={mapStyle === 'satellite'}
+                      onChange={() => setMapStyle('satellite')}
+                      size="small"
+                      aria-label="Vue satellite"
+                      sx={{ px: 1.25, py: 0.5, fontSize: '0.7rem', fontWeight: 600, border: 'none', borderRadius: '0 !important' }}
+                    >
+                      Satellite
+                    </ToggleButton>
+                  </Tooltip>
+                  <Tooltip title="Sombre">
+                    <ToggleButton
+                      value="dark"
+                      selected={mapStyle === 'dark'}
+                      onChange={() => setMapStyle('dark')}
+                      size="small"
+                      aria-label="Vue sombre"
+                      sx={{ px: 1.25, py: 0.5, fontSize: '0.7rem', fontWeight: 600, border: 'none', borderRadius: '0 !important' }}
+                    >
+                      Sombre
+                    </ToggleButton>
+                  </Tooltip>
+                  <Tooltip title={showHeatmap ? 'Masquer la heatmap' : 'Afficher la heatmap de prix'}>
+                    <ToggleButton
+                      value="heatmap"
+                      selected={showHeatmap}
+                      onChange={() => setShowHeatmap((prev) => !prev)}
+                      size="small"
+                      aria-label={showHeatmap ? 'Masquer la heatmap' : 'Afficher la heatmap'}
+                      sx={{ px: 1.25, py: 0.5, fontSize: '0.7rem', fontWeight: 600, border: 'none', borderRadius: '0 !important', color: showHeatmap ? 'primary.main' : undefined }}
+                    >
+                      <WhatshotIcon sx={{ fontSize: 16 }} />
+                    </ToggleButton>
+                  </Tooltip>
+                </Box>
+              </>
             )}
           </Box>
         )}

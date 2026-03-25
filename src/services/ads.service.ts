@@ -119,6 +119,11 @@ export const adsService = {
    * Called once when a user opens an ad detail page.
    * Feeds the recommendation engine.
    */
+  async recentlyViewed(): Promise<Ad[]> {
+    const { data } = await api.get('/my/recently-viewed');
+    return data.data ?? data;
+  },
+
   trackView(id: string): void {
     api.post(`/ads/${id}/view`).catch(() => {
       // Silently ignore — non-critical telemetry

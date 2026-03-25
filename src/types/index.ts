@@ -120,6 +120,8 @@ export interface PaymentHistoryItem {
 
 export interface User {
   id: string;
+  username?: string | null;
+  bio?: string | null;
   firstname: string;
   lastname: string;
   phone_number?: string | null;
@@ -278,6 +280,11 @@ export interface Ad {
   charges_eau?: string | null;
   charges_electricite?: string | null;
   charges_autres?: string | null;
+  distance_main_road_m?: number | null;
+  distance_shops_m?: number | null;
+  distance_transport_m?: number | null;
+  distance_school_m?: number | null;
+  distance_hospital_m?: number | null;
 }
 
 export interface Review {
@@ -459,11 +466,17 @@ export interface SearchParams {
   type?: string;
   quarter?: string;
   bedrooms?: number;
+  bathrooms?: number;
   price_min?: number;
   price_max?: number;
   surface_min?: number;
   surface_max?: number;
   has_parking?: boolean;
+  has_3d_tour?: boolean;
+  is_verified?: boolean;
+  attributes?: string[];
+  latitude?: number;
+  longitude?: number;
   sort?: string;
   order?: 'asc' | 'desc';
   page?: number;
