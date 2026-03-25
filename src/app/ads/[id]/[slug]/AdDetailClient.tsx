@@ -54,6 +54,8 @@ import {
   LocationOn,
   Lock,
   Phone,
+  PictureAsPdf as PdfIcon,
+  Print as PrintIcon,
   ReceiptLong,
   Schedule,
   Share,
@@ -245,6 +247,11 @@ function AdDetailContent() {
   const images = isLocked ? (primaryImage ? [primaryImage] : []) : allImages;
 
   const totalImageCount = ad.total_images || allImages.length;
+
+  const handleDownloadPdf = () => {
+    const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1');
+    window.open(`${apiBase}/ads/${adId}/pdf`, '_blank', 'noopener,noreferrer');
+  };
 
   const handleShare = async () => {
     const shareUrl = window.location.href;
@@ -755,6 +762,24 @@ function AdDetailContent() {
             <Button
               variant="outlined"
               size="small"
+              startIcon={<PrintIcon sx={{ fontSize: 16 }} />}
+              onClick={() => window.print()}
+              sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: 'text.primary' }}
+            >
+              Imprimer
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<PdfIcon sx={{ fontSize: 16 }} />}
+              onClick={handleDownloadPdf}
+              sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: 'text.primary' }}
+            >
+              PDF
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
               startIcon={checkFav(ad.id) ? <Favorite sx={{ color: 'primary.main' }} /> : <FavoriteBorder />}
               onClick={() => {
                 const wasFav = checkFav(ad.id);
@@ -803,6 +828,24 @@ function AdDetailContent() {
             sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: 'text.primary' }}
           >
             Partager
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<PrintIcon sx={{ fontSize: 16 }} />}
+            onClick={() => window.print()}
+            sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: 'text.primary' }}
+          >
+            Imprimer
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<PdfIcon sx={{ fontSize: 16 }} />}
+            onClick={handleDownloadPdf}
+            sx={{ borderRadius: '20px', textTransform: 'none', borderColor: 'divider', color: 'text.primary' }}
+          >
+            PDF
           </Button>
           <Button
             variant="outlined"
@@ -1045,7 +1088,27 @@ function AdDetailContent() {
             <Divider sx={{ mb: 3 }} />
 
             {/* Publisher info — blurred if locked */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+            <Box
+              component={ad.user?.id ? 'a' : 'div'}
+              href={ad.user?.id ? `/bailleurs/${ad.user.username ?? ad.user.id}` : undefined}
+              onClick={(e: React.MouseEvent) => {
+                if (ad.user?.id) {
+                  e.preventDefault();
+                  router.push(`/bailleurs/${ad.user.username ?? ad.user.id}`);
+                }
+              }}
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 2, mb: 3,
+                textDecoration: 'none', color: 'inherit',
+                ...(ad.user?.id && {
+                  cursor: 'pointer',
+                  borderRadius: 2,
+                  p: 1, mx: -1,
+                  transition: 'background-color 0.15s',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }),
+              }}
+            >
               <Avatar src={ad.user?.avatar || undefined} sx={{ width: 48, height: 48 }}>
                 {publisherName[0]}
               </Avatar>
@@ -1058,6 +1121,7 @@ function AdDetailContent() {
                 </Box>
                 <Typography variant="caption" color="text.secondary">
                   {formatRelativeDate(ad.created_at)}
+                  {ad.user?.id && ' · Voir le profil'}
                 </Typography>
               </Box>
             </Box>
