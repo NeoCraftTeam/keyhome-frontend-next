@@ -9,46 +9,87 @@ import {
   Dialog,
   Typography,
 } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { brand, gradient } from '@/theme/tokens';
 
+/** ms to wait after AppTour completion before opening this modal. */
+const WELCOME_DELAY_MS = 3 * 60 * 1000; // 3 minutes
+/** ms to wait after this modal closes before showing PushPrompt. */
+const PUSH_DELAY_MS = 3 * 1000; // 3 seconds
+/** localStorage key that stores the unix timestamp when the tour was completed. */
+const TOUR_TS_KEY = 'kh_tour_completed_at';
+
 /**
- * Welcome modal shown once to newly registered customers after they finish the AppTour.
+ * Welcome modal shown once to newly registered customers 3 minutes after they finish AppTour.
  *
- * Trigger: `kh:tour-completed` custom event dispatched by AppTour when the client variant
- * closes (both "C'est parti" and "Passer" paths).
+ * Sequence:
+ *   AppTour close → kh:tour-completed → [3 min] → WelcomeModal opens
+ *   WelcomeModal close → [3 s] → kh:welcome-dismissed → PushPrompt appears
+ *   PushPrompt close → kh:push-prompt-done → Survey unlocks
+ *
+ * The 3-minute countdown is persisted in localStorage so it survives
+ * page navigation while the user is still in the dashboard.
  *
  * On dismiss:
- * 1. Calls `POST /auth/onboarding-complete` to persist the flag server-side (idempotent).
- * 2. Dispatches `kh:welcome-dismissed` so CreditsWidget can react.
+ * 1. Calls `POST /auth/onboarding-complete` to set onboarding_completed_at server-side.
+ * 2. Calls refreshUser() to sync client state.
+ * 3. After PUSH_DELAY_MS dispatches `kh:welcome-dismissed` to trigger PushPrompt.
  */
 export default function WelcomeModal() {
   const { user, refreshUser } = useAuth();
   const [open, setOpen] = useState(false);
   const hasShown = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /** Schedule the modal to open after `delayMs`. Clears any previous pending timer. */
+  const scheduleOpen = useCallback((delayMs: number) => {
+    if (hasShown.current) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      if (hasShown.current) return;
+      hasShown.current = true;
+      if (typeof window !== 'undefined') localStorage.removeItem(TOUR_TS_KEY);
+      setOpen(true);
+    }, delayMs);
+  }, []);
+
+  // On mount: resume any pending countdown (user navigated away and came back)
+  useEffect(() => {
+    if (hasShown.current || typeof window === 'undefined') return;
+    const ts = localStorage.getItem(TOUR_TS_KEY);
+    if (ts) {
+      const elapsed = Date.now() - parseInt(ts, 10);
+      scheduleOpen(Math.max(0, WELCOME_DELAY_MS - elapsed));
+    }
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [scheduleOpen]);
+
+  // Listen for fresh tour-completed events
   useEffect(() => {
     const handleTourCompleted = () => {
       if (hasShown.current) return;
-      hasShown.current = true;
-      setOpen(true);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(TOUR_TS_KEY, String(Date.now()));
+      }
+      scheduleOpen(WELCOME_DELAY_MS);
     };
-
     window.addEventListener('kh:tour-completed', handleTourCompleted);
     return () => window.removeEventListener('kh:tour-completed', handleTourCompleted);
-  }, []);
+  }, [scheduleOpen]);
 
   const handleClose = async (): Promise<void> => {
     setOpen(false);
 
-    // Persist on backend (idempotent – safe to fire-and-forget)
+    // Persist onboarding completion on backend (idempotent)
     authService.completeOnboarding().catch(() => {});
 
     // Refresh user state so subsequent checks see onboarding_completed_at set
     refreshUser().catch(() => {});
 
-    // Signal AppTour & CreditsWidget
-    window.dispatchEvent(new CustomEvent('kh:welcome-dismissed'));
+    // Wait 3 s before signalling PushPrompt so modals never stack
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('kh:welcome-dismissed'));
+    }, PUSH_DELAY_MS);
   };
 
   const bonusCredits = Math.max(user?.point_balance ?? 0, 5);

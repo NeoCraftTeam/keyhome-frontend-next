@@ -187,15 +187,18 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
   const handleClose = () => {
     setOpen(false);
     onDone?.();
-    // For clients: signal WelcomeModal (credits) to open now — fire BEFORE the async
-    // completeOnboarding() / refreshUser() to avoid a race where onboarding_completed_at
-    // gets set before WelcomeModal has a chance to open.
     if (variant === 'client') {
+      // Signal WelcomeModal to start its 3-minute countdown.
+      // WelcomeModal is responsible for calling completeOnboarding() after it closes.
+      // We must NOT call it here or onboarding_completed_at gets set too early,
+      // which would unlock the survey before PushPrompt has a chance to show.
       window.dispatchEvent(new CustomEvent('kh:tour-completed'));
+    } else {
+      // Owner flow: no WelcomeModal, so complete onboarding immediately.
+      authService.completeOnboarding()
+        .then(() => refreshUser())
+        .catch(() => { /* ignore */ });
     }
-    authService.completeOnboarding()
-      .then(() => refreshUser())
-      .catch(() => { /* ignore */ });
   };
 
   const handleNext = () => {

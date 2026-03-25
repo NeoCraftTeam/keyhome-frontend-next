@@ -71,14 +71,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setSurveyMounted(true);
   }, []);
 
-  // Returning users: unlock survey immediately once user data loads
-  useEffect(() => {
-    if (user?.onboarding_completed_at != null) {
-      setPushPromptReady(true);
-    }
-  }, [user?.onboarding_completed_at]);
-
-  // New users: unlock survey after PushPrompt fires kh:push-prompt-done
+  // Unlock survey once PushPrompt resolves (accept / dismiss / not applicable).
+  // PushPrompt fires kh:push-prompt-done in all paths:
+  //   - New users:      after kh:welcome-dismissed (3 s post-WelcomeModal) → user acts
+  //   - Returning users: immediately when shouldShow=false (already subscribed / dismissed)
+  // We do NOT unlock from onboarding_completed_at here — that would race against the
+  // 3-second gap between WelcomeModal closing and PushPrompt appearing.
   useEffect(() => {
     const handler = () => setPushPromptReady(true);
     window.addEventListener('kh:push-prompt-done', handler);
