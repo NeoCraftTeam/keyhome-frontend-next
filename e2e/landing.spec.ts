@@ -10,8 +10,9 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Landing Page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    // 'networkidle' never fires on the landing page because Three.js WebGL
+    // continuously requests frames. 'domcontentloaded' is enough for all assertions.
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
   });
 
   // BUG CATCH: The page must render something — not a blank white screen.
