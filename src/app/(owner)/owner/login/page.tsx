@@ -17,6 +17,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Divider,
   IconButton,
   InputAdornment,
   Link,
@@ -295,6 +296,22 @@ export default function OwnerLoginPage() {
                 sx={{ fontWeight: 600, color: 'primary.main' }}
               >
                 Créer un compte bailleur
+              </Link>
+            </Typography>
+          </FadeIn>
+
+          <FadeIn delay={0.5} direction="up">
+            <Divider sx={{ my: 2.5 }}>
+              <Typography variant="caption" color="text.disabled" sx={{ px: 1 }}>ou</Typography>
+            </Divider>
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+              Vous êtes locataire ?{' '}
+              <Link
+                href="/login"
+                underline="hover"
+                sx={{ fontWeight: 600, color: 'text.primary' }}
+              >
+                Accéder à l&apos;espace client →
               </Link>
             </Typography>
           </FadeIn>
