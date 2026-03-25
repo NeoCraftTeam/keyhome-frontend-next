@@ -175,7 +175,7 @@ export default function CookieBanner() {
             <Shield sx={{ color: 'primary.main', fontSize: 18 }} />
             <Typography fontWeight={700} fontSize={15}>Préférences cookies</Typography>
           </Box>
-          <IconButton size="small" onClick={() => setCustomizeOpen(false)}><Close fontSize="small" /></IconButton>
+          <IconButton size="small" onClick={() => setCustomizeOpen(false)} aria-label="Fermer les préférences cookies"><Close fontSize="small" /></IconButton>
         </Box>
 
         <DialogContent sx={{ p: 2.5 }}>

@@ -54,6 +54,7 @@ import {
   Typography,
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { lightTheme } from '@/theme/theme';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import Image from 'next/image';
@@ -123,7 +124,7 @@ export default function RegisterPage() {
 
   const registerMuiTheme = useMemo(
     () =>
-      createTheme({
+      createTheme(lightTheme, {
         palette: {
           primary: {
             main: tokens.primary,
@@ -396,6 +397,7 @@ export default function RegisterPage() {
           p: { xs: 3, sm: 5 },
           overflowY: 'auto',
           bgcolor: 'background.paper',
+          color: 'text.primary',
         }}
       >
         <Box sx={{ width: '100%', maxWidth: 440 }}>
@@ -445,7 +447,7 @@ export default function RegisterPage() {
 
           {error && (
             <FadeIn direction="none" duration={0.3}>
-              <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+              <Alert severity="error" id="register-error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
             </FadeIn>
           )}
 

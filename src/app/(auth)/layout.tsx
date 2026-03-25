@@ -22,10 +22,23 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
    * We show it on very first auth-group visit per session, but skip it
    * for subsequent intra-auth navigations (login↔register, verify-email, etc.)
    * to keep the flow snappy.
+   *
+   * IMPORTANT: never read sessionStorage during render — the server has no
+   * sessionStorage so the server always gets `false` while the client may get
+   * `true`, which causes a hydration mismatch.  Always default to `false` and
+   * update the value inside useEffect (client-only, post-hydration).
    */
-  const alreadySeen = typeof window !== 'undefined' && sessionStorage.getItem(SPLASH_SEEN_KEY) === '1';
-  const [showSplash, setShowSplash] = useState(!alreadySeen);
+  const [showSplash, setShowSplash] = useState(false);
   const mountedRef = useRef(false);
+
+  useEffect(() => {
+    const alreadySeen = sessionStorage.getItem(SPLASH_SEEN_KEY) === '1';
+    if (!alreadySeen) {
+      setShowSplash(true);
+    }
+  // Run once after hydration to decide whether to show the splash
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Redirect authenticated users but only after the splash is done
   useEffect(() => {

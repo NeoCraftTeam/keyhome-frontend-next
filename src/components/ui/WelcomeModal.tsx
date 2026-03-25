@@ -13,40 +13,30 @@ import { useEffect, useRef, useState } from 'react';
 import { brand, gradient } from '@/theme/tokens';
 
 /**
- * Welcome modal shown once to newly registered users on their very first login.
+ * Welcome modal shown once to newly registered customers after they finish the AppTour.
  *
- * Trigger: `user.onboarding_completed_at` is `null` (set by the backend).
- * No time-windows, no fragile localStorage — the backend is the source of truth.
+ * Trigger: `kh:tour-completed` custom event dispatched by AppTour when the client variant
+ * closes (both "C'est parti" and "Passer" paths).
  *
  * On dismiss:
- * 1. Calls `POST /auth/onboarding-complete` to persist the flag server-side.
- * 2. Dispatches `kh:welcome-dismissed` so AppTour + CreditsWidget can react.
+ * 1. Calls `POST /auth/onboarding-complete` to persist the flag server-side (idempotent).
+ * 2. Dispatches `kh:welcome-dismissed` so CreditsWidget can react.
  */
 export default function WelcomeModal() {
-  const { user, isAuthenticated, refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [open, setOpen] = useState(false);
   const hasShown = useRef(false);
 
   useEffect(() => {
-    if (!isAuthenticated || !user) {
-      return;
-    }
+    const handleTourCompleted = () => {
+      if (hasShown.current) return;
+      hasShown.current = true;
+      setOpen(true);
+    };
 
-    // The SOLE condition: backend says onboarding hasn't been completed yet
-    if (user.onboarding_completed_at != null) {
-      return;
-    }
-
-    // Prevent showing twice when user object reference changes
-    if (hasShown.current) {
-      return;
-    }
-    hasShown.current = true;
-
-    // Small delay so the dashboard page renders first
-    const timer = setTimeout(() => setOpen(true), 600);
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, user]);
+    window.addEventListener('kh:tour-completed', handleTourCompleted);
+    return () => window.removeEventListener('kh:tour-completed', handleTourCompleted);
+  }, []);
 
   const handleClose = async (): Promise<void> => {
     setOpen(false);

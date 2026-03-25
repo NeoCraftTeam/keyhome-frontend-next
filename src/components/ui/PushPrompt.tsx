@@ -4,22 +4,55 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useAuth } from '@/providers/AuthProvider';
 import { Close as CloseIcon, NotificationsActive as BellIcon } from '@mui/icons-material';
 import { Box, Button, IconButton, Slide, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-const DELAY_MS = 8000;
+const FALLBACK_DELAY_MS = 8000;
 
 export default function PushPrompt() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { isSupported, permission, isSubscribed, isDismissed, subscribe, dismiss } = usePushNotifications();
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const firedDoneRef = useRef(false);
 
   const shouldShow = isAuthenticated && isSupported && permission === 'default' && !isSubscribed && !isDismissed;
 
+  const fireDone = () => {
+    if (firedDoneRef.current) return;
+    firedDoneRef.current = true;
+    window.dispatchEvent(new CustomEvent('kh:push-prompt-done'));
+  };
+
+  // When auth resolves and push prompt is not applicable, immediately unblock the survey
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (!shouldShow) {
+      fireDone();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, shouldShow]);
+
   useEffect(() => {
     if (!shouldShow) return;
-    const timer = setTimeout(() => setVisible(true), DELAY_MS);
-    return () => clearTimeout(timer);
+
+    // Snapshot at setup time: new users are in the onboarding flow (AppTour → WelcomeModal).
+    // For them, ONLY the kh:welcome-dismissed event should trigger us — no fallback timer —
+    // because the tour + reading the WelcomeModal easily exceeds 8 s and the fallback would
+    // race against the WelcomeModal still being open.
+    // Returning users (onboarding_completed_at set) will never get kh:welcome-dismissed,
+    // so they rely on the fallback timer.
+    const isNewUserOnboarding = user?.onboarding_completed_at == null;
+    const show = () => setVisible(true);
+
+    window.addEventListener('kh:welcome-dismissed', show, { once: true });
+    const fallback = isNewUserOnboarding ? undefined : setTimeout(show, FALLBACK_DELAY_MS);
+
+    return () => {
+      window.removeEventListener('kh:welcome-dismissed', show);
+      if (fallback !== undefined) clearTimeout(fallback);
+    };
+  // user intentionally excluded: we snapshot onboarding state at first setup only
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldShow]);
 
   if (!shouldShow || !visible) return null;
@@ -28,12 +61,13 @@ export default function PushPrompt() {
     setLoading(true);
     const ok = await subscribe();
     setLoading(false);
-    if (ok) setVisible(false);
+    if (ok) { setVisible(false); fireDone(); }
   };
 
   const handleDismiss = () => {
     dismiss();
     setVisible(false);
+    fireDone();
   };
 
   return (

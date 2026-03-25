@@ -70,7 +70,7 @@ export default function ForgotPasswordPage() {
 
         {error && (
           <FadeIn direction="none" duration={0.3}>
-            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+            <Alert severity="error" id="forgot-password-error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
           </FadeIn>
         )}
         {success && (

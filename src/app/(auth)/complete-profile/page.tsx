@@ -241,7 +241,7 @@ export default function CompleteProfilePage() {
 
           {error && (
             <FadeIn direction="none" duration={0.3}>
-              <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+              <Alert severity="error" id="complete-profile-error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
             </FadeIn>
           )}
 

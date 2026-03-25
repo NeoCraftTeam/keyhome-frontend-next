@@ -53,7 +53,7 @@ const STEPS: TourStep[] = [
   },
   {
     Icon: AutoAwesome,
-    title: 'Recherche par IA ✨',
+    title: 'Recherche par IA ',
     description:
       'Décrivez ce que vous cherchez en langage naturel. Notre IA comprend et filtre automatiquement les annonces pour vous.',
     color: '#6c5ce7',
@@ -179,19 +179,20 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
       window.setTimeout(() => setOpen(true), 600);
     };
 
-    const onWelcome = () => tryOpen();
-    window.addEventListener('kh:welcome-dismissed', onWelcome);
-    const fallback = window.setTimeout(() => tryOpen(), 4500);
-
-    return () => {
-      window.removeEventListener('kh:welcome-dismissed', onWelcome);
-      window.clearTimeout(fallback);
-    };
+    // Both variants open directly — for client, WelcomeModal (credits) fires AFTER the tour closes
+    const t = window.setTimeout(() => tryOpen(), 800);
+    return () => window.clearTimeout(t);
   }, [isAuthenticated, user, variant]);
 
   const handleClose = () => {
     setOpen(false);
     onDone?.();
+    // For clients: signal WelcomeModal (credits) to open now — fire BEFORE the async
+    // completeOnboarding() / refreshUser() to avoid a race where onboarding_completed_at
+    // gets set before WelcomeModal has a chance to open.
+    if (variant === 'client') {
+      window.dispatchEvent(new CustomEvent('kh:tour-completed'));
+    }
     authService.completeOnboarding()
       .then(() => refreshUser())
       .catch(() => { /* ignore */ });
@@ -306,6 +307,7 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
         <IconButton
           onClick={handleClose}
           size="small"
+          aria-label="Fermer le tutoriel"
           sx={{
             position: 'absolute', top: 12, right: 12,
             bgcolor: 'rgba(255,255,255,0.15)', color: '#fff',

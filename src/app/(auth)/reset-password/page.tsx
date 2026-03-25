@@ -69,7 +69,7 @@ function ResetPasswordForm() {
 
       {error && (
         <FadeIn direction="none" duration={0.3}>
-          <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+          <Alert severity="error" id="reset-password-error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
         </FadeIn>
       )}
 

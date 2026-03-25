@@ -67,6 +67,9 @@ export default function SplashTransition({
         opacity:         fading ? 0 : 1,
         transition:      'opacity 0.35s ease',
         pointerEvents:   fading ? 'none' : 'auto',
+        '@media (prefers-reduced-motion: reduce)': {
+          transition: 'none',
+        },
       }}
     >
       {/* Logo — spring scale in */}
@@ -76,6 +79,9 @@ export default function SplashTransition({
           '@keyframes kh-splash-in': {
             '0%':   { opacity: 0, transform: 'scale(0.55)' },
             '100%': { opacity: 1, transform: 'scale(1)' },
+          },
+          '@media (prefers-reduced-motion: reduce)': {
+            animation: 'none',
           },
         }}
       >
@@ -102,6 +108,9 @@ export default function SplashTransition({
           '@keyframes kh-fade-up': {
             '0%':   { opacity: 0, transform: 'translateY(8px)' },
             '100%': { opacity: 1, transform: 'translateY(0)' },
+          },
+          '@media (prefers-reduced-motion: reduce)': {
+            animation: 'none',
           },
         }}
       >

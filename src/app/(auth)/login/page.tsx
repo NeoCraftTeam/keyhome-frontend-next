@@ -158,12 +158,12 @@ export default function LoginPage() {
 
           {error && (
             <FadeIn direction="none" duration={0.3}>
-              <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+              <Alert severity="error" id="login-error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
             </FadeIn>
           )}
 
           <FadeIn delay={0.2} direction="up">
-            <Box component="form" onSubmit={handleSubmit}>
+            <Box component="form" onSubmit={handleSubmit} aria-describedby={error ? 'login-error' : undefined}>
               <TextField
                 fullWidth
                 label="Adresse email"

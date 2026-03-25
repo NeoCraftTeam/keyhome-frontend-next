@@ -273,7 +273,7 @@ export default function VerifyEmailPage() {
 
           {error && (
             <FadeIn direction="none" duration={0.3}>
-              <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+              <Alert severity="error" id="verify-email-error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
             </FadeIn>
           )}
           {resendMessage && (
