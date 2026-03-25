@@ -176,6 +176,7 @@ export default function PublishPage() {
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
     const marker = new mapboxgl.Marker({ color: brand.primary, draggable: true })
@@ -662,7 +663,7 @@ export default function PublishPage() {
               </Box>
             )}
 
-            {error && <Alert severity="error" sx={{ mt: 3 }}>{error}</Alert>}
+            {error && <Alert severity="error" id="publish-error" sx={{ mt: 3 }}>{error}</Alert>}
           </Box>
         )}
       </Paper>

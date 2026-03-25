@@ -116,6 +116,13 @@ export default function OwnerAdEditPage() {
       }
       if (values.charges_autres) formData.append('charges_autres', values.charges_autres);
 
+      // Proximity & distance fields
+      if (values.distance_main_road_m) formData.append('distance_main_road_m', values.distance_main_road_m);
+      if (values.distance_shops_m) formData.append('distance_shops_m', values.distance_shops_m);
+      if (values.distance_transport_m) formData.append('distance_transport_m', values.distance_transport_m);
+      if (values.distance_school_m) formData.append('distance_school_m', values.distance_school_m);
+      if (values.distance_hospital_m) formData.append('distance_hospital_m', values.distance_hospital_m);
+
       // Property condition PDF
       if (propertyConditionPdf) {
         formData.append('property_condition', propertyConditionPdf);
@@ -307,6 +314,11 @@ export default function OwnerAdEditPage() {
     charges_eau: ad.charges_eau ?? '',
     charges_electricite: ad.charges_electricite ?? '',
     charges_autres: ad.charges_autres ?? '',
+    distance_main_road_m: ad.distance_main_road_m != null ? String(ad.distance_main_road_m) : '',
+    distance_shops_m: ad.distance_shops_m != null ? String(ad.distance_shops_m) : '',
+    distance_transport_m: ad.distance_transport_m != null ? String(ad.distance_transport_m) : '',
+    distance_school_m: ad.distance_school_m != null ? String(ad.distance_school_m) : '',
+    distance_hospital_m: ad.distance_hospital_m != null ? String(ad.distance_hospital_m) : '',
   };
 
   const statusColor =

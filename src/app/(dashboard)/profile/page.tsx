@@ -18,6 +18,7 @@ import { City } from '@/types';
 import {
     Assignment as AssignmentIcon,
     Cancel as CancelIcon,
+    ChevronLeft as ChevronLeftIcon,
     CheckCircleOutline as CheckCircleOutlineIcon,
     Edit as EditIcon,
     Favorite as FavoriteIcon,
@@ -231,6 +232,12 @@ export default function ProfilePage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
+      {/* Back navigation */}
+      <Box sx={{ mb: 2 }}>
+        <IconButton onClick={() => router.back()} size="small" aria-label="Retour" sx={{ border: '1px solid', borderColor: 'divider' }}>
+          <ChevronLeftIcon />
+        </IconButton>
+      </Box>
       {/* Profile header */}
       <FadeIn delay={0.1} direction="up">
       <Paper

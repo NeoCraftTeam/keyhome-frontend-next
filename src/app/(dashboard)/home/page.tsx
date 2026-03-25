@@ -1,6 +1,7 @@
 'use client';
 
 import AdCard from '@/components/ads/AdCard';
+import ClientProfileBanner from '@/components/dashboard/ClientProfileBanner';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import HeroSearch from '@/components/ads/HeroSearch';
 import AppTour from '@/components/ui/AppTour';
@@ -350,6 +351,13 @@ export default function HomePage() {
               </Typography>
             </Box>
           </FadeIn>
+        </Container>
+      )}
+
+      {/* ── Profile completion banner (customers only) ────────────────────── */}
+      {isAuthenticated && (
+        <Container maxWidth="xl" sx={{ pt: 1.5, pb: 0, px: { xs: 2, sm: 3, md: 4 } }}>
+          <ClientProfileBanner />
         </Container>
       )}
 

@@ -2,15 +2,22 @@
 
 import PriceHeatmapLayer from '@/components/maps/PriceHeatmapLayer';
 import RentEstimatorWidget from '@/components/ads/RentEstimatorWidget';
-import { BarChart, Calculate, Layers } from '@mui/icons-material';
-import { Box, Container, Grid, Tab, Tabs, Typography } from '@mui/material';
+import { BarChart, Calculate, ChevronLeft as ChevronLeftIcon, Layers } from '@mui/icons-material';
+import { Box, Container, Grid, IconButton, Tab, Tabs, Typography } from '@mui/material';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function PrixMarcheClient() {
   const [tab, setTab] = useState(0);
+  const router = useRouter();
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
+      <Box sx={{ mb: 2 }}>
+        <IconButton onClick={() => router.back()} size="small" aria-label="Retour" sx={{ border: '1px solid', borderColor: 'divider' }}>
+          <ChevronLeftIcon />
+        </IconButton>
+      </Box>
       <Typography variant="h4" fontWeight={800} gutterBottom>
         Prix du marché
       </Typography>

@@ -3,8 +3,8 @@
 import ComparisonTable from '@/components/ads/ComparisonTable';
 import FadeIn from '@/components/ui/FadeIn';
 import { useComparator } from '@/providers/ComparatorProvider';
-import { CompareArrows, MapsHomeWork } from '@mui/icons-material';
-import { Box, Button, Container, Typography } from '@mui/material';
+import { ChevronLeft as ChevronLeftIcon, CompareArrows, MapsHomeWork } from '@mui/icons-material';
+import { Box, Button, Container, IconButton, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
 
 export default function ComparaisonsPage() {
@@ -75,7 +75,10 @@ export default function ComparaisonsPage() {
               mb: 3,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <IconButton onClick={() => router.back()} size="small" aria-label="Retour" sx={{ border: '1px solid', borderColor: 'divider' }}>
+                <ChevronLeftIcon />
+              </IconButton>
               <CompareArrows color="primary" sx={{ fontSize: 28 }} />
               <Box>
                 <Typography variant="h5" fontWeight={700}>

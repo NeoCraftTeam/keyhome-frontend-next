@@ -7,6 +7,7 @@ import Navbar from '@/components/layout/Navbar';
 import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
 import { getSurveyPostponed, setSurveyPostponed as persistSurveyPostponed } from '@/components/surveys/SurveyBanner';
 import { authService } from '@/services/auth.service';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import AppLoader from '@/components/ui/AppLoader';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
@@ -14,10 +15,17 @@ import PushPrompt from '@/components/ui/PushPrompt';
 import WelcomeModal from '@/components/ui/WelcomeModal';
 import { useAuth } from '@/providers/AuthProvider';
 import { surveysService } from '@/services/surveys.service';
+import { useUserLocation } from '@/hooks/useUserLocation';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+
+/** Silently warms up the geolocation cache on first visit so ad-detail maps are instant */
+function LocationPrimer() {
+  useUserLocation();
+  return null;
+}
 
 /** Pages we never want to save as post-login redirect targets */
 const AUTH_PAGES = ['/login', '/register', '/verify-otp', '/verify-email', '/complete-profile'];
@@ -37,6 +45,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isStandalone = useIsStandalone();
   const [surveyPostponed, setSurveyPostponed] = useState<Record<string, boolean>>({});
   const [surveyMounted, setSurveyMounted] = useState(false);
+  // Survey is gated until PushPrompt step resolves (accepted, dismissed, or not applicable).
+  // For returning users (onboarding already completed) it's immediately ready.
+  const [pushPromptReady, setPushPromptReady] = useState(false);
 
   const { data: activeSurvey, isError: activeSurveyError } = useQuery({
     queryKey: ['active-survey-global', isAuthenticated],
@@ -58,6 +69,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     setSurveyMounted(true);
+  }, []);
+
+  // Returning users: unlock survey immediately once user data loads
+  useEffect(() => {
+    if (user?.onboarding_completed_at != null) {
+      setPushPromptReady(true);
+    }
+  }, [user?.onboarding_completed_at]);
+
+  // New users: unlock survey after PushPrompt fires kh:push-prompt-done
+  useEffect(() => {
+    const handler = () => setPushPromptReady(true);
+    window.addEventListener('kh:push-prompt-done', handler);
+    return () => window.removeEventListener('kh:push-prompt-done', handler);
   }, []);
 
   useEffect(() => {
@@ -117,13 +142,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         bgcolor: 'background.default',
       }}
     >
+      <LocationPrimer />
       <Navbar />
       <Box component="main" id="main-content" tabIndex={-1} sx={{ flex: 1, pb: isMobile && isStandalone ? `${BOTTOM_NAV_HEIGHT}px` : 0 }}>
-        <PageTransition>{children}</PageTransition>
+        <ErrorBoundary>
+          <PageTransition>{children}</PageTransition>
+        </ErrorBoundary>
       </Box>
       {!isMobile && <Footer />}
       <BottomNav />
-      {surveyMounted && isAuthenticated && !isSurveyPage && !activeSurveyError && activeSurvey && surveyAnsweredData?.has_answered === false && (
+      {surveyMounted && isAuthenticated && !isSurveyPage && !activeSurveyError && activeSurvey && surveyAnsweredData?.has_answered === false && pushPromptReady && (
         <SurveyPromptOrBanner
           surveyId={activeSurvey.id}
           surveySlug={activeSurvey.slug}

@@ -47,6 +47,7 @@ export default function ProfileCompletionCard() {
     { key: 'avatar', label: 'Ajouter une photo de profil', done: !!user.avatar, href: '/owner/profile' },
     { key: 'phone', label: 'Renseigner votre téléphone', done: !!user.phone_number, href: '/owner/profile' },
     { key: 'city', label: 'Indiquer votre ville', done: !!user.city_id, href: '/owner/profile' },
+    { key: 'bio', label: 'Ajouter une bio', done: !!(user.bio && user.bio.trim().length > 10), href: '/owner/profile' },
     { key: 'ad', label: 'Publier votre première annonce', done: totalAds > 0, href: '/owner/ads/new' },
   ];
 

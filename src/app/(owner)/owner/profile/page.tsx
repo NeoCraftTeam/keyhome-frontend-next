@@ -19,6 +19,7 @@ import {
   CheckCircleOutline as CheckCircleOutlineIcon,
   Edit as EditIcon,
   Lock as LockIcon,
+  OpenInNew as OpenInNewIcon,
   PhotoCamera,
   ReceiptLong as ReceiptLongIcon,
   Save as SaveIcon,
@@ -32,6 +33,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Chip,
   CircularProgress,
   Container,
   FormControlLabel,
@@ -44,6 +46,7 @@ import {
   Tab,
   Tabs,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -108,6 +111,7 @@ export default function OwnerProfilePage() {
     lastname: user?.lastname ?? '',
     phone_number: user?.phone_number ?? '',
     phone_is_whatsapp: user?.phone_is_whatsapp ?? false,
+    bio: user?.bio ?? '',
   });
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [cityInput, setCityInput] = useState(user?.city_name ?? '');
@@ -208,6 +212,7 @@ export default function OwnerProfilePage() {
         formData.append('phone_number', normalizePhoneLikeBackend(editForm.phone_number));
       }
       formData.append('phone_is_whatsapp', editForm.phone_is_whatsapp ? '1' : '0');
+      formData.append('bio', editForm.bio);
       if (selectedCity) {
         formData.append('city_id', selectedCity.id);
       }
@@ -248,57 +253,37 @@ export default function OwnerProfilePage() {
 
   const cities = citiesData?.data ?? [];
 
+  const profileSteps = [
+    { label: 'Photo de profil', done: !!(user.avatar) },
+    { label: 'Prénom & Nom', done: !!(user.firstname && user.lastname) },
+    { label: 'Bio / Présentation', done: !!(user.bio && user.bio.trim().length > 10) },
+    { label: 'Numéro de téléphone', done: !!(user.phone_number) },
+    { label: 'Ville', done: !!(user.city_id) },
+  ];
+  const profileScore = Math.round((profileSteps.filter((s) => s.done).length / profileSteps.length) * 100);
+  const profileColor = profileScore < 40 ? '#ef4444' : profileScore < 80 ? '#f59e0b' : '#22c55e';
+
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
       <PageBreadcrumbs items={[{ label: 'Tableau de bord', href: '/owner/dashboard' }, { label: 'Mon profil' }]} />
-      {/* En-tête — aligné sur le profil client */}
+
+      {/* ── Header ── */}
       <FadeIn delay={0.1} direction="up">
         <Paper
           elevation={0}
-          sx={{
-            p: { xs: 2.5, md: 4 },
-            borderRadius: 3,
-            border: '1px solid',
-            borderColor: 'divider',
-            mb: 3,
-          }}
+          sx={{ p: { xs: 2.5, md: 4 }, borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 2 }}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: { xs: 'flex-start', sm: 'center' },
-              gap: { xs: 2, md: 3 },
-              flexWrap: 'wrap',
-            }}
-          >
+          <Box sx={{ display: 'flex', alignItems: { xs: 'flex-start', sm: 'center' }, gap: { xs: 2, md: 3 }, flexWrap: 'wrap' }}>
             <Box sx={{ position: 'relative' }}>
-              <Avatar
-                src={user.avatar || undefined}
-                sx={{ width: { xs: 64, md: 80 }, height: { xs: 64, md: 80 }, fontSize: '2rem' }}
-              >
+              <Avatar src={user.avatar || undefined} sx={{ width: { xs: 64, md: 80 }, height: { xs: 64, md: 80 }, fontSize: '2rem' }}>
                 {user.firstname?.[0]}
               </Avatar>
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                hidden
-                onChange={handleAvatarUpload}
-              />
+              <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onChange={handleAvatarUpload} />
               <IconButton
                 size="small"
                 aria-label="Changer la photo de profil"
                 onClick={() => avatarInputRef.current?.click()}
-                sx={{
-                  position: 'absolute',
-                  bottom: -4,
-                  right: -4,
-                  bgcolor: 'primary.main',
-                  color: '#fff',
-                  width: 28,
-                  height: 28,
-                  '&:hover': { bgcolor: 'primary.dark' },
-                }}
+                sx={{ position: 'absolute', bottom: -4, right: -4, bgcolor: 'primary.main', color: '#fff', width: 28, height: 28, '&:hover': { bgcolor: 'primary.dark' } }}
               >
                 <PhotoCamera sx={{ fontSize: 14 }} />
               </IconButton>
@@ -307,38 +292,84 @@ export default function OwnerProfilePage() {
               <Typography variant="h5" fontWeight={700} sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
                 {user.firstname} {user.lastname}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {user.email}
-              </Typography>
+              <Typography variant="body2" color="text.secondary">{user.email}</Typography>
             </Box>
-            {!isEditing && (
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<EditIcon />}
-                onClick={() => {
-                  setCityInput(user.city_name || '');
-                  setEditForm({
-                    firstname: user.firstname,
-                    lastname: user.lastname,
-                    phone_number: user.phone_number || '',
-                    phone_is_whatsapp: user.phone_is_whatsapp ?? false,
-                  });
-                  setSelectedCity(
-                    user.city_id && user.city_name ? { id: user.city_id, name: user.city_name } : null,
-                  );
-                  setIsEditing(true);
-                }}
-                sx={{ textTransform: 'none', fontWeight: 600 }}
-                size="medium"
-              >
-                Modifier
-              </Button>
-            )}
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {user.username && (
+                <Button variant="outlined" size="medium" startIcon={<OpenInNewIcon />}
+                  href={`/bailleurs/${user.username}`} target="_blank" rel="noopener noreferrer"
+                  sx={{ textTransform: 'none', fontWeight: 600 }}
+                >
+                  Voir mon profil public
+                </Button>
+              )}
+              {!isEditing && (
+                <Button variant="outlined" color="primary" startIcon={<EditIcon />} size="medium"
+                  sx={{ textTransform: 'none', fontWeight: 600 }}
+                  onClick={() => {
+                    setCityInput(user.city_name || '');
+                    setEditForm({ firstname: user.firstname, lastname: user.lastname, phone_number: user.phone_number || '', phone_is_whatsapp: user.phone_is_whatsapp ?? false, bio: user.bio ?? '' });
+                    setSelectedCity(user.city_id && user.city_name ? { id: user.city_id, name: user.city_name } : null);
+                    setIsEditing(true);
+                  }}
+                >
+                  Modifier
+                </Button>
+              )}
+            </Box>
           </Box>
         </Paper>
       </FadeIn>
 
+      {/* ── Profile Completion Card ── */}
+      <FadeIn delay={0.15} direction="up">
+        <Paper
+          elevation={0}
+          sx={{ p: { xs: 2, md: 3 }, borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 2,
+            background: profileScore === 100 ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' : undefined,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, gap: 2, flexWrap: 'wrap' }}>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>
+                Complétude du profil public
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Un profil complet inspire plus de confiance aux locataires.
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: 'center', minWidth: 56 }}>
+              <Typography variant="h4" fontWeight={800} sx={{ color: profileColor, lineHeight: 1 }}>
+                {profileScore}%
+              </Typography>
+              <Typography variant="caption" color="text.secondary">complété</Typography>
+            </Box>
+          </Box>
+          <LinearProgress
+            variant="determinate"
+            value={profileScore}
+            sx={{
+              height: 8, borderRadius: 4, bgcolor: 'grey.200', mb: 2,
+              '& .MuiLinearProgress-bar': { bgcolor: profileColor, borderRadius: 4, transition: 'width 0.6s ease' },
+            }}
+          />
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {profileSteps.map((step) => (
+              <Tooltip key={step.label} title={step.done ? 'Complété' : 'À compléter — cliquez sur Modifier'} arrow>
+                <Chip
+                  label={step.label}
+                  size="small"
+                  variant={step.done ? 'filled' : 'outlined'}
+                  color={step.done ? 'success' : 'default'}
+                  sx={{ borderRadius: '20px', fontWeight: step.done ? 600 : 400, opacity: step.done ? 1 : 0.7 }}
+                />
+              </Tooltip>
+            ))}
+          </Box>
+        </Paper>
+      </FadeIn>
+
+      {/* ── Tabs ── */}
       <FadeIn delay={0.2} direction="up">
         <Tabs
           value={tab}
@@ -346,9 +377,7 @@ export default function OwnerProfilePage() {
           variant="scrollable"
           scrollButtons="auto"
           sx={{
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            minHeight: 48,
+            borderBottom: '1px solid', borderColor: 'divider', minHeight: 48,
             '& .MuiTab-root': { fontWeight: 600, textTransform: 'none', minHeight: 48 },
             '& .MuiTabs-indicator': { height: 3, borderRadius: '3px 3px 0 0' },
           }}
@@ -444,6 +473,20 @@ export default function OwnerProfilePage() {
               <TextField fullWidth label="Ville" value={user.city_name || 'Non définie'} disabled />
             )}
           </Grid>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              fullWidth
+              label="Bio / Présentation"
+              multiline
+              rows={3}
+              value={isEditing ? editForm.bio : (user.bio || '')}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, bio: e.target.value }))}
+              disabled={!isEditing}
+              placeholder="Décrivez-vous en quelques mots : votre expérience, vos logements, votre zone géographique..."
+              helperText={isEditing ? `${editForm.bio.length}/500 caractères` : ''}
+              slotProps={{ htmlInput: { maxLength: 500 } }}
+            />
+          </Grid>
           {isEditing && (
             <Grid size={{ xs: 12 }}>
               <FormControlLabel
@@ -485,6 +528,7 @@ export default function OwnerProfilePage() {
                   lastname: user.lastname,
                   phone_number: user.phone_number || '',
                   phone_is_whatsapp: user.phone_is_whatsapp ?? false,
+                  bio: user.bio ?? '',
                 });
                 setCityInput(user.city_name || '');
                 setSelectedCity(

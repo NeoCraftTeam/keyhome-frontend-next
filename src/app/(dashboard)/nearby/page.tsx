@@ -104,6 +104,7 @@ export default function NearbyPage() {
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
     // User position marker
@@ -246,6 +247,9 @@ export default function NearbyPage() {
           {filteredAds.length} annonce{filteredAds.length !== 1 ? 's' : ''} trouvée{filteredAds.length !== 1 ? 's' : ''}
           {hasActiveFilters && ` (${allAds.length} au total)`}
         </Typography>
+        <Box component="span" role="status" aria-live="polite" aria-atomic="true" sx={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>
+          {filteredAds.length} annonce{filteredAds.length !== 1 ? 's' : ''} trouvée{filteredAds.length !== 1 ? 's' : ''}
+        </Box>
       </Box>
 
       {hasActiveFilters && (
