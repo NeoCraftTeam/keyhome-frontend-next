@@ -19,6 +19,10 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   IconButton,
   InputAdornment,
@@ -82,6 +86,7 @@ export default function OwnerAdsPage() {
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedAd, setSelectedAd] = useState<Ad | null>(null);
+  const [deleteAdTarget, setDeleteAdTarget] = useState<Ad | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: [
@@ -148,6 +153,7 @@ export default function OwnerAdsPage() {
       queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
       setAnchorEl(null);
       setSelectedAd(null);
+      setDeleteAdTarget(null);
     },
   });
 
@@ -622,9 +628,8 @@ export default function OwnerAdsPage() {
             )}
             <MenuItem
               onClick={() => {
-                if (confirm('Supprimer cette annonce ?')) {
-                  deleteMutation.mutate(selectedAd.id);
-                }
+                setDeleteAdTarget(selectedAd);
+                handleMenuClose();
               }}
               disabled={deleteMutation.isPending}
               sx={{ color: 'error.main' }}
@@ -638,6 +643,45 @@ export default function OwnerAdsPage() {
           </>
         )}
       </Menu>
+
+      {/* ═══ Delete Confirmation Dialog ═══ */}
+      <Dialog
+        open={!!deleteAdTarget}
+        onClose={() => setDeleteAdTarget(null)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle fontWeight={700}>Supprimer cette annonce ?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            L&apos;annonce <strong>&ldquo;{deleteAdTarget?.title}&rdquo;</strong> sera définitivement
+            supprimée. Cette action est irréversible.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setDeleteAdTarget(null)}
+            variant="outlined"
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={() => {
+              if (deleteAdTarget) {
+                deleteMutation.mutate(deleteAdTarget.id);
+              }
+            }}
+            variant="contained"
+            color="error"
+            disabled={deleteMutation.isPending}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+          >
+            {deleteMutation.isPending ? 'Suppression…' : 'Supprimer définitivement'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
