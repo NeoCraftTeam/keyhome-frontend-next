@@ -94,12 +94,23 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (
-      error.response?.status === 401 &&
-      typeof window !== 'undefined' &&
-      !AUTH_ROUTES.some((r) => error.config?.url?.includes(r))
-    ) {
-      window.dispatchEvent(new CustomEvent('kh:auth-expired'));
+    if (typeof window !== 'undefined') {
+      if (
+        error.response?.status === 401 &&
+        !AUTH_ROUTES.some((r) => error.config?.url?.includes(r))
+      ) {
+        window.dispatchEvent(new CustomEvent('kh:auth-expired'));
+      }
+
+      if (error.response?.status === 429) {
+        window.dispatchEvent(
+          new CustomEvent('kh:rate-limited', {
+            detail: {
+              retryAfter: (error.response.headers as Record<string, string | undefined>)['retry-after'] ?? null,
+            },
+          }),
+        );
+      }
     }
     return Promise.reject(error);
   },
