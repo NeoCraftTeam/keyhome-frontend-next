@@ -42,27 +42,27 @@ function getDistanceLabel(km: number): { text: string; color: string } {
 
 function createUserMarker(): HTMLDivElement {
   const el = document.createElement('div');
+  el.style.cssText = 'width:36px;height:36px;position:relative;display:flex;align-items:center;justify-content:center;';
   el.innerHTML = `
     <div style="
-      width: 28px; height: 28px;
-      background: #4285F4;
-      border-radius: 50%;
-      border: 3px solid #fff;
-      box-shadow: 0 2px 8px rgba(66,133,244,0.5);
-      position: relative;
-    ">
-      <div style="
-        position: absolute; inset: 0;
-        border-radius: 50%;
-        animation: pulse-blue 2s infinite;
-        background: rgba(66,133,244,0.25);
-      "></div>
-    </div>
+      position:absolute;inset:0;
+      border-radius:50%;
+      background:rgba(66,133,244,0.18);
+      animation:kh-pulse-blue 2s ease-out infinite;
+    "></div>
+    <div style="
+      width:20px;height:20px;
+      background:#4285F4;
+      border-radius:50%;
+      border:3px solid #fff;
+      box-shadow:0 2px 10px rgba(66,133,244,0.55);
+      position:relative;z-index:1;
+    "></div>
     <style>
-      @keyframes pulse-blue {
-        0% { transform: scale(1); opacity: 0.6; }
-        70% { transform: scale(2.2); opacity: 0; }
-        100% { transform: scale(1); opacity: 0; }
+      @keyframes kh-pulse-blue{
+        0%{transform:scale(1);opacity:.7}
+        70%{transform:scale(2.6);opacity:0}
+        100%{transform:scale(1);opacity:0}
       }
     </style>
   `;
@@ -71,21 +71,31 @@ function createUserMarker(): HTMLDivElement {
 
 function createAdMarker(): HTMLDivElement {
   const el = document.createElement('div');
+  el.style.cssText = 'width:36px;height:48px;display:flex;flex-direction:column;align-items:center;cursor:default;';
   el.innerHTML = `
     <div style="
-      width: 32px; height: 32px;
-      background: ${PRIMARY_RED};
-      border-radius: 50%;
-      border: 3px solid #fff;
-      box-shadow: 0 2px 8px rgba(246,71,95,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width:36px;height:36px;
+      background:${PRIMARY_RED};
+      border-radius:50% 50% 50% 0;
+      transform:rotate(-45deg);
+      border:3px solid #fff;
+      box-shadow:0 4px 14px rgba(246,71,95,0.45);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
     ">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="white" style="transform:rotate(45deg)">
         <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
       </svg>
     </div>
+    <div style="
+      width:4px;height:12px;
+      background:${PRIMARY_RED};
+      border-radius:0 0 3px 3px;
+      margin-top:-1px;
+      box-shadow:0 3px 6px rgba(246,71,95,0.3);
+    "></div>
   `;
   return el;
 }
@@ -161,6 +171,7 @@ export default function AdLocationMap({
     });
 
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
     map.on('load', () => {
@@ -250,7 +261,7 @@ export default function AdLocationMap({
             },
           });
 
-          new mapboxgl.Marker({ element: createAdMarker(), anchor: 'center' })
+          new mapboxgl.Marker({ element: createAdMarker(), anchor: 'bottom' })
             .setLngLat([displayLng, displayLat])
             .addTo(map);
 

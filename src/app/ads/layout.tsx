@@ -21,7 +21,7 @@ export default function AdsLayout({ children }: { children: React.ReactNode }) {
       }}
     >
       <Navbar />
-      <Box component="main" sx={{ flex: 1 }}>
+      <Box component="main" id="main-content" tabIndex={-1} sx={{ flex: 1 }}>
         {children}
       </Box>
       <Footer />

@@ -22,6 +22,20 @@ body {
   overscroll-behavior-y: auto;
 }
 
+/* ===== Scroll lock when any MUI modal/dialog/drawer is open =====
+   MUI sets `overflow: hidden` inline on <body> when a modal is active.
+   This CSS ensures both <html> and iOS touch scroll are also locked.    */
+body[style*="overflow: hidden"],
+body[style*="overflow:hidden"] {
+  /* iOS Safari / PWA: prevents momentum-based background scroll */
+  touch-action: none;
+  -webkit-overflow-scrolling: auto;
+}
+html:has(body[style*="overflow: hidden"]),
+html:has(body[style*="overflow:hidden"]) {
+  overflow: hidden;
+}
+
 /* PWA standalone mode — hide browser chrome helpers */
 @media all and (display-mode: standalone) {
   body {

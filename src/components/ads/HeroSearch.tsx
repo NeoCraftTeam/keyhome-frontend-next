@@ -206,7 +206,11 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
                     </Box>
                   ) : (
                     <Box
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Lancer la recherche IA"
                       onClick={() => handleAiSearch()}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleAiSearch(); } }}
                       sx={{
                         width: 36,
                         height: 36,
@@ -218,6 +222,7 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
                         cursor: 'pointer',
                         mr: 0.5,
                         '&:hover': { bgcolor: 'primary.dark' },
+                        '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
                       }}
                     >
                       <SearchIcon sx={{ color: 'white', fontSize: 18 }} />
@@ -232,7 +237,11 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
             {EXAMPLES.map((ex) => (
               <Box
                 key={ex}
+                role="button"
+                tabIndex={0}
+                aria-label={`Rechercher : ${ex}`}
                 onClick={() => { setAiQuery(ex); handleAiSearch(ex); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAiQuery(ex); handleAiSearch(ex); } }}
                 sx={{
                   px: 1.5,
                   py: 0.5,
@@ -246,6 +255,7 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
                   transition: 'all 0.2s ease',
                   '&:hover': { bgcolor: 'rgba(255,255,255,0.25)', transform: 'scale(1.02)' },
                   '&:active': { transform: 'scale(0.98)' },
+                  '&:focus-visible': { outline: '2px solid white', outlineOffset: 2 },
                 }}
               >
                 {ex}

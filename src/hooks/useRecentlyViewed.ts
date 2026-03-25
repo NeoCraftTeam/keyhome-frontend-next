@@ -1,6 +1,9 @@
 'use client';
 
+import { adsService } from '@/services/ads.service';
+import { useAuth } from '@/providers/AuthProvider';
 import { Ad } from '@/types';
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'keyhome_recently_viewed';
@@ -24,14 +27,33 @@ function readFromStorage(): Ad[] {
 
 /**
  * Tracks and retrieves recently viewed ads, persisted in localStorage.
+ * For authenticated users, also fetches from backend and merges results
+ * (backend takes priority for ordering since it's server-tracked).
  * Provides `addRecentlyViewed` to call when an ad detail page loads.
  */
 export function useRecentlyViewed() {
-  const [items, setItems] = useState<Ad[]>([]);
+  const { isAuthenticated } = useAuth();
+  const [localItems, setLocalItems] = useState<Ad[]>([]);
 
   useEffect(() => {
-    setItems(readFromStorage());
+    setLocalItems(readFromStorage());
   }, []);
+
+  // Fetch backend recently viewed for authenticated users
+  const { data: backendItems } = useQuery<Ad[]>({
+    queryKey: ['recently-viewed'],
+    queryFn: () => adsService.recentlyViewed(),
+    enabled: isAuthenticated,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  // Merge: backend items first, then local-only items (deduped)
+  const items = (() => {
+    if (!backendItems?.length) return localItems;
+    const backendIds = new Set(backendItems.map((a) => String(a.id)));
+    const localOnly = localItems.filter((a) => !backendIds.has(String(a.id)));
+    return [...backendItems, ...localOnly].slice(0, MAX_ITEMS);
+  })();
 
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
@@ -39,7 +61,7 @@ export function useRecentlyViewed() {
         try {
           const parsed = JSON.parse(e.newValue);
           if (Array.isArray(parsed)) {
-            setItems(parsed);
+            setLocalItems(parsed);
           }
         } catch {
           // Ignore parse errors
@@ -48,7 +70,7 @@ export function useRecentlyViewed() {
     };
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        setItems(readFromStorage());
+        setLocalItems(readFromStorage());
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -60,7 +82,7 @@ export function useRecentlyViewed() {
   }, []);
 
   const addRecentlyViewed = useCallback((ad: Ad) => {
-    setItems((prev) => {
+    setLocalItems((prev) => {
       const adId = String(ad.id);
       const filtered = prev.filter((item) => String(item.id) !== adId);
       const updated = [ad, ...filtered].slice(0, MAX_ITEMS);
@@ -74,7 +96,7 @@ export function useRecentlyViewed() {
   }, []);
 
   const clearRecentlyViewed = useCallback(() => {
-    setItems([]);
+    setLocalItems([]);
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {

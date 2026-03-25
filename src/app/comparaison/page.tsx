@@ -12,6 +12,8 @@ export const metadata: Metadata = {
     title: 'Comparaisons immobilières — KeyHome',
     description: 'Analyses comparatives pour vous aider à prendre les meilleures décisions immobilières en Afrique.',
     url: 'https://keyhome.app/comparaison',
+    siteName: 'KeyHome',
+    images: [{ url: 'https://keyhome.app/images/og-cover.png', width: 1200, height: 630, alt: 'Comparaisons immobilières — KeyHome' }],
   },
 };
 

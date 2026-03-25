@@ -73,6 +73,7 @@ export const metadata: Metadata = {
     canonical: 'https://keyhome.app',
     languages: {
       'fr-FR': 'https://keyhome.app',
+      'x-default': 'https://keyhome.app',
     },
   },
   openGraph: {

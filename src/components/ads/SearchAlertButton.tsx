@@ -69,7 +69,7 @@ export default function SearchAlertButton({ prefill = {}, variant = 'button', si
 
   const trigger = variant === 'icon' ? (
     <Tooltip title="Créer une alerte pour cette recherche">
-      <IconButton onClick={() => setOpen(true)} color="primary">
+      <IconButton onClick={() => setOpen(true)} color="primary" aria-label="Créer une alerte pour cette recherche">
         <NotificationsNone />
       </IconButton>
     </Tooltip>

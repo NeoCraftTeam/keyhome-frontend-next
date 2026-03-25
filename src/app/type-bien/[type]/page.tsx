@@ -120,6 +120,8 @@ export async function generateMetadata({
       title: `${data.plural} en Afrique | KeyHome`,
       description: `${data.description}. Annonces vérifiées.`,
       url: `https://keyhome.app/type-bien/${type.toLowerCase()}`,
+      siteName: 'KeyHome',
+      images: [{ url: 'https://keyhome.app/images/og-cover.png', width: 1200, height: 630, alt: `${data.plural} — KeyHome` }],
     },
   };
 }
@@ -176,11 +178,26 @@ export default async function PropertyTypePage({
     })),
   };
 
+  // BreadcrumbList JSON-LD for rich snippets
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: 'https://keyhome.app' },
+      { '@type': 'ListItem', position: 2, name: 'Types de biens', item: 'https://keyhome.app/type-bien' },
+      { '@type': 'ListItem', position: 3, name: data.plural, item: `https://keyhome.app/type-bien/${typeKey}` },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px', fontFamily: 'system-ui, sans-serif' }}>
         {/* Breadcrumb */}

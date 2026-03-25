@@ -40,6 +40,8 @@ export async function generateMetadata({
       title: `Immobilier à ${name} | KeyHome`,
       description: `Annonces immobilières vérifiées à ${name}. Trouvez votre bien idéal.`,
       url: `https://keyhome.app/immobilier/${ville.toLowerCase()}`,
+      siteName: 'KeyHome',
+      images: [{ url: 'https://keyhome.app/images/og-cover.png', width: 1200, height: 630, alt: `Immobilier à ${name} — KeyHome` }],
     },
   };
 }
@@ -93,11 +95,25 @@ export default async function CityPage({
     description: `Trouvez votre logement à ${name} avec KeyHome. ${total} annonces vérifiées disponibles.`,
   };
 
+  // BreadcrumbList JSON-LD for rich snippets
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: 'https://keyhome.app' },
+      { '@type': 'ListItem', position: 2, name: `Immobilier à ${name}`, item: `https://keyhome.app/immobilier/${cityKey}` },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 20px 80px' }}>

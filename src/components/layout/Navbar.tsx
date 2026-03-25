@@ -20,6 +20,8 @@ import {
     LightMode as LightModeIcon,
     Logout as LogoutIcon,
     Menu as MenuIcon,
+    Notifications as NotificationsIcon,
+    NotificationsActive as NotificationsActiveIcon,
     Person as PersonIcon,
     Search as SearchIcon,
     Settings as SettingsIcon,
@@ -80,6 +82,35 @@ export default function Navbar() {
 
   return (
     <>
+      {/* Skip-to-content link for keyboard/screen reader users (WCAG 2.4.1) */}
+      <Box
+        component="a"
+        href="#main-content"
+        sx={{
+          position: 'fixed',
+          top: '-100px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: (theme) => theme.zIndex.tooltip + 1,
+          bgcolor: 'primary.main',
+          color: '#fff',
+          px: 3,
+          py: 1.5,
+          borderRadius: '0 0 8px 8px',
+          fontWeight: 600,
+          fontSize: '0.875rem',
+          textDecoration: 'none',
+          transition: 'top 0.2s ease',
+          '&:focus': {
+            top: 0,
+            outline: '2px solid',
+            outlineColor: 'primary.main',
+            outlineOffset: 2,
+          },
+        }}
+      >
+        Aller au contenu principal
+      </Box>
       <AppBar
         position="fixed"
         elevation={0}
@@ -321,6 +352,29 @@ export default function Navbar() {
                         </ListItemIcon>
                         <ListItemText>Mes réservations</ListItemText>
                       </MenuItem>
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorEl(null);
+                          router.push('/notifications');
+                        }}
+                      >
+                        <ListItemIcon>
+                          <NotificationsIcon />
+                        </ListItemIcon>
+                        <ListItemText>Notifications</ListItemText>
+                      </MenuItem>
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorEl(null);
+                          router.push('/search-alerts');
+                        }}
+                      >
+                        <ListItemIcon>
+                          <NotificationsActiveIcon />
+                        </ListItemIcon>
+                        <ListItemText>Alertes de recherche</ListItemText>
+                      </MenuItem>
+                      <Divider />
                       <MenuItem
                         onClick={() => {
                           setAnchorEl(null);
@@ -576,6 +630,34 @@ export default function Navbar() {
                     <CalendarMonthIcon />
                   </ListItemIcon>
                   <ListItemText primary="Mes réservations" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    setMobileOpen(false);
+                    router.push('/notifications');
+                  }}
+                  sx={{ borderRadius: 2, mx: 1 }}
+                >
+                  <ListItemIcon>
+                    <NotificationsIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Notifications" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    setMobileOpen(false);
+                    router.push('/search-alerts');
+                  }}
+                  sx={{ borderRadius: 2, mx: 1 }}
+                >
+                  <ListItemIcon>
+                    <NotificationsActiveIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Alertes de recherche" />
                 </ListItemButton>
               </ListItem>
               <ListItem disablePadding>

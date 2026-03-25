@@ -72,6 +72,12 @@ export default function AppLoader({
               0%, 70% { transform: rotate(0deg); }
               100%    { transform: rotate(120deg); }
             }
+            @media (prefers-reduced-motion: reduce) {
+              .nc-loop-bars-anim-3-icon-f,
+              .nc-loop-bars-anim-3-icon-f > * {
+                animation: none !important;
+              }
+            }
           `}</style>
         </g>
       </svg>

@@ -1,7 +1,12 @@
 import {
   Bed as BedIcon,
+  DirectionsBus as BusIcon,
+  LocalHospital as HospitalIcon,
   LocalParking as ParkingIcon,
+  NearMe as NearMeIcon,
+  School as SchoolIcon,
   Shower as ShowerIcon,
+  ShoppingCart as ShopIcon,
   Straighten as StraightenIcon,
 } from '@mui/icons-material';
 import {
@@ -124,6 +129,107 @@ export default function AdFormFeatures({ values, update, errors }: AdFormFeature
               </Box>
             }
             sx={{ pt: 1 }}
+          />
+        </Grid>
+      </Grid>
+
+      {/* ═══ Proximité & Accessibilité ═══ */}
+      <Typography variant="subtitle1" sx={{ ...sectionTitleSx, display: 'flex', alignItems: 'center', gap: 1, mt: 3 }}>
+        <NearMeIcon sx={{ color: 'primary.main', fontSize: 22 }} />
+        Proximité & Accessibilité
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
+        Distances approximatives depuis le bien (en mètres). Laisser vide si non applicable.
+      </Typography>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <TextField
+            fullWidth
+            label="Route principale"
+            type="number"
+            inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
+            value={values.distance_main_road_m}
+            onChange={(e) => update('distance_main_road_m', e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <NearMeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                </InputAdornment>
+              ),
+              endAdornment: <InputAdornment position="end">m</InputAdornment>,
+            }}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <TextField
+            fullWidth
+            label="Magasins / Marchés"
+            type="number"
+            inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
+            value={values.distance_shops_m}
+            onChange={(e) => update('distance_shops_m', e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <ShopIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                </InputAdornment>
+              ),
+              endAdornment: <InputAdornment position="end">m</InputAdornment>,
+            }}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <TextField
+            fullWidth
+            label="Transport en commun"
+            type="number"
+            inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
+            value={values.distance_transport_m}
+            onChange={(e) => update('distance_transport_m', e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <BusIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                </InputAdornment>
+              ),
+              endAdornment: <InputAdornment position="end">m</InputAdornment>,
+            }}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <TextField
+            fullWidth
+            label="École / Université"
+            type="number"
+            inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
+            value={values.distance_school_m}
+            onChange={(e) => update('distance_school_m', e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SchoolIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                </InputAdornment>
+              ),
+              endAdornment: <InputAdornment position="end">m</InputAdornment>,
+            }}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <TextField
+            fullWidth
+            label="Hôpital / Clinique"
+            type="number"
+            inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
+            value={values.distance_hospital_m}
+            onChange={(e) => update('distance_hospital_m', e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <HospitalIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                </InputAdornment>
+              ),
+              endAdornment: <InputAdornment position="end">m</InputAdornment>,
+            }}
           />
         </Grid>
       </Grid>

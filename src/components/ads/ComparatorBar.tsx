@@ -16,12 +16,13 @@ import {
   useTheme,
 } from '@mui/material';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { gradient } from '@/theme/tokens';
 
 export default function ComparatorBar() {
   const { items, remove, clear, maxReached, clearMaxReached } = useComparator();
   const router = useRouter();
+  const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -29,7 +30,7 @@ export default function ComparatorBar() {
     router.push('/comparaisons');
   };
 
-  if (items.length === 0) { return null; }
+  if (items.length === 0 || pathname === '/comparaisons') { return null; }
 
   return (
     <MotionConfig reducedMotion="user">
@@ -120,7 +121,7 @@ export default function ComparatorBar() {
                 Comparer
               </Button>
 
-              <IconButton size="small" onClick={clear} sx={{ color: 'text.disabled', flexShrink: 0 }}>
+              <IconButton size="small" onClick={clear} aria-label="Vider la comparaison" sx={{ color: 'text.disabled', flexShrink: 0 }}>
                 <Close fontSize="small" />
               </IconButton>
             </Paper>

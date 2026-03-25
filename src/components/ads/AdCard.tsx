@@ -16,7 +16,6 @@ import {
     SquareFootOutlined,
     Star as StarIcon,
 } from '@mui/icons-material';
-import KeyScoreBadge from '@/components/ads/KeyScoreBadge';
 import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/material';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import Image from 'next/image';
@@ -117,6 +116,24 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
       >
       {/* ── Image area ─────────────────────────────────────────────── */}
       <Box
+        tabIndex={images.length > 1 ? 0 : undefined}
+        role={images.length > 1 ? 'region' : undefined}
+        aria-roledescription={images.length > 1 ? 'carrousel' : undefined}
+        aria-label={images.length > 1 ? `${images.length} photos de ${ad.title}` : undefined}
+        onKeyDown={(e) => {
+          if (images.length <= 1) return;
+          if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            e.stopPropagation();
+            slideDirection.current = 1;
+            setCurrentImage((prev) => (prev + 1) % images.length);
+          } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            e.stopPropagation();
+            slideDirection.current = -1;
+            setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+          }
+        }}
         onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
         onTouchEnd={(e) => {
           if (touchStartX.current === null || images.length <= 1) return;
@@ -170,7 +187,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
           >
             <Image
               src={images[currentImage].thumb || images[currentImage].url}
-              alt={`${ad.title}${currentImage > 0 ? ` ${currentImage + 1}` : ''}`}
+              alt={`${ad.title} — photo ${currentImage + 1} sur ${images.length}`}
               fill
               sizes="(max-width: 600px) 50vw, (max-width: 960px) 33vw, 25vw"
               priority={currentImage === 0}
@@ -352,12 +369,17 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
             {images.slice(0, 5).map((_, idx) => (
               <Box
                 key={idx}
+                role="button"
+                tabIndex={-1}
+                aria-label={`Photo ${idx + 1}`}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); slideDirection.current = idx > currentImage ? 1 : -1; setCurrentImage(idx); }}
                 sx={{
                   width: 5,
                   height: 5,
                   borderRadius: '50%',
                   bgcolor: idx === currentImage ? '#fff' : 'rgba(255,255,255,0.45)',
                   transition: 'background-color 0.2s',
+                  cursor: 'pointer',
                 }}
               />
             ))}
@@ -385,11 +407,6 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
             {ad.title}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-            {ad.is_unlocked && (
-              <Box onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} sx={{ display: 'flex' }}>
-                <KeyScoreBadge adId={ad.id} size="small" />
-              </Box>
-            )}
             {ad.rating != null && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0 }}>
                 <StarIcon sx={{ fontSize: 12, color: '#222' }} />

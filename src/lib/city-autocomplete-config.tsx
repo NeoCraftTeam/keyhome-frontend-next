@@ -1,16 +1,19 @@
 'use client';
 
 import { LocationOn } from '@mui/icons-material';
-import { alpha, Typography, useTheme } from '@mui/material';
+import { Typography } from '@mui/material';
 import type { City } from '@/types';
 
 /**
  * Shared config for city Autocomplete components across the app.
- * Rounded inputs match standard MUI TextField (Keyhome “premium” feel); list panel is softly rounded.
+ * Rounded inputs match standard MUI TextField (Keyhome "premium" feel); list panel is softly rounded.
+ *
+ * IMPORTANT: all color values use MUI theme tokens (strings) rather than computed CSS values
+ * so they are resolved from the render-time theme context. This prevents the dark-dropdown-on-
+ * light-panel bug that occurs when this hook is called outside a nested ThemeProvider but the
+ * Autocomplete renders inside one (e.g. the register page).
  */
 export function useCityAutocompleteConfig() {
-  const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
   /** Same radius as `theme.ts` → MuiTextField → MuiOutlinedInput-root (10px). */
   const inputRadiusPx = 10;
   const panelRadiusPx = 12;
@@ -27,7 +30,7 @@ export function useCityAutocompleteConfig() {
         borderColor: 'divider',
         mt: 0.5,
         overflow: 'hidden',
-        bgcolor: isDark ? theme.palette.background.paper : '#fff',
+        bgcolor: 'background.paper',
       },
     },
     listbox: {
@@ -42,11 +45,11 @@ export function useCityAutocompleteConfig() {
           mx: 0.5,
           my: 0.25,
           '&[aria-selected="true"]': {
-            bgcolor: alpha(theme.palette.primary.main, isDark ? 0.12 : 0.06),
+            bgcolor: 'action.selected',
             color: 'primary.main',
             fontWeight: 600,
           },
-          '&.Mui-focused': { bgcolor: alpha(theme.palette.primary.main, 0.06) },
+          '&.Mui-focused': { bgcolor: 'action.hover' },
         },
       },
     },

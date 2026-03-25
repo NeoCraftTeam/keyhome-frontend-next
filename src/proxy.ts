@@ -12,6 +12,13 @@ function isOwnerProtectedPath(pathname: string): boolean {
   return (pathname === '/owner' || pathname.startsWith('/owner/')) && !isOwnerPublicPath(pathname);
 }
 
+/** Customer-only private pages — owners must not access these */
+const CUSTOMER_PRIVATE_PATHS = ['/profile', '/my'];
+
+function isCustomerPrivatePath(pathname: string): boolean {
+  return CUSTOMER_PRIVATE_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
 /**
  * Build the Content-Security-Policy header with a per-request nonce.
  *
@@ -144,6 +151,14 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     }
     if (role === 'customer') {
       return NextResponse.redirect(new URL('/home', req.url));
+    }
+  }
+
+  // Customer-private pages: redirect authenticated owners back to their dashboard
+  if (isCustomerPrivatePath(pathname)) {
+    const role = req.cookies.get('kh_role')?.value;
+    if (role === 'agent' || role === 'admin') {
+      return NextResponse.redirect(new URL('/owner/dashboard', req.url));
     }
   }
 

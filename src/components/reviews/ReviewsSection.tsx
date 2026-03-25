@@ -106,14 +106,14 @@ export default function ReviewsSection({
         fullScreen={isMobile}
         disableScrollLock={false}
         scroll="paper"
-        PaperProps={{ sx: { borderRadius: isMobile ? 0 : 4, overflow: 'hidden' } }}
+        PaperProps={{ sx: { borderRadius: isMobile ? 0 : 4, display: 'flex', flexDirection: 'column' } }}
       >
         <Box sx={{ p: { xs: 2, md: 3 }, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end' }}>
           <IconButton aria-label="Fermer les commentaires" onClick={() => setIsDialogOpen(false)}>
             <Close />
           </IconButton>
         </Box>
-        <Box sx={{ p: { xs: 2, md: 4 } }}>
+        <Box sx={{ p: { xs: 2, md: 4 }, overflowY: 'auto', flex: 1, WebkitOverflowScrolling: 'touch' }}>
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 4 }}>
               <Typography sx={{ fontSize: { xs: '1.6rem', sm: '2rem', md: '2.2rem' }, fontWeight: 700, mb: 2 }}>
@@ -167,6 +167,7 @@ export default function ReviewsSection({
                     value={reviewSearch}
                     onChange={(e) => setReviewSearch(e.target.value)}
                     placeholder="Rechercher dans tous les commentaires"
+                    aria-label="Rechercher dans les commentaires"
                     style={{
                       width: '100%',
                       border: 'none',
@@ -180,13 +181,11 @@ export default function ReviewsSection({
               </Box>
               <Box
                 sx={{
-                  maxHeight: '56vh',
-                  overflowY: 'auto',
+                  maxHeight: { xs: 'none', md: '60vh' },
+                  overflowY: { xs: 'visible', md: 'auto' },
                   overscrollBehavior: 'contain',
                   pr: 1,
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none',
-                  '&::-webkit-scrollbar': { display: 'none', width: 0, height: 0 },
+                  WebkitOverflowScrolling: 'touch',
                 }}
               >
                 {filteredReviews.map((review) => (

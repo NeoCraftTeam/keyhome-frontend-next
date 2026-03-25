@@ -28,6 +28,8 @@ export async function generateMetadata({
       title: data.metaTitle,
       description: data.metaDescription,
       url: `https://keyhome.app/comparaison/${slug}`,
+      siteName: 'KeyHome',
+      images: [{ url: 'https://keyhome.app/images/og-cover.png', width: 1200, height: 630, alt: data.metaTitle }],
     },
   };
 }
@@ -56,6 +58,17 @@ export default async function ComparisonPage({
     dateModified: new Date().toISOString(),
   };
 
+  // BreadcrumbList JSON-LD for rich snippets
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: 'https://keyhome.app' },
+      { '@type': 'ListItem', position: 2, name: 'Comparaisons', item: 'https://keyhome.app/comparaison' },
+      { '@type': 'ListItem', position: 3, name: `${data.labelA} vs ${data.labelB}`, item: `https://keyhome.app/comparaison/${slug}` },
+    ],
+  };
+
   const cellStyle: React.CSSProperties = {
     padding: '12px 16px',
     borderBottom: '1px solid #f0f0f0',
@@ -69,6 +82,10 @@ export default async function ComparisonPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 20px', fontFamily: 'system-ui, sans-serif' }}>
         {/* Breadcrumb */}

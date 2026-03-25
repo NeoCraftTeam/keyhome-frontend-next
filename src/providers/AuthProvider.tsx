@@ -49,6 +49,13 @@ function sanctumKeyForScope(scope: 'client' | 'owner'): string {
   return scope === 'owner' ? SANCTUM_TOKEN_KEY_OWNER : SANCTUM_TOKEN_KEY_CLIENT;
 }
 
+function hasSessionHint(): boolean {
+  if (typeof document === 'undefined') {
+    return false;
+  }
+  return document.cookie.split(';').some((c) => c.trim().startsWith(`${ROLE_COOKIE}=`));
+}
+
 function hasAnySanctumInStorage(): boolean {
   if (typeof window === 'undefined') {
     return false;
@@ -202,6 +209,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const ownerArea = (pathnameRef.current ?? '').startsWith('/owner');
         const storageKey = ownerArea ? SANCTUM_TOKEN_KEY_OWNER : SANCTUM_TOKEN_KEY_CLIENT;
 
+        // --- Fast-path: pure guest (no session hint, no stored token) ---
+        // Skip the /me round-trip entirely. A guest has no kh_role cookie and no
+        // localStorage token — both guaranteed to be present after any successful login.
+        const storedToken = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null;
+        if (!hasSessionHint() && !storedToken) {
+          registerTokenGetter(() => Promise.resolve(null));
+          setToken(null);
+          setUserState(null);
+          clearRoleCookie();
+          setIsExchanging(false);
+          setHasResolvedInitialAuth(true);
+          return;
+        }
+
         // --- Session-first authentication (httpOnly cookie) ---
         // Try to authenticate via session cookie before falling back to localStorage token.
         // If a valid session exists, the cookie is sent automatically (withCredentials: true).
@@ -228,9 +249,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           // No active session — fall through to localStorage token
         }
-
-        // --- Fallback: localStorage Bearer token (migration path) ---
-        const storedToken = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null;
 
         registerPathAwareTokenGetter();
 

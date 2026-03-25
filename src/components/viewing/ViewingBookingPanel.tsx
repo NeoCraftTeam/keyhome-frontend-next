@@ -316,7 +316,14 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
                 aria-label={format(d, 'EEEE d MMMM', { locale: fr })}
                 aria-pressed={isSel}
                 onKeyDown={(e) => {
-                  if ((e.key === 'Enter' || e.key === ' ') && !isDisabled) { handleDateSelect(d); }
+                  if ((e.key === 'Enter' || e.key === ' ') && !isDisabled) { e.preventDefault(); handleDateSelect(d); }
+                  if (['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+                    e.preventDefault();
+                    const offset = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowDown' ? 7 : -7;
+                    const target = addDays(d, offset);
+                    const btn = (e.currentTarget.parentElement as HTMLElement)?.querySelector<HTMLElement>(`[aria-label="${format(target, 'EEEE d MMMM', { locale: fr })}"]`);
+                    btn?.focus();
+                  }
                 }}
                 sx={{
                   aspectRatio: '1',

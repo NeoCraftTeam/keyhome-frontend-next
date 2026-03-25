@@ -79,6 +79,7 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
     mapRef.current = map;
 

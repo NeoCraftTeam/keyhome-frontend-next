@@ -155,6 +155,7 @@ export default function ComparisonTable({ items, onRemove, onClear, showActions 
                   <IconButton
                     size="small"
                     onClick={() => onRemove(ad.id)}
+                    aria-label={`Retirer ${ad.title} de la comparaison`}
                     sx={{
                       position: 'absolute', top: 4, right: 4,
                       bgcolor: 'rgba(0,0,0,0.5)', color: 'white',

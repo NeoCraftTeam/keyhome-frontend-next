@@ -46,6 +46,9 @@ export default function PaymentSuccessScreen({
             '0%': { transform: 'scale(0)', opacity: 0 },
             '100%': { transform: 'scale(1)', opacity: 1 },
           },
+          '@media (prefers-reduced-motion: reduce)': {
+            animation: 'none',
+          },
         }}
       >
         <CheckCircle sx={{ color: '#008A05', fontSize: 42 }} />

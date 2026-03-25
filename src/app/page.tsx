@@ -25,6 +25,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'fr_FR',
     siteName: 'KeyHome',
+    images: [{ url: 'https://keyhome.app/images/og-cover.png', width: 1200, height: 630, alt: 'KeyHome — Plateforme immobilière en Afrique' }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
       'Trouvez votre maison, appartement ou terrain idéal parmi des milliers d\'annonces vérifiées.',
   },
   alternates: {
-    canonical: '/',
+    canonical: 'https://keyhome.app/',
   },
 };
 

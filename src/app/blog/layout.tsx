@@ -11,6 +11,8 @@ export const metadata: Metadata = {
     title: 'Blog Immobilier — KeyHome',
     description: "Guides et conseils immobiliers pour l'Afrique. Prix, quartiers, arnaques à éviter.",
     url: 'https://keyhome.app/blog',
+    siteName: 'KeyHome',
+    images: [{ url: 'https://keyhome.app/images/og-cover.png', width: 1200, height: 630, alt: 'Blog Immobilier — KeyHome' }],
   },
 };
 
