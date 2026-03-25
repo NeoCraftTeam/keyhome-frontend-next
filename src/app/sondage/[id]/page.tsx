@@ -10,7 +10,7 @@ import {
   Typography,
   Paper,
 } from '@mui/material';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import SurveyForm from '@/components/surveys/SurveyForm';
@@ -21,6 +21,7 @@ export default function SurveyPage() {
   const params = useParams();
   const surveyId = params.id as string;
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [submitted, setSubmitted] = useState(false);
 
   const { data: survey, isLoading, error } = useQuery({
@@ -34,6 +35,9 @@ export default function SurveyPage() {
       surveysService.submitResponse(surveyId, answers, anonymous),
     onSuccess: () => {
       setSubmitted(true);
+      queryClient.invalidateQueries({ queryKey: ['survey-has-answered-global'] });
+      queryClient.invalidateQueries({ queryKey: ['survey-has-answered-owner'] });
+      queryClient.invalidateQueries({ queryKey: ['auth-survey-has-answered'] });
     },
   });
 

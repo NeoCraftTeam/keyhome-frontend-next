@@ -22,7 +22,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import SentimentDissatisfiedOutlinedIcon from '@mui/icons-material/SentimentDissatisfiedOutlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { brand, gradient } from '@/theme/tokens';
@@ -32,6 +32,7 @@ export default function SurveySlugPage() {
   const slug = params.slug as string;
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
   const [showThankYou, setShowThankYou] = useState(false);
   const [submitAnonymously, setSubmitAnonymously] = useState(true);
 
@@ -64,6 +65,9 @@ export default function SurveySlugPage() {
     },
     onSuccess: () => {
       setShowThankYou(true);
+      queryClient.invalidateQueries({ queryKey: ['survey-has-answered-global'] });
+      queryClient.invalidateQueries({ queryKey: ['survey-has-answered-owner'] });
+      queryClient.invalidateQueries({ queryKey: ['auth-survey-has-answered'] });
     },
   });
 
