@@ -1,6 +1,54 @@
 import api from '@/lib/api';
 import { Ad, User, PaginatedResponse } from '@/types';
 
+export interface PublicReview {
+  id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  reviewer_name: string;
+  ad_title: string;
+}
+
+export interface PublicUserProfile {
+  id: string;
+  username: string | null;
+  firstname: string;
+  lastname: string;
+  display_name: string;
+  bio: string | null;
+  avatar: string | null;
+  type: 'individual' | 'agency' | null;
+  city_name: string | null;
+  is_verified: boolean;
+  agency: {
+    id: string;
+    name: string;
+    slug: string;
+    logo: string | null;
+  } | null;
+  member_since: string;
+  total_active_ads: number;
+  review_stats: {
+    avg_rating: number;
+    total_reviews: number;
+  };
+  response_time_label: string | null;
+  recent_reviews: PublicReview[];
+}
+
+export interface PublicProfileResponse {
+  success: boolean;
+  data: PublicUserProfile;
+  ads: Ad[];
+  meta: {
+    total: number;
+    current_page: number;
+    last_page: number;
+    per_page: number;
+  };
+}
+
 export const usersService = {
   async list(params?: { page?: number }): Promise<PaginatedResponse<User>> {
     const { data } = await api.get('/users', { params });
@@ -18,6 +66,11 @@ export const usersService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data.user ?? data.data ?? data;
+  },
+
+  async getPublicProfile(userId: string): Promise<PublicProfileResponse> {
+    const { data } = await api.get<PublicProfileResponse>(`/users/${userId}/public-profile`);
+    return data;
   },
 };
 
