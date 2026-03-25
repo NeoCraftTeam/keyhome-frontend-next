@@ -92,7 +92,11 @@ function buildCsp(nonce: string): string {
     "default-src 'self'",
     // script-src: nonce + explicit third-party origins (Clerk live host when pk_live_)
     `script-src 'self' 'nonce-${nonce}'${scriptSrcEvalOrStrict ? ` ${scriptSrcEvalOrStrict}` : ''} https://api.mapbox.com https://*.clerk.accounts.dev${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://*.keyhome.app https://*.neocraft.dev blob:`,
-    // style-src: unsafe-inline needed for MUI emotion; app domains added
+    // style-src: 'unsafe-inline' only — no nonce.
+    // CSP3 spec: when a nonce is present in style-src, 'unsafe-inline' is silently ignored,
+    // which blocks all Emotion/MUI <style> tags that don't carry the nonce.
+    // Since MUI injects many unnonce'd styles, we keep 'unsafe-inline' here without a nonce.
+    // The nonce is only applied to script-src where it is effective and needed.
     `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://*.keyhome.app https://*.neocraft.dev`,
     `font-src 'self' https://fonts.gstatic.com https://ray.st https://*.keyhome.app https://*.neocraft.dev`,
     "worker-src 'self' blob:",

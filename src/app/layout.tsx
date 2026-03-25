@@ -146,7 +146,6 @@ export default async function RootLayout({
 }>) {
   const nonce = (await headers()).get('x-nonce') ?? '';
   const clerkOrigin = getClerkPreconnectOrigin();
-
   return (
     <ClerkProvider
       localization={frFR}
@@ -177,7 +176,7 @@ export default async function RootLayout({
           <JsonLd />
         </head>
         <body className={`${inter.variable} ${jakarta.variable} antialiased`}>
-          <Providers>{children}
+          <Providers nonce={nonce}>{children}
             <Analytics />
             <WebVitals />
             <ServiceWorkerRegistrar />
