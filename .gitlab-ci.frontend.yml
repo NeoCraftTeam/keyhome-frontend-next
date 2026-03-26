@@ -39,7 +39,7 @@ frontend:install:
     changes:
       - keyhome-frontend-next/**/*
 
-# ── Vitest unit + component tests ────────────────────────────────────────────
+# ── Vitest unit + component tests with coverage ──────────────────────────────
 frontend:test:unit:
   stage: test
   image: node:${NODE_VERSION}-alpine
@@ -53,11 +53,17 @@ frontend:test:unit:
     policy: pull
   script:
     - cd ${FRONTEND_DIR}
-    - npm run test -- --reporter=verbose
+    - npm run test:coverage -- --reporter=verbose
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
     when: always
     reports:
       junit: ${FRONTEND_DIR}/test-results.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: ${FRONTEND_DIR}/coverage/cobertura-coverage.xml
+    paths:
+      - ${FRONTEND_DIR}/coverage/
     expire_in: 7 days
   only:
     changes:
@@ -97,6 +103,25 @@ frontend:lint:
   script:
     - cd ${FRONTEND_DIR}
     - npm run lint
+  only:
+    changes:
+      - keyhome-frontend-next/**/*
+
+# ── Prettier format check ─────────────────────────────────────────────────────
+frontend:format:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  needs: [frontend:install]
+  cache:
+    key:
+      files:
+        - ${FRONTEND_DIR}/package-lock.json
+    paths:
+      - ${FRONTEND_DIR}/node_modules/
+    policy: pull
+  script:
+    - cd ${FRONTEND_DIR}
+    - npm run format:check
   only:
     changes:
       - keyhome-frontend-next/**/*
