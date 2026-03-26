@@ -1,12 +1,37 @@
 import api from '@/lib/api';
 import {
-    Ad,
-    AutocompleteResult,
-    FacetsResponse,
-    NearbyParams,
-    PaginatedResponse,
-    SearchParams,
+  Ad,
+  AutocompleteResult,
+  FacetsResponse,
+  NearbyParams,
+  PaginatedResponse,
+  SearchParams,
 } from '@/types';
+
+/**
+ * Default Axios timeout is 30s; multipart ad payloads (many images,
+ * server-side WebP conversions, Scout/Meilisearch) routinely exceed that.
+ */
+const MULTIPART_AD_TIMEOUT_MS = 120_000;
+
+/**
+ * Tour scenes: up to 30 MiB per image (API), multiple files — upload + disk/S3 + metadata
+ * often exceeds 30s. Override in production if needed:
+ * NEXT_PUBLIC_API_TOUR_UPLOAD_TIMEOUT_MS
+ */
+function resolveTourScenesUploadTimeoutMs(): number {
+  const raw = process.env.NEXT_PUBLIC_API_TOUR_UPLOAD_TIMEOUT_MS;
+  if (raw === undefined || raw === '') {
+    return 600_000;
+  }
+  const n = Number(raw);
+  if (!Number.isFinite(n)) {
+    return 600_000;
+  }
+  return Math.max(30_000, Math.min(n, 1_800_000));
+}
+
+const TOUR_SCENES_UPLOAD_TIMEOUT_MS = resolveTourScenesUploadTimeoutMs();
 
 export const adsService = {
   async list(params?: {
@@ -36,10 +61,7 @@ export const adsService = {
     return data.data ?? data;
   },
 
-  async nearbyForUser(
-    userId: string,
-    params: NearbyParams
-  ): Promise<Ad[]> {
+  async nearbyForUser(userId: string, params: NearbyParams): Promise<Ad[]> {
     const { data } = await api.get(`/ads/${userId}/nearby`, { params });
     return data.data ?? data;
   },
@@ -62,6 +84,7 @@ export const adsService = {
   async create(formData: FormData): Promise<Ad> {
     const { data } = await api.post('/ads', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: MULTIPART_AD_TIMEOUT_MS,
     });
     const body = data.data ?? data;
     return body.ad ?? body;
@@ -72,6 +95,7 @@ export const adsService = {
     formData.append('_method', 'PUT');
     const { data } = await api.post(`/ads/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: MULTIPART_AD_TIMEOUT_MS,
     });
     const body = data.data ?? data;
     return body.ad ?? body;
@@ -82,21 +106,28 @@ export const adsService = {
   },
 
   async toggleVisibility(adId: string): Promise<{ is_visible: boolean }> {
-    const { data } = await api.post<{ data?: { is_visible: boolean }; is_visible?: boolean }>(
-      `/ads/${adId}/toggle-visibility`
-    );
+    const { data } = await api.post<{
+      data?: { is_visible: boolean };
+      is_visible?: boolean;
+    }>(`/ads/${adId}/toggle-visibility`);
     const visible = data.data?.is_visible ?? data.is_visible ?? true;
     return { is_visible: visible };
   },
 
   async enhanceDescription(description: string): Promise<{ enhanced: string }> {
-    const { data } = await api.post<{ enhanced: string }>('/ads/ai/enhance-description', {
-      description,
-    });
+    const { data } = await api.post<{ enhanced: string }>(
+      '/ads/ai/enhance-description',
+      {
+        description,
+      }
+    );
     return data;
   },
 
-  async setStatus(adId: string, status: string): Promise<{ old_status: string; new_status: string }> {
+  async setStatus(
+    adId: string,
+    status: string
+  ): Promise<{ old_status: string; new_status: string }> {
     const { data } = await api.post<{
       old_status: string;
       new_status: string;
@@ -109,7 +140,11 @@ export const adsService = {
     };
   },
 
-  async getStats(): Promise<{ ads_count: number; cities_count: number; users_count: number }> {
+  async getStats(): Promise<{
+    ads_count: number;
+    cities_count: number;
+    users_count: number;
+  }> {
     const { data } = await api.get('/stats/landing');
     return data;
   },
@@ -144,23 +179,43 @@ export const adsService = {
 
   async uploadTourScenes(
     adId: string,
-    scenes: { title: string; image: File; hotspots?: Array<{ pitch: number; yaw: number; target_scene: string; label: string }> }[],
-  ): Promise<{ message: string; scenes_count: number; config: Record<string, unknown> }> {
+    scenes: {
+      title: string;
+      image: File;
+      hotspots?: Array<{
+        pitch: number;
+        yaw: number;
+        target_scene: string;
+        label: string;
+      }>;
+    }[]
+  ): Promise<{
+    message: string;
+    scenes_count: number;
+    config: Record<string, unknown>;
+  }> {
     const formData = new FormData();
     scenes.forEach((scene, i) => {
       formData.append(`scenes[${i}][title]`, scene.title);
       formData.append(`scenes[${i}][image]`, scene.image);
       if (scene.hotspots) {
         scene.hotspots.forEach((h, j) => {
-          formData.append(`scenes[${i}][hotspots][${j}][pitch]`, String(h.pitch));
+          formData.append(
+            `scenes[${i}][hotspots][${j}][pitch]`,
+            String(h.pitch)
+          );
           formData.append(`scenes[${i}][hotspots][${j}][yaw]`, String(h.yaw));
-          formData.append(`scenes[${i}][hotspots][${j}][target_scene]`, h.target_scene);
+          formData.append(
+            `scenes[${i}][hotspots][${j}][target_scene]`,
+            h.target_scene
+          );
           formData.append(`scenes[${i}][hotspots][${j}][label]`, h.label);
         });
       }
     });
     const { data } = await api.post(`/ads/${adId}/tour/scenes`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: TOUR_SCENES_UPLOAD_TIMEOUT_MS,
     });
     return data;
   },
@@ -168,9 +223,17 @@ export const adsService = {
   async updateHotspots(
     adId: string,
     sceneId: string,
-    hotspots: Array<{ pitch: number; yaw: number; target_scene: string; label: string }>,
+    hotspots: Array<{
+      pitch: number;
+      yaw: number;
+      target_scene: string;
+      label: string;
+    }>
   ): Promise<{ message: string }> {
-    const { data } = await api.patch(`/ads/${adId}/tour/scenes/${sceneId}/hotspots`, { hotspots });
+    const { data } = await api.patch(
+      `/ads/${adId}/tour/scenes/${sceneId}/hotspots`,
+      { hotspots }
+    );
     return data;
   },
 

@@ -100,9 +100,13 @@ describe('adsService', () => {
     // the wrapper instead of unwrapping, ad detail pages show nothing.
     it('unwraps data.data from Laravel resource response', async () => {
       mockGet.mockResolvedValue({ data: { data: mockAd } });
-      const result = await adsService.show('9e5f2a3b-1c4d-4e6f-8a7b-2d3e4f5a6b7c');
+      const result = await adsService.show(
+        '9e5f2a3b-1c4d-4e6f-8a7b-2d3e4f5a6b7c'
+      );
 
-      expect(mockGet).toHaveBeenCalledWith('/ads/9e5f2a3b-1c4d-4e6f-8a7b-2d3e4f5a6b7c');
+      expect(mockGet).toHaveBeenCalledWith(
+        '/ads/9e5f2a3b-1c4d-4e6f-8a7b-2d3e4f5a6b7c'
+      );
       expect(result.title).toBe('Appartement T3 meublé à Bastos');
     });
 
@@ -131,7 +135,9 @@ describe('adsService', () => {
 
       await adsService.search(searchParams);
 
-      expect(mockGet).toHaveBeenCalledWith('/ads/search', { params: searchParams });
+      expect(mockGet).toHaveBeenCalledWith('/ads/search', {
+        params: searchParams,
+      });
     });
   });
 
@@ -163,7 +169,10 @@ describe('adsService', () => {
   describe('autocomplete', () => {
     // BUG CATCH: If field and q params aren't sent, autocomplete returns nothing.
     it('sends field and query parameters', async () => {
-      const results = [{ value: 'Yaoundé', count: 15 }, { value: 'Yaounde', count: 3 }];
+      const results = [
+        { value: 'Yaoundé', count: 15 },
+        { value: 'Yaounde', count: 3 },
+      ];
       mockGet.mockResolvedValue({ data: { data: results } });
 
       const result = await adsService.autocomplete('city', 'Yao');
@@ -207,9 +216,14 @@ describe('adsService', () => {
 
       await adsService.create(formData);
 
-      expect(mockPost).toHaveBeenCalledWith('/ads', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      expect(mockPost).toHaveBeenCalledWith(
+        '/ads',
+        formData,
+        expect.objectContaining({
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 120_000,
+        })
+      );
     });
   });
 
@@ -227,9 +241,36 @@ describe('adsService', () => {
       // Verify _method was appended
       expect(formData.get('_method')).toBe('PUT');
       // Verify it uses POST (not PUT) endpoint
-      expect(mockPost).toHaveBeenCalledWith('/ads/ad-123', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      expect(mockPost).toHaveBeenCalledWith(
+        '/ads/ad-123',
+        formData,
+        expect.objectContaining({
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 120_000,
+        })
+      );
+    });
+  });
+
+  describe('uploadTourScenes', () => {
+    it('sends multipart with extended timeout for large panoramas', async () => {
+      const file = new File(['x'], 'pano.jpg', { type: 'image/jpeg' });
+      mockPost.mockResolvedValue({
+        data: { message: 'ok', scenes_count: 1, config: {} },
       });
+
+      await adsService.uploadTourScenes('ad-123', [
+        { title: 'Salon', image: file },
+      ]);
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/ads/ad-123/tour/scenes',
+        expect.any(FormData),
+        expect.objectContaining({
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 600_000,
+        })
+      );
     });
   });
 

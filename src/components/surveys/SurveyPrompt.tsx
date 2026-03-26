@@ -144,23 +144,31 @@ export default function SurveyPrompt({
           </IconButton>
         </Stack>
 
-        <Stack
-          direction={{ xs: 'column-reverse', sm: 'row' }}
-          spacing={1}
-          justifyContent="flex-end"
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column-reverse', sm: 'row' },
+            flexWrap: 'nowrap',
+            alignItems: { xs: 'stretch', sm: 'center' },
+            justifyContent: { xs: 'stretch', sm: 'flex-end' },
+            gap: 1,
+            width: '100%',
+          }}
         >
           <Button
             variant="outlined"
             onClick={handleDismiss}
-            fullWidth
             sx={{
               borderRadius: 999,
               py: 1,
+              px: { xs: 2, sm: 2.5 },
               fontWeight: 600,
               textTransform: 'none',
               color: 'text.secondary',
               borderColor: 'divider',
-              flex: { sm: '0 0 auto' },
+              width: { xs: '100%', sm: 'auto' },
+              flexShrink: 0,
+              alignSelf: { xs: 'stretch', sm: 'auto' },
             }}
           >
             Plus tard
@@ -168,19 +176,20 @@ export default function SurveyPrompt({
           <Button
             variant="contained"
             onClick={handleStart}
-            fullWidth
             sx={{
               borderRadius: 999,
               py: 1,
+              px: { xs: 2, sm: 2.75 },
               fontWeight: 700,
               textTransform: 'none',
-              flex: { sm: '0 0 auto' },
-              minWidth: { sm: 140 },
+              width: { xs: '100%', sm: 'auto' },
+              flexShrink: 0,
+              alignSelf: { xs: 'stretch', sm: 'auto' },
             }}
           >
             Participer
           </Button>
-        </Stack>
+        </Box>
       </Stack>
     </Paper>
   );
