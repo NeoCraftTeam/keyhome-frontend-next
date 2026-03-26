@@ -225,22 +225,21 @@ function SearchContent() {
 
   // Auto-select type from URL param when adTypes load
   useEffect(() => {
+    if (!adTypes?.length || selectedType) return;
+    const urlTypeId = searchParams.get('type_id');
     const urlType = searchParams.get('type') || '';
-    if (urlType && !selectedType && adTypes?.length) {
-      const match = adTypes.find(
-        (t) => t.name.toLowerCase() === urlType.toLowerCase()
-      );
-      if (match) {
-        setSelectedType(match);
-      }
-    }
+    const match = urlTypeId
+      ? adTypes.find((t) => String(t.id) === urlTypeId)
+      : adTypes.find((t) => t.name.toLowerCase() === urlType.toLowerCase());
+    if (match) setSelectedType(match);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adTypes]);
 
   const buildParams = (): SearchParams => ({
     q: query || undefined,
     city: selectedCity?.name || undefined,
-    type: selectedType?.name || undefined,
+    type_id: selectedType?.id || undefined,
+    type: selectedType?.id ? undefined : (selectedType?.name || undefined),
     bedrooms: bedrooms || undefined,
     bathrooms: bathrooms || undefined,
     price_min: priceRange[0] > 0 ? priceRange[0] : undefined,

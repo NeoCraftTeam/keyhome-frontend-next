@@ -464,6 +464,7 @@ export interface SearchParams {
   q?: string;
   city?: string;
   type?: string;
+  type_id?: string | number;
   quarter?: string;
   bedrooms?: number;
   bathrooms?: number;

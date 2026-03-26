@@ -52,7 +52,8 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
       const params = new URLSearchParams();
       if (parsed.q) { params.set('q', parsed.q); }
       if (parsed.city_name) { params.set('city', parsed.city_name); }
-      if (parsed.type_name) { params.set('type', parsed.type_name); }
+      if (parsed.type_id) { params.set('type_id', String(parsed.type_id)); }
+      else if (parsed.type_name) { params.set('type', parsed.type_name); }
       if (parsed.bedrooms) { params.set('bedrooms', String(parsed.bedrooms)); }
       if (parsed.price_max) { params.set('price_max', String(parsed.price_max)); }
       if (parsed.price_min) { params.set('price_min', String(parsed.price_min)); }

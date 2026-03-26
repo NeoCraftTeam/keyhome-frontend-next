@@ -16,6 +16,7 @@ export interface SearchParams {
   q?: string;
   city?: string;
   type?: string;
+  type_id?: string | number;
   quarter?: string;
   bedrooms?: number;
   bathrooms?: number;
@@ -26,6 +27,7 @@ export interface SearchParams {
   has_parking?: boolean;
   has_3d_tour?: boolean;
   is_verified?: boolean;
+  attributes?: string[];
   latitude?: number;
   longitude?: number;
   sort?: string;
