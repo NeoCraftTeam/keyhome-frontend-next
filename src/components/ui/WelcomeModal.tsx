@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { APPTOUR_SHOWN_KEY } from './AppTour';
 import { brand, gradient } from '@/theme/tokens';
 
 /** ms to wait after AppTour completion before opening this modal. */
@@ -40,6 +41,8 @@ export default function WelcomeModal() {
   const [open, setOpen] = useState(false);
   const hasShown = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
 
   /** Schedule the modal to open after `delayMs`. Clears any previous pending timer. */
   const scheduleOpen = useCallback((delayMs: number) => {
@@ -47,6 +50,11 @@ export default function WelcomeModal() {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       if (hasShown.current) return;
+      // If onboarding was already completed (e.g. race condition), don't show again.
+      if (userRef.current?.onboarding_completed_at != null) {
+        if (typeof window !== 'undefined') localStorage.removeItem(TOUR_TS_KEY);
+        return;
+      }
       hasShown.current = true;
       if (typeof window !== 'undefined') localStorage.removeItem(TOUR_TS_KEY);
       setOpen(true);
@@ -64,6 +72,17 @@ export default function WelcomeModal() {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [scheduleOpen]);
 
+  // Cancel any pending timer if onboarding is already completed.
+  // This handles stale TOUR_TS_KEY left in localStorage after the full flow finishes.
+  useEffect(() => {
+    if (user?.onboarding_completed_at == null) return;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (typeof window !== 'undefined') localStorage.removeItem(TOUR_TS_KEY);
+  }, [user?.onboarding_completed_at]);
+
   // Listen for fresh tour-completed events
   useEffect(() => {
     const handleTourCompleted = () => {
@@ -79,6 +98,9 @@ export default function WelcomeModal() {
 
   const handleClose = async (): Promise<void> => {
     setOpen(false);
+
+    // Clear the tour-shown flag now that the full onboarding sequence is done.
+    if (typeof window !== 'undefined') localStorage.removeItem(APPTOUR_SHOWN_KEY);
 
     // Persist onboarding completion on backend (idempotent)
     authService.completeOnboarding().catch(() => {});

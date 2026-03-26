@@ -32,6 +32,10 @@ import {
 import type { SvgIconComponent } from '@mui/icons-material';
 import { brand } from '@/theme/tokens';
 
+/** localStorage key set when AppTour closes for a client user.
+ * Prevents the tour from reopening on refresh while WelcomeModal countdown is running. */
+export const APPTOUR_SHOWN_KEY = 'kh_apptour_shown';
+
 interface TourStep {
   Icon: SvgIconComponent;
   title: string;
@@ -160,6 +164,12 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
       return;
     }
 
+    // Tour was already completed this session (WelcomeModal countdown may still be running).
+    // Prevent the tour from looping on refresh before onboarding_completed_at is persisted.
+    if (variant === 'client' && typeof window !== 'undefined' && localStorage.getItem(APPTOUR_SHOWN_KEY)) {
+      return;
+    }
+
     if (variant === 'owner') {
       const allowed = user.role === UserRole.AGENT || user.role === UserRole.ADMIN;
       if (!allowed) {
@@ -188,10 +198,9 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
     setOpen(false);
     onDone?.();
     if (variant === 'client') {
+      // Mark tour as shown so refresh doesn't reopen it during WelcomeModal countdown.
+      if (typeof window !== 'undefined') localStorage.setItem(APPTOUR_SHOWN_KEY, '1');
       // Signal WelcomeModal to start its 3-minute countdown.
-      // WelcomeModal is responsible for calling completeOnboarding() after it closes.
-      // We must NOT call it here or onboarding_completed_at gets set too early,
-      // which would unlock the survey before PushPrompt has a chance to show.
       window.dispatchEvent(new CustomEvent('kh:tour-completed'));
     } else {
       // Owner flow: no WelcomeModal, so complete onboarding immediately.
