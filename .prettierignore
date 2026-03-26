@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+.next
+out
+dist
+build
+coverage
+
+# Cache
+.turbo
+.cache
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Misc
+.DS_Store
+*.pem
+
+# Storybook
+storybook-static
+
+# Playwright
+test-results
+playwright-report
+
+# Public
+public/sw.js
+public/workbox-*.js

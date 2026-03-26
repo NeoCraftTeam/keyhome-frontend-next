@@ -9,13 +9,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "prepare:e2e": "playwright install chromium",
+    "analyze": "ANALYZE=true next build",
     "storybook": "NODE_OPTIONS='--require ./.storybook/register-next-config.cjs' storybook dev -p 6006",
-    "build-storybook": "NODE_OPTIONS='--require ./.storybook/register-next-config.cjs' storybook build"
+    "build-storybook": "NODE_OPTIONS='--require ./.storybook/register-next-config.cjs' storybook build",
+    "prepare": "husky"
   },
   "dependencies": {
     "@clerk/localizations": "^3.37.0",
@@ -39,7 +44,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.34.3",
     "mapbox-gl": "^3.18.1",
-    "next": "16.1.6",
+    "next": "^16.2.1",
     "next-intl": "^4.3.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -49,6 +54,7 @@
     "web-vitals": "^5.1.0"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.2.1",
     "@playwright/test": "^1.58.2",
     "@storybook/addon-a11y": "^8.6.0",
     "@storybook/addon-essentials": "^8.6.0",
@@ -65,12 +71,27 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.183.1",
     "@vitejs/plugin-react": "^5.1.4",
+    "@vitest/coverage-v8": "^4.1.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "husky": "^9.1.7",
     "jsdom": "^28.1.0",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1",
     "storybook": "^8.6.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
   }
 }
