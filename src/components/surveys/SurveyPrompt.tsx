@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button, Paper, Typography } from '@mui/material';
+import { Box, Button, IconButton, Paper, Stack, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { AssignmentOutlined, Close } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
@@ -57,70 +57,95 @@ export default function SurveyPrompt({ surveyId, surveySlug, title, description 
         right: { xs: 12, sm: 24 },
         left: { xs: 12, sm: 'auto' },
         zIndex: 1000,
-        maxWidth: { xs: 'none', sm: 360 },
-        p: { xs: 2.5, sm: 3 },
-        borderRadius: 4,
+        maxWidth: { xs: 'none', sm: 420 },
+        p: { xs: 2, sm: 2.5 },
+        borderRadius: 3,
         border: '1px solid',
         borderColor: 'divider',
         boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
         animation: 'fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both',
       }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
-        <Box
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: 2,
-            bgcolor: 'rgba(246, 71, 95, 0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'primary.main',
-          }}
-        >
-          <AssignmentOutlined />
-        </Box>
-        <Close
-          onClick={handleDismiss}
-          sx={{ cursor: 'pointer', color: 'text.secondary', fontSize: 20, '&:hover': { color: 'text.primary' } }}
-        />
-      </Box>
+      <Stack spacing={2}>
+        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
+          <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: 2,
+                bgcolor: 'rgba(246, 71, 95, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'primary.main',
+                flexShrink: 0,
+              }}
+            >
+              <AssignmentOutlined sx={{ fontSize: 22 }} />
+            </Box>
+            <Stack spacing={0.75} sx={{ minWidth: 0, pt: 0.25 }}>
+              <Typography
+                component="h2"
+                variant="subtitle1"
+                fontWeight={700}
+                sx={{ fontSize: { xs: '1rem', sm: '1.0625rem' }, lineHeight: 1.35, letterSpacing: '-0.01em' }}
+              >
+                {title}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ lineHeight: 1.55, fontSize: { xs: '0.875rem', sm: '0.9rem' } }}
+              >
+                {description}
+              </Typography>
+            </Stack>
+          </Stack>
+          <IconButton
+            size="small"
+            onClick={handleDismiss}
+            aria-label="Fermer"
+            sx={{ color: 'text.secondary', mt: -0.5, mr: -0.5 }}
+          >
+            <Close fontSize="small" />
+          </IconButton>
+        </Stack>
 
-      <Typography
-        variant="subtitle1"
-        fontWeight={700}
-        gutterBottom
-        sx={{ wordBreak: 'break-word' }}
-      >
-        {title}
-      </Typography>
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        sx={{ mb: 3, lineHeight: 1.5, wordBreak: 'break-word' }}
-      >
-        {description}
-      </Typography>
-
-      <Box sx={{ display: 'flex', gap: 1.5 }}>
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={handleStart}
-          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
-        >
-          Participer
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          onClick={handleDismiss}
-          sx={{ borderRadius: 2, fontWeight: 600, textTransform: 'none', color: 'text.secondary', borderColor: 'divider' }}
-        >
-          Plus tard
-        </Button>
-      </Box>
+        <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={1} justifyContent="flex-end">
+          <Button
+            variant="outlined"
+            onClick={handleDismiss}
+            fullWidth
+            sx={{
+              borderRadius: 999,
+              py: 1,
+              fontWeight: 600,
+              textTransform: 'none',
+              color: 'text.secondary',
+              borderColor: 'divider',
+              flex: { sm: '0 0 auto' },
+            }}
+          >
+            Plus tard
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleStart}
+            fullWidth
+            sx={{
+              borderRadius: 999,
+              py: 1,
+              fontWeight: 700,
+              textTransform: 'none',
+              flex: { sm: '0 0 auto' },
+              minWidth: { sm: 140 },
+            }}
+          >
+            Participer
+          </Button>
+        </Stack>
+      </Stack>
     </Paper>
   );
 }

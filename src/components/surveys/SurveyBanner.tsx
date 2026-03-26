@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button, Paper, Typography } from '@mui/material';
+import { Box, Button, Paper, Stack, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { AssignmentOutlined } from '@mui/icons-material';
 import { useState } from 'react';
@@ -57,7 +57,7 @@ export default function SurveyBanner({ surveyId, surveySlug, title, description,
         left: { xs: 12, sm: 24 },
         right: { xs: 12, sm: 24 },
         zIndex: 1000,
-        maxWidth: 480,
+        maxWidth: { xs: 'none', sm: 520 },
         mx: 'auto',
         p: { xs: 2, sm: 2.5 },
         borderRadius: 3,
@@ -67,44 +67,69 @@ export default function SurveyBanner({ surveyId, surveySlug, title, description,
         animation: 'fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexWrap: 'wrap' }}>
-        <Box
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: 2,
-            bgcolor: 'rgba(246, 71, 95, 0.1)',
-            display: { xs: 'none', sm: 'flex' },
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'primary.main',
-            flexShrink: 0,
-          }}
+      <Stack spacing={2}>
+        <Stack direction="row" spacing={1.5} alignItems="flex-start">
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2,
+              bgcolor: 'rgba(246, 71, 95, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'primary.main',
+              flexShrink: 0,
+            }}
+          >
+            <AssignmentOutlined sx={{ fontSize: 22 }} />
+          </Box>
+          <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0, pt: 0.25 }}>
+            <Typography
+              component="h2"
+              variant="subtitle1"
+              fontWeight={700}
+              sx={{
+                fontSize: { xs: '1rem', sm: '1.0625rem' },
+                lineHeight: 1.35,
+                letterSpacing: '-0.01em',
+              }}
+            >
+              {title}
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                fontSize: { xs: '0.875rem', sm: '0.9rem' },
+                lineHeight: 1.55,
+                maxWidth: '62ch',
+              }}
+            >
+              {description}
+            </Typography>
+          </Stack>
+        </Stack>
+
+        <Stack
+          direction={{ xs: 'column-reverse', sm: 'row' }}
+          spacing={1}
+          justifyContent="flex-end"
+          alignItems={{ xs: 'stretch', sm: 'center' }}
         >
-          <AssignmentOutlined />
-        </Box>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography
-            variant="subtitle1"
-            fontWeight={700}
-            sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, wordBreak: 'break-word' }}
-          >
-            {title}
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' }, wordBreak: 'break-word' }}
-          >
-            {description}
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1, flexShrink: 0, width: { xs: '100%', sm: 'auto' } }}>
           <Button
             variant="outlined"
             onClick={handlePlusTard}
             fullWidth
-            sx={{ borderRadius: 2, fontWeight: 600, textTransform: 'none', color: 'text.secondary', borderColor: 'divider' }}
+            sx={{
+              borderRadius: 999,
+              py: 1,
+              fontWeight: 600,
+              textTransform: 'none',
+              color: 'text.secondary',
+              borderColor: 'divider',
+              flex: { sm: '0 0 auto' },
+            }}
           >
             Plus tard
           </Button>
@@ -112,12 +137,19 @@ export default function SurveyBanner({ surveyId, surveySlug, title, description,
             variant="contained"
             onClick={handleParticiper}
             fullWidth
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+            sx={{
+              borderRadius: 999,
+              py: 1,
+              fontWeight: 700,
+              textTransform: 'none',
+              flex: { sm: '0 0 auto' },
+              minWidth: { sm: 140 },
+            }}
           >
             Participer
           </Button>
-        </Box>
-      </Box>
+        </Stack>
+      </Stack>
     </Paper>
   );
 }
