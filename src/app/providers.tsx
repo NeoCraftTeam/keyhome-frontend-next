@@ -10,10 +10,16 @@ import { QueryProvider } from '@/providers/QueryProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import ComparatorBar from '@/components/ads/ComparatorBar';
 
-export function Providers({ children, nonce = '' }: { children: React.ReactNode; nonce?: string }) {
+export function Providers({
+  children,
+  nonce = '',
+}: {
+  children: React.ReactNode;
+  nonce?: string;
+}) {
   return (
     <QueryProvider>
-      <ThemeProvider>
+      <ThemeProvider nonce={nonce}>
         <UtmCaptureProvider>
           <SkipLink />
           <ErrorBoundary>

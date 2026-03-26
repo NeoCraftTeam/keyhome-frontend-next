@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
 import { lightTheme, darkTheme } from '@/theme/theme';
+import MuiEmotionRegistry from '@/components/MuiEmotionRegistry';
 
 export type ThemeChoice = 'light' | 'dark' | 'system';
 type ResolvedMode = 'light' | 'dark';
@@ -28,44 +29,65 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [choice, setChoiceState] = useState<ThemeChoice>('system');
-  const [systemDark, setSystemDark] = useState(false);
-
-  useEffect(() => {
+export function ThemeProvider({
+  children,
+  nonce = '',
+}: {
+  children: React.ReactNode;
+  nonce?: string;
+}) {
+  const [choice, setChoiceState] = useState<ThemeChoice>(() => {
+    if (typeof window === 'undefined') return 'system';
     try {
       const saved = localStorage.getItem('theme') as ThemeChoice | null;
-      if (saved === 'dark' || saved === 'light' || saved === 'system') {
-        setChoiceState(saved);
-      }
+      if (saved === 'dark' || saved === 'light' || saved === 'system')
+        return saved;
     } catch {
-      // localStorage may be unavailable
+      /* localStorage unavailable */
     }
-  }, []);
+    return 'system';
+  });
+
+  const [systemDark, setSystemDark] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
   useEffect(() => {
-    setSystemDark(getSystemPrefersDark());
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = () => setSystemDark(getSystemPrefersDark());
+    const handler = () => setSystemDark(mq.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
 
   useEffect(() => {
     const handleThemeChange = (e: CustomEvent<ThemeChoice>) => {
-      if (e.detail === 'dark' || e.detail === 'light' || e.detail === 'system') {
+      if (
+        e.detail === 'dark' ||
+        e.detail === 'light' ||
+        e.detail === 'system'
+      ) {
         setChoiceState(e.detail);
       }
     };
-    window.addEventListener('theme-change' as never, handleThemeChange as EventListener);
-    return () => window.removeEventListener('theme-change' as never, handleThemeChange as EventListener);
+    window.addEventListener(
+      'theme-change' as never,
+      handleThemeChange as EventListener
+    );
+    return () =>
+      window.removeEventListener(
+        'theme-change' as never,
+        handleThemeChange as EventListener
+      );
   }, []);
 
   const setThemeChoice = useCallback((newChoice: ThemeChoice) => {
     setChoiceState(newChoice);
     try {
       localStorage.setItem('theme', newChoice);
-      window.dispatchEvent(new CustomEvent('theme-change', { detail: newChoice }));
+      window.dispatchEvent(
+        new CustomEvent('theme-change', { detail: newChoice })
+      );
     } catch {
       // ignore
     }
@@ -82,25 +104,27 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({ mode: resolvedMode, choice, toggleTheme, setThemeChoice }),
-    [resolvedMode, choice, toggleTheme, setThemeChoice],
+    [resolvedMode, choice, toggleTheme, setThemeChoice]
   );
 
   return (
     <ThemeContext.Provider value={value}>
-      <MuiThemeProvider theme={theme}>
-        <CssBaseline />
-        <div
-          suppressHydrationWarning
-          style={{
-            minHeight: '100vh',
-            backgroundColor: theme.palette.background.default,
-            color: theme.palette.text.primary,
-            transition: 'background-color 0.6s ease, color 0.6s ease',
-          }}
-        >
-          {children}
-        </div>
-      </MuiThemeProvider>
+      <MuiEmotionRegistry nonce={nonce}>
+        <MuiThemeProvider theme={theme}>
+          <CssBaseline />
+          <div
+            suppressHydrationWarning
+            style={{
+              minHeight: '100vh',
+              backgroundColor: theme.palette.background.default,
+              color: theme.palette.text.primary,
+              transition: 'background-color 0.6s ease, color 0.6s ease',
+            }}
+          >
+            {children}
+          </div>
+        </MuiThemeProvider>
+      </MuiEmotionRegistry>
     </ThemeContext.Provider>
   );
 }
