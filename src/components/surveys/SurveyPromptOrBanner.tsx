@@ -10,6 +10,8 @@ interface SurveyPromptOrBannerProps {
   description: string;
   isPostponed: boolean;
   onPostponed: () => void;
+  /** Bottom nav height in px — forwarded to SurveyBanner / SurveyPrompt. */
+  bottomOffset?: number;
 }
 
 /**
@@ -23,6 +25,7 @@ export default function SurveyPromptOrBanner({
   description,
   isPostponed,
   onPostponed,
+  bottomOffset,
 }: SurveyPromptOrBannerProps) {
   if (isPostponed) {
     return (
@@ -31,6 +34,7 @@ export default function SurveyPromptOrBanner({
         surveySlug={surveySlug}
         title={title}
         description={description}
+        bottomOffset={bottomOffset}
       />
     );
   }
@@ -42,6 +46,7 @@ export default function SurveyPromptOrBanner({
       title={title}
       description={description}
       onPostponed={onPostponed}
+      bottomOffset={bottomOffset}
     />
   );
 }
@@ -52,12 +57,14 @@ function SurveyBannerWithCallback({
   title,
   description,
   onPostponed,
+  bottomOffset,
 }: {
   surveyId: string;
   surveySlug?: string;
   title: string;
   description: string;
   onPostponed: () => void;
+  bottomOffset?: number;
 }) {
   return (
     <SurveyBanner
@@ -66,6 +73,7 @@ function SurveyBannerWithCallback({
       title={title}
       description={description}
       onPlusTard={onPostponed}
+      bottomOffset={bottomOffset}
     />
   );
 }

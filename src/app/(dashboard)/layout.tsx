@@ -5,7 +5,10 @@ import { useIsStandalone } from '@/hooks/useIsStandalone';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
-import { getSurveyPostponed, setSurveyPostponed as persistSurveyPostponed } from '@/components/surveys/SurveyBanner';
+import {
+  getSurveyPostponed,
+  setSurveyPostponed as persistSurveyPostponed,
+} from '@/components/surveys/SurveyBanner';
 import { authService } from '@/services/auth.service';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import AppLoader from '@/components/ui/AppLoader';
@@ -28,7 +31,13 @@ function LocationPrimer() {
 }
 
 /** Pages we never want to save as post-login redirect targets */
-const AUTH_PAGES = ['/login', '/register', '/verify-otp', '/verify-email', '/complete-profile'];
+const AUTH_PAGES = [
+  '/login',
+  '/register',
+  '/verify-otp',
+  '/verify-email',
+  '/complete-profile',
+];
 
 /**
  * Routes within the dashboard group that require the user to be authenticated.
@@ -36,14 +45,21 @@ const AUTH_PAGES = ['/login', '/register', '/verify-otp', '/verify-email', '/com
  */
 const PRIVATE_PATHS = ['/profile', '/my/reservations'];
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, isLoggingOut, user, refreshUser } = useAuth();
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { isAuthenticated, isLoading, isLoggingOut, user, refreshUser } =
+    useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isStandalone = useIsStandalone();
-  const [surveyPostponed, setSurveyPostponed] = useState<Record<string, boolean>>({});
+  const [surveyPostponed, setSurveyPostponed] = useState<
+    Record<string, boolean>
+  >({});
   const [surveyMounted, setSurveyMounted] = useState(false);
   // Survey is gated until PushPrompt step resolves (accepted, dismissed, or not applicable).
   // For returning users (onboarding already completed) it's immediately ready.
@@ -59,7 +75,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const activeSurveyId = activeSurvey?.id ?? null;
 
-  const { data: surveyAnsweredData, isError: surveyAnsweredError } = useQuery({
+  const { data: surveyAnsweredData } = useQuery({
     queryKey: ['survey-has-answered-global', activeSurveyId, isAuthenticated],
     queryFn: () => surveysService.hasAnswered(activeSurveyId!),
     enabled: isAuthenticated && !!activeSurveyId,
@@ -84,26 +100,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
-    if (activeSurvey?.id && surveyMounted && getSurveyPostponed(activeSurvey.id, user)) {
+    if (
+      activeSurvey?.id &&
+      surveyMounted &&
+      getSurveyPostponed(activeSurvey.id, user)
+    ) {
       setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
     }
-  }, [activeSurvey?.id, surveyMounted, user?.preferences?.survey_postponed_ids]);
+  }, [activeSurvey?.id, surveyMounted, user]);
 
   const isPrivatePage = PRIVATE_PATHS.some((p) => pathname?.startsWith(p));
-  const isSurveyPage = pathname?.startsWith('/surveys') || pathname?.startsWith('/sondage');
+  const isSurveyPage =
+    pathname?.startsWith('/surveys') || pathname?.startsWith('/sondage');
 
   useEffect(() => {
     // Never redirect while the logout overlay is playing
-    if (isLoggingOut) { return; }
+    if (isLoggingOut) {
+      return;
+    }
     if (isPrivatePage && !isLoading && !isAuthenticated) {
       // Save where the user was so we can bring them back after re-auth
-      const shouldSave = pathname && !AUTH_PAGES.some(p => pathname.startsWith(p)) && pathname !== '/';
+      const shouldSave =
+        pathname &&
+        !AUTH_PAGES.some((p) => pathname.startsWith(p)) &&
+        pathname !== '/';
       if (shouldSave) {
-        sessionStorage.setItem('kh_redirect_after_login', pathname + window.location.search);
+        sessionStorage.setItem(
+          'kh_redirect_after_login',
+          pathname + window.location.search
+        );
       }
       router.replace('/login');
     }
-  }, [isAuthenticated, isLoading, isLoggingOut, router, pathname, isPrivatePage]);
+  }, [
+    isAuthenticated,
+    isLoading,
+    isLoggingOut,
+    router,
+    pathname,
+    isPrivatePage,
+  ]);
 
   // On first page load, wait until auth has fully resolved before rendering.
   // This prevents the flash of guest content (navbar, etc.) when a logged-in
@@ -142,38 +178,61 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     >
       <LocationPrimer />
       <Navbar />
-      <Box component="main" id="main-content" tabIndex={-1} sx={{ flex: 1, pb: isMobile && isStandalone ? `${BOTTOM_NAV_HEIGHT}px` : 0 }}>
+      <Box
+        component="main"
+        id="main-content"
+        tabIndex={-1}
+        sx={{
+          flex: 1,
+          pb: isMobile && isStandalone ? `${BOTTOM_NAV_HEIGHT}px` : 0,
+        }}
+      >
         <ErrorBoundary>
           <PageTransition>{children}</PageTransition>
         </ErrorBoundary>
       </Box>
       {!isMobile && <Footer />}
       <BottomNav />
-      {surveyMounted && isAuthenticated && !isSurveyPage && !activeSurveyError && activeSurvey && surveyAnsweredData?.has_answered === false && pushPromptReady && (
-        <SurveyPromptOrBanner
-          surveyId={activeSurvey.id}
-          surveySlug={activeSurvey.slug}
-          title="Votre avis compte !"
-          description={activeSurvey.description ?? "Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience."}
-          onPostponed={async () => {
-            setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
-            if (user) {
-              const ids = user.preferences?.survey_postponed_ids ?? [];
-              if (!ids.includes(activeSurvey.id)) {
-                try {
-                  await authService.updatePreferences({
-                    survey_postponed_ids: [...ids, activeSurvey.id],
-                  });
-                  await refreshUser();
-                } catch { /* ignore */ }
-              }
-            } else {
-              persistSurveyPostponed(activeSurvey.id);
+      {surveyMounted &&
+        isAuthenticated &&
+        !isSurveyPage &&
+        !activeSurveyError &&
+        activeSurvey &&
+        surveyAnsweredData?.has_answered === false &&
+        pushPromptReady && (
+          <SurveyPromptOrBanner
+            surveyId={activeSurvey.id}
+            surveySlug={activeSurvey.slug}
+            title="Votre avis compte !"
+            description={
+              activeSurvey.description ??
+              'Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience.'
             }
-          }}
-          isPostponed={surveyPostponed[activeSurvey.id] ?? getSurveyPostponed(activeSurvey.id, user)}
-        />
-      )}
+            onPostponed={async () => {
+              setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
+              if (user) {
+                const ids = user.preferences?.survey_postponed_ids ?? [];
+                if (!ids.includes(activeSurvey.id)) {
+                  try {
+                    await authService.updatePreferences({
+                      survey_postponed_ids: [...ids, activeSurvey.id],
+                    });
+                    await refreshUser();
+                  } catch {
+                    /* ignore */
+                  }
+                }
+              } else {
+                persistSurveyPostponed(activeSurvey.id);
+              }
+            }}
+            isPostponed={
+              surveyPostponed[activeSurvey.id] ??
+              getSurveyPostponed(activeSurvey.id, user)
+            }
+            bottomOffset={BOTTOM_NAV_HEIGHT}
+          />
+        )}
       <PushPrompt />
       <WelcomeModal />
       <LogoutOverlay />

@@ -1,6 +1,13 @@
 'use client';
 
-import { Box, Button, IconButton, Paper, Stack, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  IconButton,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { AssignmentOutlined, Close } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
@@ -11,13 +18,21 @@ interface SurveyPromptProps {
   surveySlug?: string;
   title: string;
   description: string;
+  /** Bottom nav height in px — used to position the prompt above it. */
+  bottomOffset?: number;
 }
 
 /**
  * Affiche le prompt flottant uniquement si l'utilisateur a déjà cliqué "Plus tard"
  * (stocké dans localStorage). Au prochain login, il réapparaît jusqu'à ce qu'il remplisse le sondage.
  */
-export default function SurveyPrompt({ surveyId, surveySlug, title, description }: SurveyPromptProps) {
+export default function SurveyPrompt({
+  surveyId,
+  surveySlug,
+  title,
+  description,
+  bottomOffset = 64,
+}: SurveyPromptProps) {
   const router = useRouter();
   const [visible, setVisible] = useState(false);
 
@@ -51,12 +66,12 @@ export default function SurveyPrompt({ surveyId, surveySlug, title, description 
       sx={{
         position: 'fixed',
         bottom: {
-          xs: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+          xs: `calc(${bottomOffset + 16}px + env(safe-area-inset-bottom, 0px))`,
           sm: 24,
         },
         right: { xs: 12, sm: 24 },
         left: { xs: 12, sm: 'auto' },
-        zIndex: 1000,
+        zIndex: 1300,
         maxWidth: { xs: 'none', sm: 420 },
         p: { xs: 2, sm: 2.5 },
         borderRadius: 3,
@@ -67,8 +82,18 @@ export default function SurveyPrompt({ surveyId, surveySlug, title, description 
       }}
     >
       <Stack spacing={2}>
-        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
-          <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
+        <Stack
+          direction="row"
+          alignItems="flex-start"
+          justifyContent="space-between"
+          spacing={1}
+        >
+          <Stack
+            direction="row"
+            spacing={1.5}
+            alignItems="flex-start"
+            sx={{ flex: 1, minWidth: 0 }}
+          >
             <Box
               sx={{
                 width: 44,
@@ -89,14 +114,21 @@ export default function SurveyPrompt({ surveyId, surveySlug, title, description 
                 component="h2"
                 variant="subtitle1"
                 fontWeight={700}
-                sx={{ fontSize: { xs: '1rem', sm: '1.0625rem' }, lineHeight: 1.35, letterSpacing: '-0.01em' }}
+                sx={{
+                  fontSize: { xs: '1rem', sm: '1.0625rem' },
+                  lineHeight: 1.35,
+                  letterSpacing: '-0.01em',
+                }}
               >
                 {title}
               </Typography>
               <Typography
                 variant="body2"
                 color="text.secondary"
-                sx={{ lineHeight: 1.55, fontSize: { xs: '0.875rem', sm: '0.9rem' } }}
+                sx={{
+                  lineHeight: 1.55,
+                  fontSize: { xs: '0.875rem', sm: '0.9rem' },
+                }}
               >
                 {description}
               </Typography>
@@ -112,7 +144,11 @@ export default function SurveyPrompt({ surveyId, surveySlug, title, description 
           </IconButton>
         </Stack>
 
-        <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={1} justifyContent="flex-end">
+        <Stack
+          direction={{ xs: 'column-reverse', sm: 'row' }}
+          spacing={1}
+          justifyContent="flex-end"
+        >
           <Button
             variant="outlined"
             onClick={handleDismiss}

@@ -1,11 +1,19 @@
 'use client';
 
-import OwnerBottomNav, { OWNER_BOTTOM_NAV_HEIGHT } from '@/components/owner/OwnerBottomNav';
+import OwnerBottomNav, {
+  OWNER_BOTTOM_NAV_HEIGHT,
+} from '@/components/owner/OwnerBottomNav';
 import OwnerNavbar from '@/components/owner/OwnerNavbar';
-import { SIDEBAR_COLLAPSED_WIDTH, SIDEBAR_WIDTH } from '@/components/owner/owner-constants';
+import {
+  SIDEBAR_COLLAPSED_WIDTH,
+  SIDEBAR_WIDTH,
+} from '@/components/owner/owner-constants';
 import OwnerSidebar from '@/components/owner/OwnerSidebar';
 import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
-import { getSurveyPostponed, setSurveyPostponed as persistSurveyPostponed } from '@/components/surveys/SurveyBanner';
+import {
+  getSurveyPostponed,
+  setSurveyPostponed as persistSurveyPostponed,
+} from '@/components/surveys/SurveyBanner';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import PageTransition from '@/components/ui/PageTransition';
 import { shouldShowOwnerQuickCreateFab } from '@/lib/owner-shell-fab';
@@ -19,25 +27,39 @@ import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-const OWNER_PUBLIC_PATHS = ['/owner/login', '/owner/register', '/owner/forgot-password'];
+const OWNER_PUBLIC_PATHS = [
+  '/owner/login',
+  '/owner/register',
+  '/owner/forgot-password',
+];
 
 function isPublicPath(pathname: string | null): boolean {
   if (!pathname) return false;
-  return OWNER_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  return OWNER_PUBLIC_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + '/')
+  );
 }
 
-export default function OwnerLayoutClient({ children }: { children: React.ReactNode }) {
+export default function OwnerLayoutClient({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { user, isAuthenticated, isLoading, refreshUser } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [surveyPostponed, setSurveyPostponed] = useState<Record<string, boolean>>({});
+  const [surveyPostponed, setSurveyPostponed] = useState<
+    Record<string, boolean>
+  >({});
   const [surveyMounted, setSurveyMounted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
-    setSidebarCollapsed(localStorage.getItem('owner-sidebar-collapsed') === 'true');
+    const collapsed =
+      localStorage.getItem('owner-sidebar-collapsed') === 'true';
+    setSidebarCollapsed(collapsed);
   }, []);
 
   const handleSidebarToggle = useCallback(() => {
@@ -49,7 +71,8 @@ export default function OwnerLayoutClient({ children }: { children: React.ReactN
   }, []);
 
   const publicRoute = isPublicPath(pathname);
-  const isSurveyPage = pathname?.startsWith('/surveys') || pathname?.startsWith('/sondage');
+  const isSurveyPage =
+    pathname?.startsWith('/surveys') || pathname?.startsWith('/sondage');
 
   const { data: activeSurvey, isError: activeSurveyError } = useQuery({
     queryKey: ['active-survey-owner', isAuthenticated],
@@ -74,17 +97,24 @@ export default function OwnerLayoutClient({ children }: { children: React.ReactN
   }, []);
 
   useEffect(() => {
-    if (activeSurvey?.id && surveyMounted && getSurveyPostponed(activeSurvey.id, user)) {
+    if (
+      activeSurvey?.id &&
+      surveyMounted &&
+      getSurveyPostponed(activeSurvey.id, user)
+    ) {
       setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
     }
-  }, [activeSurvey?.id, surveyMounted, user?.preferences?.survey_postponed_ids]);
+  }, [activeSurvey?.id, surveyMounted, user]);
 
   useEffect(() => {
     if (isLoading) return;
     if (publicRoute) return;
 
     if (!isAuthenticated || !user) {
-      sessionStorage.setItem('kh_owner_redirect', pathname || '/owner/dashboard');
+      sessionStorage.setItem(
+        'kh_owner_redirect',
+        pathname || '/owner/dashboard'
+      );
       router.replace('/owner/login');
       return;
     }
@@ -98,7 +128,13 @@ export default function OwnerLayoutClient({ children }: { children: React.ReactN
 
   if (publicRoute) {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', bgcolor: 'background.default' }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          bgcolor: 'background.default',
+        }}
+      >
         {children}
       </Box>
     );
@@ -131,7 +167,13 @@ export default function OwnerLayoutClient({ children }: { children: React.ReactN
   }
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+      }}
+    >
       {/* Sidebar — MUI Drawer permanent (desktop) / temporary (mobile via Navbar) */}
       <Drawer
         variant="permanent"
@@ -153,7 +195,10 @@ export default function OwnerLayoutClient({ children }: { children: React.ReactN
           },
         }}
       >
-        <OwnerSidebar collapsed={sidebarCollapsed} onToggle={handleSidebarToggle} />
+        <OwnerSidebar
+          collapsed={sidebarCollapsed}
+          onToggle={handleSidebarToggle}
+        />
       </Drawer>
 
       {/* Main content area */}
@@ -203,42 +248,46 @@ export default function OwnerLayoutClient({ children }: { children: React.ReactN
         </Fab>
       )}
 
-      {surveyMounted
-        && isAuthenticated
-        && !publicRoute
-        && !isSurveyPage
-        && !activeSurveyError
-        && activeSurvey
-        && surveyAnsweredData?.has_answered === false && (
-        <SurveyPromptOrBanner
-          surveyId={activeSurvey.id}
-          surveySlug={activeSurvey.slug}
-          title="Votre avis compte !"
-          description={
-            activeSurvey.description
-              ?? "Aidez-nous à améliorer KeyHome pour les bailleurs en répondant à quelques questions."
-          }
-          onPostponed={async () => {
-            setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
-            if (user) {
-              const ids = user.preferences?.survey_postponed_ids ?? [];
-              if (!ids.includes(activeSurvey.id)) {
-                try {
-                  await authService.updatePreferences({
-                    survey_postponed_ids: [...ids, activeSurvey.id],
-                  });
-                  await refreshUser();
-                } catch {
-                  /* ignore */
-                }
-              }
-            } else {
-              persistSurveyPostponed(activeSurvey.id);
+      {surveyMounted &&
+        isAuthenticated &&
+        !publicRoute &&
+        !isSurveyPage &&
+        !activeSurveyError &&
+        activeSurvey &&
+        surveyAnsweredData?.has_answered === false && (
+          <SurveyPromptOrBanner
+            surveyId={activeSurvey.id}
+            surveySlug={activeSurvey.slug}
+            title="Votre avis compte !"
+            description={
+              activeSurvey.description ??
+              'Aidez-nous à améliorer KeyHome en répondant à quelques questions.'
             }
-          }}
-          isPostponed={surveyPostponed[activeSurvey.id] ?? getSurveyPostponed(activeSurvey.id, user)}
-        />
-      )}
+            onPostponed={async () => {
+              setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
+              if (user) {
+                const ids = user.preferences?.survey_postponed_ids ?? [];
+                if (!ids.includes(activeSurvey.id)) {
+                  try {
+                    await authService.updatePreferences({
+                      survey_postponed_ids: [...ids, activeSurvey.id],
+                    });
+                    await refreshUser();
+                  } catch {
+                    /* ignore */
+                  }
+                }
+              } else {
+                persistSurveyPostponed(activeSurvey.id);
+              }
+            }}
+            isPostponed={
+              surveyPostponed[activeSurvey.id] ??
+              getSurveyPostponed(activeSurvey.id, user)
+            }
+            bottomOffset={OWNER_BOTTOM_NAV_HEIGHT}
+          />
+        )}
     </Box>
   );
 }

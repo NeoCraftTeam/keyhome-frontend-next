@@ -8,7 +8,10 @@ import { useState } from 'react';
 const STORAGE_KEY = (surveyId: string) => `survey_postponed_${surveyId}`;
 
 /** Check if survey was postponed — uses backend preferences when user is authenticated. */
-export function getSurveyPostponed(surveyId: string, user?: { preferences?: { survey_postponed_ids?: string[] } } | null): boolean {
+export function getSurveyPostponed(
+  surveyId: string,
+  user?: { preferences?: { survey_postponed_ids?: string[] } } | null
+): boolean {
   if (user?.preferences?.survey_postponed_ids?.includes(surveyId)) return true;
   if (typeof window === 'undefined') return false;
   return localStorage.getItem(STORAGE_KEY(surveyId)) === 'true';
@@ -26,9 +29,18 @@ interface SurveyBannerProps {
   title: string;
   description: string;
   onPlusTard?: () => void;
+  /** Bottom nav height in px — used to position the banner above it. */
+  bottomOffset?: number;
 }
 
-export default function SurveyBanner({ surveyId, surveySlug, title, description, onPlusTard }: SurveyBannerProps) {
+export default function SurveyBanner({
+  surveyId,
+  surveySlug,
+  title,
+  description,
+  onPlusTard,
+  bottomOffset = 64,
+}: SurveyBannerProps) {
   const router = useRouter();
   const [visible, setVisible] = useState(true);
 
@@ -51,12 +63,12 @@ export default function SurveyBanner({ surveyId, surveySlug, title, description,
       sx={{
         position: 'fixed',
         bottom: {
-          xs: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+          xs: `calc(${bottomOffset + 16}px + env(safe-area-inset-bottom, 0px))`,
           sm: 24,
         },
         left: { xs: 12, sm: 24 },
         right: { xs: 12, sm: 24 },
-        zIndex: 1000,
+        zIndex: 1300,
         maxWidth: { xs: 'none', sm: 520 },
         mx: 'auto',
         p: { xs: 2, sm: 2.5 },

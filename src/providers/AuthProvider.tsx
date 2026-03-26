@@ -5,7 +5,12 @@ import { resetCsrfState } from '@/lib/api';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
-import { useClerk, useAuth as useClerkAuth, useSignIn, useUser } from '@clerk/nextjs';
+import {
+  useClerk,
+  useAuth as useClerkAuth,
+  useSignIn,
+  useUser,
+} from '@clerk/nextjs';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   createContext,
@@ -31,17 +36,23 @@ function setRoleCookie(role: string): void {
   if (typeof document === 'undefined') {
     return;
   }
-  document.cookie = `${ROLE_COOKIE}=${encodeURIComponent(role)}; path=/; SameSite=Lax; Max-Age=${ROLE_COOKIE_MAX_AGE}`;
+  const isOwner = role === UserRole.AGENT || role === UserRole.ADMIN;
+  const path = isOwner ? '/owner' : '/';
+  document.cookie = `${ROLE_COOKIE}=${encodeURIComponent(role)}; path=${path}; SameSite=Lax; Max-Age=${ROLE_COOKIE_MAX_AGE}`;
 }
 
 function clearRoleCookie(): void {
   if (typeof document === 'undefined') {
     return;
   }
+  // Clear both possible paths to ensure complete logout
   document.cookie = `${ROLE_COOKIE}=; path=/; Max-Age=0; SameSite=Lax`;
+  document.cookie = `${ROLE_COOKIE}=; path=/owner; Max-Age=0; SameSite=Lax`;
 }
 
-function storageScopeForRole(role: UserRole | null | undefined): 'client' | 'owner' {
+function storageScopeForRole(
+  role: UserRole | null | undefined
+): 'client' | 'owner' {
   return role === UserRole.CUSTOMER ? 'client' : 'owner';
 }
 
@@ -53,7 +64,9 @@ function hasSessionHint(): boolean {
   if (typeof document === 'undefined') {
     return false;
   }
-  return document.cookie.split(';').some((c) => c.trim().startsWith(`${ROLE_COOKIE}=`));
+  return document.cookie
+    .split(';')
+    .some((c) => c.trim().startsWith(`${ROLE_COOKIE}=`));
 }
 
 function hasAnySanctumInStorage(): boolean {
@@ -62,9 +75,9 @@ function hasAnySanctumInStorage(): boolean {
   }
 
   return Boolean(
-    localStorage.getItem(SANCTUM_TOKEN_KEY_CLIENT)
-      || localStorage.getItem(SANCTUM_TOKEN_KEY_OWNER)
-      || localStorage.getItem(LEGACY_SANCTUM_TOKEN_KEY)
+    localStorage.getItem(SANCTUM_TOKEN_KEY_CLIENT) ||
+    localStorage.getItem(SANCTUM_TOKEN_KEY_OWNER) ||
+    localStorage.getItem(LEGACY_SANCTUM_TOKEN_KEY)
   );
 }
 
@@ -104,7 +117,7 @@ interface AuthContextType {
   loginOwner: (email: string, password: string) => Promise<void>;
   loginWithOAuth: (
     provider: OAuthProvider,
-    options?: { registrationIntent?: 'customer' | 'agent' },
+    options?: { registrationIntent?: 'customer' | 'agent' }
   ) => Promise<void>;
   logout: (redirectTo?: string) => Promise<void>;
   setUser: (user: User) => void;
@@ -143,7 +156,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return null;
       }
       const p = pathnameRef.current ?? '';
-      const key = p.startsWith('/owner') ? SANCTUM_TOKEN_KEY_OWNER : SANCTUM_TOKEN_KEY_CLIENT;
+      const key = p.startsWith('/owner')
+        ? SANCTUM_TOKEN_KEY_OWNER
+        : SANCTUM_TOKEN_KEY_CLIENT;
 
       return localStorage.getItem(key);
     });
@@ -151,8 +166,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const persistPasswordSession = useCallback(
     (sanctumToken: string, _scope: 'client' | 'owner') => {
-      // httpOnly session cookie is the primary auth mechanism.
-      // Keep the Sanctum token as Bearer fallback for environments where
+      // httpOnly session cookie is primary auth mechanism.
+      // Keep Sanctum token as Bearer fallback for environments where
       // third-party cookies are blocked (cross-origin SPA → API).
       registerTokenGetter(() => Promise.resolve(sanctumToken));
       setToken(sanctumToken);
@@ -160,13 +175,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  const persistClerkSession = useCallback((sanctumToken: string, _scope: 'client' | 'owner') => {
-    // httpOnly session cookie is the primary auth mechanism.
-    // Keep the Sanctum token as Bearer fallback for environments where
-    // third-party cookies are blocked (cross-origin SPA → API).
-    registerTokenGetter(() => Promise.resolve(sanctumToken));
-    setToken(sanctumToken);
-  }, []);
+  const persistClerkSession = useCallback(
+    (sanctumToken: string, _scope: 'client' | 'owner') => {
+      // httpOnly session cookie is primary auth mechanism.
+      // Keep Sanctum token as Bearer fallback for environments where
+      // third-party cookies are blocked (cross-origin SPA → API).
+      registerTokenGetter(() => Promise.resolve(sanctumToken));
+      setToken(sanctumToken);
+    },
+    []
+  );
 
   const clearSanctumTokens = useCallback(
     (scope: 'client' | 'owner' | 'all') => {
@@ -207,12 +225,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         const ownerArea = (pathnameRef.current ?? '').startsWith('/owner');
-        const storageKey = ownerArea ? SANCTUM_TOKEN_KEY_OWNER : SANCTUM_TOKEN_KEY_CLIENT;
+        const storageKey = ownerArea
+          ? SANCTUM_TOKEN_KEY_OWNER
+          : SANCTUM_TOKEN_KEY_CLIENT;
 
         // --- Fast-path: pure guest (no session hint, no stored token) ---
         // Skip the /me round-trip entirely. A guest has no kh_role cookie and no
         // localStorage token — both guaranteed to be present after any successful login.
-        const storedToken = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null;
+        const storedToken =
+          typeof window !== 'undefined'
+            ? localStorage.getItem(storageKey)
+            : null;
         if (!hasSessionHint() && !storedToken) {
           registerTokenGetter(() => Promise.resolve(null));
           setToken(null);
@@ -314,9 +337,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         registerTokenGetter(() => getToken());
 
         try {
-          const intentRaw = typeof window !== 'undefined' ? sessionStorage.getItem('kh_registration_intent') : null;
-          const registrationIntent = intentRaw === 'agent' ? 'agent' : 'customer';
-          const result = await authService.clerkExchange(clerkToken, { registration_intent: registrationIntent });
+          const intentRaw =
+            typeof window !== 'undefined'
+              ? sessionStorage.getItem('kh_registration_intent')
+              : null;
+          const registrationIntent =
+            intentRaw === 'agent' ? 'agent' : 'customer';
+          const result = await authService.clerkExchange(clerkToken, {
+            registration_intent: registrationIntent,
+          });
 
           if (runId !== authRunRef.current) {
             return;
@@ -335,13 +364,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
               return;
             }
-            sessionStorage.setItem('clerk_auth_email_hint', result.email_hint ?? '');
+            sessionStorage.setItem(
+              'clerk_auth_email_hint',
+              result.email_hint ?? ''
+            );
             router.replace('/verify-otp');
 
             return;
           }
 
-          const { token: sanctumToken, user: laravelUser, panel_sso_url } = result as {
+          const {
+            token: sanctumToken,
+            user: laravelUser,
+            panel_sso_url,
+          } = result as {
             token: string;
             user: User;
             panel_sso_url: string | null;
@@ -366,14 +402,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          persistClerkSession(sanctumToken, storageScopeForRole(laravelUser.role));
+          persistClerkSession(
+            sanctumToken,
+            storageScopeForRole(laravelUser.role)
+          );
           setUserState(laravelUser);
           setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
 
           const path = pathnameRef.current ?? '';
           if (
-            laravelUser.role === UserRole.AGENT
-            || laravelUser.role === UserRole.ADMIN
+            laravelUser.role === UserRole.AGENT ||
+            laravelUser.role === UserRole.ADMIN
           ) {
             if (!path.startsWith('/owner')) {
               router.replace('/owner/dashboard');
@@ -396,7 +435,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsExchanging(false);
         setHasResolvedInitialAuth(true);
       });
-  }, [isLoaded, isSignedIn, clerkUser?.id, clearSanctumTokens, persistClerkSession, registerPathAwareTokenGetter, router, signOut, getToken]);
+  }, [
+    isLoaded,
+    isSignedIn,
+    clerkUser?.id,
+    clearSanctumTokens,
+    persistClerkSession,
+    registerPathAwareTokenGetter,
+    router,
+    signOut,
+    getToken,
+  ]);
 
   const isAuthenticated = !!user;
   const isLoading = !isLoaded || !hasResolvedInitialAuth || isExchanging;
@@ -414,7 +463,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearRoleCookie();
     };
     window.addEventListener('kh:auth-expired', handleAuthExpired);
-    return () => window.removeEventListener('kh:auth-expired', handleAuthExpired);
+    return () =>
+      window.removeEventListener('kh:auth-expired', handleAuthExpired);
   }, [user]);
 
   const setUser = useCallback((u: User) => {
@@ -435,7 +485,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      persistPasswordSession(sanctumToken, storageScopeForRole(laravelUser.role));
+      persistPasswordSession(
+        sanctumToken,
+        storageScopeForRole(laravelUser.role)
+      );
       setUserState(laravelUser);
       setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
       sessionStorage.removeItem('clerk_auth_email_hint');
@@ -457,10 +510,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const { token: sanctumToken, user: laravelUser } = await authService.login(email, password);
+      const { token: sanctumToken, user: laravelUser } =
+        await authService.login(email, password);
 
       if (laravelUser.role !== UserRole.CUSTOMER) {
-        throw new Error('Accès réservé aux clients. Utilisez le panneau propriétaire.');
+        throw new Error(
+          'Accès réservé aux clients. Utilisez le panneau propriétaire.'
+        );
       }
 
       persistPasswordSession(sanctumToken, 'client');
@@ -480,10 +536,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginOwner = useCallback(
     async (email: string, password: string) => {
-      const { token: sanctumToken, user: laravelUser } = await authService.login(email, password);
+      const { token: sanctumToken, user: laravelUser } =
+        await authService.login(email, password);
 
-      if (laravelUser.role !== UserRole.AGENT && laravelUser.role !== UserRole.ADMIN) {
-        throw new Error('Accès réservé aux propriétaires et agences. Créez un compte bailleur.');
+      if (
+        laravelUser.role !== UserRole.AGENT &&
+        laravelUser.role !== UserRole.ADMIN
+      ) {
+        throw new Error(
+          'Accès réservé aux propriétaires et agences. Créez un compte bailleur.'
+        );
       }
 
       persistPasswordSession(sanctumToken, 'owner');
@@ -502,7 +564,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const loginWithOAuth = useCallback(
-    async (provider: OAuthProvider, options?: { registrationIntent?: 'customer' | 'agent' }) => {
+    async (
+      provider: OAuthProvider,
+      options?: { registrationIntent?: 'customer' | 'agent' }
+    ) => {
       if (!signIn) {
         return;
       }
@@ -515,7 +580,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (typeof window !== 'undefined') {
         if (options?.registrationIntent != null) {
-          sessionStorage.setItem('kh_registration_intent', options.registrationIntent);
+          sessionStorage.setItem(
+            'kh_registration_intent',
+            options.registrationIntent
+          );
         } else {
           sessionStorage.removeItem('kh_registration_intent');
         }
@@ -534,51 +602,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [signIn, isSignedIn, signOut]
   );
 
-  const logout = useCallback(async (redirectTo = '/home') => {
-    ++authRunRef.current;
-    clerkExchangeDoneRef.current = false;
-    setIsLoggingOut(true);
-    resetCsrfState();
+  const logout = useCallback(
+    async (redirectTo = '/home') => {
+      ++authRunRef.current;
+      clerkExchangeDoneRef.current = false;
+      setIsLoggingOut(true);
+      resetCsrfState();
 
-    sessionStorage.removeItem('clerk_auth_email_hint');
-    sessionStorage.removeItem('clerk_auth_prefill');
-    sessionStorage.removeItem('kh_flw_tx_ref');
-    sessionStorage.removeItem('kh_flw_reference');
-    sessionStorage.removeItem('kh_just_unlocked');
-    sessionStorage.removeItem('kh_redirect_after_login');
-    sessionStorage.removeItem('kh_registration_intent');
-    clearRoleCookie();
+      sessionStorage.removeItem('clerk_auth_email_hint');
+      sessionStorage.removeItem('clerk_auth_prefill');
+      sessionStorage.removeItem('kh_flw_tx_ref');
+      sessionStorage.removeItem('kh_flw_reference');
+      sessionStorage.removeItem('kh_just_unlocked');
+      sessionStorage.removeItem('kh_redirect_after_login');
+      sessionStorage.removeItem('kh_registration_intent');
+      clearRoleCookie();
 
-    if (isSignedIn) {
-      clearSanctumTokens('all');
-    } else {
-      const scope = pathnameRef.current?.startsWith('/owner') ? 'owner' : 'client';
-      clearSanctumTokens(scope);
-    }
-    setUserState(null);
+      if (isSignedIn) {
+        clearSanctumTokens('all');
+      } else {
+        const scope = pathnameRef.current?.startsWith('/owner')
+          ? 'owner'
+          : 'client';
+        clearSanctumTokens(scope);
+      }
+      setUserState(null);
 
-    await new Promise((resolve) => setTimeout(resolve, LOGOUT_OVERLAY_DURATION_MS));
+      await new Promise((resolve) =>
+        setTimeout(resolve, LOGOUT_OVERLAY_DURATION_MS)
+      );
 
-    if (isSignedIn) {
-      try {
-        await Promise.race([
-          signOut({
-            redirectUrl: `${window.location.origin}${redirectTo.startsWith('/') ? redirectTo : '/home'}`,
-          }),
-          new Promise((resolve) => setTimeout(resolve, CLERK_SIGN_OUT_FALLBACK_MS)),
-        ]);
-      } catch {
-        // Fall through to hard redirect fallback.
+      if (isSignedIn) {
+        try {
+          await Promise.race([
+            signOut({
+              redirectUrl: `${window.location.origin}${redirectTo.startsWith('/') ? redirectTo : '/home'}`,
+            }),
+            new Promise((resolve) =>
+              setTimeout(resolve, CLERK_SIGN_OUT_FALLBACK_MS)
+            ),
+          ]);
+        } catch {
+          // Fall through to hard redirect fallback.
+        }
+
+        window.location.replace(
+          redirectTo.startsWith('/') ? redirectTo : '/home'
+        );
+
+        return;
       }
 
-      window.location.replace(redirectTo.startsWith('/') ? redirectTo : '/home');
-
-      return;
-    }
-
-    setIsLoggingOut(false);
-    router.replace(redirectTo.startsWith('/') ? redirectTo : '/home');
-  }, [isSignedIn, signOut, clearSanctumTokens, router]);
+      setIsLoggingOut(false);
+      router.replace(redirectTo.startsWith('/') ? redirectTo : '/home');
+    },
+    [isSignedIn, signOut, clearSanctumTokens, router]
+  );
 
   const refreshUser = useCallback(async () => {
     try {
@@ -593,7 +672,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return;
       }
-      const scope = pathnameRef.current?.startsWith('/owner') ? 'owner' : 'client';
+      const scope = pathnameRef.current?.startsWith('/owner')
+        ? 'owner'
+        : 'client';
       clearSanctumTokens(scope);
       setUserState(null);
       router.push('/home');
@@ -616,14 +697,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       finalizeAuth,
       getClerkToken: getToken,
     }),
-    [user, token, isLoading, isAuthenticated, isLoggingOut, login, loginOwner, loginWithOAuth, logout, setUser, refreshUser, finalizeAuth, getToken]
+    [
+      user,
+      token,
+      isLoading,
+      isAuthenticated,
+      isLoggingOut,
+      login,
+      loginOwner,
+      loginWithOAuth,
+      logout,
+      setUser,
+      refreshUser,
+      finalizeAuth,
+      getToken,
+    ]
   );
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextType {
