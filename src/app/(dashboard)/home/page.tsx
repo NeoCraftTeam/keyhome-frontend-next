@@ -15,29 +15,29 @@ import { citiesService } from '@/services/cities.service';
 import { recommendationsService } from '@/services/users.service';
 import { City } from '@/types';
 import {
-    AccessTime as AccessTimeIcon,
-    Apartment,
-    Home as HomeIcon,
-    Landscape,
-    MapsHomeWork,
-    Store,
-    Villa,
-    WavingHand as WavingHandIcon,
+  AccessTime as AccessTimeIcon,
+  Apartment,
+  Home as HomeIcon,
+  Landscape,
+  MapsHomeWork,
+  Store,
+  Villa,
+  WavingHand as WavingHandIcon,
 } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Chip,
-    CircularProgress,
-    Container,
-    Dialog,
-    DialogContent,
-    Divider,
-    Grid,
-    Pagination,
-    Typography,
-    useMediaQuery,
-    useTheme,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Container,
+  Dialog,
+  DialogContent,
+  Divider,
+  Grid,
+  Pagination,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -46,11 +46,27 @@ import { useMemo, useRef, useState, useTransition } from 'react';
 
 const CATEGORIES = [
   { label: 'Tous', value: '', icon: <MapsHomeWork sx={{ fontSize: 16 }} /> },
-  { label: 'Maisons', value: 'maison', icon: <HomeIcon sx={{ fontSize: 16 }} /> },
-  { label: 'Appartements', value: 'appartement', icon: <Apartment sx={{ fontSize: 16 }} /> },
-  { label: 'Terrains', value: 'terrain', icon: <Landscape sx={{ fontSize: 16 }} /> },
+  {
+    label: 'Maisons',
+    value: 'maison',
+    icon: <HomeIcon sx={{ fontSize: 16 }} />,
+  },
+  {
+    label: 'Appartements',
+    value: 'appartement',
+    icon: <Apartment sx={{ fontSize: 16 }} />,
+  },
+  {
+    label: 'Terrains',
+    value: 'terrain',
+    icon: <Landscape sx={{ fontSize: 16 }} />,
+  },
   { label: 'Villas', value: 'villa', icon: <Villa sx={{ fontSize: 16 }} /> },
-  { label: 'Commerces', value: 'commerce', icon: <Store sx={{ fontSize: 16 }} /> },
+  {
+    label: 'Commerces',
+    value: 'commerce',
+    icon: <Store sx={{ fontSize: 16 }} />,
+  },
 ];
 
 export default function HomePage() {
@@ -107,10 +123,16 @@ export default function HomePage() {
   const recommendations = recommendationsData?.data || [];
   const recommendedIds = useMemo(
     () => (recommendationsData?.data ?? []).map((r) => String(r.id)),
-    [recommendationsData],
+    [recommendationsData]
   );
 
-  const { data: adsData, isLoading, isFetching, isError, refetch } = useQuery({
+  const {
+    data: adsData,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['ads', page, selectedCategory, recommendedIds],
     queryFn: () =>
       adsService.list({
@@ -126,7 +148,8 @@ export default function HomePage() {
   const ads = adsData?.data || [];
   const totalPages = adsData?.meta?.last_page || 1;
   const skeletonCount = isMobile ? 4 : 12;
-  const showShimmer = isLoading || (isFetching && ads.length === 0) || isPending;
+  const showShimmer =
+    isLoading || (isFetching && ads.length === 0) || isPending;
 
   const handleCategoryChange = (val: string) => {
     startTransition(() => {
@@ -150,7 +173,7 @@ export default function HomePage() {
       <Box
         sx={{
           position: 'relative',
-          minHeight: { xs: 340, sm: 400, md: 480 },
+          minHeight: { xs: 280, sm: 400, md: 480 }, // Reduced from 340px to keep search bar above fold on iPhone SE
           display: 'flex',
           alignItems: 'center',
           overflow: 'hidden',
@@ -167,7 +190,10 @@ export default function HomePage() {
           }}
           initial={{ scale: 1 }}
           animate={{ scale: prefersReducedMotion ? 1 : 1.06 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 8, ease: 'easeInOut' }}
+          transition={{
+            duration: prefersReducedMotion ? 0 : 8,
+            ease: 'easeInOut',
+          }}
         >
           <Box
             component="img"
@@ -207,9 +233,16 @@ export default function HomePage() {
           }}
         >
           <motion.div
-            initial={{ opacity: prefersReducedMotion ? 1 : 0, y: prefersReducedMotion ? 0 : 24 }}
+            initial={{
+              opacity: prefersReducedMotion ? 1 : 0,
+              y: prefersReducedMotion ? 0 : 24,
+            }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: [0.22, 1, 0.36, 1], delay: prefersReducedMotion ? 0 : 0.15 }}
+            transition={{
+              duration: prefersReducedMotion ? 0 : 0.6,
+              ease: [0.22, 1, 0.36, 1],
+              delay: prefersReducedMotion ? 0 : 0.15,
+            }}
           >
             <Typography
               component="h1"
@@ -228,9 +261,16 @@ export default function HomePage() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: prefersReducedMotion ? 1 : 0, y: prefersReducedMotion ? 0 : 20 }}
+            initial={{
+              opacity: prefersReducedMotion ? 1 : 0,
+              y: prefersReducedMotion ? 0 : 20,
+            }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.5, ease: [0.22, 1, 0.36, 1], delay: prefersReducedMotion ? 0 : 0.35 }}
+            transition={{
+              duration: prefersReducedMotion ? 0 : 0.5,
+              ease: [0.22, 1, 0.36, 1],
+              delay: prefersReducedMotion ? 0 : 0.35,
+            }}
           >
             <HeroSearch
               cities={cities}
@@ -327,7 +367,10 @@ export default function HomePage() {
 
       {/* ── Personalized greeting ─────────────────────────────────────────── */}
       {isAuthenticated && user?.firstname && (
-        <Container maxWidth="xl" sx={{ pt: 2.5, pb: 0, px: { xs: 2, sm: 3, md: 4 } }}>
+        <Container
+          maxWidth="xl"
+          sx={{ pt: 2.5, pb: 0, px: { xs: 2, sm: 3, md: 4 } }}
+        >
           <FadeIn delay={0.05} direction="up">
             <Box
               sx={{
@@ -356,7 +399,10 @@ export default function HomePage() {
 
       {/* ── Profile completion banner (customers only) ────────────────────── */}
       {isAuthenticated && (
-        <Container maxWidth="xl" sx={{ pt: 1.5, pb: 0, px: { xs: 2, sm: 3, md: 4 } }}>
+        <Container
+          maxWidth="xl"
+          sx={{ pt: 1.5, pb: 0, px: { xs: 2, sm: 3, md: 4 } }}
+        >
           <ClientProfileBanner />
         </Container>
       )}
@@ -419,7 +465,8 @@ export default function HomePage() {
                 }}
               >
                 <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
-                  {CATEGORIES.find((c) => c.value === selectedCategory)?.label || selectedCategory}
+                  {CATEGORIES.find((c) => c.value === selectedCategory)
+                    ?.label || selectedCategory}
                 </Typography>
                 {isFetching && !showShimmer && (
                   <Typography variant="caption" color="text.secondary">
@@ -459,7 +506,9 @@ export default function HomePage() {
 
               {!showShimmer && !isError && ads.length === 0 && (
                 <Box sx={{ textAlign: 'center', py: 8 }}>
-                  <MapsHomeWork sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                  <MapsHomeWork
+                    sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }}
+                  />
                   <Typography variant="h6" color="text.secondary">
                     Aucune annonce trouvée
                   </Typography>
@@ -496,7 +545,11 @@ export default function HomePage() {
             {recommendations.length > 0 && (
               <FadeIn delay={0.15} direction="up">
                 <Box sx={{ mb: { xs: 3, md: 4 } }}>
-                  <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700} gutterBottom>
+                  <Typography
+                    variant={isMobile ? 'h6' : 'h5'}
+                    fontWeight={700}
+                    gutterBottom
+                  >
                     Recommandé pour vous
                   </Typography>
                   <Box
@@ -532,9 +585,21 @@ export default function HomePage() {
             {recentlyViewed.length > 0 && (
               <FadeIn delay={0.2} direction="up">
                 <Box sx={{ mb: { xs: 3, md: 4 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                    <AccessTimeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                    <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 1.5,
+                    }}
+                  >
+                    <AccessTimeIcon
+                      sx={{ fontSize: 18, color: 'text.secondary' }}
+                    />
+                    <Typography
+                      variant={isMobile ? 'h6' : 'h5'}
+                      fontWeight={700}
+                    >
                       Récemment consultés
                     </Typography>
                   </Box>
@@ -573,7 +638,11 @@ export default function HomePage() {
             {recommendations.length > 0 && (
               <FadeIn delay={0.1} direction="up">
                 <Box sx={{ mb: { xs: 3, md: 4 } }}>
-                  <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700} gutterBottom>
+                  <Typography
+                    variant={isMobile ? 'h6' : 'h5'}
+                    fontWeight={700}
+                    gutterBottom
+                  >
                     Recommandé pour vous
                   </Typography>
                   <Box
@@ -609,9 +678,21 @@ export default function HomePage() {
             {recentlyViewed.length > 0 && (
               <FadeIn delay={0.15} direction="up">
                 <Box sx={{ mb: { xs: 3, md: 4 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                    <AccessTimeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                    <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 1.5,
+                    }}
+                  >
+                    <AccessTimeIcon
+                      sx={{ fontSize: 18, color: 'text.secondary' }}
+                    />
+                    <Typography
+                      variant={isMobile ? 'h6' : 'h5'}
+                      fontWeight={700}
+                    >
                       Récemment consultés
                     </Typography>
                   </Box>
@@ -647,89 +728,92 @@ export default function HomePage() {
 
             {/* Main grid — Annonces récentes */}
             <FadeIn delay={0.2} direction="up">
-          <Box
-            ref={gridRef}
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'baseline',
-              mb: 2,
-              scrollMarginTop: '80px',
-            }}
-          >
-            <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
-              {selectedCategory
-                ? CATEGORIES.find((c) => c.value === selectedCategory)?.label || selectedCategory
-                : 'Annonces récentes'}
-            </Typography>
-            {isFetching && !showShimmer && (
-              <Typography variant="caption" color="text.secondary">
-                Mise à jour...
-              </Typography>
-            )}
-          </Box>
-
-          {isError && !showShimmer && (
-            <QueryError
-              onRetry={() => refetch()}
-              message="Impossible de charger les annonces. Vérifiez votre connexion et réessayez."
-            />
-          )}
-
-          {!isError && (
-            <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
-              {showShimmer
-                ? Array.from({ length: skeletonCount }).map((_, idx) => (
-                    <Grid key={idx} size={{ xs: 6, sm: 6, md: 4, lg: 3 }}>
-                      <AdCardSkeleton />
-                    </Grid>
-                  ))
-                : ads.map((ad, idx) => (
-                    <Grid
-                      key={ad.id}
-                      size={{ xs: 6, sm: 6, md: 4, lg: 3 }}
-                      sx={{
-                        animation: `fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) ${idx * 0.03}s both`,
-                      }}
-                    >
-                      <AdCard ad={ad} />
-                    </Grid>
-                  ))}
-            </Grid>
-          )}
-
-          {!showShimmer && !isError && ads.length === 0 && (
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <MapsHomeWork sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary">
-                Aucune annonce trouvée
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Essayez de modifier vos filtres ou revenez plus tard
-              </Typography>
-            </Box>
-          )}
-
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={handlePageChange}
-                shape="rounded"
-                size={isMobile ? 'small' : 'medium'}
-                siblingCount={isMobile ? 0 : 1}
+              <Box
+                ref={gridRef}
                 sx={{
-                  '& .MuiPaginationItem-root.Mui-selected': {
-                    bgcolor: 'primary.main',
-                    color: '#fff',
-                    '&:hover': { bgcolor: 'primary.dark' },
-                  },
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  mb: 2,
+                  scrollMarginTop: '80px',
                 }}
-              />
-            </Box>
-          )}
-        </FadeIn>
+              >
+                <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
+                  {selectedCategory
+                    ? CATEGORIES.find((c) => c.value === selectedCategory)
+                        ?.label || selectedCategory
+                    : 'Annonces récentes'}
+                </Typography>
+                {isFetching && !showShimmer && (
+                  <Typography variant="caption" color="text.secondary">
+                    Mise à jour...
+                  </Typography>
+                )}
+              </Box>
+
+              {isError && !showShimmer && (
+                <QueryError
+                  onRetry={() => refetch()}
+                  message="Impossible de charger les annonces. Vérifiez votre connexion et réessayez."
+                />
+              )}
+
+              {!isError && (
+                <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
+                  {showShimmer
+                    ? Array.from({ length: skeletonCount }).map((_, idx) => (
+                        <Grid key={idx} size={{ xs: 6, sm: 6, md: 4, lg: 3 }}>
+                          <AdCardSkeleton />
+                        </Grid>
+                      ))
+                    : ads.map((ad, idx) => (
+                        <Grid
+                          key={ad.id}
+                          size={{ xs: 6, sm: 6, md: 4, lg: 3 }}
+                          sx={{
+                            animation: `fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) ${idx * 0.03}s both`,
+                          }}
+                        >
+                          <AdCard ad={ad} />
+                        </Grid>
+                      ))}
+                </Grid>
+              )}
+
+              {!showShimmer && !isError && ads.length === 0 && (
+                <Box sx={{ textAlign: 'center', py: 8 }}>
+                  <MapsHomeWork
+                    sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }}
+                  />
+                  <Typography variant="h6" color="text.secondary">
+                    Aucune annonce trouvée
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Essayez de modifier vos filtres ou revenez plus tard
+                  </Typography>
+                </Box>
+              )}
+
+              {totalPages > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                  <Pagination
+                    count={totalPages}
+                    page={page}
+                    onChange={handlePageChange}
+                    shape="rounded"
+                    size={isMobile ? 'small' : 'medium'}
+                    siblingCount={isMobile ? 0 : 1}
+                    sx={{
+                      '& .MuiPaginationItem-root.Mui-selected': {
+                        bgcolor: 'primary.main',
+                        color: '#fff',
+                        '&:hover': { bgcolor: 'primary.dark' },
+                      },
+                    }}
+                  />
+                </Box>
+              )}
+            </FadeIn>
           </>
         )}
       </Container>
