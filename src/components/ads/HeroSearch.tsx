@@ -58,6 +58,7 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
       if (parsed.price_min) { params.set('price_min', String(parsed.price_min)); }
       if (parsed.surface_min) { params.set('surface_min', String(parsed.surface_min)); }
       if (parsed.has_parking) { params.set('parking', '1'); }
+      if (parsed.furnished) { params.set('furnished', '1'); }
       startTransition(() => { router.push(`/search?${params.toString()}`); });
     } catch {
       // fallback: simple text search

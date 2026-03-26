@@ -171,6 +171,10 @@ function SearchContent() {
       setHasParking(true);
     }
 
+    if (searchParams.get('furnished') === '1') {
+      setSelectedAmenities((prev) => prev.includes('furnished') ? prev : [...prev, 'furnished']);
+    }
+
     const urlSurfaceMin = searchParams.get('surface_min');
     if (urlSurfaceMin) {
       const min = Number(urlSurfaceMin);
