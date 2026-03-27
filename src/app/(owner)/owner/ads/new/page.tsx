@@ -99,6 +99,7 @@ export default function OwnerNewAdPage() {
               validScenes.map((s) => ({
                 title: s.title,
                 image: s.file!,
+                clientId: s.id,
                 hotspots: s.hotspots?.map((h) => ({
                   pitch: h.pitch,
                   yaw: h.yaw,

@@ -182,6 +182,8 @@ export const adsService = {
     scenes: {
       title: string;
       image: File;
+      /** Client-side temporary ID — sent so the backend can remap target_scene refs */
+      clientId?: string;
       hotspots?: Array<{
         pitch: number;
         yaw: number;
@@ -198,6 +200,9 @@ export const adsService = {
     scenes.forEach((scene, i) => {
       formData.append(`scenes[${i}][title]`, scene.title);
       formData.append(`scenes[${i}][image]`, scene.image);
+      if (scene.clientId) {
+        formData.append(`scenes[${i}][client_id]`, scene.clientId);
+      }
       if (scene.hotspots) {
         scene.hotspots.forEach((h, j) => {
           formData.append(
