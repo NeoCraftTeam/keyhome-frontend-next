@@ -29,6 +29,7 @@ import {
 import {
   CloudDownload as DownloadIcon,
   DateRange as DateIcon,
+  FilterList,
   Receipt as ReceiptIcon,
   Toll as CreditsIcon,
 } from '@mui/icons-material';
@@ -233,7 +234,7 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
                   </Box>
                   <Tooltip title="Méthode de paiement">
                     <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right' }}>
-                      {METHOD_LABELS[item.payment_method] || item.payment_method}
+                      {METHOD_LABELS[item.payment_method as string] || item.payment_method}
                     </Typography>
                   </Tooltip>
                 </Box>
@@ -440,7 +441,7 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
                   </TableCell>
                   <TableCell>
                     <Typography variant="caption" color="text.secondary">
-                      {METHOD_LABELS[item.payment_method] || item.payment_method}
+                      {METHOD_LABELS[item.payment_method as string] || item.payment_method}
                     </Typography>
                   </TableCell>
                   <TableCell>
