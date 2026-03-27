@@ -35,6 +35,7 @@ import {
   Tabs,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
@@ -47,23 +48,54 @@ import { useState } from 'react';
 
 const formatTime = (t: string) => t.slice(0, 5);
 
-function statusConfig(status: ReservationStatus) {
+function statusConfig(status: ReservationStatus, isDark?: boolean) {
   switch (status) {
     case ReservationStatus.Confirmed:
-      return { label: 'Confirmée', color: '#15803d', bg: '#f0fdf4', border: '#86efac', icon: <CheckCircle sx={{ fontSize: 14 }} /> };
+      return {
+        label: 'Confirmée',
+        color: '#15803d',
+        darkColor: '#4ade80',
+        bg: isDark ? 'rgba(74,222,128,0.12)' : '#f0fdf4',
+        border: isDark ? 'rgba(74,222,128,0.3)' : '#86efac',
+        icon: <CheckCircle sx={{ fontSize: 14 }} />,
+      };
     case ReservationStatus.Pending:
-      return { label: 'En attente', color: '#b45309', bg: '#fffbeb', border: '#fcd34d', icon: <HourglassTop sx={{ fontSize: 14 }} /> };
+      return {
+        label: 'En attente',
+        color: '#b45309',
+        darkColor: '#fbbf24',
+        bg: isDark ? 'rgba(251,191,36,0.12)' : '#fffbeb',
+        border: isDark ? 'rgba(251,191,36,0.3)' : '#fcd34d',
+        icon: <HourglassTop sx={{ fontSize: 14 }} />,
+      };
     case ReservationStatus.Cancelled:
-      return { label: 'Annulée', color: '#b91c1c', bg: '#fef2f2', border: '#fca5a5', icon: <CancelIcon sx={{ fontSize: 14 }} /> };
+      return {
+        label: 'Annulée',
+        color: '#b91c1c',
+        darkColor: '#f87171',
+        bg: isDark ? 'rgba(248,113,113,0.12)' : '#fef2f2',
+        border: isDark ? 'rgba(248,113,113,0.3)' : '#fca5a5',
+        icon: <CancelIcon sx={{ fontSize: 14 }} />,
+      };
     case ReservationStatus.Expired:
-      return { label: 'Expirée', color: '#64748b', bg: '#f8fafc', border: '#cbd5e1', icon: <ErrorOutline sx={{ fontSize: 14 }} /> };
+      return {
+        label: 'Expirée',
+        color: '#64748b',
+        darkColor: '#94a3b8',
+        bg: isDark ? 'rgba(148,163,184,0.12)' : '#f8fafc',
+        border: isDark ? 'rgba(148,163,184,0.25)' : '#cbd5e1',
+        icon: <ErrorOutline sx={{ fontSize: 14 }} />,
+      };
   }
 }
 
 // ─── sub-components ─────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: ReservationStatus }) {
-  const cfg = statusConfig(status);
+  const { palette } = useTheme();
+  const isDark = palette.mode === 'dark';
+  const cfg = statusConfig(status, isDark);
+  const textColor = isDark ? cfg.darkColor : cfg.color;
   return (
     <Chip
       icon={cfg.icon}
@@ -71,11 +103,11 @@ function StatusBadge({ status }: { status: ReservationStatus }) {
       size="small"
       sx={{
         backgroundColor: cfg.bg,
-        color: cfg.color,
+        color: textColor,
         border: `1px solid ${cfg.border}`,
         fontWeight: 700,
         fontSize: '0.72rem',
-        '& .MuiChip-icon': { color: cfg.color },
+        '& .MuiChip-icon': { color: textColor },
       }}
     />
   );
@@ -89,7 +121,8 @@ function ReservationCard({
   onCancel: (r: Reservation) => void;
 }) {
   const canCancel =
-    r.status === ReservationStatus.Pending || r.status === ReservationStatus.Confirmed;
+    r.status === ReservationStatus.Pending ||
+    r.status === ReservationStatus.Confirmed;
   const slotDate = parseISO(r.slot_date);
   const adSlug = r.ad ? `/ads/${r.ad.id}/${r.ad.slug}` : null;
 
@@ -121,7 +154,15 @@ function ReservationCard({
 
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         {/* header row */}
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 1,
+            flexWrap: 'wrap',
+          }}
+        >
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               variant="subtitle1"
@@ -131,7 +172,11 @@ function ReservationCard({
             >
               {r.ad?.title ?? 'Annonce inconnue'}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 0.25 }}
+            >
               {r.ad?.quarter?.city_name ?? r.ad?.adresse ?? ''}
             </Typography>
           </Box>
@@ -143,11 +188,23 @@ function ReservationCard({
         {/* date + time */}
         <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', opacity: 0.85 }}>
+            <Avatar
+              sx={{
+                width: 34,
+                height: 34,
+                bgcolor: 'primary.main',
+                opacity: 0.85,
+              }}
+            >
               <CalendarMonth sx={{ fontSize: 17 }} />
             </Avatar>
             <Box>
-              <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                fontWeight={600}
+                sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
+              >
                 Date
               </Typography>
               <Typography variant="body2" fontWeight={700}>
@@ -157,11 +214,23 @@ function ReservationCard({
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Avatar sx={{ width: 34, height: 34, bgcolor: 'secondary.main', opacity: 0.85 }}>
+            <Avatar
+              sx={{
+                width: 34,
+                height: 34,
+                bgcolor: 'secondary.main',
+                opacity: 0.85,
+              }}
+            >
               <Schedule sx={{ fontSize: 17 }} />
             </Avatar>
             <Box>
-              <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                fontWeight={600}
+                sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
+              >
                 Horaire
               </Typography>
               <Typography variant="body2" fontWeight={700}>
@@ -183,7 +252,12 @@ function ReservationCard({
               borderColor: 'primary.main',
             }}
           >
-            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              fontWeight={700}
+              sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
+            >
               Votre message
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -199,14 +273,31 @@ function ReservationCard({
               mt: 2,
               p: 1.5,
               borderRadius: 2,
-              bgcolor: '#f0fdf4',
+              bgcolor: (t) =>
+                t.palette.mode === 'dark' ? 'rgba(13,148,136,0.12)' : '#f0fdf4',
               borderLeft: '3px solid #0D9488',
             }}
           >
-            <Typography variant="caption" sx={{ color: '#0D9488', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: (t) =>
+                  t.palette.mode === 'dark' ? '#2dd4bf' : '#0D9488',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+              }}
+            >
               Note du propriétaire
             </Typography>
-            <Typography variant="body2" sx={{ color: '#0D9488', mt: 0.5 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: (t) =>
+                  t.palette.mode === 'dark' ? '#2dd4bf' : '#0D9488',
+                mt: 0.5,
+              }}
+            >
               {r.landlord_notes}
             </Typography>
           </Box>
@@ -219,22 +310,51 @@ function ReservationCard({
               mt: 2,
               p: 1.5,
               borderRadius: 2,
-              bgcolor: '#fef2f2',
+              bgcolor: (t) =>
+                t.palette.mode === 'dark' ? 'rgba(239,68,68,0.12)' : '#fef2f2',
               borderLeft: '3px solid #ef4444',
             }}
           >
-            <Typography variant="caption" sx={{ color: '#b91c1c', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: (t) =>
+                  t.palette.mode === 'dark' ? '#f87171' : '#b91c1c',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+              }}
+            >
               Motif d&apos;annulation
-              {r.cancelled_by === CancelledBy.Landlord ? ' (propriétaire)' : r.cancelled_by === CancelledBy.System ? ' (système)' : ''}
+              {r.cancelled_by === CancelledBy.Landlord
+                ? ' (propriétaire)'
+                : r.cancelled_by === CancelledBy.System
+                  ? ' (système)'
+                  : ''}
             </Typography>
-            <Typography variant="body2" sx={{ color: '#7f1d1d', mt: 0.5 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: (t) =>
+                  t.palette.mode === 'dark' ? '#fca5a5' : '#7f1d1d',
+                mt: 0.5,
+              }}
+            >
               {r.cancellation_reason}
             </Typography>
           </Box>
         )}
 
         {/* footer actions */}
-        <Box sx={{ mt: 2.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Box
+          sx={{
+            mt: 2.5,
+            display: 'flex',
+            gap: 1.5,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
           {adSlug && (
             <Button
               component={Link}
@@ -289,9 +409,9 @@ function ReservationSkeleton() {
 
 // ─── main page ───────────────────────────────────────────────────────────────
 
-const TAB_ALL      = 'all';
-const TAB_ACTIVE   = 'active';
-const TAB_PAST     = 'past';
+const TAB_ALL = 'all';
+const TAB_ACTIVE = 'active';
+const TAB_PAST = 'past';
 
 export default function MyReservationsPage() {
   const queryClient = useQueryClient();
@@ -326,20 +446,28 @@ export default function MyReservationsPage() {
   // ── filtering ──
   const filtered = (reservations ?? []).filter((r) => {
     if (tab === TAB_ACTIVE) {
-      return r.status === ReservationStatus.Pending || r.status === ReservationStatus.Confirmed;
+      return (
+        r.status === ReservationStatus.Pending ||
+        r.status === ReservationStatus.Confirmed
+      );
     }
     if (tab === TAB_PAST) {
-      return r.status === ReservationStatus.Cancelled || r.status === ReservationStatus.Expired;
+      return (
+        r.status === ReservationStatus.Cancelled ||
+        r.status === ReservationStatus.Expired
+      );
     }
     return true;
   });
 
   const sortedFiltered = [...filtered].sort(
-    (a, b) => new Date(b.slot_date).getTime() - new Date(a.slot_date).getTime(),
+    (a, b) => new Date(b.slot_date).getTime() - new Date(a.slot_date).getTime()
   );
 
   const activeCount = (reservations ?? []).filter(
-    (r) => r.status === ReservationStatus.Pending || r.status === ReservationStatus.Confirmed,
+    (r) =>
+      r.status === ReservationStatus.Pending ||
+      r.status === ReservationStatus.Confirmed
   ).length;
 
   return (
@@ -348,7 +476,12 @@ export default function MyReservationsPage() {
         {/* page header */}
         <Box sx={{ mb: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-            <IconButton onClick={() => router.back()} size="small" aria-label="Retour" sx={{ border: '1px solid', borderColor: 'divider', mr: 0.5 }}>
+            <IconButton
+              onClick={() => router.back()}
+              size="small"
+              aria-label="Retour"
+              sx={{ border: '1px solid', borderColor: 'divider', mr: 0.5 }}
+            >
               <ChevronLeftIcon />
             </IconButton>
             <Typography variant="h4" fontWeight={800} color="text.primary">
@@ -366,7 +499,11 @@ export default function MyReservationsPage() {
           onChange={(_, v) => setTab(v)}
           sx={{
             mb: 3,
-            '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, minHeight: 44 },
+            '& .MuiTab-root': {
+              textTransform: 'none',
+              fontWeight: 600,
+              minHeight: 44,
+            },
             '& .MuiTabs-indicator': { backgroundColor: 'primary.main' },
           }}
         >
@@ -404,22 +541,37 @@ export default function MyReservationsPage() {
         {/* content */}
         {isLoading ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {[0, 1, 2].map((i) => <ReservationSkeleton key={i} />)}
+            {[0, 1, 2].map((i) => (
+              <ReservationSkeleton key={i} />
+            ))}
           </Box>
         ) : isError ? (
           <Alert
             severity="error"
             action={
-              <Button size="small" onClick={() => refetch()}>Réessayer</Button>
+              <Button size="small" onClick={() => refetch()}>
+                Réessayer
+              </Button>
             }
           >
             {getSafeErrorMessage(error, 'Impossible de charger vos visites.')}
           </Alert>
         ) : sortedFiltered.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
-            <CalendarMonth sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
-            <Typography variant="h6" fontWeight={700} color="text.secondary" gutterBottom>
-              {tab === TAB_ACTIVE ? 'Aucune visite active' : tab === TAB_PAST ? 'Aucune visite passée' : 'Aucune visite'}
+            <CalendarMonth
+              sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }}
+            />
+            <Typography
+              variant="h6"
+              fontWeight={700}
+              color="text.secondary"
+              gutterBottom
+            >
+              {tab === TAB_ACTIVE
+                ? 'Aucune visite active'
+                : tab === TAB_PAST
+                  ? 'Aucune visite passée'
+                  : 'Aucune visite'}
             </Typography>
             <Typography variant="body2" color="text.disabled">
               {tab === TAB_ACTIVE
@@ -456,7 +608,10 @@ export default function MyReservationsPage() {
       {/* cancel dialog */}
       <Dialog
         open={!!cancelTarget}
-        onClose={() => { setCancelTarget(null); setCancelReason(''); }}
+        onClose={() => {
+          setCancelTarget(null);
+          setCancelReason('');
+        }}
         maxWidth="sm"
         fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
@@ -467,9 +622,12 @@ export default function MyReservationsPage() {
             <>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 <strong>{cancelTarget.ad?.title}</strong> ·{' '}
-                {format(parseISO(cancelTarget.slot_date), 'EEEE d MMMM yyyy', { locale: fr })}
+                {format(parseISO(cancelTarget.slot_date), 'EEEE d MMMM yyyy', {
+                  locale: fr,
+                })}
                 {' · '}
-                {formatTime(cancelTarget.slot_starts_at)} – {formatTime(cancelTarget.slot_ends_at)}
+                {formatTime(cancelTarget.slot_starts_at)} –{' '}
+                {formatTime(cancelTarget.slot_ends_at)}
               </Typography>
               <TextField
                 fullWidth
@@ -482,7 +640,10 @@ export default function MyReservationsPage() {
               />
               {cancelMutation.isError && (
                 <Alert severity="error" sx={{ mt: 2 }}>
-                  {getSafeErrorMessage(cancelMutation.error, "Impossible d'annuler la visite.")}
+                  {getSafeErrorMessage(
+                    cancelMutation.error,
+                    "Impossible d'annuler la visite."
+                  )}
                 </Alert>
               )}
             </>
@@ -490,7 +651,10 @@ export default function MyReservationsPage() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
           <Button
-            onClick={() => { setCancelTarget(null); setCancelReason(''); }}
+            onClick={() => {
+              setCancelTarget(null);
+              setCancelReason('');
+            }}
             variant="outlined"
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
@@ -503,7 +667,11 @@ export default function MyReservationsPage() {
             disabled={cancelMutation.isPending}
             sx={{ textTransform: 'none', fontWeight: 700 }}
           >
-            {cancelMutation.isPending ? <CircularProgress size={18} color="inherit" /> : 'Confirmer l\'annulation'}
+            {cancelMutation.isPending ? (
+              <CircularProgress size={18} color="inherit" />
+            ) : (
+              "Confirmer l'annulation"
+            )}
           </Button>
         </DialogActions>
       </Dialog>

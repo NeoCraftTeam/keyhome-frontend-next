@@ -68,7 +68,7 @@ const STEPS: TourStep[] = [
     Icon: CompareArrows,
     title: 'Comparez les biens côte à côte',
     description:
-      'Sélectionnez jusqu\'à 3 annonces et comparez prix, surface, équipements et plus en un seul coup d\'œil.',
+      "Sélectionnez jusqu'à 3 annonces et comparez prix, surface, équipements et plus en un seul coup d'œil.",
     color: '#0984e3',
     badge: 'Nouveau',
     highlight: 'Prix · Surface · Chambres · Équipements · Prix/m²',
@@ -86,7 +86,7 @@ const STEPS: TourStep[] = [
     Icon: Notifications,
     title: 'Alertes de recherche',
     description:
-      'Sauvegardez vos critères de recherche. Recevez une notification dès qu\'une nouvelle annonce correspondante est publiée.',
+      "Sauvegardez vos critères de recherche. Recevez une notification dès qu'une nouvelle annonce correspondante est publiée.",
     color: '#00b894',
     badge: 'Nouveau',
     highlight: 'Notification push + email automatique',
@@ -104,7 +104,7 @@ const STEPS: TourStep[] = [
     description:
       "Utilisez vos crédits pour accéder au numéro de téléphone, email et WhatsApp de l'annonceur et le contacter directement.",
     color: '#2d3436',
-    highlight: '1 déverrouillage = accès complet à l\'annonceur',
+    highlight: "1 déverrouillage = accès complet à l'annonceur",
   },
 ];
 
@@ -166,12 +166,17 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
 
     // Tour was already completed this session (WelcomeModal countdown may still be running).
     // Prevent the tour from looping on refresh before onboarding_completed_at is persisted.
-    if (variant === 'client' && typeof window !== 'undefined' && localStorage.getItem(APPTOUR_SHOWN_KEY)) {
+    if (
+      variant === 'client' &&
+      typeof window !== 'undefined' &&
+      localStorage.getItem(APPTOUR_SHOWN_KEY)
+    ) {
       return;
     }
 
     if (variant === 'owner') {
-      const allowed = user.role === UserRole.AGENT || user.role === UserRole.ADMIN;
+      const allowed =
+        user.role === UserRole.AGENT || user.role === UserRole.ADMIN;
       if (!allowed) {
         return;
       }
@@ -199,14 +204,18 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
     onDone?.();
     if (variant === 'client') {
       // Mark tour as shown so refresh doesn't reopen it during WelcomeModal countdown.
-      if (typeof window !== 'undefined') localStorage.setItem(APPTOUR_SHOWN_KEY, '1');
+      if (typeof window !== 'undefined')
+        localStorage.setItem(APPTOUR_SHOWN_KEY, '1');
       // Signal WelcomeModal to start its 3-minute countdown.
       window.dispatchEvent(new CustomEvent('kh:tour-completed'));
     } else {
       // Owner flow: no WelcomeModal, so complete onboarding immediately.
-      authService.completeOnboarding()
+      authService
+        .completeOnboarding()
         .then(() => refreshUser())
-        .catch(() => { /* ignore */ });
+        .catch(() => {
+          /* ignore */
+        });
     }
   };
 
@@ -224,7 +233,9 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
     setStep((s) => Math.max(0, s - 1));
   };
 
-  if (!open) { return null; }
+  if (!open) {
+    return null;
+  }
 
   const current = steps[step];
   const { Icon: StepIcon } = current;
@@ -252,7 +263,8 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
         value={progress}
         sx={{
           height: 3,
-          bgcolor: 'grey.100',
+          bgcolor: (t) =>
+            t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'grey.200',
           '& .MuiLinearProgress-bar': {
             bgcolor: current.color,
             transition: 'background-color 0.4s ease',
@@ -272,9 +284,10 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
           position: 'relative',
           overflow: 'hidden',
           background: `linear-gradient(145deg, ${current.color}ee 0%, ${current.color}bb 100%)`,
-          animation: animDir === 'forward'
-            ? 'slideInRight 0.32s cubic-bezier(0.22,1,0.36,1) both'
-            : 'slideInLeft 0.32s cubic-bezier(0.22,1,0.36,1) both',
+          animation:
+            animDir === 'forward'
+              ? 'slideInRight 0.32s cubic-bezier(0.22,1,0.36,1) both'
+              : 'slideInLeft 0.32s cubic-bezier(0.22,1,0.36,1) both',
           '@keyframes slideInRight': {
             from: { opacity: 0, transform: 'translateX(30px)' },
             to: { opacity: 1, transform: 'none' },
@@ -286,19 +299,46 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
         }}
       >
         {/* Deco circles */}
-        <Box sx={{
-          position: 'absolute', width: { xs: 160, sm: 220 }, height: { xs: 160, sm: 220 }, borderRadius: '50%',
-          border: { xs: '30px solid rgba(255,255,255,0.07)', sm: '44px solid rgba(255,255,255,0.07)' }, top: -70, right: -70,
-        }} />
-        <Box sx={{
-          position: 'absolute', width: { xs: 90, sm: 130 }, height: { xs: 90, sm: 130 }, borderRadius: '50%',
-          border: { xs: '20px solid rgba(255,255,255,0.05)', sm: '28px solid rgba(255,255,255,0.05)' }, bottom: -35, left: -35,
-        }} />
-        <Box sx={{
-          position: 'absolute', width: { xs: 60, sm: 80 }, height: { xs: 60, sm: 80 }, borderRadius: '50%',
-          border: '18px solid rgba(255,255,255,0.07)', top: 20, left: '20%',
-          display: { xs: 'none', sm: 'block' },
-        }} />
+        <Box
+          sx={{
+            position: 'absolute',
+            width: { xs: 160, sm: 220 },
+            height: { xs: 160, sm: 220 },
+            borderRadius: '50%',
+            border: {
+              xs: '30px solid rgba(255,255,255,0.07)',
+              sm: '44px solid rgba(255,255,255,0.07)',
+            },
+            top: -70,
+            right: -70,
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            width: { xs: 90, sm: 130 },
+            height: { xs: 90, sm: 130 },
+            borderRadius: '50%',
+            border: {
+              xs: '20px solid rgba(255,255,255,0.05)',
+              sm: '28px solid rgba(255,255,255,0.05)',
+            },
+            bottom: -35,
+            left: -35,
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            width: { xs: 60, sm: 80 },
+            height: { xs: 60, sm: 80 },
+            borderRadius: '50%',
+            border: '18px solid rgba(255,255,255,0.07)',
+            top: 20,
+            left: '20%',
+            display: { xs: 'none', sm: 'block' },
+          }}
+        />
 
         {/* Badge */}
         {current.badge && (
@@ -306,9 +346,13 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
             label={current.badge}
             size="small"
             sx={{
-              position: 'absolute', top: 16, left: 16,
+              position: 'absolute',
+              top: 16,
+              left: 16,
               bgcolor: 'rgba(255,255,255,0.25)',
-              color: 'white', fontWeight: 700, fontSize: 11,
+              color: 'white',
+              fontWeight: 700,
+              fontSize: 11,
               backdropFilter: 'blur(4px)',
               border: '1px solid rgba(255,255,255,0.3)',
             }}
@@ -321,8 +365,11 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
           size="small"
           aria-label="Fermer le tutoriel"
           sx={{
-            position: 'absolute', top: 12, right: 12,
-            bgcolor: 'rgba(255,255,255,0.15)', color: '#fff',
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            bgcolor: 'rgba(255,255,255,0.15)',
+            color: '#fff',
             '&:hover': { bgcolor: 'rgba(255,255,255,0.28)' },
           }}
         >
@@ -332,10 +379,14 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
         {/* Icon */}
         <Box
           sx={{
-            width: { xs: 64, sm: 88 }, height: { xs: 64, sm: 88 }, borderRadius: '50%',
+            width: { xs: 64, sm: 88 },
+            height: { xs: 64, sm: 88 },
+            borderRadius: '50%',
             bgcolor: 'rgba(255,255,255,0.2)',
             backdropFilter: 'blur(8px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
             animation: 'iconBounce 0.45s cubic-bezier(0.22,1,0.36,1)',
             '@keyframes iconBounce': {
@@ -350,7 +401,12 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
         {/* Step count */}
         <Typography
           variant="caption"
-          sx={{ color: 'rgba(255,255,255,0.7)', mt: 1.5, fontWeight: 600, fontSize: 11 }}
+          sx={{
+            color: 'rgba(255,255,255,0.7)',
+            mt: 1.5,
+            fontWeight: 600,
+            fontSize: 11,
+          }}
         >
           {step + 1} / {steps.length}
         </Typography>
@@ -358,16 +414,26 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
 
       <DialogContent sx={{ px: 3.5, pb: 3.5, pt: 2.5 }}>
         {/* Dots */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5, mb: 2.5 }}>
+        <Box
+          sx={{ display: 'flex', justifyContent: 'center', gap: 0.5, mb: 2.5 }}
+        >
           {steps.map((_, i) => (
             <Box
               key={i}
-              onClick={() => { setAnimDir(i > step ? 'forward' : 'back'); setStep(i); }}
+              onClick={() => {
+                setAnimDir(i > step ? 'forward' : 'back');
+                setStep(i);
+              }}
               sx={{
                 width: i === step ? 20 : 6,
                 height: 6,
                 borderRadius: 3,
-                bgcolor: i === step ? current.color : i < step ? `${current.color}55` : 'grey.200',
+                bgcolor:
+                  i === step
+                    ? current.color
+                    : i < step
+                      ? `${current.color}55`
+                      : 'grey.200',
                 cursor: 'pointer',
                 transition: 'all 0.35s ease',
               }}
@@ -431,7 +497,11 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
             <Typography
               variant="caption"
               fontWeight={700}
-              sx={{ color: current.color, fontSize: 11.5, wordBreak: 'break-word' }}
+              sx={{
+                color: current.color,
+                fontSize: 11.5,
+                wordBreak: 'break-word',
+              }}
             >
               {current.highlight}
             </Typography>
@@ -446,8 +516,12 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
               onClick={handleBack}
               startIcon={<ArrowBack sx={{ fontSize: 16 }} />}
               sx={{
-                borderRadius: 2.5, textTransform: 'none', fontWeight: 600,
-                flex: '0 0 auto', borderColor: 'divider', color: 'text.secondary',
+                borderRadius: 2.5,
+                textTransform: 'none',
+                fontWeight: 600,
+                flex: '0 0 auto',
+                borderColor: 'divider',
+                color: 'text.secondary',
                 '&:hover': { borderColor: 'text.secondary' },
               }}
             >
@@ -457,7 +531,12 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
             <Button
               variant="text"
               onClick={handleClose}
-              sx={{ borderRadius: 2.5, textTransform: 'none', color: 'text.disabled', flex: '0 0 auto' }}
+              sx={{
+                borderRadius: 2.5,
+                textTransform: 'none',
+                color: 'text.disabled',
+                flex: '0 0 auto',
+              }}
             >
               Passer
             </Button>
@@ -469,8 +548,10 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
             endIcon={!isLast && <ArrowForward sx={{ fontSize: 16 }} />}
             fullWidth
             sx={{
-              borderRadius: 2.5, py: 1.25,
-              textTransform: 'none', fontWeight: 700,
+              borderRadius: 2.5,
+              py: 1.25,
+              textTransform: 'none',
+              fontWeight: 700,
               bgcolor: current.color,
               '&:hover': { bgcolor: current.color, filter: 'brightness(0.88)' },
               transition: 'background-color 0.4s ease',

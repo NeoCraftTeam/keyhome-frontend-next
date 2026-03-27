@@ -514,7 +514,7 @@ function AdDetailContent() {
               sx={{
                 width: '100%',
                 height: '100%',
-                bgcolor: 'grey.200',
+                bgcolor: 'action.hover',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -629,9 +629,12 @@ function AdDetailContent() {
               top: 12,
               left: 12,
               zIndex: 3,
-              bgcolor: 'rgba(255,255,255,0.95)',
+              bgcolor: (t) =>
+                t.palette.mode === 'dark'
+                  ? 'rgba(19,19,26,0.92)'
+                  : 'rgba(255,255,255,0.95)',
               color: 'text.primary',
-              '&:hover': { bgcolor: '#fff' },
+              '&:hover': { bgcolor: 'background.paper' },
               boxShadow: 1,
             }}
           >

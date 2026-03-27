@@ -15,11 +15,6 @@ import MuiEmotionRegistry from '@/components/MuiEmotionRegistry';
 export type ThemeChoice = 'light' | 'dark' | 'system';
 type ResolvedMode = 'light' | 'dark';
 
-function getSystemPrefersDark(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
-}
-
 interface ThemeContextType {
   mode: ResolvedMode;
   choice: ThemeChoice;
@@ -102,6 +97,27 @@ export function ThemeProvider({
   }, [resolvedMode, setThemeChoice]);
   const theme = resolvedMode === 'light' ? lightTheme : darkTheme;
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-kh-theme', resolvedMode);
+    if (resolvedMode === 'dark') {
+      document.documentElement.style.backgroundColor =
+        theme.palette.background.default;
+      document.documentElement.style.color = theme.palette.text.primary;
+    } else {
+      document.documentElement.style.backgroundColor = '';
+      document.documentElement.style.color = '';
+    }
+  }, [
+    resolvedMode,
+    theme.palette.background.default,
+    theme.palette.text.primary,
+  ]);
+
   const value = useMemo(
     () => ({ mode: resolvedMode, choice, toggleTheme, setThemeChoice }),
     [resolvedMode, choice, toggleTheme, setThemeChoice]
@@ -118,7 +134,9 @@ export function ThemeProvider({
               minHeight: '100vh',
               backgroundColor: theme.palette.background.default,
               color: theme.palette.text.primary,
-              transition: 'background-color 0.6s ease, color 0.6s ease',
+              transition: mounted
+                ? 'background-color 0.6s ease, color 0.6s ease'
+                : 'none',
             }}
           >
             {children}

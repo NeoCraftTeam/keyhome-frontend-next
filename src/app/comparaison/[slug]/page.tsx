@@ -29,7 +29,14 @@ export async function generateMetadata({
       description: data.metaDescription,
       url: `https://keyhome.app/comparaison/${slug}`,
       siteName: 'KeyHome',
-      images: [{ url: 'https://keyhome.app/images/og-cover.png', width: 1200, height: 630, alt: data.metaTitle }],
+      images: [
+        {
+          url: 'https://keyhome.app/images/og-cover.png',
+          width: 1200,
+          height: 630,
+          alt: data.metaTitle,
+        },
+      ],
     },
   };
 }
@@ -63,9 +70,24 @@ export default async function ComparisonPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Accueil', item: 'https://keyhome.app' },
-      { '@type': 'ListItem', position: 2, name: 'Comparaisons', item: 'https://keyhome.app/comparaison' },
-      { '@type': 'ListItem', position: 3, name: `${data.labelA} vs ${data.labelB}`, item: `https://keyhome.app/comparaison/${slug}` },
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Accueil',
+        item: 'https://keyhome.app',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Comparaisons',
+        item: 'https://keyhome.app/comparaison',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: `${data.labelA} vs ${data.labelB}`,
+        item: `https://keyhome.app/comparaison/${slug}`,
+      },
     ],
   };
 
@@ -87,21 +109,62 @@ export default async function ComparisonPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 20px', fontFamily: 'system-ui, sans-serif' }}>
+      <div
+        style={{
+          maxWidth: 900,
+          margin: '0 auto',
+          padding: '40px 20px',
+          fontFamily: 'system-ui, sans-serif',
+        }}
+      >
         {/* Breadcrumb */}
-        <nav style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>
-          <Link href="/" style={{ color: '#888', textDecoration: 'none' }}>KeyHome</Link>
+        <nav
+          style={{
+            fontSize: 13,
+            color: 'var(--kh-text-muted)',
+            marginBottom: 24,
+          }}
+        >
+          <Link
+            href="/"
+            style={{ color: 'var(--kh-text-muted)', textDecoration: 'none' }}
+          >
+            KeyHome
+          </Link>
           {' › '}
-          <Link href="/comparaison" style={{ color: '#888', textDecoration: 'none' }}>Comparaisons</Link>
+          <Link
+            href="/comparaison"
+            style={{ color: 'var(--kh-text-muted)', textDecoration: 'none' }}
+          >
+            Comparaisons
+          </Link>
           {' › '}
-          <span style={{ color: '#222', fontWeight: 600 }}>{data.labelA} vs {data.labelB}</span>
+          <span style={{ color: 'var(--kh-text-primary)', fontWeight: 600 }}>
+            {data.labelA} vs {data.labelB}
+          </span>
         </nav>
 
         {/* Header */}
-        <h1 style={{ fontSize: 30, fontWeight: 800, lineHeight: 1.25, marginBottom: 20, color: '#111' }}>
+        <h1
+          style={{
+            fontSize: 30,
+            fontWeight: 800,
+            lineHeight: 1.25,
+            marginBottom: 20,
+            color: 'var(--kh-text-strong)',
+          }}
+        >
           {data.title}
         </h1>
-        <p style={{ color: '#555', lineHeight: 1.8, fontSize: 16, marginBottom: 40, maxWidth: 760 }}>
+        <p
+          style={{
+            color: 'var(--kh-text-secondary)',
+            lineHeight: 1.8,
+            fontSize: 16,
+            marginBottom: 40,
+            maxWidth: 760,
+          }}
+        >
           {data.intro}
         </p>
 
@@ -115,7 +178,16 @@ export default async function ComparisonPage({
             overflow: 'hidden',
           }}
         >
-          <div style={{ padding: '16px', color: '#999', fontSize: 13, fontWeight: 600 }}>Critère</div>
+          <div
+            style={{
+              padding: '16px',
+              color: 'var(--kh-text-muted)',
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            Critère
+          </div>
           <div
             style={{
               padding: '16px',
@@ -148,12 +220,12 @@ export default async function ComparisonPage({
             {/* Section header */}
             <div
               style={{
-                background: '#F8F8FF',
+                background: 'var(--kh-bg-alt)',
                 padding: '10px 16px',
                 borderLeft: `4px solid ${brand.primary}`,
                 fontSize: 13,
                 fontWeight: 700,
-                color: '#444',
+                color: 'var(--kh-text-accent)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
               }}
@@ -167,41 +239,99 @@ export default async function ComparisonPage({
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr 1fr',
-                  background: i % 2 === 0 ? '#fff' : '#FAFAFA',
-                  borderLeft: '1px solid #eee',
-                  borderRight: '1px solid #eee',
+                  background:
+                    i % 2 === 0 ? 'var(--kh-row-even)' : 'var(--kh-row-odd)',
+                  borderLeft: '1px solid var(--kh-border-subtle)',
+                  borderRight: '1px solid var(--kh-border-subtle)',
                 }}
               >
-                <div style={{ ...cellStyle, fontWeight: 500, color: '#333' }}>{item.label}</div>
-                <div style={{ ...cellStyle, color: '#444', borderLeft: '1px solid #f0f0f0' }}>{item.a}</div>
-                <div style={{ ...cellStyle, color: '#444', borderLeft: '1px solid #f0f0f0' }}>{item.b}</div>
+                <div
+                  style={{
+                    ...cellStyle,
+                    fontWeight: 500,
+                    color: 'var(--kh-text-primary)',
+                  }}
+                >
+                  {item.label}
+                </div>
+                <div
+                  style={{
+                    ...cellStyle,
+                    color: 'var(--kh-text-accent)',
+                    borderLeft: '1px solid var(--kh-border-subtle)',
+                  }}
+                >
+                  {item.a}
+                </div>
+                <div
+                  style={{
+                    ...cellStyle,
+                    color: 'var(--kh-text-accent)',
+                    borderLeft: '1px solid var(--kh-border-subtle)',
+                  }}
+                >
+                  {item.b}
+                </div>
               </div>
             ))}
           </div>
         ))}
 
-        <div style={{ border: '1px solid #eee', borderTop: 'none', borderRadius: '0 0 12px 12px', height: 8 }} />
+        <div
+          style={{
+            border: '1px solid var(--kh-border-subtle)',
+            borderTop: 'none',
+            borderRadius: '0 0 12px 12px',
+            height: 8,
+          }}
+        />
 
         {/* Verdict */}
         <div
           style={{
             marginTop: 40,
             padding: '28px 32px',
-            background: 'linear-gradient(135deg, #FFF0F2, #FFF5F6)',
+            background: 'var(--kh-bg-tinted)',
             borderRadius: 16,
             borderLeft: `4px solid ${brand.primary}`,
           }}
         >
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: brand.primaryDark, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2
+            style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: brand.primaryDark,
+              marginBottom: 12,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
             <EmojiEventsIcon style={{ fontSize: 22 }} />
             Notre verdict
           </h2>
-          <p style={{ lineHeight: 1.8, color: '#444', fontSize: 15, margin: 0 }}>{data.verdict}</p>
+          <p
+            style={{
+              lineHeight: 1.8,
+              color: 'var(--kh-text-accent)',
+              fontSize: 15,
+              margin: 0,
+            }}
+          >
+            {data.verdict}
+          </p>
         </div>
 
         {/* Related links */}
         <section style={{ marginTop: 56 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#222', marginBottom: 16 }}>
+          <h2
+            style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: 'var(--kh-text-primary)',
+              marginBottom: 16,
+            }}
+          >
             Explorez par vous-même
           </h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
@@ -228,7 +358,14 @@ export default async function ComparisonPage({
 
         {/* Other comparisons */}
         <section style={{ marginTop: 48 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#222', marginBottom: 14 }}>
+          <h2
+            style={{
+              fontSize: 18,
+              fontWeight: 700,
+              color: 'var(--kh-text-primary)',
+              marginBottom: 14,
+            }}
+          >
             Autres comparaisons
           </h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
@@ -241,10 +378,11 @@ export default async function ComparisonPage({
                   style={{
                     padding: '8px 18px',
                     borderRadius: 100,
-                    border: '1px solid #ddd',
+                    border: '1px solid var(--kh-border)',
                     fontSize: 14,
-                    color: '#444',
+                    color: 'var(--kh-text-accent)',
                     textDecoration: 'none',
+                    background: 'var(--kh-bg-surface)',
                   }}
                 >
                   {c.labelA} vs {c.labelB}

@@ -81,15 +81,15 @@ function getPasswordStrength(password: string): {
     score += 25;
   }
   if (score <= 25) {
-    return { score, label: 'Faible', color: '#d32f2f' };
+    return { score, label: 'Faible', color: 'error.main' };
   }
   if (score <= 50) {
-    return { score, label: 'Moyen', color: '#ed6c02' };
+    return { score, label: 'Moyen', color: 'warning.main' };
   }
   if (score <= 75) {
-    return { score, label: 'Bon', color: '#2e7d32' };
+    return { score, label: 'Bon', color: 'success.main' };
   }
-  return { score, label: 'Excellent', color: '#1b5e20' };
+  return { score, label: 'Excellent', color: 'success.light' };
 }
 
 function TabPanel({ children, value, index }: TabPanelProps) {

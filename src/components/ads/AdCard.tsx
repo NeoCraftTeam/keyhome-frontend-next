@@ -507,7 +507,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                       flexShrink: 0,
                     }}
                   >
-                    <StarIcon sx={{ fontSize: 12, color: '#222' }} />
+                    <StarIcon sx={{ fontSize: 12, color: 'text.primary' }} />
                     <Typography
                       variant="caption"
                       fontWeight={600}

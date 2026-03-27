@@ -9,7 +9,14 @@ import {
   RocketLaunch as BoostIcon,
   Verified as VerifiedIcon,
 } from '@mui/icons-material';
-import { Box, Chip, IconButton, Typography, Tooltip, Button } from '@mui/material';
+import {
+  Box,
+  Chip,
+  IconButton,
+  Typography,
+  Tooltip,
+  Button,
+} from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { brand } from '@/theme/tokens';
@@ -20,7 +27,11 @@ interface OwnerAdCardProps {
   isToggling?: boolean;
 }
 
-export default function OwnerAdCard({ ad, onToggleVisibility, isToggling }: OwnerAdCardProps) {
+export default function OwnerAdCard({
+  ad,
+  onToggleVisibility,
+  isToggling,
+}: OwnerAdCardProps) {
   const router = useRouter();
   const image = ad.images?.[0];
   const imageUrl = image?.url || image?.thumb || '/images/placeholder-ad.jpg';
@@ -39,7 +50,9 @@ export default function OwnerAdCard({ ad, onToggleVisibility, isToggling }: Owne
         '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' },
       }}
     >
-      <Box sx={{ position: 'relative', aspectRatio: '16/10', bgcolor: 'grey.200' }}>
+      <Box
+        sx={{ position: 'relative', aspectRatio: '16/10', bgcolor: 'grey.200' }}
+      >
         <Image
           src={imageUrl}
           alt={ad.title}
@@ -60,7 +73,13 @@ export default function OwnerAdCard({ ad, onToggleVisibility, isToggling }: Owne
           <Chip
             label={ad.status_label || ad.status}
             size="small"
-            color={ad.status === 'available' ? 'success' : ad.status === 'pending' ? 'warning' : 'default'}
+            color={
+              ad.status === 'available'
+                ? 'success'
+                : ad.status === 'pending'
+                  ? 'warning'
+                  : 'default'
+            }
             sx={{ fontWeight: 600 }}
           />
           {ad.is_visible === false && (
@@ -75,7 +94,7 @@ export default function OwnerAdCard({ ad, onToggleVisibility, isToggling }: Owne
                 bgcolor: brand.primary,
                 color: 'white',
                 fontWeight: 800,
-                '& .MuiChip-icon': { color: 'white' }
+                '& .MuiChip-icon': { color: 'white' },
               }}
             />
           )}
@@ -85,7 +104,15 @@ export default function OwnerAdCard({ ad, onToggleVisibility, isToggling }: Owne
             </Tooltip>
           )}
         </Box>
-        <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0.5 }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            display: 'flex',
+            gap: 0.5,
+          }}
+        >
           <IconButton
             size="small"
             onClick={(e) => {
@@ -94,8 +121,11 @@ export default function OwnerAdCard({ ad, onToggleVisibility, isToggling }: Owne
             }}
             disabled={isToggling}
             sx={{
-              bgcolor: 'rgba(255,255,255,0.9)',
-              '&:hover': { bgcolor: 'white' },
+              bgcolor: (t) =>
+                t.palette.mode === 'dark'
+                  ? 'rgba(19,19,26,0.9)'
+                  : 'rgba(255,255,255,0.9)',
+              '&:hover': { bgcolor: 'background.paper' },
             }}
           >
             {ad.is_visible ? (
@@ -111,8 +141,11 @@ export default function OwnerAdCard({ ad, onToggleVisibility, isToggling }: Owne
               router.push(`/owner/ads/${ad.id}`);
             }}
             sx={{
-              bgcolor: 'rgba(255,255,255,0.9)',
-              '&:hover': { bgcolor: 'white' },
+              bgcolor: (t) =>
+                t.palette.mode === 'dark'
+                  ? 'rgba(19,19,26,0.9)'
+                  : 'rgba(255,255,255,0.9)',
+              '&:hover': { bgcolor: 'background.paper' },
             }}
           >
             <EditIcon fontSize="small" />
@@ -120,7 +153,14 @@ export default function OwnerAdCard({ ad, onToggleVisibility, isToggling }: Owne
         </Box>
       </Box>
       <Box sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            mb: 0.5,
+          }}
+        >
           <Typography fontWeight={700} noWrap sx={{ flex: 1 }}>
             {ad.title}
           </Typography>
@@ -140,7 +180,7 @@ export default function OwnerAdCard({ ad, onToggleVisibility, isToggling }: Owne
                 fontWeight: 700,
                 color: brand.primary,
                 textTransform: 'none',
-                '&:hover': { bgcolor: 'rgba(246, 71, 95, 0.08)' }
+                '&:hover': { bgcolor: 'rgba(246, 71, 95, 0.08)' },
               }}
             >
               Booster
@@ -148,7 +188,8 @@ export default function OwnerAdCard({ ad, onToggleVisibility, isToggling }: Owne
           )}
         </Box>
         <Typography variant="body2" color="text.secondary" gutterBottom>
-          {ad.quarter?.city_name || ''} · {ad.surface_area} m² · {ad.bedrooms} ch.
+          {ad.quarter?.city_name || ''} · {ad.surface_area} m² · {ad.bedrooms}{' '}
+          ch.
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography fontWeight={700} color="primary.main">

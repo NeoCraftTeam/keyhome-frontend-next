@@ -1419,7 +1419,10 @@ function SearchContent() {
                       ml: 0.5,
                       height: 18,
                       minWidth: 18,
-                      bgcolor: '#fff',
+                      bgcolor: (t) =>
+                        t.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.15)'
+                          : '#fff',
                       color: 'primary.main',
                       fontSize: '0.65rem',
                       fontWeight: 700,

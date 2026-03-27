@@ -9,7 +9,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { frFR } from '@clerk/localizations';
 import JsonLd from '@/components/seo/JsonLd';
 import { WebVitals } from '@/components/seo/WebVitals';
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from '@vercel/analytics/next';
 import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
 import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import NetworkStatus from '@/components/pwa/NetworkStatus';
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     template: '%s | KeyHome',
   },
   description:
-    "KeyHome : annonces immobilières vérifiées en Afrique. Maisons, appartements, terrains à Douala, Abidjan, Cotonou, Lomé. Inscription gratuite, zéro arnaque.",
+    'KeyHome : annonces immobilières vérifiées en Afrique. Maisons, appartements, terrains à Douala, Abidjan, Cotonou, Lomé. Inscription gratuite, zéro arnaque.',
   keywords: [
     'immobilier Afrique',
     'location appartement',
@@ -84,7 +84,7 @@ export const metadata: Metadata = {
     title: 'KeyHome — Trouvez votre logement en Afrique',
     description:
       "Des milliers d'annonces immobilières vérifiées. Maisons, appartements, terrains et villas à travers l'Afrique. " +
-      "Inscription gratuite, paiement sécurisé Mobile Money, contact direct avec les propriétaires. Zéro intermédiaire.",
+      'Inscription gratuite, paiement sécurisé Mobile Money, contact direct avec les propriétaires. Zéro intermédiaire.',
     images: [
       {
         url: '/images/og-cover.png',
@@ -162,7 +162,7 @@ export default async function RootLayout({
             suppressHydrationWarning
             nonce={nonce}
             dangerouslySetInnerHTML={{
-              __html: `(function(){var t=localStorage.getItem("theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.style.colorScheme=d?"dark":"light";})();`,
+              __html: `(function(){try{var t=localStorage.getItem("theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.style.colorScheme=d?"dark":"light";if(d){document.documentElement.setAttribute("data-kh-theme","dark");document.documentElement.style.backgroundColor="#0A0A0F";document.documentElement.style.color="#F0EEF8";}else{document.documentElement.setAttribute("data-kh-theme","light");}}catch(e){}})();`,
             }}
           />
           <link rel="preconnect" href="https://api.mapbox.com" />
@@ -176,7 +176,8 @@ export default async function RootLayout({
           <JsonLd />
         </head>
         <body className={`${inter.variable} ${jakarta.variable} antialiased`}>
-          <Providers nonce={nonce}>{children}
+          <Providers nonce={nonce}>
+            {children}
             <Analytics />
             <WebVitals />
             <ServiceWorkerRegistrar />

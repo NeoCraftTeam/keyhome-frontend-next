@@ -28,7 +28,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Container,
   Dialog,
   DialogContent,
@@ -384,6 +383,7 @@ export default function HomePage() {
               <Typography
                 variant="h6"
                 fontWeight={700}
+                color="text.primary"
                 sx={{ fontSize: { xs: '1rem', md: '1.15rem' } }}
               >
                 {greeting},{' '}
