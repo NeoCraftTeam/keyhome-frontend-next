@@ -3,7 +3,10 @@
 import { Box, Container, Typography } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import AdForm, { type AdFormValues, type TourScene } from '@/components/owner/AdForm';
+import AdForm, {
+  type AdFormValues,
+  type TourScene,
+} from '@/components/owner/AdForm';
 import { adsService } from '@/services/ads.service';
 
 export default function OwnerNewAdPage() {
@@ -37,60 +40,85 @@ export default function OwnerNewAdPage() {
       images.forEach((f, i) => formData.append(`images[${i}]`, f));
 
       // Premium info
-      if (values.deposit_amount) formData.append('deposit_amount', values.deposit_amount);
-      if (values.minimum_lease_duration) formData.append('minimum_lease_duration', values.minimum_lease_duration);
-      formData.append('charges_forfaitaires', values.charges_forfaitaires ? '1' : '0');
+      if (values.deposit_amount)
+        formData.append('deposit_amount', values.deposit_amount);
+      if (values.minimum_lease_duration)
+        formData.append(
+          'minimum_lease_duration',
+          values.minimum_lease_duration
+        );
+      formData.append(
+        'charges_forfaitaires',
+        values.charges_forfaitaires ? '1' : '0'
+      );
       if (values.charges_forfaitaires && values.charges_montant_forfait) {
-        formData.append('charges_montant_forfait', values.charges_montant_forfait);
+        formData.append(
+          'charges_montant_forfait',
+          values.charges_montant_forfait
+        );
       }
       if (!values.charges_forfaitaires) {
-        if (values.charges_eau) formData.append('charges_eau', values.charges_eau);
-        if (values.charges_electricite) formData.append('charges_electricite', values.charges_electricite);
+        if (values.charges_eau)
+          formData.append('charges_eau', values.charges_eau);
+        if (values.charges_electricite)
+          formData.append('charges_electricite', values.charges_electricite);
       }
-      if (values.charges_autres) formData.append('charges_autres', values.charges_autres);
+      if (values.charges_autres)
+        formData.append('charges_autres', values.charges_autres);
 
       // Proximity & distance fields
-      if (values.distance_main_road_m) formData.append('distance_main_road_m', values.distance_main_road_m);
-      if (values.distance_shops_m) formData.append('distance_shops_m', values.distance_shops_m);
-      if (values.distance_transport_m) formData.append('distance_transport_m', values.distance_transport_m);
-      if (values.distance_school_m) formData.append('distance_school_m', values.distance_school_m);
-      if (values.distance_hospital_m) formData.append('distance_hospital_m', values.distance_hospital_m);
+      if (values.distance_main_road_m)
+        formData.append('distance_main_road_m', values.distance_main_road_m);
+      if (values.distance_shops_m)
+        formData.append('distance_shops_m', values.distance_shops_m);
+      if (values.distance_transport_m)
+        formData.append('distance_transport_m', values.distance_transport_m);
+      if (values.distance_school_m)
+        formData.append('distance_school_m', values.distance_school_m);
+      if (values.distance_hospital_m)
+        formData.append('distance_hospital_m', values.distance_hospital_m);
 
       // Property condition PDF
       if (propertyConditionPdf) {
         formData.append('property_condition', propertyConditionPdf);
       }
-      
-      if ((values as any).is_boost_requested) {
+
+      if (values.is_boost_requested) {
         formData.append('is_boost_requested', '1');
       }
 
       const ad = await adsService.create(formData);
 
-      // Upload tour scenes if any
+      // Upload tour scenes if any — clean up orphan ad on failure
       if (tourScenes && tourScenes.length > 0) {
         const validScenes = tourScenes.filter((s) => s.file && s.title.trim());
         if (validScenes.length > 0) {
-          await adsService.uploadTourScenes(
-            ad.id,
-            validScenes.map((s) => ({
-              title: s.title,
-              image: s.file!,
-              hotspots: s.hotspots?.map((h) => ({
-                pitch: h.pitch,
-                yaw: h.yaw,
-                target_scene: h.target_scene,
-                label: h.label,
-              })),
-            })),
-          );
+          try {
+            await adsService.uploadTourScenes(
+              ad.id,
+              validScenes.map((s) => ({
+                title: s.title,
+                image: s.file!,
+                hotspots: s.hotspots?.map((h) => ({
+                  pitch: h.pitch,
+                  yaw: h.yaw,
+                  target_scene: h.target_scene,
+                  label: h.label,
+                })),
+              }))
+            );
+          } catch (scenesError) {
+            // Roll back: delete the orphan ad so DB stays consistent
+            await adsService.destroy(ad.id).catch(() => {});
+            throw scenesError;
+          }
         }
       }
 
       return ad;
     },
-    onSuccess: (ad) => {
-      router.push(`/owner/ads/${ad.id}`);
+    onSuccess: () => {
+      router.push('/owner/ads');
     },
   });
 
@@ -101,7 +129,7 @@ export default function OwnerNewAdPage() {
       imagesToDelete?: number[];
       tourScenes?: TourScene[];
       propertyConditionPdf?: File | null;
-    },
+    }
   ) => {
     await createMutation.mutateAsync({
       values,
