@@ -2,18 +2,16 @@
 
 import { heatmapService, HeatmapFeature } from '@/services/estimator.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
+import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { formatPrice } from '@/lib/constants';
-import { Layers } from '@mui/icons-material';
+import { City } from '@/types';
 import {
+  Autocomplete,
   Box,
-  Card,
-  CardContent,
-  Chip,
   CircularProgress,
   MenuItem,
   Paper,
   TextField,
-  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -24,7 +22,10 @@ import { MAPBOX_TOKEN, DEFAULT_CENTER } from '@/lib/constants';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 if (process.env.NODE_ENV === 'development') {
-  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', { value: '', writable: false });
+  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', {
+    value: '',
+    writable: false,
+  });
 }
 
 interface Props {
@@ -38,16 +39,25 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
     ? 'mapbox://styles/mapbox/dark-v11'
     : 'mapbox://styles/mapbox/light-v11';
 
+  const {
+    slotProps: citySlotProps,
+    renderOption: renderCityOption,
+    inputSx: cityInputSx,
+  } = useCityAutocompleteConfig();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const [cityId, setCityId] = useState('');
+  const [cityInput, setCityInput] = useState('');
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [typeId, setTypeId] = useState('');
-  const [hoveredFeature, setHoveredFeature] = useState<HeatmapFeature | null>(null);
+  const [hoveredFeature, setHoveredFeature] = useState<HeatmapFeature | null>(
+    null
+  );
 
-  const { data: cities } = useQuery({
-    queryKey: ['cities-heatmap'],
-    queryFn: () => citiesService.list(),
-    staleTime: 10 * 60 * 1000,
+  const { data: citiesData, isFetching: loadingCities } = useQuery({
+    queryKey: ['cities-heatmap', cityInput],
+    queryFn: () => citiesService.list({ q: cityInput, per_page: 20 }),
+    enabled: cityInput.length >= 1,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: types } = useQuery<import('@/types').AdType[]>({
@@ -57,8 +67,9 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
   });
 
   const { data: heatmap, isLoading } = useQuery({
-    queryKey: ['price-heatmap', cityId, typeId],
-    queryFn: () => heatmapService.get(cityId || undefined, typeId || undefined),
+    queryKey: ['price-heatmap', selectedCity?.id, typeId],
+    queryFn: () =>
+      heatmapService.get(selectedCity?.id || undefined, typeId || undefined),
     staleTime: 30 * 60 * 1000,
   });
 
@@ -68,7 +79,9 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
       mapRef.current.remove();
       mapRef.current = null;
     }
-    if (!mapContainerRef.current) { return; }
+    if (!mapContainerRef.current) {
+      return;
+    }
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
@@ -80,7 +93,10 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
     map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
+    map.addControl(
+      new mapboxgl.AttributionControl({ compact: true }),
+      'bottom-right'
+    );
     mapRef.current = map;
 
     return () => {
@@ -92,7 +108,9 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
   // Update heatmap data
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !heatmap?.features) { return; }
+    if (!map || !heatmap?.features) {
+      return;
+    }
 
     const onLoad = () => {
       const geojson: GeoJSON.FeatureCollection = {
@@ -112,7 +130,9 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
       };
 
       if (map.getSource('price-heatmap')) {
-        (map.getSource('price-heatmap') as mapboxgl.GeoJSONSource).setData(geojson);
+        (map.getSource('price-heatmap') as mapboxgl.GeoJSONSource).setData(
+          geojson
+        );
       } else {
         map.addSource('price-heatmap', { type: 'geojson', data: geojson });
 
@@ -129,12 +149,18 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
               'interpolate',
               ['linear'],
               ['heatmap-density'],
-              0, 'rgba(33,102,172,0)',
-              0.2, 'rgb(103,169,207)',
-              0.4, 'rgb(209,229,240)',
-              0.6, 'rgb(253,219,199)',
-              0.8, 'rgb(239,138,98)',
-              1, 'rgb(178,24,43)',
+              0,
+              'rgba(33,102,172,0)',
+              0.2,
+              'rgb(103,169,207)',
+              0.4,
+              'rgb(209,229,240)',
+              0.6,
+              'rgb(253,219,199)',
+              0.8,
+              'rgb(239,138,98)',
+              1,
+              'rgb(178,24,43)',
             ],
           },
         });
@@ -151,9 +177,12 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
               'interpolate',
               ['linear'],
               ['get', 'intensity'],
-              0, '#3b82f6',
-              0.5, '#f59e0b',
-              1, '#ef4444',
+              0,
+              '#3b82f6',
+              0.5,
+              '#f59e0b',
+              1,
+              '#ef4444',
             ],
             'circle-opacity': 0.8,
             'circle-stroke-width': 2,
@@ -186,7 +215,10 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
         const lats = heatmap.features.map((f) => f.lat).filter(Boolean);
         if (lngs.length > 0) {
           map.fitBounds(
-            [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+            [
+              [Math.min(...lngs), Math.min(...lats)],
+              [Math.max(...lngs), Math.max(...lats)],
+            ],
             { padding: 60, maxZoom: 14 }
           );
         }
@@ -206,20 +238,48 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
   return (
     <Box>
       {/* Controls */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-        <TextField
-          select
-          label="Ville"
-          size="small"
-          value={cityId}
-          onChange={(e) => setCityId(e.target.value)}
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="">Toutes les villes</MenuItem>
-          {cities?.data?.map((c) => (
-            <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
-          ))}
-        </TextField>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 2,
+          mb: 2,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+        }}
+      >
+        <Autocomplete<City>
+          options={citiesData?.data ?? []}
+          getOptionLabel={(c) => c.name}
+          value={selectedCity}
+          onChange={(_, val) => setSelectedCity(val)}
+          inputValue={cityInput}
+          onInputChange={(_, val) => setCityInput(val)}
+          loading={loadingCities}
+          noOptionsText={
+            cityInput.length < 1 ? 'Tapez une ville…' : 'Aucune ville trouvée'
+          }
+          slotProps={citySlotProps}
+          renderOption={(props, option) => renderCityOption(props, option)}
+          sx={{ minWidth: 200 }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Ville"
+              size="small"
+              placeholder="Toutes les villes"
+              sx={cityInputSx}
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {loadingCities ? <CircularProgress size={14} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+        />
         <TextField
           select
           label="Type"
@@ -230,10 +290,14 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
         >
           <MenuItem value="">Tous les types</MenuItem>
           {types?.map((t) => (
-            <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+            <MenuItem key={t.id} value={t.id}>
+              {t.name}
+            </MenuItem>
           ))}
         </TextField>
-        {isLoading && <CircularProgress size={24} sx={{ alignSelf: 'center' }} />}
+        {isLoading && (
+          <CircularProgress size={24} sx={{ alignSelf: 'center' }} />
+        )}
       </Box>
 
       {/* Map */}
@@ -241,7 +305,11 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
         <Box
           ref={mapContainerRef}
           sx={{
-            height: { xs: 'min(70vh, 480px)', sm: 'min(65vh, 450px)', md: height },
+            height: {
+              xs: 'min(70vh, 480px)',
+              sm: 'min(65vh, 450px)',
+              md: height,
+            },
             borderRadius: 3,
             overflow: 'hidden',
             border: '1px solid',
@@ -262,22 +330,36 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
               width: 200,
             }}
           >
-            <Typography variant="caption" fontWeight={700} display="block" mb={0.75}>
+            <Typography
+              variant="caption"
+              fontWeight={700}
+              display="block"
+              mb={0.75}
+            >
               Prix médian / mois
             </Typography>
             <Box
               sx={{
                 height: 10,
                 borderRadius: 5,
-                background: 'linear-gradient(to right, #3b82f6, #f59e0b, #ef4444)',
+                background:
+                  'linear-gradient(to right, #3b82f6, #f59e0b, #ef4444)',
                 mb: 0.75,
               }}
             />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontSize: '0.65rem' }}
+              >
                 {formatPrice(priceMin)}
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontSize: '0.65rem' }}
+              >
                 {formatPrice(priceMax)}
               </Typography>
             </Box>
@@ -297,7 +379,9 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
               minWidth: 180,
             }}
           >
-            <Typography fontWeight={700} mb={0.5}>{hoveredFeature.quarter_name}</Typography>
+            <Typography fontWeight={700} mb={0.5}>
+              {hoveredFeature.quarter_name}
+            </Typography>
             <Typography variant="body2" color="primary" fontWeight={600}>
               {formatPrice(hoveredFeature.median_price)}/mois
             </Typography>
