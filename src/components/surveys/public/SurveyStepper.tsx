@@ -105,7 +105,7 @@ export default function SurveyStepper({ survey, onSubmit, isSubmitting }: Survey
                   ? 'primary.main'
                   : i === currentStep
                   ? 'primary.main'
-                  : 'rgba(0,0,0,0.10)',
+                  : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)',
                 opacity: i === currentStep ? 1 : i < currentStep ? 0.5 : 0.3,
                 transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
               }}
@@ -219,7 +219,7 @@ export default function SurveyStepper({ survey, onSubmit, isSubmitting }: Survey
               background: gradient.primary135Stops,
               boxShadow: '0 6px 20px rgba(246,71,95,0.30)',
               '&:hover': { boxShadow: '0 8px 28px rgba(246,71,95,0.40)', transform: 'translateY(-1px)' },
-              '&:disabled': { background: '#E5E7EB', boxShadow: 'none' },
+              '&:disabled': { bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'grey.200', boxShadow: 'none' },
               transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
             }}
           >
@@ -240,7 +240,7 @@ export default function SurveyStepper({ survey, onSubmit, isSubmitting }: Survey
               background: gradient.primary135Stops,
               boxShadow: '0 6px 20px rgba(246,71,95,0.30)',
               '&:hover': { boxShadow: '0 8px 28px rgba(246,71,95,0.40)', transform: 'translateY(-1px)' },
-              '&:disabled': { background: '#E5E7EB', boxShadow: 'none' },
+              '&:disabled': { bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'grey.200', boxShadow: 'none' },
               transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
             }}
           >

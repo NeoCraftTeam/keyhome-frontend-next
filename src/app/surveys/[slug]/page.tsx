@@ -138,7 +138,10 @@ export default function SurveySlugPage() {
                 p: 2,
                 mb: 3,
                 borderRadius: 3,
-                bgcolor: '#E8F5E9',
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(46,125,50,0.12)'
+                    : '#E8F5E9',
               }}
             >
               <CheckCircleOutlineIcon sx={{ fontSize: 48, color: '#2E7D32' }} />

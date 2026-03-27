@@ -315,6 +315,7 @@ function AdDetailContent() {
     setPaymentError('');
     setUnlockState(null);
     setIsPaymentLoading(true);
+    let unlockSuccess = false;
     try {
       const response = await paymentsService.initialize(ad.id);
       setUnlockState(response);
@@ -323,13 +324,8 @@ function AdDetailContent() {
         response.status === 'already_unlocked' ||
         response.status === 'owner'
       ) {
-        // Refresh the ad to show unlocked content
-        await queryClient.invalidateQueries({
-          queryKey: ['ad', adId, isAuthenticated],
-        });
-        // Immediately write the server-confirmed balance into the shared cache.
-        // setQueryData is synchronous — the Navbar widget and dialog both update
-        // in the same render cycle with zero network wait.
+        unlockSuccess = true;
+        // Prepare balance update but don't apply yet
         if (response.points_balance !== undefined) {
           queryClient.setQueryData<number>(
             ['credits-balance'],
@@ -341,13 +337,6 @@ function AdDetailContent() {
             Math.max(0, (old ?? 0) - pointsUsed)
           );
         }
-        queryClient.invalidateQueries({ queryKey: ['unlocked-ads'] });
-        setPaymentDialogOpen(false);
-        setSnackbar('Annonce déverrouillée avec succès !');
-        track('contact_click', {
-          ad_id: ad.id,
-          unlock_status: response.status,
-        });
       }
       // For 'insufficient_points' → modal stays open and shows packages
     } catch (err) {
@@ -359,6 +348,20 @@ function AdDetailContent() {
       const remaining = MIN_UNLOCK_LOADER_MS - elapsed;
       if (remaining > 0) {
         await new Promise((resolve) => setTimeout(resolve, remaining));
+      }
+      // Apply success UI updates AFTER the delay so users see the loader
+      if (unlockSuccess) {
+        // Refresh the ad to show unlocked content
+        await queryClient.invalidateQueries({
+          queryKey: ['ad', adId, isAuthenticated],
+        });
+        queryClient.invalidateQueries({ queryKey: ['unlocked-ads'] });
+        setPaymentDialogOpen(false);
+        setSnackbar('Annonce déverrouillée avec succès !');
+        track('contact_click', {
+          ad_id: ad.id,
+          unlock_status: unlockState?.status,
+        });
       }
       setIsPaymentLoading(false);
     }
@@ -469,7 +472,7 @@ function AdDetailContent() {
     },
   ].filter((item) => item.distance !== null);
 
-  const hasProximityData = !isLocked && proximityItems.length > 0;
+  const hasProximityData = proximityItems.length > 0;
 
   // Format phone number for WhatsApp (remove spaces, dashes, etc.)
   const whatsappNumber = publisherPhone
@@ -1743,31 +1746,43 @@ function AdDetailContent() {
                   </>
                 )}
 
-                {/* Proximité & Accessibilité — unlocked only */}
+                {/* Proximité & Accessibilité — always visible to help users decide to unlock */}
                 {hasProximityData && (
                   <>
-                    <Box sx={{ mb: 3 }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                          mb: 2,
-                        }}
-                      >
-                        <NearMe sx={{ fontSize: 20, color: 'primary.main' }} />
-                        <Typography variant="h6" fontWeight={600}>
-                          Proximité & Accessibilité
-                        </Typography>
+                    <Box sx={{ mb: 4 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 40,
+                            height: 40,
+                            borderRadius: 2.5,
+                            background: gradient.primary135Stops,
+                            boxShadow: '0 4px 12px rgba(246,71,95,0.25)',
+                          }}
+                        >
+                          <NearMe sx={{ fontSize: 20, color: '#fff' }} />
+                        </Box>
+                        <Box>
+                          <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                            Proximité & Accessibilité
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
+                            Distances estimées depuis ce bien
+                          </Typography>
+                        </Box>
                       </Box>
                       <Box
                         sx={{
                           display: 'grid',
                           gridTemplateColumns: {
-                            xs: '1fr 1fr',
-                            sm: 'repeat(3, 1fr)',
+                            xs: '1fr',
+                            sm: 'repeat(2, 1fr)',
+                            md: 'repeat(3, 1fr)',
                           },
-                          gap: 1.5,
+                          gap: 2,
                         }}
                       >
                         {proximityItems.map((item) => (
@@ -1775,43 +1790,67 @@ function AdDetailContent() {
                             key={item.key}
                             sx={{
                               display: 'flex',
-                              flexDirection: 'column',
-                              gap: 0.75,
-                              p: 2,
-                              borderRadius: 2.5,
+                              alignItems: 'center',
+                              gap: 2,
+                              p: 2.5,
+                              borderRadius: 3,
                               border: '1px solid',
-                              borderColor: 'divider',
+                              borderColor: (theme) =>
+                                theme.palette.mode === 'dark'
+                                  ? 'rgba(246,71,95,0.20)'
+                                  : 'rgba(246,71,95,0.15)',
                               bgcolor: (theme) =>
                                 theme.palette.mode === 'dark'
-                                  ? 'rgba(255,255,255,0.03)'
-                                  : 'grey.50',
-                              transition: 'border-color 0.15s',
-                              '&:hover': { borderColor: 'primary.main' },
+                                  ? 'rgba(246,71,95,0.04)'
+                                  : 'rgba(246,71,95,0.02)',
+                              transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
+                              '&:hover': {
+                                borderColor: 'primary.main',
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === 'dark'
+                                    ? 'rgba(246,71,95,0.08)'
+                                    : 'rgba(246,71,95,0.06)',
+                                transform: 'translateY(-2px)',
+                                boxShadow: '0 8px 24px rgba(246,71,95,0.12)',
+                              },
                             }}
                           >
                             <Box
                               sx={{
-                                display: 'flex',
+                                display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: 0.75,
+                                justifyContent: 'center',
+                                width: 44,
+                                height: 44,
+                                borderRadius: 2.5,
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === 'dark'
+                                    ? 'rgba(246,71,95,0.15)'
+                                    : 'rgba(246,71,95,0.10)',
                               }}
                             >
                               {item.icon}
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
                               <Typography
-                                variant="caption"
+                                variant="body2"
                                 color="text.secondary"
-                                sx={{ fontWeight: 500, lineHeight: 1.3 }}
+                                sx={{ fontWeight: 500, lineHeight: 1.3, mb: 0.25 }}
                               >
                                 {item.label}
                               </Typography>
+                              <Typography
+                                variant="h6"
+                                fontWeight={800}
+                                sx={{
+                                  color: 'primary.main',
+                                  letterSpacing: 0.2,
+                                  lineHeight: 1.2,
+                                }}
+                              >
+                                {item.distance}
+                              </Typography>
                             </Box>
-                            <Typography
-                              variant="subtitle2"
-                              fontWeight={700}
-                              sx={{ color: 'text.primary', letterSpacing: 0.1 }}
-                            >
-                              {item.distance}
-                            </Typography>
                           </Box>
                         ))}
                       </Box>

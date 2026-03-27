@@ -134,7 +134,7 @@ export const viewport: Viewport = {
   maximumScale: 5,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0A0A0F' },
+    { media: '(prefers-color-scheme: dark)', color: '#141419' },
   ],
   viewportFit: 'cover',
 };
@@ -162,7 +162,7 @@ export default async function RootLayout({
             suppressHydrationWarning
             nonce={nonce}
             dangerouslySetInnerHTML={{
-              __html: `(function(){try{var t=localStorage.getItem("theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.style.colorScheme=d?"dark":"light";if(d){document.documentElement.setAttribute("data-kh-theme","dark");document.documentElement.style.backgroundColor="#0A0A0F";document.documentElement.style.color="#F0EEF8";}else{document.documentElement.setAttribute("data-kh-theme","light");}}catch(e){}})();`,
+              __html: `(function(){try{var t=localStorage.getItem("theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.style.colorScheme=d?"dark":"light";if(d){document.documentElement.setAttribute("data-kh-theme","dark");document.documentElement.style.backgroundColor="#141419";document.documentElement.style.color="#F0EEF8";}else{document.documentElement.setAttribute("data-kh-theme","light");}}catch(e){}})();`,
             }}
           />
           <link rel="preconnect" href="https://api.mapbox.com" />

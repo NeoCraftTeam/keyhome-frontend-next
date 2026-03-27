@@ -73,17 +73,17 @@ export const light = {
 /* ── Dark theme palette ──────────────────────────────────────── */
 
 export const dark = {
-  bg: '#0A0A0F',
-  paper: '#13131A',
-  surface: '#1C1C27',
+  bg: '#141419',
+  paper: '#1D1D24',
+  surface: '#24242D',
   text: '#F0EEF8',
   textSecondary: '#9190A4',
   divider: 'rgba(255,255,255,0.07)',
   border: 'rgba(255,255,255,0.06)',
   grey: {
-    50: '#0A0A0F',
-    100: '#13131A',
-    200: '#1C1C27',
+    50: '#141419',
+    100: '#1D1D24',
+    200: '#24242D',
     300: '#2C2C3E',
     400: '#9190A4',
     500: '#C4C3D4',

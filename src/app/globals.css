@@ -80,13 +80,13 @@ html[data-kh-theme='dark'] {
   --kh-text-muted: #9190a4;
   --kh-text-strong: #f0eef8;
   --kh-text-accent: #c4c3d4;
-  --kh-bg-surface: #13131a;
-  --kh-bg-alt: #1c1c27;
+  --kh-bg-surface: #141419;
+  --kh-bg-alt: #1d1d24;
   --kh-bg-tinted: rgba(246, 71, 95, 0.1);
   --kh-border: rgba(255, 255, 255, 0.12);
   --kh-border-subtle: rgba(255, 255, 255, 0.06);
-  --kh-row-even: #13131a;
-  --kh-row-odd: #1c1c27;
+  --kh-row-even: #141419;
+  --kh-row-odd: #1d1d24;
 }
 
 :root {

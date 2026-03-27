@@ -1,7 +1,7 @@
 'use client';
 
 import AdCard from '@/components/ads/AdCard';
-import PaymentHistoryTable from '@/components/payment/PaymentHistoryTable';
+import PaymentHistoryTableModern from '@/components/payment/PaymentHistoryTableModern';
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
@@ -677,7 +677,7 @@ export default function ProfilePage() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           Retrouvez ici toutes vos transactions de crédits.
         </Typography>
-        <PaymentHistoryTable perPage={10} />
+        <PaymentHistoryTableModern perPage={10} />
       </TabPanel>
 
       {/* Tab 4: Security (password) */}

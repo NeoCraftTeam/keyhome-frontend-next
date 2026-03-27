@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { gradient } from '@/theme/tokens';
 
 interface PurchaseCreditsModalProps {
   open: boolean;
@@ -118,40 +117,52 @@ export default function PurchaseCreditsModal({ open, onClose }: PurchaseCreditsM
           <Close fontSize="small" />
         </IconButton>
 
-        {/* Balance ring */}
-        <Box
-          sx={{
-            position: 'relative',
-            width: 72,
-            height: 72,
-            mx: 'auto',
-            mb: 2,
-          }}
-        >
+        {/* Balance widget - exact same design as navbar CreditsWidget */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
           <Box
             sx={{
-              width: 72,
-              height: 72,
-              borderRadius: '50%',
-              background: gradient.primary135,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 0 8px rgba(246,71,95,0.15), 0 0 0 16px rgba(246,71,95,0.07)',
+              gap: 0.6,
+              background: 'linear-gradient(135deg, rgba(246,71,95,0.12) 0%, rgba(246,71,95,0.06) 100%)',
+              border: '1px solid',
+              borderColor: 'rgba(246,71,95,0.25)',
+              borderRadius: '40px',
+              px: 1.5,
+              py: 0.55,
+              cursor: 'default',
+              userSelect: 'none',
+              transition: 'all 0.18s',
+              '&:hover': {
+                background: 'linear-gradient(135deg, rgba(246,71,95,0.2) 0%, rgba(246,71,95,0.12) 100%)',
+                borderColor: 'primary.main',
+                boxShadow: '0 0 0 3px rgba(246,71,95,0.12)',
+              },
             }}
           >
-            <Toll sx={{ color: '#fff', fontSize: 32 }} />
+            <Toll sx={{ fontSize: 15, color: 'primary.main' }} />
+            {balanceLoading ? (
+              <Skeleton width={28} height={14} sx={{ borderRadius: 1 }} />
+            ) : (
+              <Typography
+                variant="body2"
+                fontWeight={800}
+                sx={{ color: 'primary.main', lineHeight: 1, letterSpacing: -0.3, fontSize: '0.82rem' }}
+              >
+                {(balance ?? 0).toLocaleString('fr-FR')}
+              </Typography>
+            )}
           </Box>
         </Box>
 
-        <Typography variant="h2" fontWeight={900} sx={{ color: '#fff', letterSpacing: -1.5, lineHeight: 1, mb: 0.5, fontSize: { xs: '2.5rem', sm: '3rem' } }}>
+        <Typography variant="h6" fontWeight={800} sx={{ color: '#fff', letterSpacing: -0.5, lineHeight: 1.2, mb: 1 }}>
           {balanceLoading ? (
-            <Skeleton width={100} height={48} sx={{ mx: 'auto', bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2 }} />
+            <Skeleton width={80} height={32} sx={{ mx: 'auto', bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2 }} />
           ) : (
             availableCredits.toLocaleString('fr-FR')
           )}
         </Typography>
-        <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'rgba(255,255,255,0.95)', letterSpacing: 0.3, fontSize: '1rem' }}>
+        <Typography variant="body1" fontWeight={600} sx={{ color: 'rgba(255,255,255,0.9)', letterSpacing: 0.2, mb: 2 }}>
           {balanceLoading ? 'crédits disponibles' : creditsLabel}
         </Typography>
 
