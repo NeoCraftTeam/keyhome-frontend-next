@@ -41,6 +41,7 @@
     "@vercel/analytics": "^1.6.1",
     "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.13.5",
+    "browser-image-compression": "^2.0.2",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.34.3",
     "mapbox-gl": "^3.18.1",

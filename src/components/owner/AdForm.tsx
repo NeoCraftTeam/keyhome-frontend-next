@@ -5,8 +5,17 @@ import ImageLightbox from '@/components/ui/ImageLightbox';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import type { Ad, AdImage, AdType, City, Quarter } from '@/types';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { adTypesService, citiesService, quartersService } from '@/services/cities.service';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  compressAdPhotos,
+  compressTourScene,
+  formatFileSize,
+} from '@/lib/image-compression';
+import {
+  adTypesService,
+  citiesService,
+  quartersService,
+} from '@/services/cities.service';
 import { propertyAttributesService } from '@/services/property-attributes.service';
 import { adsService } from '@/services/ads.service';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
@@ -28,9 +37,6 @@ export type { AdFormValues, TourScene } from './ad-form/types';
 import type { AdFormValues, TourScene } from './ad-form/types';
 import AdFormPriceAdvisor from './ad-form/AdFormPriceAdvisor';
 
-const DEFAULT_LAT = 4.0511;
-const DEFAULT_LNG = 9.7679;
-
 interface AdFormProps {
   initialData?: Partial<AdFormValues> | null;
   ad?: Ad | null;
@@ -41,7 +47,7 @@ interface AdFormProps {
       imagesToDelete?: number[];
       tourScenes?: TourScene[];
       propertyConditionPdf?: File | null;
-    },
+    }
   ) => Promise<void>;
   onCancel?: () => void;
   submitLabel?: string;
@@ -54,7 +60,7 @@ export default function AdForm({
   ad,
   onSubmit,
   onCancel,
-  submitLabel = 'Créer l\'annonce',
+  submitLabel = "Créer l'annonce",
   isSubmitting = false,
   onEnhanceDescription,
 }: AdFormProps) {
@@ -67,9 +73,14 @@ export default function AdForm({
   const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
   const [enhancing, setEnhancing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [propertyConditionPdf, setPropertyConditionPdf] = useState<File | null>(null);
+  const [propertyConditionPdf, setPropertyConditionPdf] = useState<File | null>(
+    null
+  );
   const [photoLightboxOpen, setPhotoLightboxOpen] = useState(false);
   const [photoLightboxIndex, setPhotoLightboxIndex] = useState(0);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionSaved, setCompressionSaved] = useState<string | null>(null);
+  const compressionTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const autoSaveKey = ad?.id ? `ad-edit-${ad.id}` : 'ad-new';
   const { savedAt, clearDraft } = useAutoSave({
@@ -96,24 +107,37 @@ export default function AdForm({
     if (!ad?.id || !ad.has_3d_tour) return;
     let cancelled = false;
 
-    adsService.getTour(ad.id).then((res) => {
-      if (cancelled) return;
-      const signedScenes = (res.config as { scenes?: Array<{ id: string; image_url?: string }> })?.scenes;
-      if (!signedScenes?.length) return;
+    adsService
+      .getTour(ad.id)
+      .then((res) => {
+        if (cancelled) return;
+        const signedScenes = (
+          res.config as { scenes?: Array<{ id: string; image_url?: string }> }
+        )?.scenes;
+        if (!signedScenes?.length) return;
 
-      setTourScenes((prev) =>
-        prev.map((scene) => {
-          if (scene.file) return scene;
-          const signed = signedScenes.find((s) => s.id === scene.id);
-          return signed?.image_url ? { ...scene, previewUrl: signed.image_url } : scene;
-        }),
-      );
-    }).catch(() => {});
+        setTourScenes((prev) =>
+          prev.map((scene) => {
+            if (scene.file) return scene;
+            const signed = signedScenes.find((s) => s.id === scene.id);
+            return signed?.image_url
+              ? { ...scene, previewUrl: signed.image_url }
+              : scene;
+          })
+        );
+      })
+      .catch(() => {});
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [ad?.id, ad?.has_3d_tour]);
 
-  const { slotProps: citySlotProps, renderOption: renderCityOption, inputSx: cityInputSx } = useCityAutocompleteConfig();
+  const {
+    slotProps: citySlotProps,
+    renderOption: renderCityOption,
+    inputSx: cityInputSx,
+  } = useCityAutocompleteConfig();
 
   const [selectedCity, setSelectedCity] = useState<City | null>(() => {
     if (ad?.quarter?.city_id && ad?.quarter?.city_name) {
@@ -181,7 +205,7 @@ export default function AdForm({
       (g.attributes ?? []).map((attr) => ({
         ...attr,
         group: (g.name ?? g.group ?? 'Autre') as string,
-      })),
+      }))
     );
     opts.sort((a, b) => a.group.localeCompare(b.group));
     return opts;
@@ -200,7 +224,7 @@ export default function AdForm({
       })),
       ...(ad?.images?.filter((img) => !imagesToDelete.includes(img.id)) ?? []),
     ],
-    [imagePreviewUrls, imagesToDelete, ad?.images],
+    [imagePreviewUrls, imagesToDelete, ad?.images]
   );
 
   const openPhotoLightbox = (index: number) => {
@@ -208,21 +232,57 @@ export default function AdForm({
     setPhotoLightboxOpen(true);
   };
 
-  const update = (field: keyof AdFormValues, value: AdFormValues[keyof AdFormValues]) => {
+  const update = (
+    field: keyof AdFormValues,
+    value: AdFormValues[keyof AdFormValues]
+  ) => {
     setValues((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (images.length + files.length > 10) {
       setErrors((prev) => ({ ...prev, images: 'Maximum 10 photos.' }));
       return;
     }
-    const newImages = [...images, ...files];
-    setImages(newImages);
+
+    // Show previews immediately with originals
     const newUrls = files.map((f) => URL.createObjectURL(f));
     setImagePreviewUrls((prev) => [...prev, ...newUrls]);
+    setImages((prev) => [...prev, ...files]);
+
+    // Compress in background and swap files
+    setIsCompressing(true);
+    try {
+      const results = await compressAdPhotos(files);
+      const compressed = results.map((r) => r.file);
+      const totalSaved = results.reduce(
+        (sum, r) => sum + (r.originalSize - r.compressedSize),
+        0
+      );
+
+      // Replace originals with compressed versions
+      setImages((prev) => {
+        const startIndex = prev.length - files.length;
+        return [
+          ...prev.slice(0, startIndex),
+          ...compressed,
+          ...prev.slice(startIndex + files.length),
+        ];
+      });
+
+      if (totalSaved > 0) {
+        setCompressionSaved(`${formatFileSize(totalSaved)} économisés`);
+        clearTimeout(compressionTimerRef.current);
+        compressionTimerRef.current = setTimeout(
+          () => setCompressionSaved(null),
+          4000
+        );
+      }
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   const removeImage = (index: number) => {
@@ -245,21 +305,67 @@ export default function AdForm({
   };
 
   const addTourScene = useCallback(() => {
-    setTourScenes((prev) => [...prev, { id: `new-${Date.now()}`, title: '', file: null, previewUrl: '', hotspots: [] }]);
+    setTourScenes((prev) => [
+      ...prev,
+      {
+        id: `new-${Date.now()}`,
+        title: '',
+        file: null,
+        previewUrl: '',
+        hotspots: [],
+      },
+    ]);
   }, []);
 
-  const updateTourScene = useCallback((index: number, field: keyof TourScene, value: TourScene[keyof TourScene]) => {
-    setTourScenes((prev) =>
-      prev.map((s, i) => {
-        if (i !== index) return s;
-        if (field === 'file' && value instanceof File) {
-          if (s.previewUrl) URL.revokeObjectURL(s.previewUrl);
-          return { ...s, file: value, previewUrl: URL.createObjectURL(value) };
+  const updateTourScene = useCallback(
+    async (
+      index: number,
+      field: keyof TourScene,
+      value: TourScene[keyof TourScene]
+    ) => {
+      if (field === 'file' && value instanceof File) {
+        // Show preview immediately
+        setTourScenes((prev) =>
+          prev.map((s, i) => {
+            if (i !== index) return s;
+            if (s.previewUrl) URL.revokeObjectURL(s.previewUrl);
+            return {
+              ...s,
+              file: value,
+              previewUrl: URL.createObjectURL(value),
+            };
+          })
+        );
+
+        // Compress in background and swap
+        try {
+          const result = await compressTourScene(value);
+          if (result.savedPercent > 0) {
+            setTourScenes((prev) =>
+              prev.map((s, i) =>
+                i === index ? { ...s, file: result.file } : s
+              )
+            );
+            setCompressionSaved(
+              `Scène optimisée : ${formatFileSize(result.originalSize - result.compressedSize)} économisés`
+            );
+            clearTimeout(compressionTimerRef.current);
+            compressionTimerRef.current = setTimeout(
+              () => setCompressionSaved(null),
+              4000
+            );
+          }
+        } catch {
+          // Keep original if compression fails
         }
-        return { ...s, [field]: value };
-      }),
-    );
-  }, []);
+      } else {
+        setTourScenes((prev) =>
+          prev.map((s, i) => (i !== index ? s : { ...s, [field]: value }))
+        );
+      }
+    },
+    []
+  );
 
   const removeTourScene = useCallback((index: number) => {
     setTourScenes((prev) => {
@@ -272,17 +378,24 @@ export default function AdForm({
   const validate = (): boolean => {
     const e: Record<string, string> = {};
     if (!values.title.trim()) e.title = 'Le titre est obligatoire.';
-    if (!values.description.trim()) e.description = 'La description est obligatoire.';
+    if (!values.description.trim())
+      e.description = 'La description est obligatoire.';
     if (!values.adresse.trim()) e.adresse = "L'adresse est obligatoire.";
-    if (!values.price || parseFloat(values.price) < 0) e.price = 'Le prix est obligatoire.';
-    if (!values.surface_area || parseFloat(values.surface_area) <= 0) e.surface_area = 'La surface est obligatoire.';
-    if (parseInt(values.bedrooms, 10) < 0) e.bedrooms = 'Nombre de chambres invalide.';
-    if (parseInt(values.bathrooms, 10) < 0) e.bathrooms = 'Nombre de salles de bain invalide.';
+    if (!values.price || parseFloat(values.price) < 0)
+      e.price = 'Le prix est obligatoire.';
+    if (!values.surface_area || parseFloat(values.surface_area) <= 0)
+      e.surface_area = 'La surface est obligatoire.';
+    if (parseInt(values.bedrooms, 10) < 0)
+      e.bedrooms = 'Nombre de chambres invalide.';
+    if (parseInt(values.bathrooms, 10) < 0)
+      e.bathrooms = 'Nombre de salles de bain invalide.';
     if (!values.quarter_id) e.quarter_id = 'Le quartier est obligatoire.';
-    if (!values.type_id) e.type_id = 'Le type d\'annonce est obligatoire.';
+    if (!values.type_id) e.type_id = "Le type d'annonce est obligatoire.";
     tourScenes.forEach((scene, i) => {
-      if (!scene.title.trim()) e[`tour_scene_${i}_title`] = 'Nom de la pièce obligatoire.';
-      if (!scene.file && !ad?.has_3d_tour) e[`tour_scene_${i}_file`] = 'Photo 360° obligatoire.';
+      if (!scene.title.trim())
+        e[`tour_scene_${i}_title`] = 'Nom de la pièce obligatoire.';
+      if (!scene.file && !ad?.has_3d_tour)
+        e[`tour_scene_${i}_file`] = 'Photo 360° obligatoire.';
     });
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -309,7 +422,6 @@ export default function AdForm({
   return (
     <form onSubmit={handleSubmit} noValidate>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-
         <AdFormBasicInfo
           values={values}
           update={update}
@@ -327,9 +439,33 @@ export default function AdForm({
           errors={errors}
           onImageChange={handleImageChange}
           onRemoveImage={removeImage}
-          onDeleteExistingImage={(id) => setImagesToDelete((prev) => [...prev, id])}
+          onDeleteExistingImage={(id) =>
+            setImagesToDelete((prev) => [...prev, id])
+          }
           onOpenLightbox={openPhotoLightbox}
         />
+
+        {(isCompressing || compressionSaved) && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1 }}>
+            {isCompressing && (
+              <>
+                <CircularProgress size={14} />
+                <Typography variant="caption" color="text.secondary">
+                  Optimisation des images...
+                </Typography>
+              </>
+            )}
+            {!isCompressing && compressionSaved && (
+              <Typography
+                variant="caption"
+                color="success.main"
+                fontWeight={600}
+              >
+                ✓ {compressionSaved}
+              </Typography>
+            )}
+          </Box>
+        )}
 
         <AdFormLocation
           values={values}
@@ -355,12 +491,20 @@ export default function AdForm({
 
         <AdFormFeatures values={values} update={update} errors={errors} />
 
-        <AdFormEquipment values={values} update={update} autocompleteOptions={autocompleteOptions} />
+        <AdFormEquipment
+          values={values}
+          update={update}
+          autocompleteOptions={autocompleteOptions}
+        />
 
         <AdFormPremiumInfo
           values={values}
           update={update}
-          defaultExpanded={!!(initialData?.deposit_amount || initialData?.minimum_lease_duration)}
+          defaultExpanded={
+            !!(
+              initialData?.deposit_amount || initialData?.minimum_lease_duration
+            )
+          }
           propertyConditionPdf={propertyConditionPdf}
           onPdfChange={setPropertyConditionPdf}
         />
@@ -397,18 +541,26 @@ export default function AdForm({
               color="text.disabled"
               sx={{ mr: 'auto', alignSelf: 'center' }}
             >
-              Brouillon sauvegardé à {savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              Brouillon sauvegardé à{' '}
+              {savedAt.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
             </Typography>
           )}
           {onCancel && (
-            <Button onClick={onCancel} disabled={isSubmitting} sx={{ borderRadius: 2 }}>
+            <Button
+              onClick={onCancel}
+              disabled={isSubmitting}
+              sx={{ borderRadius: 2 }}
+            >
               Annuler
             </Button>
           )}
           <Button
             type="submit"
             variant="contained"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isCompressing}
             startIcon={isSubmitting ? <CircularProgress size={18} /> : null}
             sx={{
               borderRadius: 2,
