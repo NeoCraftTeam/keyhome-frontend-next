@@ -182,7 +182,26 @@ export default function OwnerProfilePage() {
     if (user.city_id && user.city_name && !isEditing) {
       setSelectedCity({ id: user.city_id, name: user.city_name });
     }
-  }, [user?.id, user?.city_id, user?.city_name, isEditing]);
+    if (!isEditing) {
+      setEditForm({
+        firstname: user.firstname ?? '',
+        lastname: user.lastname ?? '',
+        phone_number: user.phone_number ?? '',
+        phone_is_whatsapp: user.phone_is_whatsapp ?? false,
+        bio: user.bio ?? '',
+      });
+    }
+  }, [
+    user?.id,
+    user?.phone_is_whatsapp,
+    user?.firstname,
+    user?.lastname,
+    user?.phone_number,
+    user?.bio,
+    user?.city_id,
+    user?.city_name,
+    isEditing,
+  ]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
