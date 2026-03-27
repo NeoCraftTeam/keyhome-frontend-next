@@ -199,9 +199,9 @@ export default function OwnerProfilePage() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       setSnackbar({
-        message: "L'image ne doit pas dépasser 5 Mo.",
+        message: "L'image ne doit pas dépasser 20 Mo.",
         severity: 'error',
       });
       e.target.value = '';
