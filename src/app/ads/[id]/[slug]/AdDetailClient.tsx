@@ -63,6 +63,8 @@ import {
   PictureAsPdf as PdfIcon,
   Print as PrintIcon,
   ReceiptLong,
+  Bolt,
+  WaterDrop,
   Schedule,
   School,
   Share,
@@ -429,7 +431,12 @@ function AdDetailContent() {
     ad?.deposit_amount ||
     ad?.minimum_lease_duration ||
     ad?.detailed_charges ||
-    ad?.property_condition_pdf
+    ad?.property_condition_pdf ||
+    ad?.charges_eau ||
+    ad?.charges_electricite ||
+    ad?.charges_autres ||
+    ad?.charges_forfaitaires ||
+    ad?.charges_montant_forfait
   );
 
   const formatDistance = (m: number | null | undefined): string | null => {
@@ -2184,59 +2191,77 @@ function AdDetailContent() {
                           </Box>
                         )}
                         {ad.detailed_charges && (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'flex-start',
-                              gap: 1.25,
-                            }}
-                          >
-                            <ReceiptLong
-                              sx={{
-                                fontSize: 17,
-                                color: 'text.secondary',
-                                mt: 0.3,
-                              }}
-                            />
-                            <Typography
-                              variant="body2"
-                              sx={{ whiteSpace: 'pre-line' }}
-                            >
-                              Charges: <strong>{ad.detailed_charges}</strong>
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25 }}>
+                            <ReceiptLong sx={{ fontSize: 17, color: 'text.secondary', mt: 0.3 }} />
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                              Charges détaillées: <strong>{ad.detailed_charges}</strong>
                             </Typography>
                           </Box>
                         )}
+                        {(ad.charges_eau || ad.charges_electricite || ad.charges_autres || ad.charges_forfaitaires) && (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, pl: 0.5 }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                              Détail des charges
+                            </Typography>
+                            {ad.charges_forfaitaires && ad.charges_montant_forfait && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                <ReceiptLong sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                <Typography variant="body2">
+                                  Charges forfaitaires: <strong>{Number(ad.charges_montant_forfait).toLocaleString('fr-FR')} XOF/mois</strong>
+                                </Typography>
+                              </Box>
+                            )}
+                            {ad.charges_eau && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                <WaterDrop sx={{ fontSize: 16, color: 'primary.main' }} />
+                                <Typography variant="body2">
+                                  Eau: <strong>{Number(ad.charges_eau).toLocaleString('fr-FR')} XOF/mois</strong>
+                                </Typography>
+                              </Box>
+                            )}
+                            {ad.charges_electricite && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                <Bolt sx={{ fontSize: 16, color: 'warning.main' }} />
+                                <Typography variant="body2">
+                                  Électricité: <strong>{Number(ad.charges_electricite).toLocaleString('fr-FR')} XOF/mois</strong>
+                                </Typography>
+                              </Box>
+                            )}
+                            {ad.charges_autres && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                <ReceiptLong sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                <Typography variant="body2">
+                                  Autres charges: <strong>{ad.charges_autres}</strong>
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+                        )}
                         {ad.property_condition_pdf && (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1.25,
-                            }}
-                          >
-                            <Description
-                              sx={{ fontSize: 17, color: 'text.secondary' }}
-                            />
-                            <Button
-                              variant="text"
-                              size="small"
-                              href={ad.property_condition_pdf}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              sx={{
-                                p: 0,
-                                minWidth: 0,
-                                fontWeight: 600,
-                                color: 'primary.main',
-                                textTransform: 'none',
-                                '&:hover': {
-                                  bgcolor: 'transparent',
-                                  textDecoration: 'underline',
-                                },
-                              }}
-                            >
-                              Télécharger l&apos;état des lieux
-                            </Button>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                            <Description sx={{ fontSize: 17, color: 'text.secondary' }} />
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <Button
+                                variant="text"
+                                size="small"
+                                href={ad.property_condition_pdf}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{ p: 0, minWidth: 0, fontWeight: 600, color: 'primary.main', textTransform: 'none', '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' } }}
+                              >
+                                Visualiser l&apos;état des lieux
+                              </Button>
+                              <Typography variant="body2" color="text.secondary">·</Typography>
+                              <Button
+                                variant="text"
+                                size="small"
+                                href={ad.property_condition_pdf + '?download=1'}
+                                download
+                                sx={{ p: 0, minWidth: 0, fontWeight: 600, color: 'primary.main', textTransform: 'none', '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' } }}
+                              >
+                                Télécharger
+                              </Button>
+                            </Box>
                           </Box>
                         )}
                       </Box>
@@ -2386,59 +2411,77 @@ function AdDetailContent() {
                           </Box>
                         )}
                         {ad.detailed_charges && (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'flex-start',
-                              gap: 1.25,
-                            }}
-                          >
-                            <ReceiptLong
-                              sx={{
-                                fontSize: 17,
-                                color: 'text.secondary',
-                                mt: 0.3,
-                              }}
-                            />
-                            <Typography
-                              variant="body2"
-                              sx={{ whiteSpace: 'pre-line' }}
-                            >
-                              Charges: <strong>{ad.detailed_charges}</strong>
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25 }}>
+                            <ReceiptLong sx={{ fontSize: 17, color: 'text.secondary', mt: 0.3 }} />
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                              Charges détaillées: <strong>{ad.detailed_charges}</strong>
                             </Typography>
                           </Box>
                         )}
+                        {(ad.charges_eau || ad.charges_electricite || ad.charges_autres || ad.charges_forfaitaires) && (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, pl: 0.5 }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                              Détail des charges
+                            </Typography>
+                            {ad.charges_forfaitaires && ad.charges_montant_forfait && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                <ReceiptLong sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                <Typography variant="body2">
+                                  Charges forfaitaires: <strong>{Number(ad.charges_montant_forfait).toLocaleString('fr-FR')} XOF/mois</strong>
+                                </Typography>
+                              </Box>
+                            )}
+                            {ad.charges_eau && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                <WaterDrop sx={{ fontSize: 16, color: 'primary.main' }} />
+                                <Typography variant="body2">
+                                  Eau: <strong>{Number(ad.charges_eau).toLocaleString('fr-FR')} XOF/mois</strong>
+                                </Typography>
+                              </Box>
+                            )}
+                            {ad.charges_electricite && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                <Bolt sx={{ fontSize: 16, color: 'warning.main' }} />
+                                <Typography variant="body2">
+                                  Électricité: <strong>{Number(ad.charges_electricite).toLocaleString('fr-FR')} XOF/mois</strong>
+                                </Typography>
+                              </Box>
+                            )}
+                            {ad.charges_autres && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                <ReceiptLong sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                <Typography variant="body2">
+                                  Autres charges: <strong>{ad.charges_autres}</strong>
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+                        )}
                         {ad.property_condition_pdf && (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1.25,
-                            }}
-                          >
-                            <Description
-                              sx={{ fontSize: 17, color: 'text.secondary' }}
-                            />
-                            <Button
-                              variant="text"
-                              size="small"
-                              href={ad.property_condition_pdf}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              sx={{
-                                p: 0,
-                                minWidth: 0,
-                                fontWeight: 600,
-                                color: 'primary.main',
-                                textTransform: 'none',
-                                '&:hover': {
-                                  bgcolor: 'transparent',
-                                  textDecoration: 'underline',
-                                },
-                              }}
-                            >
-                              Télécharger l&apos;état des lieux
-                            </Button>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                            <Description sx={{ fontSize: 17, color: 'text.secondary' }} />
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <Button
+                                variant="text"
+                                size="small"
+                                href={ad.property_condition_pdf}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{ p: 0, minWidth: 0, fontWeight: 600, color: 'primary.main', textTransform: 'none', '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' } }}
+                              >
+                                Visualiser l&apos;état des lieux
+                              </Button>
+                              <Typography variant="body2" color="text.secondary">·</Typography>
+                              <Button
+                                variant="text"
+                                size="small"
+                                href={ad.property_condition_pdf + '?download=1'}
+                                download
+                                sx={{ p: 0, minWidth: 0, fontWeight: 600, color: 'primary.main', textTransform: 'none', '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' } }}
+                              >
+                                Télécharger
+                              </Button>
+                            </Box>
                           </Box>
                         )}
                       </Box>
