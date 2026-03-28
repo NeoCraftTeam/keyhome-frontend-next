@@ -1,13 +1,19 @@
 import { getAuthToken } from '@/lib/auth-token';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 /** Base URL without /api/v1 — used for /sanctum/csrf-cookie */
 const API_BASE = API_URL.replace(/\/api\/v1\/?$/, '');
 
 /** Routes that should NOT trigger the 401 auth-expired event */
-const AUTH_ROUTES = ['/auth/login', '/auth/register', '/auth/clerk/', '/auth/me'];
+const AUTH_ROUTES = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/clerk/',
+  '/auth/me',
+];
 
 const api = axios.create({
   baseURL: API_URL,
@@ -28,7 +34,9 @@ function hasXsrfCookie(): boolean {
   if (typeof document === 'undefined') {
     return false;
   }
-  return document.cookie.split(';').some((c) => c.trim().startsWith('XSRF-TOKEN='));
+  return document.cookie
+    .split(';')
+    .some((c) => c.trim().startsWith('XSRF-TOKEN='));
 }
 
 /**
@@ -86,14 +94,31 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error: AxiosError) => Promise.reject(error),
+  (error: AxiosError) => Promise.reject(error)
 );
 
 /* ---------- Response interceptors ---------- */
 
+/** Track 419 retry to prevent infinite loops */
+const CSRF_RETRY_HEADER = 'x-csrf-retry';
+
 api.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
+    // Handle CSRF token expiry: reset state, refetch cookie, and retry once
+    if (
+      error.response?.status === 419 &&
+      error.config &&
+      !error.config.headers?.[CSRF_RETRY_HEADER]
+    ) {
+      csrfReady = false;
+      csrfPromise = null;
+      await ensureCsrfCookie();
+      error.config.headers = error.config.headers ?? {};
+      error.config.headers[CSRF_RETRY_HEADER] = '1';
+      return api.request(error.config);
+    }
+
     if (typeof window !== 'undefined') {
       if (
         error.response?.status === 401 &&
@@ -106,14 +131,17 @@ api.interceptors.response.use(
         window.dispatchEvent(
           new CustomEvent('kh:rate-limited', {
             detail: {
-              retryAfter: (error.response.headers as Record<string, string | undefined>)['retry-after'] ?? null,
+              retryAfter:
+                (error.response.headers as Record<string, string | undefined>)[
+                  'retry-after'
+                ] ?? null,
             },
-          }),
+          })
         );
       }
     }
     return Promise.reject(error);
-  },
+  }
 );
 
 export default api;
