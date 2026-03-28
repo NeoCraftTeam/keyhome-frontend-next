@@ -50,25 +50,6 @@ function clearRoleCookie(): void {
   document.cookie = `${ROLE_COOKIE}=; path=/owner; Max-Age=0; SameSite=Lax`;
 }
 
-
-function hasSessionHint(): boolean {
-  if (typeof document === 'undefined') {
-    return false;
-  }
-  // Check for any session cookie (more robust detection)
-  const cookies = document.cookie.split(';');
-  const sessionCookie = cookies.find((c) => {
-    const trimmed = c.trim();
-    return trimmed.startsWith('keyhome_session=');
-  });
-  
-  if (!sessionCookie) return false;
-  
-  // Check if the session cookie has a value (not empty)
-  const value = sessionCookie.split('=')[1];
-  return Boolean(value && value.length > 0);
-}
-
 function hasAnySanctumInStorage(): boolean {
   if (typeof window === 'undefined') {
     return false;
@@ -94,7 +75,7 @@ async function migrateLegacySanctumToken(): Promise<void> {
   registerTokenGetter(() => Promise.resolve(legacy));
 
   try {
-    const laravelUser = await authService.me();
+    await authService.me();
     // Use unified session key for legacy migration
     localStorage.setItem(SANCTUM_TOKEN_KEY_CLIENT, legacy);
   } catch {
@@ -231,24 +212,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             ? localStorage.getItem(storageKey)
             : null;
 
-        // --- Debug: Log session state ---
-        if (typeof window !== 'undefined') {
-          console.log('🔍 Auth Debug - Session cookies:', document.cookie);
-          console.log('🔍 Auth Debug - hasSessionHint:', hasSessionHint());
-          console.log('🔍 Auth Debug - storedToken:', storedToken);
-        }
-        // Completely bypass fast-path guest detection
-        // Always try session auth first - this ensures sessions work even if cookie detection fails
+        // Always try session auth first — cookie is sent automatically (withCredentials: true)
 
         // --- Session-first authentication (httpOnly cookie) ---
         // Try to authenticate via session cookie before falling back to localStorage token.
         // If a valid session exists, the cookie is sent automatically (withCredentials: true).
         try {
-          console.log('🔍 Auth Debug - Trying session-first auth via /me endpoint');
-          console.log('🔍 Auth Debug - API URL:', process.env.NEXT_PUBLIC_API_URL);
           registerTokenGetter(() => Promise.resolve(null));
           const sessionUser = await authService.me();
-          console.log('🔍 Auth Debug - Session auth successful:', sessionUser);
           if (runId !== authRunRef.current) {
             return;
           }
@@ -263,8 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsExchanging(false);
           setHasResolvedInitialAuth(true);
           return;
-        } catch (error) {
-          console.log('🔍 Auth Debug - Session auth failed:', error);
+        } catch {
           if (runId !== authRunRef.current) {
             return;
           }
@@ -306,7 +276,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setToken(null);
           setUserState(null);
           clearRoleCookie();
-          router.replace(pathnameRef.current?.startsWith('/owner') ? '/owner/login' : '/home');
+          router.replace(
+            pathnameRef.current?.startsWith('/owner') ? '/owner/login' : '/home'
+          );
         } finally {
           if (runId !== authRunRef.current) {
             return;
@@ -497,7 +469,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (returnTo) {
         sessionStorage.removeItem('kh_redirect_after_login');
         router.replace(returnTo);
-      } else if (laravelUser.role === UserRole.AGENT || laravelUser.role === UserRole.ADMIN) {
+      } else if (
+        laravelUser.role === UserRole.AGENT ||
+        laravelUser.role === UserRole.ADMIN
+      ) {
         router.replace('/owner/dashboard');
       } else {
         router.replace('/home');
