@@ -1,29 +1,84 @@
 'use client';
 
-import { Box, Container, Typography } from '@mui/material';
+import { useAuth } from '@/providers/AuthProvider';
+import {
+  Box,
+  Button,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  LinearProgress,
+  Stack,
+  Typography,
+} from '@mui/material';
+import {
+  ArrowForward,
+  CalendarMonth,
+  CheckCircle,
+  Person,
+  Phone,
+  LocationOn,
+} from '@mui/icons-material';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import AdForm, {
   type AdFormValues,
   type TourScene,
 } from '@/components/owner/AdForm';
 import { adsService } from '@/services/ads.service';
 
+function useProfileCompleteness(user: ReturnType<typeof useAuth>['user']) {
+  const steps = [
+    {
+      key: 'name',
+      label: 'Prénom & Nom',
+      done: !!(user?.firstname && user?.lastname),
+      icon: <Person sx={{ fontSize: 20 }} />,
+    },
+    {
+      key: 'phone',
+      label: 'Numéro de téléphone',
+      done: !!user?.phone_number,
+      icon: <Phone sx={{ fontSize: 20 }} />,
+    },
+    {
+      key: 'city',
+      label: 'Ville de résidence',
+      done: !!user?.city_id,
+      icon: <LocationOn sx={{ fontSize: 20 }} />,
+    },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+  const isComplete = doneCount === steps.length;
+  const progress = Math.round((doneCount / steps.length) * 100);
+  return { steps, isComplete, progress, doneCount };
+}
+
 export default function OwnerNewAdPage() {
+  const { user } = useAuth();
   const router = useRouter();
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const { steps, isComplete, progress } = useProfileCompleteness(user);
+
   const createMutation = useMutation({
     mutationFn: async ({
       values,
       images,
       tourScenes,
       propertyConditionPdf,
+      idempotencyKey,
     }: {
       values: AdFormValues;
       images: File[];
       tourScenes?: TourScene[];
       propertyConditionPdf?: File | null;
+      idempotencyKey?: string;
     }) => {
       const formData = new FormData();
+      if (idempotencyKey) formData.append('_idempotency_key', idempotencyKey);
       formData.append('title', values.title);
       formData.append('description', values.description);
       formData.append('adresse', values.adresse);
@@ -119,7 +174,7 @@ export default function OwnerNewAdPage() {
       return ad;
     },
     onSuccess: () => {
-      router.push('/owner/ads');
+      setScheduleDialogOpen(true);
     },
   });
 
@@ -130,6 +185,7 @@ export default function OwnerNewAdPage() {
       imagesToDelete?: number[];
       tourScenes?: TourScene[];
       propertyConditionPdf?: File | null;
+      idempotencyKey?: string;
     }
   ) => {
     await createMutation.mutateAsync({
@@ -137,6 +193,7 @@ export default function OwnerNewAdPage() {
       images,
       tourScenes: options?.tourScenes,
       propertyConditionPdf: options?.propertyConditionPdf,
+      idempotencyKey: options?.idempotencyKey,
     });
   };
 
@@ -145,24 +202,244 @@ export default function OwnerNewAdPage() {
     return enhanced;
   };
 
+  if (!isComplete) {
+    return (
+      <Container maxWidth="sm" sx={{ py: { xs: 4, md: 8 } }}>
+        <Box
+          sx={{
+            borderRadius: 4,
+            border: '1px solid',
+            borderColor: 'divider',
+            overflow: 'hidden',
+            bgcolor: 'background.paper',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+          }}
+        >
+          {/* Header */}
+          <Box
+            sx={{
+              px: { xs: 3, sm: 4 },
+              py: 3,
+              background: 'linear-gradient(135deg, #F6475F 0%, #ff7d8c 100%)',
+            }}
+          >
+            <Typography
+              variant="h5"
+              fontWeight={800}
+              color="white"
+              gutterBottom
+            >
+              Complétez votre profil d&apos;abord
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ color: 'rgba(255,255,255,0.85)' }}
+            >
+              Vos informations sont affichées aux clients une fois
+              l&apos;annonce débloquée. Sans elles, ils ne peuvent pas vous
+              contacter.
+            </Typography>
+          </Box>
+
+          <Box sx={{ px: { xs: 3, sm: 4 }, py: 3 }}>
+            {/* Progress */}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 1,
+              }}
+            >
+              <Typography
+                variant="body2"
+                fontWeight={600}
+                color="text.secondary"
+              >
+                Progression du profil
+              </Typography>
+              <Typography variant="body2" fontWeight={700} color="primary.main">
+                {progress}%
+              </Typography>
+            </Box>
+            <LinearProgress
+              variant="determinate"
+              value={progress}
+              sx={{ height: 8, borderRadius: 4, mb: 3 }}
+            />
+
+            {/* Steps */}
+            <Stack spacing={1.5} sx={{ mb: 4 }}>
+              {steps.map((step) => (
+                <Box
+                  key={step.key}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    p: 1.5,
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: step.done ? 'success.light' : 'divider',
+                    bgcolor: step.done
+                      ? 'rgba(34,197,94,0.05)'
+                      : (theme) =>
+                          theme.palette.mode === 'dark'
+                            ? 'rgba(255,255,255,0.03)'
+                            : 'rgba(0,0,0,0.02)',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 32,
+                      height: 32,
+                      borderRadius: 1.5,
+                      flexShrink: 0,
+                      bgcolor: step.done
+                        ? 'rgba(34,197,94,0.12)'
+                        : 'action.hover',
+                      color: step.done ? 'success.main' : 'text.disabled',
+                    }}
+                  >
+                    {step.done ? (
+                      <CheckCircle sx={{ fontSize: 18 }} />
+                    ) : (
+                      step.icon
+                    )}
+                  </Box>
+                  <Typography
+                    variant="body2"
+                    fontWeight={500}
+                    sx={{
+                      color: step.done ? 'text.disabled' : 'text.primary',
+                      textDecoration: step.done ? 'line-through' : 'none',
+                    }}
+                  >
+                    {step.label}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
+
+            <Button
+              variant="contained"
+              fullWidth
+              size="large"
+              endIcon={<ArrowForward />}
+              onClick={() => router.push('/owner/profile')}
+              sx={{
+                borderRadius: 2,
+                fontWeight: 700,
+                textTransform: 'none',
+                py: 1.5,
+              }}
+            >
+              Compléter mon profil
+            </Button>
+            <Button
+              variant="text"
+              fullWidth
+              size="small"
+              onClick={() => router.back()}
+              sx={{ mt: 1.5, textTransform: 'none', color: 'text.secondary' }}
+            >
+              Retour
+            </Button>
+          </Box>
+        </Box>
+      </Container>
+    );
+  }
+
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h4" fontWeight={700} gutterBottom>
-        Nouvelle annonce
-      </Typography>
-      <Typography color="text.secondary" sx={{ mb: 4 }}>
-        Suivez les étapes pour publier votre annonce rapidement.
-      </Typography>
-      <Box>
-        <AdForm
-          onSubmit={handleSubmit}
-          onCancel={() => router.back()}
-          submitLabel="Créer l'annonce"
-          isSubmitting={createMutation.isPending}
-          onEnhanceDescription={handleEnhance}
-          stepperMode
-        />
-      </Box>
-    </Container>
+    <>
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Nouvelle annonce
+        </Typography>
+        <Typography color="text.secondary" sx={{ mb: 4 }}>
+          Suivez les étapes pour publier votre annonce rapidement.
+        </Typography>
+        <Box>
+          <AdForm
+            onSubmit={handleSubmit}
+            onCancel={() => router.back()}
+            submitLabel="Créer l'annonce"
+            isSubmitting={createMutation.isPending}
+            onEnhanceDescription={handleEnhance}
+            stepperMode
+          />
+        </Box>
+      </Container>
+
+      {/* Post-creation: configure schedules dialog */}
+      <Dialog
+        open={scheduleDialogOpen}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, p: 0.5 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, pb: 0.5 }}>
+          🎉 Annonce créée avec succès !
+        </DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              mb: 2,
+              bgcolor: (t) =>
+                t.palette.mode === 'dark'
+                  ? 'rgba(59,130,246,0.08)'
+                  : 'rgba(59,130,246,0.06)',
+              border: '1px solid',
+              borderColor: 'rgba(59,130,246,0.2)',
+              display: 'flex',
+              gap: 1.5,
+              alignItems: 'flex-start',
+            }}
+          >
+            <CalendarMonth
+              sx={{ fontSize: 22, color: '#3B82F6', mt: 0.2, flexShrink: 0 }}
+            />
+            <Box>
+              <Typography variant="body2" fontWeight={700} sx={{ mb: 0.5 }}>
+                Configurez vos horaires de disponibilité
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Indiquez vos créneaux libres pour que les locataires puissent
+                planifier une visite directement depuis votre annonce.
+              </Typography>
+            </Box>
+          </Box>
+          <Typography variant="body2" color="text.secondary">
+            Vous pouvez aussi ignorer cette étape et le faire plus tard depuis
+            votre tableau de bord.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, pt: 0, gap: 1 }}>
+          <Button
+            variant="text"
+            size="small"
+            onClick={() => router.push('/owner/ads')}
+            sx={{ textTransform: 'none', color: 'text.secondary' }}
+          >
+            Ignorer
+          </Button>
+          <Button
+            variant="contained"
+            size="small"
+            endIcon={<ArrowForward />}
+            onClick={() => router.push('/owner/availability')}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+          >
+            Configurer les horaires
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }

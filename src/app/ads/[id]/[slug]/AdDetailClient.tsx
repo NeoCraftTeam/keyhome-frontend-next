@@ -449,31 +449,36 @@ function AdDetailContent() {
   const proximityItems = [
     {
       key: 'main_road',
-      icon: <NearMe sx={{ fontSize: 18, color: 'primary.main' }} />,
+      icon: <NearMe sx={{ fontSize: 17, color: '#64748B' }} />,
+      iconBg: 'rgba(100,116,139,0.10)',
       label: 'Route principale',
       distance: formatDistance(ad.distance_main_road_m),
     },
     {
       key: 'shops',
-      icon: <Storefront sx={{ fontSize: 18, color: 'primary.main' }} />,
+      icon: <Storefront sx={{ fontSize: 17, color: '#059669' }} />,
+      iconBg: 'rgba(5,150,105,0.10)',
       label: 'Commerces',
       distance: formatDistance(ad.distance_shops_m),
     },
     {
       key: 'transport',
-      icon: <DirectionsBus sx={{ fontSize: 18, color: 'primary.main' }} />,
+      icon: <DirectionsBus sx={{ fontSize: 17, color: '#3B82F6' }} />,
+      iconBg: 'rgba(59,130,246,0.10)',
       label: 'Transport',
       distance: formatDistance(ad.distance_transport_m),
     },
     {
       key: 'school',
-      icon: <School sx={{ fontSize: 18, color: 'primary.main' }} />,
+      icon: <School sx={{ fontSize: 17, color: '#8B5CF6' }} />,
+      iconBg: 'rgba(139,92,246,0.10)',
       label: 'École / Université',
       distance: formatDistance(ad.distance_school_m),
     },
     {
       key: 'hospital',
-      icon: <LocalHospital sx={{ fontSize: 18, color: 'primary.main' }} />,
+      icon: <LocalHospital sx={{ fontSize: 17, color: '#EF4444' }} />,
+      iconBg: 'rgba(239,68,68,0.10)',
       label: 'Hôpital / Clinique',
       distance: formatDistance(ad.distance_hospital_m),
     },
@@ -1264,49 +1269,18 @@ function AdDetailContent() {
                       alignItems: 'center',
                     }}
                   >
-                    {(ad.views_count_today ?? 0) > 0 && (
+                    {(ad.view_count ?? 0) > 0 && (
                       <Typography
                         variant="body2"
                         color="text.secondary"
                         sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
                       >
                         <Visibility sx={{ fontSize: 16 }} />
-                        {ad.views_count_today} personne
-                        {(ad.views_count_today ?? 0) > 1 ? 's ont' : ' a'}{' '}
-                        consulté cette annonce aujourd&apos;hui
+                        {ad.view_count} personne
+                        {(ad.view_count ?? 0) > 1 ? 's ont' : ' a'} consulté
+                        cette annonce
                       </Typography>
                     )}
-                    {(ad.views_count_week ?? 0) >= 5 &&
-                      (ad.views_count_today ?? 0) === 0 && (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 0.5,
-                          }}
-                        >
-                          <Visibility sx={{ fontSize: 16 }} />
-                          Vu {ad.views_count_week} fois cette semaine
-                        </Typography>
-                      )}
-                    {(ad.view_count ?? 0) >= 10 &&
-                      (ad.views_count_today ?? 0) === 0 &&
-                      (ad.views_count_week ?? 0) < 5 && (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 0.5,
-                          }}
-                        >
-                          <Visibility sx={{ fontSize: 16 }} />
-                          Annonce très consultée
-                        </Typography>
-                      )}
                     {ad.available_from && (
                       <Typography
                         variant="body2"
@@ -1757,39 +1731,60 @@ function AdDetailContent() {
                 {hasProximityData && (
                   <>
                     <Box sx={{ mb: 4 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                      {/* Section header */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1.5,
+                          mb: 2.5,
+                        }}
+                      >
                         <Box
                           sx={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            width: 40,
-                            height: 40,
-                            borderRadius: 2.5,
-                            background: gradient.primary135Stops,
-                            boxShadow: '0 4px 12px rgba(246,71,95,0.25)',
+                            width: 36,
+                            height: 36,
+                            borderRadius: 2,
+                            bgcolor: (t) =>
+                              t.palette.mode === 'dark'
+                                ? 'rgba(255,255,255,0.07)'
+                                : 'rgba(0,0,0,0.05)',
                           }}
                         >
-                          <NearMe sx={{ fontSize: 20, color: '#fff' }} />
+                          <NearMe
+                            sx={{ fontSize: 18, color: 'text.secondary' }}
+                          />
                         </Box>
                         <Box>
-                          <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                          <Typography
+                            variant="h6"
+                            fontWeight={700}
+                            sx={{ lineHeight: 1.2 }}
+                          >
                             Proximité & Accessibilité
                           </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ display: 'block' }}
+                          >
                             Distances estimées depuis ce bien
                           </Typography>
                         </Box>
                       </Box>
+
+                      {/* Cards grid */}
                       <Box
                         sx={{
                           display: 'grid',
                           gridTemplateColumns: {
-                            xs: '1fr',
-                            sm: 'repeat(2, 1fr)',
-                            md: 'repeat(3, 1fr)',
+                            xs: 'repeat(2, 1fr)',
+                            sm: 'repeat(3, 1fr)',
                           },
-                          gap: 2,
+                          gap: { xs: 1, sm: 1.5 },
                         }}
                       >
                         {proximityItems.map((item) => (
@@ -1798,27 +1793,15 @@ function AdDetailContent() {
                             sx={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: 2,
-                              p: 2.5,
-                              borderRadius: 3,
+                              gap: 1.25,
+                              p: { xs: 1.5, sm: 2 },
+                              borderRadius: 2.5,
                               border: '1px solid',
-                              borderColor: (theme) =>
-                                theme.palette.mode === 'dark'
-                                  ? 'rgba(246,71,95,0.20)'
-                                  : 'rgba(246,71,95,0.15)',
-                              bgcolor: (theme) =>
-                                theme.palette.mode === 'dark'
-                                  ? 'rgba(246,71,95,0.04)'
-                                  : 'rgba(246,71,95,0.02)',
-                              transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
+                              borderColor: 'divider',
+                              bgcolor: 'background.paper',
+                              transition: 'box-shadow 0.2s ease',
                               '&:hover': {
-                                borderColor: 'primary.main',
-                                bgcolor: (theme) =>
-                                  theme.palette.mode === 'dark'
-                                    ? 'rgba(246,71,95,0.08)'
-                                    : 'rgba(246,71,95,0.06)',
-                                transform: 'translateY(-2px)',
-                                boxShadow: '0 8px 24px rgba(246,71,95,0.12)',
+                                boxShadow: '0 4px 16px rgba(0,0,0,0.07)',
                               },
                             }}
                           >
@@ -1827,33 +1810,38 @@ function AdDetailContent() {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                width: 44,
-                                height: 44,
-                                borderRadius: 2.5,
-                                bgcolor: (theme) =>
-                                  theme.palette.mode === 'dark'
-                                    ? 'rgba(246,71,95,0.15)'
-                                    : 'rgba(246,71,95,0.10)',
+                                width: 34,
+                                height: 34,
+                                borderRadius: 1.75,
+                                bgcolor: (
+                                  item as typeof item & { iconBg: string }
+                                ).iconBg,
+                                flexShrink: 0,
                               }}
                             >
                               {item.icon}
                             </Box>
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Box sx={{ minWidth: 0 }}>
                               <Typography
-                                variant="body2"
+                                variant="caption"
                                 color="text.secondary"
-                                sx={{ fontWeight: 500, lineHeight: 1.3, mb: 0.25 }}
+                                sx={{
+                                  fontWeight: 500,
+                                  display: 'block',
+                                  lineHeight: 1.3,
+                                  mb: 0.2,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
                               >
                                 {item.label}
                               </Typography>
                               <Typography
-                                variant="h6"
-                                fontWeight={800}
-                                sx={{
-                                  color: 'primary.main',
-                                  letterSpacing: 0.2,
-                                  lineHeight: 1.2,
-                                }}
+                                variant="subtitle2"
+                                fontWeight={700}
+                                color="text.primary"
+                                sx={{ lineHeight: 1.2, letterSpacing: 0.2 }}
                               >
                                 {item.distance}
                               </Typography>
@@ -1971,7 +1959,7 @@ function AdDetailContent() {
                             </IconButton>
                           </Box>
                           <Box
-                            sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}
+                            sx={{ display: 'flex', gap: 1, flexWrap: 'nowrap' }}
                           >
                             {publisherHasWhatsApp && whatsappNumber && (
                               <Button
@@ -2014,12 +2002,7 @@ function AdDetailContent() {
                       )}
                       {publisherEmail && (
                         <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            mt: publisherPhone ? 0 : 0,
-                          }}
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                         >
                           <Email sx={{ fontSize: 18, color: 'primary.main' }} />
                           <Typography
@@ -2123,53 +2106,71 @@ function AdDetailContent() {
                     <Box
                       sx={{
                         mb: 2,
-                        p: 2,
-                        borderRadius: 2.5,
-                        bgcolor: (theme) =>
-                          theme.palette.mode === 'dark'
-                            ? 'rgba(246,71,95,0.08)'
-                            : 'rgba(246,71,95,0.04)',
+                        borderRadius: 3,
                         border: '1px solid',
-                        borderColor: (theme) =>
-                          theme.palette.mode === 'dark'
-                            ? 'rgba(246,71,95,0.25)'
-                            : 'rgba(246,71,95,0.18)',
+                        borderColor: 'divider',
+                        overflow: 'hidden',
+                        bgcolor: 'background.paper',
                       }}
                     >
+                      {/* Header */}
                       <Box
                         sx={{
+                          px: 2.5,
+                          py: 1.5,
                           display: 'flex',
                           alignItems: 'center',
                           gap: 1,
-                          mb: 1.5,
+                          borderBottom: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: (t) =>
+                            t.palette.mode === 'dark'
+                              ? 'rgba(255,255,255,0.03)'
+                              : 'rgba(0,0,0,0.02)',
                         }}
                       >
-                        <Star sx={{ fontSize: 18, color: 'primary.main' }} />
-                        <Typography variant="subtitle2" fontWeight={700}>
+                        <Star sx={{ fontSize: 15, color: 'primary.main' }} />
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight={700}
+                          sx={{ letterSpacing: 0.1 }}
+                        >
                           Informations supplémentaires
                         </Typography>
                       </Box>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 1.25,
-                        }}
-                      >
+
+                      <Box sx={{ px: 2.5, py: 1.5 }}>
+                        {/* Bail conditions */}
                         {ad.deposit_amount && (
                           <Box
                             sx={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: 1.25,
+                              justifyContent: 'space-between',
+                              py: 1.1,
+                              borderBottom: '1px solid',
+                              borderColor: 'divider',
                             }}
                           >
-                            <AccountBalanceWallet
-                              sx={{ fontSize: 17, color: 'text.secondary' }}
-                            />
-                            <Typography variant="body2">
-                              Dépôt de garantie:{' '}
-                              <strong>{ad.deposit_amount}</strong>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <AccountBalanceWallet
+                                sx={{ fontSize: 15, color: 'text.disabled' }}
+                              />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Dépôt de garantie
+                              </Typography>
+                            </Box>
+                            <Typography variant="body2" fontWeight={600}>
+                              {ad.deposit_amount}
                             </Typography>
                           </Box>
                         )}
@@ -2178,86 +2179,343 @@ function AdDetailContent() {
                             sx={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: 1.25,
+                              justifyContent: 'space-between',
+                              py: 1.1,
+                              borderBottom:
+                                ad.charges_eau ||
+                                ad.charges_electricite ||
+                                ad.charges_autres ||
+                                ad.charges_forfaitaires ||
+                                ad.detailed_charges ||
+                                ad.property_condition_pdf
+                                  ? '1px solid'
+                                  : 'none',
+                              borderColor: 'divider',
                             }}
                           >
-                            <CalendarMonth
-                              sx={{ fontSize: 17, color: 'text.secondary' }}
-                            />
-                            <Typography variant="body2">
-                              Durée minimum:{' '}
-                              <strong>{ad.minimum_lease_duration}</strong>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <CalendarMonth
+                                sx={{ fontSize: 15, color: 'text.disabled' }}
+                              />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Durée minimum
+                              </Typography>
+                            </Box>
+                            <Typography variant="body2" fontWeight={600}>
+                              {ad.minimum_lease_duration}
                             </Typography>
                           </Box>
                         )}
-                        {ad.detailed_charges && (
-                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25 }}>
-                            <ReceiptLong sx={{ fontSize: 17, color: 'text.secondary', mt: 0.3 }} />
-                            <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
-                              Charges détaillées: <strong>{ad.detailed_charges}</strong>
+
+                        {/* Charges */}
+                        {(ad.charges_eau ||
+                          ad.charges_electricite ||
+                          ad.charges_autres ||
+                          ad.charges_forfaitaires ||
+                          ad.detailed_charges) && (
+                          <Box sx={{ pt: 1.25 }}>
+                            <Typography
+                              variant="caption"
+                              fontWeight={700}
+                              color="text.disabled"
+                              sx={{
+                                textTransform: 'uppercase',
+                                letterSpacing: 0.8,
+                                display: 'block',
+                                mb: 0.75,
+                              }}
+                            >
+                              Charges
                             </Typography>
-                          </Box>
-                        )}
-                        {(ad.charges_eau || ad.charges_electricite || ad.charges_autres || ad.charges_forfaitaires) && (
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, pl: 0.5 }}>
-                            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                              Détail des charges
-                            </Typography>
-                            {ad.charges_forfaitaires && ad.charges_montant_forfait && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                                <ReceiptLong sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                <Typography variant="body2">
-                                  Charges forfaitaires: <strong>{Number(ad.charges_montant_forfait).toLocaleString('fr-FR')} XOF/mois</strong>
+                            {ad.detailed_charges && (
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'flex-start',
+                                  py: 0.9,
+                                  borderBottom: '1px solid',
+                                  borderColor: 'divider',
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                  }}
+                                >
+                                  <ReceiptLong
+                                    sx={{
+                                      fontSize: 14,
+                                      color: 'text.disabled',
+                                    }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    Détail
+                                  </Typography>
+                                </Box>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  sx={{
+                                    textAlign: 'right',
+                                    maxWidth: '60%',
+                                    whiteSpace: 'pre-line',
+                                  }}
+                                >
+                                  {ad.detailed_charges}
                                 </Typography>
                               </Box>
                             )}
+                            {ad.charges_forfaitaires &&
+                              ad.charges_montant_forfait && (
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    py: 0.9,
+                                    borderBottom: '1px solid',
+                                    borderColor: 'divider',
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 1,
+                                    }}
+                                  >
+                                    <ReceiptLong
+                                      sx={{ fontSize: 14, color: '#64748B' }}
+                                    />
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                    >
+                                      Forfait mensuel
+                                    </Typography>
+                                  </Box>
+                                  <Typography variant="body2" fontWeight={600}>
+                                    {Number(
+                                      ad.charges_montant_forfait
+                                    ).toLocaleString('fr-FR')}{' '}
+                                    XOF/mois
+                                  </Typography>
+                                </Box>
+                              )}
                             {ad.charges_eau && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                                <WaterDrop sx={{ fontSize: 16, color: 'primary.main' }} />
-                                <Typography variant="body2">
-                                  Eau: <strong>{Number(ad.charges_eau).toLocaleString('fr-FR')} XOF/mois</strong>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  py: 0.9,
+                                  borderBottom: '1px solid',
+                                  borderColor: 'divider',
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                  }}
+                                >
+                                  <WaterDrop
+                                    sx={{ fontSize: 14, color: '#3B82F6' }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    Eau
+                                  </Typography>
+                                </Box>
+                                <Typography variant="body2" fontWeight={600}>
+                                  {Number(ad.charges_eau).toLocaleString(
+                                    'fr-FR'
+                                  )}{' '}
+                                  XOF/mois
                                 </Typography>
                               </Box>
                             )}
                             {ad.charges_electricite && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                                <Bolt sx={{ fontSize: 16, color: 'warning.main' }} />
-                                <Typography variant="body2">
-                                  Électricité: <strong>{Number(ad.charges_electricite).toLocaleString('fr-FR')} XOF/mois</strong>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  py: 0.9,
+                                  borderBottom:
+                                    ad.charges_autres ||
+                                    ad.property_condition_pdf
+                                      ? '1px solid'
+                                      : 'none',
+                                  borderColor: 'divider',
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                  }}
+                                >
+                                  <Bolt
+                                    sx={{ fontSize: 14, color: '#F59E0B' }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    Électricité
+                                  </Typography>
+                                </Box>
+                                <Typography variant="body2" fontWeight={600}>
+                                  {Number(
+                                    ad.charges_electricite
+                                  ).toLocaleString('fr-FR')}{' '}
+                                  XOF/mois
                                 </Typography>
                               </Box>
                             )}
                             {ad.charges_autres && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                                <ReceiptLong sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                <Typography variant="body2">
-                                  Autres charges: <strong>{ad.charges_autres}</strong>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'flex-start',
+                                  py: 0.9,
+                                  borderBottom: ad.property_condition_pdf
+                                    ? '1px solid'
+                                    : 'none',
+                                  borderColor: 'divider',
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <ReceiptLong
+                                    sx={{ fontSize: 14, color: '#64748B' }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    Autres
+                                  </Typography>
+                                </Box>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  sx={{
+                                    textAlign: 'right',
+                                    maxWidth: '65%',
+                                    whiteSpace: 'pre-line',
+                                  }}
+                                >
+                                  {ad.charges_autres}
                                 </Typography>
                               </Box>
                             )}
                           </Box>
                         )}
+
+                        {/* PDF */}
                         {ad.property_condition_pdf && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                            <Description sx={{ fontSize: 17, color: 'text.secondary' }} />
-                            <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1.5,
+                              pt: 1.5,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 32,
+                                height: 32,
+                                borderRadius: 1.5,
+                                bgcolor: 'rgba(239,68,68,0.08)',
+                                flexShrink: 0,
+                              }}
+                            >
+                              <Description
+                                sx={{ fontSize: 15, color: '#EF4444' }}
+                              />
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ fontWeight: 500 }}
+                              >
+                                État des lieux (PDF)
+                              </Typography>
+                            </Box>
+                            <Box
+                              sx={{ display: 'flex', gap: 0.75, flexShrink: 0 }}
+                            >
                               <Button
-                                variant="text"
+                                variant="outlined"
                                 size="small"
+                                component="a"
                                 href={ad.property_condition_pdf}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                sx={{ p: 0, minWidth: 0, fontWeight: 600, color: 'primary.main', textTransform: 'none', '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' } }}
+                                sx={{
+                                  textTransform: 'none',
+                                  fontWeight: 600,
+                                  fontSize: '0.72rem',
+                                  borderRadius: 1.5,
+                                  py: 0.4,
+                                  px: 1.25,
+                                  borderColor: 'divider',
+                                  color: 'text.primary',
+                                  '&:hover': { borderColor: 'text.secondary' },
+                                }}
                               >
-                                Visualiser l&apos;état des lieux
+                                Voir
                               </Button>
-                              <Typography variant="body2" color="text.secondary">·</Typography>
                               <Button
-                                variant="text"
+                                variant="outlined"
                                 size="small"
+                                component="a"
                                 href={ad.property_condition_pdf + '?download=1'}
                                 download
-                                sx={{ p: 0, minWidth: 0, fontWeight: 600, color: 'primary.main', textTransform: 'none', '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' } }}
+                                sx={{
+                                  textTransform: 'none',
+                                  fontWeight: 600,
+                                  fontSize: '0.72rem',
+                                  borderRadius: 1.5,
+                                  py: 0.4,
+                                  px: 1.25,
+                                  borderColor: 'divider',
+                                  color: 'text.primary',
+                                  '&:hover': { borderColor: 'text.secondary' },
+                                }}
                               >
                                 Télécharger
                               </Button>
@@ -2342,54 +2600,70 @@ function AdDetailContent() {
                     <Box
                       sx={{
                         mb: 3,
-                        p: 2,
-                        borderRadius: 2.5,
-                        bgcolor: (theme) =>
-                          theme.palette.mode === 'dark'
-                            ? 'rgba(246,71,95,0.08)'
-                            : 'rgba(246,71,95,0.04)',
+                        borderRadius: 3,
                         border: '1px solid',
-                        borderColor: (theme) =>
-                          theme.palette.mode === 'dark'
-                            ? 'rgba(246,71,95,0.25)'
-                            : 'rgba(246,71,95,0.18)',
+                        borderColor: 'divider',
+                        overflow: 'hidden',
+                        bgcolor: 'background.paper',
                       }}
                     >
+                      {/* Header */}
                       <Box
                         sx={{
+                          px: 2.5,
+                          py: 1.5,
                           display: 'flex',
                           alignItems: 'center',
                           gap: 1,
-                          mb: 1.5,
+                          borderBottom: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: (t) =>
+                            t.palette.mode === 'dark'
+                              ? 'rgba(255,255,255,0.03)'
+                              : 'rgba(0,0,0,0.02)',
                         }}
                       >
-                        <Star sx={{ fontSize: 18, color: 'primary.main' }} />
-                        <Typography variant="subtitle2" fontWeight={700}>
+                        <Star sx={{ fontSize: 15, color: 'primary.main' }} />
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight={700}
+                          sx={{ letterSpacing: 0.1 }}
+                        >
                           Informations supplémentaires
                         </Typography>
                       </Box>
 
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 1.25,
-                        }}
-                      >
+                      <Box sx={{ px: 2.5, py: 1.5 }}>
                         {ad.deposit_amount && (
                           <Box
                             sx={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: 1.25,
+                              justifyContent: 'space-between',
+                              py: 1.1,
+                              borderBottom: '1px solid',
+                              borderColor: 'divider',
                             }}
                           >
-                            <AccountBalanceWallet
-                              sx={{ fontSize: 17, color: 'text.secondary' }}
-                            />
-                            <Typography variant="body2">
-                              Dépôt de garantie:{' '}
-                              <strong>{ad.deposit_amount}</strong>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <AccountBalanceWallet
+                                sx={{ fontSize: 15, color: 'text.disabled' }}
+                              />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Dépôt de garantie
+                              </Typography>
+                            </Box>
+                            <Typography variant="body2" fontWeight={600}>
+                              {ad.deposit_amount}
                             </Typography>
                           </Box>
                         )}
@@ -2398,86 +2672,341 @@ function AdDetailContent() {
                             sx={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: 1.25,
+                              justifyContent: 'space-between',
+                              py: 1.1,
+                              borderBottom:
+                                ad.charges_eau ||
+                                ad.charges_electricite ||
+                                ad.charges_autres ||
+                                ad.charges_forfaitaires ||
+                                ad.detailed_charges ||
+                                ad.property_condition_pdf
+                                  ? '1px solid'
+                                  : 'none',
+                              borderColor: 'divider',
                             }}
                           >
-                            <CalendarMonth
-                              sx={{ fontSize: 17, color: 'text.secondary' }}
-                            />
-                            <Typography variant="body2">
-                              Durée minimum:{' '}
-                              <strong>{ad.minimum_lease_duration}</strong>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <CalendarMonth
+                                sx={{ fontSize: 15, color: 'text.disabled' }}
+                              />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Durée minimum
+                              </Typography>
+                            </Box>
+                            <Typography variant="body2" fontWeight={600}>
+                              {ad.minimum_lease_duration}
                             </Typography>
                           </Box>
                         )}
-                        {ad.detailed_charges && (
-                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25 }}>
-                            <ReceiptLong sx={{ fontSize: 17, color: 'text.secondary', mt: 0.3 }} />
-                            <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
-                              Charges détaillées: <strong>{ad.detailed_charges}</strong>
+
+                        {(ad.charges_eau ||
+                          ad.charges_electricite ||
+                          ad.charges_autres ||
+                          ad.charges_forfaitaires ||
+                          ad.detailed_charges) && (
+                          <Box sx={{ pt: 1.25 }}>
+                            <Typography
+                              variant="caption"
+                              fontWeight={700}
+                              color="text.disabled"
+                              sx={{
+                                textTransform: 'uppercase',
+                                letterSpacing: 0.8,
+                                display: 'block',
+                                mb: 0.75,
+                              }}
+                            >
+                              Charges
                             </Typography>
-                          </Box>
-                        )}
-                        {(ad.charges_eau || ad.charges_electricite || ad.charges_autres || ad.charges_forfaitaires) && (
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, pl: 0.5 }}>
-                            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                              Détail des charges
-                            </Typography>
-                            {ad.charges_forfaitaires && ad.charges_montant_forfait && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                                <ReceiptLong sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                <Typography variant="body2">
-                                  Charges forfaitaires: <strong>{Number(ad.charges_montant_forfait).toLocaleString('fr-FR')} XOF/mois</strong>
+                            {ad.detailed_charges && (
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'flex-start',
+                                  py: 0.9,
+                                  borderBottom: '1px solid',
+                                  borderColor: 'divider',
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                  }}
+                                >
+                                  <ReceiptLong
+                                    sx={{
+                                      fontSize: 14,
+                                      color: 'text.disabled',
+                                    }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    Détail
+                                  </Typography>
+                                </Box>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  sx={{
+                                    textAlign: 'right',
+                                    maxWidth: '60%',
+                                    whiteSpace: 'pre-line',
+                                  }}
+                                >
+                                  {ad.detailed_charges}
                                 </Typography>
                               </Box>
                             )}
+                            {ad.charges_forfaitaires &&
+                              ad.charges_montant_forfait && (
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    py: 0.9,
+                                    borderBottom: '1px solid',
+                                    borderColor: 'divider',
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 1,
+                                    }}
+                                  >
+                                    <ReceiptLong
+                                      sx={{ fontSize: 14, color: '#64748B' }}
+                                    />
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                    >
+                                      Forfait mensuel
+                                    </Typography>
+                                  </Box>
+                                  <Typography variant="body2" fontWeight={600}>
+                                    {Number(
+                                      ad.charges_montant_forfait
+                                    ).toLocaleString('fr-FR')}{' '}
+                                    XOF/mois
+                                  </Typography>
+                                </Box>
+                              )}
                             {ad.charges_eau && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                                <WaterDrop sx={{ fontSize: 16, color: 'primary.main' }} />
-                                <Typography variant="body2">
-                                  Eau: <strong>{Number(ad.charges_eau).toLocaleString('fr-FR')} XOF/mois</strong>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  py: 0.9,
+                                  borderBottom: '1px solid',
+                                  borderColor: 'divider',
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                  }}
+                                >
+                                  <WaterDrop
+                                    sx={{ fontSize: 14, color: '#3B82F6' }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    Eau
+                                  </Typography>
+                                </Box>
+                                <Typography variant="body2" fontWeight={600}>
+                                  {Number(ad.charges_eau).toLocaleString(
+                                    'fr-FR'
+                                  )}{' '}
+                                  XOF/mois
                                 </Typography>
                               </Box>
                             )}
                             {ad.charges_electricite && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                                <Bolt sx={{ fontSize: 16, color: 'warning.main' }} />
-                                <Typography variant="body2">
-                                  Électricité: <strong>{Number(ad.charges_electricite).toLocaleString('fr-FR')} XOF/mois</strong>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  py: 0.9,
+                                  borderBottom:
+                                    ad.charges_autres ||
+                                    ad.property_condition_pdf
+                                      ? '1px solid'
+                                      : 'none',
+                                  borderColor: 'divider',
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                  }}
+                                >
+                                  <Bolt
+                                    sx={{ fontSize: 14, color: '#F59E0B' }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    Électricité
+                                  </Typography>
+                                </Box>
+                                <Typography variant="body2" fontWeight={600}>
+                                  {Number(
+                                    ad.charges_electricite
+                                  ).toLocaleString('fr-FR')}{' '}
+                                  XOF/mois
                                 </Typography>
                               </Box>
                             )}
                             {ad.charges_autres && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                                <ReceiptLong sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                <Typography variant="body2">
-                                  Autres charges: <strong>{ad.charges_autres}</strong>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'flex-start',
+                                  py: 0.9,
+                                  borderBottom: ad.property_condition_pdf
+                                    ? '1px solid'
+                                    : 'none',
+                                  borderColor: 'divider',
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <ReceiptLong
+                                    sx={{ fontSize: 14, color: '#64748B' }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    Autres
+                                  </Typography>
+                                </Box>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  sx={{
+                                    textAlign: 'right',
+                                    maxWidth: '65%',
+                                    whiteSpace: 'pre-line',
+                                  }}
+                                >
+                                  {ad.charges_autres}
                                 </Typography>
                               </Box>
                             )}
                           </Box>
                         )}
+
                         {ad.property_condition_pdf && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                            <Description sx={{ fontSize: 17, color: 'text.secondary' }} />
-                            <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1.5,
+                              pt: 1.5,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 32,
+                                height: 32,
+                                borderRadius: 1.5,
+                                bgcolor: 'rgba(239,68,68,0.08)',
+                                flexShrink: 0,
+                              }}
+                            >
+                              <Description
+                                sx={{ fontSize: 15, color: '#EF4444' }}
+                              />
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ fontWeight: 500 }}
+                              >
+                                État des lieux (PDF)
+                              </Typography>
+                            </Box>
+                            <Box
+                              sx={{ display: 'flex', gap: 0.75, flexShrink: 0 }}
+                            >
                               <Button
-                                variant="text"
+                                variant="outlined"
                                 size="small"
+                                component="a"
                                 href={ad.property_condition_pdf}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                sx={{ p: 0, minWidth: 0, fontWeight: 600, color: 'primary.main', textTransform: 'none', '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' } }}
+                                sx={{
+                                  textTransform: 'none',
+                                  fontWeight: 600,
+                                  fontSize: '0.72rem',
+                                  borderRadius: 1.5,
+                                  py: 0.4,
+                                  px: 1.25,
+                                  borderColor: 'divider',
+                                  color: 'text.primary',
+                                  '&:hover': { borderColor: 'text.secondary' },
+                                }}
                               >
-                                Visualiser l&apos;état des lieux
+                                Voir
                               </Button>
-                              <Typography variant="body2" color="text.secondary">·</Typography>
                               <Button
-                                variant="text"
+                                variant="outlined"
                                 size="small"
+                                component="a"
                                 href={ad.property_condition_pdf + '?download=1'}
                                 download
-                                sx={{ p: 0, minWidth: 0, fontWeight: 600, color: 'primary.main', textTransform: 'none', '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' } }}
+                                sx={{
+                                  textTransform: 'none',
+                                  fontWeight: 600,
+                                  fontSize: '0.72rem',
+                                  borderRadius: 1.5,
+                                  py: 0.4,
+                                  px: 1.25,
+                                  borderColor: 'divider',
+                                  color: 'text.primary',
+                                  '&:hover': { borderColor: 'text.secondary' },
+                                }}
                               >
                                 Télécharger
                               </Button>
@@ -2679,7 +3208,7 @@ function AdDetailContent() {
                             </IconButton>
                           </Box>
                           <Box
-                            sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}
+                            sx={{ display: 'flex', gap: 1, flexWrap: 'nowrap' }}
                           >
                             {publisherHasWhatsApp && whatsappNumber && (
                               <Button
@@ -2694,9 +3223,11 @@ function AdDetailContent() {
                                   fontWeight: 600,
                                   bgcolor: '#0D9488',
                                   '&:hover': { bgcolor: '#128C7E' },
+                                  flex: 1,
+                                  minWidth: 0,
                                 }}
                               >
-                                WhatsApp — Contactez en 1 clic
+                                WhatsApp
                               </Button>
                             )}
                             <Button
@@ -2709,6 +3240,8 @@ function AdDetailContent() {
                                 fontWeight: 600,
                                 bgcolor: 'primary.main',
                                 '&:hover': { bgcolor: 'primary.dark' },
+                                flex: 1,
+                                minWidth: 0,
                               }}
                             >
                               Appeler

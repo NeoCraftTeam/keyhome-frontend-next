@@ -17,6 +17,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { Ad, TourHotspot } from '@/types';
 import type { TourScene } from './types';
@@ -30,8 +31,13 @@ interface AdFormTourProps {
   tourScenes: TourScene[];
   ad?: Ad | null;
   errors: Record<string, string>;
+  defaultExpanded?: boolean;
   onAddScene: () => void;
-  onUpdateScene: (index: number, field: keyof TourScene, value: TourScene[keyof TourScene]) => void;
+  onUpdateScene: (
+    index: number,
+    field: keyof TourScene,
+    value: TourScene[keyof TourScene]
+  ) => void;
   onRemoveScene: (index: number) => void;
 }
 
@@ -42,10 +48,13 @@ export default function AdFormTour({
   onAddScene,
   onUpdateScene,
   onRemoveScene,
+  defaultExpanded: defaultExpanded_,
 }: AdFormTourProps) {
+  const [open, setOpen] = useState(defaultExpanded_ ?? !!ad?.has_3d_tour);
   return (
     <Accordion
-      defaultExpanded={!!(ad?.has_3d_tour)}
+      expanded={open}
+      onChange={(_, v) => setOpen(v)}
       sx={{
         borderRadius: '12px !important',
         border: '1px solid',
@@ -55,7 +64,15 @@ export default function AdFormTour({
       }}
     >
       <AccordionSummary expandIcon={<ExpandIcon />}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography
+          variant="subtitle1"
+          sx={{
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
           <TourIcon sx={{ color: 'primary.main', fontSize: 22 }} />
           Visite Virtuelle 3D
         </Typography>
@@ -88,34 +105,72 @@ export default function AdFormTour({
                   🤖 Android — Google Camera (Recommandé)
                 </Typography>
                 <Typography variant="body2" component="ol" sx={{ pl: 2, m: 0 }}>
-                  <li>Téléchargez <strong>Google Camera</strong> depuis le Play Store</li>
-                  <li>Appuyez sur <strong>Plus</strong> → <strong>Photo Sphere</strong></li>
-                  <li>Placez-vous <strong>au centre exact</strong> de la pièce</li>
-                  <li>Suivez les cercles blancs en tournant <strong>lentement</strong> à 360°</li>
+                  <li>
+                    Téléchargez <strong>Google Camera</strong> depuis le Play
+                    Store
+                  </li>
+                  <li>
+                    Appuyez sur <strong>Plus</strong> →{' '}
+                    <strong>Photo Sphere</strong>
+                  </li>
+                  <li>
+                    Placez-vous <strong>au centre exact</strong> de la pièce
+                  </li>
+                  <li>
+                    Suivez les cercles blancs en tournant{' '}
+                    <strong>lentement</strong> à 360°
+                  </li>
                 </Typography>
               </Alert>
 
               <Alert severity="info" sx={{ borderRadius: 2 }}>
-                <Typography variant="body2" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography
+                  variant="body2"
+                  fontWeight={600}
+                  gutterBottom
+                  sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                >
                   <LightbulbIcon sx={{ fontSize: 18 }} /> iPhone (iOS 14+)
                 </Typography>
                 <Typography variant="body2" component="ol" sx={{ pl: 2, m: 0 }}>
-                  <li>App <strong>Appareil Photo</strong> → mode <strong>Panorama</strong></li>
-                  <li>Faites un panorama <strong>complet à 360°</strong></li>
-                  <li>Alternative : app <strong>Panorama 360</strong> sur l&apos;App Store</li>
+                  <li>
+                    App <strong>Appareil Photo</strong> → mode{' '}
+                    <strong>Panorama</strong>
+                  </li>
+                  <li>
+                    Faites un panorama <strong>complet à 360°</strong>
+                  </li>
+                  <li>
+                    Alternative : app <strong>Panorama 360</strong> sur
+                    l&apos;App Store
+                  </li>
                 </Typography>
               </Alert>
 
               <Alert severity="warning" sx={{ borderRadius: 2 }}>
-                <Typography variant="body2" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography
+                  variant="body2"
+                  fontWeight={600}
+                  gutterBottom
+                  sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                >
                   <LightbulbIcon sx={{ fontSize: 18 }} />
                   Conseils
                 </Typography>
                 <Typography variant="body2" component="ul" sx={{ pl: 2, m: 0 }}>
-                  <li>Prenez vos photos en <strong>pleine lumière</strong></li>
-                  <li>Placez-vous au <strong>centre exact</strong> de chaque pièce</li>
-                  <li>Faites <strong>une photo par pièce</strong></li>
-                  <li>Format : <strong>JPG ou WEBP</strong>, max <strong>30 Mo</strong></li>
+                  <li>
+                    Prenez vos photos en <strong>pleine lumière</strong>
+                  </li>
+                  <li>
+                    Placez-vous au <strong>centre exact</strong> de chaque pièce
+                  </li>
+                  <li>
+                    Faites <strong>une photo par pièce</strong>
+                  </li>
+                  <li>
+                    Format : <strong>JPG ou WEBP</strong>, max{' '}
+                    <strong>30 Mo</strong>
+                  </li>
                 </Typography>
               </Alert>
             </Box>
@@ -125,8 +180,9 @@ export default function AdFormTour({
         {/* Existing tour indicator */}
         {ad?.has_3d_tour && tourScenes.length === 0 && (
           <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
-            Ce bien possède déjà un tour 3D avec {ad.tour_scenes_count ?? '?'} scènes.
-            Ajoutez de nouvelles scènes ci-dessous pour les ajouter au tour existant.
+            Ce bien possède déjà un tour 3D avec {ad.tour_scenes_count ?? '?'}{' '}
+            scènes. Ajoutez de nouvelles scènes ci-dessous pour les ajouter au
+            tour existant.
           </Alert>
         )}
 
@@ -140,7 +196,11 @@ export default function AdFormTour({
                 p: 2,
                 borderRadius: 2,
                 border: '1px solid',
-                borderColor: errors[`tour_scene_${i}_title`] || errors[`tour_scene_${i}_file`] ? 'error.main' : 'divider',
+                borderColor:
+                  errors[`tour_scene_${i}_title`] ||
+                  errors[`tour_scene_${i}_file`]
+                    ? 'error.main'
+                    : 'divider',
                 display: 'flex',
                 flexDirection: { xs: 'column', sm: 'row' },
                 gap: 2,
@@ -172,7 +232,12 @@ export default function AdFormTour({
                     variant="text"
                     component="label"
                     size="small"
-                    sx={{ textTransform: 'none', color: 'text.secondary', flexDirection: 'column', gap: 0.5 }}
+                    sx={{
+                      textTransform: 'none',
+                      color: 'text.secondary',
+                      flexDirection: 'column',
+                      gap: 0.5,
+                    }}
                   >
                     <Add360Icon sx={{ fontSize: 28 }} />
                     <Typography variant="caption">Photo 360°</Typography>
@@ -190,7 +255,14 @@ export default function AdFormTour({
               </Box>
 
               {/* Fields */}
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                }}
+              >
                 <TextField
                   size="small"
                   label="Nom de la pièce"
@@ -206,7 +278,11 @@ export default function AdFormTour({
                     variant="outlined"
                     component="label"
                     size="small"
-                    sx={{ alignSelf: 'flex-start', textTransform: 'none', borderRadius: 1.5 }}
+                    sx={{
+                      alignSelf: 'flex-start',
+                      textTransform: 'none',
+                      borderRadius: 1.5,
+                    }}
                   >
                     Changer la photo
                     <input
@@ -221,14 +297,18 @@ export default function AdFormTour({
                   </Button>
                 )}
                 {errors[`tour_scene_${i}_file`] && (
-                  <Typography variant="caption" color="error">{errors[`tour_scene_${i}_file`]}</Typography>
+                  <Typography variant="caption" color="error">
+                    {errors[`tour_scene_${i}_file`]}
+                  </Typography>
                 )}
 
                 {/* Hotspots Editor */}
                 <AdTourHotspotEditor
                   scene={scene}
                   allScenes={tourScenes}
-                  onUpdateHotspots={(hotspots: TourHotspot[]) => onUpdateScene(i, 'hotspots', hotspots)}
+                  onUpdateHotspots={(hotspots: TourHotspot[]) =>
+                    onUpdateScene(i, 'hotspots', hotspots)
+                  }
                 />
               </Box>
 
@@ -236,7 +316,10 @@ export default function AdFormTour({
               <IconButton
                 onClick={() => onRemoveScene(i)}
                 size="small"
-                sx={{ color: 'text.secondary', alignSelf: { xs: 'flex-end', sm: 'center' } }}
+                sx={{
+                  color: 'text.secondary',
+                  alignSelf: { xs: 'flex-end', sm: 'center' },
+                }}
               >
                 <DeleteIcon />
               </IconButton>

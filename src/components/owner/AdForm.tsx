@@ -67,6 +67,7 @@ interface AdFormProps {
       imagesToDelete?: number[];
       tourScenes?: TourScene[];
       propertyConditionPdf?: File | null;
+      idempotencyKey?: string;
     }
   ) => Promise<void>;
   onCancel?: () => void;
@@ -74,6 +75,10 @@ interface AdFormProps {
   isSubmitting?: boolean;
   onEnhanceDescription?: (description: string) => Promise<string>;
   stepperMode?: boolean;
+}
+
+function generateIdempotencyKey(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 export default function AdForm({
@@ -89,6 +94,7 @@ export default function AdForm({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [activeStep, setActiveStep] = useState(0);
+  const idempotencyKeyRef = useRef<string>(generateIdempotencyKey());
   const [values, setValues] = useState<AdFormValues>(() => ({
     ...initialValues,
     ...initialData,
@@ -404,19 +410,26 @@ export default function AdForm({
     const e: Record<string, string> = {};
     if (step === 0) {
       if (!values.title.trim()) e.title = 'Le titre est obligatoire.';
-      if (!values.description.trim()) e.description = 'La description est obligatoire.';
-      if (!values.type_id) e.type_id = "Le type d'annonce est obligatoire.";
+      if (!values.description.trim())
+        e.description = 'La description est obligatoire.';
     } else if (step === 1) {
+      if (!values.type_id) e.type_id = "Le type d'annonce est obligatoire.";
       if (!values.quarter_id) e.quarter_id = 'Le quartier est obligatoire.';
     } else if (step === 2) {
-      if (!values.price || parseFloat(values.price) < 0) e.price = 'Le prix est obligatoire.';
-      if (!values.surface_area || parseFloat(values.surface_area) <= 0) e.surface_area = 'La surface est obligatoire.';
-      if (parseInt(values.bedrooms, 10) < 0) e.bedrooms = 'Nombre de chambres invalide.';
-      if (parseInt(values.bathrooms, 10) < 0) e.bathrooms = 'Nombre de salles de bain invalide.';
+      if (!values.price || parseFloat(values.price) < 0)
+        e.price = 'Le prix est obligatoire.';
+      if (!values.surface_area || parseFloat(values.surface_area) <= 0)
+        e.surface_area = 'La surface est obligatoire.';
+      if (parseInt(values.bedrooms, 10) < 0)
+        e.bedrooms = 'Nombre de chambres invalide.';
+      if (parseInt(values.bathrooms, 10) < 0)
+        e.bathrooms = 'Nombre de salles de bain invalide.';
     } else if (step === 4) {
       tourScenes.forEach((scene, i) => {
-        if (!scene.title.trim()) e[`tour_scene_${i}_title`] = 'Nom de la pièce obligatoire.';
-        if (!scene.file && !ad?.has_3d_tour) e[`tour_scene_${i}_file`] = 'Photo 360° obligatoire.';
+        if (!scene.title.trim())
+          e[`tour_scene_${i}_title`] = 'Nom de la pièce obligatoire.';
+        if (!scene.file && !ad?.has_3d_tour)
+          e[`tour_scene_${i}_file`] = 'Photo 360° obligatoire.';
       });
     }
     setErrors(e);
@@ -468,6 +481,7 @@ export default function AdForm({
       imagesToDelete: imagesToDelete.length > 0 ? imagesToDelete : undefined,
       tourScenes: tourScenes.length > 0 ? tourScenes : undefined,
       propertyConditionPdf,
+      idempotencyKey: idempotencyKeyRef.current,
     });
     clearDraft();
   };
@@ -484,7 +498,13 @@ export default function AdForm({
       case 0:
         return (
           <>
-            <AdFormBasicInfo values={values} update={update} errors={errors} enhancing={enhancing} onEnhance={onEnhanceDescription ? handleEnhance : null} />
+            <AdFormBasicInfo
+              values={values}
+              update={update}
+              errors={errors}
+              enhancing={enhancing}
+              onEnhance={onEnhanceDescription ? handleEnhance : null}
+            />
             <AdFormPhotos
               imagePreviewUrls={imagePreviewUrls}
               existingImages={ad?.images}
@@ -494,13 +514,32 @@ export default function AdForm({
               errors={errors}
               onImageChange={handleImageChange}
               onRemoveImage={removeImage}
-              onDeleteExistingImage={(id) => setImagesToDelete((prev) => [...prev, id])}
+              onDeleteExistingImage={(id) =>
+                setImagesToDelete((prev) => [...prev, id])
+              }
               onOpenLightbox={openPhotoLightbox}
             />
             {(isCompressing || compressionSaved) && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1 }}>
-                {isCompressing && (<><CircularProgress size={14} /><Typography variant="caption" color="text.secondary">Optimisation des images...</Typography></>)}
-                {!isCompressing && compressionSaved && (<Typography variant="caption" color="success.main" fontWeight={600}>✓ {compressionSaved}</Typography>)}
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1 }}
+              >
+                {isCompressing && (
+                  <>
+                    <CircularProgress size={14} />
+                    <Typography variant="caption" color="text.secondary">
+                      Optimisation des images...
+                    </Typography>
+                  </>
+                )}
+                {!isCompressing && compressionSaved && (
+                  <Typography
+                    variant="caption"
+                    color="success.main"
+                    fontWeight={600}
+                  >
+                    ✓ {compressionSaved}
+                  </Typography>
+                )}
               </Box>
             )}
           </>
@@ -508,7 +547,27 @@ export default function AdForm({
       case 1:
         return (
           <>
-            <AdFormLocation values={values} update={update} errors={errors} cities={cities} quarters={quarters} adTypes={adTypes} selectedCity={selectedCity} selectedQuarter={selectedQuarter} cityInput={cityInput} quarterInput={quarterInput} isCitiesLoading={isCitiesLoading} isQuartersLoading={isQuartersLoading} onCityInputChange={setCityInput} onCityChange={handleCityChange} onQuarterInputChange={setQuarterInput} onQuarterChange={setSelectedQuarter} citySlotProps={citySlotProps} renderCityOption={renderCityOption} cityInputSx={cityInputSx} />
+            <AdFormLocation
+              values={values}
+              update={update}
+              errors={errors}
+              cities={cities}
+              quarters={quarters}
+              adTypes={adTypes}
+              selectedCity={selectedCity}
+              selectedQuarter={selectedQuarter}
+              cityInput={cityInput}
+              quarterInput={quarterInput}
+              isCitiesLoading={isCitiesLoading}
+              isQuartersLoading={isQuartersLoading}
+              onCityInputChange={setCityInput}
+              onCityChange={handleCityChange}
+              onQuarterInputChange={setQuarterInput}
+              onQuarterChange={setSelectedQuarter}
+              citySlotProps={citySlotProps}
+              renderCityOption={renderCityOption}
+              cityInputSx={cityInputSx}
+            />
             <AdFormMapLocation values={values} update={update} />
           </>
         );
@@ -516,20 +575,39 @@ export default function AdForm({
         return (
           <>
             <AdFormFeatures values={values} update={update} errors={errors} />
-            <AdFormEquipment values={values} update={update} autocompleteOptions={autocompleteOptions} />
+            <AdFormEquipment
+              values={values}
+              update={update}
+              autocompleteOptions={autocompleteOptions}
+            />
           </>
         );
       case 3:
         return (
           <>
             <AdFormPriceAdvisor values={values} cityId={selectedCity?.id} />
-            <AdFormPremiumInfo values={values} update={update} defaultExpanded={!!(initialData?.deposit_amount || initialData?.minimum_lease_duration)} propertyConditionPdf={propertyConditionPdf} onPdfChange={setPropertyConditionPdf} />
+            <AdFormPremiumInfo
+              values={values}
+              update={update}
+              defaultExpanded={true}
+              propertyConditionPdf={propertyConditionPdf}
+              onPdfChange={setPropertyConditionPdf}
+              existingPdfUrl={ad?.property_condition_pdf ?? undefined}
+            />
           </>
         );
       case 4:
         return (
           <>
-            <AdFormTour tourScenes={tourScenes} ad={ad} errors={errors} onAddScene={addTourScene} onUpdateScene={updateTourScene} onRemoveScene={removeTourScene} />
+            <AdFormTour
+              tourScenes={tourScenes}
+              ad={ad}
+              errors={errors}
+              defaultExpanded={true}
+              onAddScene={addTourScene}
+              onUpdateScene={updateTourScene}
+              onRemoveScene={removeTourScene}
+            />
             <AdFormBoost values={values} update={update} />
           </>
         );
@@ -574,36 +652,87 @@ export default function AdForm({
         </Box>
 
         {/* ═══ Stepper navigation ═══ */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 4, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mt: 4,
+            pt: 2,
+            borderTop: '1px solid',
+            borderColor: 'divider',
+          }}
+        >
           {savedAt && (
-            <Typography variant="caption" color="text.disabled" sx={{ mr: 'auto', alignSelf: 'center', display: { xs: 'none', sm: 'block' } }}>
-              Brouillon sauvegardé à {savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            <Typography
+              variant="caption"
+              color="text.disabled"
+              sx={{
+                mr: 'auto',
+                alignSelf: 'center',
+                display: { xs: 'none', sm: 'block' },
+              }}
+            >
+              Brouillon sauvegardé à{' '}
+              {savedAt.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
             </Typography>
           )}
           <Box sx={{ display: 'flex', gap: 1.5, ml: 'auto' }}>
             {activeStep > 0 && (
-              <Button type="button" onClick={handleBack} startIcon={<ArrowBack />} sx={{ borderRadius: 2 }}>
+              <Button
+                type="button"
+                onClick={handleBack}
+                startIcon={<ArrowBack />}
+                sx={{ borderRadius: 2 }}
+              >
                 Retour
               </Button>
             )}
             {onCancel && activeStep === 0 && (
-              <Button type="button" onClick={onCancel} disabled={isSubmitting} sx={{ borderRadius: 2 }}>
+              <Button
+                type="button"
+                onClick={onCancel}
+                disabled={isSubmitting}
+                sx={{ borderRadius: 2 }}
+              >
                 Annuler
               </Button>
             )}
             {activeStep < STEPS.length - 1 ? (
-              <Button type="button" variant="contained" onClick={handleNext} endIcon={<ArrowForward />} sx={{ borderRadius: 2, fontWeight: 700, px: 3 }}>
+              <Button
+                type="button"
+                variant="contained"
+                onClick={handleNext}
+                endIcon={<ArrowForward />}
+                sx={{ borderRadius: 2, fontWeight: 700, px: 3 }}
+              >
                 Suivant
               </Button>
             ) : (
-              <Button type="submit" variant="contained" disabled={isSubmitting || isCompressing} startIcon={isSubmitting ? <CircularProgress size={18} /> : <Check />} sx={{ borderRadius: 2, fontWeight: 700, px: 4, py: 1.25 }}>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isSubmitting || isCompressing}
+                startIcon={
+                  isSubmitting ? <CircularProgress size={18} /> : <Check />
+                }
+                sx={{ borderRadius: 2, fontWeight: 700, px: 4, py: 1.25 }}
+              >
                 {submitLabel}
               </Button>
             )}
           </Box>
         </Box>
 
-        <ImageLightbox images={lightboxImages} open={photoLightboxOpen} initialIndex={photoLightboxIndex} onClose={() => setPhotoLightboxOpen(false)} />
+        <ImageLightbox
+          images={lightboxImages}
+          open={photoLightboxOpen}
+          initialIndex={photoLightboxIndex}
+          onClose={() => setPhotoLightboxOpen(false)}
+        />
       </form>
     );
   }
@@ -696,6 +825,7 @@ export default function AdForm({
           }
           propertyConditionPdf={propertyConditionPdf}
           onPdfChange={setPropertyConditionPdf}
+          existingPdfUrl={ad?.property_condition_pdf ?? undefined}
         />
 
         <AdFormTour
