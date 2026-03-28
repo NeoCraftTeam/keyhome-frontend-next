@@ -1,14 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import axios from 'axios';
 
 // Mock auth-token before importing api so the interceptor uses our mock
 vi.mock('@/lib/auth-token', () => ({
   getAuthToken: vi.fn(),
 }));
 
-import api from '@/lib/api';
+import api, { ensureCsrfCookie, resetCsrfState } from '@/lib/api';
 import { getAuthToken } from '@/lib/auth-token';
+import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 const mockedGetAuthToken = vi.mocked(getAuthToken);
+
+/**
+ * Axios interceptor handlers are private — accessing them requires
+ * reaching into internals. This type makes the cast explicit.
+ */
+interface InterceptorManager {
+  handlers: Array<{
+    fulfilled?: (value: unknown) => unknown;
+    rejected?: (error: unknown) => unknown;
+  }>;
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -59,7 +72,8 @@ describe('api (Axios instance)', () => {
       };
 
       // Execute request interceptors
-      const interceptor = api.interceptors.request as any;
+      const interceptor = api.interceptors
+        .request as unknown as InterceptorManager;
       const handlers = interceptor.handlers;
       expect(handlers.length).toBeGreaterThan(0);
 
@@ -85,7 +99,8 @@ describe('api (Axios instance)', () => {
       };
       const config = { headers };
 
-      const interceptor = api.interceptors.request as any;
+      const interceptor = api.interceptors
+        .request as unknown as InterceptorManager;
       const handlers = interceptor.handlers;
       const fulfilledHandler = handlers[0]?.fulfilled;
       if (fulfilledHandler) {
@@ -99,7 +114,8 @@ describe('api (Axios instance)', () => {
     // BUG CATCH: If the response interceptor swallows errors, error handling
     // throughout the app (toasts, redirects, retry logic) breaks silently.
     it('has a response error interceptor that rejects', () => {
-      const interceptor = api.interceptors.response as any;
+      const interceptor = api.interceptors
+        .response as unknown as InterceptorManager;
       const handlers = interceptor.handlers;
       expect(handlers.length).toBeGreaterThan(0);
 
@@ -112,7 +128,8 @@ describe('api (Axios instance)', () => {
     it('does NOT dispatch kh:auth-expired for 401 on auth routes', async () => {
       const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
 
-      const interceptor = api.interceptors.response as any;
+      const interceptor = api.interceptors
+        .response as unknown as InterceptorManager;
       const rejectedHandler = interceptor.handlers[0]?.rejected;
 
       const authError = Object.assign(new Error('Unauthorized'), {
@@ -123,7 +140,7 @@ describe('api (Axios instance)', () => {
 
       await rejectedHandler(authError).catch(() => {});
       const authExpiredCalls = dispatchSpy.mock.calls.filter(
-        (call) => (call[0] as CustomEvent).type === 'kh:auth-expired',
+        (call) => (call[0] as CustomEvent).type === 'kh:auth-expired'
       );
       expect(authExpiredCalls).toHaveLength(0);
       dispatchSpy.mockRestore();
@@ -135,7 +152,8 @@ describe('api (Axios instance)', () => {
     it('dispatches kh:rate-limited when API returns 429', async () => {
       const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
 
-      const interceptor = api.interceptors.response as any;
+      const interceptor = api.interceptors
+        .response as unknown as InterceptorManager;
       const rejectedHandler = interceptor.handlers[0]?.rejected;
 
       const rateLimitError = Object.assign(new Error('Too Many Requests'), {
@@ -150,7 +168,7 @@ describe('api (Axios instance)', () => {
       await rejectedHandler(rateLimitError).catch(() => {});
 
       const rateLimitedCalls = dispatchSpy.mock.calls.filter(
-        (call) => (call[0] as CustomEvent).type === 'kh:rate-limited',
+        (call) => (call[0] as CustomEvent).type === 'kh:rate-limited'
       );
       expect(rateLimitedCalls).toHaveLength(1);
       const event = rateLimitedCalls[0][0] as CustomEvent;
@@ -163,7 +181,8 @@ describe('api (Axios instance)', () => {
     it('sets retryAfter to null when retry-after header is absent', async () => {
       const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
 
-      const interceptor = api.interceptors.response as any;
+      const interceptor = api.interceptors
+        .response as unknown as InterceptorManager;
       const rejectedHandler = interceptor.handlers[0]?.rejected;
 
       const rateLimitError = Object.assign(new Error('Too Many Requests'), {
@@ -175,7 +194,7 @@ describe('api (Axios instance)', () => {
       await rejectedHandler(rateLimitError).catch(() => {});
 
       const event = dispatchSpy.mock.calls.find(
-        (call) => (call[0] as CustomEvent).type === 'kh:rate-limited',
+        (call) => (call[0] as CustomEvent).type === 'kh:rate-limited'
       )?.[0] as CustomEvent | undefined;
 
       expect(event).toBeDefined();
@@ -186,7 +205,8 @@ describe('api (Axios instance)', () => {
     // BUG CATCH: The interceptor must still reject after dispatching events,
     // otherwise callers never receive the error and their catch blocks are skipped.
     it('rejects the promise after dispatching kh:rate-limited', async () => {
-      const interceptor = api.interceptors.response as any;
+      const interceptor = api.interceptors
+        .response as unknown as InterceptorManager;
       const rejectedHandler = interceptor.handlers[0]?.rejected;
 
       const rateLimitError = Object.assign(new Error('Too Many Requests'), {
@@ -195,7 +215,134 @@ describe('api (Axios instance)', () => {
         isAxiosError: true,
       });
 
-      await expect(rejectedHandler(rateLimitError)).rejects.toThrow('Too Many Requests');
+      await expect(rejectedHandler(rateLimitError)).rejects.toThrow(
+        'Too Many Requests'
+      );
+    });
+  });
+
+  describe('CSRF 419 retry logic', () => {
+    // BUG CATCH: When the CSRF token expires mid-session, the server returns 419.
+    // Without automatic retry, the user sees a confusing "Page Expired" error.
+    it('retries request once after 419 by refetching CSRF cookie', async () => {
+      const interceptor = api.interceptors
+        .response as unknown as InterceptorManager;
+      const rejectedHandler = interceptor.handlers[0]?.rejected;
+
+      // Mock axios.get for CSRF cookie refetch
+      const axiosGetSpy = vi.spyOn(axios, 'get').mockResolvedValue({});
+
+      // Mock api.request to simulate successful retry
+      const apiRequestSpy = vi.spyOn(api, 'request').mockResolvedValue({
+        data: { success: true },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {} as InternalAxiosRequestConfig,
+      } as AxiosResponse);
+
+      const csrfError = Object.assign(new Error('CSRF token mismatch'), {
+        response: { status: 419, headers: {} },
+        config: {
+          url: '/payments/initialize/ad-123',
+          method: 'post',
+          headers: {},
+        },
+        isAxiosError: true,
+      });
+
+      const result = await rejectedHandler(csrfError);
+
+      // Should have called ensureCsrfCookie (which calls axios.get)
+      expect(axiosGetSpy).toHaveBeenCalled();
+      // Should have retried the original request
+      expect(apiRequestSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: '/payments/initialize/ad-123',
+          headers: expect.objectContaining({ 'x-csrf-retry': '1' }),
+        })
+      );
+      expect(result.data.success).toBe(true);
+
+      axiosGetSpy.mockRestore();
+      apiRequestSpy.mockRestore();
+    });
+
+    // BUG CATCH: Without this guard, a persistent 419 (e.g. misconfigured server)
+    // would cause an infinite retry loop, eventually crashing the browser tab.
+    it('does NOT retry a second time (prevents infinite loop)', async () => {
+      const interceptor = api.interceptors
+        .response as unknown as InterceptorManager;
+      const rejectedHandler = interceptor.handlers[0]?.rejected;
+
+      const retriedCsrfError = Object.assign(new Error('CSRF token mismatch'), {
+        response: { status: 419, headers: {} },
+        config: {
+          url: '/payments/initialize/ad-123',
+          method: 'post',
+          headers: { 'x-csrf-retry': '1' },
+        },
+        isAxiosError: true,
+      });
+
+      await expect(rejectedHandler(retriedCsrfError)).rejects.toThrow(
+        'CSRF token mismatch'
+      );
+    });
+
+    // BUG CATCH: If the CSRF retry also fails with 419, we need a clean rejection
+    // so the UI can show an appropriate error message.
+    it('rejects when CSRF cookie refetch fails', async () => {
+      const interceptor = api.interceptors
+        .response as unknown as InterceptorManager;
+      const rejectedHandler = interceptor.handlers[0]?.rejected;
+
+      // ensureCsrfCookie silently fails, but the retry itself fails
+      vi.spyOn(axios, 'get').mockRejectedValue(new Error('Network error'));
+      const apiRequestSpy = vi.spyOn(api, 'request').mockRejectedValue(
+        Object.assign(new Error('Still 419'), {
+          response: { status: 419, headers: {} },
+          config: { headers: { 'x-csrf-retry': '1' } },
+        })
+      );
+
+      const csrfError = Object.assign(new Error('CSRF token mismatch'), {
+        response: { status: 419, headers: {} },
+        config: {
+          url: '/ads',
+          method: 'post',
+          headers: {},
+        },
+        isAxiosError: true,
+      });
+
+      // ensureCsrfCookie swallows errors, but the retried request itself will be rejected
+      await expect(rejectedHandler(csrfError)).rejects.toThrow('Still 419');
+
+      apiRequestSpy.mockRestore();
+    });
+  });
+
+  describe('resetCsrfState', () => {
+    // BUG CATCH: If CSRF state isn't reset on logout, the next session
+    // reuses a stale cookie, causing 419 on the first write request.
+    it('is exported and callable', () => {
+      expect(typeof resetCsrfState).toBe('function');
+      expect(() => resetCsrfState()).not.toThrow();
+    });
+  });
+
+  describe('ensureCsrfCookie', () => {
+    // BUG CATCH: If ensureCsrfCookie isn't exported, the AuthProvider
+    // can't manually trigger CSRF prefetch before sensitive operations.
+    it('is exported and callable', async () => {
+      expect(typeof ensureCsrfCookie).toBe('function');
+      // It should resolve without throwing (even if the fetch itself fails)
+      const axiosGetSpy = vi
+        .spyOn(axios, 'get')
+        .mockRejectedValue(new Error('offline'));
+      await expect(ensureCsrfCookie()).resolves.not.toThrow();
+      axiosGetSpy.mockRestore();
     });
   });
 });
