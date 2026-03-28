@@ -18,8 +18,8 @@ const mockedGetAuthToken = vi.mocked(getAuthToken);
  */
 interface InterceptorManager {
   handlers: Array<{
-    fulfilled?: (value: unknown) => unknown;
-    rejected?: (error: unknown) => unknown;
+    fulfilled?: (value: unknown) => Promise<unknown>;
+    rejected?: (error: unknown) => Promise<unknown>;
   }>;
 }
 
@@ -80,8 +80,10 @@ describe('api (Axios instance)', () => {
       // Find the fulfilled handler (first interceptor)
       const fulfilledHandler = handlers[0]?.fulfilled;
       if (fulfilledHandler) {
-        const result = await fulfilledHandler(config);
-        expect(result.headers.Authorization).toBe('Bearer test-jwt-token');
+        const result = (await fulfilledHandler(
+          config
+        )) as InternalAxiosRequestConfig;
+        expect(result.headers?.Authorization).toBe('Bearer test-jwt-token');
       }
     });
 
@@ -104,8 +106,10 @@ describe('api (Axios instance)', () => {
       const handlers = interceptor.handlers;
       const fulfilledHandler = handlers[0]?.fulfilled;
       if (fulfilledHandler) {
-        const result = await fulfilledHandler(config);
-        expect(result.headers.Authorization).toBeUndefined();
+        const result = (await fulfilledHandler(
+          config
+        )) as InternalAxiosRequestConfig;
+        expect(result.headers?.Authorization).toBeUndefined();
       }
     });
   });
@@ -138,7 +142,7 @@ describe('api (Axios instance)', () => {
         isAxiosError: true,
       });
 
-      await rejectedHandler(authError).catch(() => {});
+      await rejectedHandler!(authError).catch(() => {});
       const authExpiredCalls = dispatchSpy.mock.calls.filter(
         (call) => (call[0] as CustomEvent).type === 'kh:auth-expired'
       );
@@ -165,7 +169,7 @@ describe('api (Axios instance)', () => {
         isAxiosError: true,
       });
 
-      await rejectedHandler(rateLimitError).catch(() => {});
+      await rejectedHandler!(rateLimitError).catch(() => {});
 
       const rateLimitedCalls = dispatchSpy.mock.calls.filter(
         (call) => (call[0] as CustomEvent).type === 'kh:rate-limited'
@@ -191,7 +195,7 @@ describe('api (Axios instance)', () => {
         isAxiosError: true,
       });
 
-      await rejectedHandler(rateLimitError).catch(() => {});
+      await rejectedHandler!(rateLimitError).catch(() => {});
 
       const event = dispatchSpy.mock.calls.find(
         (call) => (call[0] as CustomEvent).type === 'kh:rate-limited'
@@ -215,7 +219,7 @@ describe('api (Axios instance)', () => {
         isAxiosError: true,
       });
 
-      await expect(rejectedHandler(rateLimitError)).rejects.toThrow(
+      await expect(rejectedHandler!(rateLimitError)).rejects.toThrow(
         'Too Many Requests'
       );
     });
@@ -251,7 +255,7 @@ describe('api (Axios instance)', () => {
         isAxiosError: true,
       });
 
-      const result = await rejectedHandler(csrfError);
+      const result = (await rejectedHandler!(csrfError)) as AxiosResponse;
 
       // Should have called ensureCsrfCookie (which calls axios.get)
       expect(axiosGetSpy).toHaveBeenCalled();
@@ -285,7 +289,7 @@ describe('api (Axios instance)', () => {
         isAxiosError: true,
       });
 
-      await expect(rejectedHandler(retriedCsrfError)).rejects.toThrow(
+      await expect(rejectedHandler!(retriedCsrfError)).rejects.toThrow(
         'CSRF token mismatch'
       );
     });
@@ -317,7 +321,7 @@ describe('api (Axios instance)', () => {
       });
 
       // ensureCsrfCookie swallows errors, but the retried request itself will be rejected
-      await expect(rejectedHandler(csrfError)).rejects.toThrow('Still 419');
+      await expect(rejectedHandler!(csrfError)).rejects.toThrow('Still 419');
 
       apiRequestSpy.mockRestore();
     });
