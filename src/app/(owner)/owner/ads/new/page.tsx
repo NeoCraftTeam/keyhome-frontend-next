@@ -151,7 +151,7 @@ export default function OwnerNewAdPage() {
         Nouvelle annonce
       </Typography>
       <Typography color="text.secondary" sx={{ mb: 4 }}>
-        Remplissez les champs pour créer votre annonce.
+        Suivez les étapes pour publier votre annonce rapidement.
       </Typography>
       <Box>
         <AdForm
@@ -160,6 +160,7 @@ export default function OwnerNewAdPage() {
           submitLabel="Créer l'annonce"
           isSubmitting={createMutation.isPending}
           onEnhanceDescription={handleEnhance}
+          stepperMode
         />
       </Box>
     </Container>
