@@ -2,7 +2,6 @@
 
 import AdCard from '@/components/ads/AdCard';
 import ClientProfileBanner from '@/components/dashboard/ClientProfileBanner';
-import TestimonialsCarousel from '@/components/dashboard/TestimonialsCarousel';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import HeroSearch from '@/components/ads/HeroSearch';
 import FadeIn from '@/components/ui/FadeIn';
@@ -150,6 +149,7 @@ export default function HomePage() {
       }),
     placeholderData: keepPreviousData,
     staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const ads = adsData?.data || [];
@@ -817,15 +817,6 @@ export default function HomePage() {
                 </Box>
               )}
             </FadeIn>
-
-            {/* Témoignages — visible uniquement en vue "Tous" */}
-            {!selectedCategory && (
-              <Box
-                sx={{ mx: { xs: -2, sm: -3, md: -4 }, mt: { xs: 4, md: 5 } }}
-              >
-                <TestimonialsCarousel />
-              </Box>
-            )}
           </>
         )}
       </Container>
