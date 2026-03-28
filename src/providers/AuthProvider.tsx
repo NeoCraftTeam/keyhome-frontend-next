@@ -2,6 +2,17 @@
 
 import { registerTokenGetter } from '@/lib/auth-token';
 import { resetCsrfState } from '@/lib/api';
+import {
+  clearInMemoryToken,
+  clearRoleCookie,
+  clearSessionStorage,
+  getInMemoryToken,
+  hasAnySanctumInMemory,
+  migrateLegacyTokens,
+  persistInMemoryToken,
+  registerInMemoryGetter,
+  setRoleCookie,
+} from '@/lib/auth-session';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
@@ -23,77 +34,8 @@ import {
   useState,
 } from 'react';
 
-/**
- * In-memory token store — never persisted to localStorage (XSS-safe).
- * The httpOnly session cookie (withCredentials: true) is the primary auth mechanism.
- * This in-memory token is the Bearer fallback for cross-origin SPA→API scenarios.
- */
-let inMemoryToken: string | null = null;
-
-/** Legacy localStorage keys — cleared on migration, never written to again */
-const SANCTUM_TOKEN_KEY_CLIENT = 'kh_sanctum_token_client';
-const SANCTUM_TOKEN_KEY_OWNER = 'kh_sanctum_token_owner';
-const LEGACY_SANCTUM_TOKEN_KEY = 'kh_sanctum_token';
-
-/** Cookie used by the edge proxy to gate /owner routes */
-const ROLE_COOKIE = 'kh_role';
-const ROLE_COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days
-
-function setRoleCookie(role: string): void {
-  if (typeof document === 'undefined') {
-    return;
-  }
-  const isOwner = role === UserRole.AGENT || role === UserRole.ADMIN;
-  const path = isOwner ? '/owner' : '/';
-  document.cookie = `${ROLE_COOKIE}=${encodeURIComponent(role)}; path=${path}; SameSite=Lax; Max-Age=${ROLE_COOKIE_MAX_AGE}`;
-}
-
-function clearRoleCookie(): void {
-  if (typeof document === 'undefined') {
-    return;
-  }
-  // Clear both possible paths to ensure complete logout
-  document.cookie = `${ROLE_COOKIE}=; path=/; Max-Age=0; SameSite=Lax`;
-  document.cookie = `${ROLE_COOKIE}=; path=/owner; Max-Age=0; SameSite=Lax`;
-}
-
-function hasAnySanctumInMemory(): boolean {
-  return inMemoryToken !== null;
-}
-
-/**
- * One-time migration: move any legacy localStorage tokens to in-memory,
- * then delete them from localStorage permanently.
- */
-async function migrateLegacyTokens(): Promise<void> {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  const legacy =
-    localStorage.getItem(LEGACY_SANCTUM_TOKEN_KEY) ||
-    localStorage.getItem(SANCTUM_TOKEN_KEY_CLIENT) ||
-    localStorage.getItem(SANCTUM_TOKEN_KEY_OWNER);
-
-  // Always clean up localStorage regardless
-  localStorage.removeItem(LEGACY_SANCTUM_TOKEN_KEY);
-  localStorage.removeItem(SANCTUM_TOKEN_KEY_CLIENT);
-  localStorage.removeItem(SANCTUM_TOKEN_KEY_OWNER);
-
-  if (!legacy) {
-    return;
-  }
-
-  // Validate the legacy token before trusting it
-  registerTokenGetter(() => Promise.resolve(legacy));
-  try {
-    await authService.me();
-    inMemoryToken = legacy;
-  } catch {
-    // Invalid token — discard
-    inMemoryToken = null;
-  }
-}
+// Re-export for tests
+export { __resetModuleStateForTests } from '@/lib/auth-session';
 
 const LOGOUT_OVERLAY_DURATION_MS = 3500;
 const CLERK_SIGN_OUT_FALLBACK_MS = 1200;
@@ -141,22 +83,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     pathnameRef.current = pathname ?? null;
   }, [pathname]);
 
-  const registerInMemoryTokenGetter = useCallback(() => {
-    registerTokenGetter(async () => inMemoryToken);
-  }, []);
+  /* ── Session helpers ──────────────────────────────────────────── */
 
-  /** Persist a Sanctum token in-memory only (never localStorage). */
   const persistSession = useCallback((sanctumToken: string) => {
-    inMemoryToken = sanctumToken;
-    registerTokenGetter(() => Promise.resolve(sanctumToken));
+    persistInMemoryToken(sanctumToken);
     setToken(sanctumToken);
   }, []);
 
   const clearSession = useCallback(() => {
-    inMemoryToken = null;
-    registerTokenGetter(() => Promise.resolve(null));
+    clearInMemoryToken();
     setToken(null);
   }, []);
+
+  /* ── Initial auth resolution ──────────────────────────────────── */
 
   useEffect(() => {
     if (!isLoaded) {
@@ -177,7 +116,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // --- Session-first authentication (httpOnly cookie) ---
-        // Try session cookie first, then fall back to in-memory token.
         try {
           registerTokenGetter(() => Promise.resolve(null));
           const sessionUser = await authService.me();
@@ -194,13 +132,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (runId !== authRunRef.current) {
             return;
           }
-          // No active session — fall through to in-memory token
         }
 
-        // --- In-memory token fallback (from migration or previous login) ---
-        registerInMemoryTokenGetter();
+        // --- In-memory token fallback ---
+        registerInMemoryGetter();
 
-        if (!inMemoryToken) {
+        if (!getInMemoryToken()) {
           setToken(null);
           setUserState(null);
           clearRoleCookie();
@@ -209,7 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        setToken(inMemoryToken);
+        setToken(getInMemoryToken());
 
         try {
           const laravelUser = await authService.me();
@@ -240,6 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // --- Clerk signed-in: exchange JWT for Sanctum session ---
     setIsExchanging(true);
 
     if (clerkExchangeDoneRef.current) {
@@ -357,7 +295,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clerkUser?.id,
     clearSession,
     persistSession,
-    registerInMemoryTokenGetter,
     router,
     signOut,
     getToken,
@@ -366,8 +303,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!user;
   const isLoading = !isLoaded || !hasResolvedInitialAuth || isExchanging;
 
-  // Listen for 401 responses on non-auth endpoints and clear local auth state
-  // so components stop making authenticated requests with stale credentials.
+  /* ── 401 listener ─────────────────────────────────────────────── */
+
   useEffect(() => {
     const handleAuthExpired = () => {
       if (!user) {
@@ -382,6 +319,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () =>
       window.removeEventListener('kh:auth-expired', handleAuthExpired);
   }, [user]);
+
+  /* ── Auth actions ─────────────────────────────────────────────── */
 
   const setUser = useCallback((u: User) => {
     setUserState(u);
@@ -404,9 +343,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       persistSession(sanctumToken);
       setUserState(laravelUser);
       setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
-      sessionStorage.removeItem('clerk_auth_email_hint');
-      sessionStorage.removeItem('clerk_auth_prefill');
-      sessionStorage.removeItem('kh_registration_intent');
+      clearSessionStorage();
 
       const returnTo = sessionStorage.getItem('kh_redirect_after_login');
       if (returnTo) {
@@ -525,32 +462,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoggingOut(true);
       resetCsrfState();
 
-      sessionStorage.removeItem('clerk_auth_email_hint');
-      sessionStorage.removeItem('clerk_auth_prefill');
-      sessionStorage.removeItem('kh_flw_tx_ref');
-      sessionStorage.removeItem('kh_flw_reference');
-      sessionStorage.removeItem('kh_just_unlocked');
-      sessionStorage.removeItem('kh_redirect_after_login');
-      sessionStorage.removeItem('kh_registration_intent');
+      clearSessionStorage();
       clearRoleCookie();
-
-      if (isSignedIn) {
-        clearSession();
-      } else {
-        // Use unified session clearing
-        clearSession();
-      }
+      clearSession();
       setUserState(null);
 
       await new Promise((resolve) =>
         setTimeout(resolve, LOGOUT_OVERLAY_DURATION_MS)
       );
 
+      const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/home';
+
       if (isSignedIn) {
         try {
           await Promise.race([
             signOut({
-              redirectUrl: `${window.location.origin}${redirectTo.startsWith('/') ? redirectTo : '/home'}`,
+              redirectUrl: `${window.location.origin}${safeRedirect}`,
             }),
             new Promise((resolve) =>
               setTimeout(resolve, CLERK_SIGN_OUT_FALLBACK_MS)
@@ -560,15 +487,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Fall through to hard redirect fallback.
         }
 
-        window.location.replace(
-          redirectTo.startsWith('/') ? redirectTo : '/home'
-        );
+        window.location.replace(safeRedirect);
 
         return;
       }
 
       setIsLoggingOut(false);
-      router.replace(redirectTo.startsWith('/') ? redirectTo : '/home');
+      router.replace(safeRedirect);
     },
     [isSignedIn, signOut, clearSession, router]
   );
@@ -578,20 +503,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const freshUser = await authService.me();
       setUserState(freshUser);
     } catch {
-      if (isSignedIn) {
-        clearSession();
-        setUserState(null);
-        await signOut();
-        router.push('/home');
-
-        return;
-      }
-      // Use unified session clearing
       clearSession();
       setUserState(null);
+      if (isSignedIn) {
+        await signOut();
+      }
       router.push('/home');
     }
   }, [isSignedIn, signOut, clearSession, router]);
+
+  /* ── Context value ────────────────────────────────────────────── */
 
   const value = useMemo(
     () => ({

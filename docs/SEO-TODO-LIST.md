@@ -7,35 +7,35 @@
 
 ## 📋 STATUT D'IMPLÉMENTATION (mis à jour le 1er mars 2026)
 
-| # | TODO | Statut | Fichier(s) modifié(s) |
-|---|------|--------|----------------------|
-| 1 | SSR landing page + middleware | ✅ Fait | `src/middleware.ts` (créé), `src/app/page.tsx` (refactorisé) |
-| 2 | Ads hors auth-gate + JSON-LD RealEstateListing | ✅ Fait | `src/app/ads/` (créé, public), `(dashboard)/ads/` (supprimé) |
-| 3 | Search publiquement accessible | ✅ Fait | `src/app/search/` (déplacé hors de dashboard) |
-| 4 | Retirer AggregateRating fictif | ✅ Fait | `src/components/seo/JsonLd.tsx` |
-| 5 | Créer og-cover.png | ✅ Fait | `public/images/og-cover.png` (1200×630 généré) |
-| 6 | Sitemap dynamique + villes + blog | ✅ Fait | `src/app/sitemap.ts` (async, API ads, villes, blog) |
-| 7 | Meta description raccourcie | ✅ Fait | `src/app/layout.tsx` (≤155 chars) |
-| 8 | Preconnect hints | ✅ Fait | `src/app/layout.tsx` (mapbox, clerk) |
-| 9 | Google Search Console | ⏳ Manuel | Ajouter `verification.google` dans metadata |
-| 10 | Google Analytics 4 (CSP ready) | ✅ CSP prêt | `next.config.ts` (GA4 domains ajoutés au CSP) |
-| 11 | Core Web Vitals mobile (Three.js) | ✅ Fait | `HeroSection.tsx` (mobile fallback, loading placeholder) |
-| 12 | Conversion images WebP | ✅ Fait | `04Final.webp`, `maison-blanche.webp` (créés) |
-| 13 | Lien 404 corrigé | ✅ Fait | `src/app/not-found.tsx` (`/home` → `/`) |
-| 14 | Pages de ville programmatiques | ✅ Fait | `src/app/immobilier/[ville]/page.tsx` (9 villes SSR) |
-| 15 | Section blog (scaffold) | ✅ Fait | `src/app/blog/` (index, [slug], posts.ts, layout) |
-| 16 | Schema RealEstateListing | ✅ Fait | `src/app/ads/[id]/[slug]/page.tsx` (JSON-LD SSR) |
-| 17 | Maillage interne (footer + chips) | ✅ Fait | `LandingFooter.tsx` (villes), `HeroSection.tsx` (city chips) |
-| 18 | hreflang anglais | ⏳ Manuel | Nécessite version anglaise du site |
-| 19 | Google Business Profiles | ⏳ Manuel | Création manuelle sur Google |
-| 20 | Link building / annuaires | ⏳ Manuel | Soumissions manuelles |
-| 21 | robots.ts dynamique | ✅ Fait | `src/app/robots.ts` (créé), `public/robots.txt` (supprimé) |
-| 22 | Web Vitals monitoring | ✅ Fait | `src/components/seo/WebVitals.tsx` + intégré dans layout |
-| 23 | Pages type de bien | ⏳ Futur | `/appartements`, `/maisons`, etc. |
-| 24 | Pages de comparaison | ⏳ Futur | `/comparaison/...` |
-| 25 | ItemList schema search | ⏳ Futur | JSON-LD sur /search |
-| 26 | HSTS Preload List | ⏳ Manuel | Soumission sur hstspreload.org |
-| 27 | City chips links | ✅ Fait | `HeroSection.tsx` (`/register` → `/search?city=X`) |
+| #   | TODO                                           | Statut      | Fichier(s) modifié(s)                                        |
+| --- | ---------------------------------------------- | ----------- | ------------------------------------------------------------ |
+| 1   | SSR landing page + middleware                  | ✅ Fait     | `src/middleware.ts` (créé), `src/app/page.tsx` (refactorisé) |
+| 2   | Ads hors auth-gate + JSON-LD RealEstateListing | ✅ Fait     | `src/app/ads/` (créé, public), `(dashboard)/ads/` (supprimé) |
+| 3   | Search publiquement accessible                 | ✅ Fait     | `src/app/search/` (déplacé hors de dashboard)                |
+| 4   | Retirer AggregateRating fictif                 | ✅ Fait     | `src/components/seo/JsonLd.tsx`                              |
+| 5   | Créer og-cover.png                             | ✅ Fait     | `public/images/og-cover.png` (1200×630 généré)               |
+| 6   | Sitemap dynamique + villes + blog              | ✅ Fait     | `src/app/sitemap.ts` (async, API ads, villes, blog)          |
+| 7   | Meta description raccourcie                    | ✅ Fait     | `src/app/layout.tsx` (≤155 chars)                            |
+| 8   | Preconnect hints                               | ✅ Fait     | `src/app/layout.tsx` (mapbox, clerk)                         |
+| 9   | Google Search Console                          | ⏳ Manuel   | Ajouter `verification.google` dans metadata                  |
+| 10  | Google Analytics 4 (CSP ready)                 | ✅ CSP prêt | `next.config.ts` (GA4 domains ajoutés au CSP)                |
+| 11  | Core Web Vitals mobile (Three.js)              | ✅ Fait     | `HeroSection.tsx` (mobile fallback, loading placeholder)     |
+| 12  | Conversion images WebP                         | ✅ Fait     | `04Final.webp`, `maison-blanche.webp` (créés)                |
+| 13  | Lien 404 corrigé                               | ✅ Fait     | `src/app/not-found.tsx` (`/home` → `/`)                      |
+| 14  | Pages de ville programmatiques                 | ✅ Fait     | `src/app/immobilier/[ville]/page.tsx` (9 villes SSR)         |
+| 15  | Section blog (scaffold)                        | ✅ Fait     | `src/app/blog/` (index, [slug], posts.ts, layout)            |
+| 16  | Schema RealEstateListing                       | ✅ Fait     | `src/app/ads/[id]/[slug]/page.tsx` (JSON-LD SSR)             |
+| 17  | Maillage interne (footer + chips)              | ✅ Fait     | `LandingFooter.tsx` (villes), `HeroSection.tsx` (city chips) |
+| 18  | hreflang anglais                               | ⏳ Manuel   | Nécessite version anglaise du site                           |
+| 19  | Google Business Profiles                       | ⏳ Manuel   | Création manuelle sur Google                                 |
+| 20  | Link building / annuaires                      | ⏳ Manuel   | Soumissions manuelles                                        |
+| 21  | robots.ts dynamique                            | ✅ Fait     | `src/app/robots.ts` (créé), `public/robots.txt` (supprimé)   |
+| 22  | Web Vitals monitoring                          | ✅ Fait     | `src/components/seo/WebVitals.tsx` + intégré dans layout     |
+| 23  | Pages type de bien                             | ⏳ Futur    | `/appartements`, `/maisons`, etc.                            |
+| 24  | Pages de comparaison                           | ⏳ Futur    | `/comparaison/...`                                           |
+| 25  | ItemList schema search                         | ⏳ Futur    | JSON-LD sur /search                                          |
+| 26  | HSTS Preload List                              | ⏳ Manuel   | Soumission sur hstspreload.org                               |
+| 27  | City chips links                               | ✅ Fait     | `HeroSection.tsx` (`/register` → `/search?city=X`)           |
 
 **Résultat : 20/27 TODOs implémentés automatiquement. 7 restants nécessitent une action manuelle ou une phase future.**
 
@@ -50,13 +50,24 @@
 > **Impact** : Le contenu H1, les textes marketing, les CTA — rien n'est dans le HTML initial.
 
 - [ ] Créer `src/middleware.ts` avec Clerk pour rediriger les utilisateurs authentifiés vers `/home` **côté serveur** (avant le rendu)
+
   ```ts
   // src/middleware.ts
   import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
   import { NextResponse } from 'next/server';
-  
-  const isPublicRoute = createRouteMatcher(['/', '/login(.*)', '/register(.*)', '/search(.*)', '/ads(.*)', '/immobilier(.*)', '/conditions(.*)', '/confidentialite(.*)', '/blog(.*)']);
-  
+
+  const isPublicRoute = createRouteMatcher([
+    '/',
+    '/login(.*)',
+    '/register(.*)',
+    '/search(.*)',
+    '/ads(.*)',
+    '/immobilier(.*)',
+    '/conditions(.*)',
+    '/confidentialite(.*)',
+    '/blog(.*)',
+  ]);
+
   export default clerkMiddleware(async (auth, req) => {
     const { userId } = await auth();
     // Authenticated users on landing → redirect to /home
@@ -68,11 +79,14 @@
       await auth.protect();
     }
   });
-  
+
   export const config = {
-    matcher: ['/((?!_next|[^?]*\\.(?:html?|css|js|jpe?g|png|gif|svg|ico|webp|avif|woff2?|ttf|map|json|txt|xml|robots\\.txt|sitemap\\.xml)).*)'],
+    matcher: [
+      '/((?!_next|[^?]*\\.(?:html?|css|js|jpe?g|png|gif|svg|ico|webp|avif|woff2?|ttf|map|json|txt|xml|robots\\.txt|sitemap\\.xml)).*)',
+    ],
   };
   ```
+
 - [ ] Retirer `'use client'` de `src/app/page.tsx`
 - [ ] Réécrire `page.tsx` comme Server Component :
   ```tsx
@@ -107,7 +121,11 @@
   export const metadata: Metadata = {
     robots: { index: true, follow: true },
   };
-  export default function AdsLayout({ children }: { children: React.ReactNode }) {
+  export default function AdsLayout({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
     return children; // Pas d'auth check
   }
   ```
@@ -125,8 +143,12 @@
     name: ad.title,
     description: ad.description,
     url: `https://keyhome.app/ads/${ad.id}/${ad.slug}`,
-    image: ad.images?.map(img => img.url),
-    address: { '@type': 'PostalAddress', addressLocality: city, addressCountry: country },
+    image: ad.images?.map((img) => img.url),
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: city,
+      addressCountry: country,
+    },
     offers: { '@type': 'Offer', price: ad.price, priceCurrency: 'XAF' },
   };
   ```
@@ -202,41 +224,70 @@
 - [ ] Ajouter toutes les pages `/ads/[id]/[slug]` depuis l'API
 - [ ] Ajouter les futures pages `/immobilier/[ville]`
 - [ ] Code cible :
+
   ```ts
   import type { MetadataRoute } from 'next';
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
   export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = 'https://keyhome.app';
     const now = new Date().toISOString();
 
     const staticPages: MetadataRoute.Sitemap = [
-      { url: baseUrl, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
-      { url: `${baseUrl}/search`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
-      { url: `${baseUrl}/conditions`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
-      { url: `${baseUrl}/confidentialite`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+      {
+        url: baseUrl,
+        lastModified: now,
+        changeFrequency: 'daily',
+        priority: 1.0,
+      },
+      {
+        url: `${baseUrl}/search`,
+        lastModified: now,
+        changeFrequency: 'daily',
+        priority: 0.9,
+      },
+      {
+        url: `${baseUrl}/conditions`,
+        lastModified: now,
+        changeFrequency: 'yearly',
+        priority: 0.3,
+      },
+      {
+        url: `${baseUrl}/confidentialite`,
+        lastModified: now,
+        changeFrequency: 'yearly',
+        priority: 0.3,
+      },
     ];
 
     // Fetch all ads
     let adPages: MetadataRoute.Sitemap = [];
     try {
-      const res = await fetch(`${API_URL}/ads?per_page=5000&status=available`, { next: { revalidate: 3600 } });
+      const res = await fetch(`${API_URL}/ads?per_page=5000&status=available`, {
+        next: { revalidate: 3600 },
+      });
       if (res.ok) {
         const json = await res.json();
         const ads = json.data ?? [];
-        adPages = ads.map((ad: { id: string; slug: string; updated_at: string }) => ({
-          url: `${baseUrl}/ads/${ad.id}/${ad.slug}`,
-          lastModified: ad.updated_at || now,
-          changeFrequency: 'weekly' as const,
-          priority: 0.7,
-        }));
+        adPages = ads.map(
+          (ad: { id: string; slug: string; updated_at: string }) => ({
+            url: `${baseUrl}/ads/${ad.id}/${ad.slug}`,
+            lastModified: ad.updated_at || now,
+            changeFrequency: 'weekly' as const,
+            priority: 0.7,
+          })
+        );
       }
-    } catch { /* fail silently — static pages are always included */ }
+    } catch {
+      /* fail silently — static pages are always included */
+    }
 
     return [...staticPages, ...adPages];
   }
   ```
+
 - [ ] Soumettre le nouveau sitemap dans Google Search Console
 
 ---
@@ -247,6 +298,7 @@
 > **Problème** : La description fait ~270 caractères → tronquée dans les SERP.
 
 - [ ] Raccourcir à ≤ 155 caractères :
+
   ```
   Avant (270 chars) :
   "Fini les arnaques et les intermédiaires. KeyHome est la plateforme immobilière #1 en Afrique avec des annonces vérifiées manuellement. Trouvez votre maison, appartement, terrain ou villa à Douala, Abidjan, Cotonou, Lomé et dans toute l'Afrique. Inscription gratuite, paiement sécurisé par Mobile Money, contact direct avec les propriétaires."
@@ -305,7 +357,7 @@
   ```tsx
   import { GoogleAnalytics } from '@next/third-parties/google';
   // Dans le body, à côté de <Analytics /> :
-  <GoogleAnalytics gaId="G-XXXXXXXXXX" />
+  <GoogleAnalytics gaId="G-XXXXXXXXXX" />;
   ```
 - [ ] Mettre à jour le CSP dans `next.config.ts` pour autoriser Google Analytics :
   - Ajouter `https://www.googletagmanager.com` et `https://www.google-analytics.com` dans `script-src` et `connect-src`
@@ -325,8 +377,20 @@
   ```tsx
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   // ...
-  {!isMobile && <ThreeCanvas />}
-  {isMobile && <div style={{ /* gradient CSS fallback */ }} />}
+  {
+    !isMobile && <ThreeCanvas />;
+  }
+  {
+    isMobile && (
+      <div
+        style={
+          {
+            /* gradient CSS fallback */
+          }
+        }
+      />
+    );
+  }
   ```
 - [ ] **Remplacer `CircularProgress` par un skeleton** : Le spinner dans `page.tsx` et `(dashboard)/layout.tsx` qui se transforme en contenu provoque un CLS
 - [ ] **Optimiser imports MUI** : Vérifier si les imports barrel sont bien tree-shakés. Sinon, migrer vers :
@@ -339,7 +403,11 @@
   ```tsx
   const ThreeCanvas = dynamic(() => import('./ThreeCanvas'), {
     ssr: false,
-    loading: () => <div style={{ position: 'absolute', inset: 0, background: 'transparent' }} />,
+    loading: () => (
+      <div
+        style={{ position: 'absolute', inset: 0, background: 'transparent' }}
+      />
+    ),
   });
   ```
 - [ ] Tester avec PageSpeed Insights : `https://pagespeed.web.dev/`
@@ -390,9 +458,14 @@
   ```ts
   export function generateStaticParams() {
     return [
-      { ville: 'douala' }, { ville: 'abidjan' }, { ville: 'cotonou' },
-      { ville: 'lome' }, { ville: 'yaounde' }, { ville: 'accra' },
-      { ville: 'dakar' }, { ville: 'bamako' },
+      { ville: 'douala' },
+      { ville: 'abidjan' },
+      { ville: 'cotonou' },
+      { ville: 'lome' },
+      { ville: 'yaounde' },
+      { ville: 'accra' },
+      { ville: 'dakar' },
+      { ville: 'bamako' },
     ];
   }
   ```
@@ -405,9 +478,9 @@
   - CTA « Voir toutes les annonces à [Ville] »
 - [ ] Metadata dynamique avec `generateMetadata()` :
   ```ts
-  title: `Immobilier à ${ville} — Location & Vente | KeyHome`
-  description: `Trouvez votre logement à ${ville}. ${count} annonces vérifiées...`
-  canonical: `https://keyhome.app/immobilier/${ville}`
+  title: `Immobilier à ${ville} — Location & Vente | KeyHome`;
+  description: `Trouvez votre logement à ${ville}. ${count} annonces vérifiées...`;
+  canonical: `https://keyhome.app/immobilier/${ville}`;
   ```
 - [ ] Ajouter les pages villes dans le sitemap (TODO 6)
 
@@ -549,7 +622,24 @@
   import type { MetadataRoute } from 'next';
   export default function robots(): MetadataRoute.Robots {
     return {
-      rules: { userAgent: '*', allow: '/', disallow: ['/api/', '/auth/', '/complete-profile', '/verify-email', '/verify-otp', '/reset-password', '/forgot-password', '/sso-callback', '/payment-success', '/profile', '/payments', '/publish'] },
+      rules: {
+        userAgent: '*',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/auth/',
+          '/complete-profile',
+          '/verify-email',
+          '/verify-otp',
+          '/reset-password',
+          '/forgot-password',
+          '/sso-callback',
+          '/payment-success',
+          '/profile',
+          '/payments',
+          '/publish',
+        ],
+      },
       sitemap: 'https://keyhome.app/sitemap.xml',
     };
   }
@@ -642,26 +732,28 @@
 > **Problème** : Les chips de villes (Douala, Garoua, Accra...) pointent tous vers `/register` au lieu de pages de recherche/ville.
 
 - [ ] Changer les liens des chips :
+
   ```tsx
   // Avant :
   <Link key={city} href="/register">
-  
+
   // Après :
   <Link key={city} href={`/search?city=${city.toLowerCase()}`}>
   ```
+
 - [ ] Cela améliore à la fois le maillage interne et l'UX
 
 ---
 
 ## 📊 RÉCAPITULATIF
 
-| Priorité | Nombre de TODOs | Effort total estimé |
-|----------|----------------|-------------------|
-| 🔴 P0 (Critique) | 5 | ~1 semaine dev + 1h design |
-| 🟡 P1 (Important) | 8 | ~1-2 semaines dev + 2h config |
-| 🟢 P2 (Croissance) | 7 | ~3-4 semaines dev + rédaction contenu |
-| ⚪ P3 (Nice-to-have) | 7 | ~2 semaines dev |
-| **Total** | **27 TODOs** | **~2-3 mois à 1 dev** |
+| Priorité             | Nombre de TODOs | Effort total estimé                   |
+| -------------------- | --------------- | ------------------------------------- |
+| 🔴 P0 (Critique)     | 5               | ~1 semaine dev + 1h design            |
+| 🟡 P1 (Important)    | 8               | ~1-2 semaines dev + 2h config         |
+| 🟢 P2 (Croissance)   | 7               | ~3-4 semaines dev + rédaction contenu |
+| ⚪ P3 (Nice-to-have) | 7               | ~2 semaines dev                       |
+| **Total**            | **27 TODOs**    | **~2-3 mois à 1 dev**                 |
 
 ### Ordre d'exécution recommandé
 
@@ -677,6 +769,4 @@ Continu :    TODO 19-27 (profils, annuaires, monitoring, pages type)
 
 ---
 
-*Généré le 1er mars 2026 — basé sur l'audit SEO KeyHome v1.0*
-
-
+_Généré le 1er mars 2026 — basé sur l'audit SEO KeyHome v1.0_
