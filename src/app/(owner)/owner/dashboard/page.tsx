@@ -3,8 +3,9 @@
 import DashboardHeroStatCard from '@/components/owner/dashboard/DashboardHeroStatCard';
 import OwnerTopAdsTable from '@/components/owner/dashboard/OwnerTopAdsTable';
 import OwnerViewsFavoritesAreaChart from '@/components/owner/dashboard/OwnerViewsFavoritesAreaChart';
-import OwnerUnlocksBarChart, { type UnlockDatum } from '@/components/owner/dashboard/OwnerUnlocksBarChart';
-import OwnerAdStatusDonut, { buildAdStatusData } from '@/components/owner/dashboard/OwnerAdStatusDonut';
+import OwnerAdStatusDonut, {
+  buildAdStatusData,
+} from '@/components/owner/dashboard/OwnerAdStatusDonut';
 import ProfileCompletionCard from '@/components/owner/dashboard/ProfileCompletionCard';
 import {
   extractMetricSeries,
@@ -192,27 +193,8 @@ export default function OwnerDashboardPage() {
     [chartSeries]
   );
 
-  const unlocksBarData = useMemo((): UnlockDatum[] => {
-    const rows = analytics?.trends?.unlock ?? [];
-    if (!rows.length) return [];
-    // Build aligned day series
-    const map = new Map(rows.map((r: { date: string; count: number }) => [r.date, r.count]));
-    const result: UnlockDatum[] = [];
-    const now = new Date();
-    for (let i = chartDays - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setUTCDate(d.getUTCDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      result.push({
-        label: d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
-        unlocks: map.get(key) ?? 0,
-      });
-    }
-    return result;
-  }, [analytics?.trends, chartDays]);
-
   const adStatusData = useMemo(
-    () => buildAdStatusData((recentAds as { status: string }[])),
+    () => buildAdStatusData(recentAds as { status: string }[]),
     [recentAds]
   );
 
@@ -487,35 +469,22 @@ export default function OwnerDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* ═══ Déverrouillages & Répartition des annonces ═══ */}
+        {/* ═══ Répartition des annonces ═══ */}
         <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 3 }}>
-          <Grid size={{ xs: 12, md: 7 }}>
-            <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', height: '100%' }}>
-              <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <BoostIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-                  <Typography variant="subtitle2" fontWeight={700}>
-                    Déverrouillages — {periodLabelFr(period)}
-                  </Typography>
-                  {analytics?.totals?.unlocks != null && (
-                    <Chip
-                      label={`${analytics.totals.unlocks} total`}
-                      size="small"
-                      sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700, bgcolor: 'rgba(246,71,95,0.1)', color: 'primary.main' }}
-                    />
-                  )}
-                </Box>
-                <OwnerUnlocksBarChart
-                  data={unlocksBarData}
-                  loading={analyticsLoading}
-                />
-              </CardContent>
-            </Card>
-          </Grid>
           <Grid size={{ xs: 12, md: 5 }}>
-            <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', height: '100%' }}>
+            <Card
+              elevation={0}
+              sx={{
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'divider',
+                height: '100%',
+              }}
+            >
               <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Box
+                  sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}
+                >
                   <HomeIcon sx={{ color: 'primary.main', fontSize: 20 }} />
                   <Typography variant="subtitle2" fontWeight={700}>
                     Répartition de mes biens
