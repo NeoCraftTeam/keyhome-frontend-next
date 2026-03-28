@@ -1,62 +1,38 @@
 'use client';
 
 import CreditsWidget from '@/components/layout/CreditsWidget';
+import NavDesktopMenu from '@/components/layout/NavDesktopMenu';
+import NavDrawer from '@/components/layout/NavDrawer';
+import NavLogoutDialog from '@/components/layout/NavLogoutDialog';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
-import { SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
+import { useNavbarState } from '@/hooks/useNavbarState';
 import { useAuth } from '@/providers/AuthProvider';
-import { useComparator } from '@/providers/ComparatorProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
 import {
-    AddCircleOutline as AddCircleOutlineIcon,
-    BarChart as BarChartIcon,
-    CalendarMonth as CalendarMonthIcon,
-    Close as CloseIcon,
-    CompareArrows as CompareArrowsIcon,
-    DarkMode as DarkModeIcon,
-    Explore as ExploreIcon,
-    Facebook as FacebookIcon,
-    HelpOutline as HelpOutlineIcon,
-    Instagram as InstagramIcon,
-    LightMode as LightModeIcon,
-    Logout as LogoutIcon,
-    Menu as MenuIcon,
-    Notifications as NotificationsIcon,
-    NotificationsActive as NotificationsActiveIcon,
-    Person as PersonIcon,
-    Search as SearchIcon,
-    Settings as SettingsIcon,
-    X as XIcon,
+  AddCircleOutline as AddCircleOutlineIcon,
+  BarChart as BarChartIcon,
+  CompareArrows as CompareArrowsIcon,
+  DarkMode as DarkModeIcon,
+  Explore as ExploreIcon,
+  HelpOutline as HelpOutlineIcon,
+  LightMode as LightModeIcon,
+  Menu as MenuIcon,
+  Person as PersonIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import {
-    AppBar,
-    Avatar,
-    Box,
-    Button,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    Divider,
-    Drawer,
-    IconButton,
-    Link,
-    List,
-    ListItem,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
-    Menu,
-    MenuItem,
-    Toolbar,
-    Typography,
-    useMediaQuery,
-    useTheme,
+  AppBar,
+  Avatar,
+  Box,
+  Button,
+  IconButton,
+  Toolbar,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { gradient } from '@/theme/tokens';
 
 const NAV_LINKS = [
   { label: 'Rechercher', href: '/search', icon: <SearchIcon /> },
@@ -68,7 +44,6 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
-  const { items: comparatorItems } = useComparator();
   const { mode, toggleTheme } = useThemeMode();
   const router = useRouter();
   const pathname = usePathname();
@@ -76,9 +51,25 @@ export default function Navbar() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isStandalone = useIsStandalone();
 
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [logoutOpen, setLogoutOpen] = useState(false);
+  const {
+    anchorEl,
+    mobileOpen,
+    logoutOpen,
+    comparatorCount,
+    openDesktopMenu,
+    closeDesktopMenu,
+    openDrawer,
+    closeDrawer,
+    openLogout,
+    closeLogout,
+    isActive,
+    showComparatorBadge,
+  } = useNavbarState();
+
+  const handleLogout = () => {
+    closeLogout();
+    logout();
+  };
 
   return (
     <>
@@ -91,7 +82,7 @@ export default function Navbar() {
           top: '-100px',
           left: '50%',
           transform: 'translateX(-50%)',
-          zIndex: (theme) => theme.zIndex.tooltip + 1,
+          zIndex: (t) => t.zIndex.tooltip + 1,
           bgcolor: 'primary.main',
           color: '#fff',
           px: 3,
@@ -111,18 +102,17 @@ export default function Navbar() {
       >
         Aller au contenu principal
       </Box>
+
       <AppBar
         position="fixed"
         elevation={0}
         sx={{
-          // Glass effect is applied via MuiAppBar theme override
-          // mode-aware colors are handled in theme.ts
           color: 'text.primary',
           top: 0,
           left: 0,
           right: 0,
           pt: 'env(safe-area-inset-top, 0px)',
-          zIndex: (theme) => theme.zIndex.drawer + 10,
+          zIndex: (t) => t.zIndex.drawer + 10,
         }}
       >
         <Toolbar
@@ -134,81 +124,76 @@ export default function Navbar() {
             px: { xs: 1.5, md: 4 },
             minHeight: { xs: 56, md: 64 },
             display: 'grid',
-            // Mobile: 3 equal columns — hamburger | logo | actions
-            // Desktop: auto nav | logo | auto actions
-            gridTemplateColumns: {
-              xs: '1fr auto 1fr',
-              md: '1fr auto 1fr',
-            },
+            gridTemplateColumns: { xs: '1fr auto 1fr', md: '1fr auto 1fr' },
             alignItems: 'center',
           }}
         >
-          {/* LEFT — nav links (desktop only, mobile uses BottomNav) */}
+          {/* LEFT — desktop nav links */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             {!isMobile &&
-              NAV_LINKS.map((link) => {
-                const isActive =
-                  pathname === link.href || pathname?.startsWith(link.href + '/');
-                const showBadge = link.href === '/comparaisons' && comparatorItems.length > 0;
-                return (
-                  <Button
-                    key={link.href}
-                    onClick={() => router.push(link.href)}
-                    sx={{
-                      textTransform: 'none',
-                      fontWeight: isActive ? 700 : 500,
-                      fontSize: '0.9rem',
-                      color: isActive ? 'primary.main' : 'text.primary',
-                      px: 1.5,
-                      py: 0.5,
-                      borderRadius: '8px',
-                      position: 'relative',
-                      whiteSpace: 'nowrap',
-                      '&:hover': { bgcolor: 'action.hover' },
-                      '&::after': isActive
-                        ? {
-                            content: '""',
-                            position: 'absolute',
-                            bottom: -2,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '60%',
-                            height: 2,
-                            bgcolor: 'primary.main',
-                            borderRadius: 1,
-                          }
-                        : {},
-                    }}
+              NAV_LINKS.map((link) => (
+                <Button
+                  key={link.href}
+                  onClick={() => router.push(link.href)}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: isActive(link.href) ? 700 : 500,
+                    fontSize: '0.9rem',
+                    color: isActive(link.href)
+                      ? 'primary.main'
+                      : 'text.primary',
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: '8px',
+                    position: 'relative',
+                    whiteSpace: 'nowrap',
+                    '&:hover': { bgcolor: 'action.hover' },
+                    '&::after': isActive(link.href)
+                      ? {
+                          content: '""',
+                          position: 'absolute',
+                          bottom: -2,
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          width: '60%',
+                          height: 2,
+                          bgcolor: 'primary.main',
+                          borderRadius: 1,
+                        }
+                      : {},
+                  }}
+                >
+                  <Box
+                    component="span"
+                    sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
                   >
-                    <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {link.label}
-                      {showBadge && (
-                        <Box
-                          component="span"
-                          sx={{
-                            minWidth: 18,
-                            height: 18,
-                            px: 0.5,
-                            borderRadius: '50%',
-                            bgcolor: 'primary.main',
-                            color: 'white',
-                            fontSize: '0.7rem',
-                            fontWeight: 700,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          {comparatorItems.length}
-                        </Box>
-                      )}
-                    </Box>
-                  </Button>
-                );
-              })}
+                    {link.label}
+                    {showComparatorBadge(link.href) && (
+                      <Box
+                        component="span"
+                        sx={{
+                          minWidth: 18,
+                          height: 18,
+                          px: 0.5,
+                          borderRadius: '50%',
+                          bgcolor: 'primary.main',
+                          color: 'white',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {comparatorCount}
+                      </Box>
+                    )}
+                  </Box>
+                </Button>
+              ))}
           </Box>
 
-          {/* CENTER — Logo (absolutely centered in grid) */}
+          {/* CENTER — Logo */}
           <Box
             onClick={() => router.push('/home')}
             sx={{
@@ -237,7 +222,6 @@ export default function Navbar() {
                 fontWeight: 800,
                 fontSize: { xs: '1.05rem', md: '1.2rem' },
                 letterSpacing: -0.5,
-                // Show "KeyHome" text on mobile too (just smaller)
                 display: 'block',
               }}
             >
@@ -245,7 +229,7 @@ export default function Navbar() {
             </Typography>
           </Box>
 
-          {/* RIGHT — theme switcher + user actions */}
+          {/* RIGHT — theme + user actions */}
           <Box
             sx={{
               display: 'flex',
@@ -254,28 +238,26 @@ export default function Navbar() {
               gap: { xs: 0.5, md: 1 },
             }}
           >
-
             {isAuthenticated ? (
               <>
-                {/* Publish CTA for agents */}
-                {(user?.role === 'agent' || user?.role === 'admin') && !isMobile && (
-                  <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={<AddCircleOutlineIcon />}
-                    onClick={() => router.push('/publish')}
-                    sx={{ borderRadius: 99, fontWeight: 600, mr: 0.5 }}
-                  >
-                    Publier
-                  </Button>
-                )}
+                {(user?.role === 'agent' || user?.role === 'admin') &&
+                  !isMobile && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={<AddCircleOutlineIcon />}
+                      onClick={() => router.push('/publish')}
+                      sx={{ borderRadius: 99, fontWeight: 600, mr: 0.5 }}
+                    >
+                      Publier
+                    </Button>
+                  )}
                 <CreditsWidget />
 
-                {/* Mobile: avatar opens the drawer for account actions */}
-                {isMobile && (
+                {isMobile ? (
                   <IconButton
                     aria-label="Menu compte"
-                    onClick={() => setMobileOpen(true)}
+                    onClick={openDrawer}
                     size="small"
                     sx={{ ml: 0.5 }}
                   >
@@ -286,13 +268,10 @@ export default function Navbar() {
                       {user?.firstname?.[0] || 'U'}
                     </Avatar>
                   </IconButton>
-                )}
-
-                {/* Avatar menu — desktop only */}
-                {!isMobile && (
+                ) : (
                   <>
                     <Box
-                      onClick={(e) => setAnchorEl(e.currentTarget)}
+                      onClick={openDesktopMenu}
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
@@ -306,118 +285,39 @@ export default function Navbar() {
                         '&:hover': { boxShadow: '0 2px 4px rgba(0,0,0,0.08)' },
                       }}
                     >
-                      <MenuIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                      <MenuIcon
+                        sx={{ fontSize: 18, color: 'text.secondary' }}
+                      />
                       <Avatar
                         src={user?.avatar || undefined}
-                        sx={{ width: 28, height: 28, bgcolor: 'text.secondary' }}
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          bgcolor: 'text.secondary',
+                        }}
                       >
                         {user?.firstname?.[0] || 'U'}
                       </Avatar>
                     </Box>
-
-                    <Menu
+                    <NavDesktopMenu
                       anchorEl={anchorEl}
-                      open={Boolean(anchorEl)}
-                      onClose={() => setAnchorEl(null)}
-                      transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                      anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                      slotProps={{
-                        paper: {
-                          sx: {
-                            mt: 1.5,
-                            minWidth: 220,
-                            borderRadius: 3,
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-                          },
-                        },
-                      }}
-                    >
-                      <Box sx={{ px: 2, py: 1.5 }}>
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          {user?.firstname} {user?.lastname}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {user?.email}
-                        </Typography>
-                      </Box>
-                      <Divider />
-                      <MenuItem
-                        onClick={() => {
-                          setAnchorEl(null);
-                          router.push('/my/reservations');
-                        }}
-                      >
-                        <ListItemIcon>
-                          <CalendarMonthIcon />
-                        </ListItemIcon>
-                        <ListItemText>Mes réservations</ListItemText>
-                      </MenuItem>
-                      <MenuItem
-                        onClick={() => {
-                          setAnchorEl(null);
-                          router.push('/notifications');
-                        }}
-                      >
-                        <ListItemIcon>
-                          <NotificationsIcon />
-                        </ListItemIcon>
-                        <ListItemText>Notifications</ListItemText>
-                      </MenuItem>
-                      <MenuItem
-                        onClick={() => {
-                          setAnchorEl(null);
-                          router.push('/search-alerts');
-                        }}
-                      >
-                        <ListItemIcon>
-                          <NotificationsActiveIcon />
-                        </ListItemIcon>
-                        <ListItemText>Alertes de recherche</ListItemText>
-                      </MenuItem>
-                      <Divider />
-                      <MenuItem
-                        onClick={() => {
-                          setAnchorEl(null);
-                          router.push('/profile');
-                        }}
-                      >
-                        <ListItemIcon>
-                          <PersonIcon />
-                        </ListItemIcon>
-                        <ListItemText>Mon profil</ListItemText>
-                      </MenuItem>
-                      <MenuItem
-                        onClick={() => {
-                          setAnchorEl(null);
-                          router.push('/parametres');
-                        }}
-                      >
-                        <ListItemIcon>
-                          <SettingsIcon />
-                        </ListItemIcon>
-                        <ListItemText>Paramètres</ListItemText>
-                      </MenuItem>
-                      <MenuItem
-                        onClick={() => {
-                          setAnchorEl(null);
-                          setLogoutOpen(true);
-                        }}
-                      >
-                        <ListItemIcon>
-                          <LogoutIcon />
-                        </ListItemIcon>
-                        <ListItemText>Déconnexion</ListItemText>
-                      </MenuItem>
-                    </Menu>
+                      onClose={closeDesktopMenu}
+                      onNavigate={(href) => router.push(href)}
+                      onLogoutClick={openLogout}
+                      user={user}
+                    />
                   </>
                 )}
               </>
             ) : (
               <>
-                {/* Theme toggle for guests */}
                 <IconButton
                   onClick={toggleTheme}
-                  aria-label={mode === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+                  aria-label={
+                    mode === 'dark'
+                      ? 'Passer en mode clair'
+                      : 'Passer en mode sombre'
+                  }
                   size="small"
                   sx={{
                     border: '1px solid',
@@ -433,7 +333,6 @@ export default function Navbar() {
                     <DarkModeIcon sx={{ fontSize: 18 }} />
                   )}
                 </IconButton>
-                {/* On mobile: compact login icon */}
                 {isMobile ? (
                   <IconButton
                     size="small"
@@ -461,7 +360,10 @@ export default function Navbar() {
                       borderColor: 'divider',
                       color: 'text.primary',
                       whiteSpace: 'nowrap',
-                      '&:hover': { borderColor: 'primary.main', color: 'primary.main' },
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        color: 'primary.main',
+                      },
                     }}
                   >
                     Se connecter
@@ -472,7 +374,8 @@ export default function Navbar() {
           </Box>
         </Toolbar>
       </AppBar>
-      {/* Keep content from being hidden behind fixed navbar + Dynamic Island */}
+
+      {/* Spacer — prevents content hiding under fixed navbar */}
       <Toolbar
         sx={{
           minHeight: {
@@ -482,326 +385,23 @@ export default function Navbar() {
         }}
       />
 
-      {/* Mobile Drawer */}
-      <Drawer
-        anchor="left"
+      <NavDrawer
         open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        PaperProps={{ sx: { width: { xs: '85vw', sm: 300 }, maxWidth: 320, display: 'flex', flexDirection: 'column' } }}
-      >
-        <Box
-          sx={{
-            p: 2,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Image
-              src="/images/logo.png"
-              alt="KeyHome — Accueil"
-              width={32}
-              height={32}
-            />
-            <Typography variant="h6" fontWeight={700} color="primary.main">
-              KeyHome
-            </Typography>
-          </Box>
-          <IconButton
-            aria-label="Fermer le menu"
-            onClick={() => setMobileOpen(false)}
-          >
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <Divider />
-        {/* Avatar en première position */}
-        {user && (
-          <>
-            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Avatar src={user.avatar || undefined} sx={{ width: 44, height: 44 }}>
-                {user.firstname?.[0]}
-              </Avatar>
-              <Box>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  {user.firstname} {user.lastname}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {user.email}
-                </Typography>
-              </Box>
-            </Box>
-            <Divider />
-          </>
-        )}
-        {/* Mobile browser (no BottomNav): Rechercher, Explorer la carte, Estimer le loyer */}
-        {isMobile && !isStandalone && (
-          <>
-            <List sx={{ px: 1, pt: 0 }}>
-              {SIDEBAR_NAV_ITEMS.map((item) => {
-                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-                return (
-                  <ListItem key={item.href} disablePadding>
-                    <ListItemButton
-                      onClick={() => {
-                        setMobileOpen(false);
-                        router.push(item.href);
-                      }}
-                      sx={{
-                        borderRadius: 2,
-                        mx: 1,
-                        bgcolor: isActive ? 'rgba(246,71,95,0.08)' : 'transparent',
-                        color: isActive ? 'primary.main' : 'text.primary',
-                        '&:hover': { bgcolor: isActive ? 'rgba(246,71,95,0.12)' : 'action.hover' },
-                      }}
-                    >
-                      <ListItemIcon sx={{ color: isActive ? 'primary.main' : 'text.secondary', minWidth: 40 }}>
-                        {item.icon}
-                      </ListItemIcon>
-                      <ListItemText primary={item.label} />
-                    </ListItemButton>
-                  </ListItem>
-                );
-              })}
-            </List>
-            <Divider />
-          </>
-        )}
-        <List sx={{ px: 1 }}>
-          {/* Devenir hôte — mobile drawer */}
-          <ListItem disablePadding>
-            <ListItemButton
-                component="a"
-                href="/owner"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setMobileOpen(false)}
-              sx={{
-                color: 'primary.main',
-                borderRadius: 2,
-                mx: 1,
-                '&:hover': { bgcolor: 'rgba(246,71,95,0.06)' },
-              }}
-            >
-              <ListItemIcon>
-                <AddCircleOutlineIcon color="primary" />
-              </ListItemIcon>
-              <ListItemText primary="Devenir hôte" />
-            </ListItemButton>
-          </ListItem>
-          <Divider sx={{ my: 1.5, mx: 2 }} />
+        onClose={closeDrawer}
+        onNavigate={(href) => router.push(href)}
+        onLogoutClick={openLogout}
+        user={user}
+        isAuthenticated={isAuthenticated}
+        comparatorCount={comparatorCount}
+        pathname={pathname}
+        isStandalone={isStandalone}
+      />
 
-          <Typography variant="overline" color="text.secondary" sx={{ px: 2, mb: 1, display: 'block', fontWeight: 700, letterSpacing: 1.2 }}>
-            Compte
-          </Typography>
-
-          {isAuthenticated && (
-            <>
-              <ListItem disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    setMobileOpen(false);
-                    router.push('/comparaisons');
-                  }}
-                  sx={{ borderRadius: 2, mx: 1 }}
-                >
-                  <ListItemIcon>
-                    <CompareArrowsIcon />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      comparatorItems.length > 0
-                        ? `Comparaisons (${comparatorItems.length})`
-                        : 'Comparaisons'
-                    }
-                  />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    setMobileOpen(false);
-                    router.push('/my/reservations');
-                  }}
-                  sx={{ borderRadius: 2, mx: 1 }}
-                >
-                  <ListItemIcon>
-                    <CalendarMonthIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Mes réservations" />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    setMobileOpen(false);
-                    router.push('/notifications');
-                  }}
-                  sx={{ borderRadius: 2, mx: 1 }}
-                >
-                  <ListItemIcon>
-                    <NotificationsIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Notifications" />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    setMobileOpen(false);
-                    router.push('/search-alerts');
-                  }}
-                  sx={{ borderRadius: 2, mx: 1 }}
-                >
-                  <ListItemIcon>
-                    <NotificationsActiveIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Alertes de recherche" />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    setMobileOpen(false);
-                    router.push('/profile');
-                  }}
-                  sx={{ borderRadius: 2, mx: 1 }}
-                >
-                  <ListItemIcon>
-                    <PersonIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Mon profil" />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    setMobileOpen(false);
-                    router.push('/parametres');
-                  }}
-                  sx={{ borderRadius: 2, mx: 1 }}
-                >
-                  <ListItemIcon>
-                    <SettingsIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Paramètres" />
-                </ListItemButton>
-              </ListItem>
-              <Divider sx={{ my: 1, mx: 2 }} />
-              <ListItem disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    setMobileOpen(false);
-                    setLogoutOpen(true);
-                  }}
-                  sx={{ borderRadius: 2, mx: 1, color: 'error.main' }}
-                >
-                  <ListItemIcon>
-                    <LogoutIcon color="error" />
-                  </ListItemIcon>
-                  <ListItemText primary="Déconnexion" />
-                </ListItemButton>
-              </ListItem>
-            </>
-          )}
-          {!isAuthenticated && (
-            <ListItem sx={{ pt: 2, px: 2 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={() => {
-                  setMobileOpen(false);
-                  router.push('/login');
-                }}
-                sx={{
-                  borderRadius: '20px',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  background: (theme) => theme.palette.gradient?.primary135 ?? gradient.primary135,
-                }}
-              >
-                Se connecter
-              </Button>
-            </ListItem>
-          )}
-        </List>
-
-        {/* Drawer footer */}
-        <Box sx={{ mt: 'auto', borderTop: '1px solid', borderColor: 'divider', px: 2, py: 2, textAlign: 'center' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 1 }}>
-            {[
-              { icon: <FacebookIcon sx={{ fontSize: 16 }} />, href: 'https://www.facebook.com/keyhomeapp', label: 'Facebook' },
-              { icon: <XIcon sx={{ fontSize: 16 }} />, href: 'https://twitter.com/keyhome_app', label: 'X' },
-              { icon: <InstagramIcon sx={{ fontSize: 16 }} />, href: 'https://www.instagram.com/keyhome_app', label: 'Instagram' },
-            ].map((social) => (
-              <Link
-                key={social.label}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={social.label}
-                underline="none"
-                sx={{
-                  color: 'text.disabled',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 28,
-                  height: 28,
-                  borderRadius: '50%',
-                  transition: 'color 0.2s',
-                  '&:hover': { color: 'text.secondary' },
-                }}
-              >
-                {social.icon}
-              </Link>
-            ))}
-          </Box>
-          <Link
-            href="https://www.neocraft.dev"
-            target="_blank"
-            rel="noopener noreferrer"
-            underline="none"
-            sx={{ color: 'text.disabled', fontSize: '0.7rem', '&:hover': { color: 'text.secondary' } }}
-          >
-            Powered by <strong>NeoCraftTeam</strong>
-          </Link>
-        </Box>
-      </Drawer>
-      {/* Logout confirmation dialog */}
-      <Dialog
+      <NavLogoutDialog
         open={logoutOpen}
-        onClose={() => setLogoutOpen(false)}
-        PaperProps={{ sx: { borderRadius: 3, px: 1 } }}
-      >
-        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Se déconnecter ?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Êtes-vous sûr(e) de vouloir vous déconnecter de votre compte KeyHome ?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ pb: 2, px: 3, gap: 1 }}>
-          <Button
-            onClick={() => setLogoutOpen(false)}
-            variant="outlined"
-            sx={{ borderRadius: '20px', textTransform: 'none', fontWeight: 600 }}
-          >
-            Annuler
-          </Button>
-          <Button
-            onClick={() => {
-              setLogoutOpen(false);
-              logout();
-            }}
-            variant="contained"
-            color="error"
-            sx={{ borderRadius: '20px', textTransform: 'none', fontWeight: 600 }}
-          >
-            Déconnexion
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onClose={closeLogout}
+        onConfirm={handleLogout}
+      />
     </>
   );
 }
