@@ -2,14 +2,15 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { AutoAwesome, Toll } from '@mui/icons-material';
 import {
-  Box,
-  Button,
-  Dialog,
-  Typography,
-} from '@mui/material';
+  AutoAwesome,
+  NotificationsActive,
+  Search,
+  Toll,
+} from '@mui/icons-material';
+import { Box, Button, Dialog, LinearProgress, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { APPTOUR_SHOWN_KEY } from './AppTour';
 import { brand, gradient } from '@/theme/tokens';
 
@@ -20,37 +21,117 @@ const PUSH_DELAY_MS = 3 * 1000; // 3 seconds
 /** localStorage key that stores the unix timestamp when the tour was completed. */
 const TOUR_TS_KEY = 'kh_tour_completed_at';
 
+const TOTAL_STEPS = 3;
+
+interface StepConfig {
+  Icon: React.ElementType;
+  iconColor: string;
+  title: string;
+  subtitle: string;
+  body: string;
+  cta: string;
+  skip: string;
+}
+
+function getSteps(bonusCredits: number): StepConfig[] {
+  return [
+    {
+      Icon: Toll,
+      iconColor: brand.primary,
+      title: 'Bienvenue sur KeyHome !',
+      subtitle: `${bonusCredits} crédits offerts`,
+      body: 'Utilisez vos crédits pour déverrouiller les coordonnées des annonceurs et contacter les propriétaires directement.',
+      cta: 'Suivant →',
+      skip: 'Passer',
+    },
+    {
+      Icon: Search,
+      iconColor: '#6c5ce7',
+      title: 'Recherche intelligente',
+      subtitle: 'Décrivez ce que vous cherchez',
+      body: 'Tapez simplement « appartement 3 pièces à Bastos avec parking » et notre IA comprend votre besoin pour vous trouver les meilleures offres.',
+      cta: 'Essayer la recherche',
+      skip: 'Plus tard',
+    },
+    {
+      Icon: NotificationsActive,
+      iconColor: '#00b894',
+      title: 'Ne ratez aucune annonce',
+      subtitle: 'Alertes personnalisées',
+      body: "Sauvegardez vos critères et recevez une notification dès qu'un nouveau bien correspondant est publié — par push ou par email.",
+      cta: 'Créer une alerte',
+      skip: 'Terminer',
+    },
+  ];
+}
+
 /**
- * Welcome modal shown once to newly registered customers 3 minutes after they finish AppTour.
+ * Welcome wizard shown once to newly registered customers 3 minutes after they finish AppTour.
  *
  * Sequence:
- *   AppTour close → kh:tour-completed → [3 min] → WelcomeModal opens
+ *   AppTour close → kh:tour-completed → [3 min] → WelcomeModal opens (3-step wizard)
  *   WelcomeModal close → [3 s] → kh:welcome-dismissed → PushPrompt appears
  *   PushPrompt close → kh:push-prompt-done → Survey unlocks
- *
- * The 3-minute countdown is persisted in localStorage so it survives
- * page navigation while the user is still in the dashboard.
- *
- * On dismiss:
- * 1. Calls `POST /auth/onboarding-complete` to set onboarding_completed_at server-side.
- * 2. Calls refreshUser() to sync client state.
- * 3. After PUSH_DELAY_MS dispatches `kh:welcome-dismissed` to trigger PushPrompt.
  */
 export default function WelcomeModal() {
   const { user, refreshUser } = useAuth();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [step, setStep] = useState(0);
+  const [animDir, setAnimDir] = useState<1 | -1>(1);
   const hasShown = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userRef = useRef(user);
-  useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
-  /** Schedule the modal to open after `delayMs`. Clears any previous pending timer. */
+  const bonusCredits = Math.max(user?.point_balance ?? 0, 5);
+  const steps = getSteps(bonusCredits);
+  const currentStep = steps[step];
+
+  const finalize = useCallback((): void => {
+    setOpen(false);
+    setStep(0);
+    if (typeof window !== 'undefined')
+      localStorage.removeItem(APPTOUR_SHOWN_KEY);
+    authService.completeOnboarding().catch(() => {});
+    refreshUser().catch(() => {});
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('kh:welcome-dismissed'));
+    }, PUSH_DELAY_MS);
+  }, [refreshUser]);
+
+  const handleCta = useCallback((): void => {
+    if (step === 1) {
+      finalize();
+      router.push('/search');
+      return;
+    }
+    if (step === 2) {
+      finalize();
+      router.push('/search-alerts');
+      return;
+    }
+    setAnimDir(1);
+    setStep((s) => s + 1);
+  }, [step, finalize, router]);
+
+  const handleSkip = useCallback((): void => {
+    if (step < TOTAL_STEPS - 1) {
+      setAnimDir(1);
+      setStep((s) => s + 1);
+    } else {
+      finalize();
+    }
+  }, [step, finalize]);
+
+  /** Schedule the modal to open after `delayMs`. */
   const scheduleOpen = useCallback((delayMs: number) => {
     if (hasShown.current) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       if (hasShown.current) return;
-      // If onboarding was already completed (e.g. race condition), don't show again.
       if (userRef.current?.onboarding_completed_at != null) {
         if (typeof window !== 'undefined') localStorage.removeItem(TOUR_TS_KEY);
         return;
@@ -61,7 +142,6 @@ export default function WelcomeModal() {
     }, delayMs);
   }, []);
 
-  // On mount: resume any pending countdown (user navigated away and came back)
   useEffect(() => {
     if (hasShown.current || typeof window === 'undefined') return;
     const ts = localStorage.getItem(TOUR_TS_KEY);
@@ -69,11 +149,11 @@ export default function WelcomeModal() {
       const elapsed = Date.now() - parseInt(ts, 10);
       scheduleOpen(Math.max(0, WELCOME_DELAY_MS - elapsed));
     }
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [scheduleOpen]);
 
-  // Cancel any pending timer if onboarding is already completed.
-  // This handles stale TOUR_TS_KEY left in localStorage after the full flow finishes.
   useEffect(() => {
     if (user?.onboarding_completed_at == null) return;
     if (timerRef.current) {
@@ -83,43 +163,24 @@ export default function WelcomeModal() {
     if (typeof window !== 'undefined') localStorage.removeItem(TOUR_TS_KEY);
   }, [user?.onboarding_completed_at]);
 
-  // Listen for fresh tour-completed events
   useEffect(() => {
     const handleTourCompleted = () => {
       if (hasShown.current) return;
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined')
         localStorage.setItem(TOUR_TS_KEY, String(Date.now()));
-      }
       scheduleOpen(WELCOME_DELAY_MS);
     };
     window.addEventListener('kh:tour-completed', handleTourCompleted);
-    return () => window.removeEventListener('kh:tour-completed', handleTourCompleted);
+    return () =>
+      window.removeEventListener('kh:tour-completed', handleTourCompleted);
   }, [scheduleOpen]);
 
-  const handleClose = async (): Promise<void> => {
-    setOpen(false);
-
-    // Clear the tour-shown flag now that the full onboarding sequence is done.
-    if (typeof window !== 'undefined') localStorage.removeItem(APPTOUR_SHOWN_KEY);
-
-    // Persist onboarding completion on backend (idempotent)
-    authService.completeOnboarding().catch(() => {});
-
-    // Refresh user state so subsequent checks see onboarding_completed_at set
-    refreshUser().catch(() => {});
-
-    // Wait 3 s before signalling PushPrompt so modals never stack
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('kh:welcome-dismissed'));
-    }, PUSH_DELAY_MS);
-  };
-
-  const bonusCredits = Math.max(user?.point_balance ?? 0, 5);
+  const progress = ((step + 1) / TOTAL_STEPS) * 100;
 
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
+      onClose={finalize}
       maxWidth="xs"
       fullWidth
       PaperProps={{
@@ -131,6 +192,20 @@ export default function WelcomeModal() {
         },
       }}
     >
+      {/* Progress bar */}
+      <LinearProgress
+        variant="determinate"
+        value={progress}
+        sx={{
+          height: 3,
+          bgcolor: 'rgba(246,71,95,0.12)',
+          '& .MuiLinearProgress-bar': {
+            bgcolor: brand.primary,
+            transition: 'transform 0.4s ease',
+          },
+        }}
+      />
+
       {/* Header gradient */}
       <Box
         sx={{
@@ -141,6 +216,7 @@ export default function WelcomeModal() {
         }}
       >
         <Box
+          key={`icon-${step}`}
           sx={{
             width: 64,
             height: 64,
@@ -153,59 +229,115 @@ export default function WelcomeModal() {
             mb: 2,
             animation: 'welcomePulse 2s ease-in-out infinite',
             '@keyframes welcomePulse': {
-              '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(255,255,255,0.2)' },
-              '50%': { transform: 'scale(1.05)', boxShadow: '0 0 0 12px rgba(255,255,255,0)' },
+              '0%, 100%': {
+                transform: 'scale(1)',
+                boxShadow: '0 0 0 0 rgba(255,255,255,0.2)',
+              },
+              '50%': {
+                transform: 'scale(1.05)',
+                boxShadow: '0 0 0 12px rgba(255,255,255,0)',
+              },
             },
-            '@media (prefers-reduced-motion: reduce)': {
-              animation: 'none',
-            },
+            '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
           }}
         >
-          <AutoAwesome sx={{ fontSize: 32, color: '#fff' }} />
+          <currentStep.Icon sx={{ fontSize: 32, color: '#fff' }} />
         </Box>
-        <Typography variant="h5" fontWeight={800} sx={{ color: '#fff', mb: 0.5 }}>
-          Bienvenue sur KeyHome !
+
+        <Typography
+          variant="h5"
+          fontWeight={800}
+          sx={{ color: '#fff', mb: 0.5 }}
+        >
+          {currentStep.title}
         </Typography>
-        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', maxWidth: 280, mx: 'auto' }}>
-          Merci de nous avoir rejoint. Voici un cadeau pour bien démarrer.
+        <Typography
+          variant="body2"
+          sx={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}
+        >
+          {currentStep.subtitle}
         </Typography>
       </Box>
 
       {/* Body */}
-      <Box sx={{ px: 3, py: 3 }}>
-        {/* Credits badge */}
-        <Box
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 1.5,
-            bgcolor: 'rgba(246, 71, 95, 0.08)',
-            borderRadius: 3,
-            px: 3,
-            py: 1.5,
-            mb: 2,
-          }}
-        >
-          <Toll sx={{ fontSize: 28, color: 'primary.main' }} />
-          <Box>
-            <Typography variant="h4" fontWeight={800} color="primary.main" sx={{ lineHeight: 1 }}>
-              {bonusCredits}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
-              crédits offerts
-            </Typography>
+      <Box
+        key={`body-${step}`}
+        sx={{
+          px: 3,
+          py: 3,
+          animation: 'stepFadeIn 0.3s ease both',
+          '@keyframes stepFadeIn': {
+            from: { opacity: 0, transform: `translateX(${animDir * 24}px)` },
+            to: { opacity: 1, transform: 'translateX(0)' },
+          },
+          '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+        }}
+      >
+        {step === 0 && (
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 1.5,
+              bgcolor: 'rgba(246, 71, 95, 0.08)',
+              borderRadius: 3,
+              px: 3,
+              py: 1.5,
+              mb: 2,
+            }}
+          >
+            <AutoAwesome sx={{ fontSize: 24, color: 'primary.main' }} />
+            <Box>
+              <Typography
+                variant="h4"
+                fontWeight={800}
+                color="primary.main"
+                sx={{ lineHeight: 1 }}
+              >
+                {bonusCredits}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontWeight: 600 }}
+              >
+                crédits offerts
+              </Typography>
+            </Box>
           </Box>
-        </Box>
+        )}
 
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.6 }}>
-          Utilisez vos crédits pour déverrouiller les coordonnées des annonceurs et accéder aux meilleures offres immobilières.
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mb: 3, lineHeight: 1.7 }}
+        >
+          {currentStep.body}
         </Typography>
+
+        {/* Step dots */}
+        <Box
+          sx={{ display: 'flex', justifyContent: 'center', gap: 0.75, mb: 2.5 }}
+        >
+          {Array.from({ length: TOTAL_STEPS }).map((_, idx) => (
+            <Box
+              key={idx}
+              sx={{
+                width: idx === step ? 20 : 8,
+                height: 8,
+                borderRadius: 4,
+                transition: 'all 0.3s ease',
+                bgcolor: idx === step ? 'primary.main' : 'divider',
+              }}
+            />
+          ))}
+        </Box>
 
         <Button
           fullWidth
           variant="contained"
           size="large"
-          onClick={handleClose}
+          onClick={handleCta}
           sx={{
             py: 1.5,
             borderRadius: 2,
@@ -213,9 +345,20 @@ export default function WelcomeModal() {
             fontSize: '1rem',
             background: gradient.primary,
             '&:hover': { background: gradient.primaryHover },
+            mb: 1,
           }}
         >
-          C&apos;est parti !
+          {currentStep.cta}
+        </Button>
+
+        <Button
+          fullWidth
+          variant="text"
+          size="small"
+          onClick={handleSkip}
+          sx={{ color: 'text.secondary', fontSize: '0.85rem' }}
+        >
+          {currentStep.skip}
         </Button>
       </Box>
     </Dialog>

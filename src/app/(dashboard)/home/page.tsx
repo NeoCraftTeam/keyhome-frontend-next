@@ -2,11 +2,15 @@
 
 import AdCard from '@/components/ads/AdCard';
 import ClientProfileBanner from '@/components/dashboard/ClientProfileBanner';
+import TrustStrip from '@/components/dashboard/TrustStrip';
+import TestimonialsCarousel from '@/components/dashboard/TestimonialsCarousel';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import HeroSearch from '@/components/ads/HeroSearch';
-import AppTour from '@/components/ui/AppTour';
 import FadeIn from '@/components/ui/FadeIn';
 import QueryError from '@/components/ui/QueryError';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+
 import { useGreeting } from '@/hooks/useGreeting';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { useAuth } from '@/providers/AuthProvider';
@@ -14,6 +18,7 @@ import { adsService } from '@/services/ads.service';
 import { citiesService } from '@/services/cities.service';
 import { recommendationsService } from '@/services/users.service';
 import { City } from '@/types';
+
 import {
   AccessTime as AccessTimeIcon,
   Apartment,
@@ -42,6 +47,10 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
+
+const AppTour = dynamic(() => import('@/components/ui/AppTour'), {
+  ssr: false,
+});
 
 const CATEGORIES = [
   { label: 'Tous', value: '', icon: <MapsHomeWork sx={{ fontSize: 16 }} /> },
@@ -194,18 +203,13 @@ export default function HomePage() {
             ease: 'easeInOut',
           }}
         >
-          <Box
-            component="img"
+          <Image
             src="/images/maison-blanche.webp"
             alt="Maison moderne avec jardin — KeyHome"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
+            fill
+            priority
+            sizes="100vw"
+            style={{
               objectFit: 'cover',
               objectPosition: 'center 60%',
               willChange: 'transform',
@@ -281,6 +285,9 @@ export default function HomePage() {
           </motion.div>
         </Box>
       </Box>
+
+      {/* ── Trust strip ───────────────────────────────────────────────────── */}
+      <TrustStrip />
 
       {/* ── Intent dialog ─────────────────────────────────────────────────── */}
       <Dialog
@@ -814,6 +821,15 @@ export default function HomePage() {
                 </Box>
               )}
             </FadeIn>
+
+            {/* Témoignages — visible uniquement en vue "Tous" */}
+            {!selectedCategory && (
+              <Box
+                sx={{ mx: { xs: -2, sm: -3, md: -4 }, mt: { xs: 4, md: 5 } }}
+              >
+                <TestimonialsCarousel />
+              </Box>
+            )}
           </>
         )}
       </Container>
