@@ -582,17 +582,17 @@ export default function AdForm({
           )}
           <Box sx={{ display: 'flex', gap: 1.5, ml: 'auto' }}>
             {activeStep > 0 && (
-              <Button onClick={handleBack} startIcon={<ArrowBack />} sx={{ borderRadius: 2 }}>
+              <Button type="button" onClick={handleBack} startIcon={<ArrowBack />} sx={{ borderRadius: 2 }}>
                 Retour
               </Button>
             )}
             {onCancel && activeStep === 0 && (
-              <Button onClick={onCancel} disabled={isSubmitting} sx={{ borderRadius: 2 }}>
+              <Button type="button" onClick={onCancel} disabled={isSubmitting} sx={{ borderRadius: 2 }}>
                 Annuler
               </Button>
             )}
             {activeStep < STEPS.length - 1 ? (
-              <Button variant="contained" onClick={handleNext} endIcon={<ArrowForward />} sx={{ borderRadius: 2, fontWeight: 700, px: 3 }}>
+              <Button type="button" variant="contained" onClick={handleNext} endIcon={<ArrowForward />} sx={{ borderRadius: 2, fontWeight: 700, px: 3 }}>
                 Suivant
               </Button>
             ) : (
