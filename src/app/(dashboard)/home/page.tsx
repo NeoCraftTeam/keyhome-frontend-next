@@ -2,7 +2,6 @@
 
 import AdCard from '@/components/ads/AdCard';
 import ClientProfileBanner from '@/components/dashboard/ClientProfileBanner';
-import TrustStrip from '@/components/dashboard/TrustStrip';
 import TestimonialsCarousel from '@/components/dashboard/TestimonialsCarousel';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import HeroSearch from '@/components/ads/HeroSearch';
@@ -285,9 +284,6 @@ export default function HomePage() {
           </motion.div>
         </Box>
       </Box>
-
-      {/* ── Trust strip ───────────────────────────────────────────────────── */}
-      <TrustStrip />
 
       {/* ── Intent dialog ─────────────────────────────────────────────────── */}
       <Dialog
