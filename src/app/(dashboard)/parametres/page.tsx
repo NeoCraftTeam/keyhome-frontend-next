@@ -39,6 +39,7 @@ import { useClerk } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { brand } from '@/theme/tokens';
 
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -116,7 +117,7 @@ function SettingsRow({
         sx={{
           width: 34,
           height: 34,
-          bgcolor: danger ? 'rgba(211,47,47,0.08)' : (iconBg ?? 'rgba(246,71,95,0.08)'),
+          bgcolor: danger ? 'rgba(211,47,47,0.08)' : (iconBg ?? brand.primaryAlpha10),
           color: danger ? 'error.main' : 'primary.main',
           fontSize: 18,
         }}
@@ -307,7 +308,7 @@ export default function ParametresPage() {
                       border: '2px solid',
                       borderColor: isActive ? 'primary.main' : 'transparent',
                       bgcolor: isActive
-                        ? 'rgba(246,71,95,0.06)'
+                        ? brand.primaryAlpha5
                         : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',

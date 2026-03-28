@@ -100,3 +100,50 @@ export const neutral = {
   black: '#000000',
   slate400: '#94A3B8',
 } as const;
+
+/* ── Border Radius ───────────────────────────────────────────── */
+
+export const radius = {
+  xs: 4,    // 4px  — chips, badges
+  sm: 8,    // 8px  — buttons, inputs
+  md: 12,   // 12px — cards
+  lg: 16,   // 16px — panels
+  xl: 24,   // 24px — sheets, dialogs
+  full: 9999,
+} as const;
+
+/* ── Shadows ─────────────────────────────────────────────────── */
+
+export const shadow = {
+  /** Subtle card shadow */
+  card: '0 1px 4px rgba(0,0,0,0.08)',
+  /** Elevated modal / dropdown shadow */
+  modal: '0 8px 32px rgba(0,0,0,0.14)',
+  /** Primary-tinted glow for CTAs */
+  primaryGlow: '0 8px 20px rgba(246,71,95,0.25)',
+  /** Soft primary glow for hover states */
+  primaryGlowSm: '0 4px 12px rgba(246,71,95,0.18)',
+} as const;
+
+/* ── Spacing scale (in px — use as MUI sx numeric values / 8) ── */
+
+export const spacing = {
+  xs: 0.5,   // 4px
+  sm: 1,     // 8px
+  md: 2,     // 16px
+  lg: 3,     // 24px
+  xl: 4,     // 32px
+  '2xl': 6,  // 48px
+  '3xl': 8,  // 64px
+} as const;
+
+/* ── Animation / transition presets ─────────────────────────── */
+
+export const transition = {
+  /** Standard UI interaction speed */
+  fast: 'all 0.15s ease',
+  /** Page & card reveal speed */
+  base: 'all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1)',
+  /** Smooth, spring-like transitions */
+  spring: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+} as const;
