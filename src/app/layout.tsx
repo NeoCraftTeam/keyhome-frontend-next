@@ -14,6 +14,8 @@ import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
 import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import NetworkStatus from '@/components/pwa/NetworkStatus';
 import CookieBanner from '@/components/ui/CookieBanner';
+import RouteProgressBar from '@/components/ui/RouteProgressBar';
+import { Suspense } from 'react';
 import { getClerkPreconnectOrigin } from '@/lib/clerk-frontend-origins';
 
 const inter = Inter({
@@ -177,6 +179,9 @@ export default async function RootLayout({
         </head>
         <body className={`${inter.variable} ${jakarta.variable} antialiased`}>
           <Providers nonce={nonce}>
+            <Suspense fallback={null}>
+              <RouteProgressBar />
+            </Suspense>
             {children}
             <Analytics />
             <WebVitals />
