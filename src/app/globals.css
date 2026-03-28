@@ -49,12 +49,12 @@ html:has(body[style*='overflow:hidden']) {
 
 /* ===== Dark mode pre-render (set by FOUC script before Emotion loads) ===== */
 html[data-kh-theme='dark'] {
-  background-color: #0a0a0f;
+  background-color: #141419;
   color: #f0eef8;
 }
 
 html[data-kh-theme='dark'] body {
-  background-color: #0a0a0f;
+  background-color: #141419;
   color: #f0eef8;
 }
 
