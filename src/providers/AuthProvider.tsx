@@ -23,9 +23,16 @@ import {
   useState,
 } from 'react';
 
+/**
+ * In-memory token store — never persisted to localStorage (XSS-safe).
+ * The httpOnly session cookie (withCredentials: true) is the primary auth mechanism.
+ * This in-memory token is the Bearer fallback for cross-origin SPA→API scenarios.
+ */
+let inMemoryToken: string | null = null;
+
+/** Legacy localStorage keys — cleared on migration, never written to again */
 const SANCTUM_TOKEN_KEY_CLIENT = 'kh_sanctum_token_client';
 const SANCTUM_TOKEN_KEY_OWNER = 'kh_sanctum_token_owner';
-/** Legacy single key — migrated once to scoped keys */
 const LEGACY_SANCTUM_TOKEN_KEY = 'kh_sanctum_token';
 
 /** Cookie used by the edge proxy to gate /owner routes */
@@ -50,38 +57,41 @@ function clearRoleCookie(): void {
   document.cookie = `${ROLE_COOKIE}=; path=/owner; Max-Age=0; SameSite=Lax`;
 }
 
-function hasAnySanctumInStorage(): boolean {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  return Boolean(
-    localStorage.getItem(SANCTUM_TOKEN_KEY_CLIENT) ||
-    localStorage.getItem(SANCTUM_TOKEN_KEY_OWNER) ||
-    localStorage.getItem(LEGACY_SANCTUM_TOKEN_KEY)
-  );
+function hasAnySanctumInMemory(): boolean {
+  return inMemoryToken !== null;
 }
 
-async function migrateLegacySanctumToken(): Promise<void> {
+/**
+ * One-time migration: move any legacy localStorage tokens to in-memory,
+ * then delete them from localStorage permanently.
+ */
+async function migrateLegacyTokens(): Promise<void> {
   if (typeof window === 'undefined') {
     return;
   }
 
-  const legacy = localStorage.getItem(LEGACY_SANCTUM_TOKEN_KEY);
+  const legacy =
+    localStorage.getItem(LEGACY_SANCTUM_TOKEN_KEY) ||
+    localStorage.getItem(SANCTUM_TOKEN_KEY_CLIENT) ||
+    localStorage.getItem(SANCTUM_TOKEN_KEY_OWNER);
+
+  // Always clean up localStorage regardless
+  localStorage.removeItem(LEGACY_SANCTUM_TOKEN_KEY);
+  localStorage.removeItem(SANCTUM_TOKEN_KEY_CLIENT);
+  localStorage.removeItem(SANCTUM_TOKEN_KEY_OWNER);
+
   if (!legacy) {
     return;
   }
 
+  // Validate the legacy token before trusting it
   registerTokenGetter(() => Promise.resolve(legacy));
-
   try {
     await authService.me();
-    // Use unified session key for legacy migration
-    localStorage.setItem(SANCTUM_TOKEN_KEY_CLIENT, legacy);
+    inMemoryToken = legacy;
   } catch {
-    // Invalid legacy token — dropped when key is removed below
-  } finally {
-    localStorage.removeItem(LEGACY_SANCTUM_TOKEN_KEY);
+    // Invalid token — discard
+    inMemoryToken = null;
   }
 }
 
@@ -131,57 +141,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     pathnameRef.current = pathname ?? null;
   }, [pathname]);
 
-  const registerPathAwareTokenGetter = useCallback(() => {
-    registerTokenGetter(async () => {
-      if (typeof window === 'undefined') {
-        return null;
-      }
-      // Use unified session storage key
-      return localStorage.getItem(SANCTUM_TOKEN_KEY_CLIENT);
-    });
+  const registerInMemoryTokenGetter = useCallback(() => {
+    registerTokenGetter(async () => inMemoryToken);
   }, []);
 
-  const persistPasswordSession = useCallback(
-    (sanctumToken: string, _scope: 'client' | 'owner') => {
-      // httpOnly session cookie is primary auth mechanism.
-      // Keep Sanctum token as Bearer fallback for environments where
-      // third-party cookies are blocked (cross-origin SPA → API).
-      registerTokenGetter(() => Promise.resolve(sanctumToken));
-      setToken(sanctumToken);
-    },
-    []
-  );
+  /** Persist a Sanctum token in-memory only (never localStorage). */
+  const persistSession = useCallback((sanctumToken: string) => {
+    inMemoryToken = sanctumToken;
+    registerTokenGetter(() => Promise.resolve(sanctumToken));
+    setToken(sanctumToken);
+  }, []);
 
-  const persistClerkSession = useCallback(
-    (sanctumToken: string, _scope: 'client' | 'owner') => {
-      // httpOnly session cookie is primary auth mechanism.
-      // Keep Sanctum token as Bearer fallback for environments where
-      // third-party cookies are blocked (cross-origin SPA → API).
-      registerTokenGetter(() => Promise.resolve(sanctumToken));
-      setToken(sanctumToken);
-    },
-    []
-  );
-
-  const clearSanctumTokens = useCallback(
-    (scope: 'client' | 'owner' | 'all') => {
-      if (typeof window !== 'undefined') {
-        if (scope === 'all' || scope === 'client') {
-          localStorage.removeItem(SANCTUM_TOKEN_KEY_CLIENT);
-        }
-        if (scope === 'all' || scope === 'owner') {
-          localStorage.removeItem(SANCTUM_TOKEN_KEY_OWNER);
-        }
-        if (scope === 'all') {
-          localStorage.removeItem(LEGACY_SANCTUM_TOKEN_KEY);
-        }
-      }
-
-      registerTokenGetter(() => Promise.resolve(null));
-      setToken(null);
-    },
-    []
-  );
+  const clearSession = useCallback(() => {
+    inMemoryToken = null;
+    registerTokenGetter(() => Promise.resolve(null));
+    setToken(null);
+  }, []);
 
   useEffect(() => {
     if (!isLoaded) {
@@ -195,28 +170,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsExchanging(true);
 
       void (async () => {
-        await migrateLegacySanctumToken();
+        await migrateLegacyTokens();
 
         if (runId !== authRunRef.current) {
           return;
         }
 
-        // Use unified session approach - no longer path-based scoping
-        const storageKey = SANCTUM_TOKEN_KEY_CLIENT; // Unified storage
-
-        // --- Fast-path: pure guest (no session hint, no stored token) ---
-        // Skip the /me round-trip entirely. A guest has no kh_role cookie and no
-        // localStorage token — both guaranteed to be present after any successful login.
-        const storedToken =
-          typeof window !== 'undefined'
-            ? localStorage.getItem(storageKey)
-            : null;
-
-        // Always try session auth first — cookie is sent automatically (withCredentials: true)
-
         // --- Session-first authentication (httpOnly cookie) ---
-        // Try to authenticate via session cookie before falling back to localStorage token.
-        // If a valid session exists, the cookie is sent automatically (withCredentials: true).
+        // Try session cookie first, then fall back to in-memory token.
         try {
           registerTokenGetter(() => Promise.resolve(null));
           const sessionUser = await authService.me();
@@ -225,11 +186,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           setUserState(sessionUser);
           setRoleCookie(sessionUser.role ?? UserRole.CUSTOMER);
-          // Session auth succeeded — clear any leftover localStorage token
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem(storageKey);
-          }
-          registerTokenGetter(() => Promise.resolve(null));
           setToken(null);
           setIsExchanging(false);
           setHasResolvedInitialAuth(true);
@@ -238,22 +194,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (runId !== authRunRef.current) {
             return;
           }
-          // No active session — fall through to localStorage token
+          // No active session — fall through to in-memory token
         }
 
-        registerPathAwareTokenGetter();
+        // --- In-memory token fallback (from migration or previous login) ---
+        registerInMemoryTokenGetter();
 
-        if (!storedToken) {
+        if (!inMemoryToken) {
           setToken(null);
           setUserState(null);
           clearRoleCookie();
           setIsExchanging(false);
           setHasResolvedInitialAuth(true);
-
           return;
         }
 
-        setToken(storedToken);
+        setToken(inMemoryToken);
 
         try {
           const laravelUser = await authService.me();
@@ -262,18 +218,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           setUserState(laravelUser);
           setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
-          // Migration: clear localStorage, keep token as Bearer fallback
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem(storageKey);
-          }
-          registerTokenGetter(() => Promise.resolve(storedToken));
         } catch {
           if (runId !== authRunRef.current) {
             return;
           }
-          localStorage.removeItem(storageKey);
-          registerTokenGetter(() => Promise.resolve(null));
-          setToken(null);
+          clearSession();
           setUserState(null);
           clearRoleCookie();
           router.replace(
@@ -323,8 +272,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if ('state' in result && result.state === 'otp_required') {
             clerkExchangeDoneRef.current = true;
-            if (hasAnySanctumInStorage()) {
-              clearSanctumTokens('all');
+            if (hasAnySanctumInMemory()) {
+              clearSession();
               setUserState(null);
               sessionStorage.removeItem('clerk_auth_email_hint');
               sessionStorage.removeItem('clerk_auth_prefill');
@@ -364,7 +313,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (panelUrl) {
             if (!redirectToTrustedUrl(panelUrl)) {
-              clearSanctumTokens('all');
+              clearSession();
               setUserState(null);
               router.replace('/login');
             }
@@ -372,10 +321,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          persistClerkSession(
-            sanctumToken,
-            'client' // Unified session storage
-          );
+          persistSession(sanctumToken);
           setUserState(laravelUser);
           setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
 
@@ -394,7 +340,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (runId !== authRunRef.current) {
             return;
           }
-          clearSanctumTokens('all');
+          clearSession();
           setUserState(null);
         }
       })
@@ -409,9 +355,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoaded,
     isSignedIn,
     clerkUser?.id,
-    clearSanctumTokens,
-    persistClerkSession,
-    registerPathAwareTokenGetter,
+    clearSession,
+    persistSession,
+    registerInMemoryTokenGetter,
     router,
     signOut,
     getToken,
@@ -447,7 +393,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (panelUrl) {
         if (!redirectToTrustedUrl(panelUrl)) {
-          clearSanctumTokens('all');
+          clearSession();
           setUserState(null);
           router.replace('/login');
         }
@@ -455,10 +401,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      persistPasswordSession(
-        sanctumToken,
-        'client' // Unified session storage
-      );
+      persistSession(sanctumToken);
       setUserState(laravelUser);
       setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
       sessionStorage.removeItem('clerk_auth_email_hint');
@@ -478,7 +421,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace('/home');
       }
     },
-    [clearSanctumTokens, persistPasswordSession, router]
+    [clearSession, persistSession, router]
   );
 
   const login = useCallback(
@@ -492,7 +435,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
-      persistPasswordSession(sanctumToken, 'client');
+      persistSession(sanctumToken);
       setUserState(laravelUser);
       setRoleCookie(UserRole.CUSTOMER);
 
@@ -504,7 +447,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace('/home');
       }
     },
-    [persistPasswordSession, router]
+    [persistSession, router]
   );
 
   const loginOwner = useCallback(
@@ -521,7 +464,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
-      persistPasswordSession(sanctumToken, 'owner');
+      persistSession(sanctumToken);
       setUserState(laravelUser);
       setRoleCookie(laravelUser.role ?? UserRole.AGENT);
 
@@ -533,7 +476,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace('/owner/dashboard');
       }
     },
-    [persistPasswordSession, router]
+    [persistSession, router]
   );
 
   const loginWithOAuth = useCallback(
@@ -592,10 +535,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearRoleCookie();
 
       if (isSignedIn) {
-        clearSanctumTokens('all');
+        clearSession();
       } else {
         // Use unified session clearing
-        clearSanctumTokens('all');
+        clearSession();
       }
       setUserState(null);
 
@@ -627,7 +570,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoggingOut(false);
       router.replace(redirectTo.startsWith('/') ? redirectTo : '/home');
     },
-    [isSignedIn, signOut, clearSanctumTokens, router]
+    [isSignedIn, signOut, clearSession, router]
   );
 
   const refreshUser = useCallback(async () => {
@@ -636,7 +579,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserState(freshUser);
     } catch {
       if (isSignedIn) {
-        clearSanctumTokens('all');
+        clearSession();
         setUserState(null);
         await signOut();
         router.push('/home');
@@ -644,11 +587,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       // Use unified session clearing
-      clearSanctumTokens('all');
+      clearSession();
       setUserState(null);
       router.push('/home');
     }
-  }, [isSignedIn, signOut, clearSanctumTokens, router]);
+  }, [isSignedIn, signOut, clearSession, router]);
 
   const value = useMemo(
     () => ({
