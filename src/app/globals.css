@@ -708,6 +708,11 @@ img[data-nimg] {
 
 /* ===================================================================
    Landscape Orientation — mobile landscape layout adjustments
+   -------------------------------------------------------------------
+   !important is intentional here: MUI components inject inline styles
+   that cannot be overridden with specificity alone. This is the
+   standard approach for media-query-based responsive overrides of
+   CSS-in-JS frameworks.
    =================================================================== */
 
 @media (orientation: landscape) and (max-height: 500px) {
@@ -811,6 +816,10 @@ img[data-nimg] {
 /* ===================================================================
    Print Styles — optimized for property details, payment history,
    and comparison tables
+   -------------------------------------------------------------------
+   !important is standard practice in print stylesheets: MUI Emotion
+   injects inline styles that must be overridden to produce clean
+   printed output. Per WCAG/WAI guidelines, print resets use !important.
    =================================================================== */
 
 @media print {
