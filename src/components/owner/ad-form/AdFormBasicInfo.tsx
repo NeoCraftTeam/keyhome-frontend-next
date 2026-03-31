@@ -1,5 +1,8 @@
 import { AutoAwesome as AiIcon, Home as HomeIcon } from '@mui/icons-material';
-import { Box, Button, CircularProgress, Paper, TextField, Typography } from '@mui/material';
+import { Box, CircularProgress, Paper } from '@mui/material';
+import { Button } from '@/components/ui/Button';
+import { Typography } from '@/components/ui/Typography';
+import { TextField } from '@/components/ui/TextField';
 import type { AdFormValues, UpdateFn } from './types';
 import { sectionSx, sectionTitleSx } from './types';
 
@@ -14,7 +17,7 @@ interface AdFormBasicInfoProps {
 export default function AdFormBasicInfo({ values, update, errors, enhancing, onEnhance }: AdFormBasicInfoProps) {
   return (
     <Paper elevation={0} sx={sectionSx}>
-      <Typography variant="subtitle1" sx={{ ...sectionTitleSx, display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Typography variant="h6" sx={{ ...sectionTitleSx, display: 'flex', alignItems: 'center', gap: 1, fontSize: '1.125rem' }}>
         <HomeIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         Informations principales
       </Typography>
@@ -43,10 +46,12 @@ export default function AdFormBasicInfo({ values, update, errors, enhancing, onE
         {onEnhance && (
           <Button
             size="small"
+            variant="text"
+            color="primary"
             startIcon={enhancing ? <CircularProgress size={16} /> : <AiIcon />}
             onClick={onEnhance}
             disabled={!values.description.trim() || enhancing}
-            sx={{ mt: 1, textTransform: 'none', fontWeight: 600 }}
+            sx={{ mt: 1 }}
           >
             Améliorer avec l&apos;IA
           </Button>

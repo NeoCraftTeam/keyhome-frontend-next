@@ -116,7 +116,7 @@ const SlideUpTransition = forwardRef(function SlideUpTransition(
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const MIN_UNLOCK_LOADER_MS = 2000;
+const MIN_UNLOCK_LOADER_MS = 3200;
 
 function AdDetailContent() {
   const params = useParams();

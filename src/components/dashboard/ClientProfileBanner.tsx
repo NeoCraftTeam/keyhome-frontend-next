@@ -11,15 +11,15 @@ import {
 import {
   Alert,
   Box,
-  Button,
   Chip,
   Collapse,
   IconButton,
   LinearProgress,
   Stack,
   Tooltip,
-  Typography,
 } from '@mui/material';
+import { Button } from '@/components/ui/Button';
+import { Typography } from '@/components/ui/Typography';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -71,7 +71,7 @@ export default function ClientProfileBanner() {
         severity="info"
         icon={false}
         sx={{
-          borderRadius: 3,
+          borderRadius: '12px', // radius.md
           border: '1px solid',
           borderColor: 'primary.light',
           bgcolor: 'background.paper',
@@ -127,11 +127,9 @@ export default function ClientProfileBanner() {
             <Button
               size="small"
               variant="contained"
+              color="primary"
               onClick={() => router.push('/profile')}
               sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 600,
                 fontSize: '0.8rem',
                 px: 2,
               }}
@@ -143,8 +141,6 @@ export default function ClientProfileBanner() {
               variant="text"
               onClick={handleDismiss}
               sx={{
-                borderRadius: 2,
-                textTransform: 'none',
                 color: 'text.secondary',
                 fontSize: '0.8rem',
               }}

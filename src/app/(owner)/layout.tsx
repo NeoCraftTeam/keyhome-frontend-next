@@ -1,12 +1,23 @@
 'use client';
 
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import OwnerLayoutClient from '@/components/owner/OwnerLayoutClient';
+import { ConfirmDialogProvider } from '@/components/ui/ConfirmDialog';
+import SkipLink from '@/components/ui/SkipLink';
 import { OwnerThemeProvider } from '@/providers/OwnerThemeProvider';
+import ToastProvider from '@/providers/ToastProvider';
 
 export default function OwnerLayout({ children }: { children: React.ReactNode }) {
   return (
     <OwnerThemeProvider>
-      <OwnerLayoutClient>{children}</OwnerLayoutClient>
+      <ToastProvider>
+        <ConfirmDialogProvider>
+          <ErrorBoundary>
+            <SkipLink />
+            <OwnerLayoutClient>{children}</OwnerLayoutClient>
+          </ErrorBoundary>
+        </ConfirmDialogProvider>
+      </ToastProvider>
     </OwnerThemeProvider>
   );
 }

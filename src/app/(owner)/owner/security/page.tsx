@@ -7,6 +7,7 @@ import { loginHistoryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { ownerService, type LoginHistoryEntry } from '@/services/owner.service';
+import { useUser } from '@clerk/nextjs';
 import {
   Cancel as CancelIcon,
   CheckCircle as CheckCircleIcon,
@@ -68,6 +69,7 @@ function formatDateTime(dateString: string): string {
 
 export default function OwnerSecurityPage() {
   const { logout } = useAuth();
+  const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
   const queryClient = useQueryClient();
   const [historyPage, setHistoryPage] = useState(1);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
@@ -294,18 +296,38 @@ export default function OwnerSecurityPage() {
             </Typography>
           </Stack>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Déconnectez-vous de tous les appareils où votre compte est actuellement connecté.
-          </Typography>
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<LogoutIcon />}
-            onClick={() => logout('/connexion')}
-            sx={{ borderRadius: 2, textTransform: 'none' }}
-          >
-            Déconnexion de tous les appareils
-          </Button>
+          {!clerkLoaded ? (
+            <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 2 }} />
+          ) : (
+            <Box>
+              {clerkUser && (
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    bgcolor: 'action.hover',
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={600}>
+                    {clerkUser.primaryEmailAddress?.emailAddress ?? clerkUser.fullName ?? 'Compte actif'}
+                  </Typography>
+                  <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>
+                    ● Connecté depuis ce navigateur (session active)
+                  </Typography>
+                </Box>
+              )}
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<LogoutIcon />}
+                onClick={() => logout('/connexion')}
+                sx={{ borderRadius: 2, textTransform: 'none' }}
+              >
+                Déconnexion de tous les appareils
+              </Button>
+            </Box>
+          )}
         </CardContent>
       </Card>
 

@@ -15,6 +15,7 @@ import {
   PeopleAlt as PeopleAltIcon,
   Person as PersonIcon,
   RateReview as RateReviewIcon,
+  Security as SecurityIcon,
   Settings as SettingsIcon,
   Subscriptions as SubscriptionsIcon,
   Visibility as VisibilityIcon,
@@ -59,102 +60,42 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
   {
     label: 'Gestion',
     items: [
-      {
-        label: 'Dashboard',
-        href: '/owner/dashboard',
-        icon: <DashboardIcon fontSize="small" />,
-      },
-      {
-        label: 'Mes Annonces',
-        href: '/owner/ads',
-        icon: <HomeIcon fontSize="small" />,
-      },
-      {
-        label: 'Visites',
-        href: '/owner/viewings',
-        icon: <VisibilityIcon fontSize="small" />,
-        badgeKey: 'viewings',
-      },
-      {
-        label: 'Disponibilités',
-        href: '/owner/availability',
-        icon: <CalendarMonthIcon fontSize="small" />,
-      },
-      {
-        label: 'Locataires',
-        href: '/owner/tenants',
-        icon: <PeopleAltIcon fontSize="small" />,
-      },
-      {
-        label: 'Finances',
-        href: '/owner/financials',
-        icon: <AccountBalanceIcon fontSize="small" />,
-      },
-      {
-        label: 'Contrats',
-        href: '/owner/lease-contracts',
-        icon: <DescriptionIcon fontSize="small" />,
-      },
-      {
-        label: 'Avis',
-        href: '/owner/reviews',
-        icon: <RateReviewIcon fontSize="small" />,
-      },
+      { label: 'Dashboard', href: '/owner/dashboard', icon: <DashboardIcon fontSize="small" /> },
+      { label: 'Mes Annonces', href: '/owner/ads', icon: <HomeIcon fontSize="small" /> },
+      { label: 'Visites', href: '/owner/viewings', icon: <VisibilityIcon fontSize="small" />, badgeKey: 'viewings' },
+      { label: 'Disponibilités', href: '/owner/availability', icon: <CalendarMonthIcon fontSize="small" /> },
+      { label: 'Locataires', href: '/owner/tenants', icon: <PeopleAltIcon fontSize="small" /> },
+      { label: 'Finances', href: '/owner/financials', icon: <AccountBalanceIcon fontSize="small" /> },
+      { label: 'Contrats', href: '/owner/lease-contracts', icon: <DescriptionIcon fontSize="small" /> },
+      { label: 'Avis', href: '/owner/reviews', icon: <RateReviewIcon fontSize="small" /> },
     ],
   },
   {
     label: 'Business',
     items: [
-      {
-        label: 'Paiements',
-        href: '/owner/payments',
-        icon: <PaymentIcon fontSize="small" />,
-      },
-      {
-        label: 'Abonnements',
-        href: '/owner/subscriptions',
-        icon: <SubscriptionsIcon fontSize="small" />,
-      },
-      {
-        label: 'Services Pro',
-        href: '/owner/pro-services',
-        icon: <WorkspacePremiumIcon fontSize="small" />,
-      },
+      { label: 'Paiements', href: '/owner/payments', icon: <PaymentIcon fontSize="small" /> },
+      { label: 'Abonnements', href: '/owner/subscriptions', icon: <SubscriptionsIcon fontSize="small" /> },
+      { label: 'Services Pro', href: '/owner/pro-services', icon: <WorkspacePremiumIcon fontSize="small" /> },
     ],
   },
   {
     label: 'Compte',
     items: [
-      {
-        label: 'Profil',
-        href: '/owner/profile',
-        icon: <PersonIcon fontSize="small" />,
-      },
-      {
-        label: 'Mon équipe',
-        href: '/owner/equipe',
-        icon: <GroupsIcon fontSize="small" />,
-      },
-      {
-        label: 'Paramètres',
-        href: '/owner/parametres',
-        icon: <SettingsIcon fontSize="small" />,
-      },
+      { label: 'Profil', href: '/owner/profile', icon: <PersonIcon fontSize="small" /> },
+      { label: 'Mon équipe', href: '/owner/equipe', icon: <GroupsIcon fontSize="small" /> },
+      { label: 'Sécurité', href: '/owner/security', icon: <SecurityIcon fontSize="small" /> },
+      { label: 'Paramètres', href: '/owner/parametres', icon: <SettingsIcon fontSize="small" /> },
     ],
   },
 ];
 
-export default function OwnerSidebar({
-  collapsed,
-  onToggle,
-}: OwnerSidebarProps) {
+export default function OwnerSidebar({ collapsed, onToggle }: OwnerSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
   const { data: pendingViewings } = useQuery({
     queryKey: ['owner', 'viewings', 'pending-count'],
-    queryFn: () =>
-      ownerService.getViewingReservations({ page: 1, status: 'pending' }),
+    queryFn: () => ownerService.getViewingReservations({ page: 1, status: 'pending' }),
     select: (res) => res.meta?.total ?? 0,
     staleTime: 60_000,
   });
@@ -200,27 +141,12 @@ export default function OwnerSidebar({
               '&:hover': { opacity: 0.85 },
             }}
           >
-            <Image
-              src="/images/logo-teal.png"
-              alt="KeyHome"
-              width={36}
-              height={36}
-            />
+            <Image src="/images/logo-teal.png" alt="KeyHome" width={36} height={36} />
             <Box sx={{ minWidth: 0 }}>
-              <Typography
-                variant="subtitle1"
-                fontWeight={700}
-                color="primary.main"
-                noWrap
-              >
+              <Typography variant="subtitle1" fontWeight={700} color="primary.main" noWrap>
                 KeyHome
               </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                display="block"
-                noWrap
-              >
+              <Typography variant="caption" color="text.secondary" display="block" noWrap>
                 Panneau propriétaire
               </Typography>
             </Box>
@@ -231,21 +157,14 @@ export default function OwnerSidebar({
             onClick={() => router.push('/owner/dashboard')}
             sx={{ cursor: 'pointer', '&:hover': { opacity: 0.85 } }}
           >
-            <Image
-              src="/images/logo-teal.png"
-              alt="KeyHome"
-              width={32}
-              height={32}
-            />
+            <Image src="/images/logo-teal.png" alt="KeyHome" width={32} height={32} />
           </Box>
         )}
-        <Tooltip
-          title={collapsed ? 'Agrandir le menu' : 'Réduire le menu'}
-          placement="right"
-        >
+        <Tooltip title={collapsed ? 'Agrandir le menu' : 'Réduire le menu'} placement="right">
           <IconButton
             size="small"
             onClick={onToggle}
+            aria-label={collapsed ? 'Agrandir le menu latéral' : 'Réduire le menu latéral'}
             sx={{
               border: '1px solid',
               borderColor: 'divider',
@@ -266,20 +185,10 @@ export default function OwnerSidebar({
       </Box>
 
       {/* Nav sections */}
-      <Box
-        sx={{
-          flex: 1,
-          overflow: 'auto',
-          py: 1,
-          scrollbarWidth: 'none',
-          '&::-webkit-scrollbar': { display: 'none' },
-        }}
-      >
+      <Box sx={{ flex: 1, overflow: 'auto', py: 1, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
         {SIDEBAR_SECTIONS.map((section, sectionIndex) => (
           <Box key={section.label}>
-            {sectionIndex > 0 && (
-              <Divider sx={{ my: 1, mx: collapsed ? 1 : 2 }} />
-            )}
+            {sectionIndex > 0 && <Divider sx={{ my: 1, mx: collapsed ? 1 : 2 }} />}
             {!collapsed && (
               <Typography
                 variant="overline"
@@ -299,8 +208,7 @@ export default function OwnerSidebar({
             <List disablePadding sx={{ px: collapsed ? 0.5 : 1 }}>
               {section.items.map((item) => {
                 const isActive =
-                  pathname === item.href ||
-                  pathname?.startsWith(item.href + '/');
+                  pathname === item.href || pathname?.startsWith(item.href + '/');
                 const badgeCount = getBadgeCount(item.badgeKey);
                 return (
                   <ListItem key={item.href} disablePadding sx={{ mb: 0.25 }}>
@@ -315,14 +223,10 @@ export default function OwnerSidebar({
                           borderRadius: 2,
                           justifyContent: collapsed ? 'center' : 'flex-start',
                           px: collapsed ? 1 : 2,
-                          bgcolor: isActive
-                            ? 'rgba(13, 148, 136, 0.12)'
-                            : 'transparent',
+                          bgcolor: isActive ? 'rgba(13, 148, 136, 0.12)' : 'transparent',
                           color: isActive ? 'primary.main' : 'text.primary',
                           '&:hover': {
-                            bgcolor: isActive
-                              ? 'rgba(13, 148, 136, 0.18)'
-                              : 'action.hover',
+                            bgcolor: isActive ? 'rgba(13, 148, 136, 0.18)' : 'action.hover',
                           },
                         }}
                       >
@@ -334,18 +238,10 @@ export default function OwnerSidebar({
                           }}
                         >
                           <Badge
-                            badgeContent={
-                              badgeCount > 0 ? badgeCount : undefined
-                            }
+                            badgeContent={badgeCount > 0 ? badgeCount : undefined}
                             color="error"
                             max={99}
-                            sx={{
-                              '& .MuiBadge-badge': {
-                                fontSize: '0.6rem',
-                                height: 16,
-                                minWidth: 16,
-                              },
-                            }}
+                            sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', height: 16, minWidth: 16 } }}
                           >
                             {item.icon}
                           </Badge>
@@ -367,24 +263,24 @@ export default function OwnerSidebar({
       </Box>
 
       {/* CTA */}
-      <Box
-        sx={{
-          p: collapsed ? 1 : 2,
-          borderTop: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
+      <Box sx={{ p: collapsed ? 1 : 2, borderTop: '1px solid', borderColor: 'divider' }}>
         {collapsed ? (
           <Tooltip title="Nouvelle annonce" placement="right" arrow>
             <IconButton
               color="primary"
+              aria-label="Nouvelle annonce"
               onClick={() => router.push('/owner/ads/new')}
               sx={{
                 width: '100%',
                 borderRadius: 2,
                 bgcolor: 'primary.main',
                 color: '#fff',
-                '&:hover': { bgcolor: 'primary.dark' },
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  bgcolor: 'primary.dark',
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 6px 20px rgba(13,148,136,0.30)',
+                },
               }}
             >
               <AddCircleOutlineIcon />

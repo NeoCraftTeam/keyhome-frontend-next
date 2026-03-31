@@ -29,6 +29,7 @@ import AdForm, {
   type TourScene,
 } from '@/components/owner/AdForm';
 import { adsService } from '@/services/ads.service';
+import { shadow } from '@/theme/tokens';
 
 function useProfileCompleteness(user: ReturnType<typeof useAuth>['user']) {
   const steps = [
@@ -212,7 +213,7 @@ export default function OwnerNewAdPage() {
             borderColor: 'divider',
             overflow: 'hidden',
             bgcolor: 'background.paper',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            boxShadow: shadow.modal,
           }}
         >
           {/* Header */}

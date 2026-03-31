@@ -24,13 +24,13 @@ import {
   AppBar,
   Avatar,
   Box,
-  Button,
   IconButton,
   Toolbar,
-  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { Button } from '@/components/ui/Button';
+import { Typography } from '@/components/ui/Typography';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -216,12 +216,10 @@ export default function Navbar() {
               style={{ objectFit: 'contain' }}
             />
             <Typography
-              variant="h6"
+              variant="h1"
               sx={{
                 color: 'primary.main',
-                fontWeight: 800,
                 fontSize: { xs: '1.05rem', md: '1.2rem' },
-                letterSpacing: -0.5,
                 display: 'block',
               }}
             >
@@ -244,10 +242,11 @@ export default function Navbar() {
                   !isMobile && (
                     <Button
                       variant="contained"
+                      color="primary"
                       size="small"
                       startIcon={<AddCircleOutlineIcon />}
                       onClick={() => router.push('/publish')}
-                      sx={{ borderRadius: 99, fontWeight: 600, mr: 0.5 }}
+                      sx={{ borderRadius: 99, mr: 0.5 }}
                     >
                       Publier
                     </Button>

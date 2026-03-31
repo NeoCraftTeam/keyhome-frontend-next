@@ -1,33 +1,12 @@
 'use client';
 
-import {
-  Box,
-  Button,
-  CircularProgress,
-  MobileStepper,
-  Step,
-  StepLabel,
-  Stepper,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
-import { ArrowBack, ArrowForward, Check } from '@mui/icons-material';
+import { Box, Button, CircularProgress, Typography } from '@mui/material';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import type { Ad, AdImage, AdType, City, Quarter } from '@/types';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  compressAdPhotos,
-  compressTourScene,
-  formatFileSize,
-} from '@/lib/image-compression';
-import {
-  adTypesService,
-  citiesService,
-  quartersService,
-} from '@/services/cities.service';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { adTypesService, citiesService, quartersService } from '@/services/cities.service';
 import { propertyAttributesService } from '@/services/property-attributes.service';
 import { adsService } from '@/services/ads.service';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
@@ -49,13 +28,8 @@ export type { AdFormValues, TourScene } from './ad-form/types';
 import type { AdFormValues, TourScene } from './ad-form/types';
 import AdFormPriceAdvisor from './ad-form/AdFormPriceAdvisor';
 
-const STEPS = [
-  { label: 'Informations', short: 'Infos' },
-  { label: 'Localisation', short: 'Lieu' },
-  { label: 'Caractéristiques', short: 'Caract.' },
-  { label: 'Tarification', short: 'Tarif' },
-  { label: 'Publication', short: 'Publier' },
-];
+const _DEFAULT_LAT = 4.0511;
+const _DEFAULT_LNG = 9.7679;
 
 interface AdFormProps {
   initialData?: Partial<AdFormValues> | null;
@@ -67,8 +41,7 @@ interface AdFormProps {
       imagesToDelete?: number[];
       tourScenes?: TourScene[];
       propertyConditionPdf?: File | null;
-      idempotencyKey?: string;
-    }
+    },
   ) => Promise<void>;
   onCancel?: () => void;
   submitLabel?: string;
@@ -77,24 +50,15 @@ interface AdFormProps {
   stepperMode?: boolean;
 }
 
-function generateIdempotencyKey(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-}
-
 export default function AdForm({
   initialData,
   ad,
   onSubmit,
   onCancel,
-  submitLabel = "Créer l'annonce",
+  submitLabel = 'Créer l\'annonce',
   isSubmitting = false,
   onEnhanceDescription,
-  stepperMode = false,
 }: AdFormProps) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [activeStep, setActiveStep] = useState(0);
-  const idempotencyKeyRef = useRef<string>(generateIdempotencyKey());
   const [values, setValues] = useState<AdFormValues>(() => ({
     ...initialValues,
     ...initialData,
@@ -104,14 +68,9 @@ export default function AdForm({
   const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
   const [enhancing, setEnhancing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [propertyConditionPdf, setPropertyConditionPdf] = useState<File | null>(
-    null
-  );
+  const [propertyConditionPdf, setPropertyConditionPdf] = useState<File | null>(null);
   const [photoLightboxOpen, setPhotoLightboxOpen] = useState(false);
   const [photoLightboxIndex, setPhotoLightboxIndex] = useState(0);
-  const [isCompressing, setIsCompressing] = useState(false);
-  const [compressionSaved, setCompressionSaved] = useState<string | null>(null);
-  const compressionTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const autoSaveKey = ad?.id ? `ad-edit-${ad.id}` : 'ad-new';
   const { savedAt, clearDraft } = useAutoSave({
@@ -138,37 +97,24 @@ export default function AdForm({
     if (!ad?.id || !ad.has_3d_tour) return;
     let cancelled = false;
 
-    adsService
-      .getTour(ad.id)
-      .then((res) => {
-        if (cancelled) return;
-        const signedScenes = (
-          res.config as { scenes?: Array<{ id: string; image_url?: string }> }
-        )?.scenes;
-        if (!signedScenes?.length) return;
+    adsService.getTour(ad.id).then((res) => {
+      if (cancelled) return;
+      const signedScenes = (res.config as { scenes?: Array<{ id: string; image_url?: string }> })?.scenes;
+      if (!signedScenes?.length) return;
 
-        setTourScenes((prev) =>
-          prev.map((scene) => {
-            if (scene.file) return scene;
-            const signed = signedScenes.find((s) => s.id === scene.id);
-            return signed?.image_url
-              ? { ...scene, previewUrl: signed.image_url }
-              : scene;
-          })
-        );
-      })
-      .catch(() => {});
+      setTourScenes((prev) =>
+        prev.map((scene) => {
+          if (scene.file) return scene;
+          const signed = signedScenes.find((s) => s.id === scene.id);
+          return signed?.image_url ? { ...scene, previewUrl: signed.image_url } : scene;
+        }),
+      );
+    }).catch(() => {});
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [ad?.id, ad?.has_3d_tour]);
 
-  const {
-    slotProps: citySlotProps,
-    renderOption: renderCityOption,
-    inputSx: cityInputSx,
-  } = useCityAutocompleteConfig();
+  const { slotProps: citySlotProps, renderOption: renderCityOption, inputSx: cityInputSx } = useCityAutocompleteConfig();
 
   const [selectedCity, setSelectedCity] = useState<City | null>(() => {
     if (ad?.quarter?.city_id && ad?.quarter?.city_name) {
@@ -236,7 +182,7 @@ export default function AdForm({
       (g.attributes ?? []).map((attr) => ({
         ...attr,
         group: (g.name ?? g.group ?? 'Autre') as string,
-      }))
+      })),
     );
     opts.sort((a, b) => a.group.localeCompare(b.group));
     return opts;
@@ -255,7 +201,7 @@ export default function AdForm({
       })),
       ...(ad?.images?.filter((img) => !imagesToDelete.includes(img.id)) ?? []),
     ],
-    [imagePreviewUrls, imagesToDelete, ad?.images]
+    [imagePreviewUrls, imagesToDelete, ad?.images],
   );
 
   const openPhotoLightbox = (index: number) => {
@@ -263,57 +209,21 @@ export default function AdForm({
     setPhotoLightboxOpen(true);
   };
 
-  const update = (
-    field: keyof AdFormValues,
-    value: AdFormValues[keyof AdFormValues]
-  ) => {
+  const update = (field: keyof AdFormValues, value: AdFormValues[keyof AdFormValues]) => {
     setValues((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (images.length + files.length > 10) {
       setErrors((prev) => ({ ...prev, images: 'Maximum 10 photos.' }));
       return;
     }
-
-    // Show previews immediately with originals
+    const newImages = [...images, ...files];
+    setImages(newImages);
     const newUrls = files.map((f) => URL.createObjectURL(f));
     setImagePreviewUrls((prev) => [...prev, ...newUrls]);
-    setImages((prev) => [...prev, ...files]);
-
-    // Compress in background and swap files
-    setIsCompressing(true);
-    try {
-      const results = await compressAdPhotos(files);
-      const compressed = results.map((r) => r.file);
-      const totalSaved = results.reduce(
-        (sum, r) => sum + (r.originalSize - r.compressedSize),
-        0
-      );
-
-      // Replace originals with compressed versions
-      setImages((prev) => {
-        const startIndex = prev.length - files.length;
-        return [
-          ...prev.slice(0, startIndex),
-          ...compressed,
-          ...prev.slice(startIndex + files.length),
-        ];
-      });
-
-      if (totalSaved > 0) {
-        setCompressionSaved(`${formatFileSize(totalSaved)} économisés`);
-        clearTimeout(compressionTimerRef.current);
-        compressionTimerRef.current = setTimeout(
-          () => setCompressionSaved(null),
-          4000
-        );
-      }
-    } finally {
-      setIsCompressing(false);
-    }
   };
 
   const removeImage = (index: number) => {
@@ -336,67 +246,21 @@ export default function AdForm({
   };
 
   const addTourScene = useCallback(() => {
-    setTourScenes((prev) => [
-      ...prev,
-      {
-        id: `new-${Date.now()}`,
-        title: '',
-        file: null,
-        previewUrl: '',
-        hotspots: [],
-      },
-    ]);
+    setTourScenes((prev) => [...prev, { id: `new-${Date.now()}`, title: '', file: null, previewUrl: '', hotspots: [] }]);
   }, []);
 
-  const updateTourScene = useCallback(
-    async (
-      index: number,
-      field: keyof TourScene,
-      value: TourScene[keyof TourScene]
-    ) => {
-      if (field === 'file' && value instanceof File) {
-        // Show preview immediately
-        setTourScenes((prev) =>
-          prev.map((s, i) => {
-            if (i !== index) return s;
-            if (s.previewUrl) URL.revokeObjectURL(s.previewUrl);
-            return {
-              ...s,
-              file: value,
-              previewUrl: URL.createObjectURL(value),
-            };
-          })
-        );
-
-        // Compress in background and swap
-        try {
-          const result = await compressTourScene(value);
-          if (result.savedPercent > 0) {
-            setTourScenes((prev) =>
-              prev.map((s, i) =>
-                i === index ? { ...s, file: result.file } : s
-              )
-            );
-            setCompressionSaved(
-              `Scène optimisée : ${formatFileSize(result.originalSize - result.compressedSize)} économisés`
-            );
-            clearTimeout(compressionTimerRef.current);
-            compressionTimerRef.current = setTimeout(
-              () => setCompressionSaved(null),
-              4000
-            );
-          }
-        } catch {
-          // Keep original if compression fails
+  const updateTourScene = useCallback((index: number, field: keyof TourScene, value: TourScene[keyof TourScene]) => {
+    setTourScenes((prev) =>
+      prev.map((s, i) => {
+        if (i !== index) return s;
+        if (field === 'file' && value instanceof File) {
+          if (s.previewUrl) URL.revokeObjectURL(s.previewUrl);
+          return { ...s, file: value, previewUrl: URL.createObjectURL(value) };
         }
-      } else {
-        setTourScenes((prev) =>
-          prev.map((s, i) => (i !== index ? s : { ...s, [field]: value }))
-        );
-      }
-    },
-    []
-  );
+        return { ...s, [field]: value };
+      }),
+    );
+  }, []);
 
   const removeTourScene = useCallback((index: number) => {
     setTourScenes((prev) => {
@@ -406,72 +270,23 @@ export default function AdForm({
     });
   }, []);
 
-  const validateStep = (step: number): boolean => {
-    const e: Record<string, string> = {};
-    if (step === 0) {
-      if (!values.title.trim()) e.title = 'Le titre est obligatoire.';
-      if (!values.description.trim())
-        e.description = 'La description est obligatoire.';
-    } else if (step === 1) {
-      if (!values.type_id) e.type_id = "Le type d'annonce est obligatoire.";
-      if (!values.quarter_id) e.quarter_id = 'Le quartier est obligatoire.';
-    } else if (step === 2) {
-      if (!values.price || parseFloat(values.price) < 0)
-        e.price = 'Le prix est obligatoire.';
-      if (!values.surface_area || parseFloat(values.surface_area) <= 0)
-        e.surface_area = 'La surface est obligatoire.';
-      if (parseInt(values.bedrooms, 10) < 0)
-        e.bedrooms = 'Nombre de chambres invalide.';
-      if (parseInt(values.bathrooms, 10) < 0)
-        e.bathrooms = 'Nombre de salles de bain invalide.';
-    } else if (step === 4) {
-      tourScenes.forEach((scene, i) => {
-        if (!scene.title.trim())
-          e[`tour_scene_${i}_title`] = 'Nom de la pièce obligatoire.';
-        if (!scene.file && !ad?.has_3d_tour)
-          e[`tour_scene_${i}_file`] = 'Photo 360° obligatoire.';
-      });
-    }
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
   const validate = (): boolean => {
     const e: Record<string, string> = {};
     if (!values.title.trim()) e.title = 'Le titre est obligatoire.';
-    if (!values.description.trim())
-      e.description = 'La description est obligatoire.';
+    if (!values.description.trim()) e.description = 'La description est obligatoire.';
     if (!values.adresse.trim()) e.adresse = "L'adresse est obligatoire.";
-    if (!values.price || parseFloat(values.price) < 0)
-      e.price = 'Le prix est obligatoire.';
-    if (!values.surface_area || parseFloat(values.surface_area) <= 0)
-      e.surface_area = 'La surface est obligatoire.';
-    if (parseInt(values.bedrooms, 10) < 0)
-      e.bedrooms = 'Nombre de chambres invalide.';
-    if (parseInt(values.bathrooms, 10) < 0)
-      e.bathrooms = 'Nombre de salles de bain invalide.';
+    if (!values.price || parseFloat(values.price) < 0) e.price = 'Le prix est obligatoire.';
+    if (!values.surface_area || parseFloat(values.surface_area) <= 0) e.surface_area = 'La surface est obligatoire.';
+    if (parseInt(values.bedrooms, 10) < 0) e.bedrooms = 'Nombre de chambres invalide.';
+    if (parseInt(values.bathrooms, 10) < 0) e.bathrooms = 'Nombre de salles de bain invalide.';
     if (!values.quarter_id) e.quarter_id = 'Le quartier est obligatoire.';
-    if (!values.type_id) e.type_id = "Le type d'annonce est obligatoire.";
+    if (!values.type_id) e.type_id = 'Le type d\'annonce est obligatoire.';
     tourScenes.forEach((scene, i) => {
-      if (!scene.title.trim())
-        e[`tour_scene_${i}_title`] = 'Nom de la pièce obligatoire.';
-      if (!scene.file && !ad?.has_3d_tour)
-        e[`tour_scene_${i}_file`] = 'Photo 360° obligatoire.';
+      if (!scene.title.trim()) e[`tour_scene_${i}_title`] = 'Nom de la pièce obligatoire.';
+      if (!scene.file && !ad?.has_3d_tour) e[`tour_scene_${i}_file`] = 'Photo 360° obligatoire.';
     });
     setErrors(e);
     return Object.keys(e).length === 0;
-  };
-
-  const handleNext = () => {
-    if (!validateStep(activeStep)) return;
-    setActiveStep((s) => Math.min(s + 1, STEPS.length - 1));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleBack = () => {
-    setErrors({});
-    setActiveStep((s) => Math.max(s - 1, 0));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -481,7 +296,6 @@ export default function AdForm({
       imagesToDelete: imagesToDelete.length > 0 ? imagesToDelete : undefined,
       tourScenes: tourScenes.length > 0 ? tourScenes : undefined,
       propertyConditionPdf,
-      idempotencyKey: idempotencyKeyRef.current,
     });
     clearDraft();
   };
@@ -493,253 +307,10 @@ export default function AdForm({
     update('quarter_id', '');
   }, []);
 
-  const stepContent = (step: number) => {
-    switch (step) {
-      case 0:
-        return (
-          <>
-            <AdFormBasicInfo
-              values={values}
-              update={update}
-              errors={errors}
-              enhancing={enhancing}
-              onEnhance={onEnhanceDescription ? handleEnhance : null}
-            />
-            <AdFormPhotos
-              imagePreviewUrls={imagePreviewUrls}
-              existingImages={ad?.images}
-              imagesToDelete={imagesToDelete}
-              imageCount={images.length}
-              adTitle={ad?.title}
-              errors={errors}
-              onImageChange={handleImageChange}
-              onRemoveImage={removeImage}
-              onDeleteExistingImage={(id) =>
-                setImagesToDelete((prev) => [...prev, id])
-              }
-              onOpenLightbox={openPhotoLightbox}
-            />
-            {(isCompressing || compressionSaved) && (
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1 }}
-              >
-                {isCompressing && (
-                  <>
-                    <CircularProgress size={14} />
-                    <Typography variant="caption" color="text.secondary">
-                      Optimisation des images...
-                    </Typography>
-                  </>
-                )}
-                {!isCompressing && compressionSaved && (
-                  <Typography
-                    variant="caption"
-                    color="success.main"
-                    fontWeight={600}
-                  >
-                    ✓ {compressionSaved}
-                  </Typography>
-                )}
-              </Box>
-            )}
-          </>
-        );
-      case 1:
-        return (
-          <>
-            <AdFormLocation
-              values={values}
-              update={update}
-              errors={errors}
-              cities={cities}
-              quarters={quarters}
-              adTypes={adTypes}
-              selectedCity={selectedCity}
-              selectedQuarter={selectedQuarter}
-              cityInput={cityInput}
-              quarterInput={quarterInput}
-              isCitiesLoading={isCitiesLoading}
-              isQuartersLoading={isQuartersLoading}
-              onCityInputChange={setCityInput}
-              onCityChange={handleCityChange}
-              onQuarterInputChange={setQuarterInput}
-              onQuarterChange={setSelectedQuarter}
-              citySlotProps={citySlotProps}
-              renderCityOption={renderCityOption}
-              cityInputSx={cityInputSx}
-            />
-            <AdFormMapLocation values={values} update={update} />
-          </>
-        );
-      case 2:
-        return (
-          <>
-            <AdFormFeatures values={values} update={update} errors={errors} />
-            <AdFormEquipment
-              values={values}
-              update={update}
-              autocompleteOptions={autocompleteOptions}
-            />
-          </>
-        );
-      case 3:
-        return (
-          <>
-            <AdFormPriceAdvisor values={values} cityId={selectedCity?.id} />
-            <AdFormPremiumInfo
-              values={values}
-              update={update}
-              defaultExpanded={true}
-              propertyConditionPdf={propertyConditionPdf}
-              onPdfChange={setPropertyConditionPdf}
-              existingPdfUrl={ad?.property_condition_pdf ?? undefined}
-            />
-          </>
-        );
-      case 4:
-        return (
-          <>
-            <AdFormTour
-              tourScenes={tourScenes}
-              ad={ad}
-              errors={errors}
-              defaultExpanded={true}
-              onAddScene={addTourScene}
-              onUpdateScene={updateTourScene}
-              onRemoveScene={removeTourScene}
-            />
-            <AdFormBoost values={values} update={update} />
-          </>
-        );
-      default:
-        return null;
-    }
-  };
-
-  if (stepperMode) {
-    return (
-      <form onSubmit={handleSubmit} noValidate>
-        {/* ═══ Stepper header ═══ */}
-        {isMobile ? (
-          <MobileStepper
-            variant="dots"
-            steps={STEPS.length}
-            position="static"
-            activeStep={activeStep}
-            sx={{ bgcolor: 'transparent', mb: 3, px: 0 }}
-            nextButton={null}
-            backButton={null}
-          />
-        ) : (
-          <Stepper activeStep={activeStep} sx={{ mb: 4 }} alternativeLabel>
-            {STEPS.map((s, i) => (
-              <Step key={s.label} completed={i < activeStep}>
-                <StepLabel>{s.label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-        )}
-
-        {/* Step label on mobile */}
-        {isMobile && (
-          <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
-            Étape {activeStep + 1}/{STEPS.length} — {STEPS[activeStep].label}
-          </Typography>
-        )}
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {stepContent(activeStep)}
-        </Box>
-
-        {/* ═══ Stepper navigation ═══ */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mt: 4,
-            pt: 2,
-            borderTop: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          {savedAt && (
-            <Typography
-              variant="caption"
-              color="text.disabled"
-              sx={{
-                mr: 'auto',
-                alignSelf: 'center',
-                display: { xs: 'none', sm: 'block' },
-              }}
-            >
-              Brouillon sauvegardé à{' '}
-              {savedAt.toLocaleTimeString('fr-FR', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </Typography>
-          )}
-          <Box sx={{ display: 'flex', gap: 1.5, ml: 'auto' }}>
-            {activeStep > 0 && (
-              <Button
-                type="button"
-                onClick={handleBack}
-                startIcon={<ArrowBack />}
-                sx={{ borderRadius: 2 }}
-              >
-                Retour
-              </Button>
-            )}
-            {onCancel && activeStep === 0 && (
-              <Button
-                type="button"
-                onClick={onCancel}
-                disabled={isSubmitting}
-                sx={{ borderRadius: 2 }}
-              >
-                Annuler
-              </Button>
-            )}
-            {activeStep < STEPS.length - 1 ? (
-              <Button
-                type="button"
-                variant="contained"
-                onClick={handleNext}
-                endIcon={<ArrowForward />}
-                sx={{ borderRadius: 2, fontWeight: 700, px: 3 }}
-              >
-                Suivant
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={isSubmitting || isCompressing}
-                startIcon={
-                  isSubmitting ? <CircularProgress size={18} /> : <Check />
-                }
-                sx={{ borderRadius: 2, fontWeight: 700, px: 4, py: 1.25 }}
-              >
-                {submitLabel}
-              </Button>
-            )}
-          </Box>
-        </Box>
-
-        <ImageLightbox
-          images={lightboxImages}
-          open={photoLightboxOpen}
-          initialIndex={photoLightboxIndex}
-          onClose={() => setPhotoLightboxOpen(false)}
-        />
-      </form>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} noValidate>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+
         <AdFormBasicInfo
           values={values}
           update={update}
@@ -757,33 +328,9 @@ export default function AdForm({
           errors={errors}
           onImageChange={handleImageChange}
           onRemoveImage={removeImage}
-          onDeleteExistingImage={(id) =>
-            setImagesToDelete((prev) => [...prev, id])
-          }
+          onDeleteExistingImage={(id) => setImagesToDelete((prev) => [...prev, id])}
           onOpenLightbox={openPhotoLightbox}
         />
-
-        {(isCompressing || compressionSaved) && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1 }}>
-            {isCompressing && (
-              <>
-                <CircularProgress size={14} />
-                <Typography variant="caption" color="text.secondary">
-                  Optimisation des images...
-                </Typography>
-              </>
-            )}
-            {!isCompressing && compressionSaved && (
-              <Typography
-                variant="caption"
-                color="success.main"
-                fontWeight={600}
-              >
-                ✓ {compressionSaved}
-              </Typography>
-            )}
-          </Box>
-        )}
 
         <AdFormLocation
           values={values}
@@ -809,23 +356,14 @@ export default function AdForm({
 
         <AdFormFeatures values={values} update={update} errors={errors} />
 
-        <AdFormEquipment
-          values={values}
-          update={update}
-          autocompleteOptions={autocompleteOptions}
-        />
+        <AdFormEquipment values={values} update={update} autocompleteOptions={autocompleteOptions} />
 
         <AdFormPremiumInfo
           values={values}
           update={update}
-          defaultExpanded={
-            !!(
-              initialData?.deposit_amount || initialData?.minimum_lease_duration
-            )
-          }
+          defaultExpanded={!!(initialData?.deposit_amount || initialData?.minimum_lease_duration)}
           propertyConditionPdf={propertyConditionPdf}
           onPdfChange={setPropertyConditionPdf}
-          existingPdfUrl={ad?.property_condition_pdf ?? undefined}
         />
 
         <AdFormTour
@@ -860,26 +398,18 @@ export default function AdForm({
               color="text.disabled"
               sx={{ mr: 'auto', alignSelf: 'center' }}
             >
-              Brouillon sauvegardé à{' '}
-              {savedAt.toLocaleTimeString('fr-FR', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
+              Brouillon sauvegardé à {savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
             </Typography>
           )}
           {onCancel && (
-            <Button
-              onClick={onCancel}
-              disabled={isSubmitting}
-              sx={{ borderRadius: 2 }}
-            >
+            <Button onClick={onCancel} disabled={isSubmitting} sx={{ borderRadius: 2 }}>
               Annuler
             </Button>
           )}
           <Button
             type="submit"
             variant="contained"
-            disabled={isSubmitting || isCompressing}
+            disabled={isSubmitting}
             startIcon={isSubmitting ? <CircularProgress size={18} /> : null}
             sx={{
               borderRadius: 2,

@@ -176,4 +176,10 @@ export interface Ad {
   charges_eau?: string | null;
   charges_electricite?: string | null;
   charges_autres?: string | null;
+  // Proximité POI (mètres)
+  distance_main_road_m?: number | null;
+  distance_shops_m?: number | null;
+  distance_transport_m?: number | null;
+  distance_school_m?: number | null;
+  distance_hospital_m?: number | null;
 }

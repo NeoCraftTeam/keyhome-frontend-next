@@ -137,7 +137,18 @@ export default function OwnerNavbar() {
             )}
             <OwnerNotificationBell />
             <Box
+              role="button"
+              tabIndex={0}
+              aria-label="Menu utilisateur"
+              aria-haspopup="true"
+              aria-expanded={Boolean(anchorEl)}
               onClick={(e) => setAnchorEl(e.currentTarget)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setAnchorEl(e.currentTarget);
+                }
+              }}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -149,6 +160,7 @@ export default function OwnerNavbar() {
                 py: 0.5,
                 cursor: 'pointer',
                 '&:hover': { boxShadow: '0 2px 4px rgba(0,0,0,0.08)' },
+                '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
               }}
             >
               <ExpandMoreIcon sx={{ fontSize: 18, color: 'text.secondary' }} />

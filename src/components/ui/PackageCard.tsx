@@ -3,6 +3,7 @@
 import type { PointPackage } from '@/types';
 import { CheckCircleRounded, LocalFireDepartment, Toll, WorkspacePremium } from '@mui/icons-material';
 import { Box, Button, Chip, CircularProgress, Typography, useTheme } from '@mui/material';
+import { neutral } from '@/theme/tokens';
 
 export default function PackageCard({
   pkg,
@@ -88,19 +89,19 @@ export default function PackageCard({
           <Chip
             label={`-${Math.round((1 - pkg.price / (pkg.points_awarded * 100)) * 100)}%`}
             size="small"
-            sx={{ bgcolor: 'rgba(255,255,255,0.18)', color: '#fff', fontWeight: 800, fontSize: '0.65rem', height: 20 }}
+            sx={{ bgcolor: 'rgba(255,255,255,0.18)', color: neutral.white, fontWeight: 800, fontSize: '0.65rem', height: 20 }}
           />
         )}
       </Box>
 
       {/* Main content */}
       <Box sx={{ px: 2, pt: 1.5, pb: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="h6" fontWeight={800} sx={{ color: '#fff', letterSpacing: -0.3, lineHeight: 1.1, mb: 0.5 }}>
+        <Typography variant="h6" fontWeight={800} sx={{ color: neutral.white, letterSpacing: -0.3, lineHeight: 1.1, mb: 0.5 }}>
           {pkg.name}
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mb: 1.5 }}>
-          <Typography variant="h4" fontWeight={900} sx={{ color: '#fff', letterSpacing: -1, lineHeight: 1 }}>
+          <Typography variant="h4" fontWeight={900} sx={{ color: neutral.white, letterSpacing: -1, lineHeight: 1 }}>
             {pkg.points_awarded}
           </Typography>
           <Typography variant="caption" fontWeight={700} sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -136,7 +137,7 @@ export default function PackageCard({
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1,
         }}>
           <Box>
-            <Typography variant="h6" fontWeight={900} sx={{ color: '#fff', letterSpacing: -0.5, lineHeight: 1 }}>
+            <Typography variant="h6" fontWeight={900} sx={{ color: neutral.white, letterSpacing: -0.5, lineHeight: 1 }}>
               {pkg.price.toLocaleString('fr-FR')}
               <Typography component="span" variant="caption" fontWeight={700} sx={{ ml: 0.4, color: 'rgba(255,255,255,0.6)' }}>
                 FCFA
@@ -154,13 +155,13 @@ export default function PackageCard({
             onClick={(e) => { e.stopPropagation(); onPurchase(pkg); }}
             sx={{
               borderRadius: 2.5, textTransform: 'none', fontWeight: 800, fontSize: '0.82rem',
-              px: 2.5, py: 0.75, bgcolor: 'rgba(255,255,255,0.22)', color: '#fff',
+              px: 2.5, py: 0.75, bgcolor: 'rgba(255,255,255,0.22)', color: neutral.white,
               backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)', flexShrink: 0,
               '&:hover': { bgcolor: 'rgba(255,255,255,0.35)' },
               '&:disabled': { opacity: 0.5 },
             }}
           >
-            {loading ? <CircularProgress size={15} sx={{ color: '#fff' }} /> : 'Acheter'}
+            {loading ? <CircularProgress size={15} sx={{ color: neutral.white }} /> : 'Acheter'}
           </Button>
         </Box>
       </Box>

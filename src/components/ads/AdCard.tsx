@@ -16,10 +16,12 @@ import {
   SquareFootOutlined,
   Star as StarIcon,
 } from '@mui/icons-material';
-import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, IconButton, Tooltip } from '@mui/material';
+import { Typography } from '@/components/ui/Typography';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { shadow, neutral, semantic } from '@/theme/tokens';
 import { useCallback, useRef, useState } from 'react';
 
 /** Tiny inline blur placeholder — avoids layout shift while image loads */
@@ -182,10 +184,15 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               position: 'relative',
               width: '100%',
               paddingTop: '66.67%', // 3:2 — matches Airbnb
-              // Airbnb uses ~12px radius, nothing more
+              // radius.md = 12px
               borderRadius: '12px',
               overflow: 'hidden',
               bgcolor: 'grey.100',
+              transition: 'transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.25s ease',
+              '&:hover': {
+                transform: 'translateY(-3px)',
+                boxShadow: shadow.cardHover,
+              },
             }}
           >
             {/* Images — slide transition */}
@@ -251,7 +258,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.5,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  boxShadow: shadow.medium,
                 }}
               >
                 <CompareArrows sx={{ fontSize: 11 }} /> Comparé ✓
@@ -275,7 +282,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                   sx={{
                     bgcolor: 'rgba(255,255,255,0.2)',
                     backdropFilter: 'blur(4px)',
-                    color: isFavorite ? 'primary.main' : '#fff',
+                    color: isFavorite ? 'primary.main' : neutral.white,
                     width: 32,
                     height: 32,
                     transition: 'background-color 0.2s ease',
@@ -338,13 +345,13 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                   fontSize: '0.7rem',
                   bgcolor:
                     ad.status === 'sold'
-                      ? '#222'
+                      ? neutral.black
                       : ad.status === 'reserved'
-                        ? '#F59E0B'
+                        ? semantic.warning
                         : ad.status === 'rent'
-                          ? '#3B82F6'
+                          ? semantic.info
                           : 'primary.main',
-                  color: '#fff',
+                  color: neutral.white,
                 }}
               />
             )}
@@ -362,23 +369,22 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                     left: 8,
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    bgcolor: 'rgba(255,255,255,0.92)',
                     opacity: 0,
                     transition: 'opacity 0.2s',
                     '&:hover': {
-                      bgcolor: '#fff',
+                      bgcolor: neutral.white,
                       transform: 'translateY(-50%)',
                     },
                     '&:active': { transform: 'translateY(-50%)' },
-                    '@media (hover: none)': { opacity: 0.85 },
                     zIndex: 2,
                     width: 28,
                     height: 28,
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                    boxShadow: shadow.cardSm,
                   }}
                 >
                   <ChevronLeft sx={{ fontSize: 18 }} />
                 </IconButton>
+
                 <IconButton
                   className="image-nav"
                   onClick={nextImage}
@@ -389,19 +395,17 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                     right: 8,
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    bgcolor: 'rgba(255,255,255,0.92)',
                     opacity: 0,
                     transition: 'opacity 0.2s',
                     '&:hover': {
-                      bgcolor: '#fff',
+                      bgcolor: neutral.white,
                       transform: 'translateY(-50%)',
                     },
                     '&:active': { transform: 'translateY(-50%)' },
-                    '@media (hover: none)': { opacity: 0.85 },
                     zIndex: 2,
                     width: 28,
                     height: 28,
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                    boxShadow: shadow.cardSm,
                   }}
                 >
                   <ChevronRight sx={{ fontSize: 18 }} />
@@ -440,7 +444,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                       borderRadius: '50%',
                       bgcolor:
                         idx === currentImage
-                          ? '#fff'
+                          ? neutral.white
                           : 'rgba(255,255,255,0.45)',
                       transition: 'background-color 0.2s',
                       cursor: 'pointer',
@@ -621,18 +625,18 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                 gap: 0.5,
               }}
             >
-              <Typography
-                variant="body2"
-                fontWeight={700}
-                sx={{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  fontSize: { xs: '0.82rem', sm: '0.875rem' },
-                }}
-              >
-                {formatPrice(ad.price)}
-              </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                fontSize: '0.9375rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                color: 'text.primary',
+              }}
+            >
+              {ad.title}
+            </Typography>
               <Tooltip
                 title={
                   isInComparator(ad.id)

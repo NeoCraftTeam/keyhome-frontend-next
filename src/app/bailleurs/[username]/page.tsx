@@ -39,24 +39,41 @@ import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useAuth } from '@/providers/AuthProvider';
+import api from '@/lib/api';
 
-function useFollowBailleur(userId: string) {
-  const key = `kh_follow_${userId}`;
-  const [following, setFollowing] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem(key) === '1';
-  });
+function useFollowBailleur(username: string) {
+  const { user: currentUser } = useAuth();
+  const [following, setFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const toggle = useCallback(() => {
-    setFollowing((prev) => {
-      const next = !prev;
-      localStorage.setItem(key, next ? '1' : '0');
-      return next;
-    });
-  }, [key]);
+  useEffect(() => {
+    if (!currentUser || !username) return;
+    api.get<{ following: boolean; followers_count: number }>(`/v1/bailleurs/${username}/follow`)
+      .then(({ data }) => {
+        setFollowing(data.following);
+        setFollowersCount(data.followers_count);
+      })
+      .catch(() => {});
+  }, [username, currentUser]);
 
-  return { following, toggle };
+  const toggle = useCallback(async () => {
+    if (!currentUser) return;
+    setLoading(true);
+    try {
+      const { data } = await api.post<{ following: boolean; followers_count: number }>(`/v1/bailleurs/${username}/follow`);
+      setFollowing(data.following);
+      setFollowersCount(data.followers_count);
+    } catch {
+      /* ignore — leave state unchanged */
+    } finally {
+      setLoading(false);
+    }
+  }, [username, currentUser]);
+
+  return { following, toggle, loading, followersCount, isAuthenticated: !!currentUser };
 }
 
 function ReviewCard({ review }: { review: PublicReview }) {
@@ -112,7 +129,7 @@ export default function BailleurPublicProfilePage() {
   const ads: Ad[] = data?.ads ?? [];
   const meta = data?.meta;
 
-  const { following, toggle: toggleFollow } = useFollowBailleur(profile?.id ?? username);
+  const { following, toggle: toggleFollow, loading: followLoading, followersCount, isAuthenticated } = useFollowBailleur(username);
 
   if (isLoading) {
     return <AppLoader fullPage />;
@@ -290,18 +307,25 @@ export default function BailleurPublicProfilePage() {
             </Box>
           </Box>
 
-          {/* Follow button */}
-          <Box sx={{ flexShrink: 0, alignSelf: { xs: 'center', sm: 'flex-start' } }}>
+          {/* Favoris button */}
+          <Box sx={{ flexShrink: 0, alignSelf: { xs: 'center', sm: 'flex-start' }, textAlign: 'center' }}>
             <Button
               variant={following ? 'contained' : 'outlined'}
               color={following ? 'primary' : 'inherit'}
               startIcon={following ? <Favorite /> : <FavoriteBorder />}
-              onClick={toggleFollow}
+              onClick={isAuthenticated ? toggleFollow : undefined}
+              disabled={followLoading || (!isAuthenticated && false)}
+              href={!isAuthenticated ? '/login' : undefined}
               size="medium"
-              sx={{ textTransform: 'none', fontWeight: 600, borderRadius: '20px', minWidth: 160 }}
+              sx={{ textTransform: 'none', fontWeight: 600, borderRadius: '20px', minWidth: 172 }}
             >
-              {following ? 'Suivi' : '+ Suivre ce bailleur'}
+              {following ? 'Retiré des favoris' : 'Mettre en favoris'}
             </Button>
+            {followersCount !== null && followersCount > 0 && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                {followersCount} favori{followersCount > 1 ? 's' : ''}
+              </Typography>
+            )}
           </Box>
         </Box>
       </Paper>
