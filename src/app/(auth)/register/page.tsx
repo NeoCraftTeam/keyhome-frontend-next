@@ -108,6 +108,8 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailTaken, setEmailTaken] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
 
   const [showWelcome, setShowWelcome] = useState(false);
   const [accountRole, setAccountRole] = useState<AccountRole>(
@@ -236,6 +238,7 @@ export default function RegisterPage() {
   const cities = citiesData?.data || [];
 
   const updateField = (field: string, value: string) => {
+    if (field === 'email') setEmailTaken(false);
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -248,6 +251,24 @@ export default function RegisterPage() {
     form.lastname.trim().length >= 2 &&
     form.email.includes('@') &&
     isPhoneValid;
+
+  const handleProceedToStep2 = useCallback(async () => {
+    if (!canProceedStep1) return;
+    setIsCheckingEmail(true);
+    try {
+      const { available } = await authService.checkEmail(form.email);
+      if (!available) {
+        setEmailTaken(true);
+        markTouched('email');
+        return;
+      }
+      setStep(2);
+    } catch {
+      setStep(2);
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  }, [canProceedStep1, form.email]);
 
   const passwordStrength = getPasswordStrength(form.password);
   const canSubmit =
@@ -301,10 +322,18 @@ export default function RegisterPage() {
         }
       }
 
+      // Persist the registration intent so the verify-email page can adapt
+      // its UI (owner teal theme) and redirect to the correct dashboard.
+      sessionStorage.setItem('kh_register_role', accountRole);
+
       clearStoredRegisterAccountRole();
       setShowWelcome(true);
       setTimeout(() => {
-        router.push('/verify-email');
+        if (accountRole === 'agent') {
+          router.push('/owner/auth/verify-otp');
+        } else {
+          router.push('/verify-email');
+        }
       }, 3800);
     } catch (err) {
       setError(getSafeErrorMessage(err, "Erreur lors de l'inscription."));
@@ -322,7 +351,12 @@ export default function RegisterPage() {
     return (
       <WelcomeOverlay
         firstName={form.firstname}
-        onSkip={() => router.push('/verify-email')}
+        isOwner={accountRole === 'agent'}
+        onSkip={() =>
+          router.push(
+            accountRole === 'agent' ? '/owner/auth/verify-otp' : '/verify-email'
+          )
+        }
       />
     );
   }
@@ -779,11 +813,16 @@ export default function RegisterPage() {
                         emailLabelShrink.onBlur();
                       }}
                       required
-                      error={touched.email && !form.email.includes('@')}
+                      error={
+                        (touched.email && !form.email.includes('@')) ||
+                        emailTaken
+                      }
                       helperText={
-                        touched.email && !form.email.includes('@')
-                          ? 'Veuillez entrer une adresse email valide'
-                          : ''
+                        emailTaken
+                          ? 'Cette adresse email est déjà utilisée.'
+                          : touched.email && !form.email.includes('@')
+                            ? 'Veuillez entrer une adresse email valide'
+                            : ''
                       }
                       InputProps={{
                         startAdornment: (
@@ -905,11 +944,15 @@ export default function RegisterPage() {
                         fullWidth
                         variant="contained"
                         size="large"
-                        disabled={!canProceedStep1}
-                        onClick={() => setStep(2)}
+                        disabled={!canProceedStep1 || isCheckingEmail}
+                        onClick={handleProceedToStep2}
                         sx={containedGradientSx}
                       >
-                        Continuer
+                        {isCheckingEmail ? (
+                          <CircularProgress size={22} sx={{ color: '#fff' }} />
+                        ) : (
+                          'Continuer'
+                        )}
                       </Button>
                     </Box>
                   </Box>

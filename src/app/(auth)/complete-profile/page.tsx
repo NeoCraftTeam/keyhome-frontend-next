@@ -12,20 +12,21 @@ import { City } from '@/types';
 import { useSignUp } from '@clerk/nextjs';
 import { ArrowBack } from '@mui/icons-material';
 import {
-    Alert,
-    Autocomplete,
-    Box,
-    Button,
-    CircularProgress,
-    IconButton,
-    TextField,
-    Typography,
+  Alert,
+  Autocomplete,
+  Box,
+  Button,
+  CircularProgress,
+  IconButton,
+  TextField,
+  Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { gradient } from '@/theme/tokens';
+import { getRegisterThemeTokens } from '@/lib/register-theme';
 
 /**
  * Shown when a new OAuth user (Google, etc.) has missing required fields.
@@ -37,7 +38,11 @@ import { gradient } from '@/theme/tokens';
  */
 export default function CompleteProfilePage() {
   const { finalizeAuth } = useAuth();
-  const { slotProps: citySlotProps, renderOption: renderCityOption, inputSx: cityInputSx } = useCityAutocompleteConfig();
+  const {
+    slotProps: citySlotProps,
+    renderOption: renderCityOption,
+    inputSx: cityInputSx,
+  } = useCityAutocompleteConfig();
   const { signUp, setActive } = useSignUp();
   const router = useRouter();
 
@@ -61,7 +66,13 @@ export default function CompleteProfilePage() {
 
   // Detect which flow we're in
   const [isOtpFlow, setIsOtpFlow] = useState(false);
-  const [prefill, setPrefill] = useState<{ firstname: string; lastname: string; email: string | null; avatar: string | null } | null>(null);
+  const [prefill, setPrefill] = useState<{
+    firstname: string;
+    lastname: string;
+    email: string | null;
+    avatar: string | null;
+    registration_intent?: string;
+  } | null>(null);
 
   useEffect(() => {
     const raw = sessionStorage.getItem('clerk_auth_prefill');
@@ -70,6 +81,12 @@ export default function CompleteProfilePage() {
         const parsed = JSON.parse(raw);
         setPrefill(parsed);
         setIsOtpFlow(true);
+        if (parsed.registration_intent) {
+          sessionStorage.setItem(
+            'kh_registration_intent',
+            parsed.registration_intent
+          );
+        }
       } catch {
         // malformed — fall through to Clerk native flow
       }
@@ -94,7 +111,9 @@ export default function CompleteProfilePage() {
         finalizeAuth(result.token, result.user, result.panel_sso_url);
       }, 3800);
     } catch (err) {
-      setError(getSafeErrorMessage(err, 'Une erreur est survenue. Veuillez réessayer.'));
+      setError(
+        getSafeErrorMessage(err, 'Une erreur est survenue. Veuillez réessayer.')
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -104,7 +123,9 @@ export default function CompleteProfilePage() {
 
   const handleClerkFlowSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signUp) { return; }
+    if (!signUp) {
+      return;
+    }
 
     setError('');
     setIsSubmitting(true);
@@ -120,14 +141,23 @@ export default function CompleteProfilePage() {
 
       if (result.status === 'complete') {
         await setActive!({ session: result.createdSessionId! });
-        router.replace('/home');
+        const intentRaw =
+          typeof window !== 'undefined'
+            ? sessionStorage.getItem('kh_registration_intent')
+            : null;
+        router.replace(intentRaw === 'agent' ? '/owner/dashboard' : '/home');
       } else {
         // Log missing fields to help debug future issues
         const missing = result.missingFields?.join(', ') || 'inconnu';
-        setError(`Champs manquants : ${missing}. Veuillez compléter toutes les informations requises.`);
+        setError(
+          `Champs manquants : ${missing}. Veuillez compléter toutes les informations requises.`
+        );
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Une erreur est survenue. Veuillez réessayer.';
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Une erreur est survenue. Veuillez réessayer.';
       setError(msg);
     } finally {
       setIsSubmitting(false);
@@ -171,19 +201,43 @@ export default function CompleteProfilePage() {
           sx={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(to bottom, rgba(34,34,34,0.15) 0%, rgba(34,34,34,0.6) 100%)',
+            background:
+              'linear-gradient(to bottom, rgba(34,34,34,0.15) 0%, rgba(34,34,34,0.6) 100%)',
             zIndex: 1,
           }}
         />
-        <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 6, zIndex: 2 }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            p: 6,
+            zIndex: 2,
+          }}
+        >
           <FadeIn delay={0.2} direction="up">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Image src="/images/logo.png" alt="KeyHome — Compléter votre profil" width={42} height={42} />
-              <Typography variant="h4" fontWeight={700} color="#fff">KeyHome</Typography>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}
+            >
+              <Image
+                src="/images/logo.png"
+                alt="KeyHome — Compléter votre profil"
+                width={42}
+                height={42}
+              />
+              <Typography variant="h4" fontWeight={700} color="#fff">
+                KeyHome
+              </Typography>
             </Box>
           </FadeIn>
           <FadeIn delay={0.4} direction="up">
-            <Typography variant="h5" color="rgba(255,255,255,0.9)" fontWeight={400} sx={{ maxWidth: 360 }}>
+            <Typography
+              variant="h5"
+              color="rgba(255,255,255,0.9)"
+              fontWeight={400}
+              sx={{ maxWidth: 360 }}
+            >
               Presque là !
             </Typography>
           </FadeIn>
@@ -221,32 +275,74 @@ export default function CompleteProfilePage() {
 
         {/* Mobile logo */}
         <FadeIn direction="none">
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1, mb: 4 }}>
-            <Image src="/images/logo.png" alt="KeyHome — Compléter votre profil" width={40} height={40} priority />
-            <Typography variant="h5" fontWeight={700} color="primary.main">KeyHome</Typography>
+          <Box
+            sx={{
+              display: { xs: 'flex', md: 'none' },
+              alignItems: 'center',
+              gap: 1,
+              mb: 4,
+            }}
+          >
+            <Image
+              src={
+                prefill?.registration_intent === 'agent'
+                  ? '/images/logo-teal.png'
+                  : '/images/logo.png'
+              }
+              alt="KeyHome — Compléter votre profil"
+              width={40}
+              height={40}
+              priority
+            />
+            <Typography
+              variant="h5"
+              fontWeight={700}
+              sx={{
+                color:
+                  prefill?.registration_intent === 'agent'
+                    ? '#0d9488'
+                    : 'primary.main',
+              }}
+            >
+              KeyHome
+            </Typography>
           </Box>
         </FadeIn>
 
         <Box sx={{ width: '100%', maxWidth: 400 }}>
           <FadeIn delay={0.1} direction="up">
             <Typography variant="h4" fontWeight={700} gutterBottom>
-              Complétez votre profil
+              {prefill?.registration_intent === 'agent'
+                ? 'Configurez votre espace bailleur'
+                : 'Complétez votre profil'}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               {prefill?.firstname
-                ? `Bonjour ${prefill.firstname} ! Une dernière étape pour activer votre compte.`
+                ? prefill.registration_intent === 'agent'
+                  ? `Bonjour ${prefill.firstname} ! Dernière étape avant de publier vos annonces.`
+                  : `Bonjour ${prefill.firstname} ! Une dernière étape pour activer votre compte.`
                 : 'Renseignez les informations manquantes pour continuer.'}
             </Typography>
           </FadeIn>
 
           {error && (
             <FadeIn direction="none" duration={0.3}>
-              <Alert severity="error" id="complete-profile-error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+              <Alert
+                severity="error"
+                id="complete-profile-error"
+                sx={{ mb: 2, borderRadius: 2 }}
+              >
+                {error}
+              </Alert>
             </FadeIn>
           )}
 
           <FadeIn delay={0.2} direction="up">
-            <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+            >
               {showPhoneField && (
                 <PhoneField
                   value={phoneNumber}
@@ -268,9 +364,15 @@ export default function CompleteProfilePage() {
                 inputValue={cityInput}
                 onInputChange={(_, newInput) => setCityInput(newInput)}
                 loading={isCitiesLoading}
-                noOptionsText={cityInput.length < 1 ? 'Tapez pour rechercher...' : 'Aucune ville trouvée'}
+                noOptionsText={
+                  cityInput.length < 1
+                    ? 'Tapez pour rechercher...'
+                    : 'Aucune ville trouvée'
+                }
                 slotProps={citySlotProps}
-                renderOption={(props, option) => renderCityOption(props, option)}
+                renderOption={(props, option) =>
+                  renderCityOption(props, option)
+                }
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -281,7 +383,9 @@ export default function CompleteProfilePage() {
                       ...params.InputProps,
                       endAdornment: (
                         <>
-                          {isCitiesLoading ? <CircularProgress color="inherit" size={16} /> : null}
+                          {isCitiesLoading ? (
+                            <CircularProgress color="inherit" size={16} />
+                          ) : null}
                           {params.InputProps.endAdornment}
                         </>
                       ),
@@ -295,17 +399,32 @@ export default function CompleteProfilePage() {
                 variant="contained"
                 size="large"
                 fullWidth
-                disabled={isSubmitting || (showPhoneField && phoneNumber.trim().length < 8)}
+                disabled={
+                  isSubmitting ||
+                  (showPhoneField && phoneNumber.trim().length < 8)
+                }
                 sx={{
                   py: 1.5,
                   fontSize: '1rem',
                   fontWeight: 600,
-                  background: gradient.primary,
-                  '&:hover': { background: gradient.primaryHover },
+                  background:
+                    prefill?.registration_intent === 'agent'
+                      ? getRegisterThemeTokens('agent').gradient
+                      : gradient.primary,
+                  '&:hover': {
+                    background:
+                      prefill?.registration_intent === 'agent'
+                        ? getRegisterThemeTokens('agent').gradientHover
+                        : gradient.primaryHover,
+                  },
                   '&:active': { transform: 'scale(0.97)' },
                 }}
               >
-                {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Continuer'}
+                {isSubmitting ? (
+                  <CircularProgress size={24} sx={{ color: '#fff' }} />
+                ) : (
+                  'Continuer'
+                )}
               </Button>
             </Box>
           </FadeIn>

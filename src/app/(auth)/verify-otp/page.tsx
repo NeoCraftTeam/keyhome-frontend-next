@@ -7,7 +7,14 @@ import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { gradient } from '@/theme/tokens';
 import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
-import { Alert, Box, Button, CircularProgress, IconButton, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  IconButton,
+  Typography,
+} from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -50,12 +57,18 @@ export default function VerifyOtpPage() {
       }
 
       navigator.credentials
-        .get({ otp: { transport: ['sms'] }, signal: ac.signal } as CredentialRequestOptions)
+        .get({
+          otp: { transport: ['sms'] },
+          signal: ac.signal,
+        } as CredentialRequestOptions)
         .then((cred) => {
           const otpCred = cred as { code?: string };
           if (otpCred?.code) {
             const code = otpCred.code.replace(/\D/g, '').slice(0, 6);
-            const newDigits = code.split('').concat(Array(6).fill('')).slice(0, 6);
+            const newDigits = code
+              .split('')
+              .concat(Array(6).fill(''))
+              .slice(0, 6);
             setDigits(newDigits);
           }
         })
@@ -87,13 +100,24 @@ export default function VerifyOtpPage() {
     try {
       const result = await authService.verifyClerkOtp(otp);
       if (result.state === 'profile_required') {
-        sessionStorage.setItem('clerk_auth_prefill', JSON.stringify(result.prefill));
+        sessionStorage.setItem(
+          'clerk_auth_prefill',
+          JSON.stringify(result.prefill)
+        );
+        if (result.prefill.registration_intent) {
+          sessionStorage.setItem(
+            'kh_registration_intent',
+            result.prefill.registration_intent
+          );
+        }
         router.replace('/complete-profile');
         return;
       }
       finalizeAuth(result.token, result.user, result.panel_sso_url);
     } catch (err) {
-      setError(getSafeErrorMessage(err, 'Code invalide ou expiré. Veuillez réessayer.'));
+      setError(
+        getSafeErrorMessage(err, 'Code invalide ou expiré. Veuillez réessayer.')
+      );
       setDigits(['', '', '', '', '', '']);
       otpInputRef.current?.focus();
     } finally {
@@ -116,7 +140,12 @@ export default function VerifyOtpPage() {
       setDigits(['', '', '', '', '', '']);
       otpInputRef.current?.focus();
     } catch (err) {
-      setError(getSafeErrorMessage(err, "Impossible de renvoyer le code. Veuillez réessayer."));
+      setError(
+        getSafeErrorMessage(
+          err,
+          'Impossible de renvoyer le code. Veuillez réessayer.'
+        )
+      );
     }
   }, [resendCooldown, getClerkToken]);
 
@@ -143,19 +172,43 @@ export default function VerifyOtpPage() {
           sx={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(to bottom, rgba(34,34,34,0.15) 0%, rgba(34,34,34,0.6) 100%)',
+            background:
+              'linear-gradient(to bottom, rgba(34,34,34,0.15) 0%, rgba(34,34,34,0.6) 100%)',
             zIndex: 1,
           }}
         />
-        <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 6, zIndex: 2 }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            p: 6,
+            zIndex: 2,
+          }}
+        >
           <FadeIn delay={0.2} direction="up">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Image src="/images/logo.png" alt="KeyHome — Vérification code OTP" width={42} height={42} />
-              <Typography variant="h4" fontWeight={700} color="#fff">KeyHome</Typography>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}
+            >
+              <Image
+                src="/images/logo.png"
+                alt="KeyHome — Vérification code OTP"
+                width={42}
+                height={42}
+              />
+              <Typography variant="h4" fontWeight={700} color="#fff">
+                KeyHome
+              </Typography>
             </Box>
           </FadeIn>
           <FadeIn delay={0.4} direction="up">
-            <Typography variant="h5" color="rgba(255,255,255,0.9)" fontWeight={400} sx={{ maxWidth: 360 }}>
+            <Typography
+              variant="h5"
+              color="rgba(255,255,255,0.9)"
+              fontWeight={400}
+              sx={{ maxWidth: 360 }}
+            >
               Sécurité avant tout
             </Typography>
           </FadeIn>
@@ -193,9 +246,24 @@ export default function VerifyOtpPage() {
 
         {/* Mobile logo */}
         <FadeIn direction="none">
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1, mb: 4 }}>
-            <Image src="/images/logo.png" alt="KeyHome — Vérification code OTP" width={40} height={40} priority />
-            <Typography variant="h5" fontWeight={700} color="primary.main">KeyHome</Typography>
+          <Box
+            sx={{
+              display: { xs: 'flex', md: 'none' },
+              alignItems: 'center',
+              gap: 1,
+              mb: 4,
+            }}
+          >
+            <Image
+              src="/images/logo.png"
+              alt="KeyHome — Vérification code OTP"
+              width={40}
+              height={40}
+              priority
+            />
+            <Typography variant="h5" fontWeight={700} color="primary.main">
+              KeyHome
+            </Typography>
           </Box>
         </FadeIn>
 
@@ -215,12 +283,18 @@ export default function VerifyOtpPage() {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
               Saisissez le code à 6 chiffres envoyé à{' '}
               {emailHint ? (
-                <Typography component="span" fontWeight={600} color="text.primary" variant="body2">
+                <Typography
+                  component="span"
+                  fontWeight={600}
+                  color="text.primary"
+                  variant="body2"
+                >
                   {emailHint}
                 </Typography>
               ) : (
                 'votre adresse email'
-              )}.
+              )}
+              .
             </Typography>
           </FadeIn>
 
@@ -228,7 +302,10 @@ export default function VerifyOtpPage() {
             {/* form wrapper is required for iOS/Android SMS OTP autofill */}
             <Box
               component="form"
-              onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit();
+              }}
               autoComplete="on"
             >
               {/* Champ unique pour autofill (iOS) et Web OTP (Android) — superposé aux 6 cases */}
@@ -252,13 +329,22 @@ export default function VerifyOtpPage() {
                   value={digits.join('')}
                   onChange={(e) => {
                     const raw = e.target.value.replace(/\D/g, '').slice(0, 6);
-                    const newDigits = raw.split('').concat(Array(6).fill('')).slice(0, 6);
+                    const newDigits = raw
+                      .split('')
+                      .concat(Array(6).fill(''))
+                      .slice(0, 6);
                     setDigits(newDigits);
                   }}
                   onPaste={(e) => {
                     e.preventDefault();
-                    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-                    const newDigits = pasted.split('').concat(Array(6).fill('')).slice(0, 6);
+                    const pasted = e.clipboardData
+                      .getData('text')
+                      .replace(/\D/g, '')
+                      .slice(0, 6);
+                    const newDigits = pasted
+                      .split('')
+                      .concat(Array(6).fill(''))
+                      .slice(0, 6);
                     setDigits(newDigits);
                   }}
                   aria-label="Code de vérification à 6 chiffres"
@@ -297,7 +383,10 @@ export default function VerifyOtpPage() {
                       borderColor: digit ? 'primary.main' : 'divider',
                       borderRadius: '10px',
                       bgcolor: digit
-                        ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.08)
+                        ? alpha(
+                            theme.palette.primary.main,
+                            theme.palette.mode === 'dark' ? 0.22 : 0.08
+                          )
                         : theme.palette.mode === 'dark'
                           ? theme.palette.grey[900]
                           : theme.palette.background.paper,
@@ -313,12 +402,20 @@ export default function VerifyOtpPage() {
 
               {error && (
                 <FadeIn direction="none" duration={0.3}>
-                  <Alert severity="error" id="verify-otp-error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+                  <Alert
+                    severity="error"
+                    id="verify-otp-error"
+                    sx={{ mb: 2, borderRadius: 2 }}
+                  >
+                    {error}
+                  </Alert>
                 </FadeIn>
               )}
               {resendMessage && (
                 <FadeIn direction="none" duration={0.3}>
-                  <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{resendMessage}</Alert>
+                  <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>
+                    {resendMessage}
+                  </Alert>
                 </FadeIn>
               )}
 
@@ -348,7 +445,11 @@ export default function VerifyOtpPage() {
                     '&:active': { transform: 'scale(0.97)' },
                   }}
                 >
-                  {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Vérifier le code'}
+                  {isSubmitting ? (
+                    <CircularProgress size={24} sx={{ color: '#fff' }} />
+                  ) : (
+                    'Vérifier le code'
+                  )}
                 </Button>
               </FadeIn>
             </Box>

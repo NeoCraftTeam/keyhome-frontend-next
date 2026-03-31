@@ -3,15 +3,20 @@
 import { Box, Button, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useEffect } from 'react';
-import { brand } from '@/theme/tokens';
+import { brand, brandAgent } from '@/theme/tokens';
 
 interface WelcomeOverlayProps {
   firstName?: string | null;
   onSkip?: () => void;
+  isOwner?: boolean;
 }
 
 /** Celebratory full-screen overlay shown after registration / OAuth completion. */
-export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProps) {
+export default function WelcomeOverlay({
+  firstName,
+  onSkip,
+  isOwner = false,
+}: WelcomeOverlayProps) {
   useEffect(() => {
     const t = window.setTimeout(() => {
       window.dispatchEvent(new CustomEvent('kh:welcome-dismissed'));
@@ -42,8 +47,10 @@ export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProp
           animation: 'none',
         },
 
-        /* purple→red sweep background */
-        background: `linear-gradient(135deg, #0f0c29 0%, #302b63 40%, #8b1a2e 75%, ${brand.primary} 100%)`,
+        /* purple→red sweep (client) or deep-teal sweep (owner) */
+        background: isOwner
+          ? `linear-gradient(135deg, #0a1628 0%, #0c2a2a 35%, #0d4a44 70%, ${brandAgent.primary} 100%)`
+          : `linear-gradient(135deg, #0f0c29 0%, #302b63 40%, #8b1a2e 75%, ${brand.primary} 100%)`,
       }}
     >
       {/* Floating confetti dots */}
@@ -55,23 +62,63 @@ export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProp
             width: i % 3 === 0 ? 10 : i % 3 === 1 ? 7 : 5,
             height: i % 3 === 0 ? 10 : i % 3 === 1 ? 7 : 5,
             borderRadius: '50%',
-            bgcolor: [
-              brand.primary, '#ffffff', '#FFD700', '#ff9f43',
-              '#48dbfb', '#ff6b6b', '#ffeaa7', '#a29bfe',
-              '#fd79a8', '#55efc4', brand.primary, '#ffffff',
-              '#FFD700', '#ff9f43', '#48dbfb', '#ff6b6b',
-              '#a29bfe', '#55efc4',
-            ][i],
-            top: `${Math.random() * 100}%`,
-            left: `${5 + (i * 5.5) % 92}%`,
+            bgcolor: isOwner
+              ? [
+                  brandAgent.primary,
+                  '#ffffff',
+                  '#A7F3D0',
+                  '#6EE7B7',
+                  brandAgent.primaryLight,
+                  '#ffffff',
+                  '#D1FAE5',
+                  '#34D399',
+                  '#a29bfe',
+                  '#6EE7B7',
+                  brandAgent.primaryDark,
+                  '#ffffff',
+                  '#A7F3D0',
+                  '#34D399',
+                  brandAgent.primaryLight,
+                  '#6EE7B7',
+                  '#a29bfe',
+                  '#55efc4',
+                ][i]
+              : [
+                  brand.primary,
+                  '#ffffff',
+                  '#FFD700',
+                  '#ff9f43',
+                  '#48dbfb',
+                  '#ff6b6b',
+                  '#ffeaa7',
+                  '#a29bfe',
+                  '#fd79a8',
+                  '#55efc4',
+                  brand.primary,
+                  '#ffffff',
+                  '#FFD700',
+                  '#ff9f43',
+                  '#48dbfb',
+                  '#ff6b6b',
+                  '#a29bfe',
+                  '#55efc4',
+                ][i],
+            top: `${(i * 17 + 7) % 100}%`,
+            left: `${5 + ((i * 5.5) % 92)}%`,
             opacity: 0,
             animation: `confettiFall ${1.8 + (i % 5) * 0.4}s ease-in ${0.3 + (i % 6) * 0.15}s infinite`,
-            '@media (prefers-reduced-motion: reduce)': { animation: 'none', display: 'none' },
+            '@media (prefers-reduced-motion: reduce)': {
+              animation: 'none',
+              display: 'none',
+            },
             '@keyframes confettiFall': {
               '0%': { opacity: 0, transform: 'translateY(-60px) rotate(0deg)' },
               '20%': { opacity: 0.9 },
               '80%': { opacity: 0.7 },
-              '100%': { opacity: 0, transform: 'translateY(80px) rotate(720deg)' },
+              '100%': {
+                opacity: 0,
+                transform: 'translateY(80px) rotate(720deg)',
+              },
             },
           }}
         />
@@ -84,7 +131,7 @@ export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProp
           height: 160,
           borderRadius: '50%',
           position: 'absolute',
-          bgcolor: 'rgba(246,71,95,0.25)',
+          bgcolor: isOwner ? 'rgba(13,148,136,0.25)' : 'rgba(246,71,95,0.25)',
           filter: 'blur(32px)',
           animation: 'pulse 2s ease-in-out 0.4s infinite',
           '@keyframes pulse': {
@@ -130,7 +177,12 @@ export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProp
               mx: 'auto',
             }}
           >
-            <Image src="/images/logo.png" alt="Bienvenue sur KeyHome — Plateforme immobilière #1 en Afrique" width={60} height={60} />
+            <Image
+              src={isOwner ? '/images/logo-teal.png' : '/images/logo.png'}
+              alt="Bienvenue sur KeyHome"
+              width={60}
+              height={60}
+            />
           </Box>
         </Box>
 
@@ -168,7 +220,9 @@ export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProp
               lineHeight: 1.5,
             }}
           >
-            Votre chez-vous vous attend sur KeyHome.
+            {isOwner
+              ? 'Votre espace professionnel est prêt.'
+              : 'Votre chez-vous vous attend sur KeyHome.'}
           </Typography>
         </Box>
 
@@ -185,9 +239,16 @@ export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProp
         >
           <Typography
             variant="body2"
-            sx={{ color: 'rgba(255,255,255,0.55)', letterSpacing: 2, textTransform: 'uppercase', fontSize: '0.7rem' }}
+            sx={{
+              color: 'rgba(255,255,255,0.55)',
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              fontSize: '0.7rem',
+            }}
           >
-            Préparez‑vous à découvrir votre logement idéal
+            {isOwner
+              ? 'Publiez, gérez et louez vos biens en toute simplicité'
+              : 'Préparez‑vous à découvrir votre logement idéal'}
           </Typography>
         </Box>
 
@@ -199,7 +260,10 @@ export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProp
             justifyContent: 'center',
             mt: 5,
             animation: 'fadeInDots 0.6s ease 1.1s both',
-            '@keyframes fadeInDots': { from: { opacity: 0 }, to: { opacity: 1 } },
+            '@keyframes fadeInDots': {
+              from: { opacity: 0 },
+              to: { opacity: 1 },
+            },
           }}
         >
           {[0, 1, 2].map((i) => (
@@ -235,7 +299,10 @@ export default function WelcomeOverlay({ firstName, onSkip }: WelcomeOverlayProp
             fontWeight: 500,
             textTransform: 'none',
             zIndex: 2,
-            '&:hover': { color: 'rgba(255,255,255,0.9)', bgcolor: 'rgba(255,255,255,0.08)' },
+            '&:hover': {
+              color: 'rgba(255,255,255,0.9)',
+              bgcolor: 'rgba(255,255,255,0.08)',
+            },
           }}
         >
           Passer

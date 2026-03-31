@@ -12,7 +12,7 @@ import { Box, Button, Dialog, LinearProgress, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { APPTOUR_SHOWN_KEY } from './AppTour';
-import { brand, gradient } from '@/theme/tokens';
+import { brand, gradient, semantic } from '@/theme/tokens';
 
 /** ms to wait after AppTour completion before opening this modal. */
 const WELCOME_DELAY_MS = 3 * 60 * 1000; // 3 minutes
@@ -46,7 +46,7 @@ function getSteps(bonusCredits: number): StepConfig[] {
     },
     {
       Icon: Search,
-      iconColor: '#6c5ce7',
+      iconColor: semantic.purple,
       title: 'Recherche intelligente',
       subtitle: 'Décrivez ce que vous cherchez',
       body: 'Tapez simplement « appartement 3 pièces à Bastos avec parking » et notre IA comprend votre besoin pour vous trouver les meilleures offres.',
@@ -55,7 +55,7 @@ function getSteps(bonusCredits: number): StepConfig[] {
     },
     {
       Icon: NotificationsActive,
-      iconColor: '#00b894',
+      iconColor: semantic.successBright,
       title: 'Ne ratez aucune annonce',
       subtitle: 'Alertes personnalisées',
       body: "Sauvegardez vos critères et recevez une notification dès qu'un nouveau bien correspondant est publié — par push ou par email.",
