@@ -1,12 +1,8 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# KeyHome — Frontend CI pipeline fragment
-#
-# Include in your root .gitlab-ci.yml with:
-#   include:
-#     - local: 'keyhome-frontend-next/.gitlab-ci.frontend.yml'
+# KeyHome — Frontend CI pipeline (standalone)
 #
 # Requires these CI/CD variables to be set in GitLab:
-#   - LHCI_GITHUB_APP_TOKEN or LHCI_TOKEN (optional, for LHCI server uploads)
+#   - LHCI_TOKEN (optional, for LHCI server uploads)
 #   - NODE_ENV=production (for build stage)
 #   - NEXT_PUBLIC_API_URL, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (for build)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -19,156 +15,139 @@ stages:
 
 variables:
   NODE_VERSION: "20"
-  FRONTEND_DIR: "keyhome-frontend-next"
 
-# ── Dependency installation ──────────────────────────────────────────────────
-frontend:install:
+# ── Dependency installation ────────────────────────────────────────────────────
+install:
   stage: install
   image: node:${NODE_VERSION}-alpine
   cache:
     key:
       files:
-        - ${FRONTEND_DIR}/package-lock.json
+        - package-lock.json
     paths:
-      - ${FRONTEND_DIR}/node_modules/
+      - node_modules/
     policy: pull-push
   script:
-    - cd ${FRONTEND_DIR}
     - npm ci --prefer-offline
-  only:
-    changes:
-      - keyhome-frontend-next/**/*
+  rules:
+    - if: $CI_COMMIT_BRANCH
 
 # ── Vitest unit + component tests with coverage ──────────────────────────────
-frontend:test:unit:
+test:unit:
   stage: test
   image: node:${NODE_VERSION}-alpine
-  needs: [frontend:install]
+  needs: [install]
   cache:
     key:
       files:
-        - ${FRONTEND_DIR}/package-lock.json
+        - package-lock.json
     paths:
-      - ${FRONTEND_DIR}/node_modules/
+      - node_modules/
     policy: pull
   script:
-    - cd ${FRONTEND_DIR}
     - npm run test:coverage -- --reporter=verbose
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
     when: always
     reports:
-      junit: ${FRONTEND_DIR}/test-results.xml
+      junit: test-results.xml
       coverage_report:
         coverage_format: cobertura
-        path: ${FRONTEND_DIR}/coverage/cobertura-coverage.xml
+        path: coverage/cobertura-coverage.xml
     paths:
-      - ${FRONTEND_DIR}/coverage/
+      - coverage/
     expire_in: 7 days
-  only:
-    changes:
-      - keyhome-frontend-next/**/*
+  rules:
+    - if: $CI_COMMIT_BRANCH
 
-# ── TypeScript type-check ─────────────────────────────────────────────────────
-frontend:typecheck:
+# ── TypeScript type-check ─────────────────────────────────────────────────
+typecheck:
   stage: test
   image: node:${NODE_VERSION}-alpine
-  needs: [frontend:install]
+  needs: [install]
   cache:
     key:
       files:
-        - ${FRONTEND_DIR}/package-lock.json
+        - package-lock.json
     paths:
-      - ${FRONTEND_DIR}/node_modules/
+      - node_modules/
     policy: pull
   script:
-    - cd ${FRONTEND_DIR}
     - npx tsc --noEmit
-  only:
-    changes:
-      - keyhome-frontend-next/**/*
+  rules:
+    - if: $CI_COMMIT_BRANCH
 
-# ── ESLint ────────────────────────────────────────────────────────────────────
-frontend:lint:
+# ── ESLint ────────────────────────────────────────────────────────────────
+lint:
   stage: test
   image: node:${NODE_VERSION}-alpine
-  needs: [frontend:install]
+  needs: [install]
   cache:
     key:
       files:
-        - ${FRONTEND_DIR}/package-lock.json
+        - package-lock.json
     paths:
-      - ${FRONTEND_DIR}/node_modules/
+      - node_modules/
     policy: pull
   script:
-    - cd ${FRONTEND_DIR}
     - npm run lint
-  only:
-    changes:
-      - keyhome-frontend-next/**/*
+  rules:
+    - if: $CI_COMMIT_BRANCH
 
-# ── Prettier format check ─────────────────────────────────────────────────────
-frontend:format:
+# ── Prettier format check ─────────────────────────────────────────────────
+format:
   stage: test
   image: node:${NODE_VERSION}-alpine
-  needs: [frontend:install]
+  needs: [install]
   cache:
     key:
       files:
-        - ${FRONTEND_DIR}/package-lock.json
+        - package-lock.json
     paths:
-      - ${FRONTEND_DIR}/node_modules/
+      - node_modules/
     policy: pull
   script:
-    - cd ${FRONTEND_DIR}
     - npm run format:check
-  only:
-    changes:
-      - keyhome-frontend-next/**/*
+  rules:
+    - if: $CI_COMMIT_BRANCH
 
-# ── Production build ─────────────────────────────────────────────────────────
-frontend:build:
+# ── Production build ─────────────────────────────────────────────────────
+build:
   stage: build
   image: node:${NODE_VERSION}-alpine
-  needs: [frontend:install, frontend:test:unit, frontend:typecheck]
+  needs: [install, test:unit, typecheck]
   cache:
     key:
       files:
-        - ${FRONTEND_DIR}/package-lock.json
+        - package-lock.json
     paths:
-      - ${FRONTEND_DIR}/node_modules/
+      - node_modules/
     policy: pull
   script:
-    - cd ${FRONTEND_DIR}
     - npm run build
   artifacts:
     paths:
-      - ${FRONTEND_DIR}/.next/
+      - .next/
     expire_in: 1 hour
-  only:
-    refs:
-      - main
-      - staging
-    changes:
-      - keyhome-frontend-next/**/*
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "staging"
 
-# ── Playwright E2E tests ──────────────────────────────────────────────────────
-frontend:test:e2e:
+# ── Playwright E2E tests ──────────────────────────────────────────────────
+test:e2e:
   stage: test
   image: mcr.microsoft.com/playwright:v1.58.2-noble
-  needs: [frontend:install]
+  needs: [install]
   cache:
     key:
       files:
-        - ${FRONTEND_DIR}/package-lock.json
+        - package-lock.json
     paths:
-      - ${FRONTEND_DIR}/node_modules/
+      - node_modules/
     policy: pull
   variables:
     BASE_URL: "http://localhost:3000"
     CI: "true"
   script:
-    - cd ${FRONTEND_DIR}
     - npm run build
     - npm run start &
     - npx wait-on http://localhost:3000 --timeout 60000
@@ -176,50 +155,43 @@ frontend:test:e2e:
   artifacts:
     when: always
     paths:
-      - ${FRONTEND_DIR}/playwright-report/
-      - ${FRONTEND_DIR}/test-results/
+      - playwright-report/
+      - test-results/
     expire_in: 7 days
-  only:
-    refs:
-      - main
-      - staging
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "staging"
 
-# ── Lighthouse CI ─────────────────────────────────────────────────────────────
+# ── Lighthouse CI ───────────────────────────────────────────────────────
 #
 # Runs @lhci/cli against the production build.
-# Install lhci globally in your runner image, or use npx (slower).
 # Set LHCI_TOKEN in GitLab variables to upload results to your LHCI server.
 #
-frontend:lighthouse:
+lighthouse:
   stage: lighthouse
   image: node:${NODE_VERSION}-alpine
-  needs: [frontend:build]
+  needs: [build]
   cache:
     key:
       files:
-        - ${FRONTEND_DIR}/package-lock.json
+        - package-lock.json
     paths:
-      - ${FRONTEND_DIR}/node_modules/
+      - node_modules/
     policy: pull
   before_script:
     - apk add --no-cache chromium
     - export CHROME_PATH=/usr/bin/chromium-browser
     - export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
   script:
-    - cd ${FRONTEND_DIR}
     - npm run start &
     - npx wait-on http://localhost:3000 --timeout 60000
     - npx @lhci/cli@latest autorun --config=.lighthouserc.json
   artifacts:
     when: always
     paths:
-      - ${FRONTEND_DIR}/.lighthouseci/
+      - .lighthouseci/
     reports:
-      # Lighthouse JSON for GitLab merge request widgets (if supported)
-      metrics: ${FRONTEND_DIR}/.lighthouseci/lhr-*.json
+      metrics: .lighthouseci/lhr-*.json
     expire_in: 30 days
   allow_failure: true
-  only:
-    refs:
-      - main
-      - staging
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "staging"
