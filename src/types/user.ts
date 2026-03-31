@@ -13,6 +13,7 @@ export interface User {
   id: string;
   firstname: string;
   lastname: string;
+  username?: string | null;
   phone_number?: string | null;
   phone_is_whatsapp?: boolean | null;
   email?: string;

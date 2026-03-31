@@ -53,8 +53,19 @@ export function setRoleCookie(role: string): void {
     return;
   }
   const isOwner = role === UserRole.AGENT || role === UserRole.ADMIN;
-  const path = isOwner ? '/owner' : '/';
-  document.cookie = `${ROLE_COOKIE}=${encodeURIComponent(role)}; path=${path}; SameSite=Lax; Max-Age=${ROLE_COOKIE_MAX_AGE}`;
+
+  // Enterprise Grade: Strict path scoping for role cookies
+  // This ensures the browser only sends the 'agent' role cookie to /owner routes
+  // and the 'customer' role cookie to other routes, preventing state bleed.
+  if (isOwner) {
+    document.cookie = `${ROLE_COOKIE}=${encodeURIComponent(role)}; path=/owner; SameSite=Lax; Max-Age=${ROLE_COOKIE_MAX_AGE}`;
+    // Also clear any customer role cookie that might exist at root to avoid ambiguity
+    document.cookie = `${ROLE_COOKIE}=; path=/; Max-Age=0; SameSite=Lax`;
+  } else {
+    document.cookie = `${ROLE_COOKIE}=${encodeURIComponent(role)}; path=/; SameSite=Lax; Max-Age=${ROLE_COOKIE_MAX_AGE}`;
+    // Clear any owner role cookie
+    document.cookie = `${ROLE_COOKIE}=; path=/owner; Max-Age=0; SameSite=Lax`;
+  }
 }
 
 export function clearRoleCookie(): void {
@@ -114,6 +125,9 @@ const SESSION_KEYS = [
   'kh_just_unlocked',
   'kh_redirect_after_login',
   'kh_registration_intent',
+  'kh_register_account_role',
+  'kh_register_role',
+  'kh_owner_redirect',
 ] as const;
 
 export function clearSessionStorage(): void {

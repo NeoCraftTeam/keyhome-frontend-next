@@ -22,6 +22,7 @@ import {
   useSignIn,
   useUser,
 } from '@clerk/nextjs';
+import { flushSync } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   createContext,
@@ -340,14 +341,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      persistSession(sanctumToken);
-      setUserState(laravelUser);
-      setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
+      const returnTo = sessionStorage.getItem('kh_redirect_after_login');
       clearSessionStorage();
 
-      const returnTo = sessionStorage.getItem('kh_redirect_after_login');
+      flushSync(() => {
+        persistSession(sanctumToken);
+        setUserState(laravelUser);
+        setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
+      });
+
       if (returnTo) {
-        sessionStorage.removeItem('kh_redirect_after_login');
         router.replace(returnTo);
       } else if (
         laravelUser.role === UserRole.AGENT ||
@@ -462,7 +465,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoggingOut(true);
       resetCsrfState();
 
-      clearSessionStorage();
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
       clearRoleCookie();
       clearSession();
       setUserState(null);

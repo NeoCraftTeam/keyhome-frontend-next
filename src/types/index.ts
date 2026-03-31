@@ -120,8 +120,6 @@ export interface PaymentHistoryItem {
 
 export interface User {
   id: string;
-  username?: string | null;
-  bio?: string | null;
   firstname: string;
   lastname: string;
   phone_number?: string | null;
@@ -137,6 +135,7 @@ export interface User {
   updated_at?: string | null;
   city_id: string | null;
   city_name: string | null;
+  username?: string | null;
   point_balance?: number;
   onboarding_completed_at?: string | null;
   last_home_visit_at?: string | null;
@@ -280,6 +279,7 @@ export interface Ad {
   charges_eau?: string | null;
   charges_electricite?: string | null;
   charges_autres?: string | null;
+  // Proximité POI (mètres) — renvoyée par l'API, calculée côté backend
   distance_main_road_m?: number | null;
   distance_shops_m?: number | null;
   distance_transport_m?: number | null;
@@ -395,21 +395,21 @@ export interface PaymentInitResponse {
 // =====================================================
 
 export enum ReservationStatus {
-  Pending   = 'pending',
+  Pending = 'pending',
   Confirmed = 'confirmed',
   Cancelled = 'cancelled',
-  Expired   = 'expired',
+  Expired = 'expired',
 }
 
 export enum CancelledBy {
-  Client   = 'client',
+  Client = 'client',
   Landlord = 'landlord',
-  System   = 'system',
+  System = 'system',
 }
 
 export interface BookableSlot {
-  starts_at: string;   // "HH:MM"
-  ends_at: string;     // "HH:MM"
+  starts_at: string; // "HH:MM"
+  ends_at: string; // "HH:MM"
   is_available: boolean;
 }
 
@@ -417,14 +417,14 @@ export interface Reservation {
   id: string;
   status: ReservationStatus;
   status_label: string;
-  slot_date: string;          // "YYYY-MM-DD"
-  slot_starts_at: string;     // "HH:MM:SS"
-  slot_ends_at: string;       // "HH:MM:SS"
+  slot_date: string; // "YYYY-MM-DD"
+  slot_starts_at: string; // "HH:MM:SS"
+  slot_ends_at: string; // "HH:MM:SS"
   client_message: string | null;
   landlord_notes: string | null;
   cancelled_by: CancelledBy | null;
   cancellation_reason: string | null;
-  expires_at: string;         // ISO 8601
+  expires_at: string; // ISO 8601
   created_at: string;
   updated_at: string;
   ad?: Ad;
@@ -464,7 +464,6 @@ export interface SearchParams {
   q?: string;
   city?: string;
   type?: string;
-  type_id?: string | number;
   quarter?: string;
   bedrooms?: number;
   bathrooms?: number;
@@ -475,6 +474,7 @@ export interface SearchParams {
   has_parking?: boolean;
   has_3d_tour?: boolean;
   is_verified?: boolean;
+  type_id?: string;
   attributes?: string[];
   latitude?: number;
   longitude?: number;
