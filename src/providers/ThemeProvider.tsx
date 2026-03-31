@@ -31,25 +31,25 @@ export function ThemeProvider({
   children: React.ReactNode;
   nonce?: string;
 }) {
-  const [choice, setChoiceState] = useState<ThemeChoice>(() => {
-    if (typeof window === 'undefined') return 'system';
+  // Both initializers must return the same value on server AND client first render
+  // to avoid hydration mismatch. Real values are read in useEffect after mount.
+  const [choice, setChoiceState] = useState<ThemeChoice>('system');
+  const [systemDark, setSystemDark] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Read saved theme preference after mount
     try {
       const saved = localStorage.getItem('theme') as ThemeChoice | null;
-      if (saved === 'dark' || saved === 'light' || saved === 'system')
-        return saved;
+      if (saved === 'dark' || saved === 'light' || saved === 'system') {
+        setChoiceState(saved);
+      }
     } catch {
       /* localStorage unavailable */
     }
-    return 'system';
-  });
 
-  const [systemDark, setSystemDark] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  useEffect(() => {
+    // Read and subscribe to system colour-scheme preference
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    setSystemDark(mq.matches);
     const handler = () => setSystemDark(mq.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);

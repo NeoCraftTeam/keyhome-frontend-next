@@ -1,20 +1,25 @@
-"use client";
+'use client';
 
-import { createTheme } from "@mui/material/styles";
-import { baseTheme } from "./theme";
-import { brandAgent, light, dark, neutral, semantic } from "./tokens";
+import { createTheme } from '@mui/material/styles';
+import { baseTheme } from './theme';
+import { brandAgent, light, dark, neutral, semantic, gradient } from './tokens';
 
-/** Owner panel primary: Teal (brandAgent.primary) — vs customer pink (brand.primary) */
+/** Owner panel primary: Vibrant teal-to-sky gradient for modern look */
 export const ownerGradientPrimary = {
-  primary: `linear-gradient(to right, ${brandAgent.primary}, ${brandAgent.primaryDark})`,
-  primaryHover: `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`,
-  primary135: `linear-gradient(135deg, ${brandAgent.primary}, ${brandAgent.primaryDark})`,
+  /** Hero gradient — teal to sky blue (modern, vibrant) */
+  primary: gradient.agent,
+  primaryHover: gradient.agentHover,
+  primary135: gradient.agent,
+  /** Horizontal variant for buttons */
+  horizontal: gradient.agentHorizontal,
+  /** Premium gold variant for special CTAs */
+  gold: gradient.agentGold,
 };
 
 export const ownerLightTheme = createTheme({
   ...baseTheme,
   palette: {
-    mode: "light",
+    mode: 'light',
     primary: {
       main: brandAgent.primary,
       light: brandAgent.primaryLight,
@@ -22,7 +27,7 @@ export const ownerLightTheme = createTheme({
       contrastText: neutral.white,
     },
     secondary: {
-      main: "#222222",
+      main: '#222222',
       light: light.grey[500],
       dark: neutral.black,
       contrastText: neutral.white,
@@ -59,10 +64,13 @@ export const ownerLightTheme = createTheme({
       styleOverrides: {
         ...baseTheme.components?.MuiButton?.styleOverrides,
         containedPrimary: {
-          boxShadow: "none",
-          "&:hover": {
-            boxShadow: "0 6px 20px rgba(13, 148, 136, 0.3)",
-            transform: "translateY(-1px)",
+          backgroundColor: brandAgent.primary,
+          boxShadow: 'none',
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            backgroundColor: brandAgent.primaryDark,
+            boxShadow: '0 8px 24px rgba(13, 148, 136, 0.30)',
+            transform: 'translateY(-1px)',
           },
         },
       },
@@ -71,10 +79,10 @@ export const ownerLightTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: light.bg,
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
           borderBottom: `1px solid ${light.border}`,
-          boxShadow: "none",
+          boxShadow: 'none',
         },
       },
     },
@@ -84,7 +92,7 @@ export const ownerLightTheme = createTheme({
 export const ownerDarkTheme = createTheme({
   ...baseTheme,
   palette: {
-    mode: "dark",
+    mode: 'dark',
     primary: {
       main: brandAgent.primary,
       light: brandAgent.primaryLight,
@@ -92,10 +100,10 @@ export const ownerDarkTheme = createTheme({
       contrastText: neutral.white,
     },
     secondary: {
-      main: "#E0E0E0",
-      light: "#F5F5F5",
-      dark: "#B0B0B0",
-      contrastText: "#000000",
+      main: '#E0E0E0',
+      light: '#F5F5F5',
+      dark: '#B0B0B0',
+      contrastText: '#000000',
     },
     background: {
       default: dark.bg,
@@ -122,9 +130,9 @@ export const ownerDarkTheme = createTheme({
         root: {
           ...baseTheme.components?.MuiCard?.styleOverrides?.root,
           borderColor: dark.divider,
-          "&:hover": {
-            boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-            transform: "translateY(-3px)",
+          '&:hover': {
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            transform: 'translateY(-3px)',
           },
         },
       },
@@ -133,10 +141,13 @@ export const ownerDarkTheme = createTheme({
       styleOverrides: {
         ...baseTheme.components?.MuiButton?.styleOverrides,
         containedPrimary: {
-          boxShadow: "none",
-          "&:hover": {
-            boxShadow: "0 6px 20px rgba(13, 148, 136, 0.35)",
-            transform: "translateY(-1px)",
+          backgroundColor: brandAgent.primary,
+          boxShadow: 'none',
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            backgroundColor: brandAgent.primaryDark,
+            boxShadow: '0 8px 24px rgba(13, 148, 136, 0.40)',
+            transform: 'translateY(-1px)',
           },
         },
       },
@@ -144,11 +155,11 @@ export const ownerDarkTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: "rgba(10,10,15,0.8)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
+          backgroundColor: 'rgba(10,10,15,0.8)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
           borderBottom: `1px solid ${dark.border}`,
-          boxShadow: "none",
+          boxShadow: 'none',
         },
       },
     },

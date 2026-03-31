@@ -22,6 +22,17 @@ export const brandAgent = {
   primary: '#0D9488',
   primaryDark: '#0F766E',
   primaryLight: '#14B8A6',
+  /** Accent gold — premium, luxury feel */
+  accent: '#F59E0B',
+  accentDark: '#D97706',
+  accentLight: '#FBBF24',
+  /** Secondary sky blue for gradients */
+  secondary: '#0EA5E9',
+  secondaryDark: '#0284C7',
+  /** Alpha variants for overlays */
+  primaryAlpha10: 'rgba(13,148,136,0.1)',
+  primaryAlpha20: 'rgba(13,148,136,0.2)',
+  accentAlpha10: 'rgba(245,158,11,0.1)',
 } as const;
 
 /* ── Gradients ───────────────────────────────────────────────── */
@@ -34,6 +45,13 @@ export const gradient = {
   primary135Stops: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
   /** Deep transition gradient — page-level overlays/loaders */
   pageTransition: `linear-gradient(135deg, ${brand.primary} 0%, #C0302A 100%)`,
+  /** Agent/Owner — teal to sky blue (modern, vibrant) */
+  agent: `linear-gradient(135deg, #0D9488 0%, #0EA5E9 100%)`,
+  agentHover: `linear-gradient(135deg, #0F766E 0%, #0284C7 100%)`,
+  /** Agent — teal to gold (premium, luxury) */
+  agentGold: `linear-gradient(135deg, #0D9488 0%, #F59E0B 100%)`,
+  /** Agent — horizontal variant */
+  agentHorizontal: `linear-gradient(to right, #0D9488, #0EA5E9)`,
 } as const;
 
 /* ── Semantic Colors ─────────────────────────────────────────── */
@@ -104,37 +122,59 @@ export const neutral = {
 /* ── Border Radius ───────────────────────────────────────────── */
 
 export const radius = {
-  xs: 4,    // 4px  — chips, badges
-  sm: 8,    // 8px  — buttons, inputs
-  md: 12,   // 12px — cards
-  lg: 16,   // 16px — panels
-  xl: 24,   // 24px — sheets, dialogs
+  xs: 4, // 4px  — chips, badges
+  sm: 8, // 8px  — buttons, inputs
+  md: 12, // 12px — cards
+  lg: 16, // 16px — panels
+  xl: 24, // 24px — sheets, dialogs
   full: 9999,
 } as const;
 
 /* ── Shadows ─────────────────────────────────────────────────── */
 
 export const shadow = {
-  /** Subtle card shadow */
+  /** Subtle card resting shadow — elevation 1 */
   card: '0 1px 4px rgba(0,0,0,0.08)',
-  /** Elevated modal / dropdown shadow */
+  /** Card hover lift — elevation 2 (light mode) */
+  cardHover: '0 8px 32px rgba(0,0,0,0.06)',
+  /** Card hover lift — elevation 2 (dark mode) */
+  cardHoverDark: '0 8px 32px rgba(0,0,0,0.4)',
+  /** Small intra-card shadow (image nav buttons, badges) */
+  cardSm: '0 1px 4px rgba(0,0,0,0.15)',
+  /** Medium surface shadow (sticky bars, floating elements) */
+  medium: '0 2px 8px rgba(0,0,0,0.1)',
+  /** Elevated modal / dropdown shadow — elevation 3 */
   modal: '0 8px 32px rgba(0,0,0,0.14)',
-  /** Primary-tinted glow for CTAs */
+  /** Dialog / sheet — elevation 4 */
+  dialog: '0 25px 60px rgba(0,0,0,0.15)',
+  /** Primary-tinted glow for CTAs (full) */
   primaryGlow: '0 8px 20px rgba(246,71,95,0.25)',
   /** Soft primary glow for hover states */
   primaryGlowSm: '0 4px 12px rgba(246,71,95,0.18)',
+  /** Agent/teal glow for owner CTAs */
+  agentGlow: '0 8px 20px rgba(13,148,136,0.25)',
+  /** Smaller agent glow */
+  agentGlowSm: '0 4px 12px rgba(13,148,136,0.18)',
+  /** Focus ring — primary (red) */
+  focusRing: '0 0 0 4px rgba(246,71,95,0.10)',
+  /** Focus ring — agent/teal */
+  agentFocusRing: '0 0 0 4px rgba(13,148,136,0.12)',
+  /** Focus ring — success/green */
+  successRing: '0 0 0 4px rgba(0,138,5,0.10)',
+  /** Focus ring — error/red */
+  errorRing: '0 0 0 4px rgba(193,53,21,0.10)',
 } as const;
 
 /* ── Spacing scale (in px — use as MUI sx numeric values / 8) ── */
 
 export const spacing = {
-  xs: 0.5,   // 4px
-  sm: 1,     // 8px
-  md: 2,     // 16px
-  lg: 3,     // 24px
-  xl: 4,     // 32px
-  '2xl': 6,  // 48px
-  '3xl': 8,  // 64px
+  xs: 0.5, // 4px
+  sm: 1, // 8px
+  md: 2, // 16px
+  lg: 3, // 24px
+  xl: 4, // 32px
+  '2xl': 6, // 48px
+  '3xl': 8, // 64px
 } as const;
 
 /* ── Animation / transition presets ─────────────────────────── */
