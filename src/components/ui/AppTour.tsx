@@ -1,6 +1,5 @@
 'use client';
 
-import { authService } from '@/services/auth.service';
 import { useAuth } from '@/providers/AuthProvider';
 import { UserRole } from '@/types';
 import { useState, useEffect, useRef } from 'react';
@@ -30,7 +29,7 @@ import {
   RateReview,
 } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
-import { brand } from '@/theme/tokens';
+import { brand, brandAgent, neutral } from '@/theme/tokens';
 
 /** localStorage key set when AppTour closes for a client user.
  * Prevents the tour from reopening on refresh while WelcomeModal countdown is running. */
@@ -114,7 +113,7 @@ const OWNER_STEPS: TourStep[] = [
     title: 'Bienvenue dans votre espace bailleur',
     description:
       'Publiez vos annonces, suivez les statistiques et gérez vos visites depuis un tableau de bord dédié.',
-    color: '#14b8a6',
+    color: brandAgent.primaryLight,
     highlight: 'Teal · interface pensée pour les pros',
   },
   {
@@ -122,7 +121,7 @@ const OWNER_STEPS: TourStep[] = [
     title: 'Suivez vos performances',
     description:
       'Visualisez les vues, favoris et tendances sur vos biens pour ajuster votre stratégie de mise en ligne.',
-    color: '#0d9488',
+    color: brandAgent.primary,
     badge: 'Analytics',
   },
   {
@@ -130,7 +129,7 @@ const OWNER_STEPS: TourStep[] = [
     title: 'Restez réactif',
     description:
       'Notifications pour les visites, messages et actions importantes sur vos annonces.',
-    color: '#0f766e',
+    color: brandAgent.primaryDark,
   },
   {
     Icon: RateReview,
@@ -148,7 +147,7 @@ interface AppTourProps {
 }
 
 export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
-  const { user, isAuthenticated, refreshUser } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [animDir, setAnimDir] = useState<'forward' | 'back'>('forward');
@@ -202,21 +201,11 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
   const handleClose = () => {
     setOpen(false);
     onDone?.();
-    if (variant === 'client') {
-      // Mark tour as shown so refresh doesn't reopen it during WelcomeModal countdown.
-      if (typeof window !== 'undefined')
-        localStorage.setItem(APPTOUR_SHOWN_KEY, '1');
-      // Signal WelcomeModal to start its 3-minute countdown.
-      window.dispatchEvent(new CustomEvent('kh:tour-completed'));
-    } else {
-      // Owner flow: no WelcomeModal, so complete onboarding immediately.
-      authService
-        .completeOnboarding()
-        .then(() => refreshUser())
-        .catch(() => {
-          /* ignore */
-        });
-    }
+    // Mark tour as shown so refresh doesn't reopen it during WelcomeModal countdown.
+    if (typeof window !== 'undefined')
+      localStorage.setItem(APPTOUR_SHOWN_KEY, '1');
+    // Signal WelcomeModal (client) or OwnerWelcomeModal (owner) to start countdown.
+    window.dispatchEvent(new CustomEvent('kh:tour-completed'));
   };
 
   const handleNext = () => {
@@ -369,7 +358,7 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
             top: 12,
             right: 12,
             bgcolor: 'rgba(255,255,255,0.15)',
-            color: '#fff',
+            color: neutral.white,
             '&:hover': { bgcolor: 'rgba(255,255,255,0.28)' },
           }}
         >
@@ -395,7 +384,9 @@ export default function AppTour({ onDone, variant = 'client' }: AppTourProps) {
             },
           }}
         >
-          <StepIcon sx={{ fontSize: { xs: 32, sm: 44 }, color: '#fff' }} />
+          <StepIcon
+            sx={{ fontSize: { xs: 32, sm: 44 }, color: neutral.white }}
+          />
         </Box>
 
         {/* Step count */}

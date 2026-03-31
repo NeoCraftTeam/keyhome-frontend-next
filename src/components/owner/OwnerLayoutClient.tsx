@@ -16,6 +16,8 @@ import {
 } from '@/components/surveys/SurveyBanner';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import PageTransition from '@/components/ui/PageTransition';
+import PushPrompt from '@/components/ui/PushPrompt';
+import OwnerWelcomeModal from '@/components/owner/OwnerWelcomeModal';
 import { shouldShowOwnerQuickCreateFab } from '@/lib/owner-shell-fab';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
@@ -31,6 +33,7 @@ const OWNER_PUBLIC_PATHS = [
   '/owner/login',
   '/owner/register',
   '/owner/forgot-password',
+  '/owner/auth',
 ];
 
 function isPublicPath(pathname: string | null): boolean {
@@ -55,11 +58,14 @@ export default function OwnerLayoutClient({
   >({});
   const [surveyMounted, setSurveyMounted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Survey is gated until PushPrompt step resolves (accepted, dismissed, or not applicable).
+  // For returning users (onboarding already completed) it's immediately ready.
+  const [pushPromptReady, setPushPromptReady] = useState(false);
 
   useEffect(() => {
-    const collapsed =
-      localStorage.getItem('owner-sidebar-collapsed') === 'true';
-    setSidebarCollapsed(collapsed);
+    setSidebarCollapsed(
+      localStorage.getItem('owner-sidebar-collapsed') === 'true'
+    );
   }, []);
 
   const handleSidebarToggle = useCallback(() => {
@@ -96,6 +102,13 @@ export default function OwnerLayoutClient({
     setSurveyMounted(true);
   }, []);
 
+  // Unlock survey once PushPrompt resolves (accept / dismiss / not applicable).
+  useEffect(() => {
+    const handler = () => setPushPromptReady(true);
+    window.addEventListener('kh:push-prompt-done', handler);
+    return () => window.removeEventListener('kh:push-prompt-done', handler);
+  }, []);
+
   useEffect(() => {
     if (
       activeSurvey?.id &&
@@ -108,6 +121,8 @@ export default function OwnerLayoutClient({
 
   useEffect(() => {
     if (isLoading) return;
+    // Wait for pathname to be resolved before making any redirect decisions
+    if (!pathname) return;
     if (publicRoute) return;
 
     if (!isAuthenticated || !user) {
@@ -140,7 +155,8 @@ export default function OwnerLayoutClient({
     );
   }
 
-  if (isLoading) {
+  // Wait for pathname to be resolved before making auth decisions
+  if (!pathname || isLoading) {
     return (
       <Box
         sx={{
@@ -203,7 +219,10 @@ export default function OwnerLayoutClient({
 
       {/* Main content area */}
       <Box
+        id="main-content"
         component="main"
+        role="main"
+        aria-label="Contenu principal"
         sx={{
           flexGrow: 1,
           display: 'flex',
@@ -254,14 +273,15 @@ export default function OwnerLayoutClient({
         !isSurveyPage &&
         !activeSurveyError &&
         activeSurvey &&
-        surveyAnsweredData?.has_answered === false && (
+        surveyAnsweredData?.has_answered === false &&
+        pushPromptReady && (
           <SurveyPromptOrBanner
             surveyId={activeSurvey.id}
             surveySlug={activeSurvey.slug}
             title="Votre avis compte !"
             description={
               activeSurvey.description ??
-              'Aidez-nous à améliorer KeyHome en répondant à quelques questions.'
+              'Aidez-nous à améliorer KeyHome pour les bailleurs en répondant à quelques questions.'
             }
             onPostponed={async () => {
               setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
@@ -285,9 +305,12 @@ export default function OwnerLayoutClient({
               surveyPostponed[activeSurvey.id] ??
               getSurveyPostponed(activeSurvey.id, user)
             }
-            bottomOffset={OWNER_BOTTOM_NAV_HEIGHT}
           />
         )}
+
+      {/* Onboarding flow: WelcomeModal → PushPrompt → Survey */}
+      <PushPrompt />
+      <OwnerWelcomeModal />
     </Box>
   );
 }

@@ -4,7 +4,6 @@ import FadeIn from '@/components/ui/FadeIn';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
-import { writeStoredRegisterAccountRole } from '@/lib/register-intent';
 import { OWNER_LOGIN_HERO_SRC, OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { useAuth } from '@/providers/AuthProvider';
 import {
@@ -36,8 +35,13 @@ export default function OwnerLoginPage() {
   // Redirect already-authenticated owners away from the login page
   useEffect(() => {
     if (isLoading) return;
-    if (isAuthenticated && user && (user.role === UserRole.AGENT || user.role === UserRole.ADMIN)) {
-      const redirect = sessionStorage.getItem('kh_owner_redirect') || '/owner/dashboard';
+    if (
+      isAuthenticated &&
+      user &&
+      (user.role === UserRole.AGENT || user.role === UserRole.ADMIN)
+    ) {
+      const redirect =
+        sessionStorage.getItem('kh_owner_redirect') || '/owner/dashboard';
       sessionStorage.removeItem('kh_owner_redirect');
       router.replace(redirect);
     }
@@ -61,8 +65,8 @@ export default function OwnerLoginPage() {
       setError(
         getSafeErrorMessage(
           err,
-          "Identifiants incorrects. Veuillez réessayer ou créez un compte bailleur.",
-        ),
+          'Identifiants incorrects. Veuillez réessayer ou créez un compte bailleur.'
+        )
       );
     } finally {
       setIsSubmitting(false);
@@ -107,7 +111,9 @@ export default function OwnerLoginPage() {
           }}
         >
           <FadeIn delay={0.2} direction="up">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}
+            >
               <Image
                 src={OWNER_LOGO_SRC}
                 alt="KeyHome — Plateforme immobilière"
@@ -177,7 +183,11 @@ export default function OwnerLoginPage() {
 
           {error && (
             <FadeIn direction="none" duration={0.3}>
-              <Alert severity="error" id="owner-login-error" sx={{ mb: 2, borderRadius: 2 }}>
+              <Alert
+                severity="error"
+                id="owner-login-error"
+                sx={{ mb: 2, borderRadius: 2 }}
+              >
                 {error}
               </Alert>
             </FadeIn>
@@ -206,7 +216,9 @@ export default function OwnerLoginPage() {
                     </InputAdornment>
                   ),
                 }}
-                InputLabelProps={outlinedStartIconInputLabelProps(emailLabelShrink.shrink)}
+                InputLabelProps={outlinedStartIconInputLabelProps(
+                  emailLabelShrink.shrink
+                )}
                 sx={{ mb: 2 }}
               />
 
@@ -232,11 +244,7 @@ export default function OwnerLoginPage() {
                             : 'Afficher le mot de passe'
                         }
                       >
-                        {showPassword ? (
-                          <VisibilityOff />
-                        ) : (
-                          <Visibility />
-                        )}
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -244,9 +252,7 @@ export default function OwnerLoginPage() {
                 sx={{ mb: 1 }}
               />
 
-              <Box
-                sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}
-              >
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
                 <Link
                   href="/owner/forgot-password"
                   underline="hover"
@@ -290,8 +296,7 @@ export default function OwnerLoginPage() {
             >
               Pas encore de compte ?{' '}
               <Link
-                href="/register"
-                onClick={() => writeStoredRegisterAccountRole('agent')}
+                href="/register?role=agent"
                 underline="hover"
                 sx={{ fontWeight: 600, color: 'primary.main' }}
               >
@@ -302,9 +307,19 @@ export default function OwnerLoginPage() {
 
           <FadeIn delay={0.5} direction="up">
             <Divider sx={{ my: 2.5 }}>
-              <Typography variant="caption" color="text.disabled" sx={{ px: 1 }}>ou</Typography>
+              <Typography
+                variant="caption"
+                color="text.disabled"
+                sx={{ px: 1 }}
+              >
+                ou
+              </Typography>
             </Divider>
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ textAlign: 'center' }}
+            >
               Vous êtes locataire ?{' '}
               <Link
                 href="/login"
