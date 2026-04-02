@@ -362,7 +362,11 @@ export default function OwnerVerifyOtpPage() {
 
         <Box sx={{ width: '100%', maxWidth: 400 }}>
           <FadeIn delay={0.05} direction="none">
-            <AuthFlowStepper labels={stepperLabels} activeStep={1} />
+            <AuthFlowStepper
+              labels={stepperLabels}
+              activeStep={1}
+              accentColor={brandAgent.primary}
+            />
           </FadeIn>
 
           <FadeIn delay={0.1} direction="up">

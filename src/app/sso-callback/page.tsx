@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import AppLoader from '@/components/ui/AppLoader';
+import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { useAuth as useClerkAuth, useClerk } from '@clerk/nextjs';
 import { Box, Typography } from '@mui/material';
 import Image from 'next/image';
@@ -23,6 +24,11 @@ export default function SSOCallbackPage() {
   const { isLoaded, isSignedIn } = useClerkAuth();
   const router = useRouter();
   const handled = useRef(false);
+
+  // Read intent synchronously — safe on client, sessionStorage is available immediately.
+  const isAgentIntent =
+    typeof window !== 'undefined' &&
+    sessionStorage.getItem('kh_registration_intent') === 'agent';
 
   useEffect(() => {
     // Not ready yet — wait for Clerk SDK to finish loading.
@@ -45,8 +51,6 @@ export default function SSOCallbackPage() {
     handled.current = true;
 
     const origin = window.location.origin;
-    const isAgentIntent =
-      sessionStorage.getItem('kh_registration_intent') === 'agent';
 
     // Fallback destination when Clerk has no stored redirectUrlComplete.
     // Always use /home — never a login page. AuthProvider will route to the
@@ -95,13 +99,17 @@ export default function SSOCallbackPage() {
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Image
-          src="/images/logo.png"
+          src={isAgentIntent ? OWNER_LOGO_SRC : '/images/logo.png'}
           alt="KeyHome — Authentification"
           width={48}
           height={48}
         />
-        <Typography variant="h5" fontWeight={700} color="primary.main">
-          KeyHome
+        <Typography
+          variant="h5"
+          fontWeight={700}
+          sx={{ color: isAgentIntent ? '#0d9488' : 'primary.main' }}
+        >
+          {isAgentIntent ? 'KeyHome Business' : 'KeyHome'}
         </Typography>
       </Box>
       <AppLoader size={48} />

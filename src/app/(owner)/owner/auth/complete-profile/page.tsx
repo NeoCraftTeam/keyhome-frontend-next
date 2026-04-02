@@ -386,6 +386,7 @@ export default function OwnerCompleteProfilePage() {
             <AuthFlowStepper
               labels={['Inscription', 'Vérification', 'Profil']}
               activeStep={2}
+              accentColor={brandAgent.primary}
             />
           </FadeIn>
 

@@ -9,12 +9,18 @@ export type AuthFlowStepperProps = {
   labels: string[];
   /** Étape courante, 0-based (0 = première). Les étapes précédentes sont cochées. */
   activeStep: number;
+  /** Optional accent color override (defaults to theme primary.main). */
+  accentColor?: string;
 };
 
 /**
  * Stepper compact pour inscription / OTP : pastilles centrées, lisible en clair et sombre.
  */
-export default function AuthFlowStepper({ labels, activeStep }: AuthFlowStepperProps) {
+export default function AuthFlowStepper({
+  labels,
+  activeStep,
+  accentColor,
+}: AuthFlowStepperProps) {
   return (
     <Box
       sx={{
@@ -52,9 +58,13 @@ export default function AuthFlowStepper({ labels, activeStep }: AuthFlowStepperP
                 <Box
                   sx={(theme) => {
                     const inactiveBg =
-                      theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[200];
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.grey[800]
+                        : theme.palette.grey[200];
                     const inactiveFg =
-                      theme.palette.mode === 'dark' ? theme.palette.grey[400] : theme.palette.grey[700];
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.grey[400]
+                        : theme.palette.grey[700];
 
                     return {
                       width: 28,
@@ -71,8 +81,10 @@ export default function AuthFlowStepper({ labels, activeStep }: AuthFlowStepperP
                       lineHeight: 1,
                       ...(isCompleted || isActive
                         ? {
-                            bgcolor: 'primary.main',
-                            color: theme.palette.primary.contrastText,
+                            bgcolor: accentColor ?? 'primary.main',
+                            color: accentColor
+                              ? '#fff'
+                              : theme.palette.primary.contrastText,
                           }
                         : {
                             bgcolor: inactiveBg,
@@ -82,7 +94,10 @@ export default function AuthFlowStepper({ labels, activeStep }: AuthFlowStepperP
                   }}
                 >
                   {isCompleted ? (
-                    <CheckIcon sx={{ fontSize: 18, display: 'block' }} aria-hidden />
+                    <CheckIcon
+                      sx={{ fontSize: 18, display: 'block' }}
+                      aria-hidden
+                    />
                   ) : (
                     <Box
                       component="span"
@@ -122,7 +137,7 @@ export default function AuthFlowStepper({ labels, activeStep }: AuthFlowStepperP
                     alignSelf: 'center',
                     bgcolor:
                       idx < activeStep
-                        ? theme.palette.primary.main
+                        ? (accentColor ?? theme.palette.primary.main)
                         : theme.palette.mode === 'dark'
                           ? theme.palette.grey[700]
                           : theme.palette.grey[300],
