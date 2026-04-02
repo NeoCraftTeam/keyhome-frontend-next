@@ -13,6 +13,13 @@
 #   SLACK_WEBHOOK_FRONTEND                (optional) Slack incoming webhook
 #   LHCI_TOKEN                            (optional) Lighthouse CI server token
 #   CACHE_PREFIX                          bump (e.g. v2) to invalidate all caches
+#   VERCEL_TOKEN                          Vercel personal access token    [masked]
+#   VERCEL_ORG_ID                         Vercel team/org ID              [masked]
+#   VERCEL_PROJECT_ID                     Vercel project ID               [masked]
+#
+# IMPORTANT — disable Vercel's GitHub auto-deploy so only this pipeline deploys:
+#   Vercel dashboard → Project → Settings → Git → "Ignored Build Step" → set to: exit 1
+#   (or disconnect the GitHub integration entirely and use this pipeline exclusively)
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ── Skip [skip ci] commits ───────────────────────────────────────────────────
@@ -29,6 +36,7 @@ stages:
   - build
   - security
   - lighthouse
+  - deploy
   - notify
 
 variables:
@@ -212,7 +220,60 @@ lighthouse:
   rules:
     - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "staging"
 
-# ── 7. NOTIFY ─────────────────────────────────────────────────────────────────
+# ── 7. DEPLOY ─────────────────────────────────────────────────────────────────
+#
+# Vercel is driven from here — NOT from its GitHub integration.
+# Set "Ignored Build Step" to `exit 1` in Vercel project settings to block
+# GitHub-triggered builds.
+#
+deploy:preview:
+  stage: deploy
+  extends:
+    - .node_job
+    - .build_vars
+  needs: [build:app, audit:deps]
+  script:
+    - npx vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+    - npx vercel build --token=$VERCEL_TOKEN
+    - DEPLOY_URL=$(npx vercel deploy --prebuilt --token=$VERCEL_TOKEN 2>&1 | tail -1)
+    - echo "Preview URL $DEPLOY_URL"
+    - echo "DEPLOY_URL=$DEPLOY_URL" >> deploy.env
+  artifacts:
+    reports:
+      dotenv: deploy.env
+    expire_in: 1 hour
+  environment:
+    name: preview/$CI_COMMIT_REF_SLUG
+    url: $DEPLOY_URL
+    auto_stop_in: 3 days
+  timeout: 10 minutes
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
+
+deploy:production:
+  stage: deploy
+  extends:
+    - .node_job
+    - .build_vars
+  needs: [build:app, lighthouse, audit:deps]
+  script:
+    - npx vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+    - npx vercel build --prod --token=$VERCEL_TOKEN
+    - DEPLOY_URL=$(npx vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN 2>&1 | tail -1)
+    - echo "Production URL $DEPLOY_URL"
+    - echo "DEPLOY_URL=$DEPLOY_URL" >> deploy.env
+  artifacts:
+    reports:
+      dotenv: deploy.env
+    expire_in: 1 hour
+  environment:
+    name: production
+    url: $DEPLOY_URL
+  timeout: 10 minutes
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ── 8. NOTIFY ─────────────────────────────────────────────────────────────────
 notify:failure:
   stage: notify
   image: alpine:latest
@@ -232,6 +293,10 @@ notify:failure:
     - job: audit:deps
       optional: true
     - job: lighthouse
+      optional: true
+    - job: deploy:preview
+      optional: true
+    - job: deploy:production
       optional: true
   when: on_failure
   allow_failure: true
@@ -276,6 +341,10 @@ notify:success:
     - job: build:app
       optional: true
     - job: lighthouse
+      optional: true
+    - job: deploy:preview
+      optional: true
+    - job: deploy:production
       optional: true
   when: on_success
   allow_failure: true
