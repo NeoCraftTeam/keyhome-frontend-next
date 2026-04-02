@@ -335,14 +335,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          // Role-aware persistence — prevents agent tokens landing in
-          // clientInMemoryToken when the OAuth callback fires from a non-owner
-          // path (e.g. /home or /sso-callback). getActiveToken() is path-based
-          // so an agent token must live in ownerInMemoryToken from the start.
-          if (
+          // ── Context isolation ──────────────────────────────────────────────
+          // Prevents a Clerk session from one tab’s role-context leaking into
+          // another tab. An owner’s Google account must not auto-authenticate a
+          // customer tab, and vice versa — making true dual-tab usage work.
+          // intentRaw was captured before the API call and holds the stored intent.
+          const path = pathnameRef.current ?? '';
+          const expectedOwnerContext =
+            path.startsWith('/owner') || intentRaw === 'agent';
+          const isOwnerRole =
             laravelUser.role === UserRole.AGENT ||
-            laravelUser.role === UserRole.ADMIN
-          ) {
+            laravelUser.role === UserRole.ADMIN;
+
+          if (isOwnerRole && !expectedOwnerContext) {
+            // Owner Clerk session in a customer-context tab — silently abort.
+            // The tab stays unauthenticated; user can sign in via email/password.
+            clearSanctumInMemoryOnly();
+            setUserState(null);
+            clearRoleCookie();
+            return;
+          }
+
+          if (!isOwnerRole && path.startsWith('/owner')) {
+            // Customer Clerk session on an owner tab — redirect to home.
+            clearSanctumInMemoryOnly();
+            setUserState(null);
+            clearRoleCookie();
+            router.replace('/home');
+            return;
+          }
+          // ─────────────────────────────────────────────────────────────────────
+
+          // Role-aware persistence — agent token must live in ownerInMemoryToken
+          // from the start so getActiveToken() returns the right slot.
+          if (isOwnerRole) {
             persistOwnerToken(sanctumToken);
           } else {
             persistClientToken(sanctumToken);
@@ -351,11 +377,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUserState(laravelUser);
           setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
 
-          const path = pathnameRef.current ?? '';
-          if (
-            laravelUser.role === UserRole.AGENT ||
-            laravelUser.role === UserRole.ADMIN
-          ) {
+          if (isOwnerRole) {
             if (!path.startsWith('/owner')) {
               router.replace('/owner/dashboard');
             }

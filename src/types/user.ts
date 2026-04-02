@@ -27,6 +27,7 @@ export interface User {
   updated_at?: string | null;
   city_id: string | null;
   city_name: string | null;
+  bio?: string | null;
   point_balance?: number;
   onboarding_completed_at?: string | null;
   last_home_visit_at?: string | null;
