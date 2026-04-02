@@ -115,7 +115,9 @@ format:
 build:
   stage: build
   image: node:${NODE_VERSION}-alpine
-  needs: [install, test:unit, typecheck]
+  needs: [install, test:unit, typecheck, lint, format]
+  variables:
+    NODE_ENV: production
   cache:
     key:
       files:
@@ -152,6 +154,8 @@ lighthouse:
     - apk add --no-cache chromium
     - export CHROME_PATH=/usr/bin/chromium-browser
     - export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+  variables:
+    NODE_ENV: production
   script:
     - npm run start &
     - npx wait-on http://localhost:3000 --timeout 60000
