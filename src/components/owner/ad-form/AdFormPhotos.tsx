@@ -1,5 +1,16 @@
-import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, PhotoCamera as PhotoCameraIcon } from '@mui/icons-material';
-import { Box, Button, IconButton, Paper, Typography } from '@mui/material';
+import {
+  CloudUpload as CloudUploadIcon,
+  Delete as DeleteIcon,
+  PhotoCamera as PhotoCameraIcon,
+} from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  IconButton,
+  Paper,
+  Typography,
+} from '@mui/material';
 import { useCallback, useRef, useState } from 'react';
 import type { AdImage } from '@/types';
 import { sectionSx, sectionTitleSx } from './types';
@@ -11,6 +22,8 @@ interface AdFormPhotosProps {
   imageCount: number;
   adTitle?: string;
   errors: Record<string, string>;
+  /** True while images are being compressed client-side — disables the upload controls. */
+  isCompressing?: boolean;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: (index: number) => void;
   onDeleteExistingImage: (imageId: number) => void;
@@ -24,6 +37,7 @@ export default function AdFormPhotos({
   imageCount,
   adTitle,
   errors,
+  isCompressing = false,
   onImageChange,
   onRemoveImage,
   onDeleteExistingImage,
@@ -31,7 +45,9 @@ export default function AdFormPhotos({
 }: AdFormPhotosProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const visibleExisting = existingImages?.filter((img) => !imagesToDelete.includes(img.id));
+  const visibleExisting = existingImages?.filter(
+    (img) => !imagesToDelete.includes(img.id)
+  );
   const totalCount = imageCount + (visibleExisting?.length ?? 0);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -46,38 +62,71 @@ export default function AdFormPhotos({
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragOver(false);
-      const files = e.dataTransfer.files;
-      if (!files.length || !fileInputRef.current) {
-        return;
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    const files = e.dataTransfer.files;
+    if (!files.length || !fileInputRef.current) {
+      return;
+    }
+    const dt = new DataTransfer();
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    for (let i = 0; i < files.length; i++) {
+      if (allowedTypes.includes(files[i].type)) {
+        dt.items.add(files[i]);
       }
-      const dt = new DataTransfer();
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-      for (let i = 0; i < files.length; i++) {
-        if (allowedTypes.includes(files[i].type)) {
-          dt.items.add(files[i]);
-        }
-      }
-      if (dt.files.length > 0) {
-        fileInputRef.current.files = dt.files;
-        fileInputRef.current.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    },
-    [],
-  );
+    }
+    if (dt.files.length > 0) {
+      fileInputRef.current.files = dt.files;
+      fileInputRef.current.dispatchEvent(
+        new Event('change', { bubbles: true })
+      );
+    }
+  }, []);
 
   return (
     <Paper elevation={0} sx={sectionSx}>
-      <Typography variant="subtitle1" sx={{ ...sectionTitleSx, display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Typography
+        variant="subtitle1"
+        sx={{
+          ...sectionTitleSx,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+        }}
+      >
         <PhotoCameraIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         Photos du bien
-        <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 'auto', fontWeight: 400 }}>
-          max 10 — JPEG, PNG, WebP
-        </Typography>
+        {isCompressing ? (
+          <Box
+            sx={{
+              ml: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.75,
+            }}
+          >
+            <CircularProgress size={14} />
+            <Typography
+              component="span"
+              variant="caption"
+              color="primary.main"
+              fontWeight={600}
+            >
+              Optimisation…
+            </Typography>
+          </Box>
+        ) : (
+          <Typography
+            component="span"
+            variant="caption"
+            color="text.secondary"
+            sx={{ ml: 'auto', fontWeight: 400 }}
+          >
+            max 10 — JPEG, PNG, WebP
+          </Typography>
+        )}
       </Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 1 }}>
         {imagePreviewUrls.map((url, i) => (
@@ -107,7 +156,10 @@ export default function AdFormPhotos({
             />
             <IconButton
               size="small"
-              onClick={(e) => { e.stopPropagation(); onRemoveImage(i); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemoveImage(i);
+              }}
               sx={{
                 position: 'absolute',
                 top: 2,
@@ -129,7 +181,9 @@ export default function AdFormPhotos({
             onClick={() => onOpenLightbox(imagePreviewUrls.length + idx)}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && onOpenLightbox(imagePreviewUrls.length + idx)}
+            onKeyDown={(e) =>
+              e.key === 'Enter' && onOpenLightbox(imagePreviewUrls.length + idx)
+            }
             sx={{
               position: 'relative',
               width: 110,
@@ -149,7 +203,10 @@ export default function AdFormPhotos({
             />
             <IconButton
               size="small"
-              onClick={(e) => { e.stopPropagation(); onDeleteExistingImage(img.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteExistingImage(img.id);
+              }}
               sx={{
                 position: 'absolute',
                 top: 2,
@@ -169,6 +226,7 @@ export default function AdFormPhotos({
           <Button
             variant="outlined"
             component="label"
+            disabled={isCompressing}
             sx={{
               width: 110,
               height: 85,
@@ -180,13 +238,16 @@ export default function AdFormPhotos({
               gap: 0.5,
             }}
           >
-            <Typography variant="caption" fontWeight={600}>+ Photo</Typography>
+            <Typography variant="caption" fontWeight={600}>
+              {isCompressing ? '⌛' : '+ Photo'}
+            </Typography>
             <input
               ref={fileInputRef}
               type="file"
               hidden
               multiple
               accept="image/jpeg,image/png,image/webp"
+              disabled={isCompressing}
               onChange={onImageChange}
             />
           </Button>
@@ -208,11 +269,23 @@ export default function AdFormPhotos({
             textAlign: 'center',
             cursor: 'pointer',
             transition: 'all 0.2s',
-            '&:hover': { borderColor: 'primary.light', bgcolor: 'action.hover' },
+            '&:hover': {
+              borderColor: 'primary.light',
+              bgcolor: 'action.hover',
+            },
           }}
         >
-          <CloudUploadIcon sx={{ fontSize: 32, color: isDragOver ? 'primary.main' : 'text.disabled', mb: 0.5 }} />
-          <Typography variant="body2" color={isDragOver ? 'primary.main' : 'text.secondary'}>
+          <CloudUploadIcon
+            sx={{
+              fontSize: 32,
+              color: isDragOver ? 'primary.main' : 'text.disabled',
+              mb: 0.5,
+            }}
+          />
+          <Typography
+            variant="body2"
+            color={isDragOver ? 'primary.main' : 'text.secondary'}
+          >
             Glissez-déposez vos photos ici
           </Typography>
           <Typography variant="caption" color="text.disabled">
@@ -221,7 +294,9 @@ export default function AdFormPhotos({
         </Box>
       )}
       {errors.images && (
-        <Typography variant="caption" color="error">{errors.images}</Typography>
+        <Typography variant="caption" color="error">
+          {errors.images}
+        </Typography>
       )}
     </Paper>
   );

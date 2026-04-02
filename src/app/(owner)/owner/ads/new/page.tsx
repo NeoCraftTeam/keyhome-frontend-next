@@ -1,6 +1,8 @@
 'use client';
 
 import { useAuth } from '@/providers/AuthProvider';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import type { AdFormValues } from '@/components/owner/AdForm';
 import {
   Box,
   Button,
@@ -10,6 +12,7 @@ import {
   DialogContent,
   DialogTitle,
   LinearProgress,
+  Snackbar,
   Stack,
   Typography,
 } from '@mui/material';
@@ -23,11 +26,8 @@ import {
 } from '@mui/icons-material';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import AdForm, {
-  type AdFormValues,
-  type TourScene,
-} from '@/components/owner/AdForm';
+import { useEffect, useRef, useState } from 'react';
+import AdForm, { type TourScene } from '@/components/owner/AdForm';
 import { adsService } from '@/services/ads.service';
 import { shadow } from '@/theme/tokens';
 
@@ -63,6 +63,27 @@ export default function OwnerNewAdPage() {
   const router = useRouter();
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const { steps, isComplete, progress } = useProfileCompleteness(user);
+
+  // QW11: draft restore — check for a saved auto-save on first render
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
+  const [restoredDraft, setRestoredDraft] =
+    useState<Partial<AdFormValues> | null>(null);
+  const { hasDraft, restoreDraft, clearDraft } = useAutoSave<
+    Partial<AdFormValues>
+  >({
+    key: 'ad-new',
+    data: {} as Partial<AdFormValues>, // placeholder — AdForm manages the live data
+    enabled: false, // disable auto-save here; AdForm does it internally
+  });
+  const draftCheckedRef = useRef(false);
+
+  useEffect(() => {
+    if (draftCheckedRef.current) return;
+    draftCheckedRef.current = true;
+    if (hasDraft) {
+      setShowRestorePrompt(true);
+    }
+  }, [hasDraft]);
 
   const createMutation = useMutation({
     mutationFn: async ({
@@ -366,6 +387,7 @@ export default function OwnerNewAdPage() {
         </Typography>
         <Box>
           <AdForm
+            initialData={restoredDraft}
             onSubmit={handleSubmit}
             onCancel={() => router.back()}
             submitLabel="Créer l'annonce"
@@ -375,6 +397,41 @@ export default function OwnerNewAdPage() {
           />
         </Box>
       </Container>
+
+      {/* QW11: draft restore prompt */}
+      <Snackbar
+        open={showRestorePrompt}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        sx={{ mb: 2 }}
+        message="📝 Un brouillon sauvegardé a été trouvé"
+        action={
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              size="small"
+              color="inherit"
+              sx={{ fontWeight: 700 }}
+              onClick={() => {
+                const draft = restoreDraft();
+                if (draft) setRestoredDraft(draft);
+                setShowRestorePrompt(false);
+              }}
+            >
+              Restaurer
+            </Button>
+            <Button
+              size="small"
+              color="inherit"
+              sx={{ opacity: 0.7 }}
+              onClick={() => {
+                clearDraft();
+                setShowRestorePrompt(false);
+              }}
+            >
+              Ignorer
+            </Button>
+          </Box>
+        }
+      />
 
       {/* Post-creation: configure schedules dialog */}
       <Dialog

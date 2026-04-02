@@ -9,7 +9,6 @@ import {
   Description as ContractIcon,
   Edit as EditIcon,
   MoreVert as MoreIcon,
-  Share as ShareIcon,
   Visibility as VisibleIcon,
   VisibilityOff as HiddenIcon,
 } from '@mui/icons-material';
@@ -39,6 +38,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useCallback, useEffect, useState } from 'react';
 import { adsService } from '@/services/ads.service';
 import { ownerService } from '@/services/owner.service';
@@ -69,6 +69,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 export default function OwnerAdsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [page, setPage] = useState(0);
@@ -294,7 +295,11 @@ export default function OwnerAdsPage() {
 
         {isLoading ? (
           <Box sx={{ p: 4 }}>
-            <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 1 }} />
+            <Skeleton
+              variant="rectangular"
+              height={400}
+              sx={{ borderRadius: 1 }}
+            />
           </Box>
         ) : ads.length === 0 ? (
           <Box
@@ -316,7 +321,14 @@ export default function OwnerAdsPage() {
                 ? 'Modifiez vos filtres ou créez une nouvelle annonce.'
                 : "Vous n'avez pas encore publié d'annonce. Créez votre première annonce pour la mettre en location."}
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 2,
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+              }}
+            >
               {(search || statusFilter || cityFilter || typeFilter) && (
                 <Button
                   variant="outlined"
@@ -450,7 +462,11 @@ export default function OwnerAdsPage() {
                                 />
                               ))
                             ) : (
-                              <Avatar variant="rounded" src="/images/placeholder-ad.jpg" alt={ad.title} />
+                              <Avatar
+                                variant="rounded"
+                                src="/images/placeholder-ad.jpg"
+                                alt={ad.title}
+                              />
                             )}
                           </AvatarGroup>
                         </TableCell>
@@ -465,33 +481,54 @@ export default function OwnerAdsPage() {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 160 }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            noWrap
+                            sx={{ maxWidth: 160 }}
+                          >
                             {ad.adresse}
                           </Typography>
                           {ad.quarter?.city_name && (
-                            <Typography variant="caption" color="text.secondary" display="block">
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              display="block"
+                            >
                               {ad.quarter.city_name}
                             </Typography>
                           )}
                         </TableCell>
                         <TableCell align="right">
-                          <Typography variant="body2" fontWeight={600} color="primary.main">
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            color="primary.main"
+                          >
                             {ad.price != null ? formatPrice(ad.price) : '—'}
                           </Typography>
                         </TableCell>
                         <TableCell align="right">
-                          <Typography variant="body2">{ad.surface_area}</Typography>
+                          <Typography variant="body2">
+                            {ad.surface_area}
+                          </Typography>
                         </TableCell>
                         <TableCell>
                           <Chip
-                            label={ad.status === AdStatus.DRAFT ? 'Brouillon' : (ad.status_label || ad.status)}
+                            label={
+                              ad.status === AdStatus.DRAFT
+                                ? 'Brouillon'
+                                : ad.status_label || ad.status
+                            }
                             size="small"
                             color={
                               ad.status === AdStatus.AVAILABLE
                                 ? 'success'
-                                : ad.status === AdStatus.RESERVED || ad.status === AdStatus.PENDING
+                                : ad.status === AdStatus.RESERVED ||
+                                    ad.status === AdStatus.PENDING
                                   ? 'warning'
-                                  : ad.status === AdStatus.RENT || ad.status === AdStatus.SOLD
+                                  : ad.status === AdStatus.RENT ||
+                                      ad.status === AdStatus.SOLD
                                     ? 'info'
                                     : ad.status === AdStatus.DRAFT
                                       ? 'secondary'
@@ -507,7 +544,10 @@ export default function OwnerAdsPage() {
                             <HiddenIcon fontSize="small" color="disabled" />
                           )}
                         </TableCell>
-                        <TableCell align="center" onClick={(e) => e.stopPropagation()}>
+                        <TableCell
+                          align="center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <IconButton
                             size="small"
                             aria-label={`Actions pour ${ad.title}`}
@@ -560,7 +600,9 @@ export default function OwnerAdsPage() {
               }}
             >
               <EditIcon fontSize="small" sx={{ mr: 1 }} />
-              {selectedAd.status === AdStatus.DRAFT ? "Continuer l'édition" : 'Modifier'}
+              {selectedAd.status === AdStatus.DRAFT
+                ? "Continuer l'édition"
+                : 'Modifier'}
             </MenuItem>
             <MenuItem
               onClick={() => {
@@ -580,37 +622,39 @@ export default function OwnerAdsPage() {
                 </>
               )}
             </MenuItem>
-            {selectedAd.status !== AdStatus.PENDING && selectedAd.status !== AdStatus.DECLINED && (
-              <>
-                {selectedAd.status !== AdStatus.RESERVED && (
-                  <MenuItem
-                    onClick={() => {
-                      setStatusMutation.mutate({
-                        adId: selectedAd.id,
-                        status: AdStatus.RESERVED,
-                      });
-                    }}
-                    disabled={setStatusMutation.isPending}
-                  >
-                    Marquer réservé
-                  </MenuItem>
-                )}
-                {selectedAd.status !== AdStatus.AVAILABLE && (
-                  <MenuItem
-                    onClick={() => {
-                      setStatusMutation.mutate({
-                        adId: selectedAd.id,
-                        status: AdStatus.AVAILABLE,
-                      });
-                    }}
-                    disabled={setStatusMutation.isPending}
-                  >
-                    Marquer disponible
-                  </MenuItem>
-                )}
-              </>
-            )}
-            {(selectedAd.status === AdStatus.AVAILABLE || selectedAd.status === AdStatus.RESERVED) && (
+            {selectedAd.status !== AdStatus.PENDING &&
+              selectedAd.status !== AdStatus.DECLINED && (
+                <>
+                  {selectedAd.status !== AdStatus.RESERVED && (
+                    <MenuItem
+                      onClick={() => {
+                        setStatusMutation.mutate({
+                          adId: selectedAd.id,
+                          status: AdStatus.RESERVED,
+                        });
+                      }}
+                      disabled={setStatusMutation.isPending}
+                    >
+                      Marquer réservé
+                    </MenuItem>
+                  )}
+                  {selectedAd.status !== AdStatus.AVAILABLE && (
+                    <MenuItem
+                      onClick={() => {
+                        setStatusMutation.mutate({
+                          adId: selectedAd.id,
+                          status: AdStatus.AVAILABLE,
+                        });
+                      }}
+                      disabled={setStatusMutation.isPending}
+                    >
+                      Marquer disponible
+                    </MenuItem>
+                  )}
+                </>
+              )}
+            {(selectedAd.status === AdStatus.AVAILABLE ||
+              selectedAd.status === AdStatus.RESERVED) && (
               <MenuItem
                 onClick={() => {
                   handleMenuClose();
@@ -622,8 +666,16 @@ export default function OwnerAdsPage() {
               </MenuItem>
             )}
             <MenuItem
-              onClick={() => {
-                if (confirm('Supprimer cette annonce ?')) {
+              onClick={async () => {
+                handleMenuClose();
+                const ok = await confirm({
+                  title: 'Supprimer cette annonce ?',
+                  message:
+                    'Cette action est irréversible. L’annonce et toutes ses photos seront définitivement supprimées.',
+                  confirmLabel: 'Supprimer',
+                  variant: 'danger',
+                });
+                if (ok) {
                   deleteMutation.mutate(selectedAd.id);
                 }
               }}
@@ -633,8 +685,18 @@ export default function OwnerAdsPage() {
               <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
               Supprimer
             </MenuItem>
-            <Box sx={{ px: 2, py: 1, borderTop: '1px solid', borderColor: 'divider' }}>
-              <ShareAdButtons adTitle={selectedAd.title} adUrl={`/annonces/${selectedAd.slug || selectedAd.id}`} />
+            <Box
+              sx={{
+                px: 2,
+                py: 1,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <ShareAdButtons
+                adTitle={selectedAd.title}
+                adUrl={`/annonces/${selectedAd.slug || selectedAd.id}`}
+              />
             </Box>
           </>
         )}
