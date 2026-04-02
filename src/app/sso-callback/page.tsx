@@ -26,24 +26,36 @@ export default function SSOCallbackPage() {
 
     handled.current = true;
 
+    const origin = window.location.origin;
+    const isAgentIntent =
+      sessionStorage.getItem('kh_registration_intent') === 'agent';
+    const fallbackUrl = isAgentIntent
+      ? `${origin}/owner/login`
+      : `${origin}/home`;
+    const errorPath = isAgentIntent ? '/owner/login' : '/login';
+
     // Safety timeout — if Clerk hangs (e.g. Turnstile challenge), redirect after 10s
     const timeout = setTimeout(() => {
       console.warn('[sso-callback] Timed out waiting for Clerk redirect');
-      router.replace('/login');
+      router.replace(errorPath);
     }, 10000);
 
+    const continueSignUpUrl = isAgentIntent
+      ? '/owner/auth/complete-profile'
+      : '/complete-profile';
+
     handleRedirectCallback({
-      signInUrl: '/login',
-      signUpUrl: '/register',
-      signInFallbackRedirectUrl: '/home',
-      signUpFallbackRedirectUrl: '/home',
-      continueSignUpUrl: '/complete-profile',
+      signInUrl: isAgentIntent ? '/owner/login' : '/login',
+      signUpUrl: isAgentIntent ? '/register?role=agent' : '/register',
+      signInFallbackRedirectUrl: fallbackUrl,
+      signUpFallbackRedirectUrl: fallbackUrl,
+      continueSignUpUrl,
     })
       .then(() => clearTimeout(timeout))
       .catch((err: unknown) => {
         clearTimeout(timeout);
         console.error('[sso-callback] handleRedirectCallback error:', err);
-        router.replace('/login');
+        router.replace(errorPath);
       });
   }, [handleRedirectCallback, router]);
 
@@ -60,7 +72,12 @@ export default function SSOCallbackPage() {
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Image src="/images/logo.png" alt="KeyHome — Authentification" width={48} height={48} />
+        <Image
+          src="/images/logo.png"
+          alt="KeyHome — Authentification"
+          width={48}
+          height={48}
+        />
         <Typography variant="h5" fontWeight={700} color="primary.main">
           KeyHome
         </Typography>
@@ -72,4 +89,3 @@ export default function SSOCallbackPage() {
     </Box>
   );
 }
-
