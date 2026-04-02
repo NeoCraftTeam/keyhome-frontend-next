@@ -9,8 +9,9 @@ import { useRouter } from 'next/navigation';
 import { APPTOUR_SHOWN_KEY } from '@/components/ui/AppTour';
 import { brandAgent } from '@/theme/tokens';
 
-/** ms to wait after AppTour completion before opening this modal. */
-const WELCOME_DELAY_MS = 10 * 1000; // 10 seconds (dev: change to 3 * 60 * 1000 for prod)
+/** ms to wait after AppTour completion before opening this modal.
+ * Short breathing-room so the tour close animation finishes before the wizard slides in. */
+const WELCOME_DELAY_MS = 1000;
 /** ms to wait after this modal closes before showing PushPrompt. */
 const PUSH_DELAY_MS = 3 * 1000; // 3 seconds
 /** localStorage key that stores the unix timestamp when the tour was completed. */

@@ -64,6 +64,8 @@ export default function DashboardLayout({
   // Survey is gated until PushPrompt step resolves (accepted, dismissed, or not applicable).
   // For returning users (onboarding already completed) it's immediately ready.
   const [pushPromptReady, setPushPromptReady] = useState(false);
+  /** Becomes true once the WelcomeModal tour has dismissed (or immediately for returning users). */
+  const [tourDismissed, setTourDismissed] = useState(false);
 
   const { data: activeSurvey, isError: activeSurveyError } = useQuery({
     queryKey: ['active-survey-global', isAuthenticated],
@@ -86,6 +88,20 @@ export default function DashboardLayout({
   useEffect(() => {
     setSurveyMounted(true);
   }, []);
+
+  // Tour-dismissed gate: same logic as owner side.
+  useEffect(() => {
+    if (user?.onboarding_completed_at != null) {
+      setTourDismissed(true);
+      return;
+    }
+    const onDismissed = () => setTourDismissed(true);
+    window.addEventListener('kh:welcome-dismissed', onDismissed, {
+      once: true,
+    });
+    return () =>
+      window.removeEventListener('kh:welcome-dismissed', onDismissed);
+  }, [user?.onboarding_completed_at]);
 
   // Unlock survey once PushPrompt resolves (accept / dismiss / not applicable).
   // PushPrompt fires kh:push-prompt-done in all paths:
@@ -199,7 +215,8 @@ export default function DashboardLayout({
         !activeSurveyError &&
         activeSurvey &&
         surveyAnsweredData?.has_answered === false &&
-        pushPromptReady && (
+        pushPromptReady &&
+        tourDismissed && (
           <SurveyPromptOrBanner
             surveyId={activeSurvey.id}
             surveySlug={activeSurvey.slug}

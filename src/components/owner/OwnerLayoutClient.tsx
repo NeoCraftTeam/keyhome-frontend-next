@@ -61,6 +61,10 @@ export default function OwnerLayoutClient({
   // Survey is gated until PushPrompt step resolves (accepted, dismissed, or not applicable).
   // For returning users (onboarding already completed) it's immediately ready.
   const [pushPromptReady, setPushPromptReady] = useState(false);
+  /** Becomes true once the onboarding tour / WelcomeModal has dismissed.
+   * Prevents the survey from appearing before the tour sequence completes.
+   * Returning users (onboarding_completed_at set) are treated as tour-done immediately. */
+  const [tourDismissed, setTourDismissed] = useState(false);
 
   useEffect(() => {
     setSidebarCollapsed(
@@ -101,6 +105,21 @@ export default function OwnerLayoutClient({
   useEffect(() => {
     setSurveyMounted(true);
   }, []);
+
+  // Tour-dismissed gate: returning users are ready immediately; new users wait
+  // for kh:welcome-dismissed (fired 3 s after OwnerWelcomeModal closes).
+  useEffect(() => {
+    if (user?.onboarding_completed_at != null) {
+      setTourDismissed(true);
+      return;
+    }
+    const onDismissed = () => setTourDismissed(true);
+    window.addEventListener('kh:welcome-dismissed', onDismissed, {
+      once: true,
+    });
+    return () =>
+      window.removeEventListener('kh:welcome-dismissed', onDismissed);
+  }, [user?.onboarding_completed_at]);
 
   // Unlock survey once PushPrompt resolves (accept / dismiss / not applicable).
   useEffect(() => {
@@ -274,7 +293,8 @@ export default function OwnerLayoutClient({
         !activeSurveyError &&
         activeSurvey &&
         surveyAnsweredData?.has_answered === false &&
-        pushPromptReady && (
+        pushPromptReady &&
+        tourDismissed && (
           <SurveyPromptOrBanner
             surveyId={activeSurvey.id}
             surveySlug={activeSurvey.slug}
