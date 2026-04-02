@@ -18,6 +18,8 @@ interface LoginApiResponse {
   message: string;
   access_token: string;
   expires_at: string;
+  role: string;
+  type: string | null;
 }
 
 interface RegisterApiResponse {
@@ -34,10 +36,15 @@ interface OAuthRedirectResponse {
 export type OAuthProvider = 'google' | 'facebook' | 'apple';
 
 export const authService = {
-  async login(email: string, password: string): Promise<AuthResponse> {
+  async login(
+    email: string,
+    password: string,
+    loginContext: 'owner' | 'client' = 'client'
+  ): Promise<AuthResponse> {
     const { data } = await api.post<LoginApiResponse>('/auth/login', {
       email,
       password,
+      login_context: loginContext,
     });
 
     const token = data.access_token;
@@ -92,6 +99,11 @@ export const authService = {
     return data.data ?? data;
   },
 
+  /**
+   * Backend returns `otp_required` for new Clerk identities only. If a Laravel user
+   * already exists for the same email (or clerk_id), the API returns `access_token`
+   * immediately with no OTP (see ClerkAuthController::clerkExchange).
+   */
   async clerkExchange(
     bearerToken?: string | null,
     options?: { registration_intent?: 'customer' | 'agent' }
@@ -127,9 +139,7 @@ export const authService = {
       panel_sso_url: d.panel_sso_url,
     };
   },
-  async verifyClerkOtp(
-    otp: string
-  ): Promise<
+  async verifyClerkOtp(otp: string): Promise<
     | {
         state: 'profile_required';
         prefill: {
@@ -185,7 +195,7 @@ export const authService = {
   },
 
   async completeClerkProfile(profile: {
-    phone_number: string;
+    phone_number?: string;
     city_id?: string | null;
   }): Promise<{ token: string; user: User; panel_sso_url: string | null }> {
     const { data } = await api.post<{

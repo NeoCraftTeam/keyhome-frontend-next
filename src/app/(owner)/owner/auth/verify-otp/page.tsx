@@ -2,12 +2,16 @@
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
+import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
+import { KH_OWNER_POST_OTP_TOKEN_KEY } from '@/lib/owner-auth-flow';
+import { registerTokenGetter } from '@/lib/auth-token';
+import { persistInMemoryToken } from '@/lib/auth-session';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { brandAgent } from '@/theme/tokens';
 import { UserRole } from '@/types';
+import { brandAgent } from '@/theme/tokens';
 import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
 import {
   Alert,
@@ -19,13 +23,19 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 const RESEND_COOLDOWN = 60;
 
 export default function OwnerVerifyOtpPage() {
-  const { finalizeAuth } = useAuth();
   const router = useRouter();
+  const { finalizeAuth } = useAuth();
 
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [email, setEmail] = useState('');
@@ -34,13 +44,32 @@ export default function OwnerVerifyOtpPage() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendMessage, setResendMessage] = useState('');
   const [isReady, setIsReady] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [welcomeName, setWelcomeName] = useState<string | null>(null);
+  const verifyResultRef = useRef<{
+    token: string;
+    user: Record<string, unknown>;
+  } | null>(null);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useLayoutEffect(() => {
+    const stored = sessionStorage.getItem('kh_verify_token_owner');
+    if (stored) {
+      registerTokenGetter(() =>
+        Promise.resolve(
+          typeof window !== 'undefined'
+            ? sessionStorage.getItem('kh_verify_token_owner')
+            : null
+        )
+      );
+    }
+  }, []);
 
   useEffect(() => {
     // Small delay to ensure sessionStorage is properly synced after navigation
     const timer = setTimeout(() => {
-      const storedEmail = sessionStorage.getItem('kh_verify_email') ?? '';
+      const storedEmail = sessionStorage.getItem('kh_verify_email_owner') ?? '';
       const storedRole = sessionStorage.getItem('kh_register_role') ?? '';
 
       // Force owner context or redirect if not appropriate
@@ -116,23 +145,30 @@ export default function OwnerVerifyOtpPage() {
     try {
       const result = await authService.verifyEmailOtp(email, otp);
 
-      // Resolve role from API; guard above already confirmed agent intent so
-      // fall back to AGENT if the API response omits the role field.
-      const resolvedRole =
-        (result.role as UserRole | undefined) ??
-        result.user?.role ??
-        UserRole.AGENT;
-      const userWithRole = { ...result.user, role: resolvedRole };
+      persistInMemoryToken(result.access_token);
 
-      // Clean up session storage
-      sessionStorage.removeItem('kh_verify_token');
-      sessionStorage.removeItem('kh_verify_email');
+      sessionStorage.removeItem('kh_verify_token_owner');
+      sessionStorage.removeItem('kh_verify_email_owner');
       sessionStorage.removeItem('kh_register_role');
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user_id');
+      sessionStorage.removeItem(KH_OWNER_POST_OTP_TOKEN_KEY);
 
-      // finalizeAuth stores the token and routes AGENT → /owner/dashboard
-      finalizeAuth(result.access_token, userWithRole, null);
+      // Email/password flow already collected phone + city at registration.
+      // Go straight to dashboard — no complete-profile step needed.
+      verifyResultRef.current = {
+        token: result.access_token,
+        user: result.user,
+      };
+      setWelcomeName(result.user?.firstname ?? null);
+      setShowWelcome(true);
+      setTimeout(() => {
+        finalizeAuth(
+          result.access_token,
+          { ...result.user, role: UserRole.AGENT },
+          null
+        );
+      }, 3800);
     } catch (err) {
       setError(
         getSafeErrorMessage(err, 'Code invalide ou expiré. Veuillez réessayer.')
@@ -182,6 +218,21 @@ export default function OwnerVerifyOtpPage() {
       >
         <CircularProgress sx={{ color: brandAgent.primary }} />
       </Box>
+    );
+  }
+
+  if (showWelcome) {
+    return (
+      <WelcomeOverlay
+        firstName={welcomeName}
+        isOwner
+        onSkip={() => {
+          const r = verifyResultRef.current;
+          if (r) {
+            finalizeAuth(r.token, { ...r.user, role: UserRole.AGENT }, null);
+          }
+        }}
+      />
     );
   }
 

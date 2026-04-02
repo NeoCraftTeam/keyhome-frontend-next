@@ -6,12 +6,15 @@ import PhoneField from '@/components/ui/PhoneField';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
+import { KH_OWNER_POST_OTP_TOKEN_KEY } from '@/lib/owner-auth-flow';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
+import { getInMemoryToken, persistInMemoryToken } from '@/lib/auth-session';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
+import { usersService } from '@/services/users.service';
 import { brandAgent, shadow } from '@/theme/tokens';
-import { City, UserRole } from '@/types';
+import { City, User, UserRole } from '@/types';
 import { ArrowBack } from '@mui/icons-material';
 import {
   Alert,
@@ -26,7 +29,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 
 export default function OwnerCompleteProfilePage() {
   const { finalizeAuth, user: authUser } = useAuth();
@@ -44,9 +47,61 @@ export default function OwnerCompleteProfilePage() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  /** Email/password registration → OTP → this page (same UX as OAuth → Clerk complete-profile). */
+  const [isPasswordPostOtpFlow, setIsPasswordPostOtpFlow] = useState(false);
+  const [passwordFlowUser, setPasswordFlowUser] = useState<User | null>(null);
+  const [passwordFlowReady, setPasswordFlowReady] = useState(false);
+
+  /**
+   * Restore Bearer before any useEffect (including AuthProvider) runs, so
+   * registerTokenGetter(null) cannot briefly win over the post-OTP token on reload.
+   */
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const backup = sessionStorage.getItem(KH_OWNER_POST_OTP_TOKEN_KEY);
+    if (backup) {
+      persistInMemoryToken(backup);
+    }
+  }, []);
 
   useEffect(() => {
-    // If user is already fully authenticated and not an agent, redirect
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const backup = sessionStorage.getItem(KH_OWNER_POST_OTP_TOKEN_KEY);
+    if (backup) {
+      setIsPasswordPostOtpFlow(true);
+      void authService
+        .me()
+        .then((u) => {
+          setPasswordFlowUser(u);
+          if (u.phone_number) {
+            setPhoneNumber(u.phone_number);
+          }
+          if (u.city_id && u.city_name) {
+            setSelectedCity({ id: u.city_id, name: u.city_name });
+            setCityInput(u.city_name);
+          }
+        })
+        .catch(() => {
+          setError(
+            'Session expirée. Reconnectez-vous depuis la page bailleur.'
+          );
+        })
+        .finally(() => {
+          setPasswordFlowReady(true);
+        });
+      return;
+    }
+    setPasswordFlowReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!passwordFlowReady || isPasswordPostOtpFlow) {
+      return;
+    }
     if (
       authUser &&
       authUser.role !== UserRole.AGENT &&
@@ -54,7 +109,7 @@ export default function OwnerCompleteProfilePage() {
     ) {
       router.replace('/home');
     }
-  }, [authUser, router]);
+  }, [authUser, router, passwordFlowReady, isPasswordPostOtpFlow]);
 
   const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
     queryKey: ['owner-complete-profile-cities', cityInput],
@@ -71,13 +126,34 @@ export default function OwnerCompleteProfilePage() {
     setIsSubmitting(true);
 
     try {
+      if (isPasswordPostOtpFlow && passwordFlowUser) {
+        const updated = await usersService.updateProfile(passwordFlowUser.id, {
+          phone_number: phoneNumber,
+          city_id: selectedCity?.id ?? null,
+        });
+        setShowWelcome(true);
+        setTimeout(() => {
+          const t = getInMemoryToken();
+          sessionStorage.removeItem(KH_OWNER_POST_OTP_TOKEN_KEY);
+          if (!t) {
+            setShowWelcome(false);
+            setError(
+              'Session expirée. Reconnectez-vous depuis la page bailleur.'
+            );
+            setIsSubmitting(false);
+            return;
+          }
+          finalizeAuth(t, { ...updated, role: UserRole.AGENT }, null);
+        }, 3800);
+        return;
+      }
+
       const result = await authService.completeClerkProfile({
         phone_number: phoneNumber,
         ...(selectedCity ? { city_id: selectedCity.id } : {}),
       });
 
       setShowWelcome(true);
-      // finalizeAuth handles routing: AGENT → /owner/dashboard
       setTimeout(() => {
         finalizeAuth(
           result.token,
@@ -97,12 +173,85 @@ export default function OwnerCompleteProfilePage() {
     }
   };
 
+  const handleSkip = async () => {
+    setError('');
+    setIsSubmitting(true);
+    try {
+      // Complete profile with minimal data — user can fill in later from settings
+      const result = await authService.completeClerkProfile({});
+
+      finalizeAuth(
+        result.token,
+        { ...result.user, role: UserRole.AGENT },
+        result.panel_sso_url
+      );
+    } catch (err) {
+      setError(
+        getSafeErrorMessage(err, 'Une erreur est survenue. Veuillez réessayer.')
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (showWelcome) {
-    return <WelcomeOverlay firstName={authUser?.firstname} isOwner />;
+    return (
+      <WelcomeOverlay
+        firstName={passwordFlowUser?.firstname ?? authUser?.firstname}
+        isOwner
+      />
+    );
   }
 
   const buttonGradient = `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`;
   const buttonGradientHover = `linear-gradient(to right, ${brandAgent.primary}, ${brandAgent.primaryDark})`;
+
+  if (isPasswordPostOtpFlow && !passwordFlowReady) {
+    return (
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          minHeight: '100vh',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <CircularProgress sx={{ color: brandAgent.primary }} />
+      </Box>
+    );
+  }
+
+  if (isPasswordPostOtpFlow && passwordFlowReady && !passwordFlowUser) {
+    return (
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          minHeight: '100vh',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 3,
+          bgcolor: 'background.default',
+        }}
+      >
+        <Box sx={{ maxWidth: 400 }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error ||
+              'Impossible de charger votre profil. Reconnectez-vous depuis la page bailleur.'}
+          </Alert>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={() => router.replace('/owner/login')}
+          >
+            Aller à la connexion bailleur
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>
@@ -329,6 +478,29 @@ export default function OwnerCompleteProfilePage() {
                   'Activer mon espace professionnel'
                 )}
               </Button>
+
+              {!isPasswordPostOtpFlow && (
+                <Button
+                  variant="text"
+                  size="large"
+                  fullWidth
+                  disabled={isSubmitting}
+                  onClick={handleSkip}
+                  sx={{
+                    py: 1.2,
+                    fontSize: '0.9rem',
+                    fontWeight: 500,
+                    color: 'text.secondary',
+                    textTransform: 'none',
+                    '&:hover': {
+                      color: brandAgent.primary,
+                      bgcolor: 'rgba(13,148,136,0.06)',
+                    },
+                  }}
+                >
+                  Compléter plus tard
+                </Button>
+              )}
             </Box>
           </FadeIn>
         </Box>
