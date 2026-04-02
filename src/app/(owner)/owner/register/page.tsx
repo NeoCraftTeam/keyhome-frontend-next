@@ -1,8 +1,10 @@
 'use client';
 
 import { writeStoredRegisterAccountRole } from '@/lib/register-intent';
+import { brandAgent } from '@/theme/tokens';
+import { Box, CircularProgress } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 
 /**
  * L'inscription bailleur utilise la même page que les clients (`/register`),
@@ -11,10 +13,22 @@ import { useEffect } from 'react';
 export default function OwnerRegisterRedirectPage() {
   const router = useRouter();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     writeStoredRegisterAccountRole('agent');
     router.replace('/register');
   }, [router]);
 
-  return null;
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+      }}
+    >
+      <CircularProgress sx={{ color: brandAgent.primary }} />
+    </Box>
+  );
 }

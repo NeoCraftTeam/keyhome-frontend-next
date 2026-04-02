@@ -173,7 +173,7 @@ export default function OwnerVerifyOtpPage() {
       welcomeTimeoutRef.current = setTimeout(() => {
         finalizeAuth(
           result.access_token,
-          { ...result.user, role: UserRole.AGENT },
+          { ...result.user, role: result.user?.role ?? UserRole.AGENT },
           null
         );
       }, 3800);
@@ -237,7 +237,11 @@ export default function OwnerVerifyOtpPage() {
         onSkip={() => {
           const r = verifyResultRef.current;
           if (r) {
-            finalizeAuth(r.token, { ...r.user, role: UserRole.AGENT }, null);
+            finalizeAuth(
+              r.token,
+              { ...r.user, role: r.user?.role ?? UserRole.AGENT },
+              null
+            );
           }
         }}
       />

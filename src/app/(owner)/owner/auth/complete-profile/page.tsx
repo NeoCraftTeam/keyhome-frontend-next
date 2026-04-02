@@ -151,7 +151,11 @@ export default function OwnerCompleteProfilePage() {
             setIsSubmitting(false);
             return;
           }
-          finalizeAuth(t, { ...updated, role: UserRole.AGENT }, null);
+          finalizeAuth(
+            t,
+            { ...updated, role: updated.role ?? UserRole.AGENT },
+            null
+          );
         }, 3800);
         return;
       }
@@ -165,7 +169,7 @@ export default function OwnerCompleteProfilePage() {
       welcomeTimeoutRef.current = setTimeout(() => {
         finalizeAuth(
           result.token,
-          { ...result.user, role: UserRole.AGENT },
+          { ...result.user, role: result.user?.role ?? UserRole.AGENT },
           result.panel_sso_url
         );
       }, 3800);
