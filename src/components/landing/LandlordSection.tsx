@@ -1,7 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Dashboard, PeopleOutline, VerifiedUser, ArrowForward } from '@mui/icons-material';
+import {
+  Dashboard,
+  PeopleOutline,
+  VerifiedUser,
+  ArrowForward,
+} from '@mui/icons-material';
 import { useLandingTheme } from './LandingThemeContext';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
@@ -28,7 +33,8 @@ const benefits = [
 ];
 
 export default function LandlordSection() {
-  const { bgAlt, text, textSub, textMuted, surface, border } = useLandingTheme();
+  const { bgAlt, text, textSub, textMuted, surface, border } =
+    useLandingTheme();
 
   return (
     <section
@@ -37,7 +43,6 @@ export default function LandlordSection() {
       style={{ background: bgAlt, transition: 'background 0.4s ease' }}
     >
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -73,13 +78,29 @@ export default function LandlordSection() {
           >
             Vous avez un bien à louer ou vendre ?
           </h2>
-          <p style={{ fontSize: 17, color: textSub, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
-            Publiez votre annonce gratuitement et recevez uniquement des contacts sérieux. Zéro spam, zéro perte de temps.
+          <p
+            style={{
+              fontSize: 17,
+              color: textSub,
+              maxWidth: 520,
+              margin: '0 auto',
+              lineHeight: 1.6,
+            }}
+          >
+            Publiez votre annonce gratuitement et recevez uniquement des
+            contacts sérieux. Zéro spam, zéro perte de temps.
           </p>
         </motion.div>
 
         {/* Benefits cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, marginBottom: 48 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: 24,
+            marginBottom: 48,
+          }}
+        >
           {benefits.map((b, i) => (
             <motion.div
               key={b.title}
@@ -111,8 +132,26 @@ export default function LandlordSection() {
               >
                 <b.icon style={{ fontSize: 22, color: b.color }} />
               </div>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: text, margin: 0 }}>{b.title}</h3>
-              <p style={{ fontSize: 14, color: textMuted, lineHeight: 1.6, margin: 0 }}>{b.desc}</p>
+              <h3
+                style={{
+                  fontSize: 17,
+                  fontWeight: 700,
+                  color: text,
+                  margin: 0,
+                }}
+              >
+                {b.title}
+              </h3>
+              <p
+                style={{
+                  fontSize: 14,
+                  color: textMuted,
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}
+              >
+                {b.desc}
+              </p>
             </motion.div>
           ))}
         </div>
@@ -125,7 +164,7 @@ export default function LandlordSection() {
           transition={{ duration: 0.6, ease: EASE }}
           style={{ textAlign: 'center' }}
         >
-          <a href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'} style={{ textDecoration: 'none' }}>
+          <a href="/owner/login" style={{ textDecoration: 'none' }}>
             <button
               style={{
                 display: 'inline-flex',
@@ -143,12 +182,16 @@ export default function LandlordSection() {
                 transition: 'transform 0.2s, box-shadow 0.2s',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(59,130,246,0.45)';
+                (e.currentTarget as HTMLElement).style.transform =
+                  'translateY(-2px)';
+                (e.currentTarget as HTMLElement).style.boxShadow =
+                  '0 8px 24px rgba(59,130,246,0.45)';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(59,130,246,0.35)';
+                (e.currentTarget as HTMLElement).style.transform =
+                  'translateY(0)';
+                (e.currentTarget as HTMLElement).style.boxShadow =
+                  '0 4px 16px rgba(59,130,246,0.35)';
               }}
             >
               Publier mon annonce

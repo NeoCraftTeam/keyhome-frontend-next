@@ -2,12 +2,13 @@
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
+import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { brandAgent, gradient } from '@/theme/tokens';
-import { UserRole } from '@/types';
+import { User, UserRole } from '@/types';
 import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
 import {
   Alert,
@@ -36,16 +37,38 @@ export default function VerifyEmailPage() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendMessage, setResendMessage] = useState('');
   const [isOwner, setIsOwner] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const welcomeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Stored so the skip handler can call finalizeAuth without stale closure. */
+  const verifyResultRef = useRef<{
+    token: string;
+    user: User & { role: UserRole };
+  } | null>(null);
+
+  // Cleanup welcome timer on unmount (user closes tab / navigates back)
+  useEffect(() => {
+    return () => {
+      if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const storedEmail = sessionStorage.getItem('kh_verify_email_client') ?? '';
     const storedRole = sessionStorage.getItem('kh_register_role') ?? '';
+
+    // Guard: agents must use /owner/auth/verify-otp. If they land here with
+    // no client email in sessionStorage, redirect them to the correct route.
+    if (storedRole === 'agent' && !storedEmail) {
+      router.replace('/owner/auth/verify-otp');
+      return;
+    }
+
     setEmail(storedEmail);
     setIsOwner(storedRole === 'agent');
     inputRefs.current[0]?.focus();
-  }, []);
+  }, [router]);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -126,8 +149,7 @@ export default function VerifyEmailPage() {
     try {
       const result = await authService.verifyEmailOtp(email, otp);
 
-      // Resolve the user role: prefer the top-level field from the API,
-      // then fall back to the user object, then sessionStorage.
+      // Resolve role: prefer top-level API field, then user object, then sessionStorage.
       const resolvedRole =
         (result.role as UserRole | undefined) ??
         result.user?.role ??
@@ -135,19 +157,27 @@ export default function VerifyEmailPage() {
           ? UserRole.AGENT
           : UserRole.CUSTOMER);
 
-      // Ensure the user object has the role so finalizeAuth routes correctly.
       const userWithRole = { ...result.user, role: resolvedRole };
 
-      // Clean up session storage
+      // Clean up verification keys — must happen before WelcomeOverlay renders
+      // so AuthProvider’s next effect cycle doesn’t see a stale verify token.
       sessionStorage.removeItem('kh_verify_token_client');
       sessionStorage.removeItem('kh_verify_email_client');
       sessionStorage.removeItem('kh_register_role');
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user_id');
 
-      // Auto-login: finalizeAuth stores the Sanctum token, sets the user,
-      // and redirects to /owner/dashboard (agent) or /home (customer).
-      finalizeAuth(result.access_token, userWithRole, null);
+      // Stash result for the skip handler (closure-safe via ref).
+      verifyResultRef.current = {
+        token: result.access_token,
+        user: userWithRole,
+      };
+
+      // Show WelcomeOverlay for 3.8 s, then finalizeAuth routes to /home.
+      setShowWelcome(true);
+      welcomeTimerRef.current = setTimeout(() => {
+        finalizeAuth(result.access_token, userWithRole, null);
+      }, 3800);
     } catch (err) {
       setError(
         getSafeErrorMessage(err, 'Code invalide ou expiré. Veuillez réessayer.')
@@ -191,9 +221,26 @@ export default function VerifyEmailPage() {
       )
     : '';
 
+  if (showWelcome) {
+    return (
+      <WelcomeOverlay
+        firstName={verifyResultRef.current?.user?.firstname}
+        isOwner={
+          verifyResultRef.current?.user?.role === UserRole.AGENT ||
+          verifyResultRef.current?.user?.role === UserRole.ADMIN
+        }
+        onSkip={() => {
+          if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
+          const r = verifyResultRef.current;
+          if (r) finalizeAuth(r.token, r.user, null);
+        }}
+      />
+    );
+  }
+
   return (
     <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>
-      {/* Left side \u2014 image */}
+      {/* Left side — image */}
       <Box
         sx={{
           display: { xs: 'none', md: 'block' },

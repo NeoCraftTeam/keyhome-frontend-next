@@ -127,6 +127,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!isSignedIn) {
       clerkExchangeDoneRef.current = false;
+
+      // ── Synchronous verification-pending guard ──────────────────────────────
+      // Runs BEFORE setIsExchanging(true) to eliminate the full-app loading flash
+      // that previously appeared on every navigation to an OTP / complete-profile
+      // page. sessionStorage reads are synchronous — zero async work needed here.
+      if (typeof window !== 'undefined') {
+        const syncPath = pathnameRef.current ?? '';
+        const syncIsOwnerPath = syncPath.startsWith('/owner');
+        const syncVerifyKey = syncIsOwnerPath
+          ? KH_VERIFY_TOKEN_OWNER
+          : KH_VERIFY_TOKEN_CLIENT;
+        const syncHasToken = POST_REGISTRATION_PATHS.has(syncPath)
+          ? Boolean(
+              sessionStorage.getItem(KH_VERIFY_TOKEN_CLIENT) ||
+              sessionStorage.getItem(KH_VERIFY_TOKEN_OWNER)
+            )
+          : Boolean(sessionStorage.getItem(syncVerifyKey));
+        const syncActiveKey = POST_REGISTRATION_PATHS.has(syncPath)
+          ? sessionStorage.getItem(KH_VERIFY_TOKEN_OWNER)
+            ? KH_VERIFY_TOKEN_OWNER
+            : KH_VERIFY_TOKEN_CLIENT
+          : syncVerifyKey;
+        const syncIsPending =
+          PENDING_EMAIL_VERIFICATION_PATHS.has(syncPath) ||
+          (POST_REGISTRATION_PATHS.has(syncPath) && syncHasToken);
+
+        if (syncIsPending && syncHasToken) {
+          registerTokenGetter(() =>
+            Promise.resolve(
+              typeof window !== 'undefined'
+                ? sessionStorage.getItem(syncActiveKey)
+                : null
+            )
+          );
+          setUserState(null);
+          clearRoleCookie();
+          setToken(null);
+          setHasResolvedInitialAuth(true);
+          return;
+        }
+      }
+      // ────────────────────────────────────────────────────────────────────────
+
       setIsExchanging(true);
 
       void (async () => {
@@ -134,54 +177,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (runId !== authRunRef.current) {
           return;
-        }
-
-        const path = pathname ?? '';
-
-        // Skip full auth resolution when the user is on an OTP / verification
-        // page, or still on the registration page after a successful submit
-        // (the WelcomeOverlay is visible and we don't want me() to fire).
-        if (typeof window !== 'undefined') {
-          // Pick the verify-token key matching the current route context.
-          // On /register we check both keys since the path isn't owner-scoped.
-          const isOwnerPath = path.startsWith('/owner');
-          const verifyTokenKey = isOwnerPath
-            ? KH_VERIFY_TOKEN_OWNER
-            : KH_VERIFY_TOKEN_CLIENT;
-          const hasVerifyToken = POST_REGISTRATION_PATHS.has(path)
-            ? Boolean(
-                sessionStorage.getItem(KH_VERIFY_TOKEN_CLIENT) ||
-                sessionStorage.getItem(KH_VERIFY_TOKEN_OWNER)
-              )
-            : Boolean(sessionStorage.getItem(verifyTokenKey));
-
-          // Resolve the correct key for the token getter
-          const activeVerifyKey = POST_REGISTRATION_PATHS.has(path)
-            ? sessionStorage.getItem(KH_VERIFY_TOKEN_OWNER)
-              ? KH_VERIFY_TOKEN_OWNER
-              : KH_VERIFY_TOKEN_CLIENT
-            : verifyTokenKey;
-
-          const isPendingVerification =
-            PENDING_EMAIL_VERIFICATION_PATHS.has(path) ||
-            (POST_REGISTRATION_PATHS.has(path) && hasVerifyToken);
-
-          if (isPendingVerification && hasVerifyToken) {
-            registerTokenGetter(() =>
-              Promise.resolve(
-                typeof window !== 'undefined'
-                  ? sessionStorage.getItem(activeVerifyKey)
-                  : null
-              )
-            );
-            setUserState(null);
-            clearRoleCookie();
-            setToken(null);
-            setIsExchanging(false);
-            setHasResolvedInitialAuth(true);
-
-            return;
-          }
         }
 
         // --- Session-first (cookie) when no Bearer; else Bearer (SPA ↔ API cross-origin) ---
@@ -263,13 +258,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // --- Clerk signed-in: exchange JWT for Sanctum session ---
-    setIsExchanging(true);
-
+    // Guard BEFORE setIsExchanging: every pathname change while isSignedIn=true
+    // re-runs this effect. If the exchange is already done (OTP pending or user
+    // authenticated), bail immediately — never flash the loading state.
     if (clerkExchangeDoneRef.current) {
       setIsExchanging(false);
       setHasResolvedInitialAuth(true);
       return;
     }
+
+    setIsExchanging(true);
 
     getToken()
       .then(async (clerkToken) => {
@@ -337,7 +335,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          persistSession(sanctumToken);
+          // Role-aware persistence — prevents agent tokens landing in
+          // clientInMemoryToken when the OAuth callback fires from a non-owner
+          // path (e.g. /home or /sso-callback). getActiveToken() is path-based
+          // so an agent token must live in ownerInMemoryToken from the start.
+          if (
+            laravelUser.role === UserRole.AGENT ||
+            laravelUser.role === UserRole.ADMIN
+          ) {
+            persistOwnerToken(sanctumToken);
+          } else {
+            persistClientToken(sanctumToken);
+          }
+          setToken(sanctumToken);
           setUserState(laravelUser);
           setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
 
@@ -544,13 +554,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut();
       }
 
-      const postOAuthPath =
-        options?.registrationIntent === 'agent' ? '/owner/login' : '/home';
-
+      // Always land back on /sso-callback after OAuth — never on a content
+      // page like /owner/login. Using /owner/login as redirectUrlComplete was the
+      // root cause of the "login page flashes before OTP page" race: Clerk would
+      // hard-navigate there before our clerkExchange even started, the user saw
+      // the form, then AuthProvider detected isSignedIn and routed to /verify-otp.
+      // /sso-callback is already a pure loading screen so there is nothing to flash.
       await signIn.authenticateWithRedirect({
         strategy: strategyMap[provider],
         redirectUrl: `${window.location.origin}/sso-callback`,
-        redirectUrlComplete: `${window.location.origin}${postOAuthPath}`,
+        redirectUrlComplete: `${window.location.origin}/sso-callback`,
       });
     },
     [signIn, isSignedIn, signOut]

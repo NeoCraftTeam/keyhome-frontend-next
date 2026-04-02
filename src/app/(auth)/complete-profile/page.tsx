@@ -8,7 +8,7 @@ import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
-import { City } from '@/types';
+import { City, User } from '@/types';
 import { useSignUp } from '@clerk/nextjs';
 import { ArrowBack } from '@mui/icons-material';
 import {
@@ -24,7 +24,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gradient } from '@/theme/tokens';
 import { getRegisterThemeTokens } from '@/lib/register-theme';
 
@@ -65,6 +65,21 @@ export default function CompleteProfilePage() {
   const cities = citiesData?.data || [];
 
   // Detect which flow we're in
+  const welcomeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Stashed so the skip handler can call finalizeAuth without a stale closure. */
+  const completeResultRef = useRef<{
+    token: string;
+    user: User;
+    panel_sso_url: string | null;
+  } | null>(null);
+
+  // Cleanup welcome timer on unmount
+  useEffect(() => {
+    return () => {
+      if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
+    };
+  }, []);
+
   const [isOtpFlow, setIsOtpFlow] = useState(false);
   const [prefill, setPrefill] = useState<{
     firstname: string;
@@ -106,8 +121,9 @@ export default function CompleteProfilePage() {
         ...(selectedCity ? { city_id: selectedCity.id } : {}),
       });
       sessionStorage.removeItem('clerk_auth_prefill');
+      completeResultRef.current = result;
       setShowWelcome(true);
-      setTimeout(() => {
+      welcomeTimerRef.current = setTimeout(() => {
         finalizeAuth(result.token, result.user, result.panel_sso_url);
       }, 3800);
     } catch (err) {
@@ -175,7 +191,16 @@ export default function CompleteProfilePage() {
   const handleSubmit = isOtpFlow ? handleOtpFlowSubmit : handleClerkFlowSubmit;
 
   if (showWelcome) {
-    return <WelcomeOverlay firstName={prefill?.firstname} />;
+    return (
+      <WelcomeOverlay
+        firstName={prefill?.firstname}
+        onSkip={() => {
+          if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
+          const r = completeResultRef.current;
+          if (r) finalizeAuth(r.token, r.user, r.panel_sso_url);
+        }}
+      />
+    );
   }
 
   return (

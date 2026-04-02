@@ -4,7 +4,6 @@ import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
-import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { registerTokenGetter } from '@/lib/auth-token';
 import {
@@ -111,7 +110,6 @@ export default function RegisterPage() {
   const [emailTaken, setEmailTaken] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
 
-  const [showWelcome, setShowWelcome] = useState(false);
   const [accountRole, setAccountRole] = useState<AccountRole>(
     () => readStoredRegisterAccountRole() ?? 'customer'
   );
@@ -332,14 +330,11 @@ export default function RegisterPage() {
       sessionStorage.setItem('kh_register_role', accountRole);
 
       clearStoredRegisterAccountRole();
-      setShowWelcome(true);
-      setTimeout(() => {
-        if (accountRole === 'agent') {
-          router.push('/owner/auth/verify-otp');
-        } else {
-          router.push('/verify-email');
-        }
-      }, 3800);
+      // Route immediately to OTP — WelcomeOverlay fires AFTER OTP verification,
+      // not here. This matches the described flow: register → OTP → Welcome → Dashboard.
+      router.push(
+        accountRole === 'agent' ? '/owner/auth/verify-otp' : '/verify-email'
+      );
     } catch (err) {
       setError(getSafeErrorMessage(err, "Erreur lors de l'inscription."));
     } finally {
@@ -351,20 +346,6 @@ export default function RegisterPage() {
     accountRole === 'customer'
       ? ['Type de compte', 'Informations', 'Sécurité']
       : ['Type de compte', 'Informations', 'Sécurité'];
-
-  if (showWelcome) {
-    return (
-      <WelcomeOverlay
-        firstName={form.firstname}
-        isOwner={accountRole === 'agent'}
-        onSkip={() =>
-          router.push(
-            accountRole === 'agent' ? '/owner/auth/verify-otp' : '/verify-email'
-          )
-        }
-      />
-    );
-  }
 
   return (
     <MotionConfig reducedMotion="user">
