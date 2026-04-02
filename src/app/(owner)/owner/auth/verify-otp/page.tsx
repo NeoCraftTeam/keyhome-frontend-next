@@ -21,6 +21,7 @@ import {
   IconButton,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
@@ -486,14 +487,5 @@ export default function OwnerVerifyOtpPage() {
         </Box>
       </Box>
     </Box>
-  );
-}
-
-function alpha(color: string, opacity: number): string {
-  return (
-    color +
-    Math.round(opacity * 255)
-      .toString(16)
-      .padStart(2, '0')
   );
 }
