@@ -40,7 +40,7 @@ export default function VerifyEmailPage() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    const storedEmail = sessionStorage.getItem('kh_verify_email') ?? '';
+    const storedEmail = sessionStorage.getItem('kh_verify_email_client') ?? '';
     const storedRole = sessionStorage.getItem('kh_register_role') ?? '';
     setEmail(storedEmail);
     setIsOwner(storedRole === 'agent');
@@ -139,8 +139,8 @@ export default function VerifyEmailPage() {
       const userWithRole = { ...result.user, role: resolvedRole };
 
       // Clean up session storage
-      sessionStorage.removeItem('kh_verify_token');
-      sessionStorage.removeItem('kh_verify_email');
+      sessionStorage.removeItem('kh_verify_token_client');
+      sessionStorage.removeItem('kh_verify_email_client');
       sessionStorage.removeItem('kh_register_role');
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user_id');

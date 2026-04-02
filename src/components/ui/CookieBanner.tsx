@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { Close, CookieOutlined, Shield } from '@mui/icons-material';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
-import { brand, gradient } from '@/theme/tokens';
+import { brand, brandAgent, gradient } from '@/theme/tokens';
 
 const COOKIE_KEY = 'keyhome_cookie_consent_v1';
 
@@ -26,32 +26,57 @@ interface CookiePreferences {
   marketing: boolean;
 }
 
-const DEFAULT_PREFS: CookiePreferences = { necessary: true, analytics: false, marketing: false };
+const DEFAULT_PREFS: CookiePreferences = {
+  necessary: true,
+  analytics: false,
+  marketing: false,
+};
 
 function loadPrefs(): CookiePreferences | null {
-  if (typeof window === 'undefined') { return null; }
+  if (typeof window === 'undefined') {
+    return null;
+  }
   try {
     const raw = localStorage.getItem(COOKIE_KEY);
     return raw ? (JSON.parse(raw) as CookiePreferences) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function savePrefs(prefs: CookiePreferences): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(COOKIE_KEY, JSON.stringify(prefs));
-    window.dispatchEvent(new CustomEvent('kh:cookie-consent', { detail: prefs }));
+    window.dispatchEvent(
+      new CustomEvent('kh:cookie-consent', { detail: prefs })
+    );
   } catch {
     // localStorage may be full or disabled (private mode)
   }
 }
 
-export default function CookieBanner() {
+interface CookieBannerProps {
+  variant?: 'default' | 'owner';
+}
+
+export default function CookieBanner({
+  variant = 'default',
+}: CookieBannerProps) {
   const [visible, setVisible] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [prefs, setPrefs] = useState<CookiePreferences>(DEFAULT_PREFS);
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
+
+  const isOwner = variant === 'owner';
+  const accentColor = isOwner ? brandAgent.primary : brand.primary;
+  const accentBar = isOwner
+    ? `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`
+    : `linear-gradient(to right, ${brand.primary}, #6c5ce7)`;
+  const btnBg = isOwner
+    ? `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`
+    : gradient.primary;
 
   useEffect(() => {
     if (loadPrefs() === null) {
@@ -60,11 +85,23 @@ export default function CookieBanner() {
     }
   }, []);
 
-  const acceptAll = () => { savePrefs({ necessary: true, analytics: true, marketing: true }); setVisible(false); };
-  const rejectAll = () => { savePrefs(DEFAULT_PREFS); setVisible(false); };
-  const saveCustom = () => { savePrefs(prefs); setCustomizeOpen(false); setVisible(false); };
+  const acceptAll = () => {
+    savePrefs({ necessary: true, analytics: true, marketing: true });
+    setVisible(false);
+  };
+  const rejectAll = () => {
+    savePrefs(DEFAULT_PREFS);
+    setVisible(false);
+  };
+  const saveCustom = () => {
+    savePrefs(prefs);
+    setCustomizeOpen(false);
+    setVisible(false);
+  };
 
-  if (!visible) { return null; }
+  if (!visible) {
+    return null;
+  }
 
   return (
     <MotionConfig reducedMotion="user">
@@ -73,8 +110,19 @@ export default function CookieBanner() {
           initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.1 }}
-          style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1400 }}
+          transition={{
+            type: 'spring',
+            stiffness: 300,
+            damping: 30,
+            delay: 0.1,
+          }}
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1400,
+          }}
         >
           <Paper
             elevation={0}
@@ -83,12 +131,13 @@ export default function CookieBanner() {
               maxWidth: { md: 780 },
               mb: { xs: 0, sm: 2 },
               borderRadius: { xs: '12px 12px 0 0', sm: 3 },
-              border: '1px solid', borderColor: 'divider',
+              border: '1px solid',
+              borderColor: 'divider',
               boxShadow: '0 -2px 24px rgba(0,0,0,0.08)',
               overflow: 'hidden',
             }}
           >
-            <Box sx={{ height: 3, background: `linear-gradient(to right, ${brand.primary}, #6c5ce7)` }} />
+            <Box sx={{ height: 3, background: accentBar }} />
 
             <Box
               sx={{
@@ -101,17 +150,42 @@ export default function CookieBanner() {
               }}
             >
               {/* Icon + text — compact */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
-                <CookieOutlined sx={{ color: 'primary.main', fontSize: 20, flexShrink: 0 }} />
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-                  <Typography component="span" variant="body2" fontWeight={700} color="text.primary">
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                <CookieOutlined
+                  sx={{ color: accentColor, fontSize: 20, flexShrink: 0 }}
+                />
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ lineHeight: 1.5 }}
+                >
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    fontWeight={700}
+                    color="text.primary"
+                  >
                     Cookies —{' '}
                   </Typography>
                   KeyHome utilise des cookies pour améliorer votre expérience.{' '}
                   <Typography
                     component="span"
                     variant="body2"
-                    sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2, whiteSpace: 'nowrap' }}
+                    sx={{
+                      color: accentColor,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      textUnderlineOffset: 2,
+                      whiteSpace: 'nowrap',
+                    }}
                     onClick={() => setCustomizeOpen(true)}
                   >
                     En savoir plus
@@ -120,12 +194,24 @@ export default function CookieBanner() {
               </Box>
 
               {/* Actions — horizontal, compact */}
-              <Box sx={{ display: 'flex', gap: 1, flexShrink: 0, alignItems: 'center' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 1,
+                  flexShrink: 0,
+                  alignItems: 'center',
+                }}
+              >
                 <Button
                   size="small"
                   variant="text"
                   onClick={rejectAll}
-                  sx={{ textTransform: 'none', color: 'text.disabled', fontWeight: 500, whiteSpace: 'nowrap' }}
+                  sx={{
+                    textTransform: 'none',
+                    color: 'text.disabled',
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                  }}
                 >
                   Refuser
                 </Button>
@@ -133,7 +219,14 @@ export default function CookieBanner() {
                   size="small"
                   variant="outlined"
                   onClick={() => setCustomizeOpen(true)}
-                  sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2, borderColor: 'divider', color: 'text.primary', whiteSpace: 'nowrap' }}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    borderColor: 'divider',
+                    color: 'text.primary',
+                    whiteSpace: 'nowrap',
+                  }}
                 >
                   Personnaliser
                 </Button>
@@ -142,9 +235,12 @@ export default function CookieBanner() {
                   variant="contained"
                   onClick={acceptAll}
                   sx={{
-                    textTransform: 'none', fontWeight: 700, borderRadius: 2, whiteSpace: 'nowrap',
-                    background: gradient.primary,
-                    '&:hover': { filter: 'brightness(0.9)', background: gradient.primary },
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    whiteSpace: 'nowrap',
+                    background: btnBg,
+                    '&:hover': { filter: 'brightness(0.9)', background: btnBg },
                   }}
                 >
                   Tout accepter
@@ -166,16 +262,28 @@ export default function CookieBanner() {
       >
         <Box
           sx={{
-            px: 3, py: 2,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            borderBottom: '1px solid', borderColor: 'divider',
+            px: 3,
+            py: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Shield sx={{ color: 'primary.main', fontSize: 18 }} />
-            <Typography fontWeight={700} fontSize={15}>Préférences cookies</Typography>
+            <Shield sx={{ color: accentColor, fontSize: 18 }} />
+            <Typography fontWeight={700} fontSize={15}>
+              Préférences cookies
+            </Typography>
           </Box>
-          <IconButton size="small" onClick={() => setCustomizeOpen(false)} aria-label="Fermer les préférences cookies"><Close fontSize="small" /></IconButton>
+          <IconButton
+            size="small"
+            onClick={() => setCustomizeOpen(false)}
+            aria-label="Fermer les préférences cookies"
+          >
+            <Close fontSize="small" />
+          </IconButton>
         </Box>
 
         <DialogContent sx={{ p: 2.5 }}>
@@ -189,31 +297,46 @@ export default function CookieBanner() {
             },
             {
               label: 'Analytiques',
-              desc: 'Mesure d\'audience anonyme (Vercel Analytics).',
+              desc: "Mesure d'audience anonyme (Vercel Analytics).",
               checked: prefs.analytics,
               disabled: false,
-              onChange: (v: boolean) => setPrefs((p) => ({ ...p, analytics: v })),
+              onChange: (v: boolean) =>
+                setPrefs((p) => ({ ...p, analytics: v })),
             },
             {
               label: 'Marketing',
               desc: 'Personnalisation et publicités ciblées.',
               checked: prefs.marketing,
               disabled: false,
-              onChange: (v: boolean) => setPrefs((p) => ({ ...p, marketing: v })),
+              onChange: (v: boolean) =>
+                setPrefs((p) => ({ ...p, marketing: v })),
             },
           ].map(({ label, desc, checked, disabled, onChange }, i, arr) => (
             <Box key={label}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1.5 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  py: 1.5,
+                }}
+              >
                 <Box>
-                  <Typography variant="body2" fontWeight={600}>{label}</Typography>
-                  <Typography variant="caption" color="text.secondary">{desc}</Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    {label}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {desc}
+                  </Typography>
                 </Box>
                 <Switch
                   checked={checked}
                   disabled={disabled}
                   size="small"
-                  color={disabled ? 'success' : 'primary'}
-                  onChange={onChange ? (e) => onChange(e.target.checked) : undefined}
+                  color={disabled ? 'success' : isOwner ? 'primary' : 'primary'}
+                  onChange={
+                    onChange ? (e) => onChange(e.target.checked) : undefined
+                  }
                 />
               </Box>
               {i < arr.length - 1 && <Divider />}
@@ -224,7 +347,13 @@ export default function CookieBanner() {
             <Button
               variant="outlined"
               onClick={() => setCustomizeOpen(false)}
-              sx={{ textTransform: 'none', borderRadius: 2, flex: 1, borderColor: 'divider', color: 'text.secondary' }}
+              sx={{
+                textTransform: 'none',
+                borderRadius: 2,
+                flex: 1,
+                borderColor: 'divider',
+                color: 'text.secondary',
+              }}
             >
               Annuler
             </Button>
@@ -232,9 +361,12 @@ export default function CookieBanner() {
               variant="contained"
               onClick={saveCustom}
               sx={{
-                textTransform: 'none', fontWeight: 700, borderRadius: 2, flex: 2,
-                background: gradient.primary,
-                '&:hover': { filter: 'brightness(0.9)', background: gradient.primary },
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: 2,
+                flex: 2,
+                background: btnBg,
+                '&:hover': { filter: 'brightness(0.9)', background: btnBg },
               }}
             >
               Sauvegarder

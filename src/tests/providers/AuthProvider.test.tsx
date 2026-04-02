@@ -12,6 +12,7 @@ const {
   mockSignOut,
   mockSignIn,
   mockAuthService,
+  mockPathnameRef,
 } = vi.hoisted(() => ({
   mockPush: vi.fn(),
   mockReplace: vi.fn(),
@@ -24,13 +25,14 @@ const {
     logout: vi.fn(),
     clerkExchange: vi.fn(),
   },
+  mockPathnameRef: { current: '/home' },
 }));
 
 /* ── Mocks ─────────────────────────────────────────────────────────── */
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
-  usePathname: () => '/home',
+  usePathname: () => mockPathnameRef.current,
 }));
 
 vi.mock('@clerk/nextjs', () => ({
@@ -73,6 +75,7 @@ vi.mock('@/lib/trusted-redirect', () => ({
 }));
 
 // Import AFTER mocks are set up
+import { registerTokenGetter } from '@/lib/auth-token';
 import {
   AuthProvider,
   useAuth,
@@ -150,6 +153,7 @@ async function renderAndWaitForAuth(
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockPathnameRef.current = '/home';
   // Reset module-level inMemoryToken so tests are independent
   __resetModuleStateForTests();
   // Default: no active session
@@ -161,6 +165,7 @@ beforeEach(() => {
   });
   // Clear localStorage (legacy token migration reads it)
   localStorage.clear();
+  sessionStorage.clear();
 });
 
 describe('AuthProvider', () => {
@@ -410,6 +415,52 @@ describe('AuthProvider', () => {
       await waitFor(() => {
         expect(screen.getByTestId('user').textContent).toBe('Pierre');
       });
+    });
+  });
+
+  describe('pending email verification routes', () => {
+    it('registers kh_verify_token_owner getter and skips me without authenticating', async () => {
+      mockPathnameRef.current = '/owner/auth/verify-otp';
+      sessionStorage.setItem('kh_verify_token_owner', 'verify-session-token');
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('loading').textContent).toBe('false');
+        expect(screen.getByTestId('authenticated').textContent).toBe('false');
+        expect(screen.getByTestId('user').textContent).toBe('none');
+      });
+
+      expect(registerTokenGetter).toHaveBeenCalled();
+      expect(mockAuthService.me).not.toHaveBeenCalled();
+    });
+
+    it('does the same for /verify-email when kh_verify_token_client is set', async () => {
+      mockPathnameRef.current = '/verify-email';
+      sessionStorage.setItem('kh_verify_token_client', 'verify-session-token');
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('loading').textContent).toBe('false');
+        expect(screen.getByTestId('authenticated').textContent).toBe('false');
+      });
+
+      expect(mockAuthService.me).not.toHaveBeenCalled();
+    });
+
+    it('resolves normally on verify-otp path when kh_verify_token_owner is absent', async () => {
+      mockPathnameRef.current = '/owner/auth/verify-otp';
+      mockAuthService.me.mockRejectedValue(new Error('Unauthenticated'));
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('loading').textContent).toBe('false');
+        expect(screen.getByTestId('authenticated').textContent).toBe('false');
+      });
+
+      expect(mockAuthService.me).toHaveBeenCalled();
     });
   });
 

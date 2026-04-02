@@ -4,7 +4,7 @@ import SplashTransition from '@/components/ui/SplashTransition';
 import { useAuth } from '@/providers/AuthProvider';
 import AppLoader from '@/components/ui/AppLoader';
 import { Box } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** Minimum time (ms) the splash screen is visible — feels intentional, not like a flash. */
@@ -13,9 +13,21 @@ const SPLASH_DURATION = 1400;
 /** Session key to track whether the user has already seen the auth splash this session */
 const SPLASH_SEEN_KEY = 'kh_auth_splash_seen';
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+/** Pages that must always render even when isAuthenticated is true (post-registration). */
+const VERIFICATION_PATHS = new Set([
+  '/verify-email',
+  '/verify-otp',
+  '/complete-profile',
+]);
+
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   /**
    * showSplash controls the SplashTransition overlay.
@@ -31,18 +43,21 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   const [showSplash, setShowSplash] = useState(false);
   const mountedRef = useRef(false);
 
+  const isVerificationPath = VERIFICATION_PATHS.has(pathname ?? '');
+
   useEffect(() => {
     const alreadySeen = sessionStorage.getItem(SPLASH_SEEN_KEY) === '1';
     if (!alreadySeen) {
       setShowSplash(true);
     }
-  // Run once after hydration to decide whether to show the splash
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Run once after hydration to decide whether to show the splash
   }, []);
 
-  // Redirect authenticated users but only after the splash is done
+  // Redirect authenticated users but only after the splash is done.
+  // Never redirect from verification paths — those need to stay visible
+  // even if the AuthProvider briefly reports isAuthenticated=true.
   useEffect(() => {
-    if (!isLoading && isAuthenticated && !showSplash) {
+    if (!isLoading && isAuthenticated && !showSplash && !isVerificationPath) {
       const returnTo = sessionStorage.getItem('kh_redirect_after_login');
       if (returnTo) {
         sessionStorage.removeItem('kh_redirect_after_login');
@@ -51,7 +66,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         router.replace('/home');
       }
     }
-  }, [isAuthenticated, isLoading, showSplash, router]);
+  }, [isAuthenticated, isLoading, showSplash, isVerificationPath, router]);
 
   const handleSplashComplete = useCallback(() => {
     sessionStorage.setItem(SPLASH_SEEN_KEY, '1');
@@ -63,9 +78,19 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   if (showSplash) {
     return (
       <>
-        <SplashTransition duration={SPLASH_DURATION} onComplete={handleSplashComplete} />
+        <SplashTransition
+          duration={SPLASH_DURATION}
+          onComplete={handleSplashComplete}
+        />
         {/* Keep auth subtree mounted in background so it boots during splash */}
-        <Box sx={{ visibility: 'hidden', position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <Box
+          sx={{
+            visibility: 'hidden',
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+          }}
+        >
           {children}
         </Box>
       </>
@@ -88,7 +113,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  if (isAuthenticated) {
+  // Block authenticated users from auth pages, but never from
+  // verification pages (the user just registered and is mid-flow).
+  if (isAuthenticated && !isVerificationPath) {
     return null;
   }
 
@@ -96,12 +123,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <Box
       sx={{
         minHeight: '100vh',
-        display:   'flex',
-        bgcolor:   'background.default',
+        display: 'flex',
+        bgcolor: 'background.default',
         animation: 'kh-auth-in 0.35s ease both',
         '@keyframes kh-auth-in': {
-          '0%':   { opacity: 0, transform: 'translateY(6px)' },
-          '100%': { opacity: 1, transform: 'translateY(0)'   },
+          '0%': { opacity: 0, transform: 'translateY(6px)' },
+          '100%': { opacity: 1, transform: 'translateY(0)' },
         },
       }}
     >

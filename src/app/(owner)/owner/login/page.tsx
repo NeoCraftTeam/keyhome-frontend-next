@@ -1,5 +1,6 @@
 'use client';
 
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -289,10 +290,26 @@ export default function OwnerLoginPage() {
           </FadeIn>
 
           <FadeIn delay={0.4} direction="up">
+            <SocialLoginButtons
+              registrationIntent="agent"
+              onError={setError}
+              showDivider
+              providers={['google', 'facebook', 'apple']}
+            />
+          </FadeIn>
+
+          <FadeIn delay={0.5} direction="up">
+            <Divider sx={{ my: 2.5 }}>
+              <Typography
+                variant="caption"
+                color="text.disabled"
+                sx={{ px: 1 }}
+              ></Typography>
+            </Divider>
             <Typography
               variant="body2"
               color="text.secondary"
-              sx={{ mt: 3, textAlign: 'center' }}
+              sx={{ mt: 1, textAlign: 'center' }}
             >
               Pas encore de compte ?{' '}
               <Link
@@ -303,22 +320,10 @@ export default function OwnerLoginPage() {
                 Créer un compte bailleur
               </Link>
             </Typography>
-          </FadeIn>
-
-          <FadeIn delay={0.5} direction="up">
-            <Divider sx={{ my: 2.5 }}>
-              <Typography
-                variant="caption"
-                color="text.disabled"
-                sx={{ px: 1 }}
-              >
-                ou
-              </Typography>
-            </Divider>
             <Typography
               variant="body2"
               color="text.secondary"
-              sx={{ textAlign: 'center' }}
+              sx={{ mt: 1.5, textAlign: 'center' }}
             >
               Vous êtes locataire ?{' '}
               <Link

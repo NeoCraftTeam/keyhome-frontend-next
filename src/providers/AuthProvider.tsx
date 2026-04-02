@@ -3,12 +3,16 @@
 import { registerTokenGetter } from '@/lib/auth-token';
 import { resetCsrfState } from '@/lib/api';
 import {
-  clearInMemoryToken,
+  clearAllInMemoryTokens,
+  clearOwnerToken,
+  clearClientToken,
   clearRoleCookie,
   clearSessionStorage,
   getInMemoryToken,
-  hasAnySanctumInMemory,
+  clearSanctumInMemoryOnly,
   migrateLegacyTokens,
+  persistOwnerToken,
+  persistClientToken,
   persistInMemoryToken,
   registerInMemoryGetter,
   setRoleCookie,
@@ -40,6 +44,22 @@ export { __resetModuleStateForTests } from '@/lib/auth-session';
 
 const LOGOUT_OVERLAY_DURATION_MS = 3500;
 const CLERK_SIGN_OUT_FALLBACK_MS = 1200;
+
+/** Set by register flow; Bearer for verification APIs only (not full session). */
+const KH_VERIFY_TOKEN_CLIENT = 'kh_verify_token_client';
+const KH_VERIFY_TOKEN_OWNER = 'kh_verify_token_owner';
+
+const PENDING_EMAIL_VERIFICATION_PATHS = new Set<string>([
+  '/owner/auth/verify-otp',
+  '/owner/auth/complete-profile',
+  '/verify-email',
+  '/verify-otp',
+  '/complete-profile',
+]);
+
+/** Paths where a registration just happened — verify token is in sessionStorage but
+ *  the user has NOT yet navigated to the OTP page. Skip auth resolution here too. */
+const POST_REGISTRATION_PATHS = new Set<string>(['/register']);
 
 interface AuthContextType {
   user: User | null;
@@ -92,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const clearSession = useCallback(() => {
-    clearInMemoryToken();
+    clearAllInMemoryTokens();
     setToken(null);
   }, []);
 
@@ -116,9 +136,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // --- Session-first authentication (httpOnly cookie) ---
+        const path = pathname ?? '';
+
+        // Skip full auth resolution when the user is on an OTP / verification
+        // page, or still on the registration page after a successful submit
+        // (the WelcomeOverlay is visible and we don't want me() to fire).
+        if (typeof window !== 'undefined') {
+          // Pick the verify-token key matching the current route context.
+          // On /register we check both keys since the path isn't owner-scoped.
+          const isOwnerPath = path.startsWith('/owner');
+          const verifyTokenKey = isOwnerPath
+            ? KH_VERIFY_TOKEN_OWNER
+            : KH_VERIFY_TOKEN_CLIENT;
+          const hasVerifyToken = POST_REGISTRATION_PATHS.has(path)
+            ? Boolean(
+                sessionStorage.getItem(KH_VERIFY_TOKEN_CLIENT) ||
+                sessionStorage.getItem(KH_VERIFY_TOKEN_OWNER)
+              )
+            : Boolean(sessionStorage.getItem(verifyTokenKey));
+
+          // Resolve the correct key for the token getter
+          const activeVerifyKey = POST_REGISTRATION_PATHS.has(path)
+            ? sessionStorage.getItem(KH_VERIFY_TOKEN_OWNER)
+              ? KH_VERIFY_TOKEN_OWNER
+              : KH_VERIFY_TOKEN_CLIENT
+            : verifyTokenKey;
+
+          const isPendingVerification =
+            PENDING_EMAIL_VERIFICATION_PATHS.has(path) ||
+            (POST_REGISTRATION_PATHS.has(path) && hasVerifyToken);
+
+          if (isPendingVerification && hasVerifyToken) {
+            registerTokenGetter(() =>
+              Promise.resolve(
+                typeof window !== 'undefined'
+                  ? sessionStorage.getItem(activeVerifyKey)
+                  : null
+              )
+            );
+            setUserState(null);
+            clearRoleCookie();
+            setToken(null);
+            setIsExchanging(false);
+            setHasResolvedInitialAuth(true);
+
+            return;
+          }
+        }
+
+        // --- Session-first (cookie) when no Bearer; else Bearer (SPA ↔ API cross-origin) ---
         try {
-          registerTokenGetter(() => Promise.resolve(null));
+          const hasBearer = Boolean(getInMemoryToken());
+          if (hasBearer) {
+            registerInMemoryGetter();
+          } else {
+            registerTokenGetter(() => Promise.resolve(null));
+          }
           const sessionUser = await authService.me();
           if (runId !== authRunRef.current) {
             return;
@@ -160,12 +233,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (runId !== authRunRef.current) {
             return;
           }
-          clearSession();
-          setUserState(null);
-          clearRoleCookie();
-          router.replace(
-            pathnameRef.current?.startsWith('/owner') ? '/owner/login' : '/home'
-          );
+          const currentPath = pathnameRef.current ?? '';
+          const isOwnerAuthRoute = currentPath.startsWith('/owner/auth/');
+          // Post-OTP complete-profile relies on the in-memory Sanctum token; clearing it
+          // here made /auth/me fail once and wiped the Bearer, breaking finalizeAuth.
+          if (isOwnerAuthRoute) {
+            setUserState(null);
+            clearRoleCookie();
+          } else {
+            clearSession();
+            setUserState(null);
+            clearRoleCookie();
+          }
+          if (currentPath.startsWith('/owner') && !isOwnerAuthRoute) {
+            router.replace('/owner/login');
+          } else if (!currentPath.startsWith('/owner') && !isOwnerAuthRoute) {
+            // Only redirect to /home if not on any auth route
+          }
         } finally {
           if (runId !== authRunRef.current) {
             return;
@@ -183,6 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (clerkExchangeDoneRef.current) {
       setIsExchanging(false);
+      setHasResolvedInitialAuth(true);
       return;
     }
 
@@ -211,17 +296,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if ('state' in result && result.state === 'otp_required') {
             clerkExchangeDoneRef.current = true;
-            if (hasAnySanctumInMemory()) {
-              clearSession();
-              setUserState(null);
-              sessionStorage.removeItem('clerk_auth_email_hint');
-              sessionStorage.removeItem('clerk_auth_prefill');
-              sessionStorage.removeItem('kh_registration_intent');
-              await signOut();
-              router.replace('/home');
-
-              return;
-            }
+            // Drop stale Laravel bearer if any; keep Clerk session + getter (registerTokenGetter above).
+            clearSanctumInMemoryOnly();
+            setUserState(null);
             sessionStorage.setItem(
               'clerk_auth_email_hint',
               result.email_hint ?? ''
@@ -281,6 +358,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           clearSession();
           setUserState(null);
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('kh_registration_intent');
+          }
         }
       })
       .finally(() => {
@@ -294,6 +374,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoaded,
     isSignedIn,
     clerkUser?.id,
+    pathname,
     clearSession,
     persistSession,
     router,
@@ -342,10 +423,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const returnTo = sessionStorage.getItem('kh_redirect_after_login');
-      clearSessionStorage();
+      const clearContext =
+        laravelUser.role === UserRole.AGENT ||
+        laravelUser.role === UserRole.ADMIN
+          ? ('owner' as const)
+          : ('client' as const);
+      clearSessionStorage(clearContext);
 
       flushSync(() => {
-        persistSession(sanctumToken);
+        // Persist token to the correct role-specific slot
+        if (
+          laravelUser.role === UserRole.AGENT ||
+          laravelUser.role === UserRole.ADMIN
+        ) {
+          persistOwnerToken(sanctumToken);
+        } else {
+          persistClientToken(sanctumToken);
+        }
+        setToken(sanctumToken);
         setUserState(laravelUser);
         setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
       });
@@ -361,13 +456,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace('/home');
       }
     },
-    [clearSession, persistSession, router]
+    [clearSession, router]
   );
 
   const login = useCallback(
     async (email: string, password: string) => {
       const { token: sanctumToken, user: laravelUser } =
-        await authService.login(email, password);
+        await authService.login(email, password, 'client');
 
       if (laravelUser.role !== UserRole.CUSTOMER) {
         throw new Error(
@@ -375,7 +470,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
-      persistSession(sanctumToken);
+      persistClientToken(sanctumToken);
       setUserState(laravelUser);
       setRoleCookie(UserRole.CUSTOMER);
 
@@ -387,13 +482,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace('/home');
       }
     },
-    [persistSession, router]
+    [router]
   );
 
   const loginOwner = useCallback(
     async (email: string, password: string) => {
       const { token: sanctumToken, user: laravelUser } =
-        await authService.login(email, password);
+        await authService.login(email, password, 'owner');
 
       if (
         laravelUser.role !== UserRole.AGENT &&
@@ -404,7 +499,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
-      persistSession(sanctumToken);
+      persistOwnerToken(sanctumToken);
       setUserState(laravelUser);
       setRoleCookie(laravelUser.role ?? UserRole.AGENT);
 
@@ -416,7 +511,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace('/owner/dashboard');
       }
     },
-    [persistSession, router]
+    [router]
   );
 
   const loginWithOAuth = useCallback(
@@ -449,10 +544,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut();
       }
 
+      const postOAuthPath =
+        options?.registrationIntent === 'agent' ? '/owner/login' : '/home';
+
       await signIn.authenticateWithRedirect({
         strategy: strategyMap[provider],
         redirectUrl: `${window.location.origin}/sso-callback`,
-        redirectUrlComplete: '/home',
+        redirectUrlComplete: `${window.location.origin}${postOAuthPath}`,
       });
     },
     [signIn, isSignedIn, signOut]
@@ -465,12 +563,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoggingOut(true);
       resetCsrfState();
 
+      // Determine context BEFORE clearing anything
+      const isOnOwnerRoute =
+        typeof window !== 'undefined' &&
+        window.location.pathname.startsWith('/owner');
       if (typeof window !== 'undefined') {
         localStorage.clear();
-        sessionStorage.clear();
+        clearSessionStorage(isOnOwnerRoute ? 'owner' : 'client');
       }
       clearRoleCookie();
-      clearSession();
+      if (isOnOwnerRoute) {
+        clearOwnerToken();
+      } else {
+        clearClientToken();
+      }
       setUserState(null);
 
       await new Promise((resolve) =>
@@ -501,7 +607,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoggingOut(false);
       router.replace(safeRedirect);
     },
-    [isSignedIn, signOut, clearSession, router]
+    [isSignedIn, signOut, router]
   );
 
   const refreshUser = useCallback(async () => {
@@ -509,14 +615,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const freshUser = await authService.me();
       setUserState(freshUser);
     } catch {
-      clearSession();
+      clearAllInMemoryTokens();
+      setToken(null);
       setUserState(null);
       if (isSignedIn) {
         await signOut();
       }
       router.push('/home');
     }
-  }, [isSignedIn, signOut, clearSession, router]);
+  }, [isSignedIn, signOut, router]);
 
   /* ── Context value ────────────────────────────────────────────── */
 

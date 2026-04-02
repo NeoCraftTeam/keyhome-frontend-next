@@ -6,15 +6,21 @@ vi.mock('@/lib/api', () => ({
   default: {
     get: vi.fn(),
     post: vi.fn(),
+    put: vi.fn(),
   },
 }));
 
 import api from '@/lib/api';
-import { recommendationsService, unlockedAdsService, usersService } from '@/services/users.service';
+import {
+  recommendationsService,
+  unlockedAdsService,
+  usersService,
+} from '@/services/users.service';
 
 const mockedApi = vi.mocked(api);
 const mockGet = mockedApi.get as Mock;
 const mockPost = mockedApi.post as Mock;
+const mockPut = mockedApi.put as Mock;
 
 const mockUser = {
   id: 'user-abc-123',
@@ -50,8 +56,20 @@ describe('usersService', () => {
       mockGet.mockResolvedValue({
         data: {
           data: [mockUser],
-          meta: { current_page: 1, last_page: 1, per_page: 15, total: 1, from: 1, to: 1 },
-          links: { first: '/users?page=1', last: '/users?page=1', prev: null, next: null },
+          meta: {
+            current_page: 1,
+            last_page: 1,
+            per_page: 15,
+            total: 1,
+            from: 1,
+            to: 1,
+          },
+          links: {
+            first: '/users?page=1',
+            last: '/users?page=1',
+            prev: null,
+            next: null,
+          },
         },
       });
 
@@ -91,7 +109,9 @@ describe('usersService', () => {
       formData.append('firstname', 'Amina');
       formData.append('lastname', 'Bello-Nguema');
 
-      mockPost.mockResolvedValue({ data: { user: { ...mockUser, lastname: 'Bello-Nguema' } } });
+      mockPost.mockResolvedValue({
+        data: { user: { ...mockUser, lastname: 'Bello-Nguema' } },
+      });
 
       const result = await usersService.update('user-abc-123', formData);
 
@@ -116,6 +136,24 @@ describe('usersService', () => {
       mockPost.mockResolvedValue({ data: mockUser });
       const result = await usersService.update('user-abc-123', formData);
       expect(result.firstname).toBe('Amina');
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('sends JSON PUT for phone and city (owner post-OTP complete-profile)', async () => {
+      const updated = { ...mockUser, phone_number: '+237600000000' };
+      mockPut.mockResolvedValue({ data: { user: updated } });
+
+      const result = await usersService.updateProfile('user-abc-123', {
+        phone_number: '+237600000000',
+        city_id: '2',
+      });
+
+      expect(mockPut).toHaveBeenCalledWith('/users/user-abc-123', {
+        phone_number: '+237600000000',
+        city_id: '2',
+      });
+      expect(result.phone_number).toBe('+237600000000');
     });
   });
 });
@@ -179,5 +217,3 @@ describe('unlockedAdsService', () => {
     });
   });
 });
-
-

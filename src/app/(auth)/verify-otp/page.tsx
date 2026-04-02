@@ -5,7 +5,7 @@ import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { gradient } from '@/theme/tokens';
+import { brandAgent, gradient } from '@/theme/tokens';
 import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
 import {
   Alert,
@@ -29,16 +29,22 @@ export default function VerifyOtpPage() {
 
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [emailHint, setEmailHint] = useState('');
+  const [isAgent, setIsAgent] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendMessage, setResendMessage] = useState('');
+
+  const accentGradient = isAgent
+    ? `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`
+    : undefined;
 
   const otpInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const hint = sessionStorage.getItem('clerk_auth_email_hint') ?? '';
     setEmailHint(hint);
+    setIsAgent(sessionStorage.getItem('kh_registration_intent') === 'agent');
     otpInputRef.current?.focus();
   }, []);
 
@@ -104,13 +110,17 @@ export default function VerifyOtpPage() {
           'clerk_auth_prefill',
           JSON.stringify(result.prefill)
         );
-        if (result.prefill.registration_intent) {
-          sessionStorage.setItem(
-            'kh_registration_intent',
-            result.prefill.registration_intent
-          );
+        const intent =
+          result.prefill.registration_intent ??
+          sessionStorage.getItem('kh_registration_intent');
+        if (intent) {
+          sessionStorage.setItem('kh_registration_intent', intent);
         }
-        router.replace('/complete-profile');
+        router.replace(
+          intent === 'agent'
+            ? '/owner/auth/complete-profile'
+            : '/complete-profile'
+        );
         return;
       }
       finalizeAuth(result.token, result.user, result.panel_sso_url);
@@ -172,8 +182,9 @@ export default function VerifyOtpPage() {
           sx={{
             position: 'absolute',
             inset: 0,
-            background:
-              'linear-gradient(to bottom, rgba(34,34,34,0.15) 0%, rgba(34,34,34,0.6) 100%)',
+            background: isAgent
+              ? `linear-gradient(to bottom, rgba(13,148,136,0.2) 0%, rgba(13,148,136,0.55) 100%)`
+              : 'linear-gradient(to bottom, rgba(34,34,34,0.15) 0%, rgba(34,34,34,0.6) 100%)',
             zIndex: 1,
           }}
         />
@@ -261,7 +272,11 @@ export default function VerifyOtpPage() {
               height={40}
               priority
             />
-            <Typography variant="h5" fontWeight={700} color="primary.main">
+            <Typography
+              variant="h5"
+              fontWeight={700}
+              sx={{ color: isAgent ? brandAgent.primary : 'primary.main' }}
+            >
               KeyHome
             </Typography>
           </Box>
@@ -380,11 +395,17 @@ export default function VerifyOtpPage() {
                       fontVariantNumeric: 'tabular-nums',
                       lineHeight: 1,
                       border: '2px solid',
-                      borderColor: digit ? 'primary.main' : 'divider',
+                      borderColor: digit
+                        ? isAgent
+                          ? brandAgent.primary
+                          : 'primary.main'
+                        : 'divider',
                       borderRadius: '10px',
                       bgcolor: digit
                         ? alpha(
-                            theme.palette.primary.main,
+                            isAgent
+                              ? brandAgent.primary
+                              : theme.palette.primary.main,
                             theme.palette.mode === 'dark' ? 0.22 : 0.08
                           )
                         : theme.palette.mode === 'dark'
@@ -433,14 +454,18 @@ export default function VerifyOtpPage() {
                     borderRadius: '14px',
                     textTransform: 'none',
                     background: (t) =>
-                      t.palette.mode === 'dark'
-                        ? `linear-gradient(to right, ${t.palette.primary.dark}, ${t.palette.primary.main})`
-                        : gradient.primary,
+                      isAgent
+                        ? accentGradient
+                        : t.palette.mode === 'dark'
+                          ? `linear-gradient(to right, ${t.palette.primary.dark}, ${t.palette.primary.main})`
+                          : gradient.primary,
                     '&:hover': {
                       background: (t) =>
-                        t.palette.mode === 'dark'
-                          ? `linear-gradient(to right, ${t.palette.primary.main}, ${t.palette.primary.light})`
-                          : gradient.primaryHover,
+                        isAgent
+                          ? accentGradient
+                          : t.palette.mode === 'dark'
+                            ? `linear-gradient(to right, ${t.palette.primary.main}, ${t.palette.primary.light})`
+                            : gradient.primaryHover,
                     },
                     '&:active': { transform: 'scale(0.97)' },
                   }}
@@ -469,7 +494,12 @@ export default function VerifyOtpPage() {
                 sx={{
                   textTransform: 'none',
                   fontWeight: 600,
-                  color: resendCooldown > 0 ? 'text.disabled' : 'primary.main',
+                  color:
+                    resendCooldown > 0
+                      ? 'text.disabled'
+                      : isAgent
+                        ? brandAgent.primary
+                        : 'primary.main',
                 }}
               >
                 {resendCooldown > 0

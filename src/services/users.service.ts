@@ -68,8 +68,22 @@ export const usersService = {
     return data.user ?? data.data ?? data;
   },
 
+  /** JSON profile update (phone, city) — used after email OTP before dashboard. */
+  async updateProfile(
+    id: string,
+    payload: { phone_number?: string; city_id?: string | null }
+  ): Promise<User> {
+    const { data } = await api.put<{ user: User; message?: string }>(
+      `/users/${id}`,
+      payload
+    );
+    return data.user ?? (data as unknown as User);
+  },
+
   async getPublicProfile(userId: string): Promise<PublicProfileResponse> {
-    const { data } = await api.get<PublicProfileResponse>(`/users/${userId}/public-profile`);
+    const { data } = await api.get<PublicProfileResponse>(
+      `/users/${userId}/public-profile`
+    );
     return data;
   },
 };

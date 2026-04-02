@@ -307,18 +307,23 @@ export default function RegisterPage() {
       }
 
       // Store auth token so verify-email page can resend verification emails.
-      // Use a dedicated session key and register the token getter so API calls
-      // include this token automatically. We intentionally avoid localStorage's
-      // `kh_sanctum_token` so AuthProvider doesn't treat the user as fully
-      // authenticated and redirect them away from verify-email.
+      // Use role-scoped session keys to prevent state bleed between client
+      // and owner flows in the same tab.
       if (response.token) {
-        sessionStorage.setItem('kh_verify_token', response.token);
+        const isAgent = accountRole === 'agent';
+        const tokenKey = isAgent
+          ? 'kh_verify_token_owner'
+          : 'kh_verify_token_client';
+        const emailKey = isAgent
+          ? 'kh_verify_email_owner'
+          : 'kh_verify_email_client';
+        sessionStorage.setItem(tokenKey, response.token);
         registerTokenGetter(() => Promise.resolve(response.token));
         if (response.user?.id) {
           sessionStorage.setItem('user_id', response.user.id);
         }
         if (response.user?.email) {
-          sessionStorage.setItem('kh_verify_email', response.user.email);
+          sessionStorage.setItem(emailKey, response.user.email);
         }
       }
 

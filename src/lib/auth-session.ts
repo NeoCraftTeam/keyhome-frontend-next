@@ -4,43 +4,105 @@ import { registerTokenGetter } from '@/lib/auth-token';
 import { authService } from '@/services/auth.service';
 import { UserRole } from '@/types';
 
-/* ── In-memory token store ───────────────────────────────────────────
+/* ── Dual in-memory token store ──────────────────────────────────────
  * Never persisted to localStorage (XSS-safe).
- * The httpOnly session cookie (withCredentials: true) is the primary auth
- * mechanism. This in-memory token is the Bearer fallback for cross-origin
- * SPA→API scenarios.
+ * Owner and client sessions are fully isolated: each has its own
+ * in-memory token slot.  The Axios interceptor picks the correct one
+ * based on the current route (see `getActiveToken`).
  * ─────────────────────────────────────────────────────────────────── */
 
-let inMemoryToken: string | null = null;
+let ownerInMemoryToken: string | null = null;
+let clientInMemoryToken: string | null = null;
 
 /** @internal — Reset module state between tests. Not for production use. */
 export function __resetModuleStateForTests(): void {
-  inMemoryToken = null;
+  ownerInMemoryToken = null;
+  clientInMemoryToken = null;
+}
+
+/** Returns whichever token matches the current route context. */
+export function getActiveToken(pathname?: string): string | null {
+  const path =
+    pathname ?? (typeof window !== 'undefined' ? window.location.pathname : '');
+  return path.startsWith('/owner') ? ownerInMemoryToken : clientInMemoryToken;
 }
 
 export function getInMemoryToken(): string | null {
-  return inMemoryToken;
+  return getActiveToken();
+}
+
+export function getOwnerInMemoryToken(): string | null {
+  return ownerInMemoryToken;
+}
+
+export function getClientInMemoryToken(): string | null {
+  return clientInMemoryToken;
 }
 
 export function hasAnySanctumInMemory(): boolean {
-  return inMemoryToken !== null;
+  return ownerInMemoryToken !== null || clientInMemoryToken !== null;
+}
+
+/** Clears Laravel bearer only; does not touch {@link registerTokenGetter} (Clerk OAuth + OTP). */
+export function clearSanctumInMemoryOnly(): void {
+  ownerInMemoryToken = null;
+  clientInMemoryToken = null;
 }
 
 /* ── Session persistence ─────────────────────────────────────────── */
 
-/** Store a Sanctum token in-memory only (never localStorage). */
+/** Store a Sanctum token in the owner slot (never localStorage). */
+export function persistOwnerToken(sanctumToken: string): void {
+  ownerInMemoryToken = sanctumToken;
+  registerTokenGetter(async () => getActiveToken());
+}
+
+/** Store a Sanctum token in the client slot (never localStorage). */
+export function persistClientToken(sanctumToken: string): void {
+  clientInMemoryToken = sanctumToken;
+  registerTokenGetter(async () => getActiveToken());
+}
+
+/**
+ * Context-aware wrapper: persists to owner or client slot based on current route.
+ * Kept for backward compatibility with existing callers.
+ */
 export function persistInMemoryToken(sanctumToken: string): void {
-  inMemoryToken = sanctumToken;
-  registerTokenGetter(() => Promise.resolve(sanctumToken));
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  if (path.startsWith('/owner')) {
+    persistOwnerToken(sanctumToken);
+  } else {
+    persistClientToken(sanctumToken);
+  }
+}
+
+export function clearOwnerToken(): void {
+  ownerInMemoryToken = null;
+  registerTokenGetter(async () => getActiveToken());
+}
+
+export function clearClientToken(): void {
+  clientInMemoryToken = null;
+  registerTokenGetter(async () => getActiveToken());
 }
 
 export function clearInMemoryToken(): void {
-  inMemoryToken = null;
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  if (path.startsWith('/owner')) {
+    clearOwnerToken();
+  } else {
+    clearClientToken();
+  }
+}
+
+export function clearAllInMemoryTokens(): void {
+  ownerInMemoryToken = null;
+  clientInMemoryToken = null;
   registerTokenGetter(() => Promise.resolve(null));
 }
 
 export function registerInMemoryGetter(): void {
-  registerTokenGetter(async () => inMemoryToken);
+  registerTokenGetter(async () => getActiveToken());
 }
 
 /* ── Role cookie management ──────────────────────────────────────── */
@@ -54,8 +116,8 @@ export function setRoleCookie(role: string): void {
   }
   const isOwner = role === UserRole.AGENT || role === UserRole.ADMIN;
 
-  // Enterprise Grade: Strict path scoping for role cookies
-  // This ensures the browser only sends the 'agent' role cookie to /owner routes
+  // Strict path scoping for role cookies.
+  // The browser only sends the 'agent' role cookie to /owner routes
   // and the 'customer' role cookie to other routes, preventing state bleed.
   if (isOwner) {
     document.cookie = `${ROLE_COOKIE}=${encodeURIComponent(role)}; path=/owner; SameSite=Lax; Max-Age=${ROLE_COOKIE_MAX_AGE}`;
@@ -108,30 +170,69 @@ export async function migrateLegacyTokens(): Promise<void> {
   // Validate the legacy token before trusting it
   registerTokenGetter(() => Promise.resolve(legacy));
   try {
-    await authService.me();
-    inMemoryToken = legacy;
+    const user = await authService.me();
+    // Place legacy token in the correct slot based on user role
+    if (user.role === UserRole.AGENT || user.role === UserRole.ADMIN) {
+      ownerInMemoryToken = legacy;
+    } else {
+      clientInMemoryToken = legacy;
+    }
   } catch {
-    inMemoryToken = null;
+    ownerInMemoryToken = null;
+    clientInMemoryToken = null;
   }
 }
 
 /* ── Session storage cleanup ─────────────────────────────────────── */
 
-const SESSION_KEYS = [
+/** Keys common to both contexts — always cleared. */
+const SHARED_SESSION_KEYS = [
   'clerk_auth_email_hint',
   'clerk_auth_prefill',
   'kh_flw_tx_ref',
   'kh_flw_reference',
   'kh_just_unlocked',
-  'kh_redirect_after_login',
-  'kh_registration_intent',
-  'kh_register_account_role',
-  'kh_register_role',
-  'kh_owner_redirect',
+  'user_id',
 ] as const;
 
-export function clearSessionStorage(): void {
-  for (const key of SESSION_KEYS) {
+/** Keys that belong exclusively to the client (customer) flow. */
+const CLIENT_SESSION_KEYS = [
+  'kh_verify_token_client',
+  'kh_verify_email_client',
+  'kh_redirect_after_login',
+  'kh_register_account_role',
+  'kh_register_role',
+] as const;
+
+/** Keys that belong exclusively to the owner (agent) flow. */
+const OWNER_SESSION_KEYS = [
+  'kh_verify_token_owner',
+  'kh_verify_email_owner',
+  'kh_owner_redirect',
+  'kh_owner_post_otp_token',
+  'kh_registration_intent',
+] as const;
+
+/**
+ * Context-aware session cleanup.
+ * - No argument: clears everything (backward compat).
+ * - `'client'`: shared + client-only keys.
+ * - `'owner'`: shared + owner-only keys.
+ */
+export function clearSessionStorage(context?: 'client' | 'owner'): void {
+  for (const key of SHARED_SESSION_KEYS) {
     sessionStorage.removeItem(key);
+  }
+
+  if (!context || context === 'client') {
+    for (const key of CLIENT_SESSION_KEYS) {
+      sessionStorage.removeItem(key);
+    }
+  }
+
+  if (!context || context === 'owner') {
+    for (const key of OWNER_SESSION_KEYS) {
+      sessionStorage.removeItem(key);
+    }
   }
 }

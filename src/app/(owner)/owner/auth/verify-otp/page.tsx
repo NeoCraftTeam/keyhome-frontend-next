@@ -10,7 +10,7 @@ import { registerTokenGetter } from '@/lib/auth-token';
 import { persistInMemoryToken } from '@/lib/auth-session';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { UserRole } from '@/types';
+import { User, UserRole } from '@/types';
 import { brandAgent } from '@/theme/tokens';
 import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
 import {
@@ -48,10 +48,18 @@ export default function OwnerVerifyOtpPage() {
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const verifyResultRef = useRef<{
     token: string;
-    user: Record<string, unknown>;
+    user: User;
   } | null>(null);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const welcomeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timeout on unmount to prevent stale finalizeAuth calls
+  useEffect(() => {
+    return () => {
+      if (welcomeTimeoutRef.current) clearTimeout(welcomeTimeoutRef.current);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     const stored = sessionStorage.getItem('kh_verify_token_owner');
@@ -162,7 +170,7 @@ export default function OwnerVerifyOtpPage() {
       };
       setWelcomeName(result.user?.firstname ?? null);
       setShowWelcome(true);
-      setTimeout(() => {
+      welcomeTimeoutRef.current = setTimeout(() => {
         finalizeAuth(
           result.access_token,
           { ...result.user, role: UserRole.AGENT },

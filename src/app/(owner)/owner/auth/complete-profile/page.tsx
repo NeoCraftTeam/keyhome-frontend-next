@@ -29,7 +29,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 export default function OwnerCompleteProfilePage() {
   const { finalizeAuth, user: authUser } = useAuth();
@@ -51,6 +51,14 @@ export default function OwnerCompleteProfilePage() {
   const [isPasswordPostOtpFlow, setIsPasswordPostOtpFlow] = useState(false);
   const [passwordFlowUser, setPasswordFlowUser] = useState<User | null>(null);
   const [passwordFlowReady, setPasswordFlowReady] = useState(false);
+  const welcomeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timeout on unmount to prevent stale finalizeAuth calls
+  useEffect(() => {
+    return () => {
+      if (welcomeTimeoutRef.current) clearTimeout(welcomeTimeoutRef.current);
+    };
+  }, []);
 
   /**
    * Restore Bearer before any useEffect (including AuthProvider) runs, so
@@ -132,7 +140,7 @@ export default function OwnerCompleteProfilePage() {
           city_id: selectedCity?.id ?? null,
         });
         setShowWelcome(true);
-        setTimeout(() => {
+        welcomeTimeoutRef.current = setTimeout(() => {
           const t = getInMemoryToken();
           sessionStorage.removeItem(KH_OWNER_POST_OTP_TOKEN_KEY);
           if (!t) {
@@ -154,7 +162,7 @@ export default function OwnerCompleteProfilePage() {
       });
 
       setShowWelcome(true);
-      setTimeout(() => {
+      welcomeTimeoutRef.current = setTimeout(() => {
         finalizeAuth(
           result.token,
           { ...result.user, role: UserRole.AGENT },
