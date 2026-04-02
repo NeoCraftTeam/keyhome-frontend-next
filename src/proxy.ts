@@ -2,21 +2,33 @@ import { clerkMiddleware } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { getClerkFrontendOrigins } from '@/lib/clerk-frontend-origins';
 
-const OWNER_PUBLIC_PATHS = ['/owner/login', '/owner/register', '/owner/forgot-password'];
+const OWNER_PUBLIC_PATHS = [
+  '/owner/login',
+  '/owner/register',
+  '/owner/forgot-password',
+  '/owner/auth',
+];
 
 function isOwnerPublicPath(pathname: string): boolean {
-  return OWNER_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  return OWNER_PUBLIC_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
 }
 
 function isOwnerProtectedPath(pathname: string): boolean {
-  return (pathname === '/owner' || pathname.startsWith('/owner/')) && !isOwnerPublicPath(pathname);
+  return (
+    (pathname === '/owner' || pathname.startsWith('/owner/')) &&
+    !isOwnerPublicPath(pathname)
+  );
 }
 
 /** Customer-only private pages — owners must not access these */
 const CUSTOMER_PRIVATE_PATHS = ['/profile', '/my'];
 
 function isCustomerPrivatePath(pathname: string): boolean {
-  return CUSTOMER_PRIVATE_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  return CUSTOMER_PRIVATE_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
 }
 
 /**
@@ -117,10 +129,17 @@ function shouldApplyCsp(pathname: string): boolean {
   if (pathname.startsWith('/trpc')) {
     return false;
   }
-  if (pathname.startsWith('/_next/static') || pathname.startsWith('/_next/image')) {
+  if (
+    pathname.startsWith('/_next/static') ||
+    pathname.startsWith('/_next/image')
+  ) {
     return false;
   }
-  if (pathname === '/favicon.ico' || pathname === '/manifest.json' || pathname === '/sw.js') {
+  if (
+    pathname === '/favicon.ico' ||
+    pathname === '/manifest.json' ||
+    pathname === '/sw.js'
+  ) {
     return false;
   }
   if (pathname.startsWith('/icons/')) {
@@ -130,7 +149,10 @@ function shouldApplyCsp(pathname: string): boolean {
 }
 
 function isNextPrefetch(req: NextRequest): boolean {
-  return req.headers.has('next-router-prefetch') || req.headers.get('purpose') === 'prefetch';
+  return (
+    req.headers.has('next-router-prefetch') ||
+    req.headers.get('purpose') === 'prefetch'
+  );
 }
 
 /**
