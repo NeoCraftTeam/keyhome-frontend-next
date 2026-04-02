@@ -1,27 +1,78 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# KeyHome — Frontend CI pipeline (standalone)
+# KeyHome — Frontend CI pipeline (enterprise)
 #
-# Requires these CI/CD variables to be set in GitLab:
-#   - LHCI_TOKEN (optional, for LHCI server uploads)
-#   - NODE_ENV=production (for build stage)
-#   - NEXT_PUBLIC_API_URL, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (for build)
+# Required GitLab CI/CD Variables (Settings → CI/CD → Variables):
+#   NEXT_PUBLIC_API_URL                   backend API base URL
+#   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY     Clerk publishable key
+#   CLERK_SECRET_KEY                      Clerk secret key       [masked]
+#   NEXT_PUBLIC_MAPBOX_TOKEN              Mapbox GL public token
+#   NEXT_PUBLIC_VAPID_PUBLIC_KEY          Web Push VAPID public key
+#   NEXT_PUBLIC_AGENCY_URL                Agency panel URL
+#   NEXT_PUBLIC_OWNER_URL                 Owner panel URL
+#   NEXT_PUBLIC_ADMIN_URL                 Admin panel URL
+#   SLACK_WEBHOOK_FRONTEND                (optional) Slack incoming webhook
+#   LHCI_TOKEN                            (optional) Lighthouse CI server token
+#   CACHE_PREFIX                          bump (e.g. v2) to invalidate all caches
 # ──────────────────────────────────────────────────────────────────────────────
 
+# ── Skip [skip ci] commits ───────────────────────────────────────────────────
+workflow:
+  rules:
+    - if: $CI_COMMIT_TITLE =~ /\[skip ci\]/i
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
 stages:
-  - install
+  - prepare
+  - quality
   - test
   - build
+  - security
   - lighthouse
+  - notify
 
 variables:
   NODE_VERSION: "20"
+  CACHE_PREFIX: "v1"
 
-# ── Dependency installation ────────────────────────────────────────────────────
-install:
-  stage: install
+# All jobs are interruptible so a new push cancels the in-flight pipeline
+default:
+  interruptible: true
+
+# ── Shared job templates ──────────────────────────────────────────────────────
+
+# Base for every job that needs node_modules from cache
+.node_job:
   image: node:${NODE_VERSION}-alpine
   cache:
     key:
+      prefix: "$CACHE_PREFIX"
+      files:
+        - package-lock.json
+    paths:
+      - node_modules/
+    policy: pull
+
+# Build-time env vars baked into the Next.js bundle
+.build_vars:
+  variables:
+    NODE_ENV: production
+    NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: $NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    CLERK_SECRET_KEY: $CLERK_SECRET_KEY
+    NEXT_PUBLIC_MAPBOX_TOKEN: $NEXT_PUBLIC_MAPBOX_TOKEN
+    NEXT_PUBLIC_VAPID_PUBLIC_KEY: $NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    NEXT_PUBLIC_AGENCY_URL: $NEXT_PUBLIC_AGENCY_URL
+    NEXT_PUBLIC_OWNER_URL: $NEXT_PUBLIC_OWNER_URL
+    NEXT_PUBLIC_ADMIN_URL: $NEXT_PUBLIC_ADMIN_URL
+
+# ── 1. PREPARE ────────────────────────────────────────────────────────────────
+install:
+  stage: prepare
+  extends: .node_job
+  cache:
+    key:
+      prefix: "$CACHE_PREFIX"
       files:
         - package-lock.json
     paths:
@@ -29,21 +80,47 @@ install:
     policy: pull-push
   script:
     - npm ci --prefer-offline
+  retry: 1
+  timeout: 5 minutes
   rules:
     - if: $CI_COMMIT_BRANCH
 
-# ── Vitest unit + component tests with coverage ──────────────────────────────
+# ── 2. QUALITY (all parallel, all branches) ──────────────────────────────────
+typecheck:
+  stage: quality
+  extends: .node_job
+  needs: [install]
+  script:
+    - npx tsc --noEmit
+  timeout: 5 minutes
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+lint:
+  stage: quality
+  extends: .node_job
+  needs: [install]
+  script:
+    - npm run lint
+  timeout: 5 minutes
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+format:
+  stage: quality
+  extends: .node_job
+  needs: [install]
+  script:
+    - npm run format:check
+  timeout: 5 minutes
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+# ── 3. TEST ───────────────────────────────────────────────────────────────────
 test:unit:
   stage: test
-  image: node:${NODE_VERSION}-alpine
-  needs: [install]
-  cache:
-    key:
-      files:
-        - package-lock.json
-    paths:
-      - node_modules/
-    policy: pull
+  extends: .node_job
+  needs: [typecheck, lint, format]
   script:
     - npm run test:coverage
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
@@ -57,105 +134,67 @@ test:unit:
     paths:
       - coverage/
     expire_in: 7 days
+  timeout: 10 minutes
   rules:
     - if: $CI_COMMIT_BRANCH
 
-# ── TypeScript type-check ─────────────────────────────────────────────────
-typecheck:
-  stage: test
-  image: node:${NODE_VERSION}-alpine
-  needs: [install]
-  cache:
-    key:
-      files:
-        - package-lock.json
-    paths:
-      - node_modules/
-    policy: pull
-  script:
-    - npx tsc --noEmit
-  rules:
-    - if: $CI_COMMIT_BRANCH
-
-# ── ESLint ────────────────────────────────────────────────────────────────
-lint:
-  stage: test
-  image: node:${NODE_VERSION}-alpine
-  needs: [install]
-  cache:
-    key:
-      files:
-        - package-lock.json
-    paths:
-      - node_modules/
-    policy: pull
-  script:
-    - npm run lint
-  rules:
-    - if: $CI_COMMIT_BRANCH
-
-# ── Prettier format check ─────────────────────────────────────────────────
-format:
-  stage: test
-  image: node:${NODE_VERSION}-alpine
-  needs: [install]
-  cache:
-    key:
-      files:
-        - package-lock.json
-    paths:
-      - node_modules/
-    policy: pull
-  script:
-    - npm run format:check
-  rules:
-    - if: $CI_COMMIT_BRANCH
-
-# ── Production build ─────────────────────────────────────────────────────
-build:
+# ── 4. BUILD (parallel on protected branches) ────────────────────────────────
+build:app:
   stage: build
-  image: node:${NODE_VERSION}-alpine
-  needs: [install, test:unit, typecheck, lint, format]
-  variables:
-    NODE_ENV: production
-  cache:
-    key:
-      files:
-        - package-lock.json
-    paths:
-      - node_modules/
-    policy: pull
+  extends:
+    - .node_job
+    - .build_vars
+  needs: [test:unit]
   script:
     - npm run build
   artifacts:
     paths:
       - .next/
+      - public/
     expire_in: 1 hour
+  timeout: 15 minutes
   rules:
     - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "staging"
 
-# ── Lighthouse CI ───────────────────────────────────────────────────────
-#
-# Runs @lhci/cli against the production build.
-# Set LHCI_TOKEN in GitLab variables to upload results to your LHCI server.
-#
+build:storybook:
+  stage: build
+  extends: .node_job
+  needs: [test:unit]
+  script:
+    - npm run build-storybook
+  artifacts:
+    when: always
+    paths:
+      - storybook-static/
+    expire_in: 3 days
+  allow_failure: true
+  timeout: 10 minutes
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "staging"
+
+# ── 5. SECURITY ───────────────────────────────────────────────────────────────
+audit:deps:
+  stage: security
+  extends: .node_job
+  needs: [install]
+  script:
+    - npm audit --audit-level=high --omit=dev
+  allow_failure: true
+  timeout: 3 minutes
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+# ── 6. LIGHTHOUSE ─────────────────────────────────────────────────────────────
 lighthouse:
   stage: lighthouse
-  image: node:${NODE_VERSION}-alpine
-  needs: [build]
-  cache:
-    key:
-      files:
-        - package-lock.json
-    paths:
-      - node_modules/
-    policy: pull
+  extends:
+    - .node_job
+    - .build_vars
+  needs: [build:app]
   before_script:
     - apk add --no-cache chromium
     - export CHROME_PATH=/usr/bin/chromium-browser
     - export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-  variables:
-    NODE_ENV: production
   script:
     - npm run start &
     - npx wait-on http://localhost:3000 --timeout 60000
@@ -168,5 +207,102 @@ lighthouse:
       metrics: .lighthouseci/lhr-*.json
     expire_in: 30 days
   allow_failure: true
+  retry: 1
+  timeout: 10 minutes
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "staging"
+
+# ── 7. NOTIFY ─────────────────────────────────────────────────────────────────
+notify:failure:
+  stage: notify
+  image: alpine:latest
+  needs:
+    - job: typecheck
+      optional: true
+    - job: lint
+      optional: true
+    - job: format
+      optional: true
+    - job: test:unit
+      optional: true
+    - job: build:app
+      optional: true
+    - job: build:storybook
+      optional: true
+    - job: audit:deps
+      optional: true
+    - job: lighthouse
+      optional: true
+  when: on_failure
+  allow_failure: true
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      [ -z "$SLACK_WEBHOOK_FRONTEND" ] && echo "SLACK_WEBHOOK_FRONTEND not set, skipping" && exit 0
+      SHORT_SHA="${CI_COMMIT_SHA:0:8}"
+      FAILED_JOBS=$(curl -sS --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/pipelines/$CI_PIPELINE_ID/jobs?scope[]=failed" 2>/dev/null || echo "[]")
+      FAILED_JOB=$(echo "$FAILED_JOBS" | grep -o '"name":"[^"]*"' | head -1 | sed 's/"name":"//;s/"//' || echo "unknown")
+      [ -z "$FAILED_JOB" ] && FAILED_JOB="unknown"
+      curl -sS -X POST -H 'Content-type: application/json' \
+        --data "{
+          \"attachments\": [{
+            \"color\": \"#dc3545\",
+            \"blocks\": [
+              {\"type\": \"header\", \"text\": {\"type\": \"plain_text\", \"text\": \"🚨 Frontend Pipeline Failed\", \"emoji\": true}},
+              {\"type\": \"section\", \"fields\": [
+                {\"type\": \"mrkdwn\", \"text\": \"*Branch:*\n\`$CI_COMMIT_REF_NAME\`\"},
+                {\"type\": \"mrkdwn\", \"text\": \"*Failed job:*\n\`$FAILED_JOB\`\"},
+                {\"type\": \"mrkdwn\", \"text\": \"*Author:*\n$GITLAB_USER_NAME\"},
+                {\"type\": \"mrkdwn\", \"text\": \"*Commit:*\n\`$SHORT_SHA\`\"}
+              ]},
+              {\"type\": \"section\", \"text\": {\"type\": \"mrkdwn\", \"text\": \"📝 _${CI_COMMIT_TITLE}_\"}},
+              {\"type\": \"actions\", \"elements\": [
+                {\"type\": \"button\", \"text\": {\"type\": \"plain_text\", \"text\": \"🔴 View failures\"}, \"style\": \"danger\",
+                  \"url\": \"$CI_PROJECT_URL/-/pipelines/$CI_PIPELINE_ID/failures\"}
+              ]}
+            ]
+          }]
+        }" "$SLACK_WEBHOOK_FRONTEND"
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+notify:success:
+  stage: notify
+  image: alpine:latest
+  needs:
+    - job: test:unit
+    - job: build:app
+      optional: true
+    - job: lighthouse
+      optional: true
+  when: on_success
+  allow_failure: true
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      [ -z "$SLACK_WEBHOOK_FRONTEND" ] && echo "SLACK_WEBHOOK_FRONTEND not set, skipping" && exit 0
+      SHORT_SHA="${CI_COMMIT_SHA:0:8}"
+      curl -sS -X POST -H 'Content-type: application/json' \
+        --data "{
+          \"attachments\": [{
+            \"color\": \"#28a745\",
+            \"blocks\": [
+              {\"type\": \"header\", \"text\": {\"type\": \"plain_text\", \"text\": \"✅ Frontend Pipeline Passed\", \"emoji\": true}},
+              {\"type\": \"section\", \"fields\": [
+                {\"type\": \"mrkdwn\", \"text\": \"*Branch:*\n\`$CI_COMMIT_REF_NAME\`\"},
+                {\"type\": \"mrkdwn\", \"text\": \"*Author:*\n$GITLAB_USER_NAME\"},
+                {\"type\": \"mrkdwn\", \"text\": \"*Commit:*\n\`$SHORT_SHA\`\"}
+              ]},
+              {\"type\": \"section\", \"text\": {\"type\": \"mrkdwn\", \"text\": \"📝 _${CI_COMMIT_TITLE}_\"}},
+              {\"type\": \"actions\", \"elements\": [
+                {\"type\": \"button\", \"text\": {\"type\": \"plain_text\", \"text\": \"🚀 View pipeline\"}, \"style\": \"primary\",
+                  \"url\": \"$CI_PROJECT_URL/-/pipelines/$CI_PIPELINE_ID\"}
+              ]}
+            ]
+          }]
+        }" "$SLACK_WEBHOOK_FRONTEND"
   rules:
     - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "staging"
