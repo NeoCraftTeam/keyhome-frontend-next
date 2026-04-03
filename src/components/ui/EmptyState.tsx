@@ -14,16 +14,52 @@ export interface EmptyStateProps {
     href?: string;
   };
   size?: 'sm' | 'md' | 'lg';
+  /**
+   * Visual variant:
+   * - 'default' — grey muted icon (original)
+   * - 'owner'   — teal gradient icon + float animation
+   * - 'customer'— red gradient icon + float animation
+   */
+  variant?: 'default' | 'owner' | 'customer';
 }
 
 const SIZE_CONFIG = {
-  sm: { py: 3, iconBox: 40, iconFontSize: 20 },
-  md: { py: 6, iconBox: 56, iconFontSize: 28 },
-  lg: { py: 10, iconBox: 72, iconFontSize: 36 },
+  sm: { py: 3, iconBox: 44, iconFontSize: 22 },
+  md: { py: 6, iconBox: 64, iconFontSize: 30 },
+  lg: { py: 10, iconBox: 80, iconFontSize: 38 },
 } as const;
 
-export function EmptyState({ icon, title, description, action, size = 'md' }: EmptyStateProps) {
+const VARIANT_STYLES = {
+  default: {
+    background: undefined,
+    color: 'text.disabled' as const,
+    float: false,
+    shadow: 'none',
+  },
+  owner: {
+    background: 'linear-gradient(135deg, #0d9488 0%, #0ea5e9 100%)',
+    color: '#fff',
+    float: true,
+    shadow: '0 8px 24px rgba(13,148,136,0.25)',
+  },
+  customer: {
+    background: 'linear-gradient(135deg, #F6475F 0%, #FF8C94 100%)',
+    color: '#fff',
+    float: true,
+    shadow: '0 8px 24px rgba(246,71,95,0.25)',
+  },
+} as const;
+
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  size = 'md',
+  variant = 'default',
+}: EmptyStateProps) {
   const { py, iconBox, iconFontSize } = SIZE_CONFIG[size];
+  const vStyle = VARIANT_STYLES[variant];
 
   return (
     <Box
@@ -35,44 +71,89 @@ export function EmptyState({ icon, title, description, action, size = 'md' }: Em
         textAlign: 'center',
         py,
         px: 3,
-        gap: 2,
+        gap: 2.5,
       }}
     >
+      {/* Icon container */}
       <Box
         sx={{
           width: iconBox,
           height: iconBox,
-          borderRadius: '50%',
-          bgcolor: (theme) =>
-            theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
+          borderRadius: variant === 'default' ? '50%' : 3,
+          background: vStyle.background,
+          bgcolor: vStyle.background
+            ? undefined
+            : (theme) =>
+                theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'text.disabled',
+          color: vStyle.color,
           flexShrink: 0,
+          boxShadow: vStyle.shadow,
+          // Float animation for branded variants
+          ...(vStyle.float && {
+            animation: 'float 5s ease-in-out infinite',
+            '@keyframes float': {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-8px)' },
+            },
+            '@media (prefers-reduced-motion: reduce)': {
+              animation: 'none',
+            },
+          }),
         }}
       >
         {icon ?? <InboxIcon sx={{ fontSize: iconFontSize }} />}
       </Box>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-        <Typography variant="h6" fontWeight={600}>
+      {/* Text */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.75,
+          maxWidth: 320,
+        }}
+      >
+        <Typography
+          variant="subtitle1"
+          fontWeight={700}
+          sx={{ lineHeight: 1.3 }}
+        >
           {title}
         </Typography>
         {description && (
-          <Typography variant="body2" color="text.secondary">
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ lineHeight: 1.6 }}
+          >
             {description}
           </Typography>
         )}
       </Box>
 
+      {/* CTA */}
       {action &&
         (action.href ? (
           <Button
             component={NextLink}
             href={action.href}
             variant="contained"
-            sx={{ borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
+            sx={{
+              borderRadius: 2,
+              fontWeight: 700,
+              textTransform: 'none',
+              mt: 0.5,
+              ...(variant === 'owner' && {
+                background: 'linear-gradient(to right, #0d9488, #0f766e)',
+                '&:hover': {
+                  background: 'linear-gradient(to right, #0f766e, #115e59)',
+                },
+                boxShadow: 'none',
+              }),
+            }}
           >
             {action.label}
           </Button>
@@ -80,7 +161,19 @@ export function EmptyState({ icon, title, description, action, size = 'md' }: Em
           <Button
             variant="contained"
             onClick={action.onClick}
-            sx={{ borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
+            sx={{
+              borderRadius: 2,
+              fontWeight: 700,
+              textTransform: 'none',
+              mt: 0.5,
+              ...(variant === 'owner' && {
+                background: 'linear-gradient(to right, #0d9488, #0f766e)',
+                '&:hover': {
+                  background: 'linear-gradient(to right, #0f766e, #115e59)',
+                },
+                boxShadow: 'none',
+              }),
+            }}
           >
             {action.label}
           </Button>
