@@ -1,7 +1,12 @@
 'use client';
 
 import { formatPrice } from '@/lib/constants';
-import { motion, useMotionValueEvent, useReducedMotion, useScroll } from 'framer-motion';
+import {
+  motion,
+  useMotionValueEvent,
+  useReducedMotion,
+  useScroll,
+} from 'framer-motion';
 import { useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import { Phone as PhoneIcon, WhatsApp } from '@mui/icons-material';
@@ -47,7 +52,11 @@ export default function StickyPropertyBar({
     <motion.div
       initial={shouldReduce ? false : { y: 100, opacity: 0 }}
       animate={isVisible ? { y: 0, opacity: 1 } : { y: 100, opacity: 0 }}
-      transition={shouldReduce ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
+      transition={
+        shouldReduce
+          ? { duration: 0 }
+          : { type: 'spring', stiffness: 300, damping: 30 }
+      }
       style={{
         position: 'fixed',
         bottom: 0,
@@ -61,6 +70,16 @@ export default function StickyPropertyBar({
       }}
     >
       <Box
+        component={motion.div}
+        whileHover={
+          shouldReduce
+            ? undefined
+            : {
+                y: -3,
+                boxShadow: '0 -12px 40px rgba(0,0,0,0.16)',
+                transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+              }
+        }
         sx={{
           display: hideOnDesktop ? { xs: 'flex', md: 'none' } : 'flex',
           width: '100%',
@@ -78,18 +97,34 @@ export default function StickyPropertyBar({
         }}
       >
         <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography
-            variant="h6"
-            fontWeight={800}
-            sx={{
-              fontSize: '1.25rem',
-              lineHeight: 1.2,
-              letterSpacing: '-0.02em',
-              color: 'text.primary',
+          <motion.div
+            animate={
+              shouldReduce
+                ? {}
+                : isVisible
+                  ? { scale: 1, opacity: 1 }
+                  : { scale: 0.9, opacity: 0.65 }
+            }
+            transition={{
+              type: 'spring',
+              stiffness: 420,
+              damping: 26,
+              mass: 0.7,
             }}
           >
-            {formatPrice(price)}
-          </Typography>
+            <Typography
+              variant="h6"
+              fontWeight={800}
+              sx={{
+                fontSize: '1.25rem',
+                lineHeight: 1.2,
+                letterSpacing: '-0.02em',
+                color: 'text.primary',
+              }}
+            >
+              {formatPrice(price)}
+            </Typography>
+          </motion.div>
           <Typography
             variant="body2"
             color="text.secondary"
@@ -116,6 +151,9 @@ export default function StickyPropertyBar({
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  component={motion.a}
+                  whileTap={shouldReduce ? undefined : { scale: 0.96 }}
+                  whileHover={shouldReduce ? undefined : { scale: 1.03 }}
                   startIcon={<WhatsApp sx={{ fontSize: 20 }} />}
                   sx={{
                     borderRadius: '12px',
@@ -137,6 +175,9 @@ export default function StickyPropertyBar({
                   color="primary"
                   size="large"
                   href={phoneUrl}
+                  component={motion.a}
+                  whileTap={shouldReduce ? undefined : { scale: 0.96 }}
+                  whileHover={shouldReduce ? undefined : { scale: 1.03 }}
                   startIcon={<PhoneIcon sx={{ fontSize: 20 }} />}
                   sx={{
                     borderRadius: '12px',
@@ -146,7 +187,9 @@ export default function StickyPropertyBar({
                     fontWeight: 700,
                     fontSize: '0.85rem',
                     boxShadow: 'none',
-                    '&:hover': { boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)' },
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)',
+                    },
                   }}
                 >
                   Appeler
@@ -158,6 +201,9 @@ export default function StickyPropertyBar({
               variant="contained"
               color="primary"
               size="large"
+              component={motion.button}
+              whileTap={shouldReduce ? undefined : { scale: 0.96 }}
+              whileHover={shouldReduce ? undefined : { scale: 1.03 }}
               startIcon={<PhoneIcon sx={{ fontSize: 20 }} />}
               onClick={onContact}
               sx={{

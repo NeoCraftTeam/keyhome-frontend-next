@@ -14,7 +14,14 @@ import { attachPartialPanoPitchClamp } from '@/lib/psvPitchClampForPartialEquire
 import type { TourConfig } from '@/types';
 import type { VirtualTourNode } from '@photo-sphere-viewer/virtual-tour-plugin';
 import { Close, ViewInAr } from '@mui/icons-material';
-import { Box, Chip, CircularProgress, IconButton, Typography } from '@mui/material';
+import {
+  Box,
+  Chip,
+  CircularProgress,
+  IconButton,
+  Typography,
+} from '@mui/material';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 function safeAngleDeg(value: unknown, fallback: number): number {
@@ -43,13 +50,13 @@ function normalizeTourHotspots(raw: unknown): Array<Record<string, unknown>> {
   if (Array.isArray(raw)) {
     return raw.filter(
       (x): x is Record<string, unknown> =>
-        x != null && typeof x === 'object' && !Array.isArray(x),
+        x != null && typeof x === 'object' && !Array.isArray(x)
     );
   }
   if (typeof raw === 'object') {
     return Object.values(raw as Record<string, unknown>).filter(
       (x): x is Record<string, unknown> =>
-        x != null && typeof x === 'object' && !Array.isArray(x),
+        x != null && typeof x === 'object' && !Array.isArray(x)
     );
   }
 
@@ -66,7 +73,10 @@ function resolveHotspotTargetRaw(h: Record<string, unknown>): string {
 }
 
 /** Match target_scene to a scene id (handles UUID letter casing drift). */
-function resolveCanonicalSceneId(targetRaw: string, validIds: Set<string>): string | null {
+function resolveCanonicalSceneId(
+  targetRaw: string,
+  validIds: Set<string>
+): string | null {
   if (!targetRaw) {
     return null;
   }
@@ -102,8 +112,10 @@ function resolveTourUrl(url: string | undefined): string {
   if (path.startsWith('/tour-proxy/')) return path;
 
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-    const origin = apiUrl.replace(/\/api\/v1\/?$/, '') || 'http://localhost:8000';
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+    const origin =
+      apiUrl.replace(/\/api\/v1\/?$/, '') || 'http://localhost:8000';
     return `${origin}${url.startsWith('/') ? url : `/${url}`}`;
   }
 
@@ -116,16 +128,21 @@ interface TourViewerProps {
 }
 
 export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
+  const reduceMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const viewerRef = useRef<InstanceType<typeof import('@photo-sphere-viewer/core').Viewer> | null>(null);
-  const virtualTourRef = useRef<InstanceType<typeof import('@photo-sphere-viewer/virtual-tour-plugin').VirtualTourPlugin> | null>(null);
+  const viewerRef = useRef<InstanceType<
+    typeof import('@photo-sphere-viewer/core').Viewer
+  > | null>(null);
+  const virtualTourRef = useRef<InstanceType<
+    typeof import('@photo-sphere-viewer/virtual-tour-plugin').VirtualTourPlugin
+  > | null>(null);
   const isMountedRef = useRef(true);
   const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pitchClampDetachRef = useRef<(() => void) | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentScene, setCurrentScene] = useState(
-    tourConfig.default_scene ?? tourConfig.scenes?.[0]?.id ?? '',
+    tourConfig.default_scene ?? tourConfig.scenes?.[0]?.id ?? ''
   );
   const [error, setError] = useState('');
 
@@ -134,7 +151,12 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
 
     try {
       // Dynamic imports to avoid SSR issues
-      const [{ Viewer }, { MarkersPlugin }, { VirtualTourPlugin }, { CubemapAdapter }] = await Promise.all([
+      const [
+        { Viewer },
+        { MarkersPlugin },
+        { VirtualTourPlugin },
+        { CubemapAdapter },
+      ] = await Promise.all([
         import('@photo-sphere-viewer/core'),
         import('@photo-sphere-viewer/markers-plugin'),
         import('@photo-sphere-viewer/virtual-tour-plugin'),
@@ -153,7 +175,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
             s.type !== 'cubemap' &&
             s.type !== 'multires' &&
             s.image_url &&
-            (s.haov == null || s.vaov == null),
+            (s.haov == null || s.vaov == null)
         )
         .map(
           (s) =>
@@ -169,7 +191,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
               img.onerror = () => resolve();
               img.src = resolveTourUrl(s.image_url);
               setTimeout(resolve, 8_000);
-            }),
+            })
         );
 
       if (probePromises.length > 0) {
@@ -204,7 +226,10 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
         const rawHotspots = normalizeTourHotspots(scene.hotspots as unknown);
         const links = rawHotspots
           .map((h) => {
-            const targetId = resolveCanonicalSceneId(resolveHotspotTargetRaw(h), validSceneIds);
+            const targetId = resolveCanonicalSceneId(
+              resolveHotspotTargetRaw(h),
+              validSceneIds
+            );
             if (!targetId) {
               return null;
             }
@@ -232,7 +257,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
         const maxFov = 120;
         const clampedFov = Math.min(Math.max(hfov, minFov), maxFov);
         const baseZoomLvl = Math.round(
-          ((maxFov - clampedFov) / (maxFov - minFov)) * 100,
+          ((maxFov - clampedFov) / (maxFov - minFov)) * 100
         );
 
         if (scene.type === 'cubemap' && scene.cube_map?.length === 6) {
@@ -271,7 +296,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
           }
 
           const fullH = panoData
-            ? panoData.fullHeight ?? panoData.fullWidth / 2
+            ? (panoData.fullHeight ?? panoData.fullWidth / 2)
             : 0;
           const zoomLvlForNode =
             panoData != null && panoData.croppedHeight < fullH * 0.99
@@ -294,19 +319,18 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
 
       if (nodes.length === 0) {
         setError(
-          'Ce tour ne contient aucune scène exploitable pour le moment.',
+          'Ce tour ne contient aucune scène exploitable pour le moment.'
         );
         setIsLoading(false);
         return;
       }
 
       // Find the best starting node (prefer one with hotspots)
-      const preferredNode = nodes.find(
-        (n) => n.links.length > 0,
-      );
+      const preferredNode = nodes.find((n) => n.links.length > 0);
       const startNodeId =
         preferredNode?.id ??
-        (tourConfig.default_scene && nodes.find((n) => n.id === tourConfig.default_scene)
+        (tourConfig.default_scene &&
+        nodes.find((n) => n.id === tourConfig.default_scene)
           ? tourConfig.default_scene
           : nodes[0].id);
 
@@ -367,7 +391,9 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
       pitchClampDetachRef.current = attachPartialPanoPitchClamp(viewer);
 
       viewerRef.current = viewer;
-      virtualTourRef.current = viewer.getPlugin(VirtualTourPlugin) as InstanceType<typeof VirtualTourPlugin>;
+      virtualTourRef.current = viewer.getPlugin(
+        VirtualTourPlugin
+      ) as InstanceType<typeof VirtualTourPlugin>;
 
       viewer.addEventListener('ready', () => {
         clearTimeout(safetyTimerRef.current ?? undefined);
@@ -380,19 +406,22 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
         });
       });
 
-      virtualTourRef.current?.addEventListener('node-changed', ({ node }: { node: VirtualTourNode }) => {
-        if (!isMountedRef.current) return;
-        setCurrentScene(node.id);
-        const cap =
-          (typeof node?.caption === 'string' && node.caption) ||
-          (typeof node?.name === 'string' && node.name) ||
-          '';
-        viewerRef.current?.setOption('caption', cap);
-      });
+      virtualTourRef.current?.addEventListener(
+        'node-changed',
+        ({ node }: { node: VirtualTourNode }) => {
+          if (!isMountedRef.current) return;
+          setCurrentScene(node.id);
+          const cap =
+            (typeof node?.caption === 'string' && node.caption) ||
+            (typeof node?.name === 'string' && node.name) ||
+            '';
+          viewerRef.current?.setOption('caption', cap);
+        }
+      );
     } catch {
       if (!isMountedRef.current) return;
       setError(
-        'Impossible de charger la visite virtuelle. Vérifiez votre connexion.',
+        'Impossible de charger la visite virtuelle. Vérifiez votre connexion.'
       );
       setIsLoading(false);
     }
@@ -448,9 +477,17 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
 
   return (
     <Box
+      component={motion.div}
       role="dialog"
       aria-modal="true"
       aria-label="Visite virtuelle 3D"
+      initial={reduceMotion ? false : { opacity: 0, scale: 0.985 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={
+        reduceMotion
+          ? { duration: 0 }
+          : { duration: 0.42, ease: [0.22, 1, 0.36, 1] }
+      }
       sx={{
         position: 'fixed',
         inset: 0,
@@ -473,7 +510,8 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
           justifyContent: 'space-between',
           px: 2,
           py: 1.5,
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)',
+          background:
+            'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -519,10 +557,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
           }}
         >
           <CircularProgress sx={{ color: '#fff' }} />
-          <Typography
-            variant="body2"
-            sx={{ color: 'rgba(255,255,255,0.7)' }}
-          >
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
             Chargement de la visite…
           </Typography>
         </Box>
@@ -637,8 +672,8 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
             fontSize: '0.75rem',
           }}
         >
-          Cliquez sur les flèches pour changer de pièce • Glissez pour
-          naviguer • Molette pour zoomer • Échap pour quitter
+          Cliquez sur les flèches pour changer de pièce • Glissez pour naviguer
+          • Molette pour zoomer • Échap pour quitter
         </Typography>
       )}
     </Box>
