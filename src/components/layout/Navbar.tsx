@@ -147,7 +147,17 @@ export default function Navbar() {
                     borderRadius: '8px',
                     position: 'relative',
                     whiteSpace: 'nowrap',
-                    '&:hover': { bgcolor: 'action.hover' },
+                    transition:
+                      'background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
+                    '@media (prefers-reduced-motion: reduce)': {
+                      transition: 'background-color 0.2s ease, color 0.2s ease',
+                      '&:hover': { transform: 'none', boxShadow: 'none' },
+                    },
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                    },
                     '&::after': isActive(link.href)
                       ? {
                           content: '""',
@@ -159,8 +169,27 @@ export default function Navbar() {
                           height: 2,
                           bgcolor: 'primary.main',
                           borderRadius: 1,
+                          transition: 'width 0.2s ease, opacity 0.2s ease',
                         }
-                      : {},
+                      : {
+                          content: '""',
+                          position: 'absolute',
+                          bottom: -2,
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          width: '0%',
+                          height: 2,
+                          bgcolor: 'primary.main',
+                          borderRadius: 1,
+                          opacity: 0,
+                          transition: 'width 0.22s ease, opacity 0.22s ease',
+                        },
+                    '&:hover::after': isActive(link.href)
+                      ? {}
+                      : {
+                          width: '45%',
+                          opacity: 0.35,
+                        },
                   }}
                 >
                   <Box
@@ -285,7 +314,15 @@ export default function Navbar() {
                       }}
                     >
                       <MenuIcon
-                        sx={{ fontSize: 18, color: 'text.secondary' }}
+                        sx={{
+                          fontSize: 18,
+                          color: 'text.secondary',
+                          transform: anchorEl
+                            ? 'rotate(90deg)'
+                            : 'rotate(0deg)',
+                          transition:
+                            'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                        }}
                       />
                       <Avatar
                         src={user?.avatar || undefined}

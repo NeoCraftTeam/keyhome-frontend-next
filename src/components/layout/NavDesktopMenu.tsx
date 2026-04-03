@@ -12,6 +12,7 @@ import {
   Avatar,
   Box,
   Divider,
+  Fade,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -45,6 +46,8 @@ export default function NavDesktopMenu({
       anchorEl={anchorEl}
       open={Boolean(anchorEl)}
       onClose={onClose}
+      TransitionComponent={Fade}
+      transitionDuration={220}
       transformOrigin={{ horizontal: 'right', vertical: 'top' }}
       anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       slotProps={{
@@ -53,7 +56,17 @@ export default function NavDesktopMenu({
             mt: 1.5,
             minWidth: 220,
             borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
+            border: '1px solid',
+            borderColor: 'divider',
+            overflow: 'hidden',
+            '& .MuiMenuItem-root': {
+              py: 1.15,
+              transition: 'background-color 0.18s ease',
+              '&:hover': {
+                bgcolor: 'action.hover',
+              },
+            },
           },
         },
       }}

@@ -103,6 +103,7 @@ export default function NavDrawer({
       anchor="left"
       open={open}
       onClose={onClose}
+      transitionDuration={{ enter: 280, exit: 200 }}
       PaperProps={{
         sx: {
           width: { xs: '85vw', sm: 300 },
