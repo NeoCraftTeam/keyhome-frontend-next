@@ -26,6 +26,7 @@ import SimilarAds from '@/components/ads/SimilarAds';
 import KeyScoreBadge from '@/components/ads/KeyScoreBadge';
 import KeyScoreSection from '@/components/ads/KeyScoreSection';
 import NeighborhoodScorecard from '@/components/ads/NeighborhoodScorecard';
+import DirectionsPanel from '@/components/ads/DirectionsPanel';
 import {
   COMPARATOR_MAX_ITEMS,
   useComparator,
@@ -126,6 +127,8 @@ function AdDetailContent() {
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  /** Desktop gallery: main cell shows this index; thumbnails click swaps with crossfade */
+  const [desktopGalleryIndex, setDesktopGalleryIndex] = useState(0);
   const [showTour, setShowTour] = useState(false);
   const {
     add: addToComparator,
@@ -206,6 +209,10 @@ function AdDetailContent() {
       (isAuthenticated || !hasStoredSanctumToken),
   });
 
+  useEffect(() => {
+    setDesktopGalleryIndex(0);
+  }, [adId, ad?.is_unlocked]);
+
   const { addRecentlyViewed } = useRecentlyViewed();
   const { track } = useAnalytics();
   const { play: playSound } = useSoundFeedback();
@@ -279,6 +286,12 @@ function AdDetailContent() {
   const isLocked = ad.is_unlocked === false;
   // When locked, only show the primary image
   const images = isLocked ? (primaryImage ? [primaryImage] : []) : allImages;
+
+  const desktopHeroIndex = Math.min(
+    desktopGalleryIndex,
+    Math.max(0, images.length - 1)
+  );
+  const desktopHeroImage = images[desktopHeroIndex] ?? primaryImage;
 
   const totalImageCount = ad.total_images || allImages.length;
 
@@ -830,9 +843,9 @@ function AdDetailContent() {
                     mb: 3,
                   }}
                 >
-                  {/* Main image */}
+                  {/* Main image — hero follows thumbnail selection with crossfade */}
                   <Box
-                    onClick={() => openLightbox(0)}
+                    onClick={() => openLightbox(desktopHeroIndex)}
                     sx={{
                       gridRow: {
                         md:
@@ -845,21 +858,46 @@ function AdDetailContent() {
                       position: 'relative',
                       cursor: 'pointer',
                       overflow: 'hidden',
-                      '&:hover img': { transform: 'scale(1.03)' },
+                      '@media (prefers-reduced-motion: no-preference)': {
+                        '&:hover .ad-detail-hero-img': {
+                          transform: 'scale(1.02)',
+                        },
+                      },
                     }}
                   >
-                    {primaryImage ? (
-                      <Image
-                        src={primaryImage.large || primaryImage.url}
-                        alt={ad.title}
-                        fill
-                        priority
-                        sizes="(max-width: 960px) 100vw, 60vw"
-                        style={{
-                          objectFit: 'cover',
-                          transition: 'transform 0.3s ease',
-                        }}
-                      />
+                    {desktopHeroImage ? (
+                      <AnimatePresence mode="sync">
+                        <Box
+                          component={motion.div}
+                          key={desktopHeroImage.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{
+                            duration: 0.35,
+                            ease: [0.33, 1, 0.68, 1],
+                          }}
+                          className="ad-detail-hero-img"
+                          sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            '& img': {
+                              transition: 'transform 0.35s ease',
+                            },
+                          }}
+                        >
+                          <Image
+                            src={desktopHeroImage.large || desktopHeroImage.url}
+                            alt={ad.title}
+                            fill
+                            priority
+                            sizes="(max-width: 960px) 100vw, 60vw"
+                            style={{
+                              objectFit: 'cover',
+                            }}
+                          />
+                        </Box>
+                      </AnimatePresence>
                     ) : (
                       <Box
                         sx={{
@@ -882,12 +920,26 @@ function AdDetailContent() {
                   {images.slice(1, 5).map((img, idx) => (
                     <Box
                       key={img.id}
-                      onClick={() => openLightbox(idx + 1)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDesktopGalleryIndex(idx + 1);
+                      }}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        openLightbox(idx + 1);
+                      }}
                       sx={{
                         display: { xs: 'none', md: 'block' },
                         position: 'relative',
                         cursor: 'pointer',
                         overflow: 'hidden',
+                        outline:
+                          desktopGalleryIndex === idx + 1
+                            ? '2px solid'
+                            : 'none',
+                        outlineColor: 'primary.main',
+                        outlineOffset: -2,
+                        borderRadius: 0.5,
                         '&:hover img': { transform: 'scale(1.05)' },
                       }}
                     >
@@ -1724,11 +1776,18 @@ function AdDetailContent() {
                       userLocation={userLocation}
                       locationError={locationError}
                     />
+                    {/* Directions panel — only for unlocked ads (exact GPS) */}
+                    {!isLocked && (
+                      <DirectionsPanel
+                        adLat={ad.location.latitude}
+                        adLng={ad.location.longitude}
+                      />
+                    )}
                     <Divider sx={{ my: 3 }} />
                   </>
                 )}
 
-                {/* Proximité & Accessibilité — always visible to help users decide to unlock */}
+                {/* Proximité & Accessibilité — owner-declared distances (form), not OSM */}
                 {hasProximityData && (
                   <>
                     <Box sx={{ mb: 4 }}>
@@ -1770,9 +1829,15 @@ function AdDetailContent() {
                           <Typography
                             variant="caption"
                             color="text.secondary"
-                            sx={{ display: 'block' }}
+                            sx={{
+                              display: 'block',
+                              maxWidth: 520,
+                              lineHeight: 1.45,
+                            }}
                           >
-                            Distances estimées depuis ce bien
+                            Distances déclarées par l&apos;annonceur à la
+                            publication — indicatives, non vérifiées par
+                            KeyHome.
                           </Typography>
                         </Box>
                       </Box>

@@ -4,6 +4,7 @@ import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import SearchAlertButton from '@/components/ads/SearchAlertButton';
 import AppLoader from '@/components/ui/AppLoader';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/providers/AuthProvider';
 
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
@@ -66,6 +67,11 @@ if (process.env.NODE_ENV === 'development') {
     writable: false,
   });
 }
+
+const IsochroneFilter = dynamic(
+  () => import('@/components/ads/IsochroneFilter'),
+  { ssr: false }
+);
 
 const MAP_POPUP_STYLES = `
   .kh-map-popup .mapboxgl-popup-content {
@@ -1821,6 +1827,8 @@ function SearchContent() {
                     ref={mapContainerRef}
                     sx={{ width: '100%', height: '100%' }}
                   />
+                  {/* Isochrone filter — zone accessible depuis le centre */}
+                  <IsochroneFilter mapRef={mapRef} />
                   {/* Map style toggle */}
                   <Box
                     sx={{
