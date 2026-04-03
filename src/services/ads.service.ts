@@ -246,4 +246,19 @@ export const adsService = {
     const { data } = await api.delete(`/ads/${adId}/tour`);
     return data;
   },
+
+  async getNeighborhoodScorecard(adId: string): Promise<{
+    data: {
+      global_score: number;
+      cached: boolean;
+      computed_at: string | null;
+      categories: Record<
+        string,
+        { score: number; poi_count: number; label: string; radius_m: number }
+      >;
+    };
+  }> {
+    const { data } = await api.get(`/ads/${adId}/neighborhood-scorecard`);
+    return data;
+  },
 };

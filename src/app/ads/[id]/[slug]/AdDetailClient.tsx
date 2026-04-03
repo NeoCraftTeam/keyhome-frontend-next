@@ -25,6 +25,7 @@ import CompareDrawer from '@/components/ads/CompareDrawer';
 import SimilarAds from '@/components/ads/SimilarAds';
 import KeyScoreBadge from '@/components/ads/KeyScoreBadge';
 import KeyScoreSection from '@/components/ads/KeyScoreSection';
+import NeighborhoodScorecard from '@/components/ads/NeighborhoodScorecard';
 import {
   COMPARATOR_MAX_ITEMS,
   useComparator,
@@ -1851,6 +1852,14 @@ function AdDetailContent() {
                       </Box>
                     </Box>
                     <Divider sx={{ mb: 3 }} />
+                  </>
+                )}
+
+                {/* Neighborhood scorecard (OSM) — only for ads with GPS */}
+                {ad.location && (
+                  <>
+                    <NeighborhoodScorecard adId={ad.id} />
+                    <Divider sx={{ my: 3 }} />
                   </>
                 )}
 
