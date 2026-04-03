@@ -148,11 +148,20 @@ export default function OwnerVerifyOtpPage() {
   };
 
   const handleSubmit = async () => {
-    if (!isComplete || !email) return;
+    if (!isComplete) return;
+    // Re-read from sessionStorage as fallback (e.g. page refresh wipes React state)
+    const effectiveEmail =
+      email || sessionStorage.getItem('kh_verify_email_owner') || '';
+    if (!effectiveEmail) {
+      setError(
+        'Session expirée. Veuillez recommencer le processus d\'inscription.'
+      );
+      return;
+    }
     setError('');
     setIsSubmitting(true);
     try {
-      const result = await authService.verifyEmailOtp(email, otp);
+      const result = await authService.verifyEmailOtp(effectiveEmail, otp);
 
       persistInMemoryToken(result.access_token);
 
@@ -190,11 +199,13 @@ export default function OwnerVerifyOtpPage() {
   };
 
   const handleResendOtp = useCallback(async () => {
-    if (resendCooldown > 0 || !email) return;
+    const effectiveEmail =
+      email || sessionStorage.getItem('kh_verify_email_owner') || '';
+    if (resendCooldown > 0 || !effectiveEmail) return;
     setError('');
     setResendMessage('');
     try {
-      await authService.resendVerification(email);
+      await authService.resendVerification(effectiveEmail);
       setResendMessage('Un nouveau code professionnel a été envoyé.');
       setResendCooldown(RESEND_COOLDOWN);
       setDigits(['', '', '', '', '', '']);
