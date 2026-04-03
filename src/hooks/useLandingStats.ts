@@ -1,6 +1,13 @@
 import { adsService } from '@/services/ads.service';
 import { useQuery } from '@tanstack/react-query';
 
+export interface LandingStat {
+  value: string; // Formatted display string e.g. "1\u202f250+"
+  rawValue: number; // Raw number for count-up animation
+  label: string;
+  suffix: string; // '+' or other suffix after the number
+}
+
 export function useLandingStats() {
   const { data, isLoading } = useQuery({
     queryKey: ['landing-stats'],
@@ -16,16 +23,46 @@ export function useLandingStats() {
     return n + '+';
   };
 
-  const stats = [
-    { value: fmt(data?.ads_count), label: 'Annonces actives' },
-    { value: fmt(data?.cities_count), label: 'Villes couvertes' },
-    { value: fmt(data?.users_count), label: 'Utilisateurs' },
+  const stats: LandingStat[] = [
+    {
+      value: fmt(data?.ads_count),
+      rawValue: data?.ads_count ?? 0,
+      label: 'Annonces actives',
+      suffix: '+',
+    },
+    {
+      value: fmt(data?.cities_count),
+      rawValue: data?.cities_count ?? 0,
+      label: 'Villes couvertes',
+      suffix: '+',
+    },
+    {
+      value: fmt(data?.users_count),
+      rawValue: data?.users_count ?? 0,
+      label: 'Utilisateurs',
+      suffix: '+',
+    },
   ];
 
-  const authStats = [
-    { value: fmt(data?.ads_count), label: 'Annonces' },
-    { value: fmt(data?.cities_count), label: 'Villes' },
-    { value: fmt(data?.users_count || 500), label: 'Agents' }, // Keep agents fallback if API doesn't provide it
+  const authStats: LandingStat[] = [
+    {
+      value: fmt(data?.ads_count),
+      rawValue: data?.ads_count ?? 0,
+      label: 'Annonces',
+      suffix: '+',
+    },
+    {
+      value: fmt(data?.cities_count),
+      rawValue: data?.cities_count ?? 0,
+      label: 'Villes',
+      suffix: '+',
+    },
+    {
+      value: fmt(data?.users_count || 500),
+      rawValue: data?.users_count ?? 500,
+      label: 'Agents',
+      suffix: '+',
+    },
   ];
 
   return { stats, authStats, isLoading, data };
