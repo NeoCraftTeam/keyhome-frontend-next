@@ -2,20 +2,37 @@
 
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useAuth } from '@/providers/AuthProvider';
-import { Close as CloseIcon, NotificationsActive as BellIcon } from '@mui/icons-material';
+import {
+  Close as CloseIcon,
+  NotificationsActive as BellIcon,
+} from '@mui/icons-material';
 import { Box, Button, IconButton, Slide, Typography } from '@mui/material';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 
 const FALLBACK_DELAY_MS = 8000;
 
 export default function PushPrompt() {
+  const reduceMotion = useReducedMotion();
   const { isAuthenticated, user } = useAuth();
-  const { isSupported, permission, isSubscribed, isDismissed, subscribe, dismiss } = usePushNotifications();
+  const {
+    isSupported,
+    permission,
+    isSubscribed,
+    isDismissed,
+    subscribe,
+    dismiss,
+  } = usePushNotifications();
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const firedDoneRef = useRef(false);
 
-  const shouldShow = isAuthenticated && isSupported && permission === 'default' && !isSubscribed && !isDismissed;
+  const shouldShow =
+    isAuthenticated &&
+    isSupported &&
+    permission === 'default' &&
+    !isSubscribed &&
+    !isDismissed;
 
   const fireDone = () => {
     if (firedDoneRef.current) return;
@@ -29,7 +46,6 @@ export default function PushPrompt() {
     if (!shouldShow) {
       fireDone();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, shouldShow]);
 
   useEffect(() => {
@@ -45,14 +61,16 @@ export default function PushPrompt() {
     const show = () => setVisible(true);
 
     window.addEventListener('kh:welcome-dismissed', show, { once: true });
-    const fallback = isNewUserOnboarding ? undefined : setTimeout(show, FALLBACK_DELAY_MS);
+    const fallback = isNewUserOnboarding
+      ? undefined
+      : setTimeout(show, FALLBACK_DELAY_MS);
 
     return () => {
       window.removeEventListener('kh:welcome-dismissed', show);
       if (fallback !== undefined) clearTimeout(fallback);
     };
-  // user intentionally excluded: we snapshot onboarding state at first setup only
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // user intentionally excluded: we snapshot onboarding state at first setup only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldShow]);
 
   if (!shouldShow || !visible) return null;
@@ -61,7 +79,10 @@ export default function PushPrompt() {
     setLoading(true);
     const ok = await subscribe();
     setLoading(false);
-    if (ok) { setVisible(false); fireDone(); }
+    if (ok) {
+      setVisible(false);
+      fireDone();
+    }
   };
 
   const handleDismiss = () => {
@@ -87,6 +108,14 @@ export default function PushPrompt() {
         }}
       >
         <Box
+          component={motion.div}
+          initial={reduceMotion ? false : { opacity: 0, y: 20, scale: 0.97 }}
+          animate={reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+          transition={
+            reduceMotion
+              ? undefined
+              : { type: 'spring', stiffness: 380, damping: 28, mass: 0.8 }
+          }
           sx={{
             position: 'relative',
             display: 'flex',
@@ -132,7 +161,11 @@ export default function PushPrompt() {
           </Box>
 
           <Box>
-            <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.3, mb: 0.5 }}>
+            <Typography
+              variant="subtitle1"
+              fontWeight={700}
+              sx={{ lineHeight: 1.3, mb: 0.5 }}
+            >
               Restez informé
             </Typography>
             <Typography
@@ -140,11 +173,19 @@ export default function PushPrompt() {
               color="text.secondary"
               sx={{ lineHeight: 1.5, maxWidth: 280, mx: 'auto' }}
             >
-              Recevez des alertes pour les nouvelles annonces, réservations et messages importants.
+              Recevez des alertes pour les nouvelles annonces, réservations et
+              messages importants.
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 1.5, width: '100%', justifyContent: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 1.5,
+              width: '100%',
+              justifyContent: 'center',
+            }}
+          >
             <Button
               variant="contained"
               onClick={handleAccept}

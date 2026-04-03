@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { brand } from '@/theme/tokens';
+import { brand, brandAgent } from '@/theme/tokens';
 
 /**
  * Slim top-of-page progress bar that fires on every route change.
@@ -50,6 +50,11 @@ export default function RouteProgressBar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, searchParams]);
 
+  // Context-aware: teal for owner panel, red for customer side.
+  const isOwnerPath = pathname?.startsWith('/owner') ?? false;
+  const color = isOwnerPath ? brandAgent.primary : brand.primary;
+  const colorDark = isOwnerPath ? brandAgent.primaryDark : brand.primaryDark;
+
   if (shouldReduceMotion) return null;
 
   return (
@@ -74,9 +79,9 @@ export default function RouteProgressBar() {
             style={{
               height: '100%',
               width: `${progress}%`,
-              background: `linear-gradient(90deg, ${brand.primary}, ${brand.primaryDark})`,
+              background: `linear-gradient(90deg, ${color}, ${colorDark})`,
               borderRadius: '0 2px 2px 0',
-              boxShadow: `0 0 8px ${brand.primary}80`,
+              boxShadow: `0 0 8px ${color}80`,
             }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
