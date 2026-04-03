@@ -9,17 +9,14 @@ import {
   Apple,
   ArrowForwardIos as ArrowIcon,
   Assignment as AssignmentIcon,
-  ChevronLeft as ChevronLeftIcon,
   DarkMode as DarkModeIcon,
   Facebook,
   Google,
   HelpOutline as HelpIcon,
   LightMode as LightModeIcon,
-  Link as LinkIcon,
   Logout as LogoutIcon,
   MusicNote as SoundIcon,
   NotificationsNone as NotificationsIcon,
-  Person as PersonIcon,
   SettingsBrightness as SystemIcon,
 } from '@mui/icons-material';
 import {
@@ -29,8 +26,9 @@ import {
   Button,
   Chip,
   Container,
-  IconButton,
+  Grid,
   Skeleton,
+  Stack,
   Switch,
   Typography,
 } from '@mui/material';
@@ -40,7 +38,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { brand } from '@/theme/tokens';
-
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -117,7 +114,9 @@ function SettingsRow({
         sx={{
           width: 34,
           height: 34,
-          bgcolor: danger ? 'rgba(211,47,47,0.08)' : (iconBg ?? brand.primaryAlpha10),
+          bgcolor: danger
+            ? 'rgba(211,47,47,0.08)'
+            : (iconBg ?? brand.primaryAlpha10),
           color: danger ? 'error.main' : 'primary.main',
           fontSize: 18,
         }}
@@ -139,7 +138,10 @@ function SettingsRow({
           </Typography>
         )}
       </Box>
-      {trailing ?? (onClick && <ArrowIcon sx={{ fontSize: 14, color: 'text.disabled' }} />)}
+      {trailing ??
+        (onClick && (
+          <ArrowIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+        ))}
     </Box>
   );
 }
@@ -182,35 +184,63 @@ export default function ParametresPage() {
   const surveyAnswered = surveyAnsweredData?.has_answered ?? false;
 
   const socialProviders = [
-    { key: 'google', label: 'Google', icon: <Google sx={{ fontSize: 18 }} />, strategy: 'oauth_google' as const },
-    { key: 'facebook', label: 'Facebook', icon: <Facebook sx={{ fontSize: 18 }} />, strategy: 'oauth_facebook' as const },
-    { key: 'apple', label: 'Apple', icon: <Apple sx={{ fontSize: 18 }} />, strategy: 'oauth_apple' as const },
+    {
+      key: 'google',
+      label: 'Google',
+      icon: <Google sx={{ fontSize: 18 }} />,
+      strategy: 'oauth_google' as const,
+    },
+    {
+      key: 'facebook',
+      label: 'Facebook',
+      icon: <Facebook sx={{ fontSize: 18 }} />,
+      strategy: 'oauth_facebook' as const,
+    },
+    {
+      key: 'apple',
+      label: 'Apple',
+      icon: <Apple sx={{ fontSize: 18 }} />,
+      strategy: 'oauth_apple' as const,
+    },
   ];
 
   const isProviderLinked = (strategy: string) =>
-    clerkUser?.externalAccounts?.some((acc) => acc.provider === strategy) ?? false;
+    clerkUser?.externalAccounts?.some((acc) => acc.provider === strategy) ??
+    false;
 
   const getLinkedEmail = (strategy: string): string | null =>
-    clerkUser?.externalAccounts?.find((a) => a.provider === strategy)?.emailAddress ?? null;
+    clerkUser?.externalAccounts?.find((a) => a.provider === strategy)
+      ?.emailAddress ?? null;
 
-  const handleConnect = async (strategy: 'oauth_google' | 'oauth_facebook' | 'oauth_apple') => {
+  const handleConnect = async (
+    strategy: 'oauth_google' | 'oauth_facebook' | 'oauth_apple'
+  ) => {
     if (!clerkUser) return;
     setLinkedLoading(strategy);
     setLinkedError('');
     try {
-      await clerkUser.createExternalAccount({ strategy, redirectUrl: '/parametres' });
+      await clerkUser.createExternalAccount({
+        strategy,
+        redirectUrl: '/parametres',
+      });
     } catch {
-      setLinkedError('Connectez-vous d\'abord avec un compte social pour lier les autres ici.');
+      setLinkedError(
+        "Connectez-vous d'abord avec un compte social pour lier les autres ici."
+      );
     } finally {
       setLinkedLoading(null);
     }
   };
 
-  const handleDisconnect = async (strategy: 'oauth_google' | 'oauth_facebook' | 'oauth_apple') => {
+  const handleDisconnect = async (
+    strategy: 'oauth_google' | 'oauth_facebook' | 'oauth_apple'
+  ) => {
     if (!clerkUser) return;
     setLinkedLoading(strategy);
     try {
-      const acc = clerkUser.externalAccounts?.find((a) => (a.provider as string) === strategy);
+      const acc = clerkUser.externalAccounts?.find(
+        (a) => (a.provider as string) === strategy
+      );
       if (acc) await acc.destroy();
     } catch {
       setLinkedError('Impossible de déconnecter ce compte.');
@@ -219,21 +249,37 @@ export default function ParametresPage() {
     }
   };
 
-  const themeOptions: { value: ThemeChoice; label: string; icon: React.ReactNode }[] = [
-    { value: 'light', label: 'Clair', icon: <LightModeIcon sx={{ fontSize: 20 }} /> },
-    { value: 'dark', label: 'Sombre', icon: <DarkModeIcon sx={{ fontSize: 20 }} /> },
-    { value: 'system', label: 'Auto', icon: <SystemIcon sx={{ fontSize: 20 }} /> },
+  const themeOptions: {
+    value: ThemeChoice;
+    label: string;
+    icon: React.ReactNode;
+  }[] = [
+    {
+      value: 'light',
+      label: 'Clair',
+      icon: <LightModeIcon sx={{ fontSize: 20 }} />,
+    },
+    {
+      value: 'dark',
+      label: 'Sombre',
+      icon: <DarkModeIcon sx={{ fontSize: 20 }} />,
+    },
+    {
+      value: 'system',
+      label: 'Auto',
+      icon: <SystemIcon sx={{ fontSize: 20 }} />,
+    },
   ];
   const currentTheme: ThemeChoice = choice;
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 2, md: 5 }, px: { xs: 2, md: 3 } }}>
+    <Container
+      maxWidth={false}
+      sx={{ py: { xs: 2, md: 4 }, px: { xs: 2, sm: 3, md: 4 } }}
+    >
       {/* Breadcrumb navigation */}
       <PageBreadcrumbs
-        items={[
-          { label: 'Accueil', href: '/home' },
-          { label: 'Paramètres' },
-        ]}
+        items={[{ label: 'Accueil', href: '/home' }, { label: 'Paramètres' }]}
       />
 
       {/* Header */}
@@ -248,9 +294,9 @@ export default function ParametresPage() {
         </Box>
       </Box>
 
-      {/* User card */}
+      {/* User card — full width */}
       {isAuthenticated && user && (
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 3, maxWidth: { lg: 480 } }}>
           <SettingsCard>
             <Box
               onClick={() => router.push('/profile')}
@@ -265,7 +311,13 @@ export default function ParametresPage() {
             >
               <Avatar
                 src={user.avatar || undefined}
-                sx={{ width: 48, height: 48, bgcolor: 'primary.main', fontSize: 18, fontWeight: 700 }}
+                sx={{
+                  width: 48,
+                  height: 48,
+                  bgcolor: 'primary.main',
+                  fontSize: 18,
+                  fontWeight: 700,
+                }}
               >
                 {user.firstname?.[0]}
               </Avatar>
@@ -283,219 +335,309 @@ export default function ParametresPage() {
         </Box>
       )}
 
-      {/* Theme */}
-      <Box sx={{ mb: 3 }}>
-        <SectionTitle>Apparence</SectionTitle>
-        <SettingsCard>
-          <Box sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', gap: { xs: 1.5, sm: 1 }, flexWrap: 'wrap' }}>
-              {themeOptions.map((opt) => {
-                const isActive = opt.value === currentTheme;
-                return (
+      <Grid container spacing={3} alignItems="flex-start">
+        {/* ── LEFT col: Apparence + Notifications + Logout ── */}
+        <Grid size={{ xs: 12, lg: 5 }}>
+          <Stack spacing={3}>
+            {/* Theme */}
+            <Box>
+              <SectionTitle>Apparence</SectionTitle>
+              <SettingsCard>
+                <Box sx={{ p: 2 }}>
                   <Box
-                    key={opt.value}
-                    onClick={() => {
-                      if (opt.value !== currentTheme) setThemeChoice(opt.value);
-                    }}
                     sx={{
-                      flex: 1,
                       display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 0.75,
-                      py: { xs: 2.5, sm: 2 },
-                      borderRadius: 2.5,
-                      border: '2px solid',
-                      borderColor: isActive ? 'primary.main' : 'transparent',
-                      bgcolor: isActive
-                        ? brand.primaryAlpha5
-                        : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
+                      gap: { xs: 1.5, sm: 1 },
+                      flexWrap: 'wrap',
                     }}
                   >
-                    <Box sx={{ color: isActive ? 'primary.main' : 'text.secondary', lineHeight: 1 }}>{opt.icon}</Box>
-                    <Typography variant="caption" fontWeight={isActive ? 700 : 500} color={isActive ? 'primary.main' : 'text.secondary'}>
-                      {opt.label}
-                    </Typography>
+                    {themeOptions.map((opt) => {
+                      const isActive = opt.value === currentTheme;
+                      return (
+                        <Box
+                          key={opt.value}
+                          onClick={() => {
+                            if (opt.value !== currentTheme)
+                              setThemeChoice(opt.value);
+                          }}
+                          sx={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 0.75,
+                            py: { xs: 2.5, sm: 2 },
+                            borderRadius: 2.5,
+                            border: '2px solid',
+                            borderColor: isActive
+                              ? 'primary.main'
+                              : 'transparent',
+                            bgcolor: isActive
+                              ? brand.primaryAlpha5
+                              : (theme) =>
+                                  theme.palette.mode === 'dark'
+                                    ? 'rgba(255,255,255,0.04)'
+                                    : 'rgba(0,0,0,0.03)',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              color: isActive
+                                ? 'primary.main'
+                                : 'text.secondary',
+                              lineHeight: 1,
+                            }}
+                          >
+                            {opt.icon}
+                          </Box>
+                          <Typography
+                            variant="caption"
+                            fontWeight={isActive ? 700 : 500}
+                            color={isActive ? 'primary.main' : 'text.secondary'}
+                          >
+                            {opt.label}
+                          </Typography>
+                        </Box>
+                      );
+                    })}
                   </Box>
-                );
-              })}
+                </Box>
+              </SettingsCard>
             </Box>
-          </Box>
-        </SettingsCard>
-      </Box>
 
-      {/* Linked accounts */}
-      {isAuthenticated && (
-        <Box sx={{ mb: 3 }}>
-          <SectionTitle>Comptes lies</SectionTitle>
-          <SettingsCard>
-            {linkedError && (
-              <Alert severity="info" sx={{ m: 1.5, borderRadius: 2, fontSize: '0.78rem' }}>
-                {linkedError}
-              </Alert>
-            )}
-            {socialProviders.map((provider) => {
-              const linked = isProviderLinked(provider.strategy);
-              const email = getLinkedEmail(provider.strategy);
-              const loading = linkedLoading === provider.strategy;
-
-              return (
+            {/* Notifications */}
+            <Box>
+              <SectionTitle>Notifications</SectionTitle>
+              <SettingsCard>
                 <SettingsRow
-                  key={provider.key}
-                  icon={provider.icon}
-                  iconBg={linked ? 'rgba(46,125,50,0.08)' : undefined}
-                  label={provider.label}
-                  sublabel={linked ? (email ?? 'Connecte') : 'Non connecte'}
+                  icon={<NotificationsIcon sx={{ fontSize: 18 }} />}
+                  label="Notifications push"
+                  sublabel="Nouvelles annonces et messages"
                   trailing={
-                    linked ? (
-                      <Button
-                        size="small"
-                        color="error"
-                        disabled={loading}
-                        onClick={() => handleDisconnect(provider.strategy)}
-                        sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.75rem', minWidth: 0 }}
-                      >
-                        {loading ? '...' : 'Retirer'}
-                      </Button>
-                    ) : (
-                      <Button
-                        size="small"
-                        disabled={loading}
-                        onClick={() => handleConnect(provider.strategy)}
-                        sx={{
-                          textTransform: 'none',
-                          fontWeight: 600,
-                          fontSize: '0.75rem',
-                          minWidth: 0,
-                          color: 'primary.main',
-                        }}
-                      >
-                        {loading ? '...' : 'Lier'}
-                      </Button>
-                    )
+                    <Switch
+                      defaultChecked
+                      disabled
+                      size="small"
+                      sx={{
+                        '& .MuiSwitch-thumb': { bgcolor: 'primary.main' },
+                        '& .Mui-checked + .MuiSwitch-track': {
+                          bgcolor: 'primary.main !important',
+                          opacity: '0.5 !important',
+                        },
+                      }}
+                    />
                   }
                 />
-              );
-            })}
-          </SettingsCard>
-        </Box>
-      )}
-
-      {/* Preferences */}
-      <Box sx={{ mb: 3 }}>
-        <SectionTitle>Notifications</SectionTitle>
-        <SettingsCard>
-          <SettingsRow
-            icon={<NotificationsIcon sx={{ fontSize: 18 }} />}
-            label="Notifications push"
-            sublabel="Nouvelles annonces et messages"
-            trailing={
-              <Switch
-                defaultChecked
-                disabled
-                size="small"
-                sx={{
-                  '& .MuiSwitch-thumb': { bgcolor: 'primary.main' },
-                  '& .Mui-checked + .MuiSwitch-track': { bgcolor: 'primary.main !important', opacity: '0.5 !important' },
-                }}
-              />
-            }
-          />
-          <SettingsRow
-            icon={<SoundIcon sx={{ fontSize: 18 }} />}
-            label="Sons de l'interface"
-            sublabel="Retours sonores discrets (favoris, actions)"
-            trailing={
-              <Switch
-                checked={soundEnabled}
-                size="small"
-                onChange={(e) => {
-                  const enabled = e.target.checked;
-                  setSoundEnabledState(enabled);
-                  try { localStorage.setItem(SOUND_ENABLED_KEY, String(enabled)); } catch { /* ignore */ }
-                  if (enabled) { play('success'); }
-                }}
-                sx={{
-                  '& .MuiSwitch-thumb': { bgcolor: soundEnabled ? 'primary.main' : undefined },
-                  '& .Mui-checked + .MuiSwitch-track': { bgcolor: 'primary.main !important', opacity: '0.5 !important' },
-                }}
-              />
-            }
-          />
-        </SettingsCard>
-      </Box>
-
-      {/* Survey */}
-      <Box sx={{ mb: 3 }}>
-        <SectionTitle>Votre avis</SectionTitle>
-        <SettingsCard>
-          {isSurveyLoading ? (
-            <Box sx={{ p: 2 }}>
-              <Skeleton variant="text" width="60%" />
-              <Skeleton variant="text" width="40%" />
+                <SettingsRow
+                  icon={<SoundIcon sx={{ fontSize: 18 }} />}
+                  label="Sons de l'interface"
+                  sublabel="Retours sonores discrets (favoris, actions)"
+                  trailing={
+                    <Switch
+                      checked={soundEnabled}
+                      size="small"
+                      onChange={(e) => {
+                        const enabled = e.target.checked;
+                        setSoundEnabledState(enabled);
+                        try {
+                          localStorage.setItem(
+                            SOUND_ENABLED_KEY,
+                            String(enabled)
+                          );
+                        } catch {
+                          /* ignore */
+                        }
+                        if (enabled) {
+                          play('success');
+                        }
+                      }}
+                      sx={{
+                        '& .MuiSwitch-thumb': {
+                          bgcolor: soundEnabled ? 'primary.main' : undefined,
+                        },
+                        '& .Mui-checked + .MuiSwitch-track': {
+                          bgcolor: 'primary.main !important',
+                          opacity: '0.5 !important',
+                        },
+                      }}
+                    />
+                  }
+                />
+              </SettingsCard>
             </Box>
-          ) : activeSurvey ? (
-            <SettingsRow
-              icon={<AssignmentIcon sx={{ fontSize: 18 }} />}
-              iconBg={surveyAnswered ? 'rgba(46,125,50,0.08)' : undefined}
-              label={activeSurvey.title}
-              sublabel={surveyAnswered ? 'Merci pour votre participation !' : '2 min — Donnez votre avis'}
-              onClick={surveyAnswered ? undefined : () => router.push(`/sondage/${activeSurvey.id}`)}
-              trailing={
-                surveyAnswered
-                  ? <Chip label="Fait" size="small" color="success" sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }} />
-                  : undefined
-              }
-            />
-          ) : (
-            <SettingsRow
-              icon={<AssignmentIcon sx={{ fontSize: 18 }} />}
-              iconBg="rgba(0,0,0,0.04)"
-              label="Aucun sondage actif"
-              sublabel="Revenez bientot"
-            />
-          )}
-        </SettingsCard>
-      </Box>
 
-      {/* About */}
-      <Box sx={{ mb: 3 }}>
-        <SectionTitle>A propos</SectionTitle>
-        <SettingsCard>
-          {[
-            { label: 'Aide & FAQ', href: '/aide' },
-            { label: 'Conditions d\'utilisation', href: '/conditions' },
-            { label: 'Confidentialite', href: '/confidentialite' },
-            { label: 'Nous contacter', href: '/contact' },
-          ].map((item) => (
-            <SettingsRow
-              key={item.href}
-              icon={<HelpIcon sx={{ fontSize: 18 }} />}
-              iconBg="rgba(0,0,0,0.04)"
-              label={item.label}
-              onClick={() => router.push(item.href)}
-            />
-          ))}
-        </SettingsCard>
-      </Box>
+            {/* Logout */}
+            {isAuthenticated && (
+              <Box>
+                <SettingsCard>
+                  <SettingsRow
+                    icon={<LogoutIcon sx={{ fontSize: 18 }} />}
+                    label="Deconnexion"
+                    danger
+                    onClick={() => logout()}
+                  />
+                </SettingsCard>
+              </Box>
+            )}
+          </Stack>
+        </Grid>
+        {/* end left col */}
 
-      {/* Logout */}
-      {isAuthenticated && (
-        <Box sx={{ mb: 3 }}>
-          <SettingsCard>
-            <SettingsRow
-              icon={<LogoutIcon sx={{ fontSize: 18 }} />}
-              label="Deconnexion"
-              danger
-              onClick={() => logout()}
-            />
-          </SettingsCard>
-        </Box>
-      )}
+        {/* ── RIGHT col: Comptes liés + Votre avis + A propos ── */}
+        <Grid size={{ xs: 12, lg: 7 }}>
+          <Stack spacing={3}>
+            {/* Linked accounts */}
+            {isAuthenticated && (
+              <Box>
+                <SectionTitle>Comptes lies</SectionTitle>
+                <SettingsCard>
+                  {linkedError && (
+                    <Alert
+                      severity="info"
+                      sx={{ m: 1.5, borderRadius: 2, fontSize: '0.78rem' }}
+                    >
+                      {linkedError}
+                    </Alert>
+                  )}
+                  {socialProviders.map((provider) => {
+                    const linked = isProviderLinked(provider.strategy);
+                    const email = getLinkedEmail(provider.strategy);
+                    const loading = linkedLoading === provider.strategy;
 
-      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'center', mt: 2, mb: 1 }}>
+                    return (
+                      <SettingsRow
+                        key={provider.key}
+                        icon={provider.icon}
+                        iconBg={linked ? 'rgba(46,125,50,0.08)' : undefined}
+                        label={provider.label}
+                        sublabel={
+                          linked ? (email ?? 'Connecte') : 'Non connecte'
+                        }
+                        trailing={
+                          linked ? (
+                            <Button
+                              size="small"
+                              color="error"
+                              disabled={loading}
+                              onClick={() =>
+                                handleDisconnect(provider.strategy)
+                              }
+                              sx={{
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                minWidth: 0,
+                              }}
+                            >
+                              {loading ? '...' : 'Retirer'}
+                            </Button>
+                          ) : (
+                            <Button
+                              size="small"
+                              disabled={loading}
+                              onClick={() => handleConnect(provider.strategy)}
+                              sx={{
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                minWidth: 0,
+                                color: 'primary.main',
+                              }}
+                            >
+                              {loading ? '...' : 'Lier'}
+                            </Button>
+                          )
+                        }
+                      />
+                    );
+                  })}
+                </SettingsCard>
+              </Box>
+            )}
+
+            {/* Survey */}
+            <Box>
+              <SectionTitle>Votre avis</SectionTitle>
+              <SettingsCard>
+                {isSurveyLoading ? (
+                  <Box sx={{ p: 2 }}>
+                    <Skeleton variant="text" width="60%" />
+                    <Skeleton variant="text" width="40%" />
+                  </Box>
+                ) : activeSurvey ? (
+                  <SettingsRow
+                    icon={<AssignmentIcon sx={{ fontSize: 18 }} />}
+                    iconBg={surveyAnswered ? 'rgba(46,125,50,0.08)' : undefined}
+                    label={activeSurvey.title}
+                    sublabel={
+                      surveyAnswered
+                        ? 'Merci pour votre participation !'
+                        : '2 min — Donnez votre avis'
+                    }
+                    onClick={
+                      surveyAnswered
+                        ? undefined
+                        : () => router.push(`/sondage/${activeSurvey.id}`)
+                    }
+                    trailing={
+                      surveyAnswered ? (
+                        <Chip
+                          label="Fait"
+                          size="small"
+                          color="success"
+                          sx={{
+                            height: 22,
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                          }}
+                        />
+                      ) : undefined
+                    }
+                  />
+                ) : (
+                  <SettingsRow
+                    icon={<AssignmentIcon sx={{ fontSize: 18 }} />}
+                    iconBg="rgba(0,0,0,0.04)"
+                    label="Aucun sondage actif"
+                    sublabel="Revenez bientot"
+                  />
+                )}
+              </SettingsCard>
+            </Box>
+
+            {/* About */}
+            <Box>
+              <SectionTitle>A propos</SectionTitle>
+              <SettingsCard>
+                {[
+                  { label: 'Aide & FAQ', href: '/aide' },
+                  { label: "Conditions d'utilisation", href: '/conditions' },
+                  { label: 'Confidentialite', href: '/confidentialite' },
+                  { label: 'Nous contacter', href: '/contact' },
+                ].map((item) => (
+                  <SettingsRow
+                    key={item.href}
+                    icon={<HelpIcon sx={{ fontSize: 18 }} />}
+                    iconBg="rgba(0,0,0,0.04)"
+                    label={item.label}
+                    onClick={() => router.push(item.href)}
+                  />
+                ))}
+              </SettingsCard>
+            </Box>
+          </Stack>
+        </Grid>
+        {/* end right col */}
+      </Grid>
+      {/* end grid */}
+
+      <Typography
+        variant="caption"
+        color="text.disabled"
+        sx={{ display: 'block', textAlign: 'center', mt: 2, mb: 1 }}
+      >
         KeyHome v1.0 — Propulse par NeoCraftTeam
       </Typography>
     </Container>

@@ -5,7 +5,7 @@ import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import api from '@/lib/api';
 import { loginHistoryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/AuthProvider';
-import { authService } from '@/services/auth.service';
+
 import { ownerService, type LoginHistoryEntry } from '@/services/owner.service';
 import { useUser } from '@clerk/nextjs';
 import {
@@ -16,7 +16,6 @@ import {
   DevicesOther as DevicesOtherIcon,
   Download as DownloadIcon,
   History as HistoryIcon,
-  Lock as LockIcon,
   Logout as LogoutIcon,
   PhoneAndroid as PhoneAndroidIcon,
   TabletMac as TabletMacIcon,
@@ -39,7 +38,6 @@ import {
   Skeleton,
   Snackbar,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -80,12 +78,6 @@ export default function OwnerSecurityPage() {
     message: string;
     severity: 'success' | 'error';
   } | null>(null);
-  const [pwForm, setPwForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [pwError, setPwError] = useState('');
 
   // ─── Login History ───
   const {
@@ -116,29 +108,6 @@ export default function OwnerSecurityPage() {
     },
   });
 
-  // ─── Password Change ───
-  const updatePasswordMutation = useMutation({
-    mutationFn: (payload: {
-      current_password: string;
-      new_password: string;
-      new_password_confirmation: string;
-    }) => authService.updatePassword(payload),
-    onSuccess: () => {
-      setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setPwError('');
-      setSnackbar({
-        message: 'Mot de passe mis à jour avec succès',
-        severity: 'success',
-      });
-    },
-    onError: () => {
-      setSnackbar({
-        message: 'Erreur lors de la mise à jour du mot de passe',
-        severity: 'error',
-      });
-    },
-  });
-
   // ─── GDPR Data Export ───
   const dataExportMutation = useMutation({
     mutationFn: async () => {
@@ -158,33 +127,6 @@ export default function OwnerSecurityPage() {
       });
     },
   });
-
-  const handlePasswordSubmit = () => {
-    setPwError('');
-    if (
-      !pwForm.currentPassword ||
-      !pwForm.newPassword ||
-      !pwForm.confirmPassword
-    ) {
-      setPwError('Tous les champs sont obligatoires');
-      return;
-    }
-    if (pwForm.newPassword !== pwForm.confirmPassword) {
-      setPwError('Les mots de passe ne correspondent pas');
-      return;
-    }
-    if (pwForm.newPassword.length < 8) {
-      setPwError(
-        'Le nouveau mot de passe doit comporter au moins 8 caractères'
-      );
-      return;
-    }
-    updatePasswordMutation.mutate({
-      current_password: pwForm.currentPassword,
-      new_password: pwForm.newPassword,
-      new_password_confirmation: pwForm.confirmPassword,
-    });
-  };
 
   const entries = historyData?.data ?? [];
   const meta = historyData?.meta;
@@ -210,7 +152,7 @@ export default function OwnerSecurityPage() {
 
       <Grid container spacing={3} alignItems="flex-start">
         {/* ── LEFT col: Login History ── */}
-        <Grid size={{ xs: 12, lg: 7 }}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           {/* ─── Section 1: Login History ─── */}
           <Card
             sx={{
@@ -368,8 +310,8 @@ export default function OwnerSecurityPage() {
         </Grid>
         {/* end left col */}
 
-        {/* ── RIGHT col: Sessions + Password + GDPR ── */}
-        <Grid size={{ xs: 12, lg: 5 }}>
+        {/* ── RIGHT col: Sessions + GDPR ── */}
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Stack spacing={3}>
             {/* ─── Section 2: Active Sessions ─── */}
             <Card
@@ -437,93 +379,7 @@ export default function OwnerSecurityPage() {
               </CardContent>
             </Card>
 
-            {/* ─── Section 3: Change Password ─── */}
-            <Card
-              sx={{
-                borderRadius: 3,
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  gap={1}
-                  sx={{ mb: 2 }}
-                >
-                  <LockIcon sx={{ color: 'text.secondary' }} />
-                  <Typography variant="h6" fontWeight={700}>
-                    Modifier le mot de passe
-                  </Typography>
-                </Stack>
-
-                <Stack spacing={2} sx={{ maxWidth: 480 }}>
-                  {pwError && (
-                    <Alert severity="error" sx={{ borderRadius: 2 }}>
-                      {pwError}
-                    </Alert>
-                  )}
-                  <TextField
-                    label="Mot de passe actuel"
-                    type="password"
-                    size="small"
-                    value={pwForm.currentPassword}
-                    onChange={(e) =>
-                      setPwForm((f) => ({
-                        ...f,
-                        currentPassword: e.target.value,
-                      }))
-                    }
-                    disabled={updatePasswordMutation.isPending}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                  <TextField
-                    label="Nouveau mot de passe"
-                    type="password"
-                    size="small"
-                    value={pwForm.newPassword}
-                    onChange={(e) =>
-                      setPwForm((f) => ({ ...f, newPassword: e.target.value }))
-                    }
-                    disabled={updatePasswordMutation.isPending}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                  <TextField
-                    label="Confirmer le nouveau mot de passe"
-                    type="password"
-                    size="small"
-                    value={pwForm.confirmPassword}
-                    onChange={(e) =>
-                      setPwForm((f) => ({
-                        ...f,
-                        confirmPassword: e.target.value,
-                      }))
-                    }
-                    disabled={updatePasswordMutation.isPending}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                  <Box>
-                    <Button
-                      variant="contained"
-                      onClick={handlePasswordSubmit}
-                      disabled={updatePasswordMutation.isPending}
-                      sx={{
-                        borderRadius: 2,
-                        textTransform: 'none',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {updatePasswordMutation.isPending
-                        ? 'Mise à jour...'
-                        : 'Mettre à jour le mot de passe'}
-                    </Button>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-
-            {/* ─── Section 4: GDPR Data Export ─── */}
+            {/* ─── Section 3: GDPR Data Export ─── */}
             <Card
               sx={{
                 borderRadius: 3,
