@@ -3,6 +3,8 @@
 import AdCard from '@/components/ads/AdCard';
 import PaymentHistoryTableModern from '@/components/payment/PaymentHistoryTableModern';
 import FadeIn from '@/components/ui/FadeIn';
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar';
 import PhoneField from '@/components/ui/PhoneField';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -21,7 +23,6 @@ import { City } from '@/types';
 import {
   Assignment as AssignmentIcon,
   Cancel as CancelIcon,
-  ChevronLeft as ChevronLeftIcon,
   CheckCircleOutline as CheckCircleOutlineIcon,
   Edit as EditIcon,
   Favorite as FavoriteIcon,
@@ -39,12 +40,13 @@ import {
   Avatar,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Container,
+  FormControlLabel,
   Grid,
   IconButton,
   InputAdornment,
-  LinearProgress,
   Paper,
   Snackbar,
   Tab,
@@ -62,36 +64,6 @@ interface TabPanelProps {
   value: number;
 }
 
-function getPasswordStrength(password: string): {
-  score: number;
-  label: string;
-  color: string;
-} {
-  let score = 0;
-  if (password.length >= 8) {
-    score += 25;
-  }
-  if (/[A-Z]/.test(password)) {
-    score += 25;
-  }
-  if (/[0-9]/.test(password)) {
-    score += 25;
-  }
-  if (/[^A-Za-z0-9]/.test(password)) {
-    score += 25;
-  }
-  if (score <= 25) {
-    return { score, label: 'Faible', color: 'error.main' };
-  }
-  if (score <= 50) {
-    return { score, label: 'Moyen', color: 'warning.main' };
-  }
-  if (score <= 75) {
-    return { score, label: 'Bon', color: 'success.main' };
-  }
-  return { score, label: 'Excellent', color: 'success.light' };
-}
-
 function TabPanel({ children, value, index }: TabPanelProps) {
   return value === index ? <Box sx={{ py: 3 }}>{children}</Box> : null;
 }
@@ -105,6 +77,7 @@ export default function ProfilePage() {
     firstname: user?.firstname || '',
     lastname: user?.lastname || '',
     phone_number: user?.phone_number || '',
+    phone_is_whatsapp: user?.phone_is_whatsapp ?? false,
   });
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [cityInput, setCityInput] = useState(user?.city_name || '');
@@ -186,9 +159,9 @@ export default function ProfilePage() {
       return;
     }
 
-    if (file.size > 20 * 1024 * 1024) {
+    if (file.size > 5 * 1024 * 1024) {
       setSnackbar({
-        message: "L'image ne doit pas dépasser 20 Mo.",
+        message: "L'image ne doit pas dépasser 5 Mo.",
         severity: 'error',
       });
       e.target.value = '';
@@ -225,6 +198,10 @@ export default function ProfilePage() {
           normalizePhoneLikeBackend(editForm.phone_number)
         );
       }
+      formData.append(
+        'phone_is_whatsapp',
+        editForm.phone_is_whatsapp ? '1' : '0'
+      );
       if (selectedCity) {
         formData.append('city_id', selectedCity.id);
       }
@@ -296,17 +273,9 @@ export default function ProfilePage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
-      {/* Back navigation */}
-      <Box sx={{ mb: 2 }}>
-        <IconButton
-          onClick={() => router.back()}
-          size="small"
-          aria-label="Retour"
-          sx={{ border: '1px solid', borderColor: 'divider' }}
-        >
-          <ChevronLeftIcon />
-        </IconButton>
-      </Box>
+      <PageBreadcrumbs
+        items={[{ label: 'Accueil', href: '/home' }, { label: 'Mon profil' }]}
+      />
       {/* Profile header */}
       <FadeIn delay={0.1} direction="up">
         <Paper
@@ -402,6 +371,7 @@ export default function ProfilePage() {
                     firstname: user.firstname,
                     lastname: user.lastname,
                     phone_number: user.phone_number || '',
+                    phone_is_whatsapp: user.phone_is_whatsapp ?? false,
                   });
                   setSelectedCity(
                     user.city_id && user.city_name
@@ -579,6 +549,29 @@ export default function ProfilePage() {
               />
             )}
           </Grid>
+          {isEditing && (
+            <Grid size={{ xs: 12 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={editForm.phone_is_whatsapp}
+                    onChange={(e) =>
+                      setEditForm((f) => ({
+                        ...f,
+                        phone_is_whatsapp: e.target.checked,
+                      }))
+                    }
+                    color="primary"
+                  />
+                }
+                label={
+                  <Typography variant="body2" color="text.secondary">
+                    Ce numéro est disponible sur WhatsApp
+                  </Typography>
+                }
+              />
+            </Grid>
+          )}
         </Grid>
 
         {isEditing && (
@@ -607,6 +600,7 @@ export default function ProfilePage() {
                   firstname: user.firstname,
                   lastname: user.lastname,
                   phone_number: user.phone_number || '',
+                  phone_is_whatsapp: user.phone_is_whatsapp ?? false,
                 });
                 setCityInput(user.city_name || '');
                 setSelectedCity(null);
@@ -753,39 +747,7 @@ export default function ProfilePage() {
             }}
             sx={{ mb: passwordForm.new_password ? 1 : 2 }}
           />
-          {passwordForm.new_password.length > 0 &&
-            (() => {
-              const strength = getPasswordStrength(passwordForm.new_password);
-              return (
-                <Box sx={{ mb: 2 }}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={strength.score}
-                    sx={{
-                      height: 6,
-                      borderRadius: 3,
-                      bgcolor: 'grey.200',
-                      '& .MuiLinearProgress-bar': {
-                        bgcolor: strength.color,
-                        borderRadius: 3,
-                        transition: 'width 0.4s ease',
-                      },
-                    }}
-                  />
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: strength.color,
-                      fontWeight: 600,
-                      mt: 0.5,
-                      display: 'block',
-                    }}
-                  >
-                    Force : {strength.label}
-                  </Typography>
-                </Box>
-              );
-            })()}
+          <PasswordStrengthBar password={passwordForm.new_password} />
           <TextField
             fullWidth
             label="Confirmer le nouveau mot de passe"
