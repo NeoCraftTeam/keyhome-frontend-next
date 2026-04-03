@@ -85,9 +85,14 @@ function buildCsp(nonce: string): string {
     'https://api.flutterwave.com',
     // Storage
     'https://*.r2.dev',
-    // App domains — catch-all for keyhome.app and neocraft.dev subdomains
+    // App domains
+    // *.keyhome.app  covers api.keyhome.app, www.keyhome.app, etc. (one level)
+    // *.keyhome.neocraft.dev covers api.keyhome.neocraft.dev, preview.keyhome.neocraft.dev, etc.
+    // *.neocraft.dev only covers one level so api.keyhome.neocraft.dev needs the line above
     'https://*.keyhome.app',
+    'https://*.keyhome.neocraft.dev',
     'https://*.neocraft.dev',
+    'https://api.preview.neocraft.dev',
     apiOrigin,
     backendOrigin,
   ]
@@ -103,18 +108,20 @@ function buildCsp(nonce: string): string {
   const directives = [
     "default-src 'self'",
     // script-src: nonce + explicit third-party origins (Clerk live host when pk_live_)
-    `script-src 'self' 'nonce-${nonce}'${scriptSrcEvalOrStrict ? ` ${scriptSrcEvalOrStrict}` : ''} https://api.mapbox.com https://*.clerk.accounts.dev${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://*.keyhome.app https://*.neocraft.dev blob:`,
+    `script-src 'self' 'nonce-${nonce}'${scriptSrcEvalOrStrict ? ` ${scriptSrcEvalOrStrict}` : ''} https://api.mapbox.com https://*.clerk.accounts.dev${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:`,
+
     // style-src: 'unsafe-inline' only — no nonce.
     // CSP3 spec: when a nonce is present in style-src, 'unsafe-inline' is silently ignored,
     // which blocks all Emotion/MUI <style> tags that don't carry the nonce.
     // Since MUI injects many unnonce'd styles, we keep 'unsafe-inline' here without a nonce.
     // The nonce is only applied to script-src where it is effective and needed.
-    `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://*.keyhome.app https://*.neocraft.dev`,
-    `font-src 'self' https://fonts.gstatic.com https://ray.st https://*.keyhome.app https://*.neocraft.dev`,
+    `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
+    `font-src 'self' https://fonts.gstatic.com https://ray.st https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
     "worker-src 'self' blob:",
-    `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev ${apiOrigin} ${backendOrigin}`,
+    `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev ${apiOrigin} ${backendOrigin}`,
+
     `connect-src ${connectSources}`,
-    `frame-src https://*.clerk.accounts.dev https://*.clerk.com${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://challenges.cloudflare.com https://checkout.flutterwave.com https://vercel.live https://*.keyhome.app https://*.neocraft.dev`,
+    `frame-src https://*.clerk.accounts.dev https://*.clerk.com${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://challenges.cloudflare.com https://checkout.flutterwave.com https://vercel.live https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
     "frame-ancestors 'none'",
   ];
 
