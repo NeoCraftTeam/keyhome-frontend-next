@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import AppLoader from '@/components/ui/AppLoader';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
+import { brandAgent } from '@/theme/tokens';
 import { useAuth as useClerkAuth, useClerk } from '@clerk/nextjs';
 import { Box, Typography } from '@mui/material';
 import Image from 'next/image';
@@ -12,56 +13,83 @@ import { useEffect, useRef } from 'react';
 
 /**
  * Custom OAuth SSO callback — zero Clerk hosted UI.
- * Uses Clerk's low-level handleRedirectCallback to intercept missing_requirements
- * and redirect to our own /complete-profile page instead of Clerk's hosted page.
+ *
+ * Two visits:
+ * 1. First visit (OAuth params in URL, isSignedIn=false): handleRedirectCallback
+ *    processes the OAuth, creates the Clerk session, and navigates to
+ *    redirectUrlComplete = /sso-callback (clean URL).
+ * 2. Second visit (clean URL, isSignedIn=true): guard fires, AuthProvider
+ *    calls clerkExchange and routes to /verify-otp or the right dashboard.
+ *
+ * If clerkExchange fails (API down, network error), AuthProvider now redirects
+ * to login — but we still add an 8 s fallback here as a belt-and-suspenders
+ * safety net.
  */
 export default function SSOCallbackPage() {
   const { handleRedirectCallback } = useClerk();
-  // isLoaded + isSignedIn let us detect the post-callback re-entry:
-  // after Clerk processes the OAuth and redirects back to /sso-callback
-  // (redirectUrlComplete), the session is already created. We must NOT call
-  // handleRedirectCallback again — just let AuthProvider drive the routing.
   const { isLoaded, isSignedIn } = useClerkAuth();
   const router = useRouter();
   const handled = useRef(false);
+  /** Single shared timeout ref — cleaned up on unmount regardless of which
+   *  effect set it, so stale redirects never fire on the next page. */
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Read intent synchronously — safe on client, sessionStorage is available immediately.
+  // Read intent synchronously (sessionStorage is available on the client immediately).
   const isAgentIntent =
     typeof window !== 'undefined' &&
     sessionStorage.getItem('kh_registration_intent') === 'agent';
 
+  // ─── Global cleanup – cancel any pending redirect when the component unmounts
   useEffect(() => {
-    // Not ready yet — wait for Clerk SDK to finish loading.
-    if (!isLoaded) {
-      return;
-    }
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
 
-    // Race-condition guard: Clerk has already created the session
-    // (post-callback re-entry via redirectUrlComplete = /sso-callback).
-    // handleRedirectCallback must NOT run twice — let AuthProvider handle
-    // the clerkExchange and route to /verify-otp or /owner/dashboard.
-    if (isSignedIn) {
-      return;
-    }
+  // ─── Second visit: isSignedIn=true — AuthProvider is handling clerkExchange.
+  // Add an 8 s fallback so the user is never stuck on the spinner indefinitely.
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
 
-    if (handled.current) {
-      return;
-    }
+    const fallbackPath = isAgentIntent ? '/owner/dashboard' : '/home';
+    timeoutRef.current = setTimeout(() => {
+      console.warn(
+        '[sso-callback] AuthProvider routing timed out — forcing fallback'
+      );
+      router.replace(fallbackPath);
+    }, 8000);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [isLoaded, isSignedIn, isAgentIntent, router]);
+
+  // ─── First visit: isSignedIn=false — process the OAuth callback.
+  useEffect(() => {
+    if (!isLoaded) return;
+    // Post-callback re-entry: session already created — let AuthProvider route.
+    if (isSignedIn) return;
+    if (handled.current) return;
 
     handled.current = true;
 
     const origin = window.location.origin;
-
-    // Fallback destination when Clerk has no stored redirectUrlComplete.
-    // Always use /home — never a login page. AuthProvider will route to the
-    // correct dashboard once clerkExchange resolves the user’s role.
+    // Fallback when Clerk has no stored redirectUrlComplete.
     const fallbackUrl = `${origin}/home`;
-    // On hard errors (timeout / Clerk exception), redirect to the context-
-    // appropriate login so the user can retry — but this path is rare.
+    // On hard errors (timeout / exception), redirect to context-appropriate login.
     const errorPath = isAgentIntent ? '/owner/login' : '/login';
 
-    // Safety timeout — if Clerk hangs (e.g. Turnstile challenge), redirect after 10s
-    const timeout = setTimeout(() => {
+    // Safety timeout — if Clerk hangs (e.g. Turnstile challenge), redirect after 10 s.
+    // NOTE: we deliberately do NOT clear this in .then(). If handleRedirectCallback
+    // navigates away the component unmounts and the cleanup above clears it. If it
+    // resolves WITHOUT navigating (unusual), we want the timeout to fire as a net.
+    timeoutRef.current = setTimeout(() => {
       console.warn('[sso-callback] Timed out waiting for Clerk redirect');
       router.replace(errorPath);
     }, 10000);
@@ -76,14 +104,16 @@ export default function SSOCallbackPage() {
       signInFallbackRedirectUrl: fallbackUrl,
       signUpFallbackRedirectUrl: fallbackUrl,
       continueSignUpUrl,
-    })
-      .then(() => clearTimeout(timeout))
-      .catch((err: unknown) => {
-        clearTimeout(timeout);
-        console.error('[sso-callback] handleRedirectCallback error:', err);
-        router.replace(errorPath);
-      });
-  }, [handleRedirectCallback, router, isLoaded, isSignedIn]);
+    }).catch((err: unknown) => {
+      // On error, cancel the timeout immediately (we're redirecting right now).
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      console.error('[sso-callback] handleRedirectCallback error:', err);
+      router.replace(errorPath);
+    });
+  }, [handleRedirectCallback, router, isLoaded, isSignedIn, isAgentIntent]);
 
   return (
     <Box
@@ -112,7 +142,10 @@ export default function SSOCallbackPage() {
           {isAgentIntent ? 'KeyHome Business' : 'KeyHome'}
         </Typography>
       </Box>
-      <AppLoader size={48} />
+      <AppLoader
+        size={48}
+        color={isAgentIntent ? brandAgent.primary : undefined}
+      />
       <Typography variant="body2" color="text.secondary">
         Connexion en cours…
       </Typography>

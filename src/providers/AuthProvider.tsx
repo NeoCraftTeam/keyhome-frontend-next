@@ -271,17 +271,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getToken()
       .then(async (clerkToken) => {
-        if (runId !== authRunRef.current || !clerkToken) {
+        if (runId !== authRunRef.current) {
+          return;
+        }
+
+        // Read intent BEFORE the try-catch so it's accessible in the catch handler.
+        const intentRaw =
+          typeof window !== 'undefined'
+            ? sessionStorage.getItem('kh_registration_intent')
+            : null;
+
+        if (!clerkToken) {
+          // Clerk session exists but token is unavailable (expired / refresh failed).
+          // Redirect to the appropriate login so the user can retry.
+          const currentPath = pathnameRef.current ?? '';
+          const isOwnerCtx =
+            currentPath.startsWith('/owner') || intentRaw === 'agent';
+          router.replace(isOwnerCtx ? '/owner/login' : '/login');
           return;
         }
 
         registerTokenGetter(() => getToken());
 
         try {
-          const intentRaw =
-            typeof window !== 'undefined'
-              ? sessionStorage.getItem('kh_registration_intent')
-              : null;
           const registrationIntent =
             intentRaw === 'agent' ? 'agent' : 'customer';
           const result = await authService.clerkExchange(clerkToken, {
@@ -348,11 +360,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             laravelUser.role === UserRole.ADMIN;
 
           if (isOwnerRole && !expectedOwnerContext) {
-            // Owner Clerk session in a customer-context tab — silently abort.
-            // The tab stays unauthenticated; user can sign in via email/password.
-            clearSanctumInMemoryOnly();
-            setUserState(null);
-            clearRoleCookie();
+            // Owner account detected without an explicit owner-context intent
+            // (e.g. the user clicked Google from a customer page, or intent was
+            // lost). Authenticate them properly and route to their owner space.
+            persistOwnerToken(sanctumToken);
+            setToken(sanctumToken);
+            setUserState(laravelUser);
+            setRoleCookie(laravelUser.role ?? UserRole.AGENT);
+            router.replace('/owner/dashboard');
             return;
           }
 
@@ -393,6 +408,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (typeof window !== 'undefined') {
             sessionStorage.removeItem('kh_registration_intent');
           }
+          // Redirect to the appropriate login so the user is not silently stuck
+          // on /sso-callback (or wherever clerkExchange was triggered from).
+          const failPath = pathnameRef.current ?? '';
+          const failIsOwner =
+            failPath.startsWith('/owner') || intentRaw === 'agent';
+          router.replace(failIsOwner ? '/owner/login' : '/login');
         }
       })
       .finally(() => {
