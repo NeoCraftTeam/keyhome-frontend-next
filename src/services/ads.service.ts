@@ -250,11 +250,23 @@ export const adsService = {
   async getNeighborhoodScorecard(adId: string): Promise<{
     data: {
       global_score: number;
+      status: 'ok' | 'degraded' | 'unavailable';
       cached: boolean;
       computed_at: string | null;
       categories: Record<
         string,
-        { score: number; poi_count: number; label: string; radius_m: number }
+        {
+          score: number;
+          poi_count: number;
+          label: string;
+          radius_m: number;
+          nearest_poi: {
+            osm_id: string;
+            name: string | null;
+            distance_m: number;
+            mode: 'walking' | 'air';
+          } | null;
+        }
       >;
     };
   }> {
