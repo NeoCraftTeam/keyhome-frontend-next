@@ -1781,6 +1781,7 @@ function AdDetailContent() {
                       <DirectionsPanel
                         adLat={ad.location.latitude}
                         adLng={ad.location.longitude}
+                        userLocation={userLocation}
                       />
                     )}
                     <Divider sx={{ my: 3 }} />

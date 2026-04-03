@@ -119,6 +119,9 @@ export default function IsochroneFilter({ mapRef }: Props) {
 
       map.addSource(SOURCE_ID, { type: 'geojson', data: geojson });
 
+      // Insert below cluster layers when they exist so the polygon renders under ad pins
+      const beforeId = map.getLayer('clusters') ? 'clusters' : undefined;
+
       map.addLayer(
         {
           id: FILL_ID,
@@ -129,8 +132,8 @@ export default function IsochroneFilter({ mapRef }: Props) {
             'fill-opacity': 0.12,
           },
         },
-        'clusters'
-      ); // Insert below cluster layer if it exists
+        beforeId
+      );
 
       map.addLayer(
         {
@@ -143,7 +146,7 @@ export default function IsochroneFilter({ mapRef }: Props) {
             'line-opacity': 0.8,
           },
         },
-        'clusters'
+        beforeId
       );
 
       setActive(true);

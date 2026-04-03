@@ -158,10 +158,17 @@ function SummaryCard({ result }: { result: DirectionsResult }) {
 interface Props {
   adLat: number;
   adLng: number;
+  /** Pass the already-fetched location to avoid a second geolocation request */
+  userLocation?: import('@/hooks/useUserLocation').UserLocation | null;
 }
 
-export default function DirectionsPanel({ adLat, adLng }: Props) {
-  const { location: userLocation } = useUserLocation();
+export default function DirectionsPanel({
+  adLat,
+  adLng,
+  userLocation: userLocationProp,
+}: Props) {
+  const { location: userLocationInternal } = useUserLocation();
+  const userLocation = userLocationProp ?? userLocationInternal;
 
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<OrsProfile>('driving-car');
@@ -217,7 +224,13 @@ export default function DirectionsPanel({ adLat, adLng }: Props) {
       );
 
       const all = await Promise.all(fetches);
-      setResults(all.filter((r): r is DirectionsResult => r !== null));
+      const valid = all.filter((r): r is DirectionsResult => r !== null);
+      setResults(valid);
+      if (valid.length === 0) {
+        setError(
+          "Calcul d'itinéraire indisponible. Vérifiez que ORS_API_KEY est configuré."
+        );
+      }
     } catch {
       setError("Calcul d'itinéraire indisponible.");
     } finally {
