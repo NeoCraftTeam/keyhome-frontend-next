@@ -5,19 +5,50 @@ import { authService } from '@/services/auth.service';
 import { UserRole } from '@/types';
 
 /* ── Dual in-memory token store ──────────────────────────────────────
- * Never persisted to localStorage (XSS-safe).
- * Owner and client sessions are fully isolated: each has its own
- * in-memory token slot.  The Axios interceptor picks the correct one
- * based on the current route (see `getActiveToken`).
+ * Primary storage: module-level variables (fast, in-memory).
+ * Backup storage: sessionStorage — survives page refresh within the
+ * same tab but is cleared when the tab is closed (XSS window limited
+ * to the current session, not persistent like localStorage).
+ * Owner and client sessions are fully isolated: each has its own slot.
  * ─────────────────────────────────────────────────────────────────── */
 
-let ownerInMemoryToken: string | null = null;
-let clientInMemoryToken: string | null = null;
+const SS_KEY_OWNER = 'kh_s_owner_token';
+const SS_KEY_CLIENT = 'kh_s_client_token';
+
+function ssRead(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+function ssWrite(key: string, value: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {}
+}
+function ssRemove(key: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.removeItem(key);
+  } catch {}
+}
+
+// Hydrate in-memory slots from sessionStorage on module load so that
+// page refreshes restore the previous session without any async work.
+let ownerInMemoryToken: string | null =
+  typeof window !== 'undefined' ? ssRead(SS_KEY_OWNER) : null;
+let clientInMemoryToken: string | null =
+  typeof window !== 'undefined' ? ssRead(SS_KEY_CLIENT) : null;
 
 /** @internal — Reset module state between tests. Not for production use. */
 export function __resetModuleStateForTests(): void {
   ownerInMemoryToken = null;
   clientInMemoryToken = null;
+  ssRemove(SS_KEY_OWNER);
+  ssRemove(SS_KEY_CLIENT);
 }
 
 /** Returns whichever token matches the current route context. */
@@ -47,19 +78,25 @@ export function hasAnySanctumInMemory(): boolean {
 export function clearSanctumInMemoryOnly(): void {
   ownerInMemoryToken = null;
   clientInMemoryToken = null;
+  ssRemove(SS_KEY_OWNER);
+  ssRemove(SS_KEY_CLIENT);
 }
 
 /* ── Session persistence ─────────────────────────────────────────── */
 
-/** Store a Sanctum token in the owner slot (never localStorage). */
+/** Store a Sanctum token in the owner slot. Persists to sessionStorage so page
+ *  refreshes don't log the user out (sessionStorage is cleared on tab close). */
 export function persistOwnerToken(sanctumToken: string): void {
   ownerInMemoryToken = sanctumToken;
+  ssWrite(SS_KEY_OWNER, sanctumToken);
   registerTokenGetter(async () => getActiveToken());
 }
 
-/** Store a Sanctum token in the client slot (never localStorage). */
+/** Store a Sanctum token in the client slot. Persists to sessionStorage so page
+ *  refreshes don't log the user out (sessionStorage is cleared on tab close). */
 export function persistClientToken(sanctumToken: string): void {
   clientInMemoryToken = sanctumToken;
+  ssWrite(SS_KEY_CLIENT, sanctumToken);
   registerTokenGetter(async () => getActiveToken());
 }
 
@@ -78,11 +115,13 @@ export function persistInMemoryToken(sanctumToken: string): void {
 
 export function clearOwnerToken(): void {
   ownerInMemoryToken = null;
+  ssRemove(SS_KEY_OWNER);
   registerTokenGetter(async () => getActiveToken());
 }
 
 export function clearClientToken(): void {
   clientInMemoryToken = null;
+  ssRemove(SS_KEY_CLIENT);
   registerTokenGetter(async () => getActiveToken());
 }
 
@@ -98,6 +137,8 @@ export function clearInMemoryToken(): void {
 export function clearAllInMemoryTokens(): void {
   ownerInMemoryToken = null;
   clientInMemoryToken = null;
+  ssRemove(SS_KEY_OWNER);
+  ssRemove(SS_KEY_CLIENT);
   registerTokenGetter(() => Promise.resolve(null));
 }
 
@@ -202,6 +243,7 @@ const CLIENT_SESSION_KEYS = [
   'kh_redirect_after_login',
   'kh_register_account_role',
   'kh_register_role',
+  SS_KEY_CLIENT,
 ] as const;
 
 /** Keys that belong exclusively to the owner (agent) flow. */
@@ -211,6 +253,7 @@ const OWNER_SESSION_KEYS = [
   'kh_owner_redirect',
   'kh_owner_post_otp_token',
   'kh_registration_intent',
+  SS_KEY_OWNER,
 ] as const;
 
 /**
