@@ -313,7 +313,7 @@ export default function OwnerLoginPage() {
             >
               Pas encore de compte ?{' '}
               <Link
-                href="/register?role=agent"
+                href="/owner/register"
                 underline="hover"
                 sx={{ fontWeight: 600, color: 'primary.main' }}
               >

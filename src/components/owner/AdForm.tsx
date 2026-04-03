@@ -45,6 +45,8 @@ interface AdFormProps {
       propertyConditionPdf?: File | null;
     }
   ) => Promise<void>;
+  /** Called right before the API submit. Return `false` to abort (e.g. profile incomplete). The draft is NOT cleared on abort. */
+  onBeforeSubmit?: (values: AdFormValues) => Promise<boolean>;
   onCancel?: () => void;
   submitLabel?: string;
   isSubmitting?: boolean;
@@ -56,6 +58,7 @@ export default function AdForm({
   initialData,
   ad,
   onSubmit,
+  onBeforeSubmit,
   onCancel,
   submitLabel = "Créer l'annonce",
   isSubmitting = false,
@@ -349,6 +352,15 @@ export default function AdForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || !validate()) return;
+
+    // Optional pre-submit gate (e.g. profile completeness check).
+    // If it returns false, we abort WITHOUT clearing the draft so the user can
+    // complete whatever is required and come back to find their work intact.
+    if (onBeforeSubmit) {
+      const shouldProceed = await onBeforeSubmit(values);
+      if (!shouldProceed) return;
+    }
+
     await onSubmit(values, images, {
       imagesToDelete: imagesToDelete.length > 0 ? imagesToDelete : undefined,
       tourScenes: tourScenes.length > 0 ? tourScenes : undefined,
