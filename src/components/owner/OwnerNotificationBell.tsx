@@ -12,6 +12,7 @@ import {
   markNotificationAsRead,
   type LaravelNotification,
 } from '@/services/notifications.service';
+import EmptyState from '@/components/ui/EmptyState';
 import {
   CheckCircleOutline as CheckAllIcon,
   NotificationsNone as NotificationsNoneIcon,
@@ -58,7 +59,10 @@ export default function OwnerNotificationBell() {
   } = useQuery({
     queryKey: NOTIFICATIONS_QK,
     queryFn: async () => {
-      const { data } = await fetchNotifications({ per_page: 15, unread_only: false });
+      const { data } = await fetchNotifications({
+        per_page: 15,
+        unread_only: false,
+      });
       return data;
     },
     enabled: open,
@@ -115,9 +119,17 @@ export default function OwnerNotificationBell() {
         >
           <Badge
             badgeContent={unreadCount > 99 ? '99+' : unreadCount}
-            color="error"
+            color="primary"
             overlap="circular"
             invisible={unreadCount === 0}
+            sx={{
+              '& .MuiBadge-badge': {
+                bgcolor: 'primary.main',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: '0.6rem',
+              },
+            }}
           >
             <NotificationsIcon sx={{ color: 'text.secondary' }} />
           </Badge>
@@ -158,10 +170,17 @@ export default function OwnerNotificationBell() {
           {unreadCount > 0 && (
             <Button
               size="small"
-              startIcon={<CheckAllIcon />}
+              startIcon={<CheckAllIcon sx={{ fontSize: 16 }} />}
               onClick={() => markAllMutation.mutate()}
               disabled={markAllMutation.isPending}
-              sx={{ textTransform: 'none', fontWeight: 600 }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                color: 'primary.main',
+                borderRadius: 1.5,
+                '&:hover': { bgcolor: 'rgba(13,148,136,0.08)' },
+              }}
             >
               Tout lu
             </Button>
@@ -171,15 +190,16 @@ export default function OwnerNotificationBell() {
         <Box sx={{ maxHeight: 360, overflow: 'auto' }}>
           {isLoading || isFetching ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={28} />
+              <CircularProgress size={28} sx={{ color: 'primary.main' }} />
             </Box>
           ) : notifications.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 4, px: 2 }}>
-              <NotificationsNoneIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
-              <Typography variant="body2" color="text.secondary">
-                Aucune notification pour le moment.
-              </Typography>
-            </Box>
+            <EmptyState
+              variant="owner"
+              size="sm"
+              icon={<NotificationsNoneIcon sx={{ fontSize: 22 }} />}
+              title="Tout est à jour"
+              description="Vous recevrez ici les alertes visites, paiements et messages."
+            />
           ) : (
             notifications.map((n) => (
               <ListItemButton
@@ -207,7 +227,9 @@ export default function OwnerNotificationBell() {
                       justifyContent: 'center',
                     }}
                   >
-                    <NotificationsIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+                    <NotificationsIcon
+                      sx={{ fontSize: 18, color: 'primary.main' }}
+                    />
                   </Box>
                 </ListItemAvatar>
                 <ListItemText
@@ -221,7 +243,10 @@ export default function OwnerNotificationBell() {
                     </Typography>
                   }
                   secondary={formatNotificationTime(n.created_at)}
-                  secondaryTypographyProps={{ variant: 'caption', sx: { mt: 0.5 } }}
+                  secondaryTypographyProps={{
+                    variant: 'caption',
+                    sx: { mt: 0.5 },
+                  }}
                 />
               </ListItemButton>
             ))

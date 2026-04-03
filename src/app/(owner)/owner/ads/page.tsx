@@ -3,6 +3,9 @@
 import ShareAdButtons from '@/components/owner/ShareAdButtons';
 import OwnerAdCard from '@/components/owner/OwnerAdCard';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import EmptyState from '@/components/ui/EmptyState';
+import StaggerList from '@/components/ui/StaggerList';
+import { ShimmerBox } from '@/components/ui/ShimmerCard';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -16,8 +19,8 @@ import {
   Avatar,
   AvatarGroup,
   Box,
-  Button,
   Chip,
+  Fab,
   Grid,
   IconButton,
   InputAdornment,
@@ -37,6 +40,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useCallback, useEffect, useState } from 'react';
@@ -46,15 +50,11 @@ import { Ad } from '@/types';
 import { formatPrice } from '@/lib/constants';
 import { AdStatus } from '@/types';
 import { adTypesService, citiesService } from '@/services/cities.service';
-import {
-  FormControl,
-  InputLabel,
-  Select,
-  Skeleton,
-  TableSortLabel,
-} from '@mui/material';
+import { FormControl, InputLabel, Select, TableSortLabel } from '@mui/material';
 import { City } from '@/types';
 import { AdType } from '@/types';
+
+const MotionTableRow = motion(TableRow);
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'draft', label: 'Brouillon' },
@@ -198,16 +198,11 @@ export default function OwnerAdsPage() {
         }}
       >
         <Typography variant="h4" fontWeight={700}>
-          Mes Annonces
+          Mes{' '}
+          <Box component="span" sx={{ color: 'primary.main' }}>
+            Annonces
+          </Box>
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push('/owner/ads/new')}
-          sx={{ borderRadius: 3, fontWeight: 600, textTransform: 'none' }}
-        >
-          Nouvelle annonce
-        </Button>
       </Box>
 
       <Paper sx={{ overflow: 'hidden', mb: 4 }}>
@@ -294,80 +289,90 @@ export default function OwnerAdsPage() {
         </Box>
 
         {isLoading ? (
-          <Box sx={{ p: 4 }}>
-            <Skeleton
-              variant="rectangular"
-              height={400}
-              sx={{ borderRadius: 1 }}
-            />
+          <Box sx={{ p: 2.5 }}>
+            {/* Shimmer skeleton rows for both mobile and desktop */}
+            {isMobile ? (
+              <Grid container spacing={2}>
+                {[1, 2, 4, 5, 6].map((i) => (
+                  <Grid key={i} size={{ xs: 6 }}>
+                    <ShimmerBox
+                      height={0}
+                      sx={{
+                        paddingTop: '100%',
+                        height: 'auto',
+                        borderRadius: '12px',
+                      }}
+                    />
+                    <ShimmerBox
+                      height={13}
+                      width="75%"
+                      sx={{ mt: 1, mb: 0.5 }}
+                    />
+                    <ShimmerBox height={11} width="55%" />
+                  </Grid>
+                ))}
+              </Grid>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Box
+                    key={i}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      p: 1.5,
+                      borderRadius: 2,
+                    }}
+                  >
+                    <ShimmerBox width={64} height={48} borderRadius={8} />
+                    <Box sx={{ flex: 1 }}>
+                      <ShimmerBox height={13} width="50%" sx={{ mb: 0.5 }} />
+                      <ShimmerBox height={11} width="35%" />
+                    </Box>
+                    <ShimmerBox width={60} height={20} borderRadius={10} />
+                    <ShimmerBox width={40} height={32} borderRadius={6} />
+                  </Box>
+                ))}
+              </Box>
+            )}
           </Box>
         ) : ads.length === 0 ? (
-          <Box
-            sx={{
-              textAlign: 'center',
-              py: 8,
-              px: 2,
-              borderTop: '1px solid',
-              borderColor: 'divider',
-            }}
-          >
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              {search || statusFilter || cityFilter || typeFilter
+          <EmptyState
+            variant="owner"
+            size="md"
+            icon={<AddIcon sx={{ fontSize: 30 }} />}
+            title={
+              search || statusFilter || cityFilter || typeFilter
                 ? 'Aucun résultat pour ces critères'
-                : 'Aucune annonce'}
-            </Typography>
-            <Typography color="text.secondary" sx={{ mb: 2 }}>
-              {search || statusFilter || cityFilter || typeFilter
+                : 'Aucune annonce'
+            }
+            description={
+              search || statusFilter || cityFilter || typeFilter
                 ? 'Modifiez vos filtres ou créez une nouvelle annonce.'
-                : "Vous n'avez pas encore publié d'annonce. Créez votre première annonce pour la mettre en location."}
-            </Typography>
-            <Box
-              sx={{
-                display: 'flex',
-                gap: 2,
-                justifyContent: 'center',
-                flexWrap: 'wrap',
-              }}
-            >
-              {(search || statusFilter || cityFilter || typeFilter) && (
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    setSearchInput('');
-                    setSearch('');
-                    setStatusFilter('');
-                    setCityFilter('');
-                    setTypeFilter('');
-                    setPage(0);
-                  }}
-                  sx={{ borderRadius: 3 }}
-                >
-                  Réinitialiser les filtres
-                </Button>
-              )}
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => router.push('/owner/ads/new')}
-                sx={{ borderRadius: 3, fontWeight: 600 }}
-              >
-                Créer une annonce
-              </Button>
-            </Box>
-          </Box>
+                : 'Créez votre première annonce pour commencer à louer vos biens.'
+            }
+            action={undefined}
+          />
         ) : isMobile ? (
           <Box sx={{ p: 2 }}>
-            <Grid container spacing={2}>
+            <StaggerList
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '16px',
+              }}
+              stagger={0.07}
+            >
               {ads.map((ad) => (
-                <Grid key={ad.id} size={{ xs: 6, md: 4 }}>
-                  <OwnerAdCard
-                    ad={ad}
-                    onToggleVisibility={(a) => toggleMutation.mutate(a.id)}
-                    isToggling={toggleMutation.isPending}
-                  />
-                </Grid>
+                <OwnerAdCard
+                  key={ad.id}
+                  ad={ad}
+                  onToggleVisibility={(a) => toggleMutation.mutate(a.id)}
+                  isToggling={toggleMutation.isPending}
+                />
               ))}
-            </Grid>
+            </StaggerList>
             {meta && meta.last_page > 1 && (
               <TablePagination
                 component="div"
@@ -427,12 +432,20 @@ export default function OwnerAdsPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {ads.map((ad) => {
+                  {ads.map((ad, rowIndex) => {
                     const images = ad.images ?? [];
                     return (
-                      <TableRow
+                      <MotionTableRow
                         key={ad.id}
                         hover
+                        layout={false}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{
+                          delay: Math.min(rowIndex * 0.04, 0.45),
+                          duration: 0.32,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
                         sx={{
                           cursor: 'pointer',
                           '&:hover': { bgcolor: 'action.hover' },
@@ -559,7 +572,7 @@ export default function OwnerAdsPage() {
                             <MoreIcon fontSize="small" />
                           </IconButton>
                         </TableCell>
-                      </TableRow>
+                      </MotionTableRow>
                     );
                   })}
                 </TableBody>
@@ -701,6 +714,25 @@ export default function OwnerAdsPage() {
           </>
         )}
       </Menu>
+      {/* Responsive FAB — fixed bottom-right, replaces the 3 inline create buttons */}
+      <Fab
+        color="primary"
+        variant={isMobile ? 'circular' : 'extended'}
+        aria-label="Nouvelle annonce"
+        onClick={() => router.push('/owner/ads/new')}
+        sx={{
+          position: 'fixed',
+          bottom: { xs: 80, md: 24 },
+          right: 24,
+          zIndex: (t) => t.zIndex.appBar,
+          boxShadow: 4,
+          textTransform: 'none',
+          fontWeight: 700,
+        }}
+      >
+        <AddIcon sx={{ mr: isMobile ? 0 : 1 }} />
+        {!isMobile && 'Nouvelle annonce'}
+      </Fab>
     </Box>
   );
 }

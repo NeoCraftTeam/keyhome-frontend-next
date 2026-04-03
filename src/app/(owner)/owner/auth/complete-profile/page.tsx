@@ -215,9 +215,6 @@ export default function OwnerCompleteProfilePage() {
     );
   }
 
-  const buttonGradient = `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`;
-  const buttonGradientHover = `linear-gradient(to right, ${brandAgent.primary}, ${brandAgent.primaryDark})`;
-
   if (isPasswordPostOtpFlow && !passwordFlowReady) {
     return (
       <Box
@@ -477,8 +474,6 @@ export default function OwnerCompleteProfilePage() {
                   fontSize: '1rem',
                   fontWeight: 700,
                   borderRadius: '14px',
-                  background: buttonGradient,
-                  '&:hover': { background: buttonGradientHover },
                   boxShadow: shadow.agentGlow,
                   textTransform: 'none',
                   transition: 'all 0.2s',

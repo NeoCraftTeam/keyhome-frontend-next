@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { brand } from '@/theme/tokens';
+import { brandAgent } from '@/theme/tokens';
 
 interface OwnerAdCardProps {
   ad: Ad;
@@ -40,14 +40,19 @@ export default function OwnerAdCard({
     <Box
       onClick={() => router.push(`/owner/ads/${ad.id}`)}
       sx={{
-        borderRadius: 2,
+        borderRadius: 3,
         overflow: 'hidden',
         border: '1px solid',
         borderColor: 'divider',
         bgcolor: 'background.paper',
         cursor: 'pointer',
-        transition: 'box-shadow 0.2s, transform 0.2s',
-        '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' },
+        transition:
+          'box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease',
+        '&:hover': {
+          boxShadow: '0 10px 32px rgba(13,148,136,0.14)',
+          transform: 'translateY(-3px)',
+          borderColor: 'rgba(13,148,136,0.25)',
+        },
       }}
     >
       <Box
@@ -91,9 +96,10 @@ export default function OwnerAdCard({
               label="Boosté"
               size="small"
               sx={{
-                bgcolor: brand.primary,
+                bgcolor: 'primary.main',
                 color: 'white',
                 fontWeight: 800,
+                border: 'none',
                 '& .MuiChip-icon': { color: 'white' },
               }}
             />
@@ -168,7 +174,7 @@ export default function OwnerAdCard({
             <Button
               size="small"
               variant="text"
-              startIcon={<BoostIcon sx={{ fontSize: 16 }} />}
+              startIcon={<BoostIcon sx={{ fontSize: 14 }} />}
               onClick={(e) => {
                 e.stopPropagation();
                 router.push(`/owner/ads/${ad.id}?action=boost`);
@@ -178,9 +184,10 @@ export default function OwnerAdCard({
                 p: '2px 8px',
                 fontSize: 11,
                 fontWeight: 700,
-                color: brand.primary,
+                color: brandAgent.primary,
                 textTransform: 'none',
-                '&:hover': { bgcolor: 'rgba(246, 71, 95, 0.08)' },
+                borderRadius: 1.5,
+                '&:hover': { bgcolor: 'rgba(13,148,136,0.08)' },
               }}
             >
               Booster

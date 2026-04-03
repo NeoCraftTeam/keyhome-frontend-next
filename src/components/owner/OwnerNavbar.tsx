@@ -14,6 +14,7 @@ import {
   Avatar,
   Box,
   Button,
+  Chip,
   Divider,
   Menu,
   MenuItem,
@@ -37,7 +38,7 @@ export default function OwnerNavbar() {
 
   const moreNavItems = useMemo(
     () => OWNER_NAV_ITEMS.filter((item) => !bottomHrefSet.has(item.href)),
-    [],
+    []
   );
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -77,7 +78,9 @@ export default function OwnerNavbar() {
             justifyContent: 'space-between',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
+          >
             <Box
               onClick={() => router.push('/owner/dashboard')}
               sx={{
@@ -98,39 +101,58 @@ export default function OwnerNavbar() {
                 priority
                 style={{ objectFit: 'contain' }}
               />
-              <Typography
-                variant="h6"
-                sx={{
-                  color: 'primary.main',
-                  fontWeight: 800,
-                  fontSize: { xs: '1.05rem', md: '1.2rem' },
-                  letterSpacing: -0.5,
-                  display: 'block',
-                }}
-              >
-                KeyHome
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: 'text.secondary',
-                  ml: 0.5,
-                  display: { xs: 'none', sm: 'block' },
-                }}
-              >
-                Propriétaire
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 800,
+                    fontSize: { xs: '1.05rem', md: '1.2rem' },
+                    letterSpacing: -0.5,
+                  }}
+                >
+                  KeyHome
+                </Typography>
+                <Chip
+                  label="Business"
+                  size="small"
+                  sx={{
+                    height: 20,
+                    fontSize: '0.62rem',
+                    fontWeight: 700,
+                    letterSpacing: 0.3,
+                    bgcolor: 'primary.main',
+                    color: '#fff',
+                    border: 'none',
+                    display: { xs: 'none', sm: 'flex' },
+                    '& .MuiChip-label': { px: 0.75 },
+                  }}
+                />
+              </Box>
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1 }, flexShrink: 0 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: { xs: 0.75, sm: 1 },
+              flexShrink: 0,
+            }}
+          >
             {!isMobile && (
               <Button
                 variant="contained"
                 size="small"
                 startIcon={<AddCircleOutlineIcon />}
                 onClick={() => router.push('/owner/ads/new')}
-                sx={{ borderRadius: 99, fontWeight: 600 }}
+                sx={{
+                  borderRadius: 99,
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  boxShadow: 'none',
+                  transition: 'all 0.2s ease',
+                }}
               >
                 Nouvelle annonce
               </Button>
@@ -160,15 +182,25 @@ export default function OwnerNavbar() {
                 py: 0.5,
                 cursor: 'pointer',
                 '&:hover': { boxShadow: '0 2px 4px rgba(0,0,0,0.08)' },
-                '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
+                '&:focus-visible': {
+                  outline: '2px solid',
+                  outlineColor: 'primary.main',
+                  outlineOffset: 2,
+                },
               }}
             >
               <ExpandMoreIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
               <Avatar
                 src={user?.avatar || undefined}
-                sx={{ width: 28, height: 28, bgcolor: 'primary.main' }}
+                sx={{
+                  width: 28,
+                  height: 28,
+                  bgcolor: user?.avatar ? undefined : 'primary.main',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                }}
               >
-                {user?.firstname?.[0] || 'U'}
+                {user?.firstname?.[0]?.toUpperCase() || 'U'}
               </Avatar>
             </Box>
 
@@ -207,7 +239,9 @@ export default function OwnerNavbar() {
                       router.push('/owner/ads/new');
                     }}
                   >
-                    <AddCircleOutlineIcon sx={{ mr: 1.5, fontSize: 22, color: 'primary.main' }} />
+                    <AddCircleOutlineIcon
+                      sx={{ mr: 1.5, fontSize: 22, color: 'primary.main' }}
+                    />
                     Nouvelle annonce
                   </MenuItem>
                   <Divider />
@@ -215,7 +249,8 @@ export default function OwnerNavbar() {
               )}
               {moreNavItems.map((item) => {
                 const isActive =
-                  pathname === item.href || pathname?.startsWith(item.href + '/');
+                  pathname === item.href ||
+                  pathname?.startsWith(item.href + '/');
                 return (
                   <MenuItem
                     key={item.href}
@@ -226,7 +261,13 @@ export default function OwnerNavbar() {
                     selected={isActive}
                     sx={{ py: 1.25 }}
                   >
-                    <Box sx={{ mr: 1.5, display: 'flex', color: isActive ? 'primary.main' : 'text.secondary' }}>
+                    <Box
+                      sx={{
+                        mr: 1.5,
+                        display: 'flex',
+                        color: isActive ? 'primary.main' : 'text.secondary',
+                      }}
+                    >
                       {item.icon}
                     </Box>
                     {item.label}

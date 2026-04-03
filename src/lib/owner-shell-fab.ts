@@ -2,15 +2,17 @@
  * FAB « action rapide » : uniquement là où « nouvelle annonce » est pertinent.
  * Sur le tableau de bord et les autres écrans, pas de FAB (menu avatar / liste annonces).
  */
-export function shouldShowOwnerQuickCreateFab(pathname: string | null): boolean {
+export function shouldShowOwnerQuickCreateFab(
+  pathname: string | null
+): boolean {
   if (!pathname?.startsWith('/owner/')) {
     return false;
   }
 
   if (
-    pathname.startsWith('/owner/login')
-    || pathname.startsWith('/owner/register')
-    || pathname.startsWith('/owner/forgot-password')
+    pathname.startsWith('/owner/login') ||
+    pathname.startsWith('/owner/register') ||
+    pathname.startsWith('/owner/forgot-password')
   ) {
     return false;
   }
@@ -23,5 +25,5 @@ export function shouldShowOwnerQuickCreateFab(pathname: string | null): boolean 
     return false;
   }
 
-  return pathname === '/owner/ads';
+  return false;
 }
