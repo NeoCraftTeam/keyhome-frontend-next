@@ -92,19 +92,36 @@ html[data-kh-theme='dark'] {
 :root {
   --font-inter: 'Inter', sans-serif;
   --font-jakarta: 'Plus Jakarta Sans', sans-serif;
+
+  /* Customer (red) brand */
   --color-primary: #f6475f;
   --color-primary-glow: rgba(246, 71, 95, 0.25);
+
+  /* Owner/agent (teal) brand */
+  --color-agent: #0d9488;
+  --color-agent-dark: #0f766e;
+  --color-agent-light: #14b8a6;
+  --color-agent-glow: rgba(13, 148, 136, 0.28);
+  --color-agent-glow-sm: rgba(13, 148, 136, 0.15);
+
+  /* Layout */
   --color-dark: #222222;
   --color-grey: #dddddd;
   --color-bg: #f8f7f5;
+
+  /* Glass morphism */
   --glass-bg-light: rgba(255, 255, 255, 0.75);
   --glass-bg-dark: rgba(10, 10, 15, 0.8);
   --glass-blur: blur(24px);
   --glass-border-light: rgba(0, 0, 0, 0.07);
   --glass-border-dark: rgba(255, 255, 255, 0.07);
+
+  /* Shadows */
   --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
   --shadow-medium: 0 8px 32px rgba(0, 0, 0, 0.08);
   --shadow-deep: 0 20px 60px rgba(0, 0, 0, 0.15);
+
+  /* Easing presets */
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -175,8 +192,24 @@ body {
   border: 1px solid var(--glass-border-dark);
 }
 
+/* ===== Gradient text utilities ===== */
+
 .aura-gradient-text {
   background: linear-gradient(135deg, #f6475f 0%, #d93a50 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.agent-gradient-text {
+  background: linear-gradient(135deg, #0d9488 0%, #0ea5e9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.agent-gradient-text-gold {
+  background: linear-gradient(135deg, #0d9488 0%, #f59e0b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -243,6 +276,55 @@ body {
   }
 }
 
+/* Teal pulse — for owner panel live indicators */
+@keyframes pulseGlowTeal {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(13, 148, 136, 0);
+  }
+}
+
+/* Gentle glow breathe — for featured/boosted badges */
+@keyframes glowBreathe {
+  0%,
+  100% {
+    opacity: 0.7;
+    filter: drop-shadow(0 0 4px rgba(13, 148, 136, 0.4));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px rgba(13, 148, 136, 0.7));
+  }
+}
+
+/* Slide-in from right (notifications, drawers) */
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Pop scale (buttons on press, success badges) */
+@keyframes popScale {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -262,6 +344,69 @@ body {
 /* Grid card stagger animation */
 .animate-card {
   animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ===== Agent / Owner panel utilities ===== */
+
+/* Teal live dot (e.g. notifications, online status) */
+.agent-pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-agent);
+  animation: pulseGlowTeal 2.2s ease-in-out infinite;
+}
+
+/* Teal glow breathe — hero metrics, boosted items */
+.agent-glow-breathe {
+  animation: glowBreathe 3s ease-in-out infinite;
+}
+
+/* Notification slide-in */
+.slide-in-right {
+  animation: slideInFromRight 0.3s var(--ease-out) both;
+}
+
+/* Interactive card: lift + teal shadow on hover */
+.kh-card-interactive {
+  transition:
+    transform 0.22s var(--ease-out),
+    box-shadow 0.22s ease;
+  will-change: transform;
+}
+.kh-card-interactive:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+/* Owner variant: teal-tinted shadow */
+.kh-card-interactive.owner {
+  border-left: 3px solid transparent;
+  transition:
+    transform 0.22s var(--ease-out),
+    box-shadow 0.22s ease,
+    border-color 0.22s ease;
+}
+.kh-card-interactive.owner:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(13, 148, 136, 0.14);
+  border-left-color: var(--color-agent);
+}
+
+/* ===== Focus ring system (WCAG 2.1 AA) ===== */
+
+/* Customer focus ring */
+.kh-focus-ring:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Owner focus ring */
+.kh-focus-ring-agent:focus-visible {
+  outline: 2px solid var(--color-agent);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 /* Smooth page transitions */
