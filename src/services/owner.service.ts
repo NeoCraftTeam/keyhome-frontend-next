@@ -1,6 +1,7 @@
 import api from '@/lib/api';
 
-const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1';
+const PUBLIC_API_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1';
 
 async function publicFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${PUBLIC_API_URL}${path}`, {
@@ -98,7 +99,12 @@ export interface OwnerReview {
   comment: string | null;
   created_at: string;
   ad?: { id: string; title: string };
-  user?: { id: string; firstname: string; lastname: string; display_name: string };
+  user?: {
+    id: string;
+    firstname: string;
+    lastname: string;
+    display_name: string;
+  };
 }
 
 export interface OwnerViewingReservation {
@@ -113,7 +119,12 @@ export interface OwnerViewingReservation {
   cancellation_reason: string | null;
   cancelled_by: string | null;
   expires_at: string | null;
-  client?: { firstname: string; lastname: string; phone_number?: string; email?: string };
+  client?: {
+    firstname: string;
+    lastname: string;
+    phone_number?: string;
+    email?: string;
+  };
   ad?: { id: string; title: string };
   created_at: string;
 }
@@ -144,7 +155,13 @@ export interface Expense {
   id: string;
   ad_id: string;
   amount: number;
-  category: 'maintenance' | 'tax' | 'insurance' | 'utilities' | 'renovation' | 'other';
+  category:
+    | 'maintenance'
+    | 'tax'
+    | 'insurance'
+    | 'utilities'
+    | 'renovation'
+    | 'other';
   description: string | null;
   expense_date: string;
   receipt_path: string | null;
@@ -262,10 +279,15 @@ export interface SignatureRequest {
 }
 
 export const ownerService = {
-  async getAnalytics(period: '7d' | '30d' | '90d' = '30d'): Promise<OwnerAnalyticsOverview> {
-    const { data } = await api.get<{ data: OwnerAnalyticsOverview }>('/my/ads/analytics', {
-      params: { period },
-    });
+  async getAnalytics(
+    period: '7d' | '30d' | '90d' = '30d'
+  ): Promise<OwnerAnalyticsOverview> {
+    const { data } = await api.get<{ data: OwnerAnalyticsOverview }>(
+      '/my/ads/analytics',
+      {
+        params: { period },
+      }
+    );
     return data.data ?? data;
   },
 
@@ -289,20 +311,30 @@ export const ownerService = {
   async getLeaseContracts(params?: { page?: number; per_page?: number }) {
     const { data } = await api.get<{
       data: LeaseContract[];
-      meta: { current_page: number; last_page: number; total: number; per_page: number };
+      meta: {
+        current_page: number;
+        last_page: number;
+        total: number;
+        per_page: number;
+      };
     }>('/my/lease-contracts', { params });
     return data;
   },
 
   async enhanceLeaseConditions(conditions: string): Promise<string> {
-    const { data } = await api.post<{ enhanced: string }>('/my/lease-contracts/ai/enhance-conditions', {
-      conditions,
-    });
+    const { data } = await api.post<{ enhanced: string }>(
+      '/my/lease-contracts/ai/enhance-conditions',
+      {
+        conditions,
+      }
+    );
     return data.enhanced;
   },
 
   async getLeaseContract(id: string): Promise<LeaseContract> {
-    const { data } = await api.get<{ data: LeaseContract }>(`/my/lease-contracts/${id}`);
+    const { data } = await api.get<{ data: LeaseContract }>(
+      `/my/lease-contracts/${id}`
+    );
     return data.data ?? data;
   },
 
@@ -315,9 +347,12 @@ export const ownerService = {
       tenant_id_number?: string | null;
       unit_reference?: string | null;
       special_conditions?: string | null;
-    },
+    }
   ): Promise<LeaseContract> {
-    const { data } = await api.put<{ data: LeaseContract }>(`/my/lease-contracts/${id}`, updates);
+    const { data } = await api.put<{ data: LeaseContract }>(
+      `/my/lease-contracts/${id}`,
+      updates
+    );
     return data.data ?? data;
   },
 
@@ -341,9 +376,12 @@ export const ownerService = {
       monthly_rent?: number;
       deposit_amount?: number;
       special_conditions?: string;
-    },
+    }
   ) {
-    const { data } = await api.post(`/my/lease-contracts/${adId}/generate`, tenantData);
+    const { data } = await api.post(
+      `/my/lease-contracts/${adId}/generate`,
+      tenantData
+    );
     return data;
   },
 
@@ -411,7 +449,9 @@ export const ownerService = {
   // ─── Viewing Availability (Zap) ───
 
   async getAvailabilities(adId: string) {
-    const { data } = await api.get<{ data: AvailabilitySchedule[] }>(`/ads/${adId}/availability`);
+    const { data } = await api.get<{ data: AvailabilitySchedule[] }>(
+      `/ads/${adId}/availability`
+    );
     return data.data ?? data;
   },
 
@@ -420,30 +460,48 @@ export const ownerService = {
     return data;
   },
 
-  async updateAvailability(adId: string, scheduleId: string, payload: Partial<AvailabilityPayload>) {
-    const { data } = await api.put(`/ads/${adId}/availability/${scheduleId}`, payload);
+  async updateAvailability(
+    adId: string,
+    scheduleId: string,
+    payload: Partial<AvailabilityPayload>
+  ) {
+    const { data } = await api.put(
+      `/ads/${adId}/availability/${scheduleId}`,
+      payload
+    );
     return data;
   },
 
   async deleteAvailability(adId: string, scheduleId: string) {
-    const { data } = await api.delete(`/ads/${adId}/availability/${scheduleId}`);
+    const { data } = await api.delete(
+      `/ads/${adId}/availability/${scheduleId}`
+    );
     return data;
   },
 
   async getAvailabilityCalendar(adId: string, from: string, to: string) {
-    const { data } = await api.get(`/ads/${adId}/availability/calendar`, { params: { from, to } });
+    const { data } = await api.get(`/ads/${adId}/availability/calendar`, {
+      params: { from, to },
+    });
     return data.data ?? data;
   },
 
   // ─── Boost (owner self-service) ───
 
   async getBoostStatus(adId: string): Promise<BoostStatus> {
-    const { data } = await api.get<{ data: BoostStatus }>(`/my/ads/${adId}/boost-status`);
+    const { data } = await api.get<{ data: BoostStatus }>(
+      `/my/ads/${adId}/boost-status`
+    );
     return data.data ?? data;
   },
 
-  async selfBoostAd(adId: string, durationDays?: number): Promise<{ is_boosted: boolean; boost_expires_at: string | null }> {
-    const { data } = await api.post(`/my/ads/${adId}/boost`, { duration_days: durationDays });
+  async selfBoostAd(
+    adId: string,
+    durationDays?: number
+  ): Promise<{ is_boosted: boolean; boost_expires_at: string | null }> {
+    const { data } = await api.post(`/my/ads/${adId}/boost`, {
+      duration_days: durationDays,
+    });
     return data.data ?? data;
   },
 
@@ -452,11 +510,16 @@ export const ownerService = {
   },
 
   async duplicateAd(adId: string): Promise<{ id: string; slug: string }> {
-    const { data } = await api.post<{ data: { id: string; slug: string } }>(`/my/ads/${adId}/duplicate`);
+    const { data } = await api.post<{ data: { id: string; slug: string } }>(
+      `/my/ads/${adId}/duplicate`
+    );
     return data.data ?? data;
   },
 
-  async bulkUpdateAdStatus(ids: string[], status: string): Promise<{ updated: number; failed: string[] }> {
+  async bulkUpdateAdStatus(
+    ids: string[],
+    status: string
+  ): Promise<{ updated: number; failed: string[] }> {
     const { data } = await api.put('/my/ads/bulk-update', { ids, status });
     return data;
   },
@@ -468,7 +531,10 @@ export const ownerService = {
 
   // ─── Tenants ───
 
-  async getTenants(params?: { page?: number; per_page?: number }): Promise<{ data: Tenant[]; meta: PaginatedMeta }> {
+  async getTenants(params?: {
+    page?: number;
+    per_page?: number;
+  }): Promise<{ data: Tenant[]; meta: PaginatedMeta }> {
     const { data } = await api.get('/my/tenants', { params });
     return data;
   },
@@ -483,8 +549,14 @@ export const ownerService = {
     return data.data ?? data;
   },
 
-  async updateTenant(id: string, payload: Partial<TenantPayload>): Promise<Tenant> {
-    const { data } = await api.put<{ data: Tenant }>(`/my/tenants/${id}`, payload);
+  async updateTenant(
+    id: string,
+    payload: Partial<TenantPayload>
+  ): Promise<Tenant> {
+    const { data } = await api.put<{ data: Tenant }>(
+      `/my/tenants/${id}`,
+      payload
+    );
     return data.data ?? data;
   },
 
@@ -494,13 +566,19 @@ export const ownerService = {
 
   // ─── Expenses & Profit / Loss ───
 
-  async getExpenses(adId: string, params?: { page?: number }): Promise<{ data: Expense[]; meta: PaginatedMeta }> {
+  async getExpenses(
+    adId: string,
+    params?: { page?: number }
+  ): Promise<{ data: Expense[]; meta: PaginatedMeta }> {
     const { data } = await api.get(`/my/ads/${adId}/expenses`, { params });
     return data;
   },
 
   async createExpense(adId: string, payload: ExpensePayload): Promise<Expense> {
-    const { data } = await api.post<{ data: Expense }>(`/my/ads/${adId}/expenses`, payload);
+    const { data } = await api.post<{ data: Expense }>(
+      `/my/ads/${adId}/expenses`,
+      payload
+    );
     return data.data ?? data;
   },
 
@@ -509,29 +587,46 @@ export const ownerService = {
   },
 
   async getProfitLoss(adId: string): Promise<ProfitLoss> {
-    const { data } = await api.get<{ data: ProfitLoss }>(`/my/ads/${adId}/profit-loss`);
+    const { data } = await api.get<{ data: ProfitLoss }>(
+      `/my/ads/${adId}/profit-loss`
+    );
     return data.data ?? data;
   },
 
   // ─── Documents ───
 
-  async getDocuments(adId: string, type?: string): Promise<{ data: OwnerDocument[] }> {
-    const { data } = await api.get(`/my/ads/${adId}/documents`, { params: type ? { type } : undefined });
+  async getDocuments(
+    adId: string,
+    type?: string
+  ): Promise<{ data: OwnerDocument[] }> {
+    const { data } = await api.get(`/my/ads/${adId}/documents`, {
+      params: type ? { type } : undefined,
+    });
     return data;
   },
 
-  async uploadDocument(adId: string, file: File, type: string): Promise<OwnerDocument> {
+  async uploadDocument(
+    adId: string,
+    file: File,
+    type: string
+  ): Promise<OwnerDocument> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', type);
-    const { data } = await api.post<{ data: OwnerDocument }>(`/my/ads/${adId}/documents`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const { data } = await api.post<{ data: OwnerDocument }>(
+      `/my/ads/${adId}/documents`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
     return data.data ?? data;
   },
 
   async downloadDocument(documentId: string): Promise<Blob> {
-    const { data } = await api.get(`/my/documents/${documentId}/download`, { responseType: 'blob' });
+    const { data } = await api.get(`/my/documents/${documentId}/download`, {
+      responseType: 'blob',
+    });
     return data;
   },
 
@@ -542,20 +637,43 @@ export const ownerService = {
   // ─── Notification Preferences ───
 
   async getNotificationPreferences(): Promise<NotificationPreferences> {
-    const { data } = await api.get<{ data: NotificationPreferences }>('/my/notification-preferences');
+    const { data } = await api.get<{ data: NotificationPreferences }>(
+      '/my/notification-preferences'
+    );
     return data.data ?? data;
   },
 
-  async updateNotificationPreferences(prefs: Partial<NotificationPreferences>): Promise<NotificationPreferences> {
-    const { data } = await api.put<{ data: NotificationPreferences }>('/my/notification-preferences', prefs);
+  async updateNotificationPreferences(
+    prefs: Partial<NotificationPreferences>
+  ): Promise<NotificationPreferences> {
+    const { data } = await api.put<{ data: NotificationPreferences }>(
+      '/my/notification-preferences',
+      prefs
+    );
     return data.data ?? data;
   },
 
   // ─── Login History ───
 
-  async getLoginHistory(page = 1): Promise<PaginatedResponse<LoginHistoryEntry>> {
+  async getLoginHistory(
+    page = 1
+  ): Promise<PaginatedResponse<LoginHistoryEntry>> {
     const { data } = await api.get('/my/login-history', { params: { page } });
-    return data;
+    // Backend wraps a Laravel paginator under 'data': { data: [...], current_page, ... }
+    const paginator = data?.data ?? data;
+    return {
+      data: Array.isArray(paginator?.data)
+        ? paginator.data
+        : Array.isArray(paginator)
+          ? paginator
+          : [],
+      meta: {
+        current_page: paginator?.current_page ?? 1,
+        last_page: paginator?.last_page ?? 1,
+        per_page: paginator?.per_page ?? 20,
+        total: paginator?.total ?? 0,
+      },
+    };
   },
 
   async clearLoginHistory(): Promise<void> {
@@ -564,13 +682,22 @@ export const ownerService = {
 
   // ─── Team ───
 
-  async getTeam(): Promise<{ members: TeamMember[]; invitations: TeamInvitation[] }> {
+  async getTeam(): Promise<{
+    members: TeamMember[];
+    invitations: TeamInvitation[];
+  }> {
     const { data } = await api.get('/my/team');
     return data.data ?? data;
   },
 
-  async inviteTeamMember(payload: { email: string; role: 'manager' | 'viewer' }): Promise<TeamInvitation> {
-    const { data } = await api.post<{ data: TeamInvitation }>('/my/team/invite', payload);
+  async inviteTeamMember(payload: {
+    email: string;
+    role: 'manager' | 'viewer';
+  }): Promise<TeamInvitation> {
+    const { data } = await api.post<{ data: TeamInvitation }>(
+      '/my/team/invite',
+      payload
+    );
     return data.data ?? data;
   },
 
@@ -588,26 +715,28 @@ export const ownerService = {
 
   // ─── E-Signature ───
 
-  async getSignatureRequests(leaseContractId: string): Promise<SignatureRequest[]> {
+  async getSignatureRequests(
+    leaseContractId: string
+  ): Promise<SignatureRequest[]> {
     const { data } = await api.get<{ data: SignatureRequest[] }>(
-      `/my/lease-contracts/${leaseContractId}/signatures`,
+      `/my/lease-contracts/${leaseContractId}/signatures`
     );
     return data.data ?? data;
   },
 
   async createSignatureRequest(
     leaseContractId: string,
-    payload: { signer_email: string; signer_name: string },
+    payload: { signer_email: string; signer_name: string }
   ): Promise<SignatureRequest> {
     const { data } = await api.post<{ data: SignatureRequest }>(
       `/my/lease-contracts/${leaseContractId}/signatures`,
-      payload,
+      payload
     );
     return data.data ?? data;
   },
 
   async getPublicSignatureRequest(
-    token: string,
+    token: string
   ): Promise<{ request: SignatureRequest & { contract: LeaseContract } }> {
     return publicFetch(`/signatures/${token}`);
   },
