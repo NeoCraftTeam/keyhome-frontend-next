@@ -12,6 +12,7 @@ import {
 import { authService } from '@/services/auth.service';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import AppLoader from '@/components/ui/AppLoader';
+import SkipLink from '@/components/ui/SkipLink';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
 import PushPrompt from '@/components/ui/PushPrompt';
@@ -43,7 +44,16 @@ const AUTH_PAGES = [
  * Routes within the dashboard group that require the user to be authenticated.
  * Public routes (/home, /nearby) are accessible to guests for read-only browsing.
  */
-const PRIVATE_PATHS = ['/profile', '/my/reservations'];
+const PRIVATE_PATHS = [
+  '/profile',
+  '/my/reservations',
+  '/notifications',
+  '/publish',
+  '/search-alerts',
+  '/comparaisons',
+  '/payments',
+  '/messages',
+];
 
 export default function DashboardLayout({
   children,
@@ -192,6 +202,7 @@ export default function DashboardLayout({
         bgcolor: 'background.default',
       }}
     >
+      <SkipLink />
       <LocationPrimer />
       <Navbar />
       <Box

@@ -430,6 +430,8 @@ export default function HomePage() {
                 key={cat.value}
                 icon={cat.icon}
                 label={cat.label}
+                aria-label={`Filtrer par ${cat.label}`}
+                aria-pressed={isActive}
                 onClick={() => handleCategoryChange(cat.value)}
                 variant={isActive ? 'filled' : 'outlined'}
                 sx={{
@@ -530,6 +532,7 @@ export default function HomePage() {
                     shape="rounded"
                     size={isMobile ? 'small' : 'medium'}
                     siblingCount={isMobile ? 0 : 1}
+                    aria-label="Pagination des annonces"
                     sx={{
                       '& .MuiPaginationItem-root.Mui-selected': {
                         bgcolor: 'primary.main',
@@ -806,6 +809,7 @@ export default function HomePage() {
                     shape="rounded"
                     size={isMobile ? 'small' : 'medium'}
                     siblingCount={isMobile ? 0 : 1}
+                    aria-label="Pagination des annonces"
                     sx={{
                       '& .MuiPaginationItem-root.Mui-selected': {
                         bgcolor: 'primary.main',

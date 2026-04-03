@@ -13,18 +13,15 @@ import {
   formatNotificationTime,
   getNotificationMessage,
 } from '@/lib/notification-routing';
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { useAuth } from '@/providers/AuthProvider';
 import {
-  CheckCircleOutline as CheckAllIcon,
   Delete as DeleteIcon,
   DoneAll as DoneAllIcon,
-  ChevronLeft as ChevronLeftIcon,
-  Home as HomeIcon,
   Notifications as NotificationsIcon,
   NotificationsNone as NotificationsNoneIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Avatar,
   Badge,
   Box,
@@ -109,11 +106,7 @@ export default function NotificationsPage() {
     enabled: isAuthenticated,
   });
 
-  const {
-    data: notificationsData,
-    isLoading,
-    isFetching,
-  } = useQuery({
+  const { data: notificationsData, isLoading } = useQuery({
     queryKey: [...NOTIFICATIONS_QK, tab, page],
     queryFn: () =>
       fetchNotifications({
@@ -164,7 +157,9 @@ export default function NotificationsPage() {
   if (!isAuthenticated) {
     return (
       <Container maxWidth="sm" sx={{ py: 8, textAlign: 'center' }}>
-        <NotificationsNoneIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+        <NotificationsNoneIcon
+          sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }}
+        />
         <Typography variant="h6" color="text.secondary">
           Connectez-vous pour voir vos notifications
         </Typography>
@@ -174,6 +169,12 @@ export default function NotificationsPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+      <PageBreadcrumbs
+        items={[
+          { label: 'Accueil', href: '/home' },
+          { label: 'Notifications' },
+        ]}
+      />
       <FadeIn direction="up" delay={0.05}>
         {/* Header */}
         <Box
@@ -187,9 +188,6 @@ export default function NotificationsPage() {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <IconButton onClick={() => router.back()} size="small" aria-label="Retour" sx={{ border: '1px solid', borderColor: 'divider' }}>
-              <ChevronLeftIcon />
-            </IconButton>
             <Badge badgeContent={unreadCount} color="error" max={99}>
               <NotificationsIcon sx={{ fontSize: 28, color: 'primary.main' }} />
             </Badge>
@@ -276,14 +274,22 @@ export default function NotificationsPage() {
                   ? 'Aucune notification non lue'
                   : 'Aucune notification'}
               </Typography>
-              <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
+              <Typography
+                variant="body2"
+                color="text.disabled"
+                sx={{ mt: 0.5 }}
+              >
                 {tab === 'unread'
                   ? 'Toutes vos notifications ont été lues'
                   : 'Vos notifications apparaîtront ici'}
               </Typography>
             </Box>
           ) : (
-            <List disablePadding aria-label="Liste des notifications" role="list">
+            <List
+              disablePadding
+              aria-label="Liste des notifications"
+              role="list"
+            >
               {notifications.map((n, idx) => (
                 <Box key={n.id} role="listitem">
                   {idx > 0 && <Divider component="li" />}
@@ -300,7 +306,10 @@ export default function NotificationsPage() {
                             deleteMutation.mutate(n.id);
                           }}
                           disabled={deleteMutation.isPending}
-                          sx={{ color: 'text.disabled', '&:hover': { color: 'error.main' } }}
+                          sx={{
+                            color: 'text.disabled',
+                            '&:hover': { color: 'error.main' },
+                          }}
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>
@@ -336,7 +345,9 @@ export default function NotificationsPage() {
                             variant="body2"
                             fontWeight={n.read_at ? 400 : 600}
                             sx={{
-                              color: n.read_at ? 'text.secondary' : 'text.primary',
+                              color: n.read_at
+                                ? 'text.secondary'
+                                : 'text.primary',
                               pr: 4,
                             }}
                           >
