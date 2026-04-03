@@ -59,11 +59,15 @@ describe('authService', () => {
       });
       mockGet.mockResolvedValue({ data: { data: mockUser } });
 
-      const result = await authService.login('jean.dupont@example.cm', 'Str0ngP@ss!');
+      const result = await authService.login(
+        'jean.dupont@example.cm',
+        'Str0ngP@ss!'
+      );
 
       expect(mockPost).toHaveBeenCalledWith('/auth/login', {
         email: 'jean.dupont@example.cm',
         password: 'Str0ngP@ss!',
+        login_context: 'client',
       });
       // Verify the GET /auth/me uses explicit Bearer token
       expect(mockGet).toHaveBeenCalledWith('/auth/me', {
@@ -78,7 +82,9 @@ describe('authService', () => {
     // so the UI can show the error message.
     it('propagates login errors', async () => {
       mockPost.mockRejectedValue(new AxiosError('Unauthorized'));
-      await expect(authService.login('wrong@email.cm', 'bad')).rejects.toThrow();
+      await expect(
+        authService.login('wrong@email.cm', 'bad')
+      ).rejects.toThrow();
     });
   });
 
@@ -107,7 +113,10 @@ describe('authService', () => {
 
       const result = await authService.registerCustomer(payload);
 
-      expect(mockPost).toHaveBeenCalledWith('/auth/registerCustomer', expect.objectContaining(payload));
+      expect(mockPost).toHaveBeenCalledWith(
+        '/auth/registerCustomer',
+        expect.objectContaining(payload)
+      );
       expect(result.token).toBe('new-customer-token');
       expect(result.user.email).toBe('jean.dupont@example.cm');
     });
@@ -168,7 +177,11 @@ describe('authService', () => {
       });
 
       const result = await authService.clerkExchange();
-      expect(mockPost).toHaveBeenCalledWith('/auth/clerk/exchange', expect.any(Object), undefined);
+      expect(mockPost).toHaveBeenCalledWith(
+        '/auth/clerk/exchange',
+        expect.any(Object),
+        undefined
+      );
       expect(result).toHaveProperty('state', 'otp_required');
       if ('email_hint' in result) {
         expect(result.email_hint).toBe('j***@example.cm');
@@ -200,7 +213,12 @@ describe('authService', () => {
       mockPost.mockResolvedValue({
         data: {
           state: 'profile_required',
-          prefill: { firstname: 'Jean', lastname: 'D', email: 'jean@gmail.com', avatar: null },
+          prefill: {
+            firstname: 'Jean',
+            lastname: 'D',
+            email: 'jean@gmail.com',
+            avatar: null,
+          },
         },
       });
 
@@ -264,14 +282,18 @@ describe('authService', () => {
     it('sends email to forgot-password endpoint', async () => {
       mockPost.mockResolvedValue({ data: { message: 'Lien envoyé.' } });
       const result = await authService.forgotPassword('jean@example.cm');
-      expect(mockPost).toHaveBeenCalledWith('/auth/forgot-password', { email: 'jean@example.cm' });
+      expect(mockPost).toHaveBeenCalledWith('/auth/forgot-password', {
+        email: 'jean@example.cm',
+      });
       expect(result.message).toBe('Lien envoyé.');
     });
   });
 
   describe('resetPassword', () => {
     it('sends reset payload with token and new password', async () => {
-      mockPost.mockResolvedValue({ data: { message: 'Mot de passe réinitialisé.' } });
+      mockPost.mockResolvedValue({
+        data: { message: 'Mot de passe réinitialisé.' },
+      });
       const payload = {
         token: 'reset-token-abc',
         email: 'jean@example.cm',
@@ -286,7 +308,9 @@ describe('authService', () => {
 
   describe('updatePassword', () => {
     it('sends current and new password', async () => {
-      mockPost.mockResolvedValue({ data: { message: 'Mot de passe mis à jour.' } });
+      mockPost.mockResolvedValue({
+        data: { message: 'Mot de passe mis à jour.' },
+      });
       const payload = {
         current_password: 'OldP@ss!',
         new_password: 'NewP@ss!2026',
@@ -327,7 +351,10 @@ describe('authService', () => {
       });
 
       await authService.getOAuthRedirectUrl('facebook');
-      expect(mockGet).toHaveBeenCalledWith('/auth/oauth/facebook/redirect', expect.any(Object));
+      expect(mockGet).toHaveBeenCalledWith(
+        '/auth/oauth/facebook/redirect',
+        expect.any(Object)
+      );
     });
   });
 });

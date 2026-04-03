@@ -278,7 +278,8 @@ describe('AuthProvider', () => {
       });
       expect(mockAuthService.login).toHaveBeenCalledWith(
         'jean@keyhome.app',
-        'password123'
+        'password123',
+        'client'
       );
       expect(mockReplace).toHaveBeenCalledWith('/home');
     });
