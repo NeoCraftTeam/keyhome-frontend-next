@@ -136,6 +136,7 @@ export interface User {
   city_id: string | null;
   city_name: string | null;
   username?: string | null;
+  bio?: string | null;
   point_balance?: number;
   onboarding_completed_at?: string | null;
   last_home_visit_at?: string | null;
@@ -279,7 +280,7 @@ export interface Ad {
   charges_eau?: string | null;
   charges_electricite?: string | null;
   charges_autres?: string | null;
-  // Proximité POI (mètres) — renvoyée par l'API, calculée côté backend
+  // Proximité (mètres) — saisies par l'annonceur, stockées sur l'annonce
   distance_main_road_m?: number | null;
   distance_shops_m?: number | null;
   distance_transport_m?: number | null;
