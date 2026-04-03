@@ -3,8 +3,12 @@
 import { useAuth } from '@/providers/AuthProvider';
 import { brand } from '@/theme/tokens';
 import { adsService } from '@/services/ads.service';
-import { adTypesService, citiesService, quartersService } from '@/services/cities.service';
-import { PropertyAttribute } from '@/types';
+import {
+  adTypesService,
+  citiesService,
+  quartersService,
+} from '@/services/cities.service';
+import { PropertyAttribute, UserRole } from '@/types';
 import {
   AddPhotoAlternate,
   Apartment,
@@ -21,7 +25,6 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
   Chip,
   CircularProgress,
   Container,
@@ -42,18 +45,18 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MAPBOX_TOKEN, DEFAULT_CENTER } from '@/lib/constants';
 
-mapboxgl.accessToken = MAPBOX_TOKEN;
-if (process.env.NODE_ENV === 'development') {
-  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', { value: '', writable: false });
-}
-
-const STEPS = ['Informations', 'Détails & Prix', 'Localisation', 'Photos', 'Confirmation'];
+const STEPS = [
+  'Informations',
+  'Détails & Prix',
+  'Localisation',
+  'Photos',
+  'Confirmation',
+];
 
 const ATTRIBUTE_LABELS: Record<PropertyAttribute, string> = {
   [PropertyAttribute.Wifi]: 'Wi-Fi',
@@ -126,9 +129,11 @@ export default function PublishPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markerRef = useRef<any>(null);
 
   const { data: citiesData } = useQuery({
     queryKey: ['cities-publish'],
@@ -151,7 +156,7 @@ export default function PublishPage() {
 
   // Redirect if not agent/admin
   useEffect(() => {
-    if (!authLoading && isAuthenticated && user?.role === 'customer') {
+    if (!authLoading && isAuthenticated && user?.role === UserRole.CUSTOMER) {
       router.replace('/home');
     }
     if (!authLoading && !isAuthenticated) {
@@ -159,66 +164,117 @@ export default function PublishPage() {
     }
   }, [authLoading, isAuthenticated, user, router]);
 
-  // Init Mapbox on step 2
+  // Init Mapbox on step 2 — dynamically imported to avoid loading ~200 KB upfront
   useEffect(() => {
-    if (step !== 2 || !mapContainerRef.current || mapRef.current) { return; }
+    if (step !== 2 || !mapContainerRef.current || mapRef.current) {
+      return;
+    }
 
-    const center: [number, number] = form.longitude && form.latitude
-      ? [parseFloat(form.longitude), parseFloat(form.latitude)]
-      : DEFAULT_CENTER;
+    let cancelled = false;
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center,
-      zoom: 13,
-      attributionControl: false,
+    import('mapbox-gl').then(({ default: mapboxgl }) => {
+      if (cancelled || !mapContainerRef.current || mapRef.current) {
+        return;
+      }
+
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          Object.defineProperty(mapboxgl.config, 'EVENTS_URL', {
+            value: '',
+            writable: false,
+          });
+        } catch {
+          /* already set */
+        }
+      }
+
+      const center: [number, number] =
+        form.longitude && form.latitude
+          ? [parseFloat(form.longitude), parseFloat(form.latitude)]
+          : DEFAULT_CENTER;
+
+      const map = new mapboxgl.Map({
+        container: mapContainerRef.current!,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center,
+        zoom: 13,
+        attributionControl: false,
+      });
+
+      map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+      map.addControl(
+        new mapboxgl.AttributionControl({ compact: true }),
+        'bottom-right'
+      );
+
+      const marker = new mapboxgl.Marker({
+        color: brand.primary,
+        draggable: true,
+      })
+        .setLngLat(center)
+        .addTo(map);
+
+      markerRef.current = marker;
+
+      marker.on('dragend', () => {
+        const lngLat = marker.getLngLat();
+        setForm((f) => ({
+          ...f,
+          latitude: String(lngLat.lat),
+          longitude: String(lngLat.lng),
+        }));
+      });
+
+      map.on('click', (e) => {
+        marker.setLngLat(e.lngLat);
+        setForm((f) => ({
+          ...f,
+          latitude: String(e.lngLat.lat),
+          longitude: String(e.lngLat.lng),
+        }));
+      });
+
+      mapRef.current = map;
     });
-
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
-
-    const marker = new mapboxgl.Marker({ color: brand.primary, draggable: true })
-      .setLngLat(center)
-      .addTo(map);
-
-    markerRef.current = marker;
-
-    marker.on('dragend', () => {
-      const lngLat = marker.getLngLat();
-      setForm((f) => ({ ...f, latitude: String(lngLat.lat), longitude: String(lngLat.lng) }));
-    });
-
-    map.on('click', (e) => {
-      marker.setLngLat(e.lngLat);
-      setForm((f) => ({ ...f, latitude: String(e.lngLat.lat), longitude: String(e.lngLat.lng) }));
-    });
-
-    mapRef.current = map;
 
     return () => {
-      map.remove();
-      mapRef.current = null;
+      cancelled = true;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
   const handleGeolocate = useCallback(() => {
     navigator.geolocation?.getCurrentPosition((pos) => {
       const { latitude, longitude } = pos.coords;
-      setForm((f) => ({ ...f, latitude: String(latitude), longitude: String(longitude) }));
+      setForm((f) => ({
+        ...f,
+        latitude: String(latitude),
+        longitude: String(longitude),
+      }));
       mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15 });
       markerRef.current?.setLngLat([longitude, latitude]);
     });
   }, []);
 
-  const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    const remaining = 10 - images.length;
-    const toAdd = files.slice(0, remaining);
-    setImages((prev) => [...prev, ...toAdd]);
-    setImagePreviews((prev) => [...prev, ...toAdd.map((f) => URL.createObjectURL(f))]);
-  }, [images]);
+  const handleImageChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files ?? []);
+      const remaining = 10 - images.length;
+      const toAdd = files.slice(0, remaining);
+      setImages((prev) => [...prev, ...toAdd]);
+      setImagePreviews((prev) => [
+        ...prev,
+        ...toAdd.map((f) => URL.createObjectURL(f)),
+      ]);
+    },
+    [images]
+  );
 
   const removeImage = useCallback((idx: number) => {
     setImages((prev) => prev.filter((_, i) => i !== idx));
@@ -239,13 +295,18 @@ export default function PublishPage() {
 
   const canProceed = (): boolean => {
     if (step === 0) {
-      return !!(form.title.trim() && form.type_id && form.city_id && form.quarter_id);
+      return !!(
+        form.title.trim() &&
+        form.type_id &&
+        form.city_id &&
+        form.quarter_id
+      );
     }
     if (step === 1) {
       return !!(form.price && form.surface_area);
     }
     if (step === 2) {
-      return !!(form.adresse.trim());
+      return !!form.adresse.trim();
     }
     if (step === 3) {
       return images.length >= 1;
@@ -273,15 +334,20 @@ export default function PublishPage() {
         fd.append('latitude', form.latitude);
         fd.append('longitude', form.longitude);
       }
-      if (form.available_from) { fd.append('available_from', form.available_from); }
-      if (form.deposit_amount) { fd.append('deposit_amount', form.deposit_amount); }
+      if (form.available_from) {
+        fd.append('available_from', form.available_from);
+      }
+      if (form.deposit_amount) {
+        fd.append('deposit_amount', form.deposit_amount);
+      }
       form.attributes.forEach((a) => fd.append('attributes[]', a));
       images.forEach((img) => fd.append('images[]', img));
 
       await adsService.create(fd);
       setSuccess(true);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
       setError(msg ?? 'Une erreur est survenue. Veuillez réessayer.');
     } finally {
       setSubmitting(false);
@@ -310,10 +376,15 @@ export default function PublishPage() {
           Annonce soumise avec succès !
         </Typography>
         <Typography color="text.secondary" mb={4}>
-          Votre annonce est en cours de validation par notre équipe. Vous serez notifié dès qu'elle sera publiée.
+          Votre annonce est en cours de validation par notre équipe. Vous serez
+          notifié dès qu&apos;elle sera publiée.
         </Typography>
-        <Button variant="contained" onClick={() => router.push('/home')} size="large">
-          Retour à l'accueil
+        <Button
+          variant="contained"
+          onClick={() => router.push('/home')}
+          size="large"
+        >
+          Retour à l&apos;accueil
         </Button>
       </Container>
     );
@@ -342,11 +413,26 @@ export default function PublishPage() {
         sx={{ mb: 4, height: 6, borderRadius: 3 }}
       />
 
-      <Paper elevation={0} sx={{ p: { xs: 2, md: 4 }, border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, md: 4 },
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 3,
+        }}
+      >
         {/* STEP 0 — Informations de base */}
         {step === 0 && (
           <Box>
-            <Typography variant="h6" fontWeight={700} mb={3} display="flex" alignItems="center" gap={1}>
+            <Typography
+              variant="h6"
+              fontWeight={700}
+              mb={3}
+              display="flex"
+              alignItems="center"
+              gap={1}
+            >
               <Home color="primary" /> Informations générales
             </Typography>
             <Grid container spacing={3}>
@@ -355,7 +441,9 @@ export default function PublishPage() {
                   label="Titre de l'annonce *"
                   fullWidth
                   value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, title: e.target.value }))
+                  }
                   inputProps={{ maxLength: 120 }}
                   helperText={`${form.title.length}/120 — Ex : Bel appartement 3 pièces à Bastos`}
                 />
@@ -366,10 +454,14 @@ export default function PublishPage() {
                   label="Type de bien *"
                   fullWidth
                   value={form.type_id}
-                  onChange={(e) => setForm((f) => ({ ...f, type_id: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, type_id: e.target.value }))
+                  }
                 >
                   {typesData?.map((t) => (
-                    <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+                    <MenuItem key={t.id} value={t.id}>
+                      {t.name}
+                    </MenuItem>
                   ))}
                 </TextField>
               </Grid>
@@ -379,10 +471,18 @@ export default function PublishPage() {
                   label="Ville *"
                   fullWidth
                   value={form.city_id}
-                  onChange={(e) => setForm((f) => ({ ...f, city_id: e.target.value, quarter_id: '' }))}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      city_id: e.target.value,
+                      quarter_id: '',
+                    }))
+                  }
                 >
                   {citiesData?.data?.map((c) => (
-                    <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                    <MenuItem key={c.id} value={c.id}>
+                      {c.name}
+                    </MenuItem>
                   ))}
                 </TextField>
               </Grid>
@@ -392,11 +492,15 @@ export default function PublishPage() {
                   label="Quartier *"
                   fullWidth
                   value={form.quarter_id}
-                  onChange={(e) => setForm((f) => ({ ...f, quarter_id: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, quarter_id: e.target.value }))
+                  }
                   disabled={!form.city_id}
                 >
                   {quartersData?.data?.map((q) => (
-                    <MenuItem key={q.id} value={q.id}>{q.name}</MenuItem>
+                    <MenuItem key={q.id} value={q.id}>
+                      {q.name}
+                    </MenuItem>
                   ))}
                 </TextField>
               </Grid>
@@ -407,7 +511,9 @@ export default function PublishPage() {
                   multiline
                   rows={5}
                   value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, description: e.target.value }))
+                  }
                   helperText="Décrivez votre bien : état, environnement, accès, points forts... Une description détaillée augmente vos chances de location."
                 />
               </Grid>
@@ -418,7 +524,14 @@ export default function PublishPage() {
         {/* STEP 1 — Détails & Prix */}
         {step === 1 && (
           <Box>
-            <Typography variant="h6" fontWeight={700} mb={3} display="flex" alignItems="center" gap={1}>
+            <Typography
+              variant="h6"
+              fontWeight={700}
+              mb={3}
+              display="flex"
+              alignItems="center"
+              gap={1}
+            >
               <Apartment color="primary" /> Détails & Prix
             </Typography>
             <Grid container spacing={3}>
@@ -428,8 +541,14 @@ export default function PublishPage() {
                   fullWidth
                   type="number"
                   value={form.price}
-                  onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-                  InputProps={{ endAdornment: <InputAdornment position="end">FCFA/mois</InputAdornment> }}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, price: e.target.value }))
+                  }
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">FCFA/mois</InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -438,25 +557,43 @@ export default function PublishPage() {
                   fullWidth
                   type="number"
                   value={form.surface_area}
-                  onChange={(e) => setForm((f) => ({ ...f, surface_area: e.target.value }))}
-                  InputProps={{ endAdornment: <InputAdornment position="end">m²</InputAdornment> }}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, surface_area: e.target.value }))
+                  }
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">m²</InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
                 <Typography gutterBottom>Chambres : {form.bedrooms}</Typography>
                 <Slider
                   value={parseInt(form.bedrooms)}
-                  onChange={(_, v) => setForm((f) => ({ ...f, bedrooms: String(v) }))}
-                  min={0} max={10} step={1} marks
+                  onChange={(_, v) =>
+                    setForm((f) => ({ ...f, bedrooms: String(v) }))
+                  }
+                  min={0}
+                  max={10}
+                  step={1}
+                  marks
                   valueLabelDisplay="auto"
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
-                <Typography gutterBottom>Salles de bain : {form.bathrooms}</Typography>
+                <Typography gutterBottom>
+                  Salles de bain : {form.bathrooms}
+                </Typography>
                 <Slider
                   value={parseInt(form.bathrooms)}
-                  onChange={(_, v) => setForm((f) => ({ ...f, bathrooms: String(v) }))}
-                  min={0} max={6} step={1} marks
+                  onChange={(_, v) =>
+                    setForm((f) => ({ ...f, bathrooms: String(v) }))
+                  }
+                  min={0}
+                  max={6}
+                  step={1}
+                  marks
                   valueLabelDisplay="auto"
                 />
               </Grid>
@@ -465,7 +602,12 @@ export default function PublishPage() {
                   control={
                     <Switch
                       checked={form.has_parking}
-                      onChange={(e) => setForm((f) => ({ ...f, has_parking: e.target.checked }))}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          has_parking: e.target.checked,
+                        }))
+                      }
                       color="primary"
                     />
                   }
@@ -478,8 +620,14 @@ export default function PublishPage() {
                   fullWidth
                   type="number"
                   value={form.deposit_amount}
-                  onChange={(e) => setForm((f) => ({ ...f, deposit_amount: e.target.value }))}
-                  InputProps={{ endAdornment: <InputAdornment position="end">FCFA</InputAdornment> }}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, deposit_amount: e.target.value }))
+                  }
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">FCFA</InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -488,7 +636,9 @@ export default function PublishPage() {
                   fullWidth
                   type="date"
                   value={form.available_from}
-                  onChange={(e) => setForm((f) => ({ ...f, available_from: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, available_from: e.target.value }))
+                  }
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
@@ -502,8 +652,12 @@ export default function PublishPage() {
                       key={attr}
                       label={ATTRIBUTE_LABELS[attr]}
                       onClick={() => toggleAttribute(attr)}
-                      color={form.attributes.includes(attr) ? 'primary' : 'default'}
-                      variant={form.attributes.includes(attr) ? 'filled' : 'outlined'}
+                      color={
+                        form.attributes.includes(attr) ? 'primary' : 'default'
+                      }
+                      variant={
+                        form.attributes.includes(attr) ? 'filled' : 'outlined'
+                      }
                       icon={<Wifi sx={{ fontSize: 16 }} />}
                       sx={{ cursor: 'pointer' }}
                     />
@@ -517,14 +671,23 @@ export default function PublishPage() {
         {/* STEP 2 — Localisation */}
         {step === 2 && (
           <Box>
-            <Typography variant="h6" fontWeight={700} mb={3} display="flex" alignItems="center" gap={1}>
+            <Typography
+              variant="h6"
+              fontWeight={700}
+              mb={3}
+              display="flex"
+              alignItems="center"
+              gap={1}
+            >
               <LocationOn color="primary" /> Localisation
             </Typography>
             <TextField
               label="Adresse précise *"
               fullWidth
               value={form.adresse}
-              onChange={(e) => setForm((f) => ({ ...f, adresse: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, adresse: e.target.value }))
+              }
               helperText="Ex : Rue Nachtigal, face au supermarché Score"
               sx={{ mb: 3 }}
             />
@@ -532,14 +695,18 @@ export default function PublishPage() {
               <TextField
                 label="Latitude"
                 value={form.latitude}
-                onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, latitude: e.target.value }))
+                }
                 size="small"
                 sx={{ flex: 1 }}
               />
               <TextField
                 label="Longitude"
                 value={form.longitude}
-                onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, longitude: e.target.value }))
+                }
                 size="small"
                 sx={{ flex: 1 }}
               />
@@ -549,12 +716,24 @@ export default function PublishPage() {
                 </IconButton>
               </Tooltip>
             </Box>
-            <Typography variant="caption" color="text.secondary" mb={2} display="block">
-              Cliquez sur la carte ou déplacez le marqueur pour définir la position exacte.
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              mb={2}
+              display="block"
+            >
+              Cliquez sur la carte ou déplacez le marqueur pour définir la
+              position exacte.
             </Typography>
             <Box
               ref={mapContainerRef}
-              sx={{ height: 350, borderRadius: 2, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}
+              sx={{
+                height: 350,
+                borderRadius: 2,
+                overflow: 'hidden',
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
             />
           </Box>
         )}
@@ -562,11 +741,19 @@ export default function PublishPage() {
         {/* STEP 3 — Photos */}
         {step === 3 && (
           <Box>
-            <Typography variant="h6" fontWeight={700} mb={1} display="flex" alignItems="center" gap={1}>
+            <Typography
+              variant="h6"
+              fontWeight={700}
+              mb={1}
+              display="flex"
+              alignItems="center"
+              gap={1}
+            >
               <AddPhotoAlternate color="primary" /> Photos
             </Typography>
             <Typography color="text.secondary" mb={3}>
-              Ajoutez jusqu'à 10 photos. La première sera la photo principale.
+              Ajoutez jusqu&apos;à 10 photos. La première sera la photo
+              principale.
             </Typography>
 
             {images.length < 10 && (
@@ -578,14 +765,27 @@ export default function PublishPage() {
                 fullWidth
               >
                 Ajouter des photos ({images.length}/10)
-                <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
+                <input
+                  type="file"
+                  hidden
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
               </Button>
             )}
 
             <Grid container spacing={2}>
               {imagePreviews.map((src, idx) => (
                 <Grid key={idx} size={{ xs: 6, sm: 4, md: 3 }}>
-                  <Box sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden', aspectRatio: '4/3' }}>
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      aspectRatio: '4/3',
+                    }}
+                  >
                     <Box
                       component="img"
                       src={src}
@@ -621,7 +821,8 @@ export default function PublishPage() {
 
             {images.length === 0 && (
               <Alert severity="info" sx={{ mt: 2 }}>
-                Au moins 1 photo est requise. Les annonces avec 5+ photos reçoivent 3× plus de contacts.
+                Au moins 1 photo est requise. Les annonces avec 5+ photos
+                reçoivent 3× plus de contacts.
               </Alert>
             )}
           </Box>
@@ -636,17 +837,39 @@ export default function PublishPage() {
             <Grid container spacing={2}>
               {[
                 { label: 'Titre', value: form.title },
-              { label: 'Type', value: typesData?.find((t) => t.id === form.type_id)?.name ?? '—' },
-              { label: 'Quartier', value: quartersData?.data?.find((q) => q.id === form.quarter_id)?.name ?? '—' },
-                { label: 'Prix', value: form.price ? `${parseInt(form.price).toLocaleString('fr-FR')} FCFA/mois` : '—' },
-                { label: 'Surface', value: form.surface_area ? `${form.surface_area} m²` : '—' },
+                {
+                  label: 'Type',
+                  value:
+                    typesData?.find((t) => t.id === form.type_id)?.name ?? '—',
+                },
+                {
+                  label: 'Quartier',
+                  value:
+                    quartersData?.data?.find((q) => q.id === form.quarter_id)
+                      ?.name ?? '—',
+                },
+                {
+                  label: 'Prix',
+                  value: form.price
+                    ? `${parseInt(form.price).toLocaleString('fr-FR')} FCFA/mois`
+                    : '—',
+                },
+                {
+                  label: 'Surface',
+                  value: form.surface_area ? `${form.surface_area} m²` : '—',
+                },
                 { label: 'Chambres', value: form.bedrooms },
                 { label: 'Parking', value: form.has_parking ? 'Oui' : 'Non' },
                 { label: 'Photos', value: `${images.length} photo(s)` },
-                { label: 'Localisation GPS', value: form.latitude ? 'Définie' : 'Non définie' },
+                {
+                  label: 'Localisation GPS',
+                  value: form.latitude ? 'Définie' : 'Non définie',
+                },
               ].map(({ label, value }) => (
                 <Grid key={label} size={{ xs: 6, sm: 4 }}>
-                  <Typography variant="caption" color="text.secondary">{label}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {label}
+                  </Typography>
                   <Typography fontWeight={600}>{value}</Typography>
                 </Grid>
               ))}
@@ -654,16 +877,30 @@ export default function PublishPage() {
 
             {form.attributes.length > 0 && (
               <Box mt={3}>
-                <Typography variant="caption" color="text.secondary">Équipements</Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Équipements
+                </Typography>
+                <Box
+                  sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}
+                >
                   {form.attributes.map((a) => (
-                    <Chip key={a} label={ATTRIBUTE_LABELS[a]} size="small" color="primary" variant="outlined" />
+                    <Chip
+                      key={a}
+                      label={ATTRIBUTE_LABELS[a]}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
                   ))}
                 </Box>
               </Box>
             )}
 
-            {error && <Alert severity="error" id="publish-error" sx={{ mt: 3 }}>{error}</Alert>}
+            {error && (
+              <Alert severity="error" id="publish-error" sx={{ mt: 3 }}>
+                {error}
+              </Alert>
+            )}
           </Box>
         )}
       </Paper>
@@ -696,9 +933,15 @@ export default function PublishPage() {
             onClick={handleSubmit}
             disabled={submitting}
             size="large"
-            startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : <Check />}
+            startIcon={
+              submitting ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <Check />
+              )
+            }
           >
-            {submitting ? 'Publication...' : 'Publier l\'annonce'}
+            {submitting ? 'Publication...' : "Publier l'annonce"}
           </Button>
         )}
       </Box>
