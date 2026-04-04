@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import {
   Box,
   Button,
@@ -14,7 +15,9 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Close, CookieOutlined, Shield } from '@mui/icons-material';
+import Close from '@mui/icons-material/Close';
+import CookieOutlined from '@mui/icons-material/CookieOutlined';
+import Shield from '@mui/icons-material/Shield';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { brand, brandAgent, gradient } from '@/theme/tokens';
 
@@ -63,6 +66,7 @@ interface CookieBannerProps {
 export default function CookieBanner({
   variant = 'default',
 }: CookieBannerProps) {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [prefs, setPrefs] = useState<CookiePreferences>(DEFAULT_PREFS);
@@ -79,11 +83,13 @@ export default function CookieBanner({
     : gradient.primary;
 
   useEffect(() => {
+    // Owner layout mounts its own teal CookieBanner — don't double-show
+    if (variant === 'default' && pathname?.startsWith('/owner')) return;
     if (loadPrefs() === null) {
       const t = setTimeout(() => setVisible(true), 1200);
       return () => clearTimeout(t);
     }
-  }, []);
+  }, [variant, pathname]);
 
   const acceptAll = () => {
     savePrefs({ necessary: true, analytics: true, marketing: true });

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import {
   Alert,
   Box,
@@ -10,7 +11,9 @@ import {
   Snackbar,
   Typography,
 } from '@mui/material';
-import { Close, GetApp, SystemUpdate } from '@mui/icons-material';
+import Close from '@mui/icons-material/Close';
+import GetApp from '@mui/icons-material/GetApp';
+import SystemUpdate from '@mui/icons-material/SystemUpdate';
 import { brand, gradient } from '@/theme/tokens';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -26,6 +29,10 @@ interface BeforeInstallPromptEvent extends Event {
  * Also handles the "new version available" toast from the service worker.
  */
 export default function PWAInstallPrompt() {
+  const pathname = usePathname();
+  // Owner panel has its own OwnerPWAInstallPrompt — skip install banner there.
+  const isOwnerPanel = pathname?.startsWith('/owner');
+
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState(false);
@@ -39,6 +46,8 @@ export default function PWAInstallPrompt() {
   const INSTALL_THRESHOLD = 3;
 
   useEffect(() => {
+    // Owner panel handles its own install prompt
+    if (isOwnerPanel) return;
     const dismissed = sessionStorage.getItem(DISMISS_KEY);
     if (dismissed) return;
 
@@ -47,7 +56,8 @@ export default function PWAInstallPrompt() {
       setDeferredPrompt(e as BeforeInstallPromptEvent);
 
       // Increment ad view counter and only show after INSTALL_THRESHOLD views
-      const views = parseInt(sessionStorage.getItem(AD_VIEW_COUNT_KEY) ?? '0', 10) + 1;
+      const views =
+        parseInt(sessionStorage.getItem(AD_VIEW_COUNT_KEY) ?? '0', 10) + 1;
       sessionStorage.setItem(AD_VIEW_COUNT_KEY, String(views));
 
       if (views >= INSTALL_THRESHOLD) {
@@ -60,7 +70,8 @@ export default function PWAInstallPrompt() {
     // Also listen for a custom event fired by AdDetailClient on each ad page load
     const onAdView = () => {
       if (!sessionStorage.getItem(DISMISS_KEY) && deferredPrompt) {
-        const views = parseInt(sessionStorage.getItem(AD_VIEW_COUNT_KEY) ?? '0', 10) + 1;
+        const views =
+          parseInt(sessionStorage.getItem(AD_VIEW_COUNT_KEY) ?? '0', 10) + 1;
         sessionStorage.setItem(AD_VIEW_COUNT_KEY, String(views));
         if (views >= INSTALL_THRESHOLD) {
           setShowBanner(true);
@@ -97,9 +108,16 @@ export default function PWAInstallPrompt() {
     sessionStorage.setItem(DISMISS_KEY, '1');
   }, []);
 
-  const handleUpdate = useCallback(() => {
+  const handleUpdate = useCallback(async () => {
     setUpdateAvailable(false);
-    window.location.reload();
+    // Tell the waiting SW to skip waiting and take control.
+    // ServiceWorkerRegistrar listens for 'controllerchange' and reloads.
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg?.waiting) {
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+      window.location.reload();
+    }
   }, []);
 
   return (
@@ -131,7 +149,8 @@ export default function PWAInstallPrompt() {
               bgcolor: 'background.paper',
               borderRadius: 3,
               p: { xs: 1.5, sm: 2 },
-              boxShadow: '0 16px 48px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.06)',
+              boxShadow:
+                '0 16px 48px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.06)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
             }}
@@ -148,7 +167,9 @@ export default function PWAInstallPrompt() {
                 flexShrink: 0,
               }}
             >
-              <GetApp sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
+              <GetApp
+                sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }}
+              />
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography
@@ -189,7 +210,11 @@ export default function PWAInstallPrompt() {
               size="small"
               aria-label="Fermer"
               onClick={handleDismiss}
-              sx={{ color: 'text.secondary', flexShrink: 0, ml: { xs: 'auto', sm: -0.5 } }}
+              sx={{
+                color: 'text.secondary',
+                flexShrink: 0,
+                ml: { xs: 'auto', sm: -0.5 },
+              }}
             >
               <Close sx={{ fontSize: 18 }} />
             </IconButton>
