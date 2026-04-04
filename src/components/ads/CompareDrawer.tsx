@@ -4,7 +4,9 @@ import { formatPrice } from '@/lib/constants';
 import { useComparator } from '@/providers/ComparatorProvider';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { Ad } from '@/types';
-import { AccessTime, Add, Close } from '@mui/icons-material';
+import AccessTime from '@mui/icons-material/AccessTime';
+import Add from '@mui/icons-material/Add';
+import Close from '@mui/icons-material/Close';
 import { alpha } from '@mui/material/styles';
 import {
   Box,
@@ -22,13 +24,19 @@ interface CompareDrawerProps {
   onClose: () => void;
 }
 
-export default function CompareDrawer({ currentAd, open, onClose }: CompareDrawerProps) {
+export default function CompareDrawer({
+  currentAd,
+  open,
+  onClose,
+}: CompareDrawerProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { items: recentlyViewed } = useRecentlyViewed();
   const { add, isSelected } = useComparator();
 
-  const otherRecentlyViewed = recentlyViewed.filter((a) => String(a.id) !== String(currentAd.id));
+  const otherRecentlyViewed = recentlyViewed.filter(
+    (a) => String(a.id) !== String(currentAd.id)
+  );
 
   const handleAddToCompare = (ad: Ad) => {
     if (!isSelected(ad.id)) {
@@ -55,7 +63,18 @@ export default function CompareDrawer({ currentAd, open, onClose }: CompareDrawe
         },
       }}
     >
-      <Box sx={{ px: 2, py: 2, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider' }}>
+      <Box
+        sx={{
+          px: 2,
+          py: 2,
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AccessTime sx={{ color: 'text.secondary', fontSize: 20 }} />
           <Typography variant="h6" fontWeight={700}>
@@ -70,16 +89,22 @@ export default function CompareDrawer({ currentAd, open, onClose }: CompareDrawe
       <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
         <Box sx={{ p: 2 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Sélectionnez des annonces récemment consultées pour les comparer avec celle-ci.
+            Sélectionnez des annonces récemment consultées pour les comparer
+            avec celle-ci.
           </Typography>
           {otherRecentlyViewed.length === 0 ? (
-            <Typography variant="body2" color="text.disabled" sx={{ py: 4, textAlign: 'center' }}>
+            <Typography
+              variant="body2"
+              color="text.disabled"
+              sx={{ py: 4, textAlign: 'center' }}
+            >
               Aucune autre annonce récemment consultée.
             </Typography>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {otherRecentlyViewed.map((ad) => {
-                const cover = ad.images?.find((i) => i.is_primary) ?? ad.images?.[0];
+                const cover =
+                  ad.images?.find((i) => i.is_primary) ?? ad.images?.[0];
                 const selected = isSelected(ad.id);
                 return (
                   <Box
@@ -92,10 +117,17 @@ export default function CompareDrawer({ currentAd, open, onClose }: CompareDrawe
                       borderRadius: 2,
                       border: '1px solid',
                       borderColor: selected ? 'primary.main' : 'divider',
-                      bgcolor: selected ? (t) => alpha(t.palette.primary.main, 0.08) : 'transparent',
+                      bgcolor: selected
+                        ? (t) => alpha(t.palette.primary.main, 0.08)
+                        : 'transparent',
                       cursor: selected ? 'default' : 'pointer',
                       transition: 'all 0.2s',
-                      '&:hover': selected ? {} : { borderColor: 'primary.main', bgcolor: 'action.hover' },
+                      '&:hover': selected
+                        ? {}
+                        : {
+                            borderColor: 'primary.main',
+                            bgcolor: 'action.hover',
+                          },
                     }}
                   >
                     <Box
@@ -113,7 +145,11 @@ export default function CompareDrawer({ currentAd, open, onClose }: CompareDrawe
                           component="img"
                           src={cover.thumb ?? cover.url}
                           alt={ad.title}
-                          sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
                         />
                       )}
                     </Box>
@@ -121,10 +157,22 @@ export default function CompareDrawer({ currentAd, open, onClose }: CompareDrawe
                       <Typography variant="body2" fontWeight={600} noWrap>
                         {ad.title}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" noWrap display="block">
-                        {ad.quarter?.name}{ad.quarter?.city_name ? `, ${ad.quarter.city_name}` : ''}
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        noWrap
+                        display="block"
+                      >
+                        {ad.quarter?.name}
+                        {ad.quarter?.city_name
+                          ? `, ${ad.quarter.city_name}`
+                          : ''}
                       </Typography>
-                      <Typography variant="caption" fontWeight={700} color="primary.main">
+                      <Typography
+                        variant="caption"
+                        fontWeight={700}
+                        color="primary.main"
+                      >
                         {formatPrice(ad.price)}
                       </Typography>
                     </Box>
@@ -137,7 +185,11 @@ export default function CompareDrawer({ currentAd, open, onClose }: CompareDrawe
                         if (!selected) handleAddToCompare(ad);
                       }}
                       disabled={selected}
-                      sx={{ flexShrink: 0, textTransform: 'none', fontSize: '0.75rem' }}
+                      sx={{
+                        flexShrink: 0,
+                        textTransform: 'none',
+                        fontSize: '0.75rem',
+                      }}
                     >
                       {selected ? 'Ajouté' : 'Comparer'}
                     </Button>
@@ -149,8 +201,21 @@ export default function CompareDrawer({ currentAd, open, onClose }: CompareDrawe
         </Box>
       </Box>
 
-      <Box sx={{ p: 2, flexShrink: 0, borderTop: '1px solid', borderColor: 'divider' }}>
-        <Button fullWidth variant="outlined" size="small" onClick={onClose} sx={{ textTransform: 'none', borderRadius: 2 }}>
+      <Box
+        sx={{
+          p: 2,
+          flexShrink: 0,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <Button
+          fullWidth
+          variant="outlined"
+          size="small"
+          onClick={onClose}
+          sx={{ textTransform: 'none', borderRadius: 2 }}
+        >
           Fermer
         </Button>
       </Box>

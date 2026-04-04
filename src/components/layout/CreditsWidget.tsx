@@ -3,12 +3,8 @@
 import PurchaseCreditsModal from '@/components/ui/PurchaseCreditsModal';
 import { useAuth } from '@/providers/AuthProvider';
 import { creditsService } from '@/services/credits.service';
-import { Toll } from '@mui/icons-material';
-import {
-  Box,
-  Skeleton,
-  Typography,
-} from '@mui/material';
+import Toll from '@mui/icons-material/Toll';
+import { Box, Skeleton, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
@@ -28,7 +24,8 @@ export default function CreditsWidget() {
   const { data: balance, isLoading: balanceLoading } = useQuery({
     queryKey: ['credits-balance'],
     queryFn: () => creditsService.getBalance(),
-    refetchInterval: (query) => (query.state.status === 'error' ? false : 30_000),
+    refetchInterval: (query) =>
+      query.state.status === 'error' ? false : 30_000,
     staleTime: 15_000,
     enabled: isAuthenticated,
     retry: false,
@@ -99,7 +96,8 @@ export default function CreditsWidget() {
           userSelect: 'none',
           transition: 'all 0.18s',
           ...(bouncing && {
-            animation: 'creditsBounce 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite alternate, creditsGlow 1.5s ease-in-out infinite',
+            animation:
+              'creditsBounce 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite alternate, creditsGlow 1.5s ease-in-out infinite',
             '@keyframes creditsBounce': {
               '0%': { transform: 'translateY(0) scale(1)' },
               '100%': { transform: 'translateY(-4px) scale(1.08)' },
@@ -110,7 +108,8 @@ export default function CreditsWidget() {
             },
           }),
           '&:hover': {
-            background: 'linear-gradient(135deg, rgba(246,71,95,0.2) 0%, rgba(246,71,95,0.12) 100%)',
+            background:
+              'linear-gradient(135deg, rgba(246,71,95,0.2) 0%, rgba(246,71,95,0.12) 100%)',
             borderColor: 'primary.main',
             boxShadow: '0 0 0 3px rgba(246,71,95,0.12)',
           },
@@ -123,14 +122,22 @@ export default function CreditsWidget() {
           <Typography
             variant="body2"
             fontWeight={800}
-            sx={{ color: 'primary.main', lineHeight: 1, letterSpacing: -0.3, fontSize: '0.82rem' }}
+            sx={{
+              color: 'primary.main',
+              lineHeight: 1,
+              letterSpacing: -0.3,
+              fontSize: '0.82rem',
+            }}
           >
             {(balance ?? 0).toLocaleString('fr-FR')}
           </Typography>
         )}
       </Box>
 
-      <PurchaseCreditsModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <PurchaseCreditsModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
     </>
   );
 }

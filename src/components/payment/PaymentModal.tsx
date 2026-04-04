@@ -7,12 +7,10 @@ import {
   PaymentMethod,
   PaymentType,
 } from '@/types';
-import {
-  CheckCircle,
-  Close,
-  Error as ErrorIcon,
-  Lock,
-} from '@mui/icons-material';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import Close from '@mui/icons-material/Close';
+import ErrorIcon from '@mui/icons-material/Error';
+import Lock from '@mui/icons-material/Lock';
 import {
   Box,
   Button,

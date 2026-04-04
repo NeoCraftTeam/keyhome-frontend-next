@@ -2,7 +2,7 @@
 
 import { Box, Button, Paper, Stack, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { AssignmentOutlined } from '@mui/icons-material';
+import AssignmentOutlined from '@mui/icons-material/AssignmentOutlined';
 import { useState } from 'react';
 
 const STORAGE_KEY = (surveyId: string) => `survey_postponed_${surveyId}`;

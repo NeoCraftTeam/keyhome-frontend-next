@@ -1,17 +1,22 @@
 'use client';
 
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { formatDistance, haversineDistance } from '@/lib/geo';
 import { MAPBOX_TOKEN } from '@/lib/constants';
 import type { UserLocation } from '@/hooks/useUserLocation';
 import { Box, Typography, useTheme } from '@mui/material';
-import { PlaceOutlined, InfoOutlined } from '@mui/icons-material';
+import PlaceOutlined from '@mui/icons-material/PlaceOutlined';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import mapboxgl from 'mapbox-gl';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { brand } from '@/theme/tokens';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 if (process.env.NODE_ENV === 'development') {
-  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', { value: '', writable: false });
+  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', {
+    value: '',
+    writable: false,
+  });
 }
 
 interface Props {
@@ -42,7 +47,8 @@ function getDistanceLabel(km: number): { text: string; color: string } {
 
 function createUserMarker(): HTMLDivElement {
   const el = document.createElement('div');
-  el.style.cssText = 'width:36px;height:36px;position:relative;display:flex;align-items:center;justify-content:center;';
+  el.style.cssText =
+    'width:36px;height:36px;position:relative;display:flex;align-items:center;justify-content:center;';
   el.innerHTML = `
     <div style="
       position:absolute;inset:0;
@@ -71,7 +77,8 @@ function createUserMarker(): HTMLDivElement {
 
 function createAdMarker(): HTMLDivElement {
   const el = document.createElement('div');
-  el.style.cssText = 'width:36px;height:48px;display:flex;flex-direction:column;align-items:center;cursor:default;';
+  el.style.cssText =
+    'width:36px;height:48px;display:flex;flex-direction:column;align-items:center;cursor:default;';
   el.innerHTML = `
     <div style="
       width:36px;height:36px;
@@ -132,31 +139,50 @@ export default function AdLocationMap({
 }: Props) {
   const muiTheme = useTheme();
   const isDarkMode = muiTheme.palette.mode === 'dark';
-  const mapStyle = isDarkMode
-    ? 'mapbox://styles/mapbox/dark-v11'
-    : 'mapbox://styles/mapbox/light-v11';
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  /** Tracks all active Mapbox Marker instances so Effect 2 can remove them on re-run. */
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  /**
+   * Incremented each time the map style finishes loading.
+   * Effect 2 depends on this so it runs after the map is ready,
+   * without depending on mapRef directly (refs don't trigger re-renders).
+   */
+  const [mapKey, setMapKey] = useState(0);
+  const [mapViewStyle, setMapViewStyle] = useState<'streets' | 'satellite'>(
+    'streets'
+  );
+
+  const mapStyle =
+    mapViewStyle === 'satellite'
+      ? 'mapbox://styles/mapbox/satellite-streets-v12'
+      : isDarkMode
+        ? 'mapbox://styles/mapbox/dark-v11'
+        : 'mapbox://styles/mapbox/light-v11';
 
   const [displayLat, displayLng] = useMemo(
     () => (isLocked ? fuzzyCoords(latitude, longitude) : [latitude, longitude]),
-    [latitude, longitude, isLocked],
+    [latitude, longitude, isLocked]
   );
 
   const showRoute = !isLocked && !!userLocation;
 
   const distanceKm = useMemo(() => {
     if (!userLocation) return null;
-    const km = haversineDistance(userLocation.latitude, userLocation.longitude, latitude, longitude);
+    const km = haversineDistance(
+      userLocation.latitude,
+      userLocation.longitude,
+      latitude,
+      longitude
+    );
     return Number.isFinite(km) ? km : null;
   }, [userLocation, latitude, longitude]);
 
+  // ── Effect 1: create / destroy the map ──────────────────────────────────────
+  // Only re-runs when coordinates, lock status, or map style change.
+  // Does NOT depend on userLocation — position updates never recreate the map.
   useEffect(() => {
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
     if (!mapContainerRef.current || !MAPBOX_TOKEN) return;
 
     const map = new mapboxgl.Map({
@@ -165,166 +191,226 @@ export default function AdLocationMap({
       center: [displayLng, displayLat],
       zoom: isLocked ? 13 : 15,
       interactive: true,
-      scrollZoom: false,
+      scrollZoom: true,
       attributionControl: false,
       projection: 'mercator',
     });
 
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+    map.addControl(
+      new mapboxgl.NavigationControl({ showCompass: false }),
+      'top-right'
+    );
     map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
-
-    map.on('load', () => {
-      if (isLocked) {
-        map.addSource('approx-zone', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [displayLng, displayLat] },
-            properties: {},
-          },
-        });
-
-        map.addLayer({
-          id: 'approx-zone-blur',
-          type: 'circle',
-          source: 'approx-zone',
-          paint: {
-            'circle-radius': APPROX_RADIUS_PX,
-            'circle-color': PRIMARY_RED,
-            'circle-opacity': 0.10,
-            'circle-blur': 1,
-          },
-        });
-
-        map.addLayer({
-          id: 'approx-zone-ring',
-          type: 'circle',
-          source: 'approx-zone',
-          paint: {
-            'circle-radius': APPROX_RADIUS_PX,
-            'circle-color': 'transparent',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': PRIMARY_RED,
-            'circle-stroke-opacity': 0.25,
-          },
-        });
-
-        const iconEl = document.createElement('div');
-        iconEl.innerHTML = `
-          <div style="
-            width: 40px; height: 40px;
-            background: rgba(246,71,95,0.15);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          ">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="${PRIMARY_RED}">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-            </svg>
-          </div>
-        `;
-        new mapboxgl.Marker({ element: iconEl, anchor: 'center' })
-          .setLngLat([displayLng, displayLat])
-          .addTo(map);
-      } else {
-        if (showRoute && userLocation && distanceKm !== null) {
-          map.addSource('route-line', {
-            type: 'geojson',
-            data: {
-              type: 'Feature',
-              geometry: {
-                type: 'LineString',
-                coordinates: [
-                  [userLocation.longitude, userLocation.latitude],
-                  [displayLng, displayLat],
-                ],
-              },
-              properties: {},
-            },
-          });
-
-          map.addLayer({
-            id: 'route-line-dashed',
-            type: 'line',
-            source: 'route-line',
-            paint: {
-              'line-color': PRIMARY_RED,
-              'line-width': 2.5,
-              'line-dasharray': [4, 3],
-              'line-opacity': 0.7,
-            },
-            layout: {
-              'line-cap': 'round',
-              'line-join': 'round',
-            },
-          });
-
-          new mapboxgl.Marker({ element: createAdMarker(), anchor: 'bottom' })
-            .setLngLat([displayLng, displayLat])
-            .addTo(map);
-
-          new mapboxgl.Marker({ element: createUserMarker(), anchor: 'center' })
-            .setLngLat([userLocation.longitude, userLocation.latitude])
-            .addTo(map);
-
-          const bounds = new mapboxgl.LngLatBounds();
-          bounds.extend([userLocation.longitude, userLocation.latitude]);
-          bounds.extend([displayLng, displayLat]);
-          map.fitBounds(bounds, {
-            padding: { top: 60, bottom: 60, left: 50, right: 50 },
-            maxZoom: 14,
-            duration: 0,
-          });
-
-          map.once('idle', () => {
-            const userPx = map.project([userLocation.longitude, userLocation.latitude]);
-            const adPx = map.project([displayLng, displayLat]);
-            const midLngLat = map.unproject([(userPx.x + adPx.x) / 2, (userPx.y + adPx.y) / 2]);
-            new mapboxgl.Marker({
-              element: createDistanceLabel(formatDistance(distanceKm), isDarkMode),
-              anchor: 'center',
-            })
-              .setLngLat(midLngLat)
-              .addTo(map);
-          });
-        } else {
-          const markerEl = document.createElement('div');
-          markerEl.innerHTML = `
-            <div style="
-              width: 44px; height: 44px;
-              background: #222;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-              border: 3px solid #fff;
-            ">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-              </svg>
-            </div>
-          `;
-          new mapboxgl.Marker({ element: markerEl, anchor: 'center' })
-            .setLngLat([displayLng, displayLat])
-            .addTo(map);
-        }
-      }
-
-      map.resize();
-    });
+    map.addControl(
+      new mapboxgl.AttributionControl({ compact: true }),
+      'bottom-right'
+    );
 
     mapRef.current = map;
 
-    return () => { map.remove(); mapRef.current = null; };
-  }, [displayLat, displayLng, isLocked, showRoute, userLocation, distanceKm, mapStyle, isDarkMode]);
+    // Signal Effect 2 that the map style is ready. Using once() so the counter
+    // only increments once per map instance even if the style reloads.
+    map.once('load', () => {
+      setMapKey((k) => k + 1);
+    });
+
+    return () => {
+      // Remove any lingering markers before destroying the map.
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [displayLat, displayLng, isLocked, mapStyle]); // ← NO userLocation here
+
+  // ── Effect 2: add / refresh markers — no map recreation ─────────────────────
+  // Runs after the map style loads (via mapKey) and whenever location data updates.
+  // watchPosition can fire many times; each call just moves the markers in-place.
+  useEffect(() => {
+    if (mapKey === 0) return; // map not yet loaded
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+    const safeRemoveLayer = (id: string) => {
+      if (map.getLayer(id)) map.removeLayer(id);
+    };
+    const safeRemoveSource = (id: string) => {
+      if (map.getSource(id)) map.removeSource(id);
+    };
+
+    // Remove overlays from the previous Effect 2 run.
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+    safeRemoveLayer('route-line-dashed');
+    safeRemoveSource('route-line');
+    safeRemoveLayer('approx-zone-ring');
+    safeRemoveLayer('approx-zone-blur');
+    safeRemoveSource('approx-zone');
+
+    // ── locked ad: fuzzy zone + house icon ───────────────────────────────────
+    if (isLocked) {
+      map.addSource('approx-zone', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [displayLng, displayLat] },
+          properties: {},
+        },
+      });
+      map.addLayer({
+        id: 'approx-zone-blur',
+        type: 'circle',
+        source: 'approx-zone',
+        paint: {
+          'circle-radius': APPROX_RADIUS_PX,
+          'circle-color': PRIMARY_RED,
+          'circle-opacity': 0.1,
+          'circle-blur': 1,
+        },
+      });
+      map.addLayer({
+        id: 'approx-zone-ring',
+        type: 'circle',
+        source: 'approx-zone',
+        paint: {
+          'circle-radius': APPROX_RADIUS_PX,
+          'circle-color': 'transparent',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': PRIMARY_RED,
+          'circle-stroke-opacity': 0.25,
+        },
+      });
+      const iconEl = document.createElement('div');
+      iconEl.innerHTML = `
+        <div style="
+          width:40px;height:40px;
+          background:rgba(246,71,95,0.15);
+          border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+        ">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="${PRIMARY_RED}">
+            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+          </svg>
+        </div>
+      `;
+      const m = new mapboxgl.Marker({ element: iconEl, anchor: 'center' })
+        .setLngLat([displayLng, displayLat])
+        .addTo(map);
+      markersRef.current.push(m);
+
+      // ── unlocked ad + user location: route line + blue + red markers ─────────
+    } else if (showRoute && userLocation && distanceKm !== null) {
+      map.addSource('route-line', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [userLocation.longitude, userLocation.latitude],
+              [displayLng, displayLat],
+            ],
+          },
+          properties: {},
+        },
+      });
+      map.addLayer({
+        id: 'route-line-dashed',
+        type: 'line',
+        source: 'route-line',
+        paint: {
+          'line-color': PRIMARY_RED,
+          'line-width': 2.5,
+          'line-dasharray': [4, 3],
+          'line-opacity': 0.7,
+        },
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+      });
+
+      const adMarker = new mapboxgl.Marker({
+        element: createAdMarker(),
+        anchor: 'bottom',
+      })
+        .setLngLat([displayLng, displayLat])
+        .addTo(map);
+      const userMarker = new mapboxgl.Marker({
+        element: createUserMarker(),
+        anchor: 'center',
+      })
+        .setLngLat([userLocation.longitude, userLocation.latitude])
+        .addTo(map);
+      markersRef.current.push(adMarker, userMarker);
+
+      const bounds = new mapboxgl.LngLatBounds();
+      bounds.extend([userLocation.longitude, userLocation.latitude]);
+      bounds.extend([displayLng, displayLat]);
+      map.fitBounds(bounds, {
+        padding: { top: 60, bottom: 60, left: 50, right: 50 },
+        maxZoom: 14,
+        duration: 800,
+      });
+
+      map.once('idle', () => {
+        if (!mapRef.current) return; // guard: map may have been removed
+        const userPx = map.project([
+          userLocation.longitude,
+          userLocation.latitude,
+        ]);
+        const adPx = map.project([displayLng, displayLat]);
+        const midLngLat = map.unproject([
+          (userPx.x + adPx.x) / 2,
+          (userPx.y + adPx.y) / 2,
+        ]);
+        const labelMarker = new mapboxgl.Marker({
+          element: createDistanceLabel(formatDistance(distanceKm), isDarkMode),
+          anchor: 'center',
+        })
+          .setLngLat(midLngLat)
+          .addTo(map);
+        markersRef.current.push(labelMarker);
+      });
+
+      // ── unlocked ad, no user location: simple dark pin ───────────────────────
+    } else {
+      const markerEl = document.createElement('div');
+      markerEl.innerHTML = `
+        <div style="
+          width:44px;height:44px;
+          background:#222;
+          border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          box-shadow:0 4px 16px rgba(0,0,0,0.25);
+          border:3px solid #fff;
+        ">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+          </svg>
+        </div>
+      `;
+      const m = new mapboxgl.Marker({ element: markerEl, anchor: 'center' })
+        .setLngLat([displayLng, displayLat])
+        .addTo(map);
+      markersRef.current.push(m);
+    }
+
+    map.resize();
+  }, [
+    mapKey,
+    isLocked,
+    showRoute,
+    userLocation,
+    distanceKm,
+    isDarkMode,
+    displayLat,
+    displayLng,
+  ]);
 
   if (!MAPBOX_TOKEN) return null;
 
   const locationLabel = [quartierName, cityName].filter(Boolean).join(', ');
-  const distanceInfo = distanceKm !== null ? getDistanceLabel(distanceKm) : null;
+  const distanceInfo =
+    distanceKm !== null ? getDistanceLabel(distanceKm) : null;
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -352,7 +438,9 @@ export default function AdLocationMap({
             border: '1px solid',
             borderColor: 'divider',
             bgcolor: (theme) =>
-              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+              theme.palette.mode === 'dark'
+                ? 'rgba(255,255,255,0.04)'
+                : 'rgba(0,0,0,0.02)',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -371,10 +459,22 @@ export default function AdLocationMap({
               <PlaceOutlined sx={{ fontSize: 20, color: PRIMARY_RED }} />
             </Box>
             <Box>
-              <Typography variant="body2" fontWeight={700} sx={{ lineHeight: 1.3 }}>
+              <Typography
+                variant="body2"
+                fontWeight={700}
+                sx={{ lineHeight: 1.3 }}
+              >
                 {formatDistance(distanceKm)} de votre position
                 {userLocation?.isApproximate && (
-                  <Box component="span" sx={{ color: 'warning.main', fontWeight: 600, ml: 0.5, fontSize: 'inherit' }}>
+                  <Box
+                    component="span"
+                    sx={{
+                      color: 'warning.main',
+                      fontWeight: 600,
+                      ml: 0.5,
+                      fontSize: 'inherit',
+                    }}
+                  >
                     (approx.)
                   </Box>
                 )}
@@ -383,8 +483,13 @@ export default function AdLocationMap({
                 Distance à vol d&apos;oiseau
               </Typography>
               {userLocation?.isApproximate && (
-                <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 0.25, fontSize: '0.65rem' }}>
-                  Position approximative (précision ~{Math.round(userLocation.accuracy / 1000)} km)
+                <Typography
+                  variant="caption"
+                  color="warning.main"
+                  sx={{ display: 'block', mt: 0.25, fontSize: '0.65rem' }}
+                >
+                  Position approximative (précision ~
+                  {Math.round(userLocation.accuracy / 1000)} km)
                 </Typography>
               )}
             </Box>
@@ -399,7 +504,11 @@ export default function AdLocationMap({
               flexShrink: 0,
             }}
           >
-            <Typography variant="caption" fontWeight={600} sx={{ color: distanceInfo.color, fontSize: '0.7rem' }}>
+            <Typography
+              variant="caption"
+              fontWeight={600}
+              sx={{ color: distanceInfo.color, fontSize: '0.7rem' }}
+            >
               {distanceInfo.text}
             </Typography>
           </Box>
@@ -408,8 +517,8 @@ export default function AdLocationMap({
 
       {/* Map */}
       <Box
-        ref={mapContainerRef}
         sx={{
+          position: 'relative',
           width: '100%',
           height: { xs: 240, sm: 300, md: 360 },
           borderRadius: 3,
@@ -417,22 +526,109 @@ export default function AdLocationMap({
           border: '1px solid',
           borderColor: 'divider',
         }}
-      />
+      >
+        <Box ref={mapContainerRef} sx={{ width: '100%', height: '100%' }} />
+
+        {/* Style picker overlay — bottom-left, above Mapbox attribution */}
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 28,
+            left: 8,
+            zIndex: 1,
+            display: 'flex',
+            borderRadius: 1.5,
+            overflow: 'hidden',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+          }}
+        >
+          {(['streets', 'satellite'] as const).map((style) => (
+            <Box
+              key={style}
+              component="button"
+              type="button"
+              onClick={() => setMapViewStyle(style)}
+              sx={{
+                px: 1.25,
+                py: 0.5,
+                fontSize: 10,
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                lineHeight: 1.4,
+                bgcolor:
+                  mapViewStyle === style
+                    ? 'primary.main'
+                    : 'rgba(255,255,255,0.92)',
+                color: mapViewStyle === style ? '#fff' : 'rgba(0,0,0,0.78)',
+                transition: 'background 0.15s',
+                '&:hover': {
+                  bgcolor:
+                    mapViewStyle === style
+                      ? 'primary.dark'
+                      : 'rgba(255,255,255,1)',
+                },
+              }}
+            >
+              {style === 'streets' ? 'Plan' : 'Satellite'}
+            </Box>
+          ))}
+        </Box>
+      </Box>
 
       {/* Legend — only when route is shown */}
       {showRoute && (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2.5, mt: 1.5, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2.5,
+            mt: 1.5,
+            flexWrap: 'wrap',
+          }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#4285F4', border: '2px solid #fff', boxShadow: '0 0 0 1px rgba(0,0,0,0.15)' }} />
-            <Typography variant="caption" color="text.secondary">Votre position</Typography>
+            <Box
+              sx={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                bgcolor: '#4285F4',
+                border: '2px solid #fff',
+                boxShadow: '0 0 0 1px rgba(0,0,0,0.15)',
+              }}
+            />
+            <Typography variant="caption" color="text.secondary">
+              Votre position
+            </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: PRIMARY_RED, border: '2px solid #fff', boxShadow: '0 0 0 1px rgba(0,0,0,0.15)' }} />
-            <Typography variant="caption" color="text.secondary">Logement</Typography>
+            <Box
+              sx={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                bgcolor: PRIMARY_RED,
+                border: '2px solid #fff',
+                boxShadow: '0 0 0 1px rgba(0,0,0,0.15)',
+              }}
+            />
+            <Typography variant="caption" color="text.secondary">
+              Logement
+            </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-            <Box sx={{ width: 20, borderTop: `2px dashed ${PRIMARY_RED}`, opacity: 0.65 }} />
-            <Typography variant="caption" color="text.secondary">Trajectoire directe</Typography>
+            <Box
+              sx={{
+                width: 20,
+                borderTop: `2px dashed ${PRIMARY_RED}`,
+                opacity: 0.65,
+              }}
+            />
+            <Typography variant="caption" color="text.secondary">
+              Trajectoire directe
+            </Typography>
           </Box>
         </Box>
       )}
@@ -447,17 +643,28 @@ export default function AdLocationMap({
             border: '1px dashed',
             borderColor: 'divider',
             bgcolor: (theme) =>
-              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+              theme.palette.mode === 'dark'
+                ? 'rgba(255,255,255,0.03)'
+                : 'rgba(0,0,0,0.02)',
           }}
         >
           <Typography variant="caption" color="text.secondary">
-            {locationError} Autorisez la localisation pour afficher la distance et la trajectoire.
+            {locationError} Autorisez la localisation pour afficher la distance
+            et la trajectoire.
           </Typography>
         </Box>
       )}
 
       {/* Disclaimer */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mt: 1.5 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 0.5,
+          mt: 1.5,
+        }}
+      >
         <InfoOutlined sx={{ fontSize: 14, color: 'text.disabled', mt: 0.15 }} />
         <Typography variant="caption" color="text.secondary">
           {isLocked

@@ -1,7 +1,16 @@
 'use client';
 
-import { ArrowBack as ArrowBackIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
-import { Box, Breadcrumbs, IconButton, Link, Typography, useMediaQuery, useTheme } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import {
+  Box,
+  Breadcrumbs,
+  IconButton,
+  Link,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -21,7 +30,10 @@ interface PageBreadcrumbsProps {
  * On mobile, shows a compact back arrow + current page label.
  * On desktop, shows the full breadcrumb trail.
  */
-export default function PageBreadcrumbs({ items, showBack = true }: PageBreadcrumbsProps) {
+export default function PageBreadcrumbs({
+  items,
+  showBack = true,
+}: PageBreadcrumbsProps) {
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -81,7 +93,12 @@ export default function PageBreadcrumbs({ items, showBack = true }: PageBreadcru
         {parentItem && (
           <NavigateNextIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
         )}
-        <Typography variant="body2" fontWeight={700} color="text.primary" noWrap>
+        <Typography
+          variant="body2"
+          fontWeight={700}
+          color="text.primary"
+          noWrap
+        >
           {lastItem.label}
         </Typography>
       </Box>
@@ -125,7 +142,12 @@ export default function PageBreadcrumbs({ items, showBack = true }: PageBreadcru
             {item.label}
           </Link>
         ) : (
-          <Typography key={idx} variant="body2" color="text.secondary" fontWeight={500}>
+          <Typography
+            key={idx}
+            variant="body2"
+            color="text.secondary"
+            fontWeight={500}
+          >
             {item.label}
           </Typography>
         );

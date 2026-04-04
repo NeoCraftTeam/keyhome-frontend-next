@@ -1,8 +1,12 @@
 'use client';
 
 import { useAuth } from '@/providers/AuthProvider';
-import { searchAlertsService, SearchAlertPayload } from '@/services/searchAlerts.service';
-import { NotificationsActive, NotificationsNone } from '@mui/icons-material';
+import {
+  searchAlertsService,
+  SearchAlertPayload,
+} from '@/services/searchAlerts.service';
+import NotificationsActive from '@mui/icons-material/NotificationsActive';
+import NotificationsNone from '@mui/icons-material/NotificationsNone';
 import type { SxProps, Theme } from '@mui/material';
 import {
   Box,
@@ -14,7 +18,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  MenuItem,
   TextField,
   Tooltip,
   Typography,
@@ -31,7 +34,12 @@ interface Props {
   sx?: SxProps<Theme>;
 }
 
-export default function SearchAlertButton({ prefill = {}, variant = 'button', size = 'medium', sx }: Props) {
+export default function SearchAlertButton({
+  prefill = {},
+  variant = 'button',
+  size = 'medium',
+  sx,
+}: Props) {
   const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState(prefill.label ?? '');
@@ -48,75 +56,151 @@ export default function SearchAlertButton({ prefill = {}, variant = 'button', si
   });
 
   const createMutation = useMutation({
-    mutationFn: (payload: SearchAlertPayload) => searchAlertsService.create(payload),
+    mutationFn: (payload: SearchAlertPayload) =>
+      searchAlertsService.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['search-alerts'] });
       setSaved(true);
-      setTimeout(() => { setOpen(false); setSaved(false); }, 1500);
+      setTimeout(() => {
+        setOpen(false);
+        setSaved(false);
+      }, 1500);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => searchAlertsService.remove(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['search-alerts'] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['search-alerts'] }),
   });
 
   const handleSave = () => {
     createMutation.mutate({ ...prefill, label: label || undefined });
   };
 
-  if (!isAuthenticated) { return null; }
+  if (!isAuthenticated) {
+    return null;
+  }
 
-  const trigger = variant === 'icon' ? (
-    <Tooltip title="Créer une alerte pour cette recherche">
-      <IconButton onClick={() => setOpen(true)} color="primary" aria-label="Créer une alerte pour cette recherche">
-        <NotificationsNone />
-      </IconButton>
-    </Tooltip>
-  ) : (
-    <Button
-      variant="outlined"
-      startIcon={<NotificationsNone />}
-      onClick={() => setOpen(true)}
-      size={size}
-      sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 99, whiteSpace: 'nowrap', ...sx }}
-    >
-      Créer une alerte
-    </Button>
-  );
+  const trigger =
+    variant === 'icon' ? (
+      <Tooltip title="Créer une alerte pour cette recherche">
+        <IconButton
+          onClick={() => setOpen(true)}
+          color="primary"
+          aria-label="Créer une alerte pour cette recherche"
+        >
+          <NotificationsNone />
+        </IconButton>
+      </Tooltip>
+    ) : (
+      <Button
+        variant="outlined"
+        startIcon={<NotificationsNone />}
+        onClick={() => setOpen(true)}
+        size={size}
+        sx={{
+          textTransform: 'none',
+          fontWeight: 600,
+          borderRadius: 99,
+          whiteSpace: 'nowrap',
+          ...sx,
+        }}
+      >
+        Créer une alerte
+      </Button>
+    );
 
   return (
     <>
       {trigger}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth fullScreen={isMobile} PaperProps={{ sx: { borderRadius: isMobile ? 0 : undefined } }}>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        fullScreen={isMobile}
+        PaperProps={{ sx: { borderRadius: isMobile ? 0 : undefined } }}
+      >
         <DialogTitle sx={{ fontWeight: 700 }}>
-          <NotificationsActive color="primary" sx={{ mr: 1, verticalAlign: 'middle' }} />
+          <NotificationsActive
+            color="primary"
+            sx={{ mr: 1, verticalAlign: 'middle' }}
+          />
           Alertes de recherche
         </DialogTitle>
         <DialogContent>
           {saved ? (
             <Box textAlign="center" py={3}>
               <NotificationsActive color="success" sx={{ fontSize: 48 }} />
-              <Typography variant="h6" mt={1}>Alerte créée !</Typography>
-              <Typography color="text.secondary">Vous serez notifié dès qu'une annonce correspond.</Typography>
+              <Typography variant="h6" mt={1}>
+                Alerte créée !
+              </Typography>
+              <Typography color="text.secondary">
+                Vous serez notifié dès qu&apos;une annonce correspond.
+              </Typography>
             </Box>
           ) : (
             <>
-              <Box sx={{ p: 2, bgcolor: 'primary.50', borderRadius: 2, mb: 2.5, border: '1px solid', borderColor: 'primary.100' }}>
-                <Typography variant="body2" fontWeight={600} color="primary.main" mb={0.5}>
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: 'primary.50',
+                  borderRadius: 2,
+                  mb: 2.5,
+                  border: '1px solid',
+                  borderColor: 'primary.100',
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  fontWeight={600}
+                  color="primary.main"
+                  mb={0.5}
+                >
                   Comment ça marche ?
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Dès qu'une nouvelle annonce correspondant à vos critères est publiée, vous recevrez une notification push et un email automatiquement.
+                  Dès qu&apos;une nouvelle annonce correspondant à vos critères
+                  est publiée, vous recevrez une notification push et un email
+                  automatiquement.
                 </Typography>
               </Box>
 
               {prefill.city_name && (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {prefill.city_name && <Chip label={`Ville : ${prefill.city_name}`} size="small" color="primary" variant="outlined" />}
-                  {prefill.type_name && <Chip label={`Type : ${prefill.type_name}`} size="small" color="primary" variant="outlined" />}
-                  {prefill.price_max && <Chip label={`Max : ${prefill.price_max.toLocaleString('fr-FR')} FCFA`} size="small" color="primary" variant="outlined" />}
-                  {prefill.bedrooms_min && <Chip label={`${prefill.bedrooms_min}+ ch.`} size="small" color="primary" variant="outlined" />}
+                  {prefill.city_name && (
+                    <Chip
+                      label={`Ville : ${prefill.city_name}`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                  {prefill.type_name && (
+                    <Chip
+                      label={`Type : ${prefill.type_name}`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                  {prefill.price_max && (
+                    <Chip
+                      label={`Max : ${prefill.price_max.toLocaleString('fr-FR')} FCFA`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                  {prefill.bedrooms_min && (
+                    <Chip
+                      label={`${prefill.bedrooms_min}+ ch.`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
                 </Box>
               )}
 
@@ -152,8 +236,12 @@ export default function SearchAlertButton({ prefill = {}, variant = 'button', si
                           {alert.label ?? 'Alerte sans nom'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {[alert.city_name, alert.type_name].filter(Boolean).join(' · ')}
-                          {alert.price_max ? ` · Max ${alert.price_max.toLocaleString('fr-FR')} FCFA` : ''}
+                          {[alert.city_name, alert.type_name]
+                            .filter(Boolean)
+                            .join(' · ')}
+                          {alert.price_max
+                            ? ` · Max ${alert.price_max.toLocaleString('fr-FR')} FCFA`
+                            : ''}
                         </Typography>
                       </Box>
                       <Button
@@ -178,9 +266,15 @@ export default function SearchAlertButton({ prefill = {}, variant = 'button', si
               variant="contained"
               onClick={handleSave}
               disabled={createMutation.isPending}
-              startIcon={createMutation.isPending ? <CircularProgress size={16} color="inherit" /> : <NotificationsActive />}
+              startIcon={
+                createMutation.isPending ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <NotificationsActive />
+                )
+              }
             >
-              Enregistrer l'alerte
+              Enregistrer l&apos;alerte
             </Button>
           </DialogActions>
         )}

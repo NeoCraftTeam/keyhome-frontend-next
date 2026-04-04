@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { EmailOutlined, CheckCircleOutline } from '@mui/icons-material';
+import EmailOutlined from '@mui/icons-material/EmailOutlined';
+import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
 import { useLandingTheme } from './LandingThemeContext';
 import { brand, gradient } from '@/theme/tokens';
 
@@ -27,9 +28,12 @@ export default function NewsletterSection() {
         `${process.env.NEXT_PUBLIC_API_URL ?? ''}/newsletter/subscribe`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
           body: JSON.stringify({ email }),
-        },
+        }
       );
 
       if (!response.ok) {
@@ -116,8 +120,9 @@ export default function NewsletterSection() {
               marginBottom: 32,
             }}
           >
-            Recevez en exclusivité les nouvelles annonces, les tendances du marché et les
-            conseils immobiliers directement dans votre boîte mail.
+            Recevez en exclusivité les nouvelles annonces, les tendances du
+            marché et les conseils immobiliers directement dans votre boîte
+            mail.
           </p>
 
           {isSuccess ? (
@@ -192,7 +197,11 @@ export default function NewsletterSection() {
               </div>
 
               {error && (
-                <p style={{ color: '#ef4444', fontSize: '0.875rem', margin: 0 }}>{error}</p>
+                <p
+                  style={{ color: '#ef4444', fontSize: '0.875rem', margin: 0 }}
+                >
+                  {error}
+                </p>
               )}
 
               <p style={{ color: textSub, fontSize: '0.8rem', margin: 0 }}>

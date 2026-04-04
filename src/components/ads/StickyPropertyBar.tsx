@@ -9,7 +9,8 @@ import {
 } from 'framer-motion';
 import { useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
-import { Phone as PhoneIcon, WhatsApp } from '@mui/icons-material';
+import PhoneIcon from '@mui/icons-material/Phone';
+import WhatsApp from '@mui/icons-material/WhatsApp';
 
 interface StickyPropertyBarProps {
   price: number;

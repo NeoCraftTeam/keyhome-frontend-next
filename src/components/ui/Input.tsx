@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircleOutline } from '@mui/icons-material';
+import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
 import {
   InputAdornment,
   TextField as MuiTextField,

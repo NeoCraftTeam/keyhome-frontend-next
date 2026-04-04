@@ -1,7 +1,8 @@
 'use client';
 
 import { PaymentMethod } from '@/types';
-import { CreditCard, PhoneIphone } from '@mui/icons-material';
+import CreditCard from '@mui/icons-material/CreditCard';
+import PhoneIphone from '@mui/icons-material/PhoneIphone';
 import { Box, Typography, useTheme } from '@mui/material';
 
 interface PaymentOption {
@@ -61,7 +62,11 @@ export default function PaymentMethodSelector({
         return (
           <Box
             key={option.method}
-            onClick={() => { if (!disabled) { onChange(option.method); } }}
+            onClick={() => {
+              if (!disabled) {
+                onChange(option.method);
+              }
+            }}
             role="button"
             tabIndex={disabled ? -1 : 0}
             aria-pressed={isSelected}
@@ -79,7 +84,11 @@ export default function PaymentMethodSelector({
               p: 2,
               borderRadius: 3,
               border: '2px solid',
-              borderColor: isSelected ? option.color : isDark ? 'rgba(255,255,255,0.1)' : 'divider',
+              borderColor: isSelected
+                ? option.color
+                : isDark
+                  ? 'rgba(255,255,255,0.1)'
+                  : 'divider',
               bgcolor: isSelected
                 ? `${option.color}18`
                 : isDark
@@ -125,11 +134,18 @@ export default function PaymentMethodSelector({
               <Typography
                 variant="body2"
                 fontWeight={700}
-                sx={{ color: isSelected ? option.color : 'text.primary', lineHeight: 1.2 }}
+                sx={{
+                  color: isSelected ? option.color : 'text.primary',
+                  lineHeight: 1.2,
+                }}
               >
                 {option.label}
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontSize: '0.7rem' }}
+              >
                 {option.method === PaymentMethod.CARD
                   ? 'Visa, Mastercard, etc.'
                   : 'Paiement mobile instantané'}
@@ -143,7 +159,11 @@ export default function PaymentMethodSelector({
                 height: 20,
                 borderRadius: '50%',
                 border: '2px solid',
-                borderColor: isSelected ? option.color : isDark ? 'rgba(255,255,255,0.2)' : 'grey.300',
+                borderColor: isSelected
+                  ? option.color
+                  : isDark
+                    ? 'rgba(255,255,255,0.2)'
+                    : 'grey.300',
                 bgcolor: isSelected ? option.color : 'transparent',
                 display: 'flex',
                 alignItems: 'center',

@@ -5,12 +5,10 @@ import { ShimmerBox } from '@/components/ui/ShimmerCard';
 import { creditsService } from '@/services/credits.service';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import type { PointPackage } from '@/types';
-import {
-  AutoAwesome,
-  Close,
-  Lock as LockIcon,
-  Toll,
-} from '@mui/icons-material';
+import AutoAwesome from '@mui/icons-material/AutoAwesome';
+import Close from '@mui/icons-material/Close';
+import LockIcon from '@mui/icons-material/Lock';
+import Toll from '@mui/icons-material/Toll';
 import {
   Box,
   Dialog,

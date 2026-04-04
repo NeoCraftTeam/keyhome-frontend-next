@@ -3,12 +3,10 @@
 import { brand } from '@/theme/tokens';
 import { motion } from 'framer-motion';
 import { useLandingTheme } from './LandingThemeContext';
-import {
-  PersonAddOutlined,
-  TravelExploreOutlined,
-  LockOpenOutlined,
-  CallOutlined,
-} from '@mui/icons-material';
+import PersonAddOutlined from '@mui/icons-material/PersonAddOutlined';
+import TravelExploreOutlined from '@mui/icons-material/TravelExploreOutlined';
+import LockOpenOutlined from '@mui/icons-material/LockOpenOutlined';
+import CallOutlined from '@mui/icons-material/CallOutlined';
 
 const steps = [
   {
@@ -16,28 +14,32 @@ const steps = [
     icon: <PersonAddOutlined style={{ fontSize: 26 }} />,
     color: brand.primary,
     title: 'Créez votre compte',
-    description: 'Inscription gratuite en 30 secondes. Aucune carte bancaire requise pour parcourir les annonces.',
+    description:
+      'Inscription gratuite en 30 secondes. Aucune carte bancaire requise pour parcourir les annonces.',
   },
   {
     number: '02',
     icon: <TravelExploreOutlined style={{ fontSize: 26 }} />,
     color: '#3B82F6',
     title: 'Explorez les annonces',
-    description: 'Naviguez par catégorie, filtrez par budget et localisation. Consultez les photos et les détails complets.',
+    description:
+      'Naviguez par catégorie, filtrez par budget et localisation. Consultez les photos et les détails complets.',
   },
   {
     number: '03',
     icon: <LockOpenOutlined style={{ fontSize: 26 }} />,
     color: '#10B981',
     title: 'Accès direct & sécurisé',
-    description: 'Payez un petit montant unique via Mobile Money pour accéder aux coordonnées. Zéro commission, 100% direct.',
+    description:
+      'Payez un petit montant unique via Mobile Money pour accéder aux coordonnées. Zéro commission, 100% direct.',
   },
   {
     number: '04',
     icon: <CallOutlined style={{ fontSize: 26 }} />,
     color: '#8B5CF6',
     title: 'Contactez directement',
-    description: 'Appelez, envoyez un WhatsApp ou un email. Organisez votre visite et finalisez votre projet immobilier.',
+    description:
+      'Appelez, envoyez un WhatsApp ou un email. Organisez votre visite et finalisez votre projet immobilier.',
   },
 ];
 
@@ -68,14 +70,23 @@ export default function HowItWorksSection() {
         }}
       />
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: '0 auto',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+          transition={{
+            duration: 0.7,
+            ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+          }}
           style={{ textAlign: 'center', marginBottom: 80 }}
         >
           <span
@@ -105,24 +116,42 @@ export default function HowItWorksSection() {
           >
             Simple, rapide, sécurisé
           </h2>
-          <p style={{ fontSize: 18, color: textSub, maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>
+          <p
+            style={{
+              fontSize: 18,
+              color: textSub,
+              maxWidth: 480,
+              margin: '0 auto',
+              lineHeight: 1.6,
+            }}
+          >
             De l&apos;inscription au premier contact en moins de 5 minutes.
           </p>
         </motion.div>
 
         {/* Steps */}
-          <div className="steps-grid" style={{ position: 'relative' }}>
+        <div className="steps-grid" style={{ position: 'relative' }}>
           {steps.map((step, i) => (
             <motion.div
               key={step.number}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.65, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+              transition={{
+                duration: 0.65,
+                delay: i * 0.1,
+                ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+              }}
               style={{ textAlign: 'center' }}
             >
               {/* Step number arc */}
-              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 28 }}>
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'inline-block',
+                  marginBottom: 28,
+                }}
+              >
                 <div
                   style={{
                     width: 72,
@@ -172,7 +201,14 @@ export default function HowItWorksSection() {
               >
                 {step.title}
               </h3>
-              <p style={{ fontSize: 15, color: textSub, lineHeight: 1.7, margin: 0 }}>
+              <p
+                style={{
+                  fontSize: 15,
+                  color: textSub,
+                  lineHeight: 1.7,
+                  margin: 0,
+                }}
+              >
                 {step.description}
               </p>
             </motion.div>

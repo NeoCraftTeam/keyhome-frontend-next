@@ -1,7 +1,8 @@
 'use client';
 
 import { keyScoreService } from '@/services/estimator.service';
-import { EmojiEvents, Info } from '@mui/icons-material';
+import EmojiEvents from '@mui/icons-material/EmojiEvents';
+import Info from '@mui/icons-material/Info';
 import {
   Box,
   CircularProgress,
@@ -20,10 +21,18 @@ interface Props {
 }
 
 const SCORE_COLOR = (score: number): string => {
-  if (score >= 85) { return '#22c55e'; }
-  if (score >= 70) { return '#84cc16'; }
-  if (score >= 55) { return '#f59e0b'; }
-  if (score >= 40) { return '#f97316'; }
+  if (score >= 85) {
+    return '#22c55e';
+  }
+  if (score >= 70) {
+    return '#84cc16';
+  }
+  if (score >= 55) {
+    return '#f59e0b';
+  }
+  if (score >= 40) {
+    return '#f97316';
+  }
   return '#ef4444';
 };
 
@@ -40,7 +49,9 @@ export default function KeyScoreBadge({ adId, size = 'medium' }: Props) {
     return <CircularProgress size={16} />;
   }
 
-  if (!data) { return null; }
+  if (!data) {
+    return null;
+  }
 
   const color = SCORE_COLOR(data.score);
   const isSmall = size === 'small';
@@ -93,9 +104,18 @@ export default function KeyScoreBadge({ adId, size = 'medium' }: Props) {
           <EmojiEvents sx={{ color, fontSize: 28 }} />
           <Box>
             <Typography fontWeight={700} fontSize={22} sx={{ color }}>
-              {data.score}<Typography component="span" variant="caption" color="text.secondary">/100</Typography>
+              {data.score}
+              <Typography
+                component="span"
+                variant="caption"
+                color="text.secondary"
+              >
+                /100
+              </Typography>
             </Typography>
-            <Typography variant="caption" color="text.secondary">{data.label}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {data.label}
+            </Typography>
           </Box>
         </Box>
 
@@ -103,9 +123,19 @@ export default function KeyScoreBadge({ adId, size = 'medium' }: Props) {
 
         {Object.values(data.breakdown).map((item) => (
           <Box key={item.label} mb={1.5}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
-              <Typography variant="caption" fontWeight={600}>{item.label}</Typography>
-              <Typography variant="caption" color="text.secondary">{item.value}</Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                mb: 0.25,
+              }}
+            >
+              <Typography variant="caption" fontWeight={600}>
+                {item.label}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {item.value}
+              </Typography>
             </Box>
             <LinearProgress
               variant="determinate"

@@ -2,7 +2,8 @@
 
 import { formatRelativeDate } from '@/lib/constants';
 import type { Review } from '@/types';
-import { Close, Search } from '@mui/icons-material';
+import Close from '@mui/icons-material/Close';
+import Search from '@mui/icons-material/Search';
 import {
   Avatar,
   Box,
@@ -35,7 +36,13 @@ export default function ReviewsSection({
 
   const reviewsCount = reviewsCountProp ?? reviews.length;
 
-  const ratingBreakdown: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  const ratingBreakdown: Record<number, number> = {
+    5: 0,
+    4: 0,
+    3: 0,
+    2: 0,
+    1: 0,
+  };
   for (const review of reviews) {
     const rounded = Math.min(5, Math.max(1, Math.round(review.rating)));
     ratingBreakdown[rounded] += 1;
@@ -61,12 +68,33 @@ export default function ReviewsSection({
     <>
       <Box sx={{ mb: 3 }}>
         <Divider sx={{ mb: 3 }} />
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 2 }}>
-          <Typography variant="h6" fontWeight={600}>Avis</Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1,
+            mb: 2,
+          }}
+        >
+          <Typography variant="h6" fontWeight={600}>
+            Avis
+          </Typography>
           {averageRating != null && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               {[1, 2, 3, 4, 5].map((s) => (
-                <Box key={s} component="span" sx={{ color: s <= Math.round(averageRating) ? '#FFB400' : '#E0E0E0', fontSize: 18, lineHeight: 1 }}>★</Box>
+                <Box
+                  key={s}
+                  component="span"
+                  sx={{
+                    color:
+                      s <= Math.round(averageRating) ? '#FFB400' : '#E0E0E0',
+                    fontSize: 18,
+                    lineHeight: 1,
+                  }}
+                >
+                  ★
+                </Box>
               ))}
               <Typography variant="body2" fontWeight={600} sx={{ ml: 0.5 }}>
                 {averageRating.toFixed(1)}
@@ -91,7 +119,10 @@ export default function ReviewsSection({
             textDecoration: 'underline',
             textDecorationColor: 'divider',
             textUnderlineOffset: '3px',
-            '&:hover': { bgcolor: 'transparent', textDecorationColor: 'text.primary' },
+            '&:hover': {
+              bgcolor: 'transparent',
+              textDecorationColor: 'text.primary',
+            },
           }}
         >
           Voir tous les commentaires
@@ -106,17 +137,47 @@ export default function ReviewsSection({
         fullScreen={isMobile}
         disableScrollLock={false}
         scroll="paper"
-        PaperProps={{ sx: { borderRadius: isMobile ? 0 : 4, display: 'flex', flexDirection: 'column' } }}
+        PaperProps={{
+          sx: {
+            borderRadius: isMobile ? 0 : 4,
+            display: 'flex',
+            flexDirection: 'column',
+          },
+        }}
       >
-        <Box sx={{ p: { xs: 2, md: 3 }, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end' }}>
-          <IconButton aria-label="Fermer les commentaires" onClick={() => setIsDialogOpen(false)}>
+        <Box
+          sx={{
+            p: { xs: 2, md: 3 },
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <IconButton
+            aria-label="Fermer les commentaires"
+            onClick={() => setIsDialogOpen(false)}
+          >
             <Close />
           </IconButton>
         </Box>
-        <Box sx={{ p: { xs: 2, md: 4 }, overflowY: 'auto', flex: 1, WebkitOverflowScrolling: 'touch' }}>
+        <Box
+          sx={{
+            p: { xs: 2, md: 4 },
+            overflowY: 'auto',
+            flex: 1,
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 4 }}>
-              <Typography sx={{ fontSize: { xs: '1.6rem', sm: '2rem', md: '2.2rem' }, fontWeight: 700, mb: 2 }}>
+              <Typography
+                sx={{
+                  fontSize: { xs: '1.6rem', sm: '2rem', md: '2.2rem' },
+                  fontWeight: 700,
+                  mb: 2,
+                }}
+              >
                 ★ {averageRating?.toFixed(2).replace('.', ',') ?? '—'}
               </Typography>
               <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
@@ -125,21 +186,54 @@ export default function ReviewsSection({
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {[5, 4, 3, 2, 1].map((star) => {
                   const count = ratingBreakdown[star];
-                  const percent = reviews.length ? (count / reviews.length) * 100 : 0;
+                  const percent = reviews.length
+                    ? (count / reviews.length) * 100
+                    : 0;
                   return (
-                    <Box key={star} sx={{ display: 'grid', gridTemplateColumns: '18px 1fr 38px', gap: 1, alignItems: 'center' }}>
-                      <Typography variant="caption" color="text.secondary">{star}</Typography>
-                      <Box sx={{ height: 6, borderRadius: 99, bgcolor: 'action.hover', overflow: 'hidden' }}>
-                        <Box sx={{ width: `${percent}%`, height: '100%', bgcolor: 'primary.main' }} />
+                    <Box
+                      key={star}
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: '18px 1fr 38px',
+                        gap: 1,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography variant="caption" color="text.secondary">
+                        {star}
+                      </Typography>
+                      <Box
+                        sx={{
+                          height: 6,
+                          borderRadius: 99,
+                          bgcolor: 'action.hover',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: `${percent}%`,
+                            height: '100%',
+                            bgcolor: 'primary.main',
+                          }}
+                        />
                       </Box>
-                      <Typography variant="caption" color="text.secondary">{count}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {count}
+                      </Typography>
                     </Box>
                   );
                 })}
               </Box>
             </Grid>
             <Grid size={{ xs: 12, md: 8 }}>
-              <Typography sx={{ fontSize: { xs: '1.8rem', md: '2rem' }, fontWeight: 700, mb: 0.5 }}>
+              <Typography
+                sx={{
+                  fontSize: { xs: '1.8rem', md: '2rem' },
+                  fontWeight: 700,
+                  mb: 0.5,
+                }}
+              >
                 {reviewsCount} commentaire{reviewsCount > 1 ? 's' : ''}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -159,7 +253,10 @@ export default function ReviewsSection({
                     color: 'text.secondary',
                     borderColor: 'divider',
                     textTransform: 'none',
-                    '&:hover': { borderColor: 'divider', bgcolor: 'action.hover' },
+                    '&:hover': {
+                      borderColor: 'divider',
+                      bgcolor: 'action.hover',
+                    },
                   }}
                 >
                   <Box
@@ -190,12 +287,23 @@ export default function ReviewsSection({
               >
                 {filteredReviews.map((review) => (
                   <Box key={review.id} sx={{ mb: 3 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.5,
+                        mb: 1,
+                      }}
+                    >
                       <Avatar src={review.user?.avatar || undefined}>
                         {review.user?.name?.charAt(0) || '?'}
                       </Avatar>
                       <Box>
-                        <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight={700}
+                          sx={{ lineHeight: 1.2 }}
+                        >
                           {review.user?.name || 'Utilisateur'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -205,11 +313,28 @@ export default function ReviewsSection({
                     </Box>
                     <Box sx={{ display: 'flex', gap: 0.25, mb: 0.6 }}>
                       {[1, 2, 3, 4, 5].map((s) => (
-                        <Box key={s} component="span" sx={{ color: s <= review.rating ? 'primary.main' : '#D1D5DB', fontSize: 14 }}>★</Box>
+                        <Box
+                          key={s}
+                          component="span"
+                          sx={{
+                            color:
+                              s <= review.rating ? 'primary.main' : '#D1D5DB',
+                            fontSize: 14,
+                          }}
+                        >
+                          ★
+                        </Box>
                       ))}
                     </Box>
                     {review.comment && (
-                      <Typography variant="body1" sx={{ lineHeight: 1.55, wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          lineHeight: 1.55,
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                        }}
+                      >
                         {review.comment}
                       </Typography>
                     )}

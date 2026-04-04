@@ -12,7 +12,7 @@ import { brand } from '@/theme/tokens';
  *                   Pass `brandAgent.primary` (#0D9488) for the owner panel.
  */
 export default function AppLoader({
-  size = 48,
+  size = 64,
   fullPage = false,
   color = brand.primary,
 }: {

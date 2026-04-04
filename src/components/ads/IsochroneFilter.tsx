@@ -1,15 +1,13 @@
 'use client';
 
 import { geoService, type OrsProfile } from '@/services/geo.service';
-import {
-  AccessTime,
-  Close,
-  DirectionsBike,
-  DirectionsCar,
-  DirectionsWalk,
-  Accessible,
-  RadioButtonChecked,
-} from '@mui/icons-material';
+import AccessTime from '@mui/icons-material/AccessTime';
+import Close from '@mui/icons-material/Close';
+import DirectionsBike from '@mui/icons-material/DirectionsBike';
+import DirectionsCar from '@mui/icons-material/DirectionsCar';
+import DirectionsWalk from '@mui/icons-material/DirectionsWalk';
+import Accessible from '@mui/icons-material/Accessible';
+import RadioButtonChecked from '@mui/icons-material/RadioButtonChecked';
 import {
   Box,
   CircularProgress,

@@ -13,21 +13,19 @@ import {
   LinearProgress,
   Chip,
 } from '@mui/material';
-import {
-  Close as CloseIcon,
-  ArrowForward,
-  ArrowBack,
-  MapsHomeWork,
-  AutoAwesome,
-  CompareArrows,
-  Calculate,
-  Notifications,
-  LockOpenRounded,
-  FavoriteBorderRounded,
-  Dashboard as DashboardIcon,
-  BarChart,
-  RateReview,
-} from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
+import ArrowForward from '@mui/icons-material/ArrowForward';
+import ArrowBack from '@mui/icons-material/ArrowBack';
+import MapsHomeWork from '@mui/icons-material/MapsHomeWork';
+import AutoAwesome from '@mui/icons-material/AutoAwesome';
+import CompareArrows from '@mui/icons-material/CompareArrows';
+import Calculate from '@mui/icons-material/Calculate';
+import Notifications from '@mui/icons-material/Notifications';
+import LockOpenRounded from '@mui/icons-material/LockOpenRounded';
+import FavoriteBorderRounded from '@mui/icons-material/FavoriteBorderRounded';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import BarChart from '@mui/icons-material/BarChart';
+import RateReview from '@mui/icons-material/RateReview';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { brand, brandAgent, neutral } from '@/theme/tokens';
 

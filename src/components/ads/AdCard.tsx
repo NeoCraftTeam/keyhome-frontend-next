@@ -1,21 +1,19 @@
 'use client';
 
-import { formatPrice } from '@/lib/constants';
+import { formatPriceCompact } from '@/lib/constants';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useFavorites } from '@/providers/FavoritesProvider';
 import { useComparator } from '@/providers/ComparatorProvider';
 import { Ad } from '@/types';
-import {
-  BathtubOutlined,
-  BedOutlined,
-  ChevronLeft,
-  ChevronRight,
-  CompareArrows,
-  Favorite,
-  FavoriteBorder,
-  SquareFootOutlined,
-  Star as StarIcon,
-} from '@mui/icons-material';
+import BathtubOutlined from '@mui/icons-material/BathtubOutlined';
+import BedOutlined from '@mui/icons-material/BedOutlined';
+import ChevronLeft from '@mui/icons-material/ChevronLeft';
+import ChevronRight from '@mui/icons-material/ChevronRight';
+import Bookmark from '@mui/icons-material/Bookmark';
+import BookmarkBorder from '@mui/icons-material/BookmarkBorder';
+import CompareArrows from '@mui/icons-material/CompareArrows';
+import SquareFootOutlined from '@mui/icons-material/SquareFootOutlined';
+import StarIcon from '@mui/icons-material/Star';
 import { Box, Chip, IconButton, Tooltip } from '@mui/material';
 import { Typography } from '@/components/ui/Typography';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
@@ -107,10 +105,10 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
   return (
     <MotionConfig reducedMotion="user">
       <motion.a
-        href={`/ads/${ad.id}/${ad.slug}`}
+        href={`/ads/${ad.slug}`}
         onClick={(e: React.MouseEvent) => {
           e.preventDefault();
-          router.push(`/ads/${ad.id}/${ad.slug}`);
+          router.push(`/ads/${ad.slug}`);
         }}
         whileTap={{ scale: 0.97 }}
         transition={{ type: 'spring', stiffness: 400, damping: 20 }}
@@ -188,7 +186,8 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
               borderRadius: '12px',
               overflow: 'hidden',
               bgcolor: 'grey.100',
-              transition: 'transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.25s ease',
+              transition:
+                'transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.25s ease',
               '&:hover': {
                 transform: 'translateY(-3px)',
                 boxShadow: shadow.cardHover,
@@ -303,7 +302,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                         transition={{ duration: 0.2 }}
                         style={{ display: 'flex' }}
                       >
-                        <Favorite sx={{ fontSize: 16 }} />
+                        <Bookmark sx={{ fontSize: 16 }} />
                       </motion.span>
                     ) : (
                       <motion.span
@@ -314,7 +313,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                         transition={{ duration: 0.2 }}
                         style={{ display: 'flex' }}
                       >
-                        <FavoriteBorder sx={{ fontSize: 16 }} />
+                        <BookmarkBorder sx={{ fontSize: 16 }} />
                       </motion.span>
                     )}
                   </AnimatePresence>
@@ -370,9 +369,12 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                     top: '50%',
                     transform: 'translateY(-50%)',
                     opacity: 0,
+                    bgcolor: 'rgba(255,255,255,0.88)',
+                    color: 'rgba(0,0,0,0.75)',
                     transition: 'opacity 0.2s',
                     '&:hover': {
                       bgcolor: neutral.white,
+                      color: 'rgba(0,0,0,0.87)',
                       transform: 'translateY(-50%)',
                     },
                     '&:active': { transform: 'translateY(-50%)' },
@@ -396,9 +398,12 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                     top: '50%',
                     transform: 'translateY(-50%)',
                     opacity: 0,
+                    bgcolor: 'rgba(255,255,255,0.88)',
+                    color: 'rgba(0,0,0,0.75)',
                     transition: 'opacity 0.2s',
                     '&:hover': {
                       bgcolor: neutral.white,
+                      color: 'rgba(0,0,0,0.87)',
                       transform: 'translateY(-50%)',
                     },
                     '&:active': { transform: 'translateY(-50%)' },
@@ -625,18 +630,19 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                 gap: 0.5,
               }}
             >
-            <Typography
-              variant="h6"
-              sx={{
-                fontSize: '0.9375rem',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                color: 'text.primary',
-              }}
-            >
-              {ad.title}
-            </Typography>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontSize: '0.9375rem',
+                  fontWeight: 700,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  color: 'text.primary',
+                }}
+              >
+                {formatPriceCompact(ad.price)}
+              </Typography>
               <Tooltip
                 title={
                   isInComparator(ad.id)

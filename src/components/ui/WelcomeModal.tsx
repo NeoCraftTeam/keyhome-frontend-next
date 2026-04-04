@@ -2,12 +2,10 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import {
-  AutoAwesome,
-  NotificationsActive,
-  Search,
-  Toll,
-} from '@mui/icons-material';
+import AutoAwesome from '@mui/icons-material/AutoAwesome';
+import NotificationsActive from '@mui/icons-material/NotificationsActive';
+import Search from '@mui/icons-material/Search';
+import Toll from '@mui/icons-material/Toll';
 import { Box, Button, Dialog, LinearProgress, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';

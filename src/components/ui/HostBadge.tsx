@@ -1,6 +1,6 @@
 'use client';
 
-import { VerifiedUser } from '@mui/icons-material';
+import VerifiedUser from '@mui/icons-material/VerifiedUser';
 import { Box, Tooltip, Typography } from '@mui/material';
 
 interface HostBadgeProps {
@@ -44,7 +44,8 @@ export default function HostBadge({
 }: HostBadgeProps) {
   const v = VARIANTS[variant];
   const isSmall = size === 'small';
-  const displayLabel = label ?? (variant === 'gold' ? 'Propriétaire Vérifié' : 'Agence Vérifiée');
+  const displayLabel =
+    label ?? (variant === 'gold' ? 'Propriétaire Vérifié' : 'Agence Vérifiée');
 
   return (
     <Tooltip title={v.tooltip} arrow>

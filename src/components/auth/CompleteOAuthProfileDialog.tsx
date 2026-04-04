@@ -5,21 +5,21 @@ import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { User } from '@/types';
-import { Phone as PhoneIcon } from '@mui/icons-material';
+import PhoneIcon from '@mui/icons-material/Phone';
 import {
-    Autocomplete,
-    Avatar,
-    Box,
-    Button,
-    CircularProgress,
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    InputAdornment,
-    TextField,
-    Typography,
-    useMediaQuery,
-    useTheme,
+  Autocomplete,
+  Avatar,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  InputAdornment,
+  TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -43,9 +43,17 @@ interface Props {
   onComplete: (token: string, user: User) => void;
 }
 
-export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }: Props) {
+export default function CompleteOAuthProfileDialog({
+  open,
+  prefill,
+  onComplete,
+}: Props) {
   const muiTheme = useTheme();
-  const { slotProps: citySlotProps, renderOption: renderCityOption, inputSx: cityInputSx } = useCityAutocompleteConfig();
+  const {
+    slotProps: citySlotProps,
+    renderOption: renderCityOption,
+    inputSx: cityInputSx,
+  } = useCityAutocompleteConfig();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
@@ -101,7 +109,9 @@ export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }
     }
   };
 
-  const displayName = [prefill.firstname, prefill.lastname].filter(Boolean).join(' ') || 'Utilisateur';
+  const displayName =
+    [prefill.firstname, prefill.lastname].filter(Boolean).join(' ') ||
+    'Utilisateur';
 
   return (
     <Dialog
@@ -113,10 +123,23 @@ export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }
       PaperProps={{ sx: { borderRadius: isMobile ? 0 : 3, p: 1 } }}
     >
       <DialogTitle sx={{ pb: 0 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, pt: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 1.5,
+            pt: 1,
+          }}
+        >
           <Avatar
             src={prefill.avatar ?? undefined}
-            sx={{ width: 64, height: 64, fontSize: 24, bgcolor: 'primary.main' }}
+            sx={{
+              width: 64,
+              height: 64,
+              fontSize: 24,
+              bgcolor: 'primary.main',
+            }}
           >
             {displayName[0]?.toUpperCase()}
           </Avatar>
@@ -132,7 +155,11 @@ export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }
       </DialogTitle>
 
       <DialogContent>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}
+        >
           {/* Phone number */}
           <TextField
             label="Numéro de téléphone"
@@ -160,7 +187,12 @@ export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }
             onChange={(_, val) => setSelectedCity(val)}
             inputValue={cityInput}
             onInputChange={(_, val) => setCityInput(val)}
-            open={cityDropdownOpen && cityInput.length >= 1 && !isCitiesLoading && cities.length > 0}
+            open={
+              cityDropdownOpen &&
+              cityInput.length >= 1 &&
+              !isCitiesLoading &&
+              cities.length > 0
+            }
             onOpen={() => setCityDropdownOpen(true)}
             onClose={() => setCityDropdownOpen(false)}
             loading={isCitiesLoading}
@@ -176,7 +208,9 @@ export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }
                   ...params.InputProps,
                   endAdornment: (
                     <>
-                      {isCitiesLoading ? <CircularProgress color="inherit" size={18} /> : null}
+                      {isCitiesLoading ? (
+                        <CircularProgress color="inherit" size={18} />
+                      ) : null}
                       {params.InputProps.endAdornment}
                     </>
                   ),
@@ -206,7 +240,11 @@ export default function CompleteOAuthProfileDialog({ open, prefill, onComplete }
               '&:hover': { background: gradient.primaryHover },
             }}
           >
-            {isSubmitting ? <CircularProgress size={22} color="inherit" /> : 'Créer mon compte'}
+            {isSubmitting ? (
+              <CircularProgress size={22} color="inherit" />
+            ) : (
+              'Créer mon compte'
+            )}
           </Button>
         </Box>
       </DialogContent>

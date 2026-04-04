@@ -11,7 +11,6 @@ import {
   CardContent,
   Chip,
   Divider,
-  IconButton,
   LinearProgress,
   Paper,
   Skeleton,
@@ -26,13 +25,10 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import {
-  CloudDownload as DownloadIcon,
-  DateRange as DateIcon,
-  FilterList,
-  Receipt as ReceiptIcon,
-  Toll as CreditsIcon,
-} from '@mui/icons-material';
+import DownloadIcon from '@mui/icons-material/CloudDownload';
+import DateIcon from '@mui/icons-material/DateRange';
+import ReceiptIcon from '@mui/icons-material/Receipt';
+import CreditsIcon from '@mui/icons-material/Toll';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
 
@@ -54,12 +50,16 @@ interface PaymentHistoryTableModernProps {
   perPage?: number;
 }
 
-export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHistoryTableModernProps): React.ReactElement {
+export default function PaymentHistoryTableModern({
+  perPage = 15,
+}: PaymentHistoryTableModernProps): React.ReactElement {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [page, setPage] = useState(1);
-  const [selectedPeriod, setSelectedPeriod] = useState<'all' | '30' | '90' | '365'>('all');
+  const [selectedPeriod, setSelectedPeriod] = useState<
+    'all' | '30' | '90' | '365'
+  >('all');
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['payment-history', page, selectedPeriod],
@@ -73,29 +73,38 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
   // Filter items based on selected period
   const filteredItems = useMemo(() => {
     if (selectedPeriod === 'all') return items;
-    
+
     const now = new Date();
     const daysAgo = new Date();
     daysAgo.setDate(now.getDate() - parseInt(selectedPeriod));
-    
-    return items.filter(item => new Date(item.created_at) >= daysAgo);
+
+    return items.filter((item) => new Date(item.created_at) >= daysAgo);
   }, [items, selectedPeriod]);
 
   const formatDate = (iso: string): string =>
-    new Intl.DateTimeFormat('fr-CM', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric', 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    new Intl.DateTimeFormat('fr-CM', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     }).format(new Date(iso));
 
   const handleDownloadAll = async () => {
     try {
       // In a real app, this would generate and download a CSV/PDF
       const csvContent = [
-        ['Date', 'Type', 'Pack', 'Méthode', 'Montant', 'Crédits', 'Statut', 'Référence'],
-        ...items.map(item => [
+        [
+          'Date',
+          'Type',
+          'Pack',
+          'Méthode',
+          'Montant',
+          'Crédits',
+          'Statut',
+          'Référence',
+        ],
+        ...items.map((item) => [
           formatDate(item.created_at),
           TYPE_LABELS[item.type] || item.type,
           item.pack_name || '—',
@@ -103,9 +112,11 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
           `${item.amount} XOF`,
           item.points_awarded?.toString() || '—',
           item.status,
-          item.reference || '—'
-        ])
-      ].map(row => row.join(',')).join('\n');
+          item.reference || '—',
+        ]),
+      ]
+        .map((row) => row.join(','))
+        .join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -125,9 +136,23 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
     return (
       <Box>
         {/* Header with filters */}
-        <Card sx={{ mb: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+        <Card
+          sx={{
+            mb: 3,
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: 'divider',
+          }}
+        >
           <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 2,
+              }}
+            >
               <Typography variant="h6" fontWeight={700}>
                 Historique des paiements
               </Typography>
@@ -142,7 +167,7 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
                 Télécharger tout
               </Button>
             </Box>
-            
+
             {/* Period filter */}
             <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
               {[
@@ -154,10 +179,18 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
                 <Chip
                   key={period.value}
                   label={period.label}
-                  onClick={() => setSelectedPeriod(period.value as any)}
-                  variant={selectedPeriod === period.value ? 'filled' : 'outlined'}
+                  onClick={() =>
+                    setSelectedPeriod(
+                      period.value as 'all' | '30' | '90' | '365'
+                    )
+                  }
+                  variant={
+                    selectedPeriod === period.value ? 'filled' : 'outlined'
+                  }
                   size="small"
-                  color={selectedPeriod === period.value ? 'primary' : 'default'}
+                  color={
+                    selectedPeriod === period.value ? 'primary' : 'default'
+                  }
                   sx={{ borderRadius: 2 }}
                 />
               ))}
@@ -183,42 +216,80 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
           ))
         ) : filteredItems.length === 0 ? (
           <Card sx={{ borderRadius: 3, textAlign: 'center', py: 6 }}>
-            <ReceiptIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <ReceiptIcon
+              sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }}
+            />
             <Typography variant="h6" color="text.secondary" gutterBottom>
               Aucune transaction trouvée
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {selectedPeriod === 'all' 
-                ? 'Vous n\'avez aucune transaction pour le moment.'
-                : `Aucune transaction sur les ${selectedPeriod === '30' ? '30' : selectedPeriod === '90' ? '90' : '365'} derniers jours.`
-              }
+              {selectedPeriod === 'all'
+                ? "Vous n'avez aucune transaction pour le moment."
+                : `Aucune transaction sur les ${selectedPeriod === '30' ? '30' : selectedPeriod === '90' ? '90' : '365'} derniers jours.`}
             </Typography>
           </Card>
         ) : (
           filteredItems.map((item) => (
-            <Card key={item.id} sx={{ mb: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Card
+              key={item.id}
+              sx={{
+                mb: 2,
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
               <CardContent sx={{ p: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    mb: 1,
+                  }}
+                >
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={700}
+                      gutterBottom
+                    >
                       {item.pack_name ?? TYPE_LABELS[item.type] ?? item.type}
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <DateIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        mb: 1,
+                      }}
+                    >
+                      <DateIcon
+                        sx={{ fontSize: 14, color: 'text.secondary' }}
+                      />
                       <Typography variant="caption" color="text.secondary">
                         {formatDate(item.created_at)}
                       </Typography>
                     </Box>
                     {item.reference && (
-                      <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.disabled' }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ fontFamily: 'monospace', color: 'text.disabled' }}
+                      >
                         Réf: {item.reference.slice(0, 12)}...
                       </Typography>
                     )}
                   </Box>
                   <PaymentStatusBadge status={item.status} />
                 </Box>
-                
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     {item.points_awarded != null && (
                       <Chip
@@ -230,11 +301,20 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
                         sx={{ fontWeight: 600 }}
                       />
                     )}
-                    <PaymentAmountDisplay amount={item.amount} variant="body1" fontWeight={700} />
+                    <PaymentAmountDisplay
+                      amount={item.amount}
+                      variant="body1"
+                      fontWeight={700}
+                    />
                   </Box>
                   <Tooltip title="Méthode de paiement">
-                    <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right' }}>
-                      {METHOD_LABELS[item.payment_method as string] || item.payment_method}
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ textAlign: 'right' }}
+                    >
+                      {METHOD_LABELS[item.payment_method as string] ||
+                        item.payment_method}
                     </Typography>
                   </Tooltip>
                 </Box>
@@ -247,7 +327,7 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
             <Button
               variant="outlined"
-              onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
               disabled={page >= totalPages}
               sx={{ borderRadius: 2 }}
             >
@@ -262,8 +342,23 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
   return (
     <Box>
       {/* Header */}
-      <Paper sx={{ p: 3, mb: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Paper
+        sx={{
+          p: 3,
+          mb: 3,
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 3,
+          }}
+        >
           <Typography variant="h5" fontWeight={700}>
             Historique des paiements
           </Typography>
@@ -279,17 +374,25 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
                 <Chip
                   key={period.value}
                   label={period.label}
-                  onClick={() => setSelectedPeriod(period.value as any)}
-                  variant={selectedPeriod === period.value ? 'filled' : 'outlined'}
+                  onClick={() =>
+                    setSelectedPeriod(
+                      period.value as 'all' | '30' | '90' | '365'
+                    )
+                  }
+                  variant={
+                    selectedPeriod === period.value ? 'filled' : 'outlined'
+                  }
                   size="small"
-                  color={selectedPeriod === period.value ? 'primary' : 'default'}
+                  color={
+                    selectedPeriod === period.value ? 'primary' : 'default'
+                  }
                   sx={{ borderRadius: 2 }}
                 />
               ))}
             </Box>
-            
+
             <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-            
+
             {/* Download button */}
             <Button
               variant="outlined"
@@ -306,7 +409,15 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
 
         {/* Summary stats */}
         <Box sx={{ display: 'flex', gap: 3, mb: 2 }}>
-          <Card sx={{ flex: 1, p: 2, textAlign: 'center', borderRadius: 2, bgcolor: isDark ? 'rgba(246,71,95,0.04)' : 'rgba(246,71,95,0.02)' }}>
+          <Card
+            sx={{
+              flex: 1,
+              p: 2,
+              textAlign: 'center',
+              borderRadius: 2,
+              bgcolor: isDark ? 'rgba(246,71,95,0.04)' : 'rgba(246,71,95,0.02)',
+            }}
+          >
             <Typography variant="caption" color="text.secondary" gutterBottom>
               Total des transactions
             </Typography>
@@ -314,7 +425,15 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
               {items.length}
             </Typography>
           </Card>
-          <Card sx={{ flex: 1, p: 2, textAlign: 'center', borderRadius: 2, bgcolor: isDark ? 'rgba(46,125,50,0.04)' : 'rgba(46,125,50,0.02)' }}>
+          <Card
+            sx={{
+              flex: 1,
+              p: 2,
+              textAlign: 'center',
+              borderRadius: 2,
+              bgcolor: isDark ? 'rgba(46,125,50,0.04)' : 'rgba(46,125,50,0.02)',
+            }}
+          >
             <Typography variant="caption" color="text.secondary" gutterBottom>
               Crédits obtenus
             </Typography>
@@ -322,12 +441,23 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
               {items.reduce((sum, item) => sum + (item.points_awarded || 0), 0)}
             </Typography>
           </Card>
-          <Card sx={{ flex: 1, p: 2, textAlign: 'center', borderRadius: 2, bgcolor: isDark ? 'rgba(25,135,84,0.04)' : 'rgba(25,135,84,0.02)' }}>
+          <Card
+            sx={{
+              flex: 1,
+              p: 2,
+              textAlign: 'center',
+              borderRadius: 2,
+              bgcolor: isDark ? 'rgba(25,135,84,0.04)' : 'rgba(25,135,84,0.02)',
+            }}
+          >
             <Typography variant="caption" color="text.secondary" gutterBottom>
               Montant total
             </Typography>
             <Typography variant="h6" fontWeight={800} color="info.main">
-              {items.reduce((sum, item) => sum + item.amount, 0).toLocaleString('fr-CM')} XOF
+              {items
+                .reduce((sum, item) => sum + item.amount, 0)
+                .toLocaleString('fr-CM')}{' '}
+              XOF
             </Typography>
           </Card>
         </Box>
@@ -353,18 +483,28 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
       >
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'grey.50' }}>
-              {['Date', 'Type', 'Pack', 'Crédits', 'Montant', 'Méthode', 'Statut'].map((header) => (
+            <TableRow
+              sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'grey.50' }}
+            >
+              {[
+                'Date',
+                'Type',
+                'Pack',
+                'Crédits',
+                'Montant',
+                'Méthode',
+                'Statut',
+              ].map((header) => (
                 <TableCell
                   key={header}
-                  sx={{ 
-                    fontWeight: 700, 
-                    fontSize: '0.75rem', 
-                    letterSpacing: 0.5, 
-                    textTransform: 'uppercase', 
-                    color: 'text.secondary', 
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    letterSpacing: 0.5,
+                    textTransform: 'uppercase',
+                    color: 'text.secondary',
                     py: 1.5,
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {header}
@@ -378,7 +518,10 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
                 <TableRow key={i}>
                   {Array.from({ length: 7 }, (__, j) => (
                     <TableCell key={j}>
-                      <Skeleton height={20} width={j === 0 ? 120 : j === 4 ? 80 : 60} />
+                      <Skeleton
+                        height={20}
+                        width={j === 0 ? 120 : j === 4 ? 80 : 60}
+                      />
                     </TableCell>
                   ))}
                 </TableRow>
@@ -386,7 +529,15 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
             ) : filteredItems.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} sx={{ textAlign: 'center', py: 6 }}>
-                  <ReceiptIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1, display: 'block', mx: 'auto' }} />
+                  <ReceiptIcon
+                    sx={{
+                      fontSize: 48,
+                      color: 'text.secondary',
+                      mb: 1,
+                      display: 'block',
+                      mx: 'auto',
+                    }}
+                  />
                   <Typography variant="body2" color="text.secondary">
                     Aucune transaction trouvée
                   </Typography>
@@ -396,11 +547,11 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
               filteredItems.map((item) => (
                 <TableRow
                   key={item.id}
-                  sx={{ 
-                    '&:hover': { 
+                  sx={{
+                    '&:hover': {
                       bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'grey.50',
-                      cursor: 'pointer'
-                    } 
+                      cursor: 'pointer',
+                    },
                   }}
                 >
                   <TableCell sx={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
@@ -413,13 +564,20 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
                   </TableCell>
                   <TableCell sx={{ fontSize: '0.8rem' }}>
                     {item.reference ? (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{ fontFamily: 'monospace' }}
+                        >
                           {item.reference.slice(0, 10)}...
                         </Typography>
                       </Box>
                     ) : (
-                      <Typography variant="body2" color="text.secondary">—</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        —
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell>
@@ -433,15 +591,22 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
                         sx={{ fontWeight: 600 }}
                       />
                     ) : (
-                      <Typography variant="body2" color="text.secondary">—</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        —
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell>
-                    <PaymentAmountDisplay amount={item.amount} variant="body2" fontWeight={700} />
+                    <PaymentAmountDisplay
+                      amount={item.amount}
+                      variant="body2"
+                      fontWeight={700}
+                    />
                   </TableCell>
                   <TableCell>
                     <Typography variant="caption" color="text.secondary">
-                      {METHOD_LABELS[item.payment_method as string] || item.payment_method}
+                      {METHOD_LABELS[item.payment_method as string] ||
+                        item.payment_method}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -459,7 +624,7 @@ export default function PaymentHistoryTableModern({ perPage = 15 }: PaymentHisto
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
           <Button
             variant="outlined"
-            onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+            onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
             disabled={page >= totalPages}
             sx={{ borderRadius: 2 }}
           >

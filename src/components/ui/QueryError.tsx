@@ -1,6 +1,6 @@
 'use client';
 
-import { ErrorOutline as ErrorIcon } from '@mui/icons-material';
+import ErrorIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Button, Link, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
@@ -43,14 +43,35 @@ export default function QueryError({
         ...(compact ? {} : { minHeight: '30vh' }),
       }}
     >
-      <ErrorIcon sx={{ fontSize: compact ? 48 : EMPTY_STATE_ICON_SIZE, color: 'error.main', mb: 2 }} />
-      <Typography variant={compact ? 'subtitle1' : 'h6'} fontWeight={600} gutterBottom>
+      <ErrorIcon
+        sx={{
+          fontSize: compact ? 48 : EMPTY_STATE_ICON_SIZE,
+          color: 'error.main',
+          mb: 2,
+        }}
+      />
+      <Typography
+        variant={compact ? 'subtitle1' : 'h6'}
+        fontWeight={600}
+        gutterBottom
+      >
         Un petit souci de connexion
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 400 }}>
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mb: 3, maxWidth: 400 }}
+      >
         {message}
       </Typography>
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 1.5,
+        }}
+      >
         {onRetry && (
           <Button
             variant="contained"
@@ -67,7 +88,11 @@ export default function QueryError({
           </Button>
         )}
         {showSupportLink && (
-          <Link href="/contact" color="primary.main" sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
+          <Link
+            href="/contact"
+            color="primary.main"
+            sx={{ fontSize: '0.875rem', fontWeight: 500 }}
+          >
             Contacter le support
           </Link>
         )}

@@ -1,7 +1,7 @@
 'use client';
 
 import { brandAgent } from '@/theme/tokens';
-import { Warning as WarningIcon } from '@mui/icons-material';
+import WarningIcon from '@mui/icons-material/Warning';
 import {
   Button,
   Dialog,

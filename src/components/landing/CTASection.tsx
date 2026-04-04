@@ -1,13 +1,15 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowForward, PhoneIphoneOutlined } from '@mui/icons-material';
+import ArrowForward from '@mui/icons-material/ArrowForward';
+import PhoneIphoneOutlined from '@mui/icons-material/PhoneIphoneOutlined';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
 import { brand, gradient } from '@/theme/tokens';
 
 export default function CTASection() {
-  const { bgAlt, text, textSub, surface, surfaceHover, border } = useLandingTheme();
+  const { bgAlt, text, textSub, surface, surfaceHover, border } =
+    useLandingTheme();
   return (
     <section
       className="landing-section-pad"
@@ -28,7 +30,8 @@ export default function CTASection() {
           width: 400,
           height: 400,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(246,71,95,0.18) 0%, transparent 70%)',
+          background:
+            'radial-gradient(circle, rgba(246,71,95,0.18) 0%, transparent 70%)',
           pointerEvents: 'none',
           filter: 'blur(40px)',
         }}
@@ -42,18 +45,30 @@ export default function CTASection() {
           width: 300,
           height: 300,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)',
+          background:
+            'radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)',
           pointerEvents: 'none',
           filter: 'blur(40px)',
         }}
       />
 
-      <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+      <div
+        style={{
+          maxWidth: 860,
+          margin: '0 auto',
+          textAlign: 'center',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+          transition={{
+            duration: 0.7,
+            ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+          }}
         >
           <div
             style={{
@@ -107,13 +122,20 @@ export default function CTASection() {
               margin: '0 auto 48px',
             }}
           >
-            Rejoignez des milliers d&apos;utilisateurs qui font confiance à KeyHome pour leurs projets immobiliers à travers l&apos;Afrique.
+            Rejoignez des milliers d&apos;utilisateurs qui font confiance à
+            KeyHome pour leurs projets immobiliers à travers l&apos;Afrique.
           </p>
 
           <div className="cta-buttons" style={{ marginBottom: 0 }}>
-            <PageTransitionLink href="/search" style={{ textDecoration: 'none' }}>
+            <PageTransitionLink
+              href="/search"
+              style={{ textDecoration: 'none' }}
+            >
               <motion.button
-                whileHover={{ scale: 1.03, boxShadow: '0 8px 40px rgba(246,71,95,0.6)' }}
+                whileHover={{
+                  scale: 1.03,
+                  boxShadow: '0 8px 40px rgba(246,71,95,0.6)',
+                }}
                 whileTap={{ scale: 0.97 }}
                 style={{
                   display: 'flex',
@@ -136,7 +158,10 @@ export default function CTASection() {
               </motion.button>
             </PageTransitionLink>
 
-            <a href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'} style={{ textDecoration: 'none' }}>
+            <a
+              href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'}
+              style={{ textDecoration: 'none' }}
+            >
               <motion.button
                 whileHover={{ scale: 1.03, background: surfaceHover }}
                 whileTap={{ scale: 0.97 }}
@@ -170,7 +195,12 @@ export default function CTASection() {
               flexWrap: 'wrap',
             }}
           >
-            {['Inscription gratuite', 'Paiement sécurisé', 'Support local', 'Sans engagement'].map((badge) => (
+            {[
+              'Inscription gratuite',
+              'Paiement sécurisé',
+              'Support local',
+              'Sans engagement',
+            ].map((badge) => (
               <span
                 key={badge}
                 style={{

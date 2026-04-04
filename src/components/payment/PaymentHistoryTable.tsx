@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
 import { paymentsService } from '@/services/payments.service';
 import { PaymentHistoryItem } from '@/types';
-import { Toll } from '@mui/icons-material';
+import Toll from '@mui/icons-material/Toll';
 import {
   Box,
   Pagination,

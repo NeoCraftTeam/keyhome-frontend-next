@@ -1,7 +1,8 @@
 'use client';
 
 import api from '@/lib/api';
-import { AutoAwesome, Search } from '@mui/icons-material';
+import AutoAwesome from '@mui/icons-material/AutoAwesome';
+import Search from '@mui/icons-material/Search';
 import {
   Box,
   Chip,
@@ -31,7 +32,9 @@ export default function NaturalSearchBar() {
 
   const handleSearch = async (q?: string) => {
     const searchQuery = q ?? query;
-    if (!searchQuery.trim()) { return; }
+    if (!searchQuery.trim()) {
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -41,14 +44,41 @@ export default function NaturalSearchBar() {
       const parsed = res.data;
 
       const params = new URLSearchParams();
-      if (parsed.q) { params.set('q', parsed.q); }
-      if (parsed.city_id) { params.set('city', parsed.city_id); }
-      if (parsed.type_id) { params.set('type', parsed.type_id); }
-      if (parsed.bedrooms) { params.set('bedrooms', String(parsed.bedrooms)); }
-      if (parsed.price_max) { params.set('price_max', String(parsed.price_max)); }
-      if (parsed.price_min) { params.set('price_min', String(parsed.price_min)); }
-      if (parsed.has_parking) { params.set('parking', '1'); }
-      if (parsed.surface_min) { params.set('surface_min', String(parsed.surface_min)); }
+      if (parsed.q) {
+        params.set('q', parsed.q);
+      }
+      if (parsed.city_name) {
+        params.set('city', parsed.city_name);
+      }
+      if (parsed.type_id) {
+        params.set('type_id', String(parsed.type_id));
+      } else if (parsed.type_name) {
+        params.set('type', parsed.type_name);
+      }
+      if (parsed.quarter_name) {
+        params.set('quarter', parsed.quarter_name);
+      }
+      if (parsed.transaction_type) {
+        params.set('transaction_type', parsed.transaction_type);
+      }
+      if (parsed.bedrooms) {
+        params.set('bedrooms', String(parsed.bedrooms));
+      }
+      if (parsed.price_max) {
+        params.set('price_max', String(parsed.price_max));
+      }
+      if (parsed.price_min) {
+        params.set('price_min', String(parsed.price_min));
+      }
+      if (parsed.surface_min) {
+        params.set('surface_min', String(parsed.surface_min));
+      }
+      if (parsed.has_parking) {
+        params.set('parking', '1');
+      }
+      if (parsed.furnished) {
+        params.set('furnished', '1');
+      }
 
       startTransition(() => {
         router.push(`/search?${params.toString()}`);
@@ -79,10 +109,14 @@ export default function NaturalSearchBar() {
       >
         <TextField
           fullWidth
-          placeholder='Décrivez votre bien idéal en français...'
+          placeholder="Décrivez votre bien idéal en français..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(); } }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSearch();
+            }
+          }}
           variant="standard"
           InputProps={{
             disableUnderline: true,
@@ -130,7 +164,11 @@ export default function NaturalSearchBar() {
 
       {/* Example chips */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center', mr: 0.5 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ alignSelf: 'center', mr: 0.5 }}
+        >
           Essayez :
         </Typography>
         {EXAMPLES.map((ex) => (
@@ -139,7 +177,10 @@ export default function NaturalSearchBar() {
             label={ex}
             size="small"
             variant="outlined"
-            onClick={() => { setQuery(ex); handleSearch(ex); }}
+            onClick={() => {
+              setQuery(ex);
+              handleSearch(ex);
+            }}
             sx={{ cursor: 'pointer', fontSize: 11 }}
           />
         ))}

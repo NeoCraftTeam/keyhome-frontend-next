@@ -1,6 +1,6 @@
 'use client';
 
-import { Check as CheckIcon } from '@mui/icons-material';
+import CheckIcon from '@mui/icons-material/Check';
 import { Box, Typography } from '@mui/material';
 import { Fragment } from 'react';
 

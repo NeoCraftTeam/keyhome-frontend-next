@@ -6,15 +6,13 @@ import {
   type OrsProfile,
 } from '@/services/geo.service';
 import { useUserLocation } from '@/hooks/useUserLocation';
-import {
-  Accessible,
-  DirectionsBike,
-  DirectionsCar,
-  DirectionsWalk,
-  NavigationOutlined,
-  Schedule,
-  Straighten,
-} from '@mui/icons-material';
+import Accessible from '@mui/icons-material/Accessible';
+import DirectionsBike from '@mui/icons-material/DirectionsBike';
+import DirectionsCar from '@mui/icons-material/DirectionsCar';
+import DirectionsWalk from '@mui/icons-material/DirectionsWalk';
+import NavigationOutlined from '@mui/icons-material/NavigationOutlined';
+import Schedule from '@mui/icons-material/Schedule';
+import Straighten from '@mui/icons-material/Straighten';
 import {
   Box,
   CircularProgress,
@@ -227,9 +225,7 @@ export default function DirectionsPanel({
       const valid = all.filter((r): r is DirectionsResult => r !== null);
       setResults(valid);
       if (valid.length === 0) {
-        setError(
-          "Calcul d'itinéraire indisponible. Vérifiez que ORS_API_KEY est configuré."
-        );
+        setError("Service d'itinéraires temporairement indisponible.");
       }
     } catch {
       setError("Calcul d'itinéraire indisponible.");
@@ -245,6 +241,7 @@ export default function DirectionsPanel({
       {/* Trigger row */}
       <Box
         component="button"
+        type="button"
         onClick={() => {
           setOpen((v) => {
             if (!v && results.length === 0) {
@@ -303,22 +300,12 @@ export default function DirectionsPanel({
               : 'Voiture · Pied · Vélo — depuis votre position'}
           </Typography>
         </Box>
-        {loading && <CircularProgress size={16} />}
+        {loading && results.length === 0 && <CircularProgress size={16} />}
       </Box>
 
       {/* Expanded content */}
       <Collapse in={open} unmountOnExit>
         <Box sx={{ pt: 0.5 }}>
-          {error && (
-            <Typography
-              variant="caption"
-              color="error"
-              sx={{ display: 'block', mt: 1 }}
-            >
-              {error}
-            </Typography>
-          )}
-
           {results.length > 0 && (
             <>
               {/* Sort: car first, then walking, then cycling */}
@@ -345,7 +332,10 @@ export default function DirectionsPanel({
               value={profile}
               exclusive
               onChange={(_, v) => {
-                if (v) setProfile(v);
+                if (v) {
+                  setProfile(v);
+                  setError(null);
+                }
               }}
               size="small"
               sx={{
@@ -364,9 +354,16 @@ export default function DirectionsPanel({
 
             <Box
               component="button"
-              onClick={compute}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                compute();
+              }}
               disabled={loading}
               sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.75,
                 py: 0.75,
                 px: 1.5,
                 bgcolor: 'primary.main',
@@ -381,9 +378,20 @@ export default function DirectionsPanel({
                 transition: 'opacity 0.2s',
               }}
             >
+              {loading && <CircularProgress size={10} sx={{ color: '#fff' }} />}
               Calculer
             </Box>
           </Box>
+
+          {error && (
+            <Typography
+              variant="caption"
+              color="error"
+              sx={{ display: 'block', mt: 1 }}
+            >
+              {error}
+            </Typography>
+          )}
 
           <Typography
             variant="caption"

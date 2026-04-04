@@ -1,7 +1,8 @@
 'use client';
 
 import { keyScoreService } from '@/services/estimator.service';
-import { EmojiEvents, Info } from '@mui/icons-material';
+import EmojiEvents from '@mui/icons-material/EmojiEvents';
+import Info from '@mui/icons-material/Info';
 import {
   Box,
   CircularProgress,
@@ -19,43 +20,69 @@ interface Props {
 }
 
 const SCORE_COLOR = (score: number): string => {
-  if (score >= 85) { return '#22c55e'; }
-  if (score >= 70) { return '#84cc16'; }
-  if (score >= 55) { return '#f59e0b'; }
-  if (score >= 40) { return '#f97316'; }
+  if (score >= 85) {
+    return '#22c55e';
+  }
+  if (score >= 70) {
+    return '#84cc16';
+  }
+  if (score >= 55) {
+    return '#f59e0b';
+  }
+  if (score >= 40) {
+    return '#f97316';
+  }
   return '#ef4444';
 };
 
 const SCORE_BG_LIGHT = (score: number): string => {
-  if (score >= 85) { return '#f0fdf4'; }
-  if (score >= 70) { return '#f7fee7'; }
-  if (score >= 55) { return '#fffbeb'; }
-  if (score >= 40) { return '#fff7ed'; }
+  if (score >= 85) {
+    return '#f0fdf4';
+  }
+  if (score >= 70) {
+    return '#f7fee7';
+  }
+  if (score >= 55) {
+    return '#fffbeb';
+  }
+  if (score >= 40) {
+    return '#fff7ed';
+  }
   return '#fef2f2';
 };
 
 const SCORE_BG_DARK = (score: number): string => {
-  if (score >= 85) { return 'rgba(34,197,94,0.08)'; }
-  if (score >= 70) { return 'rgba(132,204,22,0.08)'; }
-  if (score >= 55) { return 'rgba(245,158,11,0.08)'; }
-  if (score >= 40) { return 'rgba(249,115,22,0.08)'; }
+  if (score >= 85) {
+    return 'rgba(34,197,94,0.08)';
+  }
+  if (score >= 70) {
+    return 'rgba(132,204,22,0.08)';
+  }
+  if (score >= 55) {
+    return 'rgba(245,158,11,0.08)';
+  }
+  if (score >= 40) {
+    return 'rgba(249,115,22,0.08)';
+  }
   return 'rgba(239,68,68,0.08)';
 };
 
 const CRITERION_TIPS: Record<string, string> = {
-  'Photos': 'Plus il y a de photos de qualité, plus les locataires font confiance à l\'annonce.',
-  'Description': 'Une description détaillée rassure et réduit les questions inutiles.',
-  'Prix': 'Un prix compétitif par rapport au marché local augmente les contacts.',
-  'Localisation': 'Les annonces géolocalisées reçoivent 2× plus de vues.',
-  'Équipements': 'Lister les équipements aide les locataires à se projeter.',
-  'Popularité': 'Basé sur le ratio vues / interactions.',
-  'Fraîcheur': 'Les annonces récentes sont mieux référencées.',
+  Photos:
+    "Plus il y a de photos de qualité, plus les locataires font confiance à l'annonce.",
+  Description:
+    'Une description détaillée rassure et réduit les questions inutiles.',
+  Prix: 'Un prix compétitif par rapport au marché local augmente les contacts.',
+  Localisation: 'Les annonces géolocalisées reçoivent 2× plus de vues.',
+  Équipements: 'Lister les équipements aide les locataires à se projeter.',
+  Popularité: 'Basé sur le ratio vues / interactions.',
+  Fraîcheur: 'Les annonces récentes sont mieux référencées.',
 };
 
 const POSITIVE_LABELS: Record<string, string> = {
-  'Prix': 'Bon rapport qualité/prix',
-  'Localisation': 'Localisation bien définie',
-  'Équipements': 'Équipements bien détaillés',
+  Prix: 'Bon rapport qualité/prix',
+  Localisation: 'Localisation bien définie',
+  Équipements: 'Équipements bien détaillés',
 };
 
 export default function KeyScoreSection({ adId }: Props) {
@@ -95,7 +122,14 @@ export default function KeyScoreSection({ adId }: Props) {
       }}
     >
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 }, mb: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: { xs: 1.5, sm: 2 },
+          mb: 3,
+        }}
+      >
         {/* Score circle */}
         <Box
           sx={{
@@ -111,7 +145,11 @@ export default function KeyScoreSection({ adId }: Props) {
             bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'white',
           }}
         >
-          <Typography fontWeight={800} fontSize={{ xs: 18, sm: 22 }} sx={{ color, lineHeight: 1 }}>
+          <Typography
+            fontWeight={800}
+            fontSize={{ xs: 18, sm: 22 }}
+            sx={{ color, lineHeight: 1 }}
+          >
             {data.score}
           </Typography>
           <Typography variant="caption" color="text.disabled" fontSize={10}>
@@ -126,11 +164,7 @@ export default function KeyScoreSection({ adId }: Props) {
               KeyScore™
             </Typography>
           </Box>
-          <Typography
-            variant="subtitle1"
-            fontWeight={700}
-            sx={{ color }}
-          >
+          <Typography variant="subtitle1" fontWeight={700} sx={{ color }}>
             {data.label}
           </Typography>
           <Typography variant="caption" color="text.secondary">
@@ -144,55 +178,77 @@ export default function KeyScoreSection({ adId }: Props) {
       {/* Criteria — sort by score descending to highlight strengths first */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {Object.values(data.breakdown)
-          .sort((a, b) => (b.score / b.max) - (a.score / a.max))
+          .sort((a, b) => b.score / b.max - a.score / a.max)
           .map((item) => {
-          const pct = Math.round((item.score / item.max) * 100);
-          const itemColor = SCORE_COLOR(pct);
-          const tip = CRITERION_TIPS[item.label];
-          const displayValue = pct >= 70 && POSITIVE_LABELS[item.label] ? POSITIVE_LABELS[item.label] : item.value;
+            const pct = Math.round((item.score / item.max) * 100);
+            const itemColor = SCORE_COLOR(pct);
+            const tip = CRITERION_TIPS[item.label];
+            const displayValue =
+              pct >= 70 && POSITIVE_LABELS[item.label]
+                ? POSITIVE_LABELS[item.label]
+                : item.value;
 
-          return (
-            <Box key={item.label}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Typography variant="body2" fontWeight={600}>
-                    {item.label}
-                  </Typography>
-                  {tip && (
-                    <Tooltip title={tip} placement="top">
-                      <Info sx={{ fontSize: 14, color: 'text.disabled', cursor: 'help' }} />
-                    </Tooltip>
-                  )}
+            return (
+              <Box key={item.label}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 0.5,
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="body2" fontWeight={600}>
+                      {item.label}
+                    </Typography>
+                    {tip && (
+                      <Tooltip title={tip} placement="top">
+                        <Info
+                          sx={{
+                            fontSize: 14,
+                            color: 'text.disabled',
+                            cursor: 'help',
+                          }}
+                        />
+                      </Tooltip>
+                    )}
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {displayValue}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      fontWeight={700}
+                      sx={{
+                        color: itemColor,
+                        minWidth: 36,
+                        textAlign: 'right',
+                      }}
+                    >
+                      {item.score}/{item.max}
+                    </Typography>
+                  </Box>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    {displayValue}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    fontWeight={700}
-                    sx={{ color: itemColor, minWidth: 36, textAlign: 'right' }}
-                  >
-                    {item.score}/{item.max}
-                  </Typography>
-                </Box>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={pct}
-                sx={{
-                  height: 8,
-                  borderRadius: 4,
-                  bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                  '& .MuiLinearProgress-bar': {
-                    bgcolor: itemColor,
+                <LinearProgress
+                  variant="determinate"
+                  value={pct}
+                  sx={{
+                    height: 8,
                     borderRadius: 4,
-                  },
-                }}
-              />
-            </Box>
-          );
-        })}
+                    bgcolor: isDark
+                      ? 'rgba(255,255,255,0.08)'
+                      : 'rgba(0,0,0,0.06)',
+                    '& .MuiLinearProgress-bar': {
+                      bgcolor: itemColor,
+                      borderRadius: 4,
+                    },
+                  }}
+                />
+              </Box>
+            );
+          })}
       </Box>
 
       <Box
@@ -206,9 +262,12 @@ export default function KeyScoreSection({ adId }: Props) {
           gap: 1,
         }}
       >
-        <Info sx={{ fontSize: 16, color: 'text.disabled', mt: 0.1, flexShrink: 0 }} />
+        <Info
+          sx={{ fontSize: 16, color: 'text.disabled', mt: 0.1, flexShrink: 0 }}
+        />
         <Typography variant="caption" color="text.secondary">
-          Le KeyScore est mis à jour automatiquement. Il aide les locataires à évaluer la qualité d'une annonce en un coup d'œil.
+          Le KeyScore est mis à jour automatiquement. Il aide les locataires à
+          évaluer la qualité d&apos;une annonce en un coup d&apos;œil.
         </Typography>
       </Box>
     </Paper>

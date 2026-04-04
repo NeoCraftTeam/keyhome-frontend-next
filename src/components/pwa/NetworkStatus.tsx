@@ -1,6 +1,7 @@
 'use client';
 
-import { SignalWifiOff, Wifi } from '@mui/icons-material';
+import SignalWifiOff from '@mui/icons-material/SignalWifiOff';
+import Wifi from '@mui/icons-material/Wifi';
 import { Alert, Slide, Snackbar } from '@mui/material';
 import { useEffect, useState } from 'react';
 

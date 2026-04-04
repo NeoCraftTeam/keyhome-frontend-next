@@ -1,6 +1,7 @@
 'use client';
 
-import { FormatQuote, Star } from '@mui/icons-material';
+import FormatQuote from '@mui/icons-material/FormatQuote';
+import Star from '@mui/icons-material/Star';
 import {
   Avatar,
   Box,

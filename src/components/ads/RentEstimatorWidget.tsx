@@ -5,7 +5,10 @@ import { adTypesService, citiesService } from '@/services/cities.service';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { formatPrice } from '@/lib/constants';
 import { City, AdType } from '@/types';
-import { Calculate, TrendingDown, TrendingFlat, TrendingUp } from '@mui/icons-material';
+import Calculate from '@mui/icons-material/Calculate';
+import TrendingDown from '@mui/icons-material/TrendingDown';
+import TrendingFlat from '@mui/icons-material/TrendingFlat';
+import TrendingUp from '@mui/icons-material/TrendingUp';
 import {
   Alert,
   Autocomplete,
@@ -23,12 +26,20 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 export default function RentEstimatorWidget() {
-  const { slotProps: citySlotProps, renderOption: renderCityOption, inputSx: cityInputSx } = useCityAutocompleteConfig();
+  const {
+    slotProps: citySlotProps,
+    renderOption: renderCityOption,
+    inputSx: cityInputSx,
+  } = useCityAutocompleteConfig();
   const [cityInput, setCityInput] = useState('');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [typeId, setTypeId] = useState('');
   const [surface, setSurface] = useState(50);
-  const [submittedParams, setSubmittedParams] = useState<{ city_id: string; type_id: string; surface: number } | null>(null);
+  const [submittedParams, setSubmittedParams] = useState<{
+    city_id: string;
+    type_id: string;
+    surface: number;
+  } | null>(null);
 
   const { data: citiesData, isFetching: loadingCities } = useQuery({
     queryKey: ['cities-estimator', cityInput],
@@ -43,8 +54,17 @@ export default function RentEstimatorWidget() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['rent-estimate', submittedParams?.city_id, submittedParams?.type_id, submittedParams?.surface],
+  const {
+    data,
+    isLoading: _isLoading,
+    isFetching,
+  } = useQuery({
+    queryKey: [
+      'rent-estimate',
+      submittedParams?.city_id,
+      submittedParams?.type_id,
+      submittedParams?.surface,
+    ],
     queryFn: () => estimatorService.estimate(submittedParams!),
     enabled: !!submittedParams,
     staleTime: 60 * 60 * 1000,
@@ -75,16 +95,22 @@ export default function RentEstimatorWidget() {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
         <Box
           sx={{
-            width: 44, height: 44, borderRadius: 2,
+            width: 44,
+            height: 44,
+            borderRadius: 2,
             bgcolor: 'primary.main',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             flexShrink: 0,
           }}
         >
           <Calculate sx={{ color: 'white', fontSize: 24 }} />
         </Box>
         <Box>
-          <Typography variant="h6" fontWeight={700}>Estimateur de loyer</Typography>
+          <Typography variant="h6" fontWeight={700}>
+            Estimateur de loyer
+          </Typography>
           <Typography variant="caption" color="text.secondary">
             Basé sur les annonces actives du marché
           </Typography>
@@ -97,11 +123,18 @@ export default function RentEstimatorWidget() {
           options={citiesData?.data ?? []}
           getOptionLabel={(c) => c.name}
           value={selectedCity}
-          onChange={(_, val) => { setSelectedCity(val); setSubmittedParams(null); }}
+          onChange={(_, val) => {
+            setSelectedCity(val);
+            setSubmittedParams(null);
+          }}
           inputValue={cityInput}
-          onInputChange={(_, val) => { setCityInput(val); }}
+          onInputChange={(_, val) => {
+            setCityInput(val);
+          }}
           loading={loadingCities}
-          noOptionsText={cityInput.length < 1 ? 'Tapez une ville…' : 'Aucune ville trouvée'}
+          noOptionsText={
+            cityInput.length < 1 ? 'Tapez une ville…' : 'Aucune ville trouvée'
+          }
           slotProps={citySlotProps}
           renderOption={(props, option) => renderCityOption(props, option)}
           renderInput={(params) => (
@@ -130,10 +163,15 @@ export default function RentEstimatorWidget() {
           size="small"
           fullWidth
           value={typeId}
-          onChange={(e) => { setTypeId(e.target.value); setSubmittedParams(null); }}
+          onChange={(e) => {
+            setTypeId(e.target.value);
+            setSubmittedParams(null);
+          }}
         >
           {types?.map((t) => (
-            <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+            <MenuItem key={t.id} value={t.id}>
+              {t.name}
+            </MenuItem>
           ))}
         </TextField>
 
@@ -144,7 +182,10 @@ export default function RentEstimatorWidget() {
           </Typography>
           <Slider
             value={surface}
-            onChange={(_, v) => { setSurface(v as number); setSubmittedParams(null); }}
+            onChange={(_, v) => {
+              setSurface(v as number);
+              setSubmittedParams(null);
+            }}
             min={10}
             max={500}
             step={5}
@@ -158,7 +199,13 @@ export default function RentEstimatorWidget() {
           variant="contained"
           onClick={handleEstimate}
           disabled={!canEstimate}
-          startIcon={isFetching ? <CircularProgress size={16} color="inherit" /> : <Calculate />}
+          startIcon={
+            isFetching ? (
+              <CircularProgress size={16} color="inherit" />
+            ) : (
+              <Calculate />
+            )
+          }
           fullWidth
           sx={{ py: 1.25, fontWeight: 700 }}
         >
@@ -171,19 +218,43 @@ export default function RentEstimatorWidget() {
         <>
           <Divider sx={{ my: 3 }} />
           <Typography variant="subtitle2" color="text.secondary" mb={2}>
-            Fourchette estimée pour <strong>{surface} m²</strong> à <strong>{selectedCity?.name}</strong>
+            Fourchette estimée pour <strong>{surface} m²</strong> à{' '}
+            <strong>{selectedCity?.name}</strong>
           </Typography>
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 1, textAlign: 'center' }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' },
+              gap: 1,
+              textAlign: 'center',
+            }}
+          >
             {[
-              { label: 'Bas du marché', value: data.estimated_min, icon: <TrendingDown color="success" />, highlight: false },
-              { label: 'Prix médian', value: data.estimated_median, icon: <TrendingFlat color="primary" />, highlight: true },
-              { label: 'Haut du marché', value: data.estimated_max, icon: <TrendingUp color="error" />, highlight: false },
+              {
+                label: 'Bas du marché',
+                value: data.estimated_min,
+                icon: <TrendingDown color="success" />,
+                highlight: false,
+              },
+              {
+                label: 'Prix médian',
+                value: data.estimated_median,
+                icon: <TrendingFlat color="primary" />,
+                highlight: true,
+              },
+              {
+                label: 'Haut du marché',
+                value: data.estimated_max,
+                icon: <TrendingUp color="error" />,
+                highlight: false,
+              },
             ].map(({ label, value, icon, highlight }) => (
               <Box
                 key={label}
                 sx={{
-                  p: 1.5, borderRadius: 2,
+                  p: 1.5,
+                  borderRadius: 2,
                   bgcolor: highlight ? 'primary.main' : 'action.hover',
                   color: highlight ? 'white' : 'text.primary',
                   display: { xs: 'flex', sm: 'block' },
@@ -193,10 +264,18 @@ export default function RentEstimatorWidget() {
               >
                 {icon}
                 <Box sx={{ flex: { xs: 1, sm: 'unset' }, minWidth: 0 }}>
-                  <Typography variant="h6" fontWeight={700} fontSize={13} mt={{ xs: 0, sm: 0.5 }}>
+                  <Typography
+                    variant="h6"
+                    fontWeight={700}
+                    fontSize={13}
+                    mt={{ xs: 0, sm: 0.5 }}
+                  >
                     {formatPrice(value)}
                   </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.75, fontSize: 10 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ opacity: 0.75, fontSize: 10 }}
+                  >
                     {label}
                   </Typography>
                 </Box>
@@ -204,8 +283,16 @@ export default function RentEstimatorWidget() {
             ))}
           </Box>
 
-          <Typography variant="caption" color="text.secondary" mt={2} display="block" textAlign="center">
-            Basé sur {data.sample_count} annonce{data.sample_count > 1 ? 's' : ''} similaire{data.sample_count > 1 ? 's' : ''}
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            mt={2}
+            display="block"
+            textAlign="center"
+          >
+            Basé sur {data.sample_count} annonce
+            {data.sample_count > 1 ? 's' : ''} similaire
+            {data.sample_count > 1 ? 's' : ''}
           </Typography>
         </>
       )}

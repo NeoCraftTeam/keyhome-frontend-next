@@ -1,6 +1,8 @@
 'use client';
 
-import { Facebook, Instagram, X } from '@mui/icons-material';
+import Facebook from '@mui/icons-material/Facebook';
+import Instagram from '@mui/icons-material/Instagram';
+import X from '@mui/icons-material/X';
 import { Box, Container, Link, Typography } from '@mui/material';
 
 const LEGAL_LINKS = [
@@ -10,9 +12,17 @@ const LEGAL_LINKS = [
 ];
 
 const SOCIAL_LINKS = [
-  { label: 'Facebook', href: 'https://www.facebook.com/keyhomeapp', icon: Facebook },
+  {
+    label: 'Facebook',
+    href: 'https://www.facebook.com/keyhomeapp',
+    icon: Facebook,
+  },
   { label: 'X', href: 'https://twitter.com/keyhome_app', icon: X },
-  { label: 'Instagram', href: 'https://www.instagram.com/keyhome_app', icon: Instagram },
+  {
+    label: 'Instagram',
+    href: 'https://www.instagram.com/keyhome_app',
+    icon: Instagram,
+  },
 ];
 
 export default function Footer() {
@@ -24,7 +34,8 @@ export default function Footer() {
       sx={{
         borderTop: '1px solid',
         borderColor: 'divider',
-        bgcolor: (theme) => theme.palette.mode === 'dark' ? '#10131A' : '#F5F5F5',
+        bgcolor: (theme) =>
+          theme.palette.mode === 'dark' ? '#10131A' : '#F5F5F5',
         mt: 'auto',
       }}
     >
@@ -41,12 +52,22 @@ export default function Footer() {
           columnGap: 2,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.75 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 0.75,
+          }}
+        >
           <Typography variant="caption" color="text.secondary">
             © {currentYear} KeyHome, Inc.
           </Typography>
           {LEGAL_LINKS.map((link) => (
-            <Box key={link.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <Box
+              key={link.label}
+              sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}
+            >
               <Typography variant="caption" color="text.disabled">
                 ·
               </Typography>
@@ -56,7 +77,10 @@ export default function Footer() {
                 sx={{
                   color: 'text.secondary',
                   fontSize: '0.78rem',
-                  '&:hover': { color: 'text.primary', textDecoration: 'underline' },
+                  '&:hover': {
+                    color: 'text.primary',
+                    textDecoration: 'underline',
+                  },
                 }}
               >
                 {link.label}
@@ -65,8 +89,22 @@ export default function Footer() {
           ))}
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.2 }}>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, whiteSpace: 'nowrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1.2,
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.secondary',
+              fontWeight: 500,
+              whiteSpace: 'nowrap',
+            }}
+          >
             Français (CM)
           </Typography>
           <Typography variant="caption" color="text.disabled">
@@ -75,7 +113,10 @@ export default function Footer() {
           <Typography variant="caption" color="text.disabled">
             ·
           </Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.secondary', fontWeight: 500 }}
+          >
             Powered by{' '}
             <Link
               href="https://www.neocraft.dev"
@@ -105,7 +146,10 @@ export default function Footer() {
                   width: 20,
                   height: 20,
                   transition: 'color 0.2s ease, transform 0.2s ease',
-                  '&:hover': { color: 'text.primary', transform: 'translateY(-1px)' },
+                  '&:hover': {
+                    color: 'text.primary',
+                    transform: 'translateY(-1px)',
+                  },
                 }}
               >
                 <Icon sx={{ fontSize: 14 }} />

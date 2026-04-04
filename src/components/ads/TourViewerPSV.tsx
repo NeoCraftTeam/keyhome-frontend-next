@@ -13,7 +13,8 @@ import { buildPsvKeyboardActions } from '@/lib/psvKeyboardActions';
 import { attachPartialPanoPitchClamp } from '@/lib/psvPitchClampForPartialEquirect';
 import type { TourConfig } from '@/types';
 import type { VirtualTourNode } from '@photo-sphere-viewer/virtual-tour-plugin';
-import { Close, ViewInAr } from '@mui/icons-material';
+import Close from '@mui/icons-material/Close';
+import ViewInAr from '@mui/icons-material/ViewInAr';
 import {
   Box,
   Chip,

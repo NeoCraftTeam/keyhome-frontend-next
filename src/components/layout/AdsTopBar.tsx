@@ -2,7 +2,8 @@
 
 import CreditsWidget from '@/components/layout/CreditsWidget';
 import { useAuth } from '@/providers/AuthProvider';
-import { ArrowBack, PersonOutline } from '@mui/icons-material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
+import PersonOutline from '@mui/icons-material/PersonOutline';
 import { Avatar, Box, IconButton, Typography } from '@mui/material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -39,7 +40,15 @@ export default function AdsTopBar() {
         >
           <ArrowBack fontSize="small" />
         </IconButton>
-        <Link href="/home" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+        <Link
+          href="/home"
+          style={{
+            textDecoration: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
           <Typography
             variant="subtitle1"
             fontWeight={800}
@@ -54,7 +63,10 @@ export default function AdsTopBar() {
       <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1.5 }}>
         {isAuthenticated && <CreditsWidget />}
         {isAuthenticated && user ? (
-          <Link href="/profile" style={{ display: 'flex', alignItems: 'center' }}>
+          <Link
+            href="/profile"
+            style={{ display: 'flex', alignItems: 'center' }}
+          >
             <Avatar
               src={user.avatar || undefined}
               sx={{
@@ -90,7 +102,12 @@ export default function AdsTopBar() {
               }}
             >
               <PersonOutline sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+              <Typography
+                variant="body2"
+                fontWeight={600}
+                color="text.secondary"
+                sx={{ fontSize: '0.8rem' }}
+              >
                 Connexion
               </Typography>
             </Box>

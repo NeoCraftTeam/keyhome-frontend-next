@@ -3,15 +3,29 @@
 import { propertyAttributesService } from '@/services/property-attributes.service';
 import { useQuery } from '@tanstack/react-query';
 import * as MuiIcons from '@mui/icons-material';
-import { ArrowBack } from '@mui/icons-material';
-import { Box, Button, Chip, Dialog, DialogContent, DialogTitle, Divider, IconButton, Slide, Tooltip, Typography, useMediaQuery, useTheme } from '@mui/material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
+import {
+  Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
+  Slide,
+  Tooltip,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import type { TransitionProps } from '@mui/material/transitions';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { forwardRef, useMemo, useState } from 'react';
 
 const SlideUpTransition = forwardRef(function SlideUpTransition(
   props: TransitionProps & { children: React.ReactElement },
-  ref: React.Ref<unknown>,
+  ref: React.Ref<unknown>
 ) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
@@ -60,25 +74,28 @@ export default function PropertyAttributes({
     staleTime: 1000 * 60 * 10,
   });
 
-  if (!attributes || attributes.length === 0) {
-    return null;
-  }
-
-  const bySlug: Record<string, any> = metadata?.data ?? {};
+  const safeAttrs = attributes ?? [];
+  const bySlug = (metadata?.data ?? {}) as Record<
+    string,
+    { value: string; label: string; icon: string; admin_icon: string }
+  >;
   const grouped = metadata?.grouped ?? [];
-  const fallbackSelectedByCategory = [
-    {
-      slug: 'autres',
-      name: 'Autres',
-      attributes: attributes.map((attribute) => ({
-        value: attribute,
-        label: humanizeAttribute(attribute),
-        icon: 'CheckCircleOutline',
-        admin_icon: 'heroicon-o-check-circle',
-      })),
-    },
-  ];
-  const selected = attributes
+  const fallbackSelectedByCategory =
+    safeAttrs.length > 0
+      ? [
+          {
+            slug: 'autres',
+            name: 'Autres',
+            attributes: safeAttrs.map((attribute) => ({
+              value: attribute,
+              label: humanizeAttribute(attribute),
+              icon: 'CheckCircleOutline',
+              admin_icon: 'heroicon-o-check-circle',
+            })),
+          },
+        ]
+      : [];
+  const selected = safeAttrs
     .map((slug) => bySlug[slug] ?? bySlug[normalizeAttributeKey(slug)])
     .filter(Boolean);
 
@@ -90,19 +107,29 @@ export default function PropertyAttributes({
       ),
     }))
     .filter((category) => category.attributes.length > 0);
-  const effectiveSelectedByCategory = selectedByCategory.length > 0 ? selectedByCategory : fallbackSelectedByCategory;
+  const effectiveSelectedByCategory =
+    selectedByCategory.length > 0
+      ? selectedByCategory
+      : fallbackSelectedByCategory;
 
   const flatSelected = useMemo(
-    () => effectiveSelectedByCategory.flatMap((category) =>
-      category.attributes.map((attribute) => ({ ...attribute, category: category.name }))
-    ),
+    () =>
+      effectiveSelectedByCategory.flatMap((category) =>
+        category.attributes.map((attribute) => ({
+          ...attribute,
+          category: category.name,
+        }))
+      ),
     [effectiveSelectedByCategory]
   );
 
-  const displayAttributes = maxDisplay ? flatSelected.slice(0, maxDisplay) : flatSelected;
-  const remainingCount = maxDisplay && flatSelected.length > maxDisplay
-    ? flatSelected.length - maxDisplay
-    : 0;
+  const displayAttributes = maxDisplay
+    ? flatSelected.slice(0, maxDisplay)
+    : flatSelected;
+  const remainingCount =
+    maxDisplay && flatSelected.length > maxDisplay
+      ? flatSelected.length - maxDisplay
+      : 0;
 
   const getIcon = (iconName: string): SvgIconComponent => {
     const icon = (MuiIcons as Record<string, SvgIconComponent>)[iconName];
@@ -114,18 +141,35 @@ export default function PropertyAttributes({
     return effectiveSelectedByCategory
       .map((category) => ({
         ...category,
-        attributes: category.attributes.filter((item) => previewValues.has(item.value)),
+        attributes: category.attributes.filter((item) =>
+          previewValues.has(item.value)
+        ),
       }))
       .filter((category) => category.attributes.length > 0);
   }, [displayAttributes, effectiveSelectedByCategory]);
 
+  if (!attributes || attributes.length === 0) {
+    return null;
+  }
+
   if (variant === 'compact') {
     return (
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 0.5,
+          alignItems: 'center',
+        }}
+      >
         {displayAttributes.map((entry) => {
           const IconComponent = getIcon(entry.icon);
           return (
-            <Tooltip key={entry.value} title={`${entry.category} · ${entry.label}`} arrow>
+            <Tooltip
+              key={entry.value}
+              title={`${entry.category} · ${entry.label}`}
+              arrow
+            >
               <Box
                 sx={{
                   display: 'flex',
@@ -137,9 +181,7 @@ export default function PropertyAttributes({
                   bgcolor: 'action.hover',
                 }}
               >
-                <IconComponent
-                  sx={{ fontSize: 16, color: 'text.secondary' }}
-                />
+                <IconComponent sx={{ fontSize: 16, color: 'text.secondary' }} />
               </Box>
             </Tooltip>
           );
@@ -166,7 +208,11 @@ export default function PropertyAttributes({
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: '1fr 1fr',
+                md: '1fr 1fr 1fr',
+              },
               gap: 1.25,
             }}
           >
@@ -196,7 +242,9 @@ export default function PropertyAttributes({
                       bgcolor: 'background.paper',
                     }}
                   >
-                    <IconComponent sx={{ fontSize: 14, color: 'text.secondary' }} />
+                    <IconComponent
+                      sx={{ fontSize: 14, color: 'text.secondary' }}
+                    />
                   </Box>
                   <Typography variant="body2" sx={{ lineHeight: 1.3 }}>
                     {entry.label}
@@ -259,7 +307,11 @@ export default function PropertyAttributes({
                   <Box
                     sx={{
                       display: 'grid',
-                      gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
                       gap: 1.1,
                     }}
                   >
@@ -289,7 +341,9 @@ export default function PropertyAttributes({
                               bgcolor: 'background.paper',
                             }}
                           >
-                            <IconComponent sx={{ fontSize: 14, color: 'text.secondary' }} />
+                            <IconComponent
+                              sx={{ fontSize: 14, color: 'text.secondary' }}
+                            />
                           </Box>
                           <Typography variant="body2">{entry.label}</Typography>
                         </Box>
@@ -326,7 +380,10 @@ export default function PropertyAttributes({
             {displayAttributes.map((entry) => {
               const IconComponent = getIcon(entry.icon);
               return (
-                <Box key={entry.value} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box
+                  key={entry.value}
+                  sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
+                >
                   <Box
                     sx={{
                       display: 'flex',
@@ -339,9 +396,13 @@ export default function PropertyAttributes({
                       bgcolor: 'action.hover',
                     }}
                   >
-                    <IconComponent sx={{ fontSize: 22, color: 'text.secondary' }} />
+                    <IconComponent
+                      sx={{ fontSize: 22, color: 'text.secondary' }}
+                    />
                   </Box>
-                  <Typography variant="body2" fontWeight={500}>{entry.label}</Typography>
+                  <Typography variant="body2" fontWeight={500}>
+                    {entry.label}
+                  </Typography>
                 </Box>
               );
             })}
@@ -358,7 +419,10 @@ export default function PropertyAttributes({
               color: 'text.primary',
               textDecoration: 'underline',
               textUnderlineOffset: '3px',
-              '&:hover': { bgcolor: 'transparent', textDecorationColor: 'primary.main' },
+              '&:hover': {
+                bgcolor: 'transparent',
+                textDecorationColor: 'primary.main',
+              },
             }}
           >
             Voir les {totalCount} équipement{totalCount > 1 ? 's' : ''} ›
@@ -399,28 +463,48 @@ export default function PropertyAttributes({
             >
               <ArrowBack />
             </IconButton>
-            <Typography variant="subtitle1" fontWeight={700} noWrap sx={{ flex: 1 }}>
+            <Typography
+              variant="subtitle1"
+              fontWeight={700}
+              noWrap
+              sx={{ flex: 1 }}
+            >
               Équipements & Services
             </Typography>
           </Box>
 
           {/* Content */}
-          <Box sx={{ px: { xs: 2.5, sm: 4, md: 6 }, py: { xs: 3, sm: 4 }, maxWidth: 720, mx: 'auto', width: '100%' }}>
+          <Box
+            sx={{
+              px: { xs: 2.5, sm: 4, md: 6 },
+              py: { xs: 3, sm: 4 },
+              maxWidth: 720,
+              mx: 'auto',
+              width: '100%',
+            }}
+          >
             <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
               Ce que propose ce logement
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {totalCount} équipement{totalCount > 1 ? 's' : ''} disponible{totalCount > 1 ? 's' : ''}
+              {totalCount} équipement{totalCount > 1 ? 's' : ''} disponible
+              {totalCount > 1 ? 's' : ''}
             </Typography>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               {effectiveSelectedByCategory.map((category, catIdx) => (
                 <Box key={category.slug}>
                   {catIdx > 0 && <Divider sx={{ mb: 3 }} />}
-                  <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={700}
+                    sx={{ mb: 2 }}
+                  >
                     {category.name}
                   </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  <Box
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+                  >
                     {category.attributes.map((entry, entryIdx) => {
                       const IconComponent = getIcon(entry.icon);
                       return (
@@ -433,7 +517,13 @@ export default function PropertyAttributes({
                               py: 1.75,
                             }}
                           >
-                            <IconComponent sx={{ fontSize: 24, color: 'text.secondary', flexShrink: 0 }} />
+                            <IconComponent
+                              sx={{
+                                fontSize: 24,
+                                color: 'text.secondary',
+                                flexShrink: 0,
+                              }}
+                            />
                             <Typography variant="body1" fontWeight={500}>
                               {entry.label}
                             </Typography>
@@ -464,7 +554,11 @@ export default function PropertyAttributes({
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
         {previewGrouped.map((category) => (
           <Box key={category.slug}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: 'block', mb: 0.75 }}
+            >
               {category.name}
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -492,7 +586,11 @@ export default function PropertyAttributes({
             label={`+${remainingCount}`}
             variant="outlined"
             size="small"
-            sx={{ borderRadius: 2, borderColor: 'divider', width: 'fit-content' }}
+            sx={{
+              borderRadius: 2,
+              borderColor: 'divider',
+              width: 'fit-content',
+            }}
           />
         )}
       </Box>

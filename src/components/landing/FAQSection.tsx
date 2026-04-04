@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Add, Remove } from '@mui/icons-material';
+import Add from '@mui/icons-material/Add';
+import Remove from '@mui/icons-material/Remove';
 import { useLandingTheme } from './LandingThemeContext';
 import { brand } from '@/theme/tokens';
 
@@ -32,7 +33,7 @@ const faqs = [
   {
     question: 'Comment publier une annonce en tant que propriétaire ?',
     answer:
-      "Rendez-vous sur le panneau propriétaire ou agence, créez votre compte gratuitement, puis publiez votre annonce en quelques minutes : photos, description, prix, localisation. Votre annonce sera visible après validation.",
+      'Rendez-vous sur le panneau propriétaire ou agence, créez votre compte gratuitement, puis publiez votre annonce en quelques minutes : photos, description, prix, localisation. Votre annonce sera visible après validation.',
   },
   {
     question: 'Puis-je contacter directement le propriétaire ?',
@@ -42,7 +43,8 @@ const faqs = [
 ];
 
 export default function FAQSection() {
-  const { text, textSub, textMuted, surface, border, bgAlt } = useLandingTheme();
+  const { text, textSub, textMuted, surface, border, bgAlt } =
+    useLandingTheme();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const toggle = (idx: number) => {
@@ -91,8 +93,17 @@ export default function FAQSection() {
           >
             Tout ce que vous devez savoir
           </h2>
-          <p style={{ fontSize: 17, color: textSub, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
-            Vous avez des questions ? Vous trouverez probablement la réponse ici.
+          <p
+            style={{
+              fontSize: 17,
+              color: textSub,
+              maxWidth: 520,
+              margin: '0 auto',
+              lineHeight: 1.6,
+            }}
+          >
+            Vous avez des questions ? Vous trouverez probablement la réponse
+            ici.
           </p>
         </motion.div>
 
@@ -149,7 +160,9 @@ export default function FAQSection() {
                         width: 32,
                         height: 32,
                         borderRadius: 8,
-                        background: isOpen ? brand.primaryAlpha10 : 'transparent',
+                        background: isOpen
+                          ? brand.primaryAlpha10
+                          : 'transparent',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -157,7 +170,9 @@ export default function FAQSection() {
                       }}
                     >
                       {isOpen ? (
-                        <Remove style={{ fontSize: 20, color: brand.primary }} />
+                        <Remove
+                          style={{ fontSize: 20, color: brand.primary }}
+                        />
                       ) : (
                         <Add style={{ fontSize: 20, color: textMuted }} />
                       )}

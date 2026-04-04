@@ -1,13 +1,11 @@
 'use client';
 
 import type { PointPackage } from '@/types';
-import {
-  ArrowForward,
-  CheckCircleRounded,
-  LocalFireDepartment,
-  Toll,
-  WorkspacePremium,
-} from '@mui/icons-material';
+import ArrowForward from '@mui/icons-material/ArrowForward';
+import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
+import LocalFireDepartment from '@mui/icons-material/LocalFireDepartment';
+import Toll from '@mui/icons-material/Toll';
+import WorkspacePremium from '@mui/icons-material/WorkspacePremium';
 import {
   Box,
   Button,

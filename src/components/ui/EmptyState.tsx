@@ -1,6 +1,6 @@
 'use client';
 
-import { Inbox as InboxIcon } from '@mui/icons-material';
+import InboxIcon from '@mui/icons-material/Inbox';
 import { Box, Button, Typography } from '@mui/material';
 import NextLink from 'next/link';
 

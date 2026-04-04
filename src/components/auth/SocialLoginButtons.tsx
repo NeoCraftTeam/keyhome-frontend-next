@@ -2,8 +2,17 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { OAuthProvider } from '@/services/auth.service';
-import { Apple, Facebook, Google } from '@mui/icons-material';
-import { Box, CircularProgress, Divider, IconButton, Tooltip, Typography } from '@mui/material';
+import Apple from '@mui/icons-material/Apple';
+import Facebook from '@mui/icons-material/Facebook';
+import Google from '@mui/icons-material/Google';
+import {
+  Box,
+  CircularProgress,
+  Divider,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useState } from 'react';
 import { brand } from '@/theme/tokens';
 
@@ -41,7 +50,9 @@ export default function SocialLoginButtons({
   providers = ['google', 'facebook', 'apple'],
   registrationIntent,
 }: SocialLoginButtonsProps) {
-  const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(null);
+  const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(
+    null
+  );
 
   const { loginWithOAuth } = useAuth();
   const isAgentIntent = registrationIntent === 'agent';
@@ -53,10 +64,15 @@ export default function SocialLoginButtons({
 
     setLoadingProvider(provider);
     try {
-      await loginWithOAuth(provider, registrationIntent ? { registrationIntent } : undefined);
+      await loginWithOAuth(
+        provider,
+        registrationIntent ? { registrationIntent } : undefined
+      );
     } catch (err) {
       console.error(`OAuth ${provider} error:`, err);
-      onError?.(`Erreur lors de la connexion avec ${providerConfig[provider].label}`);
+      onError?.(
+        `Erreur lors de la connexion avec ${providerConfig[provider].label}`
+      );
       setLoadingProvider(null);
     }
   };

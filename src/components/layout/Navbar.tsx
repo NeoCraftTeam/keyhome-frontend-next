@@ -8,18 +8,16 @@ import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { useNavbarState } from '@/hooks/useNavbarState';
 import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
-import {
-  AddCircleOutline as AddCircleOutlineIcon,
-  BarChart as BarChartIcon,
-  CompareArrows as CompareArrowsIcon,
-  DarkMode as DarkModeIcon,
-  Explore as ExploreIcon,
-  HelpOutline as HelpOutlineIcon,
-  LightMode as LightModeIcon,
-  Menu as MenuIcon,
-  Person as PersonIcon,
-  Search as SearchIcon,
-} from '@mui/icons-material';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import ExploreIcon from '@mui/icons-material/Explore';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import MenuIcon from '@mui/icons-material/Menu';
+import PersonIcon from '@mui/icons-material/Person';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   AppBar,
   Avatar,

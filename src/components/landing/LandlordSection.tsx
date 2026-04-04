@@ -1,12 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import {
-  Dashboard,
-  PeopleOutline,
-  VerifiedUser,
-  ArrowForward,
-} from '@mui/icons-material';
+import Dashboard from '@mui/icons-material/Dashboard';
+import PeopleOutline from '@mui/icons-material/PeopleOutline';
+import VerifiedUser from '@mui/icons-material/VerifiedUser';
+import ArrowForward from '@mui/icons-material/ArrowForward';
 import { useLandingTheme } from './LandingThemeContext';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];

@@ -1,19 +1,19 @@
 'use client';
 
-import {
-  AddCircleOutline as AddCircleOutlineIcon,
-  CalendarMonth as CalendarMonthIcon,
-  Close as CloseIcon,
-  CompareArrows as CompareArrowsIcon,
-  Facebook as FacebookIcon,
-  Instagram as InstagramIcon,
-  Logout as LogoutIcon,
-  Notifications as NotificationsIcon,
-  NotificationsActive as NotificationsActiveIcon,
-  Person as PersonIcon,
-  Settings as SettingsIcon,
-  X as XIcon,
-} from '@mui/icons-material';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import CloseIcon from '@mui/icons-material/Close';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import FacebookIcon from '@mui/icons-material/Facebook';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import LogoutIcon from '@mui/icons-material/Logout';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import PersonIcon from '@mui/icons-material/Person';
+import SettingsIcon from '@mui/icons-material/Settings';
+import XIcon from '@mui/icons-material/X';
 import {
   Avatar,
   Box,
@@ -32,6 +32,7 @@ import {
 import Image from 'next/image';
 import { SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
 import type { User } from '@/types';
+import { useThemeMode } from '@/providers/ThemeProvider';
 
 interface NavDrawerProps {
   open: boolean;
@@ -76,6 +77,8 @@ export default function NavDrawer({
   pathname,
   isStandalone,
 }: NavDrawerProps) {
+  const { mode, toggleTheme } = useThemeMode();
+
   const go = (href: string) => {
     onClose();
     onNavigate(href);
@@ -281,6 +284,25 @@ export default function NavDrawer({
               </ListItemButton>
             </ListItem>
             <Divider sx={{ my: 1, mx: 2 }} />
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  toggleTheme();
+                }}
+                sx={ITEM_SX}
+              >
+                <ListItemIcon>
+                  {mode === 'dark' ? (
+                    <LightModeIcon sx={{ color: 'text.secondary' }} />
+                  ) : (
+                    <DarkModeIcon sx={{ color: 'text.secondary' }} />
+                  )}
+                </ListItemIcon>
+                <ListItemText
+                  primary={mode === 'dark' ? 'Mode clair' : 'Mode sombre'}
+                />
+              </ListItemButton>
+            </ListItem>
             <ListItem disablePadding>
               <ListItemButton
                 onClick={() => {

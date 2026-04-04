@@ -1,6 +1,6 @@
 'use client';
 
-import { ErrorOutline as ErrorIcon } from '@mui/icons-material';
+import ErrorIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Button, Typography } from '@mui/material';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { gradient } from '@/theme/tokens';
@@ -60,8 +60,13 @@ export class ErrorBoundary extends Component<Props, State> {
           <Typography variant="h5" fontWeight={700} gutterBottom>
             Quelque chose s&apos;est mal passé
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 400 }}>
-            Une erreur inattendue est survenue. Veuillez réessayer ou recharger la page.
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mb: 3, maxWidth: 400 }}
+          >
+            Une erreur inattendue est survenue. Veuillez réessayer ou recharger
+            la page.
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button

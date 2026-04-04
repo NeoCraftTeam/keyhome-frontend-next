@@ -1,7 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Star, StarHalf, StarBorder, Verified } from '@mui/icons-material';
+import Star from '@mui/icons-material/Star';
+import StarHalf from '@mui/icons-material/StarHalf';
+import StarBorder from '@mui/icons-material/StarBorder';
+import Verified from '@mui/icons-material/Verified';
 import { useLandingTheme } from './LandingThemeContext';
 import { brand, semantic } from '@/theme/tokens';
 import { useLandingTestimonials } from '@/hooks/useLandingTestimonials';
@@ -66,15 +69,25 @@ function RatingStars({ rating }: { rating: number }) {
     if (i <= Math.floor(rating)) {
       stars.push(<Star key={i} style={{ fontSize: 16, color: '#F59E0B' }} />);
     } else if (i - 0.5 === rating) {
-      stars.push(<StarHalf key={i} style={{ fontSize: 16, color: '#F59E0B' }} />);
+      stars.push(
+        <StarHalf key={i} style={{ fontSize: 16, color: '#F59E0B' }} />
+      );
     } else {
-      stars.push(<StarBorder key={i} style={{ fontSize: 16, color: '#F59E0B' }} />);
+      stars.push(
+        <StarBorder key={i} style={{ fontSize: 16, color: '#F59E0B' }} />
+      );
     }
   }
   return <>{stars}</>;
 }
 
-function SkeletonCard({ surface, border }: { surface: string; border: string }) {
+function SkeletonCard({
+  surface,
+  border,
+}: {
+  surface: string;
+  border: string;
+}) {
   return (
     <div
       style={{
@@ -89,17 +102,54 @@ function SkeletonCard({ surface, border }: { surface: string; border: string }) 
         animation: 'pulse 1.5s ease-in-out infinite',
       }}
     >
-      <div style={{ height: 16, borderRadius: 8, background: border, width: '40%' }} />
+      <div
+        style={{
+          height: 16,
+          borderRadius: 8,
+          background: border,
+          width: '40%',
+        }}
+      />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ height: 12, borderRadius: 6, background: border }} />
         <div style={{ height: 12, borderRadius: 6, background: border }} />
-        <div style={{ height: 12, borderRadius: 6, background: border, width: '70%' }} />
+        <div
+          style={{
+            height: 12,
+            borderRadius: 6,
+            background: border,
+            width: '70%',
+          }}
+        />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 42, height: 42, borderRadius: '50%', background: border }} />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ height: 12, borderRadius: 6, background: border, width: '60%' }} />
-          <div style={{ height: 10, borderRadius: 5, background: border, width: '45%' }} />
+        <div
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: '50%',
+            background: border,
+          }}
+        />
+        <div
+          style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}
+        >
+          <div
+            style={{
+              height: 12,
+              borderRadius: 6,
+              background: border,
+              width: '60%',
+            }}
+          />
+          <div
+            style={{
+              height: 10,
+              borderRadius: 5,
+              background: border,
+              width: '45%',
+            }}
+          />
         </div>
       </div>
     </div>
@@ -107,13 +157,23 @@ function SkeletonCard({ surface, border }: { surface: string; border: string }) 
 }
 
 export default function TestimonialsSection() {
-  const { bg, surface, border, text, textSub, quote, textMuted } = useLandingTheme();
-  const { testimonials: apiTestimonials, averageRating, totalCount, isLoading } = useLandingTestimonials();
+  const { bg, surface, border, text, textSub, quote, textMuted } =
+    useLandingTheme();
+  const {
+    testimonials: apiTestimonials,
+    averageRating,
+    totalCount,
+    isLoading,
+  } = useLandingTestimonials();
 
-  const testimonials = apiTestimonials.length >= 4 ? apiTestimonials.slice(0, 8) : FALLBACK_TESTIMONIALS;
+  const testimonials =
+    apiTestimonials.length >= 4
+      ? apiTestimonials.slice(0, 8)
+      : FALLBACK_TESTIMONIALS;
 
   const displayRating = averageRating?.toFixed(1) ?? '4.6';
-  const displayCount = totalCount && totalCount >= 10 ? `${totalCount}+` : '120+';
+  const displayCount =
+    totalCount && totalCount >= 10 ? `${totalCount}+` : '120+';
 
   return (
     <section
@@ -122,13 +182,15 @@ export default function TestimonialsSection() {
       style={{ background: bg, transition: 'background 0.4s ease' }}
     >
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+          transition={{
+            duration: 0.7,
+            ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+          }}
           style={{ textAlign: 'center', marginBottom: 72 }}
         >
           <span
@@ -158,8 +220,17 @@ export default function TestimonialsSection() {
           >
             Ils nous font confiance
           </h2>
-          <p style={{ fontSize: 18, color: textSub, maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>
-            Des milliers d&apos;utilisateurs ont déjà trouvé leur logement idéal avec KeyHome.
+          <p
+            style={{
+              fontSize: 18,
+              color: textSub,
+              maxWidth: 480,
+              margin: '0 auto',
+              lineHeight: 1.6,
+            }}
+          >
+            Des milliers d&apos;utilisateurs ont déjà trouvé leur logement idéal
+            avec KeyHome.
           </p>
           <div
             style={{
@@ -179,8 +250,12 @@ export default function TestimonialsSection() {
               ))}
               <StarHalf style={{ fontSize: 16, color: '#F59E0B' }} />
             </div>
-            <span style={{ fontSize: 14, fontWeight: 700, color: text }}>{displayRating}/5</span>
-            <span style={{ fontSize: 13, color: textSub }}>basé sur {displayCount} avis</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: text }}>
+              {displayRating}/5
+            </span>
+            <span style={{ fontSize: 13, color: textSub }}>
+              basé sur {displayCount} avis
+            </span>
           </div>
         </motion.div>
 
@@ -198,7 +273,16 @@ export default function TestimonialsSection() {
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: '-40px' }}
-                    transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+                    transition={{
+                      duration: 0.6,
+                      delay: i * 0.1,
+                      ease: [0.22, 1, 0.36, 1] as [
+                        number,
+                        number,
+                        number,
+                        number,
+                      ],
+                    }}
                     whileHover={{ y: -4, transition: { duration: 0.2 } }}
                     style={{
                       padding: '28px',
@@ -231,7 +315,9 @@ export default function TestimonialsSection() {
                     </p>
 
                     {/* Author */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: 12 }}
+                    >
                       <div
                         style={{
                           width: 42,
@@ -251,12 +337,39 @@ export default function TestimonialsSection() {
                         {t.initials}
                       </div>
                       <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: text }}>{t.display_name}</span>
-                          <Verified titleAccess="Profil vérifié" style={{ fontSize: 14, color: semantic.info }} />
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 14,
+                              fontWeight: 700,
+                              color: text,
+                            }}
+                          >
+                            {t.display_name}
+                          </span>
+                          <Verified
+                            titleAccess="Profil vérifié"
+                            style={{ fontSize: 14, color: semantic.info }}
+                          />
                         </div>
-                        <div style={{ fontSize: 12, color: textMuted }}>{t.role}</div>
-                        <div style={{ fontSize: 11, color: textMuted, marginTop: 2 }}>{t.created_at}</div>
+                        <div style={{ fontSize: 12, color: textMuted }}>
+                          {t.role}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: textMuted,
+                            marginTop: 2,
+                          }}
+                        >
+                          {t.created_at}
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -267,4 +380,3 @@ export default function TestimonialsSection() {
     </section>
   );
 }
-

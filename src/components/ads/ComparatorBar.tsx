@@ -1,7 +1,11 @@
 'use client';
 
-import { COMPARATOR_MAX_ITEMS, useComparator } from '@/providers/ComparatorProvider';
-import { Close, CompareArrows } from '@mui/icons-material';
+import {
+  COMPARATOR_MAX_ITEMS,
+  useComparator,
+} from '@/providers/ComparatorProvider';
+import Close from '@mui/icons-material/Close';
+import CompareArrows from '@mui/icons-material/CompareArrows';
 import {
   Alert,
   Avatar,
@@ -30,30 +34,32 @@ export default function ComparatorBar() {
     router.push('/comparaisons');
   };
 
-  if (items.length === 0 || pathname === '/comparaisons') { return null; }
+  if (items.length === 0 || pathname === '/comparaisons') {
+    return null;
+  }
 
   return (
     <MotionConfig reducedMotion="user">
       {/* Floating bar — always visible when items selected */}
       <AnimatePresence>
         <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-            style={{
-              position: 'fixed',
-              bottom: isMobile ? 72 : 24,
-              left: 0,
-              right: 0,
-              display: 'flex',
-              justifyContent: 'center',
-              zIndex: 1200,
-              pointerEvents: 'none',
-              padding: isMobile ? '0 8px' : 0,
-            }}
-          >
-            <Box sx={{ pointerEvents: 'auto', maxWidth: '100%' }}>
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 100, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+          style={{
+            position: 'fixed',
+            bottom: isMobile ? 72 : 24,
+            left: 0,
+            right: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            zIndex: 1200,
+            pointerEvents: 'none',
+            padding: isMobile ? '0 8px' : 0,
+          }}
+        >
+          <Box sx={{ pointerEvents: 'auto', maxWidth: '100%' }}>
             <Paper
               elevation={12}
               sx={{
@@ -71,8 +77,15 @@ export default function ComparatorBar() {
                 overflow: 'hidden',
               }}
             >
-              <CompareArrows color="primary" sx={{ fontSize: { xs: 16, sm: 20 }, flexShrink: 0 }} />
-              <Typography fontWeight={700} fontSize={{ xs: 11, sm: 13 }} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+              <CompareArrows
+                color="primary"
+                sx={{ fontSize: { xs: 16, sm: 20 }, flexShrink: 0 }}
+              />
+              <Typography
+                fontWeight={700}
+                fontSize={{ xs: 11, sm: 13 }}
+                sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
                 {items.length} bien{items.length > 1 ? 's' : ''}
               </Typography>
 
@@ -80,19 +93,32 @@ export default function ComparatorBar() {
               <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
                 {items.map((ad) => (
                   <Tooltip key={ad.id} title={`Retirer : ${ad.title}`}>
-                    <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => remove(ad.id)}>
+                    <Box
+                      sx={{ position: 'relative', cursor: 'pointer' }}
+                      onClick={() => remove(ad.id)}
+                    >
                       <Avatar
                         src={ad.images?.[0]?.thumb}
-                        sx={{ width: { xs: 24, sm: 30 }, height: { xs: 24, sm: 30 }, border: '2px solid white' }}
+                        sx={{
+                          width: { xs: 24, sm: 30 },
+                          height: { xs: 24, sm: 30 },
+                          border: '2px solid white',
+                        }}
                       >
                         {ad.title[0]}
                       </Avatar>
                       <Box
                         sx={{
-                          position: 'absolute', top: -3, right: -3,
-                          width: 13, height: 13, borderRadius: '50%',
-                          bgcolor: 'error.main', display: 'flex',
-                          alignItems: 'center', justifyContent: 'center',
+                          position: 'absolute',
+                          top: -3,
+                          right: -3,
+                          width: 13,
+                          height: 13,
+                          borderRadius: '50%',
+                          bgcolor: 'error.main',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                         }}
                       >
                         <Close sx={{ fontSize: 9, color: 'white' }} />
@@ -121,12 +147,17 @@ export default function ComparatorBar() {
                 Comparer
               </Button>
 
-              <IconButton size="small" onClick={clear} aria-label="Vider la comparaison" sx={{ color: 'text.disabled', flexShrink: 0 }}>
+              <IconButton
+                size="small"
+                onClick={clear}
+                aria-label="Vider la comparaison"
+                sx={{ color: 'text.disabled', flexShrink: 0 }}
+              >
                 <Close fontSize="small" />
               </IconButton>
             </Paper>
-              </Box>
-          </motion.div>
+          </Box>
+        </motion.div>
       </AnimatePresence>
 
       {/* Max reached snackbar — le tableau comparatif s'affiche uniquement sur /comparaisons */}
@@ -136,8 +167,14 @@ export default function ComparatorBar() {
         onClose={clearMaxReached}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert onClose={clearMaxReached} severity="warning" variant="filled" sx={{ width: '100%' }}>
-          Vous ne pouvez pas comparer plus de {COMPARATOR_MAX_ITEMS} biens à la fois.
+        <Alert
+          onClose={clearMaxReached}
+          severity="warning"
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          Vous ne pouvez pas comparer plus de {COMPARATOR_MAX_ITEMS} biens à la
+          fois.
         </Alert>
       </Snackbar>
     </MotionConfig>

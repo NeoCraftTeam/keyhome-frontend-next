@@ -2,10 +2,8 @@
 
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useAuth } from '@/providers/AuthProvider';
-import {
-  Close as CloseIcon,
-  NotificationsActive as BellIcon,
-} from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
+import BellIcon from '@mui/icons-material/NotificationsActive';
 import { Box, Button, IconButton, Slide, Typography } from '@mui/material';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';

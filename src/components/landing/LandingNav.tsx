@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
@@ -23,7 +24,11 @@ function isLaravelOwnerPanel(): boolean {
   }
   const raw = process.env.NEXT_PUBLIC_OWNER_URL?.trim() || '';
   // Back-compat: .env.example uses Laravel on :8000 for local Filament
-  return /:8000\b/.test(raw) || /127\.0\.0\.1:8000/.test(raw) || /localhost:8000/.test(raw);
+  return (
+    /:8000\b/.test(raw) ||
+    /127\.0\.0\.1:8000/.test(raw) ||
+    /localhost:8000/.test(raw)
+  );
 }
 
 /**
@@ -75,7 +80,8 @@ const NAV_LINKS = [
 export default function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isDark, toggle, text, textNav, navBg, navBorder, border, bg, surface } = useLandingTheme();
+  const { isDark, toggle, text, textNav, navBg, navBorder, border, surface } =
+    useLandingTheme();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -85,9 +91,14 @@ export default function LandingNav() {
 
   // Close menu on route change / scroll
   useEffect(() => {
-    if (menuOpen) { document.body.style.overflow = 'hidden'; }
-    else { document.body.style.overflow = ''; }
-    return () => { document.body.style.overflow = ''; };
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [menuOpen]);
 
   return (
@@ -95,39 +106,87 @@ export default function LandingNav() {
       <motion.nav
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+        transition={{
+          duration: 0.6,
+          ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+        }}
         style={{
           position: 'fixed',
-          top: 0, left: 0, right: 0,
+          top: 0,
+          left: 0,
+          right: 0,
           zIndex: 100,
           transition: 'background 0.35s ease, border-color 0.35s ease',
-          background: (scrolled || menuOpen) ? navBg : 'transparent',
-          backdropFilter: (scrolled || menuOpen) ? 'blur(20px)' : 'none',
-          borderBottom: (scrolled || menuOpen) ? `1px solid ${navBorder}` : 'none',
+          background: scrolled || menuOpen ? navBg : 'transparent',
+          backdropFilter: scrolled || menuOpen ? 'blur(20px)' : 'none',
+          borderBottom:
+            scrolled || menuOpen ? `1px solid ${navBorder}` : 'none',
         }}
       >
-        <div style={{
-          maxWidth: 1200, margin: '0 auto', padding: '0 24px',
-          height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-
+        <div
+          style={{
+            maxWidth: 1200,
+            margin: '0 auto',
+            padding: '0 24px',
+            height: 72,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           {/* Logo */}
-          <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', zIndex: 101 }}>
-            <Image src="/images/logo.png" alt="KeyHome — Logo plateforme immobilière en Afrique" width={36} height={36} style={{ borderRadius: 8 }} />
-            <span style={{ color: text, fontWeight: 700, fontSize: 20, letterSpacing: '-0.5px', transition: 'color 0.35s' }}>
+          <Link
+            href="/"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              textDecoration: 'none',
+              zIndex: 101,
+            }}
+          >
+            <Image
+              src="/images/logo.png"
+              alt="KeyHome — Logo plateforme immobilière en Afrique"
+              width={36}
+              height={36}
+              style={{ borderRadius: 8 }}
+            />
+            <span
+              style={{
+                color: text,
+                fontWeight: 700,
+                fontSize: 20,
+                letterSpacing: '-0.5px',
+                transition: 'color 0.35s',
+              }}
+            >
               Key<span style={{ color: brand.primary }}>Home</span>
             </span>
-          </a>
+          </Link>
 
           {/* Desktop links */}
-          <div className="landing-nav-links" style={{ alignItems: 'center', gap: 32 }}>
+          <div
+            className="landing-nav-links"
+            style={{ alignItems: 'center', gap: 32 }}
+          >
             {NAV_LINKS.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
-                style={{ color: textNav, textDecoration: 'none', fontSize: 15, fontWeight: 500, transition: 'color 0.2s' }}
-                onMouseEnter={(e) => { (e.target as HTMLElement).style.color = brand.primary; }}
-                onMouseLeave={(e) => { (e.target as HTMLElement).style.color = textNav; }}
+                style={{
+                  color: textNav,
+                  textDecoration: 'none',
+                  fontSize: 15,
+                  fontWeight: 500,
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLElement).style.color = brand.primary;
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLElement).style.color = textNav;
+                }}
               >
                 {item.label}
               </a>
@@ -135,28 +194,49 @@ export default function LandingNav() {
           </div>
 
           {/* Desktop CTA + toggle */}
-          <div className="landing-nav-cta" style={{ alignItems: 'center', gap: 12 }}>
+          <div
+            className="landing-nav-cta"
+            style={{ alignItems: 'center', gap: 12 }}
+          >
             {/* Dark/Light toggle */}
             <motion.button
               onClick={toggle}
               whileTap={{ scale: 0.9 }}
               title={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}
               style={{
-                width: 46, height: 26, borderRadius: 13, padding: 3,
+                width: 46,
+                height: 26,
+                borderRadius: 13,
+                padding: 3,
                 border: `1px solid ${border}`,
-                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                cursor: 'pointer', display: 'flex', alignItems: 'center',
-                position: 'relative', transition: 'border-color 0.3s, background 0.3s', flexShrink: 0,
+                background: isDark
+                  ? 'rgba(255,255,255,0.08)'
+                  : 'rgba(0,0,0,0.08)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                position: 'relative',
+                transition: 'border-color 0.3s, background 0.3s',
+                flexShrink: 0,
               }}
             >
               <motion.div
                 animate={{ x: isDark ? 0 : 20 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 style={{
-                  width: 18, height: 18, borderRadius: '50%',
-                  background: isDark ? 'linear-gradient(135deg, #8080b0, #5050a0)' : `linear-gradient(135deg, #FFc040, ${brand.primary})`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0,
-                }}>
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  background: isDark
+                    ? 'linear-gradient(135deg, #8080b0, #5050a0)'
+                    : `linear-gradient(135deg, #FFc040, ${brand.primary})`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 10,
+                  flexShrink: 0,
+                }}
+              >
                 <motion.span
                   key={isDark ? 'moon' : 'sun'}
                   initial={{ scale: 0, rotate: -90, opacity: 0 }}
@@ -171,41 +251,80 @@ export default function LandingNav() {
 
             <PageTransitionLink
               href="/home"
-              style={{ color: textNav, textDecoration: 'none', fontSize: 15, fontWeight: 500, padding: '8px 18px', borderRadius: 10, border: `1px solid ${border}`, display: 'inline-block', transition: 'color 0.35s, border-color 0.35s' }}
+              style={{
+                color: textNav,
+                textDecoration: 'none',
+                fontSize: 15,
+                fontWeight: 500,
+                padding: '8px 18px',
+                borderRadius: 10,
+                border: `1px solid ${border}`,
+                display: 'inline-block',
+                transition: 'color 0.35s, border-color 0.35s',
+              }}
             >
               Visiter
             </PageTransitionLink>
 
             <PageTransitionLink
               href={getOwnerLoginHref()}
-              style={{ color: '#fff', textDecoration: 'none', fontSize: 15, fontWeight: 600, padding: '8px 20px', borderRadius: 10, background: gradient.primary135, boxShadow: '0 4px 20px rgba(246,71,95,0.35)', display: 'inline-block' }}
+              style={{
+                color: '#fff',
+                textDecoration: 'none',
+                fontSize: 15,
+                fontWeight: 600,
+                padding: '8px 20px',
+                borderRadius: 10,
+                background: gradient.primary135,
+                boxShadow: '0 4px 20px rgba(246,71,95,0.35)',
+                display: 'inline-block',
+              }}
             >
               Annoncer
             </PageTransitionLink>
           </div>
 
           {/* Mobile right side: toggle + hamburger */}
-          <div className="landing-hamburger" style={{ alignItems: 'center', gap: 10 }}>
+          <div
+            className="landing-hamburger"
+            style={{ alignItems: 'center', gap: 10 }}
+          >
             {/* Theme toggle (always visible on mobile) */}
             <motion.button
               onClick={toggle}
               whileTap={{ scale: 0.9 }}
               title={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}
               style={{
-                width: 40, height: 22, borderRadius: 11, padding: 2,
+                width: 40,
+                height: 22,
+                borderRadius: 11,
+                padding: 2,
                 border: `1px solid ${border}`,
-                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                cursor: 'pointer', display: 'flex', alignItems: 'center',
-                transition: 'border-color 0.3s, background 0.3s', flexShrink: 0,
+                background: isDark
+                  ? 'rgba(255,255,255,0.08)'
+                  : 'rgba(0,0,0,0.08)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'border-color 0.3s, background 0.3s',
+                flexShrink: 0,
               }}
             >
               <motion.div
                 animate={{ x: isDark ? 0 : 17 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 style={{
-                  width: 16, height: 16, borderRadius: '50%',
-                  background: isDark ? 'linear-gradient(135deg, #8080b0, #5050a0)' : `linear-gradient(135deg, #FFc040, ${brand.primary})`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, flexShrink: 0,
+                  width: 16,
+                  height: 16,
+                  borderRadius: '50%',
+                  background: isDark
+                    ? 'linear-gradient(135deg, #8080b0, #5050a0)'
+                    : `linear-gradient(135deg, #FFc040, ${brand.primary})`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 9,
+                  flexShrink: 0,
                 }}
               >
                 <motion.span
@@ -225,25 +344,55 @@ export default function LandingNav() {
               onClick={() => setMenuOpen((o) => !o)}
               aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
               style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                padding: 6, display: 'flex', flexDirection: 'column',
-                gap: 5, alignItems: 'center', justifyContent: 'center',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 6,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 5,
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               <motion.span
                 animate={{ rotate: menuOpen ? 45 : 0, y: menuOpen ? 9 : 0 }}
                 transition={{ duration: 0.25 }}
-                style={{ display: 'block', width: 22, height: 2, borderRadius: 2, background: text, transition: 'background 0.3s' }}
+                style={{
+                  display: 'block',
+                  width: 22,
+                  height: 2,
+                  borderRadius: 2,
+                  background: text,
+                  transition: 'background 0.3s',
+                }}
               />
               <motion.span
-                animate={{ opacity: menuOpen ? 0 : 1, scaleX: menuOpen ? 0 : 1 }}
+                animate={{
+                  opacity: menuOpen ? 0 : 1,
+                  scaleX: menuOpen ? 0 : 1,
+                }}
                 transition={{ duration: 0.2 }}
-                style={{ display: 'block', width: 22, height: 2, borderRadius: 2, background: text, transition: 'background 0.3s' }}
+                style={{
+                  display: 'block',
+                  width: 22,
+                  height: 2,
+                  borderRadius: 2,
+                  background: text,
+                  transition: 'background 0.3s',
+                }}
               />
               <motion.span
                 animate={{ rotate: menuOpen ? -45 : 0, y: menuOpen ? -9 : 0 }}
                 transition={{ duration: 0.25 }}
-                style={{ display: 'block', width: 22, height: 2, borderRadius: 2, background: text, transition: 'background 0.3s' }}
+                style={{
+                  display: 'block',
+                  width: 22,
+                  height: 2,
+                  borderRadius: 2,
+                  background: text,
+                  transition: 'background 0.3s',
+                }}
               />
             </button>
           </div>
@@ -258,7 +407,10 @@ export default function LandingNav() {
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+            transition={{
+              duration: 0.25,
+              ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+            }}
             className="landing-mobile-menu open"
             style={{ background: navBg }}
           >
@@ -272,13 +424,23 @@ export default function LandingNav() {
                 transition={{ delay: i * 0.07, duration: 0.3 }}
                 onClick={() => setMenuOpen(false)}
                 style={{
-                  color: text, textDecoration: 'none', fontSize: 17, fontWeight: 600,
-                  padding: '14px 16px', borderRadius: 12,
-                  background: surface, border: `1px solid ${border}`,
-                  display: 'block', transition: 'color 0.2s, background 0.2s',
+                  color: text,
+                  textDecoration: 'none',
+                  fontSize: 17,
+                  fontWeight: 600,
+                  padding: '14px 16px',
+                  borderRadius: 12,
+                  background: surface,
+                  border: `1px solid ${border}`,
+                  display: 'block',
+                  transition: 'color 0.2s, background 0.2s',
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = brand.primary; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = text; }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = brand.primary;
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = text;
+                }}
               >
                 {item.label}
               </motion.a>
@@ -297,9 +459,16 @@ export default function LandingNav() {
                 href="/home"
                 onClick={() => setMenuOpen(false)}
                 style={{
-                  color: textNav, textDecoration: 'none', fontSize: 16, fontWeight: 600,
-                  padding: '14px 20px', borderRadius: 12, border: `1px solid ${border}`,
-                  display: 'block', textAlign: 'center', transition: 'color 0.2s',
+                  color: textNav,
+                  textDecoration: 'none',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  padding: '14px 20px',
+                  borderRadius: 12,
+                  border: `1px solid ${border}`,
+                  display: 'block',
+                  textAlign: 'center',
+                  transition: 'color 0.2s',
                 }}
               >
                 Visiter
@@ -308,11 +477,16 @@ export default function LandingNav() {
                 href={getOwnerLoginHref()}
                 onClick={() => setMenuOpen(false)}
                 style={{
-                  color: '#fff', textDecoration: 'none', fontSize: 16, fontWeight: 700,
-                  padding: '14px 20px', borderRadius: 12,
+                  color: '#fff',
+                  textDecoration: 'none',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  padding: '14px 20px',
+                  borderRadius: 12,
                   background: gradient.primary135,
                   boxShadow: '0 4px 24px rgba(246,71,95,0.4)',
-                  display: 'block', textAlign: 'center',
+                  display: 'block',
+                  textAlign: 'center',
                 }}
               >
                 Annoncer
@@ -324,4 +498,3 @@ export default function LandingNav() {
     </>
   );
 }
-

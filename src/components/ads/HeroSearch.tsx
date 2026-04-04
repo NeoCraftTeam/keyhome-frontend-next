@@ -3,7 +3,9 @@
 import api from '@/lib/api';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { City } from '@/types';
-import { AutoAwesome, LocationOn, Search as SearchIcon } from '@mui/icons-material';
+import AutoAwesome from '@mui/icons-material/AutoAwesome';
+import LocationOn from '@mui/icons-material/LocationOn';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   alpha,
   Autocomplete,
@@ -33,9 +35,16 @@ interface Props {
   onCitySelect: (event: React.SyntheticEvent, city: City | null) => void;
 }
 
-export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLoading, onCitySelect }: Props) {
+export default function HeroSearch({
+  cities,
+  cityInput,
+  setCityInput,
+  isCitiesLoading,
+  onCitySelect,
+}: Props) {
   const theme = useTheme();
-  const { slotProps: citySlotProps, renderOption: renderCityOption } = useCityAutocompleteConfig();
+  const { slotProps: citySlotProps, renderOption: renderCityOption } =
+    useCityAutocompleteConfig();
   const [tab, setTab] = useState(0);
   const [aiQuery, setAiQuery] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -44,26 +53,57 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
 
   const handleAiSearch = async (q?: string) => {
     const searchQuery = q ?? aiQuery;
-    if (!searchQuery.trim()) { return; }
+    if (!searchQuery.trim()) {
+      return;
+    }
     setAiLoading(true);
     try {
       const res = await api.post('/search/parse', { q: searchQuery });
       const parsed = res.data;
       const params = new URLSearchParams();
-      if (parsed.q) { params.set('q', parsed.q); }
-      if (parsed.city_name) { params.set('city', parsed.city_name); }
-      if (parsed.type_id) { params.set('type_id', String(parsed.type_id)); }
-      else if (parsed.type_name) { params.set('type', parsed.type_name); }
-      if (parsed.bedrooms) { params.set('bedrooms', String(parsed.bedrooms)); }
-      if (parsed.price_max) { params.set('price_max', String(parsed.price_max)); }
-      if (parsed.price_min) { params.set('price_min', String(parsed.price_min)); }
-      if (parsed.surface_min) { params.set('surface_min', String(parsed.surface_min)); }
-      if (parsed.has_parking) { params.set('parking', '1'); }
-      if (parsed.furnished) { params.set('furnished', '1'); }
-      startTransition(() => { router.push(`/search?${params.toString()}`); });
+      if (parsed.q) {
+        params.set('q', parsed.q);
+      }
+      if (parsed.city_name) {
+        params.set('city', parsed.city_name);
+      }
+      if (parsed.type_id) {
+        params.set('type_id', String(parsed.type_id));
+      } else if (parsed.type_name) {
+        params.set('type', parsed.type_name);
+      }
+      if (parsed.bedrooms) {
+        params.set('bedrooms', String(parsed.bedrooms));
+      }
+      if (parsed.price_max) {
+        params.set('price_max', String(parsed.price_max));
+      }
+      if (parsed.price_min) {
+        params.set('price_min', String(parsed.price_min));
+      }
+      if (parsed.surface_min) {
+        params.set('surface_min', String(parsed.surface_min));
+      }
+      if (parsed.quarter_name) {
+        params.set('quarter', parsed.quarter_name);
+      }
+      if (parsed.transaction_type) {
+        params.set('transaction_type', parsed.transaction_type);
+      }
+      if (parsed.has_parking) {
+        params.set('parking', '1');
+      }
+      if (parsed.furnished) {
+        params.set('furnished', '1');
+      }
+      startTransition(() => {
+        router.push(`/search?${params.toString()}`);
+      });
     } catch {
       // fallback: simple text search
-      startTransition(() => { router.push(`/search?q=${encodeURIComponent(searchQuery)}`); });
+      startTransition(() => {
+        router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      });
     } finally {
       setAiLoading(false);
     }
@@ -101,7 +141,13 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
   };
 
   return (
-    <Box sx={{ width: '100%', maxWidth: { xs: '100%', sm: 580 }, mx: { xs: 'auto', md: 0 } }}>
+    <Box
+      sx={{
+        width: '100%',
+        maxWidth: { xs: '100%', sm: 580 },
+        mx: { xs: 'auto', md: 0 },
+      }}
+    >
       {/* Mode tabs */}
       <Tabs
         value={tab}
@@ -119,11 +165,23 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
             textTransform: 'none',
           },
           '& .Mui-selected': { color: 'white !important' },
-          '& .MuiTabs-indicator': { bgcolor: 'white', height: 2, borderRadius: 1 },
+          '& .MuiTabs-indicator': {
+            bgcolor: 'white',
+            height: 2,
+            borderRadius: 1,
+          },
         }}
       >
-        <Tab icon={<LocationOn sx={{ fontSize: 14 }} />} iconPosition="start" label="Par ville" />
-        <Tab icon={<AutoAwesome sx={{ fontSize: 14 }} />} iconPosition="start" label="Recherche IA" />
+        <Tab
+          icon={<LocationOn sx={{ fontSize: 14 }} />}
+          iconPosition="start"
+          label="Par ville"
+        />
+        <Tab
+          icon={<AutoAwesome sx={{ fontSize: 14 }} />}
+          iconPosition="start"
+          label="Recherche IA"
+        />
       </Tabs>
 
       {/* Tab 0 — City search */}
@@ -136,7 +194,9 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
             borderRadius: isDropdownOpen ? '16px 16px 0 0' : 1,
             overflow: 'hidden',
             border: '1px solid',
-            borderColor: isDropdownOpen ? alpha(theme.palette.primary.main, 0.4) : 'divider',
+            borderColor: isDropdownOpen
+              ? alpha(theme.palette.primary.main, 0.4)
+              : 'divider',
             bgcolor: isDark ? theme.palette.background.paper : '#F8F7F5',
             boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
             transition: 'border-color 0.2s',
@@ -164,12 +224,16 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
                   ...params.InputProps,
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon sx={{ color: 'text.secondary', fontSize: 19 }} />
+                      <SearchIcon
+                        sx={{ color: 'text.secondary', fontSize: 19 }}
+                      />
                     </InputAdornment>
                   ),
                   endAdornment: (
                     <>
-                      {isCitiesLoading ? <CircularProgress color="inherit" size={16} /> : null}
+                      {isCitiesLoading ? (
+                        <CircularProgress color="inherit" size={16} />
+                      ) : null}
                       {params.InputProps.endAdornment}
                     </>
                   ),
@@ -189,7 +253,11 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
             placeholder="Ex: Appartement 3 pièces à Bastos moins de 150 000 FCFA…"
             value={aiQuery}
             onChange={(e) => setAiQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { handleAiSearch(); } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleAiSearch();
+              }
+            }}
             sx={inputSx}
             InputProps={{
               startAdornment: (
@@ -200,9 +268,18 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
               endAdornment: (
                 <InputAdornment position="end">
                   {aiLoading ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <CircularProgress size={20} sx={{ color: 'primary.main' }} />
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                    <Box
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                    >
+                      <CircularProgress
+                        size={20}
+                        sx={{ color: 'primary.main' }}
+                      />
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                      >
                         Recherche…
                       </Typography>
                     </Box>
@@ -212,7 +289,12 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
                       tabIndex={0}
                       aria-label="Lancer la recherche IA"
                       onClick={() => handleAiSearch()}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleAiSearch(); } }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleAiSearch();
+                        }
+                      }}
                       sx={{
                         width: 36,
                         height: 36,
@@ -224,7 +306,11 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
                         cursor: 'pointer',
                         mr: 0.5,
                         '&:hover': { bgcolor: 'primary.dark' },
-                        '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
+                        '&:focus-visible': {
+                          outline: '2px solid',
+                          outlineColor: 'primary.main',
+                          outlineOffset: 2,
+                        },
                       }}
                     >
                       <SearchIcon sx={{ color: 'white', fontSize: 18 }} />
@@ -242,8 +328,17 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
                 role="button"
                 tabIndex={0}
                 aria-label={`Rechercher : ${ex}`}
-                onClick={() => { setAiQuery(ex); handleAiSearch(ex); }}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAiQuery(ex); handleAiSearch(ex); } }}
+                onClick={() => {
+                  setAiQuery(ex);
+                  handleAiSearch(ex);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setAiQuery(ex);
+                    handleAiSearch(ex);
+                  }
+                }}
                 sx={{
                   px: 1.5,
                   py: 0.5,
@@ -255,9 +350,15 @@ export default function HeroSearch({ cities, cityInput, setCityInput, isCitiesLo
                   fontSize: { xs: 10, sm: 11 },
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.25)', transform: 'scale(1.02)' },
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.25)',
+                    transform: 'scale(1.02)',
+                  },
                   '&:active': { transform: 'scale(0.98)' },
-                  '&:focus-visible': { outline: '2px solid white', outlineOffset: 2 },
+                  '&:focus-visible': {
+                    outline: '2px solid white',
+                    outlineOffset: 2,
+                  },
                 }}
               >
                 {ex}

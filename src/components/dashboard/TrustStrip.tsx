@@ -1,11 +1,9 @@
 'use client';
 
-import {
-  Apartment,
-  Shield,
-  SupportAgent,
-  VerifiedUser,
-} from '@mui/icons-material';
+import Apartment from '@mui/icons-material/Apartment';
+import Shield from '@mui/icons-material/Shield';
+import SupportAgent from '@mui/icons-material/SupportAgent';
+import VerifiedUser from '@mui/icons-material/VerifiedUser';
 import { Box, Container, Divider, Typography, useTheme } from '@mui/material';
 
 const STATS = [

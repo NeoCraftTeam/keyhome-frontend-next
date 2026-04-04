@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from '@mui/icons-material';
+import ChevronLeft from '@mui/icons-material/ChevronLeft';
+import ChevronRight from '@mui/icons-material/ChevronRight';
 import { Box, Chip, IconButton } from '@mui/material';
 import { useRef } from 'react';
 import { brand } from '@/theme/tokens';
@@ -11,7 +12,11 @@ interface CategoryPillsProps {
   onChange: (value: string) => void;
 }
 
-export default function CategoryPills({ categories, selected, onChange }: CategoryPillsProps) {
+export default function CategoryPills({
+  categories,
+  selected,
+  onChange,
+}: CategoryPillsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -77,7 +82,10 @@ export default function CategoryPills({ categories, selected, onChange }: Catego
                   }
                 : {
                     borderColor: 'divider',
-                    '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' },
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                      borderColor: 'text.secondary',
+                    },
                   }),
             }}
           />

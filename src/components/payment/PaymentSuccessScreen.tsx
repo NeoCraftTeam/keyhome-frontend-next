@@ -1,7 +1,7 @@
 'use client';
 
 import PaymentAmountDisplay from '@/components/payment/PaymentAmountDisplay';
-import { CheckCircle } from '@mui/icons-material';
+import CheckCircle from '@mui/icons-material/CheckCircle';
 import { Box, Button, Typography } from '@mui/material';
 import Image from 'next/image';
 
@@ -61,7 +61,11 @@ export default function PaymentSuccessScreen({
       <PaymentAmountDisplay amount={amount} variant="h5" fontWeight={900} />
 
       {txRef && (
-        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ fontFamily: 'monospace' }}
+        >
           Réf : {txRef}
         </Typography>
       )}
@@ -76,7 +80,14 @@ export default function PaymentSuccessScreen({
         <Button
           variant="contained"
           onClick={onGoHome}
-          sx={{ borderRadius: 3, px: 4, py: 1.2, fontWeight: 700, bgcolor: '#008A05', '&:hover': { bgcolor: '#007004' } }}
+          sx={{
+            borderRadius: 3,
+            px: 4,
+            py: 1.2,
+            fontWeight: 700,
+            bgcolor: '#008A05',
+            '&:hover': { bgcolor: '#007004' },
+          }}
         >
           Retour à l&apos;accueil
         </Button>

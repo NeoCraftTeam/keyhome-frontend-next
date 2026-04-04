@@ -3,14 +3,12 @@
 import { formatPrice } from '@/lib/constants';
 import { getAttributeLabel } from '@/lib/attribute-labels';
 import { Ad, PropertyAttribute } from '@/types';
-import {
-  Bathtub,
-  Bed,
-  Check,
-  Close,
-  OpenInNew,
-  SquareFoot,
-} from '@mui/icons-material';
+import Bathtub from '@mui/icons-material/Bathtub';
+import Bed from '@mui/icons-material/Bed';
+import Check from '@mui/icons-material/Check';
+import Close from '@mui/icons-material/Close';
+import OpenInNew from '@mui/icons-material/OpenInNew';
+import SquareFoot from '@mui/icons-material/SquareFoot';
 import {
   Box,
   Button,
@@ -36,7 +34,9 @@ const CRITERIA = [
     render: (ad: Ad) => (
       <Box display="flex" alignItems="center" gap={0.5} justifyContent="center">
         <SquareFoot sx={{ fontSize: 15, color: 'text.secondary' }} />
-        <Typography variant="body2">{ad.surface_area ? `${ad.surface_area} m²` : '—'}</Typography>
+        <Typography variant="body2">
+          {ad.surface_area ? `${ad.surface_area} m²` : '—'}
+        </Typography>
       </Box>
     ),
   },
@@ -60,9 +60,12 @@ const CRITERIA = [
   },
   {
     label: 'Parking',
-    render: (ad: Ad) => ad.has_parking
-      ? <Chip label="Oui" size="small" color="success" variant="outlined" />
-      : <Chip label="Non" size="small" color="default" variant="outlined" />,
+    render: (ad: Ad) =>
+      ad.has_parking ? (
+        <Chip label="Oui" size="small" color="success" variant="outlined" />
+      ) : (
+        <Chip label="Non" size="small" color="default" variant="outlined" />
+      ),
   },
   {
     label: 'Prix / m²',
@@ -76,9 +79,19 @@ const CRITERIA = [
   },
   {
     label: 'Visite 360°',
-    render: (ad: Ad) => ad.has_3d_tour
-      ? <Chip label="Disponible" size="small" color="success" variant="outlined" />
-      : <Typography variant="caption" color="text.disabled">—</Typography>,
+    render: (ad: Ad) =>
+      ad.has_3d_tour ? (
+        <Chip
+          label="Disponible"
+          size="small"
+          color="success"
+          variant="outlined"
+        />
+      ) : (
+        <Typography variant="caption" color="text.disabled">
+          —
+        </Typography>
+      ),
   },
 ];
 
@@ -89,16 +102,23 @@ interface ComparisonTableProps {
   showActions?: boolean;
 }
 
-export default function ComparisonTable({ items, onRemove, onClear, showActions = true }: ComparisonTableProps) {
+export default function ComparisonTable({
+  items,
+  onRemove,
+  onClear: _onClear,
+  showActions = true,
+}: ComparisonTableProps) {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const _isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const router = useRouter();
-  const allAttributes = [...new Set(items.flatMap((ad) => ad.attributes ?? []))].sort((a, b) =>
-    getAttributeLabel(a).localeCompare(getAttributeLabel(b), 'fr'),
+  const allAttributes = [
+    ...new Set(items.flatMap((ad) => ad.attributes ?? [])),
+  ].sort((a, b) =>
+    getAttributeLabel(a).localeCompare(getAttributeLabel(b), 'fr')
   );
 
   const handleViewAd = (ad: Ad) => {
-    router.push(`/ads/${ad.id}/${ad.slug}`);
+    router.push(`/ads/${ad.slug}`);
   };
 
   return (
@@ -157,9 +177,13 @@ export default function ComparisonTable({ items, onRemove, onClear, showActions 
                     onClick={() => onRemove(ad.id)}
                     aria-label={`Retirer ${ad.title} de la comparaison`}
                     sx={{
-                      position: 'absolute', top: 4, right: 4,
-                      bgcolor: 'rgba(0,0,0,0.5)', color: 'white',
-                      width: 22, height: 22,
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      bgcolor: 'rgba(0,0,0,0.5)',
+                      color: 'white',
+                      width: 22,
+                      height: 22,
                       '&:hover': { bgcolor: 'rgba(0,0,0,0.75)' },
                     }}
                   >
@@ -169,11 +193,16 @@ export default function ComparisonTable({ items, onRemove, onClear, showActions 
               </Box>
 
               <Box sx={{ flex: 1 }}>
-                <Typography variant="body2" fontWeight={700} sx={{ lineHeight: 1.3 }}>
+                <Typography
+                  variant="body2"
+                  fontWeight={700}
+                  sx={{ lineHeight: 1.3 }}
+                >
                   {ad.title}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {ad.quarter?.name}{ad.quarter?.city_name ? `, ${ad.quarter.city_name}` : ''}
+                  {ad.quarter?.name}
+                  {ad.quarter?.city_name ? `, ${ad.quarter.city_name}` : ''}
                 </Typography>
               </Box>
 
@@ -199,12 +228,20 @@ export default function ComparisonTable({ items, onRemove, onClear, showActions 
         })}
       </Box>
 
-      {[...CRITERIA, ...allAttributes.map((attr) => ({
-        label: getAttributeLabel(attr),
-        render: (ad: Ad) => (ad.attributes ?? []).includes(attr as PropertyAttribute)
-          ? <Check color="success" sx={{ fontSize: 18 }} />
-          : <Typography variant="caption" color="text.disabled">—</Typography>,
-      }))].map(({ label, render }, idx) => (
+      {[
+        ...CRITERIA,
+        ...allAttributes.map((attr) => ({
+          label: getAttributeLabel(attr),
+          render: (ad: Ad) =>
+            (ad.attributes ?? []).includes(attr as PropertyAttribute) ? (
+              <Check color="success" sx={{ fontSize: 18 }} />
+            ) : (
+              <Typography variant="caption" color="text.disabled">
+                —
+              </Typography>
+            ),
+        })),
+      ].map(({ label, render }, idx) => (
         <Box
           key={label}
           sx={{
@@ -228,7 +265,12 @@ export default function ComparisonTable({ items, onRemove, onClear, showActions 
               alignItems: 'center',
             }}
           >
-            <Typography variant="body2" fontWeight={600} color="text.secondary" fontSize={{ xs: 11, sm: 13 }}>
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              color="text.secondary"
+              fontSize={{ xs: 11, sm: 13 }}
+            >
               {label}
             </Typography>
           </Box>

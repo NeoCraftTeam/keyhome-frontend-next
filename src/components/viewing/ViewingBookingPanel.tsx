@@ -4,21 +4,24 @@ import { gradient } from '@/theme/tokens';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { viewingsService } from '@/services/viewings.service';
-import { type BookableSlot, CancelledBy, type Reservation, ReservationStatus } from '@/types';
 import {
-  AccessTime,
-  CalendarMonth,
-  CalendarToday,
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-  Close,
-  EventAvailable,
-  EventBusy,
-  Forum,
-  KeyboardArrowRight,
-  Refresh,
-} from '@mui/icons-material';
+  type BookableSlot,
+  CancelledBy,
+  type Reservation,
+  ReservationStatus,
+} from '@/types';
+import AccessTime from '@mui/icons-material/AccessTime';
+import CalendarMonth from '@mui/icons-material/CalendarMonth';
+import CalendarToday from '@mui/icons-material/CalendarToday';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import ChevronLeft from '@mui/icons-material/ChevronLeft';
+import ChevronRight from '@mui/icons-material/ChevronRight';
+import Close from '@mui/icons-material/Close';
+import EventAvailable from '@mui/icons-material/EventAvailable';
+import EventBusy from '@mui/icons-material/EventBusy';
+import Forum from '@mui/icons-material/Forum';
+import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
+import Refresh from '@mui/icons-material/Refresh';
 import {
   Alert,
   Box,
@@ -64,13 +67,13 @@ const STATUS_CONFIG: Record<
   ReservationStatus,
   { label: string; color: 'warning' | 'success' | 'error' | 'default' }
 > = {
-  [ReservationStatus.Pending]:   { label: 'En attente',  color: 'warning' },
-  [ReservationStatus.Confirmed]: { label: 'Confirmée',   color: 'success' },
-  [ReservationStatus.Cancelled]: { label: 'Annulée',     color: 'error'   },
-  [ReservationStatus.Expired]:   { label: 'Expirée',     color: 'default' },
+  [ReservationStatus.Pending]: { label: 'En attente', color: 'warning' },
+  [ReservationStatus.Confirmed]: { label: 'Confirmée', color: 'success' },
+  [ReservationStatus.Cancelled]: { label: 'Annulée', color: 'error' },
+  [ReservationStatus.Expired]: { label: 'Expirée', color: 'default' },
 };
 
-const MAX_BOOKING_DAYS = 90;  // how many days ahead to allow booking
+const MAX_BOOKING_DAYS = 90; // how many days ahead to allow booking
 const DEFAULT_VARIANT = 'outlined' as const;
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -83,7 +86,10 @@ function formatSlot(time: string) {
 // ─── sub-components ──────────────────────────────────────────────────────────
 
 function StatusChip({ status }: { status: ReservationStatus }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, color: 'default' as const };
+  const cfg = STATUS_CONFIG[status] ?? {
+    label: status,
+    color: 'default' as const,
+  };
   return (
     <Chip
       label={cfg.label}
@@ -105,8 +111,12 @@ interface Props {
 
 // ─── component ────────────────────────────────────────────────────────────────
 
-export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_VARIANT }: Props) {
-  const { isAuthenticated, user } = useAuth();
+export default function ViewingBookingPanel({
+  adId,
+  adTitle,
+  variant = DEFAULT_VARIANT,
+}: Props) {
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
@@ -149,7 +159,7 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
         setCalendarMonth(startOfMonth(today));
       }, 300);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // ── Slots query ───────────────────────────────────────────────────────────
@@ -182,9 +192,9 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
   const { mutate: createReservation, isPending: isCreating } = useMutation({
     mutationFn: () =>
       viewingsService.reserve(adId, {
-        slot_date:     dateStr,
+        slot_date: dateStr,
         slot_starts_at: selectedSlot!.starts_at,
-        slot_ends_at:   selectedSlot!.ends_at,
+        slot_ends_at: selectedSlot!.ends_at,
         client_message: message.trim() || undefined,
       }),
     onSuccess: () => {
@@ -193,14 +203,20 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
       queryClient.invalidateQueries({ queryKey: ['slots', adId, dateStr] });
     },
     onError: (err) => {
-      setBookingError(getSafeErrorMessage(err, 'Impossible de créer la réservation.'));
+      setBookingError(
+        getSafeErrorMessage(err, 'Impossible de créer la réservation.')
+      );
     },
   });
 
   // ── Cancel mutation ────────────────────────────────────────────────────────
   const { mutate: cancelReservation, isPending: isCancelling } = useMutation({
     mutationFn: () =>
-      viewingsService.cancel(adId, cancelTarget!.id, cancelReason.trim() || undefined),
+      viewingsService.cancel(
+        adId,
+        cancelTarget!.id,
+        cancelReason.trim() || undefined
+      ),
     onSuccess: () => {
       setCancelTarget(null);
       setCancelReason('');
@@ -209,21 +225,33 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
       queryClient.invalidateQueries({ queryKey: ['slots', adId, dateStr] });
     },
     onError: (err) => {
-      setCancelError(getSafeErrorMessage(err, 'Impossible d\'annuler cette réservation.'));
+      setCancelError(
+        getSafeErrorMessage(err, "Impossible d'annuler cette réservation.")
+      );
     },
   });
 
   // ─── calendar month navigation ─────────────────────────────────────────────
-  const canGoPrevMonth = isAfter(startOfMonth(calendarMonth), startOfMonth(today));
-  const canGoNextMonth = isBefore(startOfMonth(addMonths(calendarMonth, 1)), addDays(maxDate, 1));
+  const canGoPrevMonth = isAfter(
+    startOfMonth(calendarMonth),
+    startOfMonth(today)
+  );
+  const canGoNextMonth = isBefore(
+    startOfMonth(addMonths(calendarMonth, 1)),
+    addDays(maxDate, 1)
+  );
 
   function handlePrevMonth() {
     const prev = addMonths(calendarMonth, -1);
-    setCalendarMonth(isBefore(prev, startOfMonth(today)) ? startOfMonth(today) : prev);
+    setCalendarMonth(
+      isBefore(prev, startOfMonth(today)) ? startOfMonth(today) : prev
+    );
   }
   function handleNextMonth() {
     const next = addMonths(calendarMonth, 1);
-    if (canGoNextMonth) { setCalendarMonth(next); }
+    if (canGoNextMonth) {
+      setCalendarMonth(next);
+    }
   }
 
   function handleDateSelect(d: Date) {
@@ -234,7 +262,9 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
   }
 
   function handleSlotSelect(s: BookableSlot) {
-    if (!s.is_available) { return; }
+    if (!s.is_available) {
+      return;
+    }
     setSelectedSlot(s);
     setStep(2);
   }
@@ -243,14 +273,19 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
 
   function renderDateStep() {
     const firstDay = startOfMonth(calendarMonth);
-    const lastDay  = endOfMonth(calendarMonth);
-    const days     = eachDayOfInterval({ start: firstDay, end: lastDay });
+    const lastDay = endOfMonth(calendarMonth);
+    const days = eachDayOfInterval({ start: firstDay, end: lastDay });
 
     // Monday-first padding: Sunday(0)→6, Monday(1)→0, …
     const startPad = (getDay(firstDay) + 6) % 7;
-    const cells: (Date | null)[] = [...Array<null>(startPad).fill(null), ...days];
+    const cells: (Date | null)[] = [
+      ...Array<null>(startPad).fill(null),
+      ...days,
+    ];
     const endPad = (7 - (cells.length % 7)) % 7;
-    for (let i = 0; i < endPad; i++) { cells.push(null); }
+    for (let i = 0; i < endPad; i++) {
+      cells.push(null);
+    }
 
     const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
@@ -262,7 +297,12 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
 
         {/* Month navigator */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <IconButton size="small" onClick={handlePrevMonth} disabled={!canGoPrevMonth} aria-label="Mois précédent">
+          <IconButton
+            size="small"
+            onClick={handlePrevMonth}
+            disabled={!canGoPrevMonth}
+            aria-label="Mois précédent"
+          >
             <ChevronLeft fontSize="small" />
           </IconButton>
           <Typography
@@ -272,13 +312,24 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
           >
             {format(calendarMonth, 'MMMM yyyy', { locale: fr })}
           </Typography>
-          <IconButton size="small" onClick={handleNextMonth} disabled={!canGoNextMonth} aria-label="Mois suivant">
+          <IconButton
+            size="small"
+            onClick={handleNextMonth}
+            disabled={!canGoNextMonth}
+            aria-label="Mois suivant"
+          >
             <ChevronRight fontSize="small" />
           </IconButton>
         </Box>
 
         {/* Day-of-week header */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 0.5 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            mb: 0.5,
+          }}
+        >
           {DOW_LABELS.map((d) => (
             <Typography
               key={d}
@@ -297,16 +348,22 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
         </Box>
 
         {/* Calendar grid */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.25 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            gap: 0.25,
+          }}
+        >
           {cells.map((d, idx) => {
             if (!d) {
               return <Box key={`pad-${idx}`} />;
             }
-            const isPast      = isBefore(startOfDay(d), today);
+            const isPast = isBefore(startOfDay(d), today);
             const isBeyondMax = isAfter(d, maxDate);
-            const isDisabled  = isPast || isBeyondMax;
-            const isSel       = selectedDate ? isSameDay(d, selectedDate) : false;
-            const isNow       = isToday(d);
+            const isDisabled = isPast || isBeyondMax;
+            const isSel = selectedDate ? isSameDay(d, selectedDate) : false;
+            const isNow = isToday(d);
             return (
               <Box
                 key={d.toISOString()}
@@ -316,12 +373,33 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
                 aria-label={format(d, 'EEEE d MMMM', { locale: fr })}
                 aria-pressed={isSel}
                 onKeyDown={(e) => {
-                  if ((e.key === 'Enter' || e.key === ' ') && !isDisabled) { e.preventDefault(); handleDateSelect(d); }
-                  if (['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+                  if ((e.key === 'Enter' || e.key === ' ') && !isDisabled) {
                     e.preventDefault();
-                    const offset = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowDown' ? 7 : -7;
+                    handleDateSelect(d);
+                  }
+                  if (
+                    [
+                      'ArrowRight',
+                      'ArrowLeft',
+                      'ArrowDown',
+                      'ArrowUp',
+                    ].includes(e.key)
+                  ) {
+                    e.preventDefault();
+                    const offset =
+                      e.key === 'ArrowRight'
+                        ? 1
+                        : e.key === 'ArrowLeft'
+                          ? -1
+                          : e.key === 'ArrowDown'
+                            ? 7
+                            : -7;
                     const target = addDays(d, offset);
-                    const btn = (e.currentTarget.parentElement as HTMLElement)?.querySelector<HTMLElement>(`[aria-label="${format(target, 'EEEE d MMMM', { locale: fr })}"]`);
+                    const btn = (
+                      e.currentTarget.parentElement as HTMLElement
+                    )?.querySelector<HTMLElement>(
+                      `[aria-label="${format(target, 'EEEE d MMMM', { locale: fr })}"]`
+                    );
                     btn?.focus();
                   }
                 }}
@@ -335,7 +413,11 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
                   opacity: isDisabled ? 0.28 : 1,
                   bgcolor: isSel ? 'primary.main' : 'transparent',
                   border: '2px solid',
-                  borderColor: isSel ? 'primary.main' : isNow ? 'primary.main' : 'transparent',
+                  borderColor: isSel
+                    ? 'primary.main'
+                    : isNow
+                      ? 'primary.main'
+                      : 'transparent',
                   transition: 'all 0.15s',
                   '&:hover': !isDisabled
                     ? { bgcolor: isSel ? 'primary.dark' : 'action.hover' }
@@ -346,7 +428,11 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
                   variant="body2"
                   sx={{
                     fontWeight: isSel || isNow ? 700 : 400,
-                    color: isSel ? 'primary.contrastText' : isNow ? 'primary.main' : 'text.primary',
+                    color: isSel
+                      ? 'primary.contrastText'
+                      : isNow
+                        ? 'primary.main'
+                        : 'text.primary',
                     fontSize: '0.82rem',
                     lineHeight: 1,
                   }}
@@ -358,7 +444,11 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
           })}
         </Box>
 
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5, textAlign: 'center' }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: 'block', mt: 1.5, textAlign: 'center' }}
+        >
           Sélectionnez une date pour voir les créneaux disponibles
         </Typography>
       </Box>
@@ -367,18 +457,27 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
 
   function renderSlotStep() {
     const available = (slots ?? []).filter((s) => s.is_available);
-    const booked    = (slots ?? []).filter((s) => !s.is_available);
+    const booked = (slots ?? []).filter((s) => !s.is_available);
 
     return (
       <Box>
         {/* Back + date label */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <IconButton size="small" onClick={() => { setStep(0); setSelectedSlot(null); }} aria-label="Retour">
+          <IconButton
+            size="small"
+            onClick={() => {
+              setStep(0);
+              setSelectedSlot(null);
+            }}
+            aria-label="Retour"
+          >
             <ChevronLeft fontSize="small" />
           </IconButton>
           <CalendarToday sx={{ fontSize: 16, color: 'primary.main' }} />
           <Typography variant="subtitle2" fontWeight={600}>
-            {selectedDate ? format(selectedDate, 'EEEE d MMMM', { locale: fr }) : ''}
+            {selectedDate
+              ? format(selectedDate, 'EEEE d MMMM', { locale: fr })
+              : ''}
           </Typography>
         </Box>
 
@@ -393,7 +492,11 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
             <Typography color="error" variant="body2" gutterBottom>
               Impossible de charger les créneaux.
             </Typography>
-            <Button size="small" startIcon={<Refresh />} onClick={() => refetchSlots()}>
+            <Button
+              size="small"
+              startIcon={<Refresh />}
+              onClick={() => refetchSlots()}
+            >
               Réessayer
             </Button>
           </Box>
@@ -403,7 +506,9 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
           <>
             {available.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 3 }}>
-                <EventBusy sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+                <EventBusy
+                  sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }}
+                />
                 <Typography variant="body2" color="text.secondary">
                   Aucun créneau disponible pour cette date.
                 </Typography>
@@ -413,10 +518,24 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
               </Box>
             ) : (
               <>
-                <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', fontWeight: 500 }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ mb: 1, display: 'block', fontWeight: 500 }}
+                >
                   Créneaux disponibles ({available.length})
                 </Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, gap: 0.75, mb: booked.length > 0 ? 2 : 0 }}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: 'repeat(2, 1fr)',
+                      sm: 'repeat(3, 1fr)',
+                    },
+                    gap: 0.75,
+                    mb: booked.length > 0 ? 2 : 0,
+                  }}
+                >
                   {available.map((s) => {
                     const isSel = selectedSlot?.starts_at === s.starts_at;
                     return (
@@ -425,7 +544,11 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
                         role="button"
                         tabIndex={0}
                         onClick={() => handleSlotSelect(s)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { handleSlotSelect(s); } }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            handleSlotSelect(s);
+                          }
+                        }}
                         aria-pressed={isSel}
                         sx={{
                           py: 1,
@@ -437,18 +560,33 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
                           cursor: 'pointer',
                           textAlign: 'center',
                           transition: 'all 0.15s',
-                          '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.50' },
+                          '&:hover': {
+                            borderColor: 'primary.main',
+                            bgcolor: 'primary.50',
+                          },
                         }}
                       >
                         <Typography
                           variant="caption"
-                          sx={{ fontWeight: 700, color: isSel ? 'primary.contrastText' : 'text.primary', display: 'block', lineHeight: 1.4 }}
+                          sx={{
+                            fontWeight: 700,
+                            color: isSel
+                              ? 'primary.contrastText'
+                              : 'text.primary',
+                            display: 'block',
+                            lineHeight: 1.4,
+                          }}
                         >
                           {formatSlot(s.starts_at)}
                         </Typography>
                         <Typography
                           variant="caption"
-                          sx={{ color: isSel ? 'rgba(255,255,255,0.75)' : 'text.secondary', fontSize: '0.62rem' }}
+                          sx={{
+                            color: isSel
+                              ? 'rgba(255,255,255,0.75)'
+                              : 'text.secondary',
+                            fontSize: '0.62rem',
+                          }}
                         >
                           — {formatSlot(s.ends_at)}
                         </Typography>
@@ -459,7 +597,11 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
 
                 {booked.length > 0 && (
                   <>
-                    <Typography variant="caption" color="text.disabled" sx={{ mb: 0.5, display: 'block', fontWeight: 500 }}>
+                    <Typography
+                      variant="caption"
+                      color="text.disabled"
+                      sx={{ mb: 0.5, display: 'block', fontWeight: 500 }}
+                    >
                       Déjà réservés ({booked.length})
                     </Typography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -488,29 +630,48 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
       <Box>
         {/* Back + summary */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <IconButton size="small" onClick={() => setStep(1)} aria-label="Retour">
+          <IconButton
+            size="small"
+            onClick={() => setStep(1)}
+            aria-label="Retour"
+          >
             <ChevronLeft fontSize="small" />
           </IconButton>
-          <Typography variant="subtitle2" fontWeight={600}>Votre visite</Typography>
+          <Typography variant="subtitle2" fontWeight={600}>
+            Votre visite
+          </Typography>
         </Box>
 
         {/* Summary card */}
         <Paper
           variant="outlined"
-          sx={{ p: 2, borderRadius: 2, mb: 2, bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(246,71,95,0.06)' : 'rgba(246,71,95,0.04)', borderColor: 'primary.light' }}
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            mb: 2,
+            bgcolor: (t) =>
+              t.palette.mode === 'dark'
+                ? 'rgba(246,71,95,0.06)'
+                : 'rgba(246,71,95,0.04)',
+            borderColor: 'primary.light',
+          }}
         >
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CalendarMonth sx={{ fontSize: 15, color: 'primary.main' }} />
                 <Typography variant="body2" fontWeight={600}>
-                  {selectedDate ? format(selectedDate, 'EEEE d MMMM yyyy', { locale: fr }) : ''}
+                  {selectedDate
+                    ? format(selectedDate, 'EEEE d MMMM yyyy', { locale: fr })
+                    : ''}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <AccessTime sx={{ fontSize: 15, color: 'primary.main' }} />
                 <Typography variant="body2" fontWeight={600}>
-                  {selectedSlot ? `${formatSlot(selectedSlot.starts_at)} – ${formatSlot(selectedSlot.ends_at)}` : ''}
+                  {selectedSlot
+                    ? `${formatSlot(selectedSlot.starts_at)} – ${formatSlot(selectedSlot.ends_at)}`
+                    : ''}
                 </Typography>
               </Box>
             </Box>
@@ -543,7 +704,13 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
           size="large"
           onClick={() => createReservation()}
           disabled={isCreating}
-          startIcon={isCreating ? <CircularProgress size={16} color="inherit" /> : <EventAvailable />}
+          startIcon={
+            isCreating ? (
+              <CircularProgress size={16} color="inherit" />
+            ) : (
+              <EventAvailable />
+            )
+          }
           sx={{
             py: 1.5,
             borderRadius: 2,
@@ -555,7 +722,11 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
           {isCreating ? 'Réservation en cours…' : 'Confirmer la visite'}
         </Button>
 
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5, textAlign: 'center' }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: 'block', mt: 1.5, textAlign: 'center' }}
+        >
           Votre créneau est retenu 24h pendant que le propriétaire confirme.
         </Typography>
       </Box>
@@ -570,17 +741,34 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
           Visite réservée !
         </Typography>
         <Typography variant="body2" color="text.secondary" gutterBottom>
-          {selectedDate ? format(selectedDate, 'EEEE d MMMM yyyy', { locale: fr }) : ''}
-          {selectedSlot ? ` · ${formatSlot(selectedSlot.starts_at)} – ${formatSlot(selectedSlot.ends_at)}` : ''}
+          {selectedDate
+            ? format(selectedDate, 'EEEE d MMMM yyyy', { locale: fr })
+            : ''}
+          {selectedSlot
+            ? ` · ${formatSlot(selectedSlot.starts_at)} – ${formatSlot(selectedSlot.ends_at)}`
+            : ''}
         </Typography>
 
-        <Alert icon={false} severity="success" sx={{ mt: 2, mb: 2, borderRadius: 2, textAlign: 'left' }}>
+        <Alert
+          icon={false}
+          severity="success"
+          sx={{ mt: 2, mb: 2, borderRadius: 2, textAlign: 'left' }}
+        >
           <Typography variant="body2">
-            Votre créneau est retenu pendant 24h. Le propriétaire vous contactera pour confirmer la visite. Assurez-vous d&apos;être joignable sur votre numéro enregistré.
+            Votre créneau est retenu pendant 24h. Le propriétaire vous
+            contactera pour confirmer la visite. Assurez-vous d&apos;être
+            joignable sur votre numéro enregistré.
           </Typography>
         </Alert>
 
-        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
           <Button
             variant="outlined"
             size="small"
@@ -601,7 +789,10 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
             onClick={() => {
               setOpen(false);
             }}
-            sx={{ background: gradient.primary, '&:hover': { background: gradient.primaryHover } }}
+            sx={{
+              background: gradient.primary,
+              '&:hover': { background: gradient.primaryHover },
+            }}
           >
             Fermer
           </Button>
@@ -635,7 +826,9 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
     if (reservations.length === 0) {
       return (
         <Box sx={{ textAlign: 'center', py: 4 }}>
-          <EventAvailable sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+          <EventAvailable
+            sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }}
+          />
           <Typography variant="body2" color="text.secondary">
             Vous n&apos;avez aucune visite planifiée pour cette annonce.
           </Typography>
@@ -652,17 +845,29 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
     }
 
     const sortedRes = [...reservations].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
     return (
       <Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mb: 2,
+          }}
+        >
           <Typography variant="subtitle2" fontWeight={600}>
             Mes réservations ({reservations.length})
           </Typography>
           <Tooltip title="Actualiser">
-            <IconButton size="small" onClick={() => refetchMyRes()} aria-label="Actualiser">
+            <IconButton
+              size="small"
+              onClick={() => refetchMyRes()}
+              aria-label="Actualiser"
+            >
               <Refresh fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -680,43 +885,115 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
                 variant="outlined"
                 sx={{ p: 2, borderRadius: 2, borderColor: 'divider' }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: 1,
+                  }}
+                >
                   <Box sx={{ flex: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        mb: 0.5,
+                      }}
+                    >
                       <StatusChip status={r.status} />
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
-                      <CalendarToday sx={{ fontSize: 13, color: 'text.secondary' }} />
-                      <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.82rem' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.75,
+                        mb: 0.25,
+                      }}
+                    >
+                      <CalendarToday
+                        sx={{ fontSize: 13, color: 'text.secondary' }}
+                      />
+                      <Typography
+                        variant="body2"
+                        fontWeight={600}
+                        sx={{ fontSize: '0.82rem' }}
+                      >
                         {format(slotDate, 'EEEE d MMMM yyyy', { locale: fr })}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <AccessTime sx={{ fontSize: 13, color: 'text.secondary' }} />
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-                        {formatSlot(r.slot_starts_at)} – {formatSlot(r.slot_ends_at)}
+                    <Box
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}
+                    >
+                      <AccessTime
+                        sx={{ fontSize: 13, color: 'text.secondary' }}
+                      />
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontSize: '0.8rem' }}
+                      >
+                        {formatSlot(r.slot_starts_at)} –{' '}
+                        {formatSlot(r.slot_ends_at)}
                       </Typography>
                     </Box>
                     {r.client_message && (
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.75, mt: 0.5 }}>
-                        <Forum sx={{ fontSize: 13, color: 'text.secondary', mt: 0.2 }} />
-                        <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 0.75,
+                          mt: 0.5,
+                        }}
+                      >
+                        <Forum
+                          sx={{
+                            fontSize: 13,
+                            color: 'text.secondary',
+                            mt: 0.2,
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontStyle: 'italic' }}
+                        >
                           {r.client_message}
                         </Typography>
                       </Box>
                     )}
                     {r.landlord_notes && (
-                      <Alert severity="info" icon={false} sx={{ mt: 1, py: 0.5, px: 1, fontSize: '0.75rem', borderRadius: 1.5 }}>
-                        <strong>Note du propriétaire :</strong> {r.landlord_notes}
+                      <Alert
+                        severity="info"
+                        icon={false}
+                        sx={{
+                          mt: 1,
+                          py: 0.5,
+                          px: 1,
+                          fontSize: '0.75rem',
+                          borderRadius: 1.5,
+                        }}
+                      >
+                        <strong>Note du propriétaire :</strong>{' '}
+                        {r.landlord_notes}
                       </Alert>
                     )}
                     {r.cancellation_reason && (
-                      <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="error"
+                        sx={{ display: 'block', mt: 0.5 }}
+                      >
                         Motif : {r.cancellation_reason}
                       </Typography>
                     )}
                     {r.cancelled_by === CancelledBy.System && (
-                      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.25 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.disabled"
+                        sx={{ display: 'block', mt: 0.25 }}
+                      >
                         Expiré automatiquement
                       </Typography>
                     )}
@@ -731,7 +1008,13 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
                         setCancelError('');
                         setCancelReason('');
                       }}
-                      sx={{ borderRadius: 1.5, flexShrink: 0, minWidth: 0, fontSize: '0.72rem', px: 1 }}
+                      sx={{
+                        borderRadius: 1.5,
+                        flexShrink: 0,
+                        minWidth: 0,
+                        fontSize: '0.72rem',
+                        px: 1,
+                      }}
                     >
                       Annuler
                     </Button>
@@ -774,13 +1057,20 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
             : {
                 borderColor: 'primary.main',
                 color: 'primary.main',
-                '&:hover': { bgcolor: 'primary.50', borderColor: 'primary.dark' },
+                '&:hover': {
+                  bgcolor: 'primary.50',
+                  borderColor: 'primary.dark',
+                },
               }),
         }}
       >
         Planifier une visite
       </Button>
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, textAlign: 'center' }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ display: 'block', mt: 0.5, textAlign: 'center' }}
+      >
         Réservez votre créneau en quelques clics
       </Typography>
     </Box>
@@ -802,11 +1092,37 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
         PaperProps={{ sx: { borderRadius: isMobile ? 0 : 3 } }}
       >
         {/* Header */}
-        <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2.5, pb: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6" fontWeight={700} sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            Visite · <span style={{ fontWeight: 400, fontSize: '0.9em', opacity: 0.8 }}>{adTitle}</span>
+        <Box
+          sx={{
+            px: { xs: 2, sm: 3 },
+            pt: 2.5,
+            pb: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Typography
+            variant="h6"
+            fontWeight={700}
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Visite ·{' '}
+            <span style={{ fontWeight: 400, fontSize: '0.9em', opacity: 0.8 }}>
+              {adTitle}
+            </span>
           </Typography>
-          <IconButton size="small" onClick={() => setOpen(false)} aria-label="Fermer">
+          <IconButton
+            size="small"
+            onClick={() => setOpen(false)}
+            aria-label="Fermer"
+          >
             <Close fontSize="small" />
           </IconButton>
         </Box>
@@ -820,14 +1136,22 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
             borderBottom: '1px solid',
             borderColor: 'divider',
             minHeight: 40,
-            '& .MuiTab-root': { minHeight: 40, textTransform: 'none', fontWeight: 600, fontSize: '0.85rem' },
+            '& .MuiTab-root': {
+              minHeight: 40,
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+            },
           }}
         >
           <Tab label="Réserver" />
           <Tab
             label={
-              myReservations && myReservations.filter(
-                (r) => r.status === ReservationStatus.Pending || r.status === ReservationStatus.Confirmed,
+              myReservations &&
+              myReservations.filter(
+                (r) =>
+                  r.status === ReservationStatus.Pending ||
+                  r.status === ReservationStatus.Confirmed
               ).length > 0
                 ? `Mes réservations (${myReservations.filter((r) => r.status === ReservationStatus.Pending || r.status === ReservationStatus.Confirmed).length})`
                 : 'Mes réservations'
@@ -851,7 +1175,12 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
       {/* ── Cancel confirmation dialog ── */}
       <Dialog
         open={!!cancelTarget}
-        onClose={() => { if (!isCancelling) { setCancelTarget(null); setCancelError(''); } }}
+        onClose={() => {
+          if (!isCancelling) {
+            setCancelTarget(null);
+            setCancelError('');
+          }
+        }}
         maxWidth="xs"
         fullWidth
         fullScreen={isMobile}
@@ -863,9 +1192,12 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
           </Typography>
           {cancelTarget && (
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {format(parseISO(cancelTarget.slot_date), 'EEEE d MMMM yyyy', { locale: fr })}
+              {format(parseISO(cancelTarget.slot_date), 'EEEE d MMMM yyyy', {
+                locale: fr,
+              })}
               {' · '}
-              {formatSlot(cancelTarget.slot_starts_at)} – {formatSlot(cancelTarget.slot_ends_at)}
+              {formatSlot(cancelTarget.slot_starts_at)} –{' '}
+              {formatSlot(cancelTarget.slot_ends_at)}
             </Typography>
           )}
 
@@ -892,7 +1224,10 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
             <Button
               variant="text"
-              onClick={() => { setCancelTarget(null); setCancelError(''); }}
+              onClick={() => {
+                setCancelTarget(null);
+                setCancelError('');
+              }}
               disabled={isCancelling}
             >
               Retour
@@ -902,9 +1237,13 @@ export default function ViewingBookingPanel({ adId, adTitle, variant = DEFAULT_V
               color="error"
               onClick={() => cancelReservation()}
               disabled={isCancelling}
-              startIcon={isCancelling ? <CircularProgress size={14} color="inherit" /> : undefined}
+              startIcon={
+                isCancelling ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : undefined
+              }
             >
-              {isCancelling ? 'Annulation…' : 'Confirmer l\'annulation'}
+              {isCancelling ? 'Annulation…' : "Confirmer l'annulation"}
             </Button>
           </Box>
         </Box>

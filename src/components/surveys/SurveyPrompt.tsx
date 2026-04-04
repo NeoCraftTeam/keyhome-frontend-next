@@ -9,7 +9,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { AssignmentOutlined, Close } from '@mui/icons-material';
+import AssignmentOutlined from '@mui/icons-material/AssignmentOutlined';
+import Close from '@mui/icons-material/Close';
 import { useState, useEffect } from 'react';
 import { getSurveyPostponed } from './SurveyBanner';
 

@@ -2,7 +2,8 @@
 
 import api from '@/lib/api';
 import { useCountUp } from '@/hooks/useCountUp';
-import { AutoAwesome, Search } from '@mui/icons-material';
+import AutoAwesome from '@mui/icons-material/AutoAwesome';
+import Search from '@mui/icons-material/Search';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
