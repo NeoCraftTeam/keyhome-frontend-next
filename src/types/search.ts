@@ -25,6 +25,7 @@ export interface SearchParams {
   surface_min?: number;
   surface_max?: number;
   has_parking?: boolean;
+  transaction_type?: string;
   has_3d_tour?: boolean;
   is_verified?: boolean;
   attributes?: string[];

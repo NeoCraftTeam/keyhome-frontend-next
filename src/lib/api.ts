@@ -13,6 +13,7 @@ const AUTH_ROUTES = [
   '/auth/register',
   '/auth/clerk/',
   '/auth/me',
+  '/auth/logout', // 401 here means session already expired; logout handles its own cleanup
 ];
 
 const api = axios.create({

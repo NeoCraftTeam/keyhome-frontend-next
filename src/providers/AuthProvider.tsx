@@ -1,11 +1,9 @@
 'use client';
 
 import { registerTokenGetter } from '@/lib/auth-token';
-import { resetCsrfState } from '@/lib/api';
+import api, { resetCsrfState } from '@/lib/api';
 import {
   clearAllInMemoryTokens,
-  clearOwnerToken,
-  clearClientToken,
   clearRoleCookie,
   clearSessionStorage,
   getInMemoryToken,
@@ -19,6 +17,7 @@ import {
 } from '@/lib/auth-session';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
+import { useQueryClient } from '@tanstack/react-query';
 import { User, UserRole } from '@/types';
 import {
   useClerk,
@@ -96,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [hasResolvedInitialAuth, setHasResolvedInitialAuth] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const authRunRef = useRef(0);
   const pathnameRef = useRef<string | null>(null);
   const clerkExchangeDoneRef = useRef(false);
@@ -112,9 +112,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const clearSession = useCallback(() => {
+    queryClient.clear();
     clearAllInMemoryTokens();
     setToken(null);
-  }, []);
+  }, [queryClient]);
 
   /* ── Initial auth resolution ──────────────────────────────────── */
 
@@ -445,7 +446,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!user) {
         return;
       }
-      registerTokenGetter(() => Promise.resolve(null));
+      // clearAllInMemoryTokens() internally calls registerTokenGetter(() => null)
+      // AND removes the sessionStorage backup keys so a page refresh can't
+      // rehydrate a stale token and silently re-authenticate the user.
+      clearAllInMemoryTokens();
+      queryClient.clear();
       setToken(null);
       setUserState(null);
       clearRoleCookie();
@@ -453,7 +458,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener('kh:auth-expired', handleAuthExpired);
     return () =>
       window.removeEventListener('kh:auth-expired', handleAuthExpired);
-  }, [user]);
+  }, [user, queryClient]);
 
   /* ── Auth actions ─────────────────────────────────────────────── */
 
@@ -619,20 +624,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoggingOut(true);
       resetCsrfState();
 
-      // Determine context BEFORE clearing anything
-      const isOnOwnerRoute =
-        typeof window !== 'undefined' &&
-        window.location.pathname.startsWith('/owner');
+      // Snapshot the Sanctum Bearer BEFORE wiping in-memory slots.
+      // The Axios request interceptor is a microtask — by the time it runs,
+      // clearAllInMemoryTokens() below has already nulled the getter, so the
+      // interceptor would send no Authorization header and the backend would
+      // only revoke the session cookie, not the Bearer token record.
+      // Passing it explicitly in the header bypasses the interceptor race.
+      const bearerSnapshot = getInMemoryToken();
+      void api
+        .post(
+          '/auth/logout',
+          undefined,
+          bearerSnapshot
+            ? { headers: { Authorization: `Bearer ${bearerSnapshot}` } }
+            : undefined
+        )
+        .catch(() => {});
+
+      // Wipe all cached API responses so no stale data leaks to the next session.
+      queryClient.clear();
+
       if (typeof window !== 'undefined') {
         localStorage.clear();
-        clearSessionStorage(isOnOwnerRoute ? 'owner' : 'client');
+        clearSessionStorage(); // clear both client and owner contexts
       }
       clearRoleCookie();
-      if (isOnOwnerRoute) {
-        clearOwnerToken();
-      } else {
-        clearClientToken();
-      }
+      clearAllInMemoryTokens(); // clear both token slots
+      setToken(null);
       setUserState(null);
 
       await new Promise((resolve) =>
@@ -663,7 +681,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoggingOut(false);
       router.replace(safeRedirect);
     },
-    [isSignedIn, signOut, router]
+    [isSignedIn, signOut, router, queryClient]
   );
 
   const refreshUser = useCallback(async () => {
@@ -671,6 +689,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const freshUser = await authService.me();
       setUserState(freshUser);
     } catch {
+      queryClient.clear();
       clearAllInMemoryTokens();
       setToken(null);
       setUserState(null);
@@ -679,7 +698,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       router.push('/home');
     }
-  }, [isSignedIn, signOut, router]);
+  }, [isSignedIn, signOut, router, queryClient]);
 
   /* ── Context value ────────────────────────────────────────────── */
 

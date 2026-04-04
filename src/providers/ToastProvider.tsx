@@ -1,6 +1,5 @@
 'use client';
 
-import { brandAgent } from '@/theme/tokens';
 import { SnackbarProvider } from 'notistack';
 import type { ReactNode } from 'react';
 
@@ -20,9 +19,11 @@ export default function ToastProvider({ children }: ToastProviderProps) {
       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       preventDuplicate
       style={{ fontFamily: 'inherit' }}
-      Components={{
-        // Custom styles handled via sx below
-      }}
+      Components={
+        {
+          // Custom styles handled via sx below
+        }
+      }
     >
       {children}
     </SnackbarProvider>

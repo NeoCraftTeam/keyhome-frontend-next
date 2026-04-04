@@ -247,7 +247,10 @@ export const adsService = {
     return data;
   },
 
-  async getNeighborhoodScorecard(adId: string): Promise<{
+  async getNeighborhoodScorecard(
+    adId: string,
+    force = false
+  ): Promise<{
     data: {
       global_score: number;
       status: 'ok' | 'degraded' | 'unavailable';
@@ -270,7 +273,9 @@ export const adsService = {
       >;
     };
   }> {
-    const { data } = await api.get(`/ads/${adId}/neighborhood-scorecard`);
+    const { data } = await api.get(`/ads/${adId}/neighborhood-scorecard`, {
+      params: force ? { force: 1 } : {},
+    });
     return data;
   },
 };

@@ -19,7 +19,7 @@ const RAD_PAD = 0.035;
  * Returns null when vertical coverage is effectively the full 180° strip (no extra clamp).
  */
 export function getEquirectVerticalPitchLimitsRad(
-  panoData: PanoData | null | undefined,
+  panoData: PanoData | null | undefined
 ): { min: number; max: number } | null {
   if (!panoData?.fullWidth) {
     return null;
@@ -46,18 +46,18 @@ export function getEquirectVerticalPitchLimitsRad(
  */
 export function clampViewerPitchToPanoContent(
   viewer: Pick<Viewer, 'state'>,
-  position: { pitch: number },
+  position: { pitch: number }
 ): void {
   const limits = getEquirectVerticalPitchLimitsRad(
-    viewer.state.textureData?.panoData,
+    viewer.state.textureData?.panoData
   );
   if (!limits) {
     return;
   }
 
   const halfFov = MathUtils.degToRad(viewer.state.vFov) / 2;
-  let minP = limits.min + halfFov + RAD_PAD;
-  let maxP = limits.max - halfFov - RAD_PAD;
+  const minP = limits.min + halfFov + RAD_PAD;
+  const maxP = limits.max - halfFov - RAD_PAD;
 
   if (minP > maxP) {
     position.pitch = (limits.min + limits.max) / 2;
@@ -91,13 +91,25 @@ export function attachPartialPanoPitchClamp(viewer: Viewer): () => void {
     }
   };
 
-  viewer.addEventListener('before-rotate', onBeforeRotate as (e: unknown) => void);
-  viewer.addEventListener('before-animate', onBeforeAnimate as (e: unknown) => void);
+  viewer.addEventListener(
+    'before-rotate',
+    onBeforeRotate as (e: unknown) => void
+  );
+  viewer.addEventListener(
+    'before-animate',
+    onBeforeAnimate as (e: unknown) => void
+  );
   viewer.addEventListener('zoom-updated', onZoomUpdated);
 
   return () => {
-    viewer.removeEventListener('before-rotate', onBeforeRotate as (e: unknown) => void);
-    viewer.removeEventListener('before-animate', onBeforeAnimate as (e: unknown) => void);
+    viewer.removeEventListener(
+      'before-rotate',
+      onBeforeRotate as (e: unknown) => void
+    );
+    viewer.removeEventListener(
+      'before-animate',
+      onBeforeAnimate as (e: unknown) => void
+    );
     viewer.removeEventListener('zoom-updated', onZoomUpdated);
   };
 }

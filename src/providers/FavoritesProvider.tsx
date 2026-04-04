@@ -3,7 +3,16 @@
 import api from '@/lib/api';
 import { useAuth } from '@/providers/AuthProvider';
 import { Ad } from '@/types';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 const STORAGE_KEY = 'keyhome_favorites';
 const MAX_FAVORITES = 100;
@@ -30,7 +39,12 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0].id) {
+        if (
+          Array.isArray(parsed) &&
+          parsed.length > 0 &&
+          typeof parsed[0] === 'object' &&
+          parsed[0].id
+        ) {
           return parsed.slice(0, MAX_FAVORITES);
         }
         localStorage.removeItem(STORAGE_KEY);
@@ -43,7 +57,10 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
   const persist = useCallback((ads: Ad[]) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(ads.slice(0, MAX_FAVORITES)));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(ads.slice(0, MAX_FAVORITES))
+      );
     } catch {
       /* ignore — storage quota may be exceeded */
     }
@@ -67,7 +84,9 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
           // Server has no favorites — push local ones to server
           const local = readLocal();
           if (local.length > 0) {
-            await Promise.allSettled(local.map((ad) => api.post(`/ads/${ad.id}/favorite`)));
+            await Promise.allSettled(
+              local.map((ad) => api.post(`/ads/${ad.id}/favorite`))
+            );
           }
         } else {
           // Merge: server is source of truth, add any local-only ones
@@ -77,7 +96,9 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
           // Push local-only favorites to server (fire-and-forget)
           if (localOnly.length > 0) {
-            Promise.allSettled(localOnly.map((ad) => api.post(`/ads/${ad.id}/favorite`)));
+            Promise.allSettled(
+              localOnly.map((ad) => api.post(`/ads/${ad.id}/favorite`))
+            );
           }
 
           // Merged list: server favorites + local-only
@@ -95,24 +116,33 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     syncFromApi();
   }, [isAuthenticated, readLocal, persist]);
 
-  // Reset sync flag on logout
+  // Clear favorites state and reset sync flag on logout
   useEffect(() => {
     if (!isAuthenticated) {
       hasSynced.current = false;
+      setFavorites([]);
     }
   }, [isAuthenticated]);
 
   // ── Derived state ───────────────────────────────────────────────────
-  const favoriteIds = useMemo(() => new Set(favorites.map((f) => f.id)), [favorites]);
+  const favoriteIds = useMemo(
+    () => new Set(favorites.map((f) => f.id)),
+    [favorites]
+  );
 
-  const isFavorite = useCallback((adId: string) => favoriteIds.has(adId), [favoriteIds]);
+  const isFavorite = useCallback(
+    (adId: string) => favoriteIds.has(adId),
+    [favoriteIds]
+  );
 
   // ── Toggle: update local state immediately, sync to API in background
   const toggleFavorite = useCallback(
     (ad: Ad) => {
       setFavorites((prev) => {
         const exists = prev.some((f) => f.id === ad.id);
-        const next = exists ? prev.filter((f) => f.id !== ad.id) : [...prev, ad];
+        const next = exists
+          ? prev.filter((f) => f.id !== ad.id)
+          : [...prev, ad];
         persist(next);
         return next;
       });
@@ -157,15 +187,34 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   }, [persist, isAuthenticated, favorites]);
 
   const value = useMemo(
-    () => ({ favorites, favoriteIds, isFavorite, toggleFavorite, removeFavorite, clearFavorites }),
-    [favorites, favoriteIds, isFavorite, toggleFavorite, removeFavorite, clearFavorites]
+    () => ({
+      favorites,
+      favoriteIds,
+      isFavorite,
+      toggleFavorite,
+      removeFavorite,
+      clearFavorites,
+    }),
+    [
+      favorites,
+      favoriteIds,
+      isFavorite,
+      toggleFavorite,
+      removeFavorite,
+      clearFavorites,
+    ]
   );
 
-  return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>;
+  return (
+    <FavoritesContext.Provider value={value}>
+      {children}
+    </FavoritesContext.Provider>
+  );
 }
 
 export function useFavorites(): FavoritesContextType {
   const ctx = useContext(FavoritesContext);
-  if (!ctx) throw new Error('useFavorites must be used within FavoritesProvider');
+  if (!ctx)
+    throw new Error('useFavorites must be used within FavoritesProvider');
   return ctx;
 }

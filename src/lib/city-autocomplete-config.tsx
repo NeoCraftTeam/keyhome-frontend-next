@@ -1,6 +1,6 @@
 'use client';
 
-import { LocationOn } from '@mui/icons-material';
+import LocationOn from '@mui/icons-material/LocationOn';
 import { Typography } from '@mui/material';
 import type { City } from '@/types';
 
@@ -57,10 +57,11 @@ export function useCityAutocompleteConfig() {
 
   const renderOption = (
     props: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key },
-    option: City,
+    option: City
   ) => {
     const { key, ...restProps } = props;
-    const isSelected = props['aria-selected'] === true || props['aria-selected'] === 'true';
+    const isSelected =
+      props['aria-selected'] === true || props['aria-selected'] === 'true';
     return (
       <li key={key ?? option.id} {...restProps}>
         <LocationOn
@@ -77,12 +78,16 @@ export function useCityAutocompleteConfig() {
 
   const renderOptionFreeSolo = (
     props: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key },
-    option: City | string,
+    option: City | string
   ) => {
     const { key, ...restProps } = props;
-    const isSelected = props['aria-selected'] === true || props['aria-selected'] === 'true';
+    const isSelected =
+      props['aria-selected'] === true || props['aria-selected'] === 'true';
     return (
-      <li key={key ?? (typeof option === 'string' ? option : option.id)} {...restProps}>
+      <li
+        key={key ?? (typeof option === 'string' ? option : option.id)}
+        {...restProps}
+      >
         <LocationOn
           sx={{
             fontSize: 16,
