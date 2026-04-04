@@ -101,19 +101,29 @@
     {
       "name": "Rechercher un bien",
       "short_name": "Recherche",
+      "description": "Chercher des appartements, maisons, terrains",
       "url": "/search",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "Mes favoris",
       "short_name": "Favoris",
+      "description": "Voir mes annonces sauvegardées",
       "url": "/favorites",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Espace propriétaire",
+      "short_name": "Propriétaire",
+      "description": "Tableau de bord propriétaire",
+      "url": "/owner/dashboard",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "Publier une annonce",
       "short_name": "Publier",
-      "url": "/agency",
+      "description": "Créer une nouvelle annonce immobilière",
+      "url": "/owner/ads/new",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ],

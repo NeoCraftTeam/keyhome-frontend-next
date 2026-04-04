@@ -1,6 +1,148 @@
-// KeyHome Push Notification Service Worker
-// Handles incoming push events and notification clicks for the Next.js frontend.
+// KeyHome Service Worker v2
+// Push + Background Sync + Caching strategy for full offline/PWA support.
 
+const VERSION      = "v2";
+const STATIC_CACHE = `kh-static-${VERSION}`;
+const API_CACHE    = `kh-api-${VERSION}`;
+const NAV_CACHE    = `kh-nav-${VERSION}`;
+const KNOWN_CACHES = [STATIC_CACHE, API_CACHE, NAV_CACHE];
+
+// Shell assets pre-cached at install time (must exist in /public)
+const PRECACHE_URLS = [
+  "/offline",
+  "/manifest.json",
+  "/images/logo-teal.png",
+  "/icons/icon-192x192.png",
+  "/icons/icon-512x512.png",
+];
+
+// ─── Install ────────────────────────────────────────────────────────────────
+// Pre-cache shell assets. Do NOT auto-skipWaiting — the update toast in
+// PWAInstallPrompt sends SKIP_WAITING when the user explicitly consents.
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS))
+  );
+});
+
+// ─── Activate ───────────────────────────────────────────────────────────────
+// Remove stale caches from previous SW versions, then claim all clients.
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys.filter((k) => !KNOWN_CACHES.includes(k)).map((k) => caches.delete(k))
+        )
+      )
+      .then(() => self.clients.claim())
+  );
+});
+
+// ─── Message — SKIP_WAITING ─────────────────────────────────────────────────
+// PWAInstallPrompt posts { type: 'SKIP_WAITING' } before reload so the
+// waiting SW takes over immediately, triggering controllerchange → reload.
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
+// ─── Caching helpers ─────────────────────────────────────────────────────────
+
+async function cacheFirst(request, cacheName) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    return Response.error();
+  }
+}
+
+async function networkFirst(request, cacheName) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    return cached ?? Response.error();
+  }
+}
+
+async function navigationWithOfflineFallback(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(NAV_CACHE);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    const offlinePage = await caches.match("/offline");
+    return offlinePage ?? new Response("Hors ligne", { status: 503, headers: { "Content-Type": "text/plain" } });
+  }
+}
+
+// Owner-panel read-only API paths worth caching for offline resilience
+const CACHEABLE_OWNER_PATHS = [
+  "/api/v1/my/ads",
+  "/api/v1/owner/analytics",
+  "/api/v1/viewings/reservations",
+  "/api/v1/notifications",
+  "/api/v1/ads",
+];
+
+function isCacheableApi(pathname) {
+  return CACHEABLE_OWNER_PATHS.some((p) => pathname.startsWith(p));
+}
+
+// ─── Fetch ───────────────────────────────────────────────────────────────────
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Pass through non-GET, non-HTTP, and cross-origin requests
+  if (request.method !== "GET") return;
+  if (!url.protocol.startsWith("http")) return;
+  if (url.origin !== self.location.origin) return;
+
+  // 1. Immutable Next.js build output + static assets → cache-first
+  if (
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/icons/") ||
+    url.pathname.startsWith("/images/")
+  ) {
+    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    return;
+  }
+
+  // 2. Cacheable read-only API calls → network-first (serve stale when offline)
+  if (isCacheableApi(url.pathname)) {
+    event.respondWith(networkFirst(request, API_CACHE));
+    return;
+  }
+
+  // 3. Navigation requests → network-first with /offline fallback
+  if (request.mode === "navigate") {
+    event.respondWith(navigationWithOfflineFallback(request));
+    return;
+  }
+});
+
+// ─── Push Notifications ─────────────────────────────────────────────────────
 self.addEventListener("push", (event) => {
   let data = {
     title: "KeyHome",
@@ -37,9 +179,6 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const rawPath = event.notification.data?.url || "/home";
-  const targetUrl = new URL(rawPath, self.location.origin).href;
-
   event.waitUntil(
     (async () => {
       const allClients = await self.clients.matchAll({
@@ -47,12 +186,20 @@ self.addEventListener("notificationclick", (event) => {
         includeUncontrolled: true,
       });
 
+      // If the push payload specifies a URL use it; otherwise detect panel context.
+      let rawPath = event.notification.data?.url;
+      if (!rawPath) {
+        const isOwnerContext = allClients.some(
+          (c) => c.url.startsWith(self.location.origin) && c.url.includes("/owner/")
+        );
+        rawPath = isOwnerContext ? "/owner/dashboard" : "/home";
+      }
+      const targetUrl = new URL(rawPath, self.location.origin).href;
+
       for (const client of allClients) {
-        if (!client.url.startsWith(self.location.origin)) {
-          continue;
-        }
+        if (!client.url.startsWith(self.location.origin)) continue;
         await client.focus();
-        // navigate() est supporté sur Chromium ; Safari / Firefox : on ouvre l’URL.
+        // navigate() est supporté sur Chromium ; Safari / Firefox : on ouvre l'URL.
         if ("navigate" in client && typeof client.navigate === "function") {
           try {
             return await client.navigate(targetUrl);
@@ -74,13 +221,14 @@ self.addEventListener("notificationclick", (event) => {
 // connectivity is restored the browser fires the 'sync' event here and we
 // replay those queued requests against the API.
 
-const SYNC_TAG_FAVORITES = 'kh-sync-favorites';
-const SYNC_TAG_CONTACTS  = 'kh-sync-contacts';
+const SYNC_TAG_FAVORITES         = 'kh-sync-favorites';
+const SYNC_TAG_CONTACTS          = 'kh-sync-contacts';
+const SYNC_TAG_VIEWING_RESPONSE  = 'kh-sync-viewing-response';
 
 /** Open (or create) the offline-queue store. */
 async function openSyncStore(storeName) {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('kh-sync-db', 1);
+    const req = indexedDB.open('kh-sync-db', 2);
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains('favorites')) {
@@ -88,6 +236,9 @@ async function openSyncStore(storeName) {
       }
       if (!db.objectStoreNames.contains('contacts')) {
         db.createObjectStore('contacts', { autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains('viewing-responses')) {
+        db.createObjectStore('viewing-responses', { autoIncrement: true });
       }
     };
     req.onsuccess = (e) => resolve(e.target.result);
@@ -143,6 +294,22 @@ self.addEventListener('sync', (event) => {
     event.waitUntil(
       openSyncStore('contacts').then((db) =>
         drainStore(db, 'contacts', async (record) => {
+          await fetch(record.url, {
+            method:  record.method || 'POST',
+            headers: { 'Content-Type': 'application/json', ...record.headers },
+            body:    record.body ? JSON.stringify(record.body) : undefined,
+            credentials: 'include',
+          });
+        }),
+      ),
+    );
+  }
+
+  // Owner: replay viewing confirm/decline actions queued while offline
+  if (event.tag === SYNC_TAG_VIEWING_RESPONSE) {
+    event.waitUntil(
+      openSyncStore('viewing-responses').then((db) =>
+        drainStore(db, 'viewing-responses', async (record) => {
           await fetch(record.url, {
             method:  record.method || 'POST',
             headers: { 'Content-Type': 'application/json', ...record.headers },

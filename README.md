@@ -1,246 +1,329 @@
-# KeyHome - Frontend Next.js
+# KeyHome — Frontend Next.js
 
-Application web client pour la plateforme immobiliere **KeyHome**, dediee a la recherche et a la consultation d'annonces immobilieres. Ce frontend communique avec une API REST Laravel via des requetes authentifiees (Sanctum token-based).
-
-## Objectifs du projet
-
-- Offrir une experience utilisateur fluide et moderne pour la recherche de biens immobiliers
-- Proposer un systeme de consultation avec deverrouillage payant (blur-to-pay) via FedaPay
-- Integrer la geolocalisation avec affichage interactif sur carte Mapbox
-- Garantir une interface responsive, performante et accessible sur tous les appareils
-
-## Fonctionnalites cles
-
-- **Authentification complete** : connexion, inscription client, reinitialisation et verification d'email via Laravel Sanctum
-- **Catalogue d'annonces** : affichage en grille responsive avec pagination optimisee, filtres par ville, type de bien, surface, prix, nombre de chambres
-- **Detail d'annonce** : galerie photo Airbnb-style, lightbox, informations floutees jusqu'au paiement
-- **Paiement securise** : integration FedaPay pour le deverrouillage des coordonnees et photos
-- **Carte interactive** : recherche geographique, affichage des annonces avec pins de prix sur Mapbox
-- **Recherche avancee** : autocomplete sur villes et types de bien, vue split liste/carte
-- **Exploration proximite** : geolocalisation du navigateur, rayon de recherche configurable
-- **Profil utilisateur** : edition des informations, upload d'avatar, changement de mot de passe, historique des annonces deverrouillees
-- **Theming** : mode clair/sombre avec basculement dynamique
-- **Animations** : transitions FadeIn, skeleton loading, loaders animes
+Application web client de la plateforme immobilière **KeyHome** : espace client chercheur,
+espace bailleur/propriétaire intégré, et pages SEO. Authentification Clerk, paiements
+Flutterwave, tours virtuels 360°, cartographie Mapbox et internationalisation fr/en.
 
 ## Stack technique
 
-| Categorie | Technologie | Version |
-|-----------|------------|---------|
-| Framework | Next.js (App Router) | 16.1.6 |
-| Langage | TypeScript | ^5 |
-| UI | React | 19.2.3 |
-| Design System | Material-UI (MUI) | ^7.3.7 |
-| Styling | Emotion (`@emotion/react`, `@emotion/styled`) | ^11.14.x |
-| CSS Utilitaire | Tailwind CSS | ^4 |
-| Cartographie | Mapbox GL JS | ^3.18.1 |
-| Cartographie React | react-map-gl | ^8.1.0 |
-| State serveur | TanStack React Query | ^5.90.21 |
-| Client HTTP | Axios | ^1.13.5 |
-| Formulaires | React Hook Form | ^7.71.1 |
-| Validation | Zod | ^4.3.6 |
-| Resolvers | @hookform/resolvers | ^5.2.2 |
-| Dates | date-fns | ^4.1.0 |
-| Cookies | nookies | ^2.5.2 |
-| Linting | ESLint + eslint-config-next | ^9 / 16.1.6 |
-| PostCSS | @tailwindcss/postcss | ^4 |
+| Catégorie             | Technologie                             | Version      |
+| --------------------- | --------------------------------------- | ------------ |
+| Framework             | Next.js (App Router, Turbopack)         | ^16.2.1      |
+| Langage               | TypeScript                              | ^5           |
+| UI                    | React                                   | 19.2.3       |
+| Design System         | Material-UI (MUI)                       | ^7.3.7       |
+| CSS utilitaire        | Tailwind CSS                            | ^4           |
+| Animations            | Framer Motion                           | ^12          |
+| Cartographie          | Mapbox GL JS + react-map-gl             | ^3.18 / ^8.1 |
+| Tours virtuels 360°   | Photo Sphere Viewer                     | ^5.14        |
+| Graphiques            | Recharts                                | ^3.8         |
+| 3D                    | Three.js                                | ^0.183       |
+| State serveur         | TanStack React Query                    | ^5           |
+| Authentification      | Clerk (`@clerk/nextjs`)                 | ^6           |
+| Client HTTP           | Axios                                   | ^1.13        |
+| Formulaires           | React Hook Form + Zod                   | ^7 / ^4      |
+| Internationalisation  | next-intl                               | ^4           |
+| Notifications UI      | notistack                               | ^3           |
+| Monitoring            | Sentry (`@sentry/nextjs`)               | ^10          |
+| Analytics             | Vercel Analytics + Speed Insights       | ^1 / ^2      |
+| Tests unitaires       | Vitest + Testing Library                | ^4           |
+| Tests E2E             | Playwright                              | ^1.58        |
+| Composants documentés | Storybook                               | ^8.6         |
+| Qualité               | ESLint + Prettier + Husky + lint-staged | —            |
 
 ## Architecture du projet
 
 ```
 src/
-├── app/                          # Routes Next.js (App Router)
-│   ├── (auth)/                   # Groupe de routes authentification
-│   │   ├── login/                # Page de connexion
-│   │   ├── register/             # Page d'inscription client
-│   │   ├── forgot-password/      # Mot de passe oublie
-│   │   ├── reset-password/       # Reinitialisation du mot de passe
-│   │   ├── verify-email/         # Verification d'email
-│   │   └── layout.tsx            # Layout auth (sans navbar)
-│   ├── (dashboard)/              # Groupe de routes authentifiees
-│   │   ├── home/                 # Page d'accueil avec annonces
-│   │   ├── ads/[id]/[slug]/      # Detail d'une annonce
-│   │   ├── search/               # Recherche avancee
-│   │   ├── nearby/               # Exploration geographique
-│   │   ├── profile/              # Gestion du profil
-│   │   ├── payments/             # Callback de paiement FedaPay
-│   │   └── layout.tsx            # Layout dashboard (navbar + footer)
-│   ├── globals.css               # Styles globaux et animations CSS
-│   ├── layout.tsx                # Layout racine (providers)
-│   ├── providers.tsx             # Assemblage des providers
-│   └── page.tsx                  # Redirection initiale
+├── app/
+│   ├── (auth)/                       # Routes authentification client (Clerk)
+│   │   ├── login/                    # Connexion
+│   │   ├── register/                 # Inscription
+│   │   ├── forgot-password/          # Mot de passe oublié
+│   │   ├── reset-password/           # Réinitialisation
+│   │   ├── verify-email/             # Vérification e-mail
+│   │   ├── verify-otp/               # Code OTP
+│   │   ├── complete-profile/         # Complétion du profil
+│   │   └── auth/callback/            # Callback Clerk OAuth
+│   ├── (dashboard)/                  # Espace client authentifié
+│   │   ├── home/                     # Accueil avec annonces et recommandations
+│   │   ├── search/                   # Recherche avancée
+│   │   ├── nearby/                   # Exploration géographique (rayon configurable)
+│   │   ├── profile/                  # Profil utilisateur
+│   │   ├── payments/                 # Callback de paiement
+│   │   ├── my/reservations/          # Mes réservations de visites
+│   │   ├── search-alerts/            # Alertes de recherche
+│   │   ├── notifications/            # Centre de notifications
+│   │   ├── messages/                 # Messagerie
+│   │   ├── comparaisons/             # Comparateur d'annonces
+│   │   ├── prix-marche/              # Heatmap des prix du marché
+│   │   ├── parametres/               # Paramètres utilisateur
+│   │   ├── aide/                     # Centre d'aide
+│   │   └── contact/                  # Contact
+│   ├── (owner)/owner/                # Espace bailleur/propriétaire
+│   │   ├── dashboard/                # Tableau de bord analytique
+│   │   ├── ads/                      # Gestion des annonces (+ tours 360°)
+│   │   ├── availability/             # Gestion des créneaux de visite
+│   │   ├── viewings/                 # Visites planifiées
+│   │   ├── lease-contracts/          # Contrats de bail
+│   │   ├── financials/               # Finances & dépenses
+│   │   ├── subscriptions/            # Abonnements
+│   │   ├── payments/                 # Paiements & facturation
+│   │   ├── reviews/                  # Avis reçus
+│   │   ├── tenants/                  # Locataires
+│   │   ├── equipe/                   # Équipe / agents
+│   │   ├── pro-services/             # Services professionnels
+│   │   ├── profile/ security/ parametres/
+│   │   └── auth/                     # Auth bailleur (login, register, OTP, complete-profile)
+│   ├── ads/[id]/[slug]/              # Détail annonce (SSR + OpenGraph dynamique)
+│   ├── agences/[id]/                 # Profil agence public
+│   ├── bailleurs/[username]/         # Profil bailleur public
+│   ├── search/                       # Recherche publique
+│   ├── credits/                      # Achat de crédits + callback
+│   ├── payment/ payment-success/     # Flux de paiement Flutterwave
+│   ├── immobilier/[ville]/           # SEO : pages par ville
+│   ├── type-bien/[type]/             # SEO : pages par type de bien
+│   ├── comparaison/[slug]/           # Pages de comparaison SEO
+│   ├── sign/[token]/                 # Signature électronique de contrat de bail
+│   ├── surveys/ sondage/[id]/        # Sondages publics et anonymes
+│   ├── blog/ blog/[slug]/            # Blog
+│   ├── conditions/ confidentialite/  # Pages légales
+│   ├── sso-callback/                 # Callback SSO Clerk
+│   ├── tour-proxy/[[...path]]/       # Proxy sécurisé pour les tours 360°
+│   └── offline/ health/
 ├── components/
-│   ├── ads/
-│   │   ├── AdCard.tsx            # Carte d'annonce reutilisable
-│   │   └── AdCardSkeleton.tsx    # Skeleton loading pour les cartes
-│   ├── layout/
-│   │   ├── Navbar.tsx            # Barre de navigation principale
-│   │   └── Footer.tsx            # Pied de page
-│   └── ui/
-│       ├── FadeIn.tsx            # Composant d'animation fade-in
-│       ├── PageLoader.tsx        # Loader de page avec logo anime
-│       └── CategoryPills.tsx     # Pilules de categories scrollables
+│   ├── ads/          # Cartes d'annonces, galeries, lightbox, tours 360°
+│   ├── auth/         # Composants d'authentification Clerk / email
+│   ├── dashboard/    # Composants espace client
+│   ├── landing/      # Page d'accueil marketing
+│   ├── layout/       # Navbar, Footer
+│   ├── maps/         # Carte Mapbox, markers, heatmap des prix
+│   ├── notifications/ # Centre de notifications
+│   ├── owner/        # Composants espace bailleur
+│   ├── payment/      # Flux de paiement Flutterwave
+│   ├── pwa/          # Service Worker, installation PWA
+│   ├── reviews/      # Avis et notes
+│   ├── seo/          # Meta, OpenGraph, structured data
+│   ├── surveys/      # Formulaires de sondage
+│   ├── utm/          # Attribution marketing
+│   ├── viewing/      # Calendrier de visites
+│   └── ui/           # Composants atomiques réutilisables
+├── hooks/            # Hooks personnalisés (16 fichiers)
 ├── lib/
-│   ├── api.ts                    # Instance Axios + intercepteurs
-│   └── constants.ts              # Utilitaires (formatPrice, formatDate...)
-├── providers/
-│   ├── AuthProvider.tsx          # Contexte d'authentification
-│   ├── ThemeProvider.tsx         # Contexte theme clair/sombre
-│   └── QueryProvider.tsx         # Provider TanStack Query
-├── services/
-│   ├── ads.service.ts            # API annonces (CRUD, search, nearby)
-│   ├── auth.service.ts           # API authentification
-│   ├── cities.service.ts         # API villes
-│   ├── payments.service.ts       # API paiements FedaPay
-│   └── users.service.ts          # API utilisateurs + recommandations
+│   ├── api.ts        # Instance Axios + intercepteurs (injection token, redirection 401)
+│   └── constants.ts  # Utilitaires (formatPrice, formatDate…)
+├── providers/        # AuthProvider, ThemeProvider, QueryProvider…
+├── services/         # Appels API par domaine (22 fichiers)
 ├── theme/
-│   └── theme.ts                  # Themes MUI (light + dark)
-└── types/
-    └── index.ts                  # Types TypeScript (Ad, User, City, etc.)
+│   ├── tokens.ts     # Design tokens (couleurs, spacing…)
+│   ├── theme.ts      # Thème MUI clair + sombre
+│   └── ownerTheme.ts # Thème dédié espace bailleur
+└── types/            # Types TypeScript globaux
 ```
 
-## Prerequisites
+## Prérequis
 
-- **Node.js** >= 18.x
-- **npm** >= 9.x (ou yarn/pnpm)
-- Un **backend Laravel** en cours d'execution avec l'API KeyHome
-- Une **cle API Mapbox** pour les fonctionnalites cartographiques
+- Node.js ≥ 18.x
+- npm ≥ 9.x (ou yarn / pnpm)
+- Backend Laravel en cours d'exécution avec l'API KeyHome
+- Clé API Mapbox
+- Projet Clerk configuré (dashboard.clerk.com)
 
 ## Installation
 
 ```bash
-# Cloner le repository
-git clone git@gitlab.com:neocraft/keyhome-next.git
-cd keyhome-next
-
-# Installer les dependances
 npm install
 ```
 
 ## Configuration
 
-Creer un fichier `.env.local` a la racine du projet :
+Copier `.env.example` en `.env.local` et remplir les valeurs :
 
 ```env
-NEXT_PUBLIC_API_URL=https://api.keyhome.neocraft.dev/api/v1
-NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_public_token
+# Backend API
+NEXT_PUBLIC_API_URL=https://api.keyhome.app/api/v1
+# Timeout upload tours 360° en ms (défaut 600 000 = 10 min, max 1 800 000 = 30 min)
+# NEXT_PUBLIC_API_TOUR_UPLOAD_TIMEOUT_MS=600000
+
+# Mapbox
+NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1...
+
+# Clerk — https://dashboard.clerk.com
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+CLERK_SECRET_KEY=sk_live_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/login
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/register
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/home
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/home
+
+# URLs des panels backend (Laravel)
+NEXT_PUBLIC_AGENCY_URL=https://api.keyhome.app/agency
+NEXT_PUBLIC_OWNER_URL=https://api.keyhome.app/owner
+NEXT_PUBLIC_ADMIN_URL=https://api.keyhome.app/admin
+# next = espace bailleur intégré (ce frontend) | laravel = panel Filament
+NEXT_PUBLIC_OWNER_PANEL=next
+
+# Web Push (VAPID — générer côté backend : php artisan webpush:vapid)
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=
+
+# Service Worker / PWA (activer en local : 1)
+# NEXT_PUBLIC_ENABLE_SW=1
+
+# Contact
+NEXT_PUBLIC_WHATSAPP_NUMBER=237657507909
 ```
 
-| Variable | Description |
-|----------|-------------|
-| `NEXT_PUBLIC_API_URL` | URL de base de l'API Laravel (avec `/api/v1`) |
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | Token public Mapbox GL pour les cartes interactives |
-
-## Scripts disponibles
+## Scripts
 
 ```bash
-# Demarrer le serveur de developpement (Turbopack)
-npm run dev
-
-# Creer un build de production optimise
-npm run build
-
-# Demarrer le serveur de production
-npm start
-
-# Executer le linter ESLint
-npm run lint
+npm run dev              # Serveur de développement (Turbopack)
+npm run dev:webpack      # Serveur de développement (webpack)
+npm run dev:clean        # Purge .next puis dev
+npm run build            # Build de production
+npm start                # Serveur de production
+npm run lint             # ESLint
+npm run format           # Prettier (fix)
+npm run format:check     # Prettier (vérification)
+npm run test             # Tests unitaires (Vitest, exécution unique)
+npm run test:watch       # Tests en mode watch
+npm run test:coverage    # Tests avec rapport de couverture
+npm run test:e2e         # Tests E2E (Playwright)
+npm run test:e2e:ui      # Interface Playwright UI
+npm run prepare:e2e      # Installer Chromium pour Playwright
+npm run analyze          # Analyse du bundle (ANALYZE=true next build)
+npm run storybook        # Storybook (port 6006)
+npm run build-storybook  # Build Storybook statique
 ```
 
+## Authentification
+
+L'application utilise **Clerk** comme fournisseur d'identité principal :
+
+1. **Espace client** : connexion/inscription via Clerk UI. Le JWT Clerk est échangé
+   côté backend via `POST /api/v1/auth/clerk/exchange` → retourne un token Sanctum (`kh_*`).
+2. **Espace bailleur** (`/owner`) : authentification email/mot de passe native via l'API backend (Sanctum).
+3. **OAuth** : Google, Facebook, Apple (géré par Socialite côté backend).
+4. Le token est stocké en cookie côté client et injecté automatiquement par Axios dans chaque requête.
+5. Redirection automatique vers `/login` sur erreur 401.
+
+## Paiement (Flutterwave)
+
+- Initialisation côté backend (`POST /api/v1/payments/initialize`) — le montant n'est **jamais** défini côté client.
+- Redirection vers la passerelle Flutterwave.
+- Vérification via webhook Flutterwave (côté serveur).
+- Types : déblocage d'annonce, abonnement, boost, achat de crédits.
+
+## Fonctionnalités principales
+
+### Espace client
+
+- Catalogue d'annonces : pagination, filtres (ville, type, surface, prix, chambres)
+- Détail d'annonce : galerie Airbnb-style, lightbox, coordonnées floutées jusqu'au paiement
+- Tours virtuels 360° (Photo Sphere Viewer + cubemap adapter)
+- Carte interactive Mapbox : vue split liste/carte, pins de prix, heatmap
+- Recherche géographique (géolocalisation navigateur, rayon configurable)
+- Recherche en langage naturel (IA)
+- Alertes de recherche avec notifications push/email
+- Comparateur d'annonces
+- Estimateur de prix/loyer
+- Profil utilisateur, annonces débloquées, réservations de visites
+
+### Espace bailleur (`/owner`)
+
+- Publication & gestion des annonces (avec upload de tours 360°)
+- Calendrier de disponibilités & planification des visites
+- Contrats de bail & signatures électroniques
+- Gestion des locataires & documents
+- Suivi des paiements & dépenses
+- Dashboard analytique (vues, clics, favoris — Recharts)
+- Gestion des abonnements & crédits
+- Notifications Web Push et WhatsApp
+
+### SEO & Performance
+
+- Pages statiques par ville (`/immobilier/[ville]`) et par type (`/type-bien/[type]`)
+- OpenGraph dynamique par annonce avec image de prévisualisation
+- PWA : Service Worker, mode hors-ligne, installation sur écran d'accueil
+- Optimisation images (`next/image`), Turbopack, bundle analyzer
+
+## Services API consommés
+
+| Fichier service                  | Domaine                                           |
+| -------------------------------- | ------------------------------------------------- |
+| `ads.service.ts`                 | Annonces (CRUD, search, nearby, boost)            |
+| `auth.service.ts`                | Authentification                                  |
+| `users.service.ts`               | Utilisateurs, profil, recommandations             |
+| `payments.service.ts`            | Paiements Flutterwave                             |
+| `credits.service.ts`             | Achat et solde de crédits                         |
+| `cities.service.ts`              | Villes & quartiers                                |
+| `subscriptions.service.ts`       | Abonnements & plans                               |
+| `geo.service.ts`                 | Isochrones, directions, heatmap                   |
+| `viewings.service.ts`            | Disponibilités & réservations de visites          |
+| `reviews.service.ts`             | Avis et notes                                     |
+| `notifications.service.ts`       | Notifications & préférences                       |
+| `searchAlerts.service.ts`        | Alertes de recherche                              |
+| `surveys.service.ts`             | Sondages authentifiés                             |
+| `publicSurveys.service.ts`       | Sondages anonymes                                 |
+| `ad-reports.service.ts`          | Signalements d'annonces                           |
+| `agency.service.ts`              | Agences                                           |
+| `owner.service.ts`               | Espace bailleur (annonces, finances, locataires…) |
+| `property-attributes.service.ts` | Attributs et catégories de biens                  |
+| `estimator.service.ts`           | Estimation de prix/loyer                          |
 
 ## Sécurité
 
-L'application inclut des en-têtes de sécurité HTTP stricts configurés dans `next.config.ts` :
+En-têtes HTTP stricts configurés dans `next.config.ts` :
 
-- **CSP (Content Security Policy)** : Restreint les sources de scripts/styles/images (Mapbox, API KeyHome uniquement).
-- **X-XSS-Protection** : Bloque les attaques XSS cross-site.
-- **X-Frame-Options** : Empêche le clickjacking (SAMEORIGIN).
-- **X-Content-Type-Options** : Empêche le sniffing MIME.
+- **CSP** (Content Security Policy) — sources de scripts/styles/images restreintes (Mapbox, API KeyHome)
+- **X-XSS-Protection** — protection XSS cross-site
+- **X-Frame-Options: SAMEORIGIN** — protection clickjacking
+- **X-Content-Type-Options: nosniff** — prévention MIME sniffing
 
-⚠️ **Important en Production** :
-Assurez-vous que `NEXT_PUBLIC_API_URL` pointe vers une URL HTTPS sécurisée (ex: `https://api.keyhome.cm/api/v1`) pour éviter toute fuite de données ou problèmes de Mixed Content.
-
-## Details des dependances
-
-### Framework et rendu
-
-- **Next.js 16** : framework React avec App Router, rendu hybride (SSR/SSG), optimisation automatique des images via `next/image`, et bundling Turbopack
-- **React 19** : bibliotheque UI avec les derniers hooks et le support concurrent
-- **TypeScript 5** : typage statique pour une meilleure maintenabilite et detection d'erreurs a la compilation
-
-### Interface utilisateur
-
-- **Material-UI (MUI) 7** : design system complet avec composants preconçus (Button, TextField, Dialog, Autocomplete, Grid, Tabs, etc.)
-- **@mui/icons-material** : pack d'icones Material Design
-- **Emotion** (`@emotion/react`, `@emotion/styled`) : moteur CSS-in-JS utilise par MUI pour le styling dynamique et le theming
-- **Tailwind CSS 4** : classes utilitaires CSS pour le layout, le spacing et les ajustements rapides, integre via PostCSS
-
-### Gestion de l'etat et des donnees
-
-- **TanStack React Query 5** : gestion de l'etat serveur avec cache automatique, revalidation, pagination optimisee (`keepPreviousData`), et requetes conditionnelles
-- **Axios** : client HTTP avec intercepteurs pour l'injection automatique du token d'authentification et la redirection sur erreur 401
-- **nookies** : gestion des cookies cote client et serveur pour le stockage du token d'authentification
-
-### Formulaires et validation
-
-- **React Hook Form 7** : gestion performante des formulaires avec un minimum de re-renders
-- **Zod 4** : schema de validation declaratif et type-safe
-- **@hookform/resolvers** : pont entre React Hook Form et Zod pour une validation integree
-
-### Cartographie
-
-- **Mapbox GL JS 3** : rendu de cartes interactives WebGL haute performance avec markers personnalises, popups, et controles de navigation
-- **react-map-gl 8** : wrapper React pour Mapbox GL avec integration declarative
-
-### Utilitaires
-
-- **date-fns 4** : manipulation et formatage de dates (dates relatives, localisation francaise)
+⚠️ En production : `NEXT_PUBLIC_API_URL` doit pointer vers une URL **HTTPS** pour éviter
+tout problème Mixed Content ou fuite de données.
 
 ## Charte graphique
 
-La palette de couleurs est basee sur les maquettes de l'application mobile KeyHome :
+| Couleur    | Hex       | Usage                        |
+| ---------- | --------- | ---------------------------- |
+| Primary    | `#F6475F` | Boutons, liens, accents, CTA |
+| Dark       | `#222222` | Textes principaux, titres    |
+| Grey       | `#DDDDDD` | Bordures, séparateurs        |
+| Background | `#F7F7F7` | Arrière-plan des pages       |
 
-| Couleur | Hex | Usage |
-|---------|-----|-------|
-| Primary | `#F6475F` | Boutons, liens, accents, CTA |
-| Dark | `#222222` | Textes principaux, titres |
-| Grey | `#DDDDDD` | Bordures, separateurs |
-| Background | `#F7F7F7` | Arriere-plan des pages |
+Design inspiré d'Airbnb : cartes arrondies, galeries photo, barre de recherche arrondie.
+Tokens dans `src/theme/tokens.ts`. Thème MUI dans `src/theme/theme.ts`.
+L'espace bailleur possède son propre thème (`src/theme/ownerTheme.ts`).
 
-Le design suit une approche inspiree d'Airbnb : cartes a bords arrondis, galeries photos, barre de recherche arrondie, navigation epuree.
+## Déploiement
 
-## Communication avec le backend
+### Variables d'environnement production
 
-L'application communique avec l'API Laravel via une instance Axios configuree dans `src/lib/api.ts` :
+```env
+NEXT_PUBLIC_API_URL=https://api.keyhome.app/api/v1
+NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1...
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+CLERK_SECRET_KEY=sk_live_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/login
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/register
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/home
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/home
+NEXT_PUBLIC_OWNER_PANEL=next
+NEXT_PUBLIC_AGENCY_URL=https://api.keyhome.app/agency
+NEXT_PUBLIC_ADMIN_URL=https://api.keyhome.app/admin
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=
+```
 
-- **Authentification** : token Bearer stocke dans un cookie (`auth_token`), injecte automatiquement dans chaque requete
-- **Gestion des erreurs** : interception des reponses 401 pour deconnexion automatique et redirection vers `/login`
-- **Base URL** : configurable via la variable d'environnement `NEXT_PUBLIC_API_URL`
-
-### Endpoints principaux consommes
-
-| Service | Endpoints |
-|---------|-----------|
-| Auth | `POST /login`, `POST /register/customer`, `POST /forgot-password`, `POST /reset-password`, `GET /user` |
-| Annonces | `GET /ads`, `GET /ads/{id}`, `GET /ads/search`, `GET /ads/nearby` |
-| Paiements | `POST /payments/initialize` |
-| Villes | `GET /cities` |
-| Utilisateurs | `PUT /user`, `POST /user/avatar`, `PUT /user/password` |
-
-## Deploiement
-
-### Vercel (recommande)
+### Vercel (recommandé)
 
 ```bash
-# Installer Vercel CLI
 npm i -g vercel
-
-# Deployer
 vercel
 ```
 
 Configurer les variables d'environnement dans le dashboard Vercel.
 
-### Docker (alternatif)
+### Docker
 
 ```dockerfile
 FROM node:18-alpine AS builder
@@ -260,13 +343,6 @@ EXPOSE 3000
 CMD ["npm", "start"]
 ```
 
-### Variables d'environnement de production
-
-```env
-NEXT_PUBLIC_API_URL=https://api.keyhome.cm/api/v1
-NEXT_PUBLIC_MAPBOX_TOKEN=pk.xxxxx
-```
-
 ## Licence
 
-Projet prive - NeoCraft. Tous droits reserves.
+Projet privé — NeoCraft. Tous droits réservés.

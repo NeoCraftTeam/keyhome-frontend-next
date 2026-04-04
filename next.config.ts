@@ -113,6 +113,16 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [];
   },
+  // Permanent redirect for old /ads/:uuid/:slug URLs → clean /ads/:slug
+  async redirects() {
+    return [
+      {
+        source: '/ads/:id/:slug',
+        destination: '/ads/:slug',
+        permanent: true,
+      },
+    ];
+  },
   experimental: {
     // Rewrite barrel imports to direct module paths for much smaller bundles.
     // Particularly important for @mui/icons-material which has 3 000+ icons.
@@ -121,6 +131,8 @@ const nextConfig: NextConfig = {
       '@mui/icons-material',
       '@mui/lab',
     ],
+    workerThreads: false,
+    cpus: 1,
   },
   images: {
     formats: ['image/avif', 'image/webp'],
