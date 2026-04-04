@@ -2,13 +2,11 @@
 
 import { formatPrice } from '@/lib/constants';
 import { Ad } from '@/types';
-import {
-  Edit as EditIcon,
-  Visibility as VisibleIcon,
-  VisibilityOff as HiddenIcon,
-  RocketLaunch as BoostIcon,
-  Verified as VerifiedIcon,
-} from '@mui/icons-material';
+import EditIcon from '@mui/icons-material/Edit';
+import VisibleIcon from '@mui/icons-material/Visibility';
+import HiddenIcon from '@mui/icons-material/VisibilityOff';
+import BoostIcon from '@mui/icons-material/RocketLaunch';
+import VerifiedIcon from '@mui/icons-material/Verified';
 import {
   Box,
   Chip,

@@ -17,16 +17,14 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import {
-  ArrowForward,
-  BookmarkAdded,
-  CalendarMonth,
-  CheckCircle,
-  Description,
-  Person,
-  Phone,
-  LocationOn,
-} from '@mui/icons-material';
+import ArrowForward from '@mui/icons-material/ArrowForward';
+import BookmarkAdded from '@mui/icons-material/BookmarkAdded';
+import CalendarMonth from '@mui/icons-material/CalendarMonth';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import Description from '@mui/icons-material/Description';
+import Person from '@mui/icons-material/Person';
+import Phone from '@mui/icons-material/Phone';
+import LocationOn from '@mui/icons-material/LocationOn';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';

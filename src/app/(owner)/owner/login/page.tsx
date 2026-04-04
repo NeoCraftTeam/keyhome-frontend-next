@@ -7,11 +7,9 @@ import { getSafeErrorMessage } from '@/lib/error-messages';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { OWNER_LOGIN_HERO_SRC, OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { useAuth } from '@/providers/AuthProvider';
-import {
-  Email as EmailIcon,
-  Visibility,
-  VisibilityOff,
-} from '@mui/icons-material';
+import EmailIcon from '@mui/icons-material/Email';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
   Alert,
   Box,

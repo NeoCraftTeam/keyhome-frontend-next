@@ -1,4 +1,4 @@
-import { LocationOn as LocationIcon } from '@mui/icons-material';
+import LocationIcon from '@mui/icons-material/LocationOn';
 import {
   Autocomplete,
   FormControl,
@@ -33,7 +33,10 @@ interface AdFormLocationProps {
   onQuarterInputChange: (value: string) => void;
   onQuarterChange: (quarter: Quarter | null) => void;
   citySlotProps: object;
-  renderCityOption: (props: React.HTMLAttributes<HTMLLIElement>, option: City) => React.ReactNode;
+  renderCityOption: (
+    props: React.HTMLAttributes<HTMLLIElement>,
+    option: City
+  ) => React.ReactNode;
   cityInputSx: object;
 }
 
@@ -89,7 +92,9 @@ export default function AdFormLocation({
                     ...params.InputProps,
                     startAdornment: (
                       <InputAdornment position="start">
-                        <LocationIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                        <LocationIcon
+                          sx={{ color: 'text.secondary', fontSize: 20 }}
+                        />
                       </InputAdornment>
                     ),
                   },

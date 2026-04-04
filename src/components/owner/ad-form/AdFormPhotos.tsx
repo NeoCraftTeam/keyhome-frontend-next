@@ -1,8 +1,6 @@
-import {
-  CloudUpload as CloudUploadIcon,
-  Delete as DeleteIcon,
-  PhotoCamera as PhotoCameraIcon,
-} from '@mui/icons-material';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import {
   Box,
   Button,

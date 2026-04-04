@@ -1,36 +1,34 @@
-import {
-  CheckCircle as CheckCircleIcon,
-  CheckCircleOutline as CheckCircleOutlineIcon,
-  Wifi as WifiIcon,
-  Pool as PoolIcon,
-  AcUnit as AcUnitIcon,
-  Elevator as ElevatorIcon,
-  Kitchen as KitchenIcon,
-  Yard as YardIcon,
-  Fireplace as FireplaceIcon,
-  FitnessCenter as FitnessCenterIcon,
-  Security as SecurityIcon,
-  LocalLaundryService as LaundryServiceIcon,
-  Tv as TvIcon,
-  BalconyOutlined as BalconyIcon,
-  WaterDrop as WaterDropIcon,
-  ElectricBolt as ElectricBoltIcon,
-  Garage as GarageIcon,
-  DirectionsCar as DirectionsCarIcon,
-  Bathtub as BathtubIcon,
-  Bed as BedIcon,
-  Shower as ShowerIcon,
-  LocalParking as ParkingIcon,
-  LocalBar as LocalBarIcon,
-  LocalCafe as LocalCafeIcon,
-  Deck as DeckIcon,
-  Fence as FenceIcon,
-  Alarm as AlarmIcon,
-  Roofing as RoofingIcon,
-  Spa as SpaIcon,
-  SportsSoccer as SportsSoccerIcon,
-  Lightbulb as LightbulbIcon,
-} from '@mui/icons-material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import WifiIcon from '@mui/icons-material/Wifi';
+import PoolIcon from '@mui/icons-material/Pool';
+import AcUnitIcon from '@mui/icons-material/AcUnit';
+import ElevatorIcon from '@mui/icons-material/Elevator';
+import KitchenIcon from '@mui/icons-material/Kitchen';
+import YardIcon from '@mui/icons-material/Yard';
+import FireplaceIcon from '@mui/icons-material/Fireplace';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import SecurityIcon from '@mui/icons-material/Security';
+import LaundryServiceIcon from '@mui/icons-material/LocalLaundryService';
+import TvIcon from '@mui/icons-material/Tv';
+import BalconyIcon from '@mui/icons-material/BalconyOutlined';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
+import GarageIcon from '@mui/icons-material/Garage';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import BathtubIcon from '@mui/icons-material/Bathtub';
+import BedIcon from '@mui/icons-material/Bed';
+import ShowerIcon from '@mui/icons-material/Shower';
+import ParkingIcon from '@mui/icons-material/LocalParking';
+import LocalBarIcon from '@mui/icons-material/LocalBar';
+import LocalCafeIcon from '@mui/icons-material/LocalCafe';
+import DeckIcon from '@mui/icons-material/Deck';
+import FenceIcon from '@mui/icons-material/Fence';
+import AlarmIcon from '@mui/icons-material/Alarm';
+import RoofingIcon from '@mui/icons-material/Roofing';
+import SpaIcon from '@mui/icons-material/Spa';
+import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { Autocomplete, Box, Paper, TextField, Typography } from '@mui/material';
 import type { AdFormValues, AttributeOption, UpdateFn } from './types';
@@ -73,7 +71,11 @@ const ATTRIBUTE_ICON_MAP: Record<string, SvgIconComponent> = {
 const getAttributeIcon = (iconName?: string): SvgIconComponent => {
   if (!iconName) return CheckCircleOutlineIcon;
   const cleaned = iconName.replace(/^heroicon-[o-s]-/, '');
-  return ATTRIBUTE_ICON_MAP[iconName] ?? ATTRIBUTE_ICON_MAP[cleaned] ?? CheckCircleOutlineIcon;
+  return (
+    ATTRIBUTE_ICON_MAP[iconName] ??
+    ATTRIBUTE_ICON_MAP[cleaned] ??
+    CheckCircleOutlineIcon
+  );
 };
 
 interface AdFormEquipmentProps {
@@ -82,12 +84,24 @@ interface AdFormEquipmentProps {
   autocompleteOptions: AttributeOption[];
 }
 
-export default function AdFormEquipment({ values, update, autocompleteOptions }: AdFormEquipmentProps) {
+export default function AdFormEquipment({
+  values,
+  update,
+  autocompleteOptions,
+}: AdFormEquipmentProps) {
   if (autocompleteOptions.length === 0) return null;
 
   return (
     <Paper elevation={0} sx={sectionSx}>
-      <Typography variant="subtitle1" sx={{ ...sectionTitleSx, display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Typography
+        variant="subtitle1"
+        sx={{
+          ...sectionTitleSx,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+        }}
+      >
         <CheckCircleIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         Équipements & Services
       </Typography>
@@ -100,7 +114,10 @@ export default function AdFormEquipment({ values, update, autocompleteOptions }:
           .map((v) => autocompleteOptions.find((a) => a.value === v))
           .filter((a): a is AttributeOption => !!a)}
         onChange={(_, newValue) => {
-          update('attributes', newValue.map((opt) => opt.value));
+          update(
+            'attributes',
+            newValue.map((opt) => opt.value)
+          );
         }}
         isOptionEqualToValue={(opt, val) => opt.value === val.value}
         renderOption={(props, option) => {

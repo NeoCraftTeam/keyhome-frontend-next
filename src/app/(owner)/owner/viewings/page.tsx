@@ -1,20 +1,21 @@
 'use client';
 
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
-import { ownerService, type OwnerViewingReservation } from '@/services/owner.service';
 import {
-  CalendarMonth as CalendarIcon,
-  CheckCircleOutline as ConfirmIcon,
-  CancelOutlined as CancelIcon,
-  EditNote as NotesIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
-  ExpandMore as ExpandIcon,
-  FilterList as FilterIcon,
-  AccessTime as TimeIcon,
-  Person as PersonIcon,
-  Home as AdIcon,
-} from '@mui/icons-material';
+  ownerService,
+  type OwnerViewingReservation,
+} from '@/services/owner.service';
+import CalendarIcon from '@mui/icons-material/CalendarMonth';
+import ConfirmIcon from '@mui/icons-material/CheckCircleOutline';
+import CancelIcon from '@mui/icons-material/CancelOutlined';
+import NotesIcon from '@mui/icons-material/EditNote';
+import PhoneIcon from '@mui/icons-material/Phone';
+import EmailIcon from '@mui/icons-material/Email';
+import ExpandIcon from '@mui/icons-material/ExpandMore';
+import FilterIcon from '@mui/icons-material/FilterList';
+import TimeIcon from '@mui/icons-material/AccessTime';
+import PersonIcon from '@mui/icons-material/Person';
+import AdIcon from '@mui/icons-material/Home';
 import {
   Alert,
   Box,
@@ -87,7 +88,10 @@ function formatDateTimeShort(dateStr: string, timeStr: string) {
   }
 }
 
-const STATUS_CONFIG: Record<string, { color: 'warning' | 'success' | 'default' | 'error'; label: string }> = {
+const STATUS_CONFIG: Record<
+  string,
+  { color: 'warning' | 'success' | 'default' | 'error'; label: string }
+> = {
   pending: { color: 'warning', label: 'En attente' },
   confirmed: { color: 'success', label: 'Confirmée' },
   cancelled: { color: 'error', label: 'Annulée' },
@@ -101,14 +105,21 @@ export default function OwnerViewingsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Dialog states
-  const [confirmDialog, setConfirmDialog] = useState<OwnerViewingReservation | null>(null);
-  const [cancelDialog, setCancelDialog] = useState<OwnerViewingReservation | null>(null);
+  const [confirmDialog, setConfirmDialog] =
+    useState<OwnerViewingReservation | null>(null);
+  const [cancelDialog, setCancelDialog] =
+    useState<OwnerViewingReservation | null>(null);
   const [cancelReason, setCancelReason] = useState('');
-  const [notesDialog, setNotesDialog] = useState<OwnerViewingReservation | null>(null);
+  const [notesDialog, setNotesDialog] =
+    useState<OwnerViewingReservation | null>(null);
   const [notesValue, setNotesValue] = useState('');
 
   // Snackbar
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
     open: false,
     message: '',
     severity: 'success',
@@ -136,12 +147,20 @@ export default function OwnerViewingsPage() {
   const confirmMutation = useMutation({
     mutationFn: (id: string) => ownerService.confirmReservation(id),
     onSuccess: () => {
-      setSnackbar({ open: true, message: 'Visite confirmée avec succès !', severity: 'success' });
+      setSnackbar({
+        open: true,
+        message: 'Visite confirmée avec succès !',
+        severity: 'success',
+      });
       setConfirmDialog(null);
       invalidateReservations();
     },
     onError: () => {
-      setSnackbar({ open: true, message: 'Erreur lors de la confirmation.', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: 'Erreur lors de la confirmation.',
+        severity: 'error',
+      });
     },
   });
 
@@ -150,13 +169,21 @@ export default function OwnerViewingsPage() {
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       ownerService.cancelReservation(id, reason),
     onSuccess: () => {
-      setSnackbar({ open: true, message: 'Visite annulée.', severity: 'success' });
+      setSnackbar({
+        open: true,
+        message: 'Visite annulée.',
+        severity: 'success',
+      });
       setCancelDialog(null);
       setCancelReason('');
       invalidateReservations();
     },
     onError: () => {
-      setSnackbar({ open: true, message: "Erreur lors de l'annulation.", severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: "Erreur lors de l'annulation.",
+        severity: 'error',
+      });
     },
   });
 
@@ -165,18 +192,27 @@ export default function OwnerViewingsPage() {
     mutationFn: ({ id, notes }: { id: string; notes: string }) =>
       ownerService.updateReservationNotes(id, notes),
     onSuccess: () => {
-      setSnackbar({ open: true, message: 'Notes enregistrées.', severity: 'success' });
+      setSnackbar({
+        open: true,
+        message: 'Notes enregistrées.',
+        severity: 'success',
+      });
       setNotesDialog(null);
       setNotesValue('');
       invalidateReservations();
     },
     onError: () => {
-      setSnackbar({ open: true, message: 'Erreur lors de la sauvegarde.', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: 'Erreur lors de la sauvegarde.',
+        severity: 'error',
+      });
     },
   });
 
   const isPending = (r: OwnerViewingReservation) => r.status === 'pending';
-  const isActive = (r: OwnerViewingReservation) => r.status === 'pending' || r.status === 'confirmed';
+  const isActive = (r: OwnerViewingReservation) =>
+    r.status === 'pending' || r.status === 'confirmed';
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
@@ -195,18 +231,28 @@ export default function OwnerViewingsPage() {
         sx={{ mb: 3 }}
       >
         <Box sx={{ minWidth: 0 }}>
-          <Typography variant="h4" fontWeight={800} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+          <Typography
+            variant="h4"
+            fontWeight={800}
+            gutterBottom
+            sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+          >
             Demandes de visite
           </Typography>
           <Typography color="text.secondary" sx={{ maxWidth: 640 }}>
-            Gérez les demandes de visite sur vos annonces. Confirmez, annulez et ajoutez des notes.
+            Gérez les demandes de visite sur vos annonces. Confirmez, annulez et
+            ajoutez des notes.
           </Typography>
         </Box>
         <Button
           variant="outlined"
           startIcon={<FilterIcon />}
           onClick={() => setShowFilters(!showFilters)}
-          sx={{ borderRadius: 2, textTransform: 'none', alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            alignSelf: { xs: 'stretch', sm: 'flex-start' },
+          }}
         >
           Filtrer
         </Button>
@@ -214,7 +260,16 @@ export default function OwnerViewingsPage() {
 
       {/* Filters */}
       <Collapse in={showFilters}>
-        <Box sx={{ mb: 3, p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Box
+          sx={{
+            mb: 3,
+            p: 2,
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+          }}
+        >
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>Statut</InputLabel>
             <Select
@@ -237,8 +292,20 @@ export default function OwnerViewingsPage() {
 
       {/* Filtres rapides par statut (les totaux viennent de l’API paginée — pas de compteur trompeur) */}
       {!isLoading && reservations.length > 0 && (
-        <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Typography variant="caption" color="text.secondary" sx={{ width: '100%', mb: 0.5, fontWeight: 600 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            mb: 3,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ width: '100%', mb: 0.5, fontWeight: 600 }}
+          >
             Filtrer par statut
           </Typography>
           {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
@@ -261,7 +328,12 @@ export default function OwnerViewingsPage() {
       {isLoading ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} variant="rectangular" height={130} sx={{ borderRadius: 3 }} />
+            <Skeleton
+              key={i}
+              variant="rectangular"
+              height={130}
+              sx={{ borderRadius: 3 }}
+            />
           ))}
         </Box>
       ) : reservations.length === 0 ? (
@@ -281,7 +353,8 @@ export default function OwnerViewingsPage() {
           </Typography>
           <Typography color="text.secondary" sx={{ maxWidth: 400, mx: 'auto' }}>
             Les demandes de visite pour vos annonces apparaîtront ici.
-            Configurez les créneaux de disponibilité sur chaque annonce pour recevoir des demandes.
+            Configurez les créneaux de disponibilité sur chaque annonce pour
+            recevoir des demandes.
           </Typography>
         </Card>
       ) : (
@@ -289,7 +362,8 @@ export default function OwnerViewingsPage() {
         <>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {reservations.map((r) => {
-              const statusCfg = STATUS_CONFIG[r.status] || STATUS_CONFIG.expired;
+              const statusCfg =
+                STATUS_CONFIG[r.status] || STATUS_CONFIG.expired;
               const isExpanded = expandedId === r.id;
 
               return (
@@ -316,16 +390,44 @@ export default function OwnerViewingsPage() {
                     >
                       <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
                         {/* Ad title */}
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
-                          <AdIcon sx={{ fontSize: 18, color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
-                          <Typography fontWeight={700} variant="body1" sx={{ wordBreak: 'break-word', minWidth: 0 }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 1,
+                            mb: 0.5,
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          <AdIcon
+                            sx={{
+                              fontSize: 18,
+                              color: 'primary.main',
+                              mt: 0.25,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <Typography
+                            fontWeight={700}
+                            variant="body1"
+                            sx={{ wordBreak: 'break-word', minWidth: 0 }}
+                          >
                             {r.ad?.title || 'Annonce'}
                           </Typography>
                         </Box>
 
                         {/* Client info */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                          <PersonIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            mb: 0.5,
+                          }}
+                        >
+                          <PersonIcon
+                            sx={{ fontSize: 16, color: 'text.secondary' }}
+                          />
                           <Typography variant="body2" color="text.secondary">
                             {r.client
                               ? `${r.client.firstname} ${r.client.lastname}`
@@ -338,7 +440,9 @@ export default function OwnerViewingsPage() {
                                 href={`tel:${r.client.phone_number}`}
                                 sx={{ p: 0.25 }}
                               >
-                                <PhoneIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                <PhoneIcon
+                                  sx={{ fontSize: 14, color: 'text.secondary' }}
+                                />
                               </IconButton>
                             </Tooltip>
                           )}
@@ -349,21 +453,49 @@ export default function OwnerViewingsPage() {
                                 href={`mailto:${r.client.email}`}
                                 sx={{ p: 0.25 }}
                               >
-                                <EmailIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                <EmailIcon
+                                  sx={{ fontSize: 14, color: 'text.secondary' }}
+                                />
                               </IconButton>
                             </Tooltip>
                           )}
                         </Box>
 
                         {/* Date/time */}
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                          <TimeIcon sx={{ fontSize: 16, color: 'text.secondary', mt: 0.25, flexShrink: 0 }} />
-                          <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
-                            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 1,
+                          }}
+                        >
+                          <TimeIcon
+                            sx={{
+                              fontSize: 16,
+                              color: 'text.secondary',
+                              mt: 0.25,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ wordBreak: 'break-word' }}
+                          >
+                            <Box
+                              component="span"
+                              sx={{ display: { xs: 'none', sm: 'inline' } }}
+                            >
                               {formatDateTime(r.slot_date, r.slot_starts_at)}
                             </Box>
-                            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-                              {formatDateTimeShort(r.slot_date, r.slot_starts_at)}
+                            <Box
+                              component="span"
+                              sx={{ display: { xs: 'inline', sm: 'none' } }}
+                            >
+                              {formatDateTimeShort(
+                                r.slot_date,
+                                r.slot_starts_at
+                              )}
                             </Box>
                           </Typography>
                         </Box>
@@ -414,7 +546,10 @@ export default function OwnerViewingsPage() {
                     <Box
                       sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(auto-fit, minmax(120px, auto))' },
+                        gridTemplateColumns: {
+                          xs: 'repeat(2, minmax(0, 1fr))',
+                          sm: 'repeat(auto-fit, minmax(120px, auto))',
+                        },
                         gap: 1,
                         mt: 2,
                         pt: 1.5,
@@ -430,7 +565,12 @@ export default function OwnerViewingsPage() {
                           color="success"
                           startIcon={<ConfirmIcon />}
                           onClick={() => setConfirmDialog(r)}
-                          sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600, fontSize: '0.8rem' }}
+                          sx={{
+                            borderRadius: 1.5,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            fontSize: '0.8rem',
+                          }}
                         >
                           Confirmer
                         </Button>
@@ -442,7 +582,12 @@ export default function OwnerViewingsPage() {
                           color="error"
                           startIcon={<CancelIcon />}
                           onClick={() => setCancelDialog(r)}
-                          sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600, fontSize: '0.8rem' }}
+                          sx={{
+                            borderRadius: 1.5,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            fontSize: '0.8rem',
+                          }}
                         >
                           Annuler
                         </Button>
@@ -456,7 +601,12 @@ export default function OwnerViewingsPage() {
                           setNotesDialog(r);
                           setNotesValue(r.landlord_notes || '');
                         }}
-                        sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600, fontSize: '0.8rem' }}
+                        sx={{
+                          borderRadius: 1.5,
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          fontSize: '0.8rem',
+                        }}
                       >
                         {r.landlord_notes ? 'Modifier notes' : 'Ajouter notes'}
                       </Button>
@@ -498,18 +648,35 @@ export default function OwnerViewingsPage() {
                           gap: 1.5,
                         }}
                       >
-                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
+                        <Box
+                          sx={{
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                            gap: 1.5,
+                          }}
+                        >
                           <Box>
-                            <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase">
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              fontWeight={700}
+                              textTransform="uppercase"
+                            >
                               Créneau
                             </Typography>
                             <Typography variant="body2">
-                              {r.slot_date} de {r.slot_starts_at} à {r.slot_ends_at}
+                              {r.slot_date} de {r.slot_starts_at} à{' '}
+                              {r.slot_ends_at}
                             </Typography>
                           </Box>
                           {r.expires_at && (
                             <Box>
-                              <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase">
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                fontWeight={700}
+                                textTransform="uppercase"
+                              >
                                 Expire le
                               </Typography>
                               <Typography variant="body2">
@@ -519,25 +686,44 @@ export default function OwnerViewingsPage() {
                           )}
                           {r.client?.phone_number && (
                             <Box>
-                              <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase">
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                fontWeight={700}
+                                textTransform="uppercase"
+                              >
                                 Téléphone
                               </Typography>
-                              <Typography variant="body2">{r.client.phone_number}</Typography>
+                              <Typography variant="body2">
+                                {r.client.phone_number}
+                              </Typography>
                             </Box>
                           )}
                           {r.client?.email && (
                             <Box>
-                              <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase">
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                fontWeight={700}
+                                textTransform="uppercase"
+                              >
                                 Email
                               </Typography>
-                              <Typography variant="body2">{r.client.email}</Typography>
+                              <Typography variant="body2">
+                                {r.client.email}
+                              </Typography>
                             </Box>
                           )}
                         </Box>
 
                         {r.landlord_notes && (
                           <Box>
-                            <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase">
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              fontWeight={700}
+                              textTransform="uppercase"
+                            >
                               Mes notes
                             </Typography>
                             <Typography
@@ -562,7 +748,9 @@ export default function OwnerViewingsPage() {
                             <Typography variant="body2" fontWeight={600}>
                               Motif d&apos;annulation :
                             </Typography>
-                            <Typography variant="body2">{r.cancellation_reason}</Typography>
+                            <Typography variant="body2">
+                              {r.cancellation_reason}
+                            </Typography>
                           </Alert>
                         )}
                       </Box>
@@ -601,10 +789,16 @@ export default function OwnerViewingsPage() {
           {confirmDialog && (
             <Typography variant="body2" color="text.secondary">
               Confirmez la visite du{' '}
-              <strong>{formatDateTime(confirmDialog.slot_date, confirmDialog.slot_starts_at)}</strong>{' '}
+              <strong>
+                {formatDateTime(
+                  confirmDialog.slot_date,
+                  confirmDialog.slot_starts_at
+                )}
+              </strong>{' '}
               pour{' '}
               <strong>
-                {confirmDialog.client?.firstname} {confirmDialog.client?.lastname}
+                {confirmDialog.client?.firstname}{' '}
+                {confirmDialog.client?.lastname}
               </strong>{' '}
               ? Le locataire sera notifié par email.
             </Typography>
@@ -620,11 +814,15 @@ export default function OwnerViewingsPage() {
           <Button
             variant="contained"
             color="success"
-            onClick={() => confirmDialog && confirmMutation.mutate(confirmDialog.id)}
+            onClick={() =>
+              confirmDialog && confirmMutation.mutate(confirmDialog.id)
+            }
             disabled={confirmMutation.isPending}
             sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}
           >
-            {confirmMutation.isPending ? 'Confirmation...' : 'Confirmer la visite'}
+            {confirmMutation.isPending
+              ? 'Confirmation...'
+              : 'Confirmer la visite'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -648,10 +846,16 @@ export default function OwnerViewingsPage() {
             <>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Annuler la visite du{' '}
-                <strong>{formatDateTime(cancelDialog.slot_date, cancelDialog.slot_starts_at)}</strong>{' '}
+                <strong>
+                  {formatDateTime(
+                    cancelDialog.slot_date,
+                    cancelDialog.slot_starts_at
+                  )}
+                </strong>{' '}
                 pour{' '}
                 <strong>
-                  {cancelDialog.client?.firstname} {cancelDialog.client?.lastname}
+                  {cancelDialog.client?.firstname}{' '}
+                  {cancelDialog.client?.lastname}
                 </strong>{' '}
                 ? Le locataire sera notifié.
               </Typography>

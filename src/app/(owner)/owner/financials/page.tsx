@@ -1,12 +1,14 @@
 'use client';
 
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
-import { ownerService, type Expense, type ExpensePayload } from '@/services/owner.service';
 import {
-  AccountBalance as AccountBalanceIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+  ownerService,
+  type Expense,
+  type ExpensePayload,
+} from '@/services/owner.service';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
   Alert,
   Box,
@@ -36,7 +38,14 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import {
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  Legend,
+} from 'recharts';
 
 const EXPENSE_CATEGORIES: { value: Expense['category']; label: string }[] = [
   { value: 'maintenance', label: 'Maintenance' },
@@ -47,7 +56,14 @@ const EXPENSE_CATEGORIES: { value: Expense['category']; label: string }[] = [
   { value: 'other', label: 'Autre' },
 ];
 
-const PIE_COLORS = ['#0d9488', '#f59e0b', '#6366f1', '#ec4899', '#10b981', '#64748b'];
+const PIE_COLORS = [
+  '#0d9488',
+  '#f59e0b',
+  '#6366f1',
+  '#ec4899',
+  '#10b981',
+  '#64748b',
+];
 
 const EMPTY_FORM: ExpensePayload = {
   amount: 0,
@@ -67,7 +83,10 @@ export default function OwnerFinancialsPage() {
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [form, setForm] = useState<ExpensePayload>(EMPTY_FORM);
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
-  const [snackbar, setSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    message: string;
+    severity: 'success' | 'error';
+  } | null>(null);
 
   const { data: adsData, isLoading: adsLoading } = useQuery({
     queryKey: ['owner-my-ads-select'],
@@ -83,7 +102,8 @@ export default function OwnerFinancialsPage() {
 
   const { data: expensesData, isLoading: expensesLoading } = useQuery({
     queryKey: ['owner-expenses', selectedAdId, expensePage],
-    queryFn: () => ownerService.getExpenses(selectedAdId, { page: expensePage }),
+    queryFn: () =>
+      ownerService.getExpenses(selectedAdId, { page: expensePage }),
     enabled: Boolean(selectedAdId),
   });
 
@@ -91,29 +111,44 @@ export default function OwnerFinancialsPage() {
   const expensesMeta = expensesData?.meta;
 
   const createExpenseMutation = useMutation({
-    mutationFn: (payload: ExpensePayload) => ownerService.createExpense(selectedAdId, payload),
+    mutationFn: (payload: ExpensePayload) =>
+      ownerService.createExpense(selectedAdId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['owner-expenses', selectedAdId] });
-      queryClient.invalidateQueries({ queryKey: ['owner-profit-loss', selectedAdId] });
+      queryClient.invalidateQueries({
+        queryKey: ['owner-expenses', selectedAdId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['owner-profit-loss', selectedAdId],
+      });
       setAddExpenseOpen(false);
       setForm(EMPTY_FORM);
-      setSnackbar({ message: 'Dépense ajoutée avec succès', severity: 'success' });
+      setSnackbar({
+        message: 'Dépense ajoutée avec succès',
+        severity: 'success',
+      });
     },
     onError: () => {
-      setSnackbar({ message: 'Erreur lors de l\'ajout', severity: 'error' });
+      setSnackbar({ message: "Erreur lors de l'ajout", severity: 'error' });
     },
   });
 
   const deleteExpenseMutation = useMutation({
     mutationFn: (id: string) => ownerService.deleteExpense(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['owner-expenses', selectedAdId] });
-      queryClient.invalidateQueries({ queryKey: ['owner-profit-loss', selectedAdId] });
+      queryClient.invalidateQueries({
+        queryKey: ['owner-expenses', selectedAdId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['owner-profit-loss', selectedAdId],
+      });
       setDeleteTarget(null);
       setSnackbar({ message: 'Dépense supprimée', severity: 'success' });
     },
     onError: () => {
-      setSnackbar({ message: 'Erreur lors de la suppression', severity: 'error' });
+      setSnackbar({
+        message: 'Erreur lors de la suppression',
+        severity: 'error',
+      });
     },
   });
 
@@ -145,7 +180,14 @@ export default function OwnerFinancialsPage() {
       </Typography>
 
       {/* Ad selector */}
-      <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 3 }}>
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+          mb: 3,
+        }}
+      >
         <CardContent>
           <FormControl fullWidth>
             <InputLabel id="ad-select-label">Sélectionnez un bien</InputLabel>
@@ -183,20 +225,34 @@ export default function OwnerFinancialsPage() {
             textAlign: 'center',
           }}
         >
-          <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+          <AccountBalanceIcon
+            sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }}
+          />
           <Typography variant="h6" fontWeight={600} gutterBottom>
             Sélectionnez un bien pour voir les finances
           </Typography>
           <Typography color="text.secondary">
-            Choisissez un bien immobilier ci-dessus pour consulter son bilan financier.
+            Choisissez un bien immobilier ci-dessus pour consulter son bilan
+            financier.
           </Typography>
         </Card>
       ) : (
         <>
           {/* Profit/Loss Summary */}
-          <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 3 }}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              border: '1px solid',
+              borderColor: 'divider',
+              mb: 3,
+            }}
+          >
             <CardContent>
-              <Typography variant="overline" color="text.secondary" fontWeight={700}>
+              <Typography
+                variant="overline"
+                color="text.secondary"
+                fontWeight={700}
+              >
                 Bilan financier
               </Typography>
               {profitLoading ? (
@@ -216,7 +272,11 @@ export default function OwnerFinancialsPage() {
                     <Typography variant="body2" color="text.secondary">
                       Total dépenses
                     </Typography>
-                    <Typography variant="h6" fontWeight={700} color="error.main">
+                    <Typography
+                      variant="h6"
+                      fontWeight={700}
+                      color="error.main"
+                    >
                       {formatCurrency(profitLoss?.total_expenses ?? 0)}
                     </Typography>
                   </Box>
@@ -224,7 +284,11 @@ export default function OwnerFinancialsPage() {
                     <Typography variant="body2" color="text.secondary">
                       Revenus (contrats)
                     </Typography>
-                    <Typography variant="h6" fontWeight={700} color="success.main">
+                    <Typography
+                      variant="h6"
+                      fontWeight={700}
+                      color="success.main"
+                    >
                       {formatCurrency(profitLoss?.contract_revenue ?? 0)}
                     </Typography>
                   </Box>
@@ -235,7 +299,11 @@ export default function OwnerFinancialsPage() {
                     <Typography
                       variant="h6"
                       fontWeight={700}
-                      color={(profitLoss?.net_income ?? 0) >= 0 ? 'success.main' : 'error.main'}
+                      color={
+                        (profitLoss?.net_income ?? 0) >= 0
+                          ? 'success.main'
+                          : 'error.main'
+                      }
                     >
                       {formatCurrency(profitLoss?.net_income ?? 0)}
                     </Typography>
@@ -247,9 +315,20 @@ export default function OwnerFinancialsPage() {
 
           {/* Pie chart */}
           {!profitLoading && pieData.length > 0 && (
-            <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 3 }}>
+            <Card
+              sx={{
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'divider',
+                mb: 3,
+              }}
+            >
               <CardContent>
-                <Typography variant="overline" color="text.secondary" fontWeight={700}>
+                <Typography
+                  variant="overline"
+                  color="text.secondary"
+                  fontWeight={700}
+                >
                   Dépenses par catégorie
                 </Typography>
                 <Box sx={{ height: 280, mt: 2 }}>
@@ -265,11 +344,17 @@ export default function OwnerFinancialsPage() {
                         dataKey="value"
                       >
                         {pieData.map((_, index) => (
-                          <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                          <Cell
+                            key={index}
+                            fill={PIE_COLORS[index % PIE_COLORS.length]}
+                          />
                         ))}
                       </Pie>
                       <RechartsTooltip
-                        formatter={(value) => [formatCurrency(Number(value ?? 0)), '']}
+                        formatter={(value) => [
+                          formatCurrency(Number(value ?? 0)),
+                          '',
+                        ]}
                       />
                       <Legend />
                     </PieChart>
@@ -280,7 +365,12 @@ export default function OwnerFinancialsPage() {
           )}
 
           {/* Expenses list */}
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ mb: 2 }}
+          >
             <Typography variant="h6" fontWeight={700}>
               Dépenses
             </Typography>
@@ -301,7 +391,12 @@ export default function OwnerFinancialsPage() {
           {expensesLoading ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} variant="rectangular" height={72} sx={{ borderRadius: 2 }} />
+                <Skeleton
+                  key={i}
+                  variant="rectangular"
+                  height={72}
+                  sx={{ borderRadius: 2 }}
+                />
               ))}
             </Box>
           ) : expenses.length === 0 ? (
@@ -314,7 +409,9 @@ export default function OwnerFinancialsPage() {
                 textAlign: 'center',
               }}
             >
-              <Typography color="text.secondary">Aucune dépense enregistrée pour ce bien.</Typography>
+              <Typography color="text.secondary">
+                Aucune dépense enregistrée pour ce bien.
+              </Typography>
             </Card>
           ) : (
             <>
@@ -329,9 +426,17 @@ export default function OwnerFinancialsPage() {
                     }}
                   >
                     <CardContent sx={{ py: '12px !important', px: 2 }}>
-                      <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                      >
                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Stack direction="row" spacing={1.5} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={1.5}
+                            alignItems="center"
+                          >
                             <Typography fontWeight={700} color="error.main">
                               {formatCurrency(expense.amount)}
                             </Typography>
@@ -349,16 +454,23 @@ export default function OwnerFinancialsPage() {
                             </Typography>
                           </Stack>
                           {expense.description && (
-                            <Typography variant="body2" color="text.secondary" noWrap>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              noWrap
+                            >
                               {expense.description}
                             </Typography>
                           )}
                           <Typography variant="caption" color="text.disabled">
-                            {new Date(expense.expense_date).toLocaleDateString('fr-FR', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
+                            {new Date(expense.expense_date).toLocaleDateString(
+                              'fr-FR',
+                              {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              }
+                            )}
                           </Typography>
                         </Box>
                         <Tooltip title="Supprimer">
@@ -411,7 +523,9 @@ export default function OwnerFinancialsPage() {
               label="Montant (XAF) *"
               type="number"
               value={form.amount || ''}
-              onChange={(e) => setForm((f) => ({ ...f, amount: Number(e.target.value) }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, amount: Number(e.target.value) }))
+              }
               fullWidth
               autoFocus
               inputProps={{ min: 0 }}
@@ -423,7 +537,10 @@ export default function OwnerFinancialsPage() {
                 value={form.category}
                 label="Catégorie *"
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, category: e.target.value as Expense['category'] }))
+                  setForm((f) => ({
+                    ...f,
+                    category: e.target.value as Expense['category'],
+                  }))
                 }
               >
                 {EXPENSE_CATEGORIES.map((cat) => (
@@ -436,7 +553,9 @@ export default function OwnerFinancialsPage() {
             <TextField
               label="Description"
               value={form.description ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, description: e.target.value }))
+              }
               fullWidth
               multiline
               rows={2}
@@ -445,21 +564,35 @@ export default function OwnerFinancialsPage() {
               label="Date de la dépense *"
               type="date"
               value={form.expense_date}
-              onChange={(e) => setForm((f) => ({ ...f, expense_date: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, expense_date: e.target.value }))
+              }
               fullWidth
               InputLabelProps={{ shrink: true }}
             />
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2.5, pt: 1 }}>
-          <Button onClick={() => setAddExpenseOpen(false)} variant="outlined" sx={{ borderRadius: 2 }}>
+          <Button
+            onClick={() => setAddExpenseOpen(false)}
+            variant="outlined"
+            sx={{ borderRadius: 2 }}
+          >
             Annuler
           </Button>
           <Button
             onClick={() => createExpenseMutation.mutate(form)}
             variant="contained"
-            disabled={createExpenseMutation.isPending || !form.amount || !form.expense_date}
-            startIcon={createExpenseMutation.isPending ? <CircularProgress size={16} /> : null}
+            disabled={
+              createExpenseMutation.isPending ||
+              !form.amount ||
+              !form.expense_date
+            }
+            startIcon={
+              createExpenseMutation.isPending ? (
+                <CircularProgress size={16} />
+              ) : null
+            }
             sx={{ borderRadius: 2 }}
           >
             Ajouter
@@ -477,19 +610,32 @@ export default function OwnerFinancialsPage() {
         <DialogContent>
           <DialogContentText>
             Supprimer cette dépense de{' '}
-            <strong>{deleteTarget ? formatCurrency(deleteTarget.amount) : ''}</strong> ? Cette action est irréversible.
+            <strong>
+              {deleteTarget ? formatCurrency(deleteTarget.amount) : ''}
+            </strong>{' '}
+            ? Cette action est irréversible.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setDeleteTarget(null)} variant="outlined" sx={{ borderRadius: 2 }}>
+          <Button
+            onClick={() => setDeleteTarget(null)}
+            variant="outlined"
+            sx={{ borderRadius: 2 }}
+          >
             Annuler
           </Button>
           <Button
-            onClick={() => deleteTarget && deleteExpenseMutation.mutate(deleteTarget.id)}
+            onClick={() =>
+              deleteTarget && deleteExpenseMutation.mutate(deleteTarget.id)
+            }
             color="error"
             variant="contained"
             disabled={deleteExpenseMutation.isPending}
-            startIcon={deleteExpenseMutation.isPending ? <CircularProgress size={16} /> : null}
+            startIcon={
+              deleteExpenseMutation.isPending ? (
+                <CircularProgress size={16} />
+              ) : null
+            }
             sx={{ borderRadius: 2 }}
           >
             Supprimer
@@ -503,7 +649,11 @@ export default function OwnerFinancialsPage() {
         onClose={() => setSnackbar(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity={snackbar?.severity} onClose={() => setSnackbar(null)} sx={{ borderRadius: 2 }}>
+        <Alert
+          severity={snackbar?.severity}
+          onClose={() => setSnackbar(null)}
+          sx={{ borderRadius: 2 }}
+        >
           {snackbar?.message}
         </Alert>
       </Snackbar>

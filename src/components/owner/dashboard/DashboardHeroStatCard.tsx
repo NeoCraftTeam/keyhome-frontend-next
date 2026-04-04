@@ -3,10 +3,8 @@
 import MiniMetricSparkline from '@/components/owner/dashboard/MiniMetricSparkline';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
 import { useCountUp } from '@/hooks/useCountUp';
-import {
-  TrendingDown as DownIcon,
-  TrendingUp as UpIcon,
-} from '@mui/icons-material';
+import DownIcon from '@mui/icons-material/TrendingDown';
+import UpIcon from '@mui/icons-material/TrendingUp';
 import { Box, Card, CardContent, Chip, Typography } from '@mui/material';
 
 /** Animated value display – uses count-up when `numericValue` is provided. */

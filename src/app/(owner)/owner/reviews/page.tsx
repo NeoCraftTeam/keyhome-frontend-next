@@ -2,7 +2,7 @@
 
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ownerService, type OwnerReview } from '@/services/owner.service';
-import { Star as StarIcon } from '@mui/icons-material';
+import StarIcon from '@mui/icons-material/Star';
 import {
   Avatar,
   Box,
@@ -73,17 +73,31 @@ export default function OwnerReviewsPage() {
       {isLoading ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} variant="rectangular" height={100} sx={{ borderRadius: 2 }} />
+            <Skeleton
+              key={i}
+              variant="rectangular"
+              height={100}
+              sx={{ borderRadius: 2 }}
+            />
           ))}
         </Box>
       ) : reviews.length === 0 ? (
-        <Card sx={{ borderRadius: 3, border: '1px dashed', borderColor: 'divider', p: 6, textAlign: 'center' }}>
+        <Card
+          sx={{
+            borderRadius: 3,
+            border: '1px dashed',
+            borderColor: 'divider',
+            p: 6,
+            textAlign: 'center',
+          }}
+        >
           <StarIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
           <Typography variant="h6" fontWeight={600} gutterBottom>
             Aucun avis
           </Typography>
           <Typography color="text.secondary">
-            Les avis apparaîtront ici lorsque des locataires évalueront vos annonces.
+            Les avis apparaîtront ici lorsque des locataires évalueront vos
+            annonces.
           </Typography>
         </Card>
       ) : (
@@ -100,11 +114,20 @@ export default function OwnerReviewsPage() {
               >
                 <CardContent sx={{ p: 2.5 }}>
                   <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Avatar sx={{ bgcolor: 'primary.main', width: 44, height: 44 }}>
+                    <Avatar
+                      sx={{ bgcolor: 'primary.main', width: 44, height: 44 }}
+                    >
                       {r.user?.firstname?.[0] || r.user?.lastname?.[0] || '?'}
                     </Avatar>
                     <Box sx={{ flex: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          mb: 0.5,
+                        }}
+                      >
                         <Stars rating={r.rating} />
                         <Typography variant="caption" color="text.secondary">
                           {formatDate(r.created_at)}
@@ -114,7 +137,11 @@ export default function OwnerReviewsPage() {
                         {r.user?.firstname} {r.user?.lastname}
                       </Typography>
                       {r.ad?.title && (
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mb: 0.5 }}
+                        >
                           Sur : {r.ad.title}
                         </Typography>
                       )}

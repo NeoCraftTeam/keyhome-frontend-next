@@ -13,11 +13,9 @@ import {
   type LaravelNotification,
 } from '@/services/notifications.service';
 import EmptyState from '@/components/ui/EmptyState';
-import {
-  CheckCircleOutline as CheckAllIcon,
-  NotificationsNone as NotificationsNoneIcon,
-  Notifications as NotificationsIcon,
-} from '@mui/icons-material';
+import CheckAllIcon from '@mui/icons-material/CheckCircleOutline';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import {
   Badge,
   Box,

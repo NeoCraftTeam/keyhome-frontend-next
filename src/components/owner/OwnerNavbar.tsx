@@ -4,11 +4,9 @@ import OwnerNotificationBell from '@/components/owner/OwnerNotificationBell';
 import { SIDEBAR_WIDTH } from '@/components/owner/owner-constants';
 import { OWNER_BOTTOM_NAV_ITEMS, OWNER_NAV_ITEMS } from '@/lib/nav-config';
 import { useAuth } from '@/providers/AuthProvider';
-import {
-  AddCircleOutline as AddCircleOutlineIcon,
-  ExpandMore as ExpandMoreIcon,
-  Logout as LogoutIcon,
-} from '@mui/icons-material';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import LogoutIcon from '@mui/icons-material/Logout';
 import {
   AppBar,
   Avatar,

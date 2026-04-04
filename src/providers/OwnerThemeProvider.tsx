@@ -1,23 +1,22 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material';
 import { ownerLightTheme, ownerDarkTheme } from '@/theme/ownerTheme';
 import { useThemeMode } from '@/providers/ThemeProvider';
 
 type ResolvedMode = 'light' | 'dark';
 
-const OwnerThemeContext = createContext<{ mode: ResolvedMode } | undefined>(undefined);
+const OwnerThemeContext = createContext<{ mode: ResolvedMode } | undefined>(
+  undefined
+);
 
-export function OwnerThemeProvider({ children }: { children: React.ReactNode }) {
-  const { choice, mode } = useThemeMode();
+export function OwnerThemeProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { mode } = useThemeMode();
   const theme = mode === 'dark' ? ownerDarkTheme : ownerLightTheme;
 
   const value = useMemo(() => ({ mode }), [mode]);

@@ -1,7 +1,8 @@
 'use client';
 
 import { MAPBOX_TOKEN } from '@/lib/constants';
-import { MyLocation as GpsIcon, Search as SearchIcon } from '@mui/icons-material';
+import GpsIcon from '@mui/icons-material/MyLocation';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   Alert,
   Box,
@@ -18,7 +19,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 if (process.env.NODE_ENV === 'development') {
-  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', { value: '', writable: false });
+  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', {
+    value: '',
+    writable: false,
+  });
 }
 
 interface MapPickerProps {
@@ -82,12 +86,12 @@ export default function MapPicker({
           const lngLat = markerRef.current!.getLngLat();
           onLocationChange(
             Math.round(lngLat.lat * 1e6) / 1e6,
-            Math.round(lngLat.lng * 1e6) / 1e6,
+            Math.round(lngLat.lng * 1e6) / 1e6
           );
         });
       }
     },
-    [onLocationChange],
+    [onLocationChange]
   );
 
   // Initialize map
@@ -102,9 +106,15 @@ export default function MapPicker({
       attributionControl: false,
     });
 
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+    map.addControl(
+      new mapboxgl.NavigationControl({ showCompass: false }),
+      'top-right'
+    );
     map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
+    map.addControl(
+      new mapboxgl.AttributionControl({ compact: true }),
+      'bottom-right'
+    );
 
     map.on('load', () => {
       if (latitude && longitude) {
@@ -134,7 +144,11 @@ export default function MapPicker({
   useEffect(() => {
     if (latitude && longitude && mapRef.current) {
       updateMarker(latitude, longitude);
-      mapRef.current.flyTo({ center: [longitude, latitude], zoom: 15, duration: 800 });
+      mapRef.current.flyTo({
+        center: [longitude, latitude],
+        zoom: 15,
+        duration: 800,
+      });
     }
   }, [latitude, longitude, updateMarker]);
 
@@ -145,8 +159,8 @@ export default function MapPicker({
     try {
       const res = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          searchQuery.trim(),
-        )}.json?access_token=${MAPBOX_TOKEN}&country=cm&limit=1&language=fr`,
+          searchQuery.trim()
+        )}.json?access_token=${MAPBOX_TOKEN}&country=cm&limit=1&language=fr`
       );
       const data = await res.json();
       if (data.features?.[0]) {
@@ -154,7 +168,7 @@ export default function MapPicker({
         updateMarker(lat, lng);
         onLocationChange(
           Math.round(lat * 1e6) / 1e6,
-          Math.round(lng * 1e6) / 1e6,
+          Math.round(lng * 1e6) / 1e6
         );
         mapRef.current?.flyTo({ center: [lng, lat], zoom: 15, duration: 1000 });
       }
@@ -179,7 +193,7 @@ export default function MapPicker({
         setGeolocating(false);
       },
       () => setGeolocating(false),
-      { enableHighAccuracy: true, timeout: 10000 },
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   }, [updateMarker, onLocationChange]);
 
@@ -281,7 +295,11 @@ export default function MapPicker({
         </Box>
       )}
 
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mt: 0.5, display: 'block' }}
+      >
         Cliquez sur la carte ou glissez le marqueur pour positionner votre bien.
       </Typography>
     </Box>

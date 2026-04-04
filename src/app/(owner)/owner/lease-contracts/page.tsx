@@ -1,16 +1,18 @@
 'use client';
 
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
-import { ownerService, type LeaseContract, type SignatureRequest } from '@/services/owner.service';
 import {
-  AutoAwesome as AiIcon,
-  Close as CloseIcon,
-  Download as DownloadIcon,
-  Draw as DrawIcon,
-  Edit as EditIcon,
-  ExpandMore as ExpandMoreIcon,
-  Visibility as ViewIcon,
-} from '@mui/icons-material';
+  ownerService,
+  type LeaseContract,
+  type SignatureRequest,
+} from '@/services/owner.service';
+import AiIcon from '@mui/icons-material/AutoAwesome';
+import CloseIcon from '@mui/icons-material/Close';
+import DownloadIcon from '@mui/icons-material/Download';
+import DrawIcon from '@mui/icons-material/Draw';
+import EditIcon from '@mui/icons-material/Edit';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ViewIcon from '@mui/icons-material/Visibility';
 import {
   Alert,
   Box,
@@ -63,11 +65,20 @@ export default function OwnerLeaseContractsPage() {
     unit_reference: '',
     special_conditions: '',
   });
-  const [snackbar, setSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    message: string;
+    severity: 'success' | 'error';
+  } | null>(null);
   const [enhancingConditions, setEnhancingConditions] = useState(false);
-  const [signatureContract, setSignatureContract] = useState<LeaseContract | null>(null);
-  const [signatureForm, setSignatureForm] = useState({ signer_email: '', signer_name: '' });
-  const [expandedSignatureIds, setExpandedSignatureIds] = useState<Set<string>>(new Set());
+  const [signatureContract, setSignatureContract] =
+    useState<LeaseContract | null>(null);
+  const [signatureForm, setSignatureForm] = useState({
+    signer_email: '',
+    signer_name: '',
+  });
+  const [expandedSignatureIds, setExpandedSignatureIds] = useState<Set<string>>(
+    new Set()
+  );
 
   const { data, isLoading } = useQuery({
     queryKey: ['owner-lease-contracts', page],
@@ -87,10 +98,16 @@ export default function OwnerLeaseContractsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['owner-lease-contracts'] });
       setEditContract(null);
-      setSnackbar({ message: 'Contrat mis à jour avec succès', severity: 'success' });
+      setSnackbar({
+        message: 'Contrat mis à jour avec succès',
+        severity: 'success',
+      });
     },
     onError: () => {
-      setSnackbar({ message: 'Erreur lors de la mise à jour', severity: 'error' });
+      setSnackbar({
+        message: 'Erreur lors de la mise à jour',
+        severity: 'error',
+      });
     },
   });
 
@@ -101,13 +118,21 @@ export default function OwnerLeaseContractsPage() {
         signer_name: signatureForm.signer_name,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contract-signatures', signatureContract!.id] });
+      queryClient.invalidateQueries({
+        queryKey: ['contract-signatures', signatureContract!.id],
+      });
       setSignatureContract(null);
       setSignatureForm({ signer_email: '', signer_name: '' });
-      setSnackbar({ message: 'Demande de signature envoyée par email', severity: 'success' });
+      setSnackbar({
+        message: 'Demande de signature envoyée par email',
+        severity: 'success',
+      });
     },
     onError: () => {
-      setSnackbar({ message: "Erreur lors de l'envoi de la demande", severity: 'error' });
+      setSnackbar({
+        message: "Erreur lors de l'envoi de la demande",
+        severity: 'error',
+      });
     },
   });
 
@@ -165,22 +190,37 @@ export default function OwnerLeaseContractsPage() {
         Contrats de bail
       </Typography>
       <Typography color="text.secondary" sx={{ mb: 4 }}>
-        Liste de vos contrats générés. Les contrats sont créés depuis une annonce.
+        Liste de vos contrats générés. Les contrats sont créés depuis une
+        annonce.
       </Typography>
 
       {isLoading ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+            <Skeleton
+              key={i}
+              variant="rectangular"
+              height={120}
+              sx={{ borderRadius: 2 }}
+            />
           ))}
         </Box>
       ) : contracts.length === 0 ? (
-        <Card sx={{ borderRadius: 3, border: '1px dashed', borderColor: 'divider', p: 6, textAlign: 'center' }}>
+        <Card
+          sx={{
+            borderRadius: 3,
+            border: '1px dashed',
+            borderColor: 'divider',
+            p: 6,
+            textAlign: 'center',
+          }}
+        >
           <Typography variant="h6" fontWeight={600} gutterBottom>
             Aucun contrat
           </Typography>
           <Typography color="text.secondary">
-            Générez un contrat de bail depuis l&apos;une de vos annonces ( Disponible ou Réservé ).
+            Générez un contrat de bail depuis l&apos;une de vos annonces (
+            Disponible ou Réservé ).
           </Typography>
         </Card>
       ) : (
@@ -204,7 +244,8 @@ export default function OwnerLeaseContractsPage() {
                         component="p"
                         fontWeight={700}
                         sx={{
-                          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                          fontFamily:
+                            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
                           fontSize: { xs: '0.8rem', sm: '0.9rem' },
                           lineHeight: 1.4,
                           wordBreak: 'break-all',
@@ -258,7 +299,11 @@ export default function OwnerLeaseContractsPage() {
                         startIcon={<ViewIcon />}
                         onClick={() => setViewContract(c)}
                         fullWidth
-                        sx={{ borderRadius: 2, textTransform: 'none', flex: { sm: 1 } }}
+                        sx={{
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          flex: { sm: 1 },
+                        }}
                       >
                         Voir
                       </Button>
@@ -268,7 +313,11 @@ export default function OwnerLeaseContractsPage() {
                         startIcon={<EditIcon />}
                         onClick={() => openEdit(c)}
                         fullWidth
-                        sx={{ borderRadius: 2, textTransform: 'none', flex: { sm: 1 } }}
+                        sx={{
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          flex: { sm: 1 },
+                        }}
                       >
                         Modifier
                       </Button>
@@ -279,7 +328,11 @@ export default function OwnerLeaseContractsPage() {
                         onClick={() => handleDownload(c.id)}
                         disabled={downloadingId === c.id}
                         fullWidth
-                        sx={{ borderRadius: 2, textTransform: 'none', flex: { sm: 1 } }}
+                        sx={{
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          flex: { sm: 1 },
+                        }}
                       >
                         PDF
                       </Button>
@@ -289,20 +342,35 @@ export default function OwnerLeaseContractsPage() {
                         color="secondary"
                         startIcon={<DrawIcon />}
                         onClick={() => {
-                          setSignatureForm({ signer_email: '', signer_name: '' });
+                          setSignatureForm({
+                            signer_email: '',
+                            signer_name: '',
+                          });
                           setSignatureContract(c);
                         }}
                         fullWidth
-                        sx={{ borderRadius: 2, textTransform: 'none', flex: { sm: 1 } }}
+                        sx={{
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          flex: { sm: 1 },
+                        }}
                       >
                         Signature
                       </Button>
-                      <Tooltip title={expandedSignatureIds.has(c.id) ? 'Masquer statut' : 'Statut signature'}>
+                      <Tooltip
+                        title={
+                          expandedSignatureIds.has(c.id)
+                            ? 'Masquer statut'
+                            : 'Statut signature'
+                        }
+                      >
                         <IconButton
                           size="small"
                           onClick={() => toggleSignatureExpand(c.id)}
                           sx={{
-                            transform: expandedSignatureIds.has(c.id) ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transform: expandedSignatureIds.has(c.id)
+                              ? 'rotate(180deg)'
+                              : 'rotate(0deg)',
                             transition: 'transform 0.2s',
                             border: '1px solid',
                             borderColor: 'divider',
@@ -315,8 +383,19 @@ export default function OwnerLeaseContractsPage() {
                       </Tooltip>
                     </Stack>
                     <Collapse in={expandedSignatureIds.has(c.id)} unmountOnExit>
-                      <Box sx={{ pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
-                        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 1, display: 'block' }}>
+                      <Box
+                        sx={{
+                          pt: 1.5,
+                          borderTop: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          fontWeight={600}
+                          sx={{ mb: 1, display: 'block' }}
+                        >
                           Statut de la signature électronique
                         </Typography>
                         <SignatureStatusSection contractId={c.id} />
@@ -348,7 +427,13 @@ export default function OwnerLeaseContractsPage() {
         fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           <Typography variant="h6" fontWeight={700}>
             {viewContract?.contract_number}
           </Typography>
@@ -362,25 +447,73 @@ export default function OwnerLeaseContractsPage() {
               <InfoRow label="Bien" value={viewContract.ad?.title || '—'} />
               <InfoRow label="Locataire" value={viewContract.tenant_name} />
               <InfoRow label="Téléphone" value={viewContract.tenant_phone} />
-              {viewContract.tenant_email && <InfoRow label="Email" value={viewContract.tenant_email} />}
-              {viewContract.tenant_id_number && <InfoRow label="N° CNI / Passeport" value={viewContract.tenant_id_number} />}
-              {viewContract.unit_reference && <InfoRow label="Référence logement" value={viewContract.unit_reference} />}
-              <InfoRow label="Début du bail" value={formatDate(viewContract.lease_start)} />
-              <InfoRow label="Fin du bail" value={formatDate(viewContract.lease_end)} />
-              <InfoRow label="Durée" value={`${viewContract.lease_duration_months} mois`} />
-              <InfoRow label="Loyer mensuel" value={`${viewContract.monthly_rent?.toLocaleString('fr-FR')} XAF`} />
+              {viewContract.tenant_email && (
+                <InfoRow label="Email" value={viewContract.tenant_email} />
+              )}
+              {viewContract.tenant_id_number && (
+                <InfoRow
+                  label="N° CNI / Passeport"
+                  value={viewContract.tenant_id_number}
+                />
+              )}
+              {viewContract.unit_reference && (
+                <InfoRow
+                  label="Référence logement"
+                  value={viewContract.unit_reference}
+                />
+              )}
+              <InfoRow
+                label="Début du bail"
+                value={formatDate(viewContract.lease_start)}
+              />
+              <InfoRow
+                label="Fin du bail"
+                value={formatDate(viewContract.lease_end)}
+              />
+              <InfoRow
+                label="Durée"
+                value={`${viewContract.lease_duration_months} mois`}
+              />
+              <InfoRow
+                label="Loyer mensuel"
+                value={`${viewContract.monthly_rent?.toLocaleString('fr-FR')} XAF`}
+              />
               {viewContract.deposit_amount && (
-                <InfoRow label="Caution" value={`${viewContract.deposit_amount.toLocaleString('fr-FR')} XAF`} />
+                <InfoRow
+                  label="Caution"
+                  value={`${viewContract.deposit_amount.toLocaleString('fr-FR')} XAF`}
+                />
               )}
               {viewContract.special_conditions && (
                 <Box sx={{ py: 1 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>Conditions particulières</Typography>
-                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', bgcolor: 'action.hover', p: 1.5, borderRadius: 2 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 0.5 }}
+                  >
+                    Conditions particulières
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      whiteSpace: 'pre-wrap',
+                      bgcolor: 'action.hover',
+                      p: 1.5,
+                      borderRadius: 2,
+                    }}
+                  >
                     {viewContract.special_conditions}
                   </Typography>
                 </Box>
               )}
-              <InfoRow label="Créé le" value={viewContract.created_at ? formatDate(viewContract.created_at) : '—'} />
+              <InfoRow
+                label="Créé le"
+                value={
+                  viewContract.created_at
+                    ? formatDate(viewContract.created_at)
+                    : '—'
+                }
+              />
             </Box>
           </DialogContent>
         )}
@@ -417,40 +550,58 @@ export default function OwnerLeaseContractsPage() {
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
         <DialogTitle fontWeight={700}>Modifier le contrat</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '8px !important' }}>
+        <DialogContent
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            pt: '8px !important',
+          }}
+        >
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            Vous pouvez modifier les informations du locataire et les conditions. Les dates et montants ne sont pas modifiables.
+            Vous pouvez modifier les informations du locataire et les
+            conditions. Les dates et montants ne sont pas modifiables.
           </Typography>
           <TextField
             label="Nom du locataire"
             size="small"
             value={editForm.tenant_name}
-            onChange={(e) => setEditForm((f) => ({ ...f, tenant_name: e.target.value }))}
+            onChange={(e) =>
+              setEditForm((f) => ({ ...f, tenant_name: e.target.value }))
+            }
           />
           <TextField
             label="Téléphone du locataire"
             size="small"
             value={editForm.tenant_phone}
-            onChange={(e) => setEditForm((f) => ({ ...f, tenant_phone: e.target.value }))}
+            onChange={(e) =>
+              setEditForm((f) => ({ ...f, tenant_phone: e.target.value }))
+            }
           />
           <TextField
             label="Email du locataire"
             size="small"
             type="email"
             value={editForm.tenant_email}
-            onChange={(e) => setEditForm((f) => ({ ...f, tenant_email: e.target.value }))}
+            onChange={(e) =>
+              setEditForm((f) => ({ ...f, tenant_email: e.target.value }))
+            }
           />
           <TextField
             label="N° CNI / Passeport"
             size="small"
             value={editForm.tenant_id_number}
-            onChange={(e) => setEditForm((f) => ({ ...f, tenant_id_number: e.target.value }))}
+            onChange={(e) =>
+              setEditForm((f) => ({ ...f, tenant_id_number: e.target.value }))
+            }
           />
           <TextField
             label="Référence du logement"
             size="small"
             value={editForm.unit_reference}
-            onChange={(e) => setEditForm((f) => ({ ...f, unit_reference: e.target.value }))}
+            onChange={(e) =>
+              setEditForm((f) => ({ ...f, unit_reference: e.target.value }))
+            }
           />
           <TextField
             label="Conditions particulières"
@@ -458,23 +609,37 @@ export default function OwnerLeaseContractsPage() {
             multiline
             rows={3}
             value={editForm.special_conditions}
-            onChange={(e) => setEditForm((f) => ({ ...f, special_conditions: e.target.value }))}
+            onChange={(e) =>
+              setEditForm((f) => ({ ...f, special_conditions: e.target.value }))
+            }
           />
           {editForm.special_conditions.trim() && (
             <Button
               size="small"
-              startIcon={enhancingConditions ? <CircularProgress size={16} /> : <AiIcon />}
+              startIcon={
+                enhancingConditions ? (
+                  <CircularProgress size={16} />
+                ) : (
+                  <AiIcon />
+                )
+              }
               onClick={async () => {
                 setEnhancingConditions(true);
                 try {
-                  const enhanced = await ownerService.enhanceLeaseConditions(editForm.special_conditions);
+                  const enhanced = await ownerService.enhanceLeaseConditions(
+                    editForm.special_conditions
+                  );
                   setEditForm((f) => ({ ...f, special_conditions: enhanced }));
                 } finally {
                   setEnhancingConditions(false);
                 }
               }}
               disabled={enhancingConditions}
-              sx={{ textTransform: 'none', fontWeight: 600, alignSelf: 'flex-start' }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                alignSelf: 'flex-start',
+              }}
             >
               Améliorer avec l&apos;IA
             </Button>
@@ -491,7 +656,11 @@ export default function OwnerLeaseContractsPage() {
           <Button
             onClick={() => updateMutation.mutate()}
             variant="contained"
-            disabled={updateMutation.isPending || !editForm.tenant_name || !editForm.tenant_phone}
+            disabled={
+              updateMutation.isPending ||
+              !editForm.tenant_name ||
+              !editForm.tenant_phone
+            }
             sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
           >
             {updateMutation.isPending ? 'Enregistrement…' : 'Enregistrer'}
@@ -507,11 +676,20 @@ export default function OwnerLeaseContractsPage() {
         fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        <DialogTitle fontWeight={700}>Demande de signature électronique</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '8px !important' }}>
+        <DialogTitle fontWeight={700}>
+          Demande de signature électronique
+        </DialogTitle>
+        <DialogContent
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            pt: '8px !important',
+          }}
+        >
           <Typography variant="body2" color="text.secondary">
-            Un email sera envoyé au signataire avec un lien sécurisé pour signer le contrat{' '}
-            <strong>{signatureContract?.contract_number}</strong>.
+            Un email sera envoyé au signataire avec un lien sécurisé pour signer
+            le contrat <strong>{signatureContract?.contract_number}</strong>.
           </Typography>
           <TextField
             label="Email du signataire"
@@ -519,14 +697,18 @@ export default function OwnerLeaseContractsPage() {
             size="small"
             required
             value={signatureForm.signer_email}
-            onChange={(e) => setSignatureForm((f) => ({ ...f, signer_email: e.target.value }))}
+            onChange={(e) =>
+              setSignatureForm((f) => ({ ...f, signer_email: e.target.value }))
+            }
           />
           <TextField
             label="Nom du signataire"
             size="small"
             required
             value={signatureForm.signer_name}
-            onChange={(e) => setSignatureForm((f) => ({ ...f, signer_name: e.target.value }))}
+            onChange={(e) =>
+              setSignatureForm((f) => ({ ...f, signer_name: e.target.value }))
+            }
           />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -574,14 +756,33 @@ export default function OwnerLeaseContractsPage() {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
-      <Typography variant="body2" color="text.secondary">{label}</Typography>
-      <Typography variant="body2" fontWeight={600} sx={{ textAlign: 'right', maxWidth: '60%' }}>{value}</Typography>
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        py: 1,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography
+        variant="body2"
+        fontWeight={600}
+        sx={{ textAlign: 'right', maxWidth: '60%' }}
+      >
+        {value}
+      </Typography>
     </Box>
   );
 }
 
-const SIG_STATUS_CHIP: Record<string, { label: string; color: 'warning' | 'success' | 'error' | 'info' | 'default' }> = {
+const SIG_STATUS_CHIP: Record<
+  string,
+  { label: string; color: 'warning' | 'success' | 'error' | 'info' | 'default' }
+> = {
   pending: { label: 'En attente', color: 'warning' },
   viewed: { label: 'Lu', color: 'info' },
   signed: { label: 'Signé ✓', color: 'success' },
@@ -611,14 +812,35 @@ function SignatureStatusSection({ contractId }: { contractId: string }) {
   return (
     <Stack spacing={1}>
       {signatures.map((sig) => {
-        const chipConfig = SIG_STATUS_CHIP[sig.status] ?? { label: sig.status, color: 'default' as const };
+        const chipConfig = SIG_STATUS_CHIP[sig.status] ?? {
+          label: sig.status,
+          color: 'default' as const,
+        };
         return (
-          <Box key={sig.id} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+          <Box
+            key={sig.id}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
+            }}
+          >
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="caption" fontWeight={600} noWrap display="block">
+              <Typography
+                variant="caption"
+                fontWeight={600}
+                noWrap
+                display="block"
+              >
                 {sig.signer_name}
               </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" noWrap>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+                noWrap
+              >
                 {sig.signer_email}
               </Typography>
             </Box>

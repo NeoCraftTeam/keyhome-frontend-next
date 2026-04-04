@@ -6,15 +6,13 @@ import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import EmptyState from '@/components/ui/EmptyState';
 import StaggerList from '@/components/ui/StaggerList';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Description as ContractIcon,
-  Edit as EditIcon,
-  MoreVert as MoreIcon,
-  Visibility as VisibleIcon,
-  VisibilityOff as HiddenIcon,
-} from '@mui/icons-material';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ContractIcon from '@mui/icons-material/Description';
+import EditIcon from '@mui/icons-material/Edit';
+import MoreIcon from '@mui/icons-material/MoreVert';
+import VisibleIcon from '@mui/icons-material/Visibility';
+import HiddenIcon from '@mui/icons-material/VisibilityOff';
 import {
   Avatar,
   AvatarGroup,

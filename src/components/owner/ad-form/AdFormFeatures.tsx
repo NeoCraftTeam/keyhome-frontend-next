@@ -1,14 +1,12 @@
-import {
-  Bed as BedIcon,
-  DirectionsBus as BusIcon,
-  LocalHospital as HospitalIcon,
-  LocalParking as ParkingIcon,
-  NearMe as NearMeIcon,
-  School as SchoolIcon,
-  Shower as ShowerIcon,
-  ShoppingCart as ShopIcon,
-  Straighten as StraightenIcon,
-} from '@mui/icons-material';
+import BedIcon from '@mui/icons-material/Bed';
+import BusIcon from '@mui/icons-material/DirectionsBus';
+import HospitalIcon from '@mui/icons-material/LocalHospital';
+import ParkingIcon from '@mui/icons-material/LocalParking';
+import NearMeIcon from '@mui/icons-material/NearMe';
+import SchoolIcon from '@mui/icons-material/School';
+import ShowerIcon from '@mui/icons-material/Shower';
+import ShopIcon from '@mui/icons-material/ShoppingCart';
+import StraightenIcon from '@mui/icons-material/Straighten';
 import {
   Box,
   FormControlLabel,
@@ -28,10 +26,22 @@ interface AdFormFeaturesProps {
   errors: Record<string, string>;
 }
 
-export default function AdFormFeatures({ values, update, errors }: AdFormFeaturesProps) {
+export default function AdFormFeatures({
+  values,
+  update,
+  errors,
+}: AdFormFeaturesProps) {
   return (
     <Paper elevation={0} sx={sectionSx}>
-      <Typography variant="subtitle1" sx={{ ...sectionTitleSx, display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Typography
+        variant="subtitle1"
+        sx={{
+          ...sectionTitleSx,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+        }}
+      >
         <StraightenIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         Caractéristiques
       </Typography>
@@ -58,7 +68,9 @@ export default function AdFormFeatures({ values, update, errors }: AdFormFeature
             error={!!errors.price}
             helperText={errors.price}
             InputProps={{
-              startAdornment: <InputAdornment position="start">₣</InputAdornment>,
+              startAdornment: (
+                <InputAdornment position="start">₣</InputAdornment>
+              ),
             }}
           />
         </Grid>
@@ -123,7 +135,10 @@ export default function AdFormFeatures({ values, update, errors }: AdFormFeature
               />
             }
             label={
-              <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box
+                component="span"
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+              >
                 <ParkingIcon sx={{ fontSize: 18 }} />
                 Parking
               </Box>
@@ -134,12 +149,26 @@ export default function AdFormFeatures({ values, update, errors }: AdFormFeature
       </Grid>
 
       {/* ═══ Proximité & Accessibilité ═══ */}
-      <Typography variant="subtitle1" sx={{ ...sectionTitleSx, display: 'flex', alignItems: 'center', gap: 1, mt: 3 }}>
+      <Typography
+        variant="subtitle1"
+        sx={{
+          ...sectionTitleSx,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          mt: 3,
+        }}
+      >
         <NearMeIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         Proximité & Accessibilité
       </Typography>
-      <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-        Distances approximatives depuis le bien (en mètres). Laisser vide si non applicable.
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mb: 1.5, display: 'block' }}
+      >
+        Distances approximatives depuis le bien (en mètres). Laisser vide si non
+        applicable.
       </Typography>
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
@@ -225,7 +254,9 @@ export default function AdFormFeatures({ values, update, errors }: AdFormFeature
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <HospitalIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                  <HospitalIcon
+                    sx={{ fontSize: 18, color: 'text.secondary' }}
+                  />
                 </InputAdornment>
               ),
               endAdornment: <InputAdornment position="end">m</InputAdornment>,

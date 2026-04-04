@@ -1,4 +1,4 @@
-import { RocketLaunch as BoostIcon } from '@mui/icons-material';
+import BoostIcon from '@mui/icons-material/RocketLaunch';
 import { Box, Paper, Switch, Typography } from '@mui/material';
 import { brand } from '@/theme/tokens';
 import type { AdFormValues, UpdateFn } from './types';
@@ -27,13 +27,29 @@ export default function AdFormBoost({ values, update }: AdFormBoostProps) {
         </Typography>
       </Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Positionnez votre annonce en tête des résultats dès sa publication pour attirer 3x plus de locataires.
+        Positionnez votre annonce en tête des résultats dès sa publication pour
+        attirer 3x plus de locataires.
       </Typography>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, borderRadius: 2, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          p: 2,
+          borderRadius: 2,
+          bgcolor: 'background.paper',
+          border: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
         <Box>
-          <Typography variant="body1" fontWeight={700}>Activer le Boost Standard</Typography>
-          <Typography variant="caption" color="text.secondary">Remontée quotidienne pendant 3 jours · 1 500 FCFA</Typography>
+          <Typography variant="body1" fontWeight={700}>
+            Activer le Boost Standard
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Remontée quotidienne pendant 3 jours · 1 500 FCFA
+          </Typography>
         </Box>
         <Switch
           color="primary"

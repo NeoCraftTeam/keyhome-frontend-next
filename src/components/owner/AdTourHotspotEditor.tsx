@@ -1,12 +1,10 @@
 'use client';
 
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  MyLocation as HotspotIcon,
-  TouchApp as PlaceIcon,
-  Visibility as PreviewIcon,
-} from '@mui/icons-material';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import HotspotIcon from '@mui/icons-material/MyLocation';
+import PlaceIcon from '@mui/icons-material/TouchApp';
+import PreviewIcon from '@mui/icons-material/Visibility';
 import {
   Alert,
   Box,
@@ -89,7 +87,7 @@ export default function AdTourHotspotEditor({
       newHotspots[index] = { ...newHotspots[index], [field]: value };
       onUpdateHotspots(newHotspots);
     },
-    [scene.hotspots, onUpdateHotspots],
+    [scene.hotspots, onUpdateHotspots]
   );
 
   const removeHotspot = useCallback(
@@ -100,7 +98,7 @@ export default function AdTourHotspotEditor({
         setPlacingIndex(null);
       }
     },
-    [scene.hotspots, onUpdateHotspots, placingIndex],
+    [scene.hotspots, onUpdateHotspots, placingIndex]
   );
 
   const handlePanoramaClick = useCallback(
@@ -120,7 +118,7 @@ export default function AdTourHotspotEditor({
       setPlacingMode(false);
       setPlacingIndex(null);
     },
-    [placingMode, placingIndex, scene.hotspots, onUpdateHotspots],
+    [placingMode, placingIndex, scene.hotspots, onUpdateHotspots]
   );
 
   const startPlacing = (index: number) => {
@@ -175,7 +173,11 @@ export default function AdTourHotspotEditor({
               variant={showViewer ? 'contained' : 'outlined'}
               startIcon={<PreviewIcon />}
               onClick={() => setShowViewer(!showViewer)}
-              sx={{ textTransform: 'none', borderRadius: 1.5, fontSize: '0.75rem' }}
+              sx={{
+                textTransform: 'none',
+                borderRadius: 1.5,
+                fontSize: '0.75rem',
+              }}
             >
               {showViewer ? 'Masquer' : 'Aperçu 360'}
             </Button>
@@ -185,7 +187,11 @@ export default function AdTourHotspotEditor({
             startIcon={<AddIcon />}
             onClick={addHotspot}
             disabled={otherScenes.length === 0}
-            sx={{ textTransform: 'none', borderRadius: 1.5, fontSize: '0.75rem' }}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 1.5,
+              fontSize: '0.75rem',
+            }}
           >
             Ajouter un lien
           </Button>
@@ -195,7 +201,8 @@ export default function AdTourHotspotEditor({
       {otherScenes.length === 0 && scene.hotspots.length === 0 && (
         <Alert severity="info" sx={{ borderRadius: 2, mb: 1.5 }}>
           <Typography variant="body2">
-            Ajoutez au moins 2 pièces pour pouvoir créer des liens de navigation entre elles.
+            Ajoutez au moins 2 pièces pour pouvoir créer des liens de navigation
+            entre elles.
           </Typography>
         </Alert>
       )}
@@ -232,9 +239,11 @@ export default function AdTourHotspotEditor({
               }
             >
               <Typography variant="body2">
-                Orientez la vue (hors mode placement), puis cliquez sur « Placer ». En mode placement la rotation
-                est désactivée : cliquez sur le panorama pour positionner le hotspot &quot;
-                {scene.hotspots[placingIndex]?.label || `#${placingIndex + 1}`}&quot;.
+                Orientez la vue (hors mode placement), puis cliquez sur « Placer
+                ». En mode placement la rotation est désactivée : cliquez sur le
+                panorama pour positionner le hotspot &quot;
+                {scene.hotspots[placingIndex]?.label || `#${placingIndex + 1}`}
+                &quot;.
               </Typography>
             </Alert>
           )}
@@ -248,8 +257,8 @@ export default function AdTourHotspotEditor({
           color="text.secondary"
           sx={{ fontStyle: 'italic', py: 1 }}
         >
-          Aucun point d&apos;interaction. Ajoutez-en un pour permettre la navigation entre les
-          pièces.
+          Aucun point d&apos;interaction. Ajoutez-en un pour permettre la
+          navigation entre les pièces.
         </Typography>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -262,7 +271,9 @@ export default function AdTourHotspotEditor({
                 borderRadius: 2,
                 border: '1px solid',
                 borderColor:
-                  placingMode && placingIndex === idx ? 'primary.main' : 'divider',
+                  placingMode && placingIndex === idx
+                    ? 'primary.main'
+                    : 'divider',
                 bgcolor:
                   placingMode && placingIndex === idx
                     ? 'rgba(13, 148, 136, 0.04)'
@@ -272,14 +283,21 @@ export default function AdTourHotspotEditor({
             >
               <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
                 <Box
-                  sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}
+                  sx={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1.5,
+                  }}
                 >
                   <Box sx={{ display: 'flex', gap: 1.5 }}>
                     <TextField
                       size="small"
                       label="Label du bouton"
                       value={hotspot.label}
-                      onChange={(e) => updateHotspot(idx, 'label', e.target.value)}
+                      onChange={(e) =>
+                        updateHotspot(idx, 'label', e.target.value)
+                      }
                       fullWidth
                     />
                     <FormControl size="small" fullWidth>
@@ -307,7 +325,11 @@ export default function AdTourHotspotEditor({
                       inputProps={{ step: 0.5, min: -90, max: 90 }}
                       value={hotspot.pitch}
                       onChange={(e) =>
-                        updateHotspot(idx, 'pitch', parseFloat(e.target.value) || 0)
+                        updateHotspot(
+                          idx,
+                          'pitch',
+                          parseFloat(e.target.value) || 0
+                        )
                       }
                       sx={{ width: 100 }}
                     />
@@ -318,7 +340,11 @@ export default function AdTourHotspotEditor({
                       inputProps={{ step: 0.5, min: -180, max: 180 }}
                       value={hotspot.yaw}
                       onChange={(e) =>
-                        updateHotspot(idx, 'yaw', parseFloat(e.target.value) || 0)
+                        updateHotspot(
+                          idx,
+                          'yaw',
+                          parseFloat(e.target.value) || 0
+                        )
                       }
                       sx={{ width: 100 }}
                     />

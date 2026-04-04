@@ -1,10 +1,8 @@
 'use client';
 
-import {
-  Favorite as FavoriteIcon,
-  Search as SearchIcon,
-  Visibility as VisibilityIcon,
-} from '@mui/icons-material';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import SearchIcon from '@mui/icons-material/Search';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Box,
   Chip,

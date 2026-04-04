@@ -1,12 +1,10 @@
 'use client';
 
 import { ownerService } from '@/services/owner.service';
-import {
-  AutoAwesome as AiIcon,
-  TrendingDown as LowIcon,
-  TrendingFlat as OkIcon,
-  TrendingUp as HighIcon,
-} from '@mui/icons-material';
+import AiIcon from '@mui/icons-material/AutoAwesome';
+import LowIcon from '@mui/icons-material/TrendingDown';
+import OkIcon from '@mui/icons-material/TrendingFlat';
+import HighIcon from '@mui/icons-material/TrendingUp';
 import { Alert, Box, Chip, Paper, Skeleton, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import type { AdFormValues } from './types';
@@ -21,7 +19,10 @@ function formatPrice(n: number): string {
   return n.toLocaleString('fr-FR');
 }
 
-export default function AdFormPriceAdvisor({ values, cityId }: AdFormPriceAdvisorProps) {
+export default function AdFormPriceAdvisor({
+  values,
+  cityId,
+}: AdFormPriceAdvisorProps) {
   const surface = parseInt(values.surface_area, 10);
   const price = parseFloat(values.price);
   const bedrooms = parseInt(values.bedrooms, 10);
@@ -61,13 +62,33 @@ export default function AdFormPriceAdvisor({ values, cityId }: AdFormPriceAdviso
   }
 
   const statusConfig = {
-    good: { color: 'success' as const, icon: <OkIcon fontSize="small" />, label: 'Dans la moyenne' },
-    high: { color: 'warning' as const, icon: <HighIcon fontSize="small" />, label: `${Math.round(pctDiff)}% au-dessus` },
-    low: { color: 'info' as const, icon: <LowIcon fontSize="small" />, label: `${Math.round(Math.abs(pctDiff))}% en-dessous` },
+    good: {
+      color: 'success' as const,
+      icon: <OkIcon fontSize="small" />,
+      label: 'Dans la moyenne',
+    },
+    high: {
+      color: 'warning' as const,
+      icon: <HighIcon fontSize="small" />,
+      label: `${Math.round(pctDiff)}% au-dessus`,
+    },
+    low: {
+      color: 'info' as const,
+      icon: <LowIcon fontSize="small" />,
+      label: `${Math.round(Math.abs(pctDiff))}% en-dessous`,
+    },
   };
 
   return (
-    <Paper elevation={0} sx={{ ...sectionSx, border: '2px solid', borderColor: 'primary.light', bgcolor: 'primary.50' }}>
+    <Paper
+      elevation={0}
+      sx={{
+        ...sectionSx,
+        border: '2px solid',
+        borderColor: 'primary.light',
+        bgcolor: 'primary.50',
+      }}
+    >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
         <AiIcon sx={{ color: 'primary.main' }} />
         <Typography variant="subtitle1" fontWeight={700} color="primary.main">
@@ -85,19 +106,23 @@ export default function AdFormPriceAdvisor({ values, cityId }: AdFormPriceAdviso
           <Typography variant="body2" color="text.secondary">
             Prix du marché pour {surface} m² :{' '}
             <Typography component="span" fontWeight={700}>
-              {formatPrice(data.estimated_min)} – {formatPrice(data.estimated_max)} FCFA
-            </Typography>
-            {' '}(médian : {formatPrice(data.estimated_median)} FCFA)
+              {formatPrice(data.estimated_min)} –{' '}
+              {formatPrice(data.estimated_max)} FCFA
+            </Typography>{' '}
+            (médian : {formatPrice(data.estimated_median)} FCFA)
           </Typography>
 
           {data.sample_count < 5 && (
             <Typography variant="caption" color="text.disabled">
-              Basé sur {data.sample_count} annonce{data.sample_count > 1 ? 's' : ''} — estimation approximative
+              Basé sur {data.sample_count} annonce
+              {data.sample_count > 1 ? 's' : ''} — estimation approximative
             </Typography>
           )}
 
           {status && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}
+            >
               <Typography variant="body2">Votre prix :</Typography>
               <Typography variant="body2" fontWeight={700}>
                 {formatPrice(price)} FCFA
@@ -119,7 +144,8 @@ export default function AdFormPriceAdvisor({ values, cityId }: AdFormPriceAdviso
           )}
         </Box>
       ) : (
-        data && 'error' in data && (
+        data &&
+        'error' in data && (
           <Typography variant="body2" color="text.secondary">
             {(data as { error: string }).error}
           </Typography>

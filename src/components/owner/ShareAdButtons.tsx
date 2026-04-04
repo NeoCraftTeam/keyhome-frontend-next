@@ -1,17 +1,10 @@
 'use client';
 
-import {
-  ContentCopy as CopyIcon,
-  Facebook as FacebookIcon,
-  Share as ShareIcon,
-  WhatsApp as WhatsAppIcon,
-} from '@mui/icons-material';
-import {
-  IconButton,
-  Snackbar,
-  Stack,
-  Tooltip,
-} from '@mui/material';
+import CopyIcon from '@mui/icons-material/ContentCopy';
+import FacebookIcon from '@mui/icons-material/Facebook';
+import ShareIcon from '@mui/icons-material/Share';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import { IconButton, Snackbar, Stack, Tooltip } from '@mui/material';
 import { useCallback, useState } from 'react';
 
 interface ShareAdButtonsProps {
@@ -20,12 +13,15 @@ interface ShareAdButtonsProps {
   size?: 'small' | 'medium';
 }
 
-export default function ShareAdButtons({ adTitle, adUrl, size = 'small' }: ShareAdButtonsProps) {
+export default function ShareAdButtons({
+  adTitle,
+  adUrl,
+  size = 'small',
+}: ShareAdButtonsProps) {
   const [copied, setCopied] = useState(false);
 
-  const fullUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}${adUrl}`
-    : adUrl;
+  const fullUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}${adUrl}` : adUrl;
 
   const handleCopyLink = useCallback(async () => {
     await navigator.clipboard.writeText(fullUrl);
@@ -39,7 +35,11 @@ export default function ShareAdButtons({ adTitle, adUrl, size = 'small' }: Share
 
   const handleFacebook = useCallback(() => {
     const url = encodeURIComponent(fullUrl);
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'noopener,noreferrer');
+    window.open(
+      `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
   }, [fullUrl]);
 
   const handleNativeShare = useCallback(async () => {
@@ -52,12 +52,20 @@ export default function ShareAdButtons({ adTitle, adUrl, size = 'small' }: Share
     <>
       <Stack direction="row" spacing={0.5}>
         <Tooltip title="Partager sur WhatsApp">
-          <IconButton size={size} onClick={handleWhatsApp} sx={{ color: '#25D366' }}>
+          <IconButton
+            size={size}
+            onClick={handleWhatsApp}
+            sx={{ color: '#25D366' }}
+          >
             <WhatsAppIcon fontSize={size} />
           </IconButton>
         </Tooltip>
         <Tooltip title="Partager sur Facebook">
-          <IconButton size={size} onClick={handleFacebook} sx={{ color: '#1877F2' }}>
+          <IconButton
+            size={size}
+            onClick={handleFacebook}
+            sx={{ color: '#1877F2' }}
+          >
             <FacebookIcon fontSize={size} />
           </IconButton>
         </Tooltip>

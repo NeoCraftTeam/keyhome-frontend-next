@@ -1,4 +1,5 @@
-import { AutoAwesome as AiIcon, Home as HomeIcon } from '@mui/icons-material';
+import AiIcon from '@mui/icons-material/AutoAwesome';
+import HomeIcon from '@mui/icons-material/Home';
 import { Box, CircularProgress, Paper } from '@mui/material';
 import { Button } from '@/components/ui/Button';
 import { Typography } from '@/components/ui/Typography';
@@ -14,10 +15,25 @@ interface AdFormBasicInfoProps {
   onEnhance: (() => Promise<void>) | null;
 }
 
-export default function AdFormBasicInfo({ values, update, errors, enhancing, onEnhance }: AdFormBasicInfoProps) {
+export default function AdFormBasicInfo({
+  values,
+  update,
+  errors,
+  enhancing,
+  onEnhance,
+}: AdFormBasicInfoProps) {
   return (
     <Paper elevation={0} sx={sectionSx}>
-      <Typography variant="h6" sx={{ ...sectionTitleSx, display: 'flex', alignItems: 'center', gap: 1, fontSize: '1.125rem' }}>
+      <Typography
+        variant="h6"
+        sx={{
+          ...sectionTitleSx,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          fontSize: '1.125rem',
+        }}
+      >
         <HomeIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         Informations principales
       </Typography>

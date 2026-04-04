@@ -1,10 +1,8 @@
-import {
-  AddPhotoAlternate as Add360Icon,
-  Delete as DeleteIcon,
-  ExpandMore as ExpandIcon,
-  Lightbulb as LightbulbIcon,
-  ViewInAr as TourIcon,
-} from '@mui/icons-material';
+import Add360Icon from '@mui/icons-material/AddPhotoAlternate';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ExpandIcon from '@mui/icons-material/ExpandMore';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import TourIcon from '@mui/icons-material/ViewInAr';
 import {
   Accordion,
   AccordionDetails,

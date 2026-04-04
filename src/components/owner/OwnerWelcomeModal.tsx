@@ -2,7 +2,9 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { Apartment, BarChart, CalendarMonth } from '@mui/icons-material';
+import Apartment from '@mui/icons-material/Apartment';
+import BarChart from '@mui/icons-material/BarChart';
+import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import { Box, Button, Dialog, LinearProgress, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';

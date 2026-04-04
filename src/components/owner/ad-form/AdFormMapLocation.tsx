@@ -1,4 +1,4 @@
-import { Map as MapIcon } from '@mui/icons-material';
+import MapIcon from '@mui/icons-material/Map';
 import { Box, Paper, Typography } from '@mui/material';
 import dynamic from 'next/dynamic';
 import type { AdFormValues, UpdateFn } from './types';
@@ -10,8 +10,19 @@ const DEFAULT_LNG = 9.7679;
 const MapPicker = dynamic(() => import('../MapPicker'), {
   ssr: false,
   loading: () => (
-    <Box sx={{ height: 300, borderRadius: 2, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Typography variant="body2" color="text.secondary">Chargement de la carte...</Typography>
+    <Box
+      sx={{
+        height: 300,
+        borderRadius: 2,
+        bgcolor: 'action.hover',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Typography variant="body2" color="text.secondary">
+        Chargement de la carte...
+      </Typography>
     </Box>
   ),
 });
@@ -21,7 +32,10 @@ interface AdFormMapLocationProps {
   update: UpdateFn;
 }
 
-export default function AdFormMapLocation({ values, update }: AdFormMapLocationProps) {
+export default function AdFormMapLocation({
+  values,
+  update,
+}: AdFormMapLocationProps) {
   return (
     <Paper elevation={0} sx={sectionSx}>
       <Typography variant="subtitle1" sx={sectionTitleSx}>
@@ -29,7 +43,8 @@ export default function AdFormMapLocation({ values, update }: AdFormMapLocationP
         Position sur la carte
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Positionnez votre bien sur la carte pour que les locataires puissent le localiser facilement.
+        Positionnez votre bien sur la carte pour que les locataires puissent le
+        localiser facilement.
       </Typography>
       <MapPicker
         latitude={values.latitude !== DEFAULT_LAT ? values.latitude : null}

@@ -12,7 +12,8 @@ import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
 import { brandAgent } from '@/theme/tokens';
-import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import {
   Alert,
   Box,

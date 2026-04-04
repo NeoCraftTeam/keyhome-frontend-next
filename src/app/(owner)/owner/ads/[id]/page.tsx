@@ -1,15 +1,13 @@
 'use client';
 
-import {
-  ArrowBack as BackIcon,
-  AutoAwesome as AiIcon,
-  Delete as DeleteIcon,
-  Description as ContractIcon,
-  OpenInNew as OpenIcon,
-  Visibility as VisibleIcon,
-  VisibilityOff as HiddenIcon,
-  ViewInAr as TourIcon,
-} from '@mui/icons-material';
+import BackIcon from '@mui/icons-material/ArrowBack';
+import AiIcon from '@mui/icons-material/AutoAwesome';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ContractIcon from '@mui/icons-material/Description';
+import OpenIcon from '@mui/icons-material/OpenInNew';
+import VisibleIcon from '@mui/icons-material/Visibility';
+import HiddenIcon from '@mui/icons-material/VisibilityOff';
+import TourIcon from '@mui/icons-material/ViewInAr';
 import {
   Alert,
   Box,

@@ -1,13 +1,11 @@
 'use client';
 
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
-import {
-  RocketLaunch as BoostIcon,
-  Verified as VerifiedIcon,
-  AutoAwesome as AiIcon,
-  CameraAlt as PhotoIcon,
-  CheckCircle as CheckIcon,
-} from '@mui/icons-material';
+import BoostIcon from '@mui/icons-material/RocketLaunch';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import AiIcon from '@mui/icons-material/AutoAwesome';
+import PhotoIcon from '@mui/icons-material/CameraAlt';
+import CheckIcon from '@mui/icons-material/CheckCircle';
 import {
   Box,
   Button,
@@ -24,25 +22,36 @@ import { brand } from '@/theme/tokens';
 const SERVICES = [
   {
     title: 'Boost de visibilité',
-    description: 'Remontez votre annonce en tête de liste et multipliez vos contacts par 3.',
+    description:
+      'Remontez votre annonce en tête de liste et multipliez vos contacts par 3.',
     icon: <BoostIcon sx={{ fontSize: 40, color: brand.primary }} />,
     price: 'À partir de 1 500 FCFA',
-    benefits: ['Position prioritaire', 'Badge exclusif', 'Statistiques détaillées'],
+    benefits: [
+      'Position prioritaire',
+      'Badge exclusif',
+      'Statistiques détaillées',
+    ],
     cta: 'Booster une annonce',
     link: '/owner/ads',
   },
   {
-    title: 'Vérification d\'identité',
-    description: 'Gagnez la confiance des locataires avec le badge "Propriétaire Vérifié".',
+    title: "Vérification d'identité",
+    description:
+      'Gagnez la confiance des locataires avec le badge "Propriétaire Vérifié".',
     icon: <VerifiedIcon sx={{ fontSize: 40, color: '#10B981' }} />,
     price: '2 000 FCFA (Unique)',
-    benefits: ['Confiance accrue', 'Moins de questions inutiles', 'Meilleur référencement'],
+    benefits: [
+      'Confiance accrue',
+      'Moins de questions inutiles',
+      'Meilleur référencement',
+    ],
     cta: 'Se faire vérifier',
     link: '/owner/profile?action=verify',
   },
   {
     title: 'Rédaction IA Premium',
-    description: 'Laissez notre IA rédiger une description irrésistible pour votre bien.',
+    description:
+      'Laissez notre IA rédiger une description irrésistible pour votre bien.',
     icon: <AiIcon sx={{ fontSize: 40, color: '#7C3AED' }} />,
     price: '500 FCFA / Annonce',
     benefits: ['Optimisé SEO', 'Style professionnel', 'Multi-langues'],
@@ -51,7 +60,8 @@ const SERVICES = [
   },
   {
     title: 'Photographie Pro',
-    description: 'Mise en relation avec un photographe partenaire pour des photos HD.',
+    description:
+      'Mise en relation avec un photographe partenaire pour des photos HD.',
     icon: <PhotoIcon sx={{ fontSize: 40, color: '#3B82F6' }} />,
     price: 'Sur devis',
     benefits: ['Qualité magazine', 'Plus de clics', 'Vente plus rapide'],
@@ -65,13 +75,23 @@ export default function ProServicesPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <PageBreadcrumbs items={[{ label: 'Tableau de bord', href: '/owner/dashboard' }, { label: 'Services Pro' }]} />
+      <PageBreadcrumbs
+        items={[
+          { label: 'Tableau de bord', href: '/owner/dashboard' },
+          { label: 'Services Pro' },
+        ]}
+      />
       <Box sx={{ mb: 6, textAlign: 'center' }}>
         <Typography variant="h3" fontWeight={800} gutterBottom>
           Services Pro KeyHome
         </Typography>
-        <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 700, mx: 'auto' }}>
-          Boostez vos performances et louez vos biens plus rapidement avec nos outils professionnels.
+        <Typography
+          variant="h6"
+          color="text.secondary"
+          sx={{ maxWidth: 700, mx: 'auto' }}
+        >
+          Boostez vos performances et louez vos biens plus rapidement avec nos
+          outils professionnels.
         </Typography>
       </Box>
 
@@ -92,7 +112,13 @@ export default function ProServicesPage() {
               }}
             >
               <CardContent sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    mb: 2,
+                  }}
+                >
                   {service.icon}
                   <Chip
                     label={service.price}
@@ -107,7 +133,15 @@ export default function ProServicesPage() {
                 </Typography>
                 <Box sx={{ mb: 4 }}>
                   {service.benefits.map((benefit) => (
-                    <Box key={benefit} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Box
+                      key={benefit}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        mb: 1,
+                      }}
+                    >
                       <CheckIcon sx={{ fontSize: 18, color: 'success.main' }} />
                       <Typography variant="body2" fontWeight={500}>
                         {benefit}
@@ -146,10 +180,11 @@ export default function ProServicesPage() {
         }}
       >
         <Typography variant="h5" fontWeight={700} gutterBottom>
-          Besoin d'un accompagnement sur mesure ?
+          Besoin d&apos;un accompagnement sur mesure ?
         </Typography>
         <Typography sx={{ mb: 3, opacity: 0.9 }}>
-          Nos experts immobiliers sont là pour vous aider à optimiser votre patrimoine.
+          Nos experts immobiliers sont là pour vous aider à optimiser votre
+          patrimoine.
         </Typography>
         <Button
           variant="contained"

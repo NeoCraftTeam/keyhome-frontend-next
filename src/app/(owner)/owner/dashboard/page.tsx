@@ -22,19 +22,17 @@ import { ShimmerBox } from '@/components/ui/ShimmerCard';
 import GradientText from '@/components/ui/GradientText';
 import AppTour from '@/components/ui/AppTour';
 import { useGreeting } from '@/hooks/useGreeting';
-import {
-  CalendarMonth as CalendarIcon,
-  CheckCircle as CheckIcon,
-  Download as DownloadIcon,
-  Favorite as FavoriteIcon,
-  BarChart as EngagementIcon,
-  Home as HomeIcon,
-  RocketLaunch as BoostIcon,
-  Visibility as VisibilityIcon,
-  ArrowForward as ArrowIcon,
-  AccessTime as ClockIcon,
-  WavingHand as WavingHandIcon,
-} from '@mui/icons-material';
+import CalendarIcon from '@mui/icons-material/CalendarMonth';
+import CheckIcon from '@mui/icons-material/CheckCircle';
+import DownloadIcon from '@mui/icons-material/Download';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import EngagementIcon from '@mui/icons-material/BarChart';
+import HomeIcon from '@mui/icons-material/Home';
+import BoostIcon from '@mui/icons-material/RocketLaunch';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import ArrowIcon from '@mui/icons-material/ArrowForward';
+import ClockIcon from '@mui/icons-material/AccessTime';
+import WavingHandIcon from '@mui/icons-material/WavingHand';
 import {
   Avatar,
   Box,

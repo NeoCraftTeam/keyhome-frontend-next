@@ -4,7 +4,7 @@ import FadeIn from '@/components/ui/FadeIn';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
-import { ArrowBack } from '@mui/icons-material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import {
   Alert,
   Box,
@@ -33,12 +33,10 @@ export default function OwnerForgotPasswordPage() {
       const res = await authService.forgotPassword(email);
       setSuccess(
         res.message ||
-          'Un lien de réinitialisation a été envoyé à votre adresse email.',
+          'Un lien de réinitialisation a été envoyé à votre adresse email.'
       );
     } catch (err) {
-      setError(
-        getSafeErrorMessage(err, "Erreur lors de l'envoi du lien."),
-      );
+      setError(getSafeErrorMessage(err, "Erreur lors de l'envoi du lien."));
     } finally {
       setIsSubmitting(false);
     }

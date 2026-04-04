@@ -1,13 +1,15 @@
 'use client';
 
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
-import { ownerService, type Tenant, type TenantPayload } from '@/services/owner.service';
 import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  PeopleAlt as PeopleAltIcon,
-} from '@mui/icons-material';
+  ownerService,
+  type Tenant,
+  type TenantPayload,
+} from '@/services/owner.service';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import {
   Alert,
   Box,
@@ -49,7 +51,10 @@ export default function OwnerTenantsPage() {
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [form, setForm] = useState<TenantPayload>(EMPTY_FORM);
   const [deleteTarget, setDeleteTarget] = useState<Tenant | null>(null);
-  const [snackbar, setSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    message: string;
+    severity: 'success' | 'error';
+  } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['owner-tenants', page],
@@ -64,7 +69,10 @@ export default function OwnerTenantsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['owner-tenants'] });
       handleCloseDialog();
-      setSnackbar({ message: 'Locataire ajouté avec succès', severity: 'success' });
+      setSnackbar({
+        message: 'Locataire ajouté avec succès',
+        severity: 'success',
+      });
     },
     onError: () => {
       setSnackbar({ message: 'Erreur lors de la création', severity: 'error' });
@@ -77,10 +85,16 @@ export default function OwnerTenantsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['owner-tenants'] });
       handleCloseDialog();
-      setSnackbar({ message: 'Locataire mis à jour avec succès', severity: 'success' });
+      setSnackbar({
+        message: 'Locataire mis à jour avec succès',
+        severity: 'success',
+      });
     },
     onError: () => {
-      setSnackbar({ message: 'Erreur lors de la mise à jour', severity: 'error' });
+      setSnackbar({
+        message: 'Erreur lors de la mise à jour',
+        severity: 'error',
+      });
     },
   });
 
@@ -92,7 +106,10 @@ export default function OwnerTenantsPage() {
       setSnackbar({ message: 'Locataire supprimé', severity: 'success' });
     },
     onError: () => {
-      setSnackbar({ message: 'Erreur lors de la suppression', severity: 'error' });
+      setSnackbar({
+        message: 'Erreur lors de la suppression',
+        severity: 'error',
+      });
     },
   });
 
@@ -148,7 +165,12 @@ export default function OwnerTenantsPage() {
           { label: 'Mes locataires' },
         ]}
       />
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ mb: 1 }}
+      >
         <Typography variant="h4" fontWeight={700}>
           Locataires
         </Typography>
@@ -156,7 +178,11 @@ export default function OwnerTenantsPage() {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={openCreate}
-          sx={{ borderRadius: 2, textTransform: 'none', display: { xs: 'none', sm: 'flex' } }}
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            display: { xs: 'none', sm: 'flex' },
+          }}
         >
           Ajouter
         </Button>
@@ -168,7 +194,12 @@ export default function OwnerTenantsPage() {
       {isLoading ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} variant="rectangular" height={100} sx={{ borderRadius: 2 }} />
+            <Skeleton
+              key={i}
+              variant="rectangular"
+              height={100}
+              sx={{ borderRadius: 2 }}
+            />
           ))}
         </Box>
       ) : tenants.length === 0 ? (
@@ -188,7 +219,12 @@ export default function OwnerTenantsPage() {
           <Typography color="text.secondary" sx={{ mb: 3 }}>
             Commencez par ajouter un locataire pour gérer vos contrats.
           </Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate} sx={{ borderRadius: 2, textTransform: 'none' }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={openCreate}
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
             Ajouter un locataire
           </Button>
         </Card>
@@ -207,12 +243,22 @@ export default function OwnerTenantsPage() {
                 }}
               >
                 <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-                  <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'center' }} justifyContent="space-between" spacing={2}>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    alignItems={{ sm: 'center' }}
+                    justifyContent="space-between"
+                    spacing={2}
+                  >
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography fontWeight={700} noWrap>
                         {tenant.name}
                       </Typography>
-                      <Stack direction="row" spacing={2} sx={{ mt: 0.5 }} flexWrap="wrap">
+                      <Stack
+                        direction="row"
+                        spacing={2}
+                        sx={{ mt: 0.5 }}
+                        flexWrap="wrap"
+                      >
                         {tenant.phone && (
                           <Typography variant="body2" color="text.secondary">
                             {tenant.phone}
@@ -230,14 +276,23 @@ export default function OwnerTenantsPage() {
                         )}
                       </Stack>
                       {typeof tenant.lease_contracts_count === 'number' && (
-                        <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: 'block' }}>
-                          {tenant.lease_contracts_count} contrat{tenant.lease_contracts_count !== 1 ? 's' : ''}
+                        <Typography
+                          variant="caption"
+                          color="text.disabled"
+                          sx={{ mt: 0.5, display: 'block' }}
+                        >
+                          {tenant.lease_contracts_count} contrat
+                          {tenant.lease_contracts_count !== 1 ? 's' : ''}
                         </Typography>
                       )}
                     </Box>
                     <Stack direction="row" spacing={1}>
                       <Tooltip title="Modifier">
-                        <IconButton size="small" onClick={() => openEdit(tenant)} sx={{ borderRadius: 1.5 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => openEdit(tenant)}
+                          sx={{ borderRadius: 1.5 }}
+                        >
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -315,26 +370,34 @@ export default function OwnerTenantsPage() {
             <TextField
               label="Téléphone"
               value={form.phone ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, phone: e.target.value }))
+              }
               fullWidth
             />
             <TextField
               label="Email"
               type="email"
               value={form.email ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, email: e.target.value }))
+              }
               fullWidth
             />
             <TextField
               label="Numéro de pièce d'identité"
               value={form.id_number ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, id_number: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, id_number: e.target.value }))
+              }
               fullWidth
             />
             <TextField
               label="Notes"
               value={form.notes ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, notes: e.target.value }))
+              }
               fullWidth
               multiline
               rows={3}
@@ -342,7 +405,12 @@ export default function OwnerTenantsPage() {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2.5, pt: 1 }}>
-          <Button onClick={handleCloseDialog} variant="outlined" sx={{ borderRadius: 2 }} disabled={isPending}>
+          <Button
+            onClick={handleCloseDialog}
+            variant="outlined"
+            sx={{ borderRadius: 2 }}
+            disabled={isPending}
+          >
             Annuler
           </Button>
           <Button
@@ -366,19 +434,29 @@ export default function OwnerTenantsPage() {
         <DialogTitle fontWeight={700}>Supprimer le locataire ?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Êtes-vous sûr de vouloir supprimer <strong>{deleteTarget?.name}</strong> ? Cette action est irréversible.
+            Êtes-vous sûr de vouloir supprimer{' '}
+            <strong>{deleteTarget?.name}</strong> ? Cette action est
+            irréversible.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setDeleteTarget(null)} variant="outlined" sx={{ borderRadius: 2 }}>
+          <Button
+            onClick={() => setDeleteTarget(null)}
+            variant="outlined"
+            sx={{ borderRadius: 2 }}
+          >
             Annuler
           </Button>
           <Button
-            onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+            onClick={() =>
+              deleteTarget && deleteMutation.mutate(deleteTarget.id)
+            }
             color="error"
             variant="contained"
             disabled={deleteMutation.isPending}
-            startIcon={deleteMutation.isPending ? <CircularProgress size={16} /> : null}
+            startIcon={
+              deleteMutation.isPending ? <CircularProgress size={16} /> : null
+            }
             sx={{ borderRadius: 2 }}
           >
             Supprimer
@@ -392,7 +470,11 @@ export default function OwnerTenantsPage() {
         onClose={() => setSnackbar(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity={snackbar?.severity} onClose={() => setSnackbar(null)} sx={{ borderRadius: 2 }}>
+        <Alert
+          severity={snackbar?.severity}
+          onClose={() => setSnackbar(null)}
+          sx={{ borderRadius: 2 }}
+        >
           {snackbar?.message}
         </Alert>
       </Snackbar>

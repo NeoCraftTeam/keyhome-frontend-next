@@ -15,7 +15,7 @@ import { citiesService } from '@/services/cities.service';
 import { usersService } from '@/services/users.service';
 import { brandAgent, shadow } from '@/theme/tokens';
 import { City, User, UserRole } from '@/types';
-import { ArrowBack } from '@mui/icons-material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import {
   Alert,
   Autocomplete,

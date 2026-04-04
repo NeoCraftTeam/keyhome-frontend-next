@@ -1,10 +1,8 @@
 'use client';
 
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
-import {
-  Group as GroupIcon,
-  HourglassEmpty as SoonIcon,
-} from '@mui/icons-material';
+import GroupIcon from '@mui/icons-material/Group';
+import SoonIcon from '@mui/icons-material/HourglassEmpty';
 import { Box, Chip, Container, Paper, Typography } from '@mui/material';
 
 export default function OwnerEquipePage() {
