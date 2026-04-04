@@ -16,13 +16,11 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import {
-  Business,
-  CalendarMonth,
-  Group,
-  Home,
-  Verified,
-} from '@mui/icons-material';
+import Business from '@mui/icons-material/Business';
+import CalendarMonth from '@mui/icons-material/CalendarMonth';
+import Group from '@mui/icons-material/Group';
+import Home from '@mui/icons-material/Home';
+import Verified from '@mui/icons-material/Verified';
 import AdCard from '@/components/ads/AdCard';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { formatDistanceToNow } from 'date-fns';
@@ -46,7 +44,14 @@ export default function AgencyProfilePage() {
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '60vh',
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -60,14 +65,17 @@ export default function AgencyProfilePage() {
           Agence introuvable
         </Typography>
         <Typography color="text.secondary">
-          Cette agence n'existe pas ou a été supprimée.
+          Cette agence n&apos;existe pas ou a été supprimée.
         </Typography>
       </Container>
     );
   }
 
   const memberSince = agency.created_at
-    ? formatDistanceToNow(new Date(agency.created_at), { addSuffix: false, locale: fr })
+    ? formatDistanceToNow(new Date(agency.created_at), {
+        addSuffix: false,
+        locale: fr,
+      })
     : null;
 
   return (
@@ -110,14 +118,34 @@ export default function AgencyProfilePage() {
         </Avatar>
 
         <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: { xs: 'center', sm: 'flex-start' }, mb: 0.5 }}>
-            <Typography variant="h4" fontWeight={800} sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              justifyContent: { xs: 'center', sm: 'flex-start' },
+              mb: 0.5,
+            }}
+          >
+            <Typography
+              variant="h4"
+              fontWeight={800}
+              sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}
+            >
               {agency.name}
             </Typography>
             <Verified sx={{ color: 'primary.main', fontSize: 24 }} />
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: { xs: 'center', sm: 'flex-start' }, mt: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              flexWrap: 'wrap',
+              justifyContent: { xs: 'center', sm: 'flex-start' },
+              mt: 1,
+            }}
+          >
             {memberSince && (
               <Chip
                 icon={<CalendarMonth sx={{ fontSize: 16 }} />}
@@ -152,10 +180,17 @@ export default function AgencyProfilePage() {
               component="a"
               href={`/bailleurs/${agency.owner.id}`}
               sx={{
-                display: 'flex', alignItems: 'center', gap: 1.5, mt: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                mt: 2,
                 justifyContent: { xs: 'center', sm: 'flex-start' },
-                textDecoration: 'none', color: 'inherit',
-                cursor: 'pointer', borderRadius: 2, p: 0.5, mx: -0.5,
+                textDecoration: 'none',
+                color: 'inherit',
+                cursor: 'pointer',
+                borderRadius: 2,
+                p: 0.5,
+                mx: -0.5,
                 transition: 'background-color 0.15s',
                 '&:hover': { bgcolor: 'action.hover' },
               }}
@@ -167,7 +202,11 @@ export default function AgencyProfilePage() {
                 {agency.owner.firstname?.charAt(0)}
               </Avatar>
               <Typography variant="body2" color="text.secondary">
-                Géré par <strong>{agency.owner.firstname} {agency.owner.lastname}</strong> · Voir le profil
+                Géré par{' '}
+                <strong>
+                  {agency.owner.firstname} {agency.owner.lastname}
+                </strong>{' '}
+                · Voir le profil
               </Typography>
             </Box>
           )}
@@ -195,7 +234,7 @@ export default function AgencyProfilePage() {
             Aucune annonce disponible
           </Typography>
           <Typography color="text.secondary">
-            Cette agence n'a pas encore publié d'annonces.
+            Cette agence n&apos;a pas encore publié d&apos;annonces.
           </Typography>
         </Paper>
       ) : (

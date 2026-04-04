@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { BLOG_POSTS } from './blog/posts';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 /**
  * Dynamic sitemap — includes static pages + all public ad listings.
@@ -41,7 +42,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // ── Programmatic city pages ───────────────────────────────────
-  const cities = ['douala', 'yaounde', 'bafoussam', 'abidjan', 'cotonou', 'lome', 'accra', 'dakar', 'bamako'];
+  const cities = [
+    'douala',
+    'yaounde',
+    'bafoussam',
+    'abidjan',
+    'cotonou',
+    'lome',
+    'accra',
+    'dakar',
+    'bamako',
+  ];
   const cityPages: MetadataRoute.Sitemap = cities.map((city) => ({
     url: `${baseUrl}/immobilier/${city}`,
     lastModified: now,
@@ -50,7 +61,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // ── Property-type pages ──────────────────────────────────────
-  const propertyTypes = ['appartement', 'maison', 'villa', 'terrain', 'bureau', 'studio'];
+  const propertyTypes = [
+    'appartement',
+    'maison',
+    'villa',
+    'terrain',
+    'bureau',
+    'studio',
+  ];
   const typePages: MetadataRoute.Sitemap = propertyTypes.map((type) => ({
     url: `${baseUrl}/type-bien/${type}`,
     lastModified: now,
@@ -59,9 +77,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // ── Comparison pages ─────────────────────────────────────────
-  const comparisonSlugs = ['louer-vs-acheter', 'douala-vs-yaounde', 'appartement-vs-maison'];
+  const comparisonSlugs = [
+    'louer-vs-acheter',
+    'douala-vs-yaounde',
+    'appartement-vs-maison',
+  ];
   const comparisonPages: MetadataRoute.Sitemap = [
-    { url: `${baseUrl}/comparaison`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.65 },
+    {
+      url: `${baseUrl}/comparaison`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.65,
+    },
     ...comparisonSlugs.map((slug) => ({
       url: `${baseUrl}/comparaison/${slug}`,
       lastModified: now,
@@ -72,7 +99,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ── Blog pages ───────────────────────────────────────────────
   const blogPages: MetadataRoute.Sitemap = [
-    { url: `${baseUrl}/blog`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.7 },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    },
     ...BLOG_POSTS.map((post) => ({
       url: `${baseUrl}/blog/${post.slug}`,
       lastModified: now,
@@ -85,23 +117,51 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let adPages: MetadataRoute.Sitemap = [];
   try {
     const res = await fetch(`${API_URL}/ads?per_page=5000&status=available`, {
-      next: { revalidate: 3600 }, // re-fetch at most once per hour
+      next: { revalidate: 3600 },
     });
     if (res.ok) {
       const json = await res.json();
-      const ads = json.data ?? [];
-      adPages = ads.map(
-        (ad: { id: string; slug?: string; updated_at?: string }) => ({
-          url: `${baseUrl}/ads/${ad.id}/${ad.slug || ad.id}`,
-          lastModified: ad.updated_at || now,
-          changeFrequency: 'weekly' as const,
-          priority: 0.7,
-        }),
-      );
+      const ads: Array<{ id: string; slug?: string; updated_at?: string }> =
+        json.data ?? [];
+      adPages = ads.map((ad) => ({
+        url: `${baseUrl}/ads/${ad.slug || ad.id}`,
+        lastModified: ad.updated_at || now,
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      }));
     }
   } catch {
     // Fail silently — static pages are always included even if the API is down
   }
 
-  return [...staticPages, ...cityPages, ...typePages, ...comparisonPages, ...blogPages, ...adPages];
+  // ── Agency profile pages ─────────────────────────────────────────
+  let agencyPages: MetadataRoute.Sitemap = [];
+  try {
+    const res = await fetch(`${API_URL}/agencies?per_page=500`, {
+      next: { revalidate: 3600 },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const agencies: Array<{ id: string; updated_at?: string }> =
+        json.data ?? [];
+      agencyPages = agencies.map((agency) => ({
+        url: `${baseUrl}/agences/${agency.id}`,
+        lastModified: agency.updated_at || now,
+        changeFrequency: 'weekly' as const,
+        priority: 0.6,
+      }));
+    }
+  } catch {
+    // Fail silently
+  }
+
+  return [
+    ...staticPages,
+    ...cityPages,
+    ...typePages,
+    ...comparisonPages,
+    ...blogPages,
+    ...adPages,
+    ...agencyPages,
+  ];
 }

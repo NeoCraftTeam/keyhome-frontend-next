@@ -8,22 +8,20 @@ import { getSafeErrorMessage } from '@/lib/error-messages';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { useAuth } from '@/providers/AuthProvider';
 import { gradient } from '@/theme/tokens';
+import EmailIcon from '@mui/icons-material/Email';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
-    Email as EmailIcon,
-    Visibility,
-    VisibilityOff,
-} from '@mui/icons-material';
-import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Divider,
-    IconButton,
-    InputAdornment,
-    Link,
-    TextField,
-    Typography,
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Divider,
+  IconButton,
+  InputAdornment,
+  Link,
+  TextField,
+  Typography,
 } from '@mui/material';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -47,7 +45,9 @@ export default function LoginPage() {
     try {
       await login(email, password);
     } catch (err) {
-      setError(getSafeErrorMessage(err, 'Identifiants incorrects. Veuillez réessayer.'));
+      setError(
+        getSafeErrorMessage(err, 'Identifiants incorrects. Veuillez réessayer.')
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -77,7 +77,8 @@ export default function LoginPage() {
           sx={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(to bottom, rgba(34,34,34,0.2) 0%, rgba(34,34,34,0.55) 100%)',
+            background:
+              'linear-gradient(to bottom, rgba(34,34,34,0.2) 0%, rgba(34,34,34,0.55) 100%)',
             zIndex: 1,
           }}
         />
@@ -93,15 +94,27 @@ export default function LoginPage() {
           }}
         >
           <FadeIn delay={0.2} direction="up">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Image src="/images/logo.png" alt="KeyHome — Plateforme immobilière" width={42} height={42} />
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}
+            >
+              <Image
+                src="/images/logo.png"
+                alt="KeyHome — Plateforme immobilière"
+                width={42}
+                height={42}
+              />
               <Typography variant="h4" fontWeight={700} color="#fff">
                 KeyHome
               </Typography>
             </Box>
           </FadeIn>
           <FadeIn delay={0.4} direction="up">
-            <Typography variant="h5" color="rgba(255,255,255,0.9)" fontWeight={400} sx={{ maxWidth: 360 }}>
+            <Typography
+              variant="h5"
+              color="rgba(255,255,255,0.9)"
+              fontWeight={400}
+              sx={{ maxWidth: 360 }}
+            >
               Trouvez votre bien immobilier idéal
             </Typography>
           </FadeIn>
@@ -109,8 +122,12 @@ export default function LoginPage() {
             <Box sx={{ mt: 3, display: 'flex', gap: 4 }}>
               {authStats.map((stat) => (
                 <Box key={stat.label}>
-                  <Typography variant="h5" fontWeight={700} color="#fff">{stat.value}</Typography>
-                  <Typography variant="caption" color="rgba(255,255,255,0.7)">{stat.label}</Typography>
+                  <Typography variant="h5" fontWeight={700} color="#fff">
+                    {stat.value}
+                  </Typography>
+                  <Typography variant="caption" color="rgba(255,255,255,0.7)">
+                    {stat.label}
+                  </Typography>
                 </Box>
               ))}
             </Box>
@@ -140,7 +157,13 @@ export default function LoginPage() {
               mb: 4,
             }}
           >
-            <Image src="/images/logo.png" alt="KeyHome — Plateforme immobilière" width={40} height={40} priority />
+            <Image
+              src="/images/logo.png"
+              alt="KeyHome — Plateforme immobilière"
+              width={40}
+              height={40}
+              priority
+            />
             <Typography variant="h5" fontWeight={700} color="primary.main">
               KeyHome
             </Typography>
@@ -159,12 +182,22 @@ export default function LoginPage() {
 
           {error && (
             <FadeIn direction="none" duration={0.3}>
-              <Alert severity="error" id="login-error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+              <Alert
+                severity="error"
+                id="login-error"
+                sx={{ mb: 2, borderRadius: 2 }}
+              >
+                {error}
+              </Alert>
             </FadeIn>
           )}
 
           <FadeIn delay={0.2} direction="up">
-            <Box component="form" onSubmit={handleSubmit} aria-describedby={error ? 'login-error' : undefined}>
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              aria-describedby={error ? 'login-error' : undefined}
+            >
               <TextField
                 fullWidth
                 label="Adresse email"
@@ -180,11 +213,15 @@ export default function LoginPage() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <EmailIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                      <EmailIcon
+                        sx={{ color: 'text.secondary', fontSize: 20 }}
+                      />
                     </InputAdornment>
                   ),
                 }}
-                InputLabelProps={outlinedStartIconInputLabelProps(emailLabelShrink.shrink)}
+                InputLabelProps={outlinedStartIconInputLabelProps(
+                  emailLabelShrink.shrink
+                )}
                 sx={{ mb: 2 }}
               />
 
@@ -200,7 +237,16 @@ export default function LoginPage() {
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small" aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                        size="small"
+                        aria-label={
+                          showPassword
+                            ? 'Masquer le mot de passe'
+                            : 'Afficher le mot de passe'
+                        }
+                      >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
@@ -213,7 +259,11 @@ export default function LoginPage() {
                 <Link
                   href="/forgot-password"
                   underline="hover"
-                  sx={{ fontSize: '0.8125rem', color: 'primary.main', fontWeight: 500 }}
+                  sx={{
+                    fontSize: '0.8125rem',
+                    color: 'primary.main',
+                    fontWeight: 500,
+                  }}
                 >
                   Mot de passe oublié ?
                 </Link>
@@ -229,13 +279,23 @@ export default function LoginPage() {
                   py: 1.5,
                   fontSize: '1rem',
                   fontWeight: 600,
-                  background: (theme) => theme.palette.gradient?.primary ?? gradient.primary,
-                  '&:hover': { background: (theme) => theme.palette.gradient?.primaryHover ?? gradient.primaryHover },
-                  transition: 'transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s',
+                  background: (theme) =>
+                    theme.palette.gradient?.primary ?? gradient.primary,
+                  '&:hover': {
+                    background: (theme) =>
+                      theme.palette.gradient?.primaryHover ??
+                      gradient.primaryHover,
+                  },
+                  transition:
+                    'transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s',
                   '&:active': { transform: 'scale(0.97)' },
                 }}
               >
-                {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Se connecter'}
+                {isSubmitting ? (
+                  <CircularProgress size={24} sx={{ color: '#fff' }} />
+                ) : (
+                  'Se connecter'
+                )}
               </Button>
             </Box>
           </FadeIn>
@@ -248,9 +308,17 @@ export default function LoginPage() {
           </FadeIn>
 
           <FadeIn delay={0.4} direction="up">
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 3, textAlign: 'center' }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 3, textAlign: 'center' }}
+            >
               Pas encore de compte ?{' '}
-              <Link href="/register" underline="hover" sx={{ fontWeight: 600, color: 'primary.main' }}>
+              <Link
+                href="/register"
+                underline="hover"
+                sx={{ fontWeight: 600, color: 'primary.main' }}
+              >
                 Créer un compte
               </Link>
             </Typography>
@@ -258,9 +326,19 @@ export default function LoginPage() {
 
           <FadeIn delay={0.5} direction="up">
             <Divider sx={{ my: 2.5 }}>
-              <Typography variant="caption" color="text.disabled" sx={{ px: 1 }}>ou</Typography>
+              <Typography
+                variant="caption"
+                color="text.disabled"
+                sx={{ px: 1 }}
+              >
+                ou
+              </Typography>
             </Divider>
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ textAlign: 'center' }}
+            >
               Vous êtes propriétaire ?{' '}
               <Link
                 href="/owner/login"

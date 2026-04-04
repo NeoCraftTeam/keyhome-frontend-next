@@ -8,12 +8,10 @@ import { escapeHtml } from '@/lib/sanitize';
 import { useAuth } from '@/providers/AuthProvider';
 import { brand } from '@/theme/tokens';
 import { adsService } from '@/services/ads.service';
-import {
-  Close as CloseIcon,
-  FilterList as FilterListIcon,
-  List as ListIcon,
-  MyLocation as MyLocationIcon,
-} from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import ListIcon from '@mui/icons-material/List';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import {
   Box,
   Chip,
@@ -192,7 +190,7 @@ export default function NearbyPage() {
         offset: 25,
         closeButton: false,
       }).setHTML(
-        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${encodeURIComponent(ad.id)}/${encodeURIComponent(ad.slug)}'">
+        `<div style="font-size:13px;font-weight:600;max-width:180px;cursor:pointer" onclick="window.location.href='/ads/${encodeURIComponent(ad.slug)}'">
           <div>${escapeHtml(ad.title)}</div>
           <div style="color:${brand.primary};font-weight:700">${formatPrice(ad.price)}</div>
         </div>`

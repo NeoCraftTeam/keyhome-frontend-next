@@ -4,7 +4,14 @@ import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PaymentHistoryTableModern from '@/components/payment/PaymentHistoryTableModern';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
-import { Box, CircularProgress, Container, Typography } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import {
+  Box,
+  CircularProgress,
+  Container,
+  IconButton,
+  Typography,
+} from '@mui/material';
 
 /**
  * Dual-purpose route:
@@ -50,9 +57,19 @@ function PaymentsContent() {
           { label: 'Mes Paiements' },
         ]}
       />
-      <Typography variant="h4" fontWeight={700} gutterBottom>
-        Mes Paiements
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+        <IconButton
+          onClick={() => router.back()}
+          aria-label="Retour"
+          size="small"
+          sx={{ color: 'text.secondary' }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h4" fontWeight={700}>
+          Mes Paiements
+        </Typography>
+      </Box>
       <Typography color="text.secondary" sx={{ mb: 4 }}>
         Historique de vos transactions.
       </Typography>

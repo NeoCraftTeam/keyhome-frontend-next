@@ -7,16 +7,13 @@ import {
   type SearchAlert,
   type SearchAlertPayload,
 } from '@/services/searchAlerts.service';
-import {
-  Add as AddIcon,
-  ChevronLeft as ChevronLeftIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  NotificationsActive,
-  NotificationsNone,
-  NotificationsOff,
-  Search as SearchIcon,
-} from '@mui/icons-material';
+import AddIcon from '@mui/icons-material/Add';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import NotificationsActive from '@mui/icons-material/NotificationsActive';
+import NotificationsNone from '@mui/icons-material/NotificationsNone';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   Alert,
   Box,
@@ -51,8 +48,12 @@ function buildFilterSummary(alert: SearchAlert): string[] {
   if (alert.city_name) parts.push(alert.city_name);
   if (alert.type_name) parts.push(alert.type_name);
   if (alert.price_min || alert.price_max) {
-    const min = alert.price_min ? `${(alert.price_min / 1000).toFixed(0)}k` : '0';
-    const max = alert.price_max ? `${(alert.price_max / 1000).toFixed(0)}k` : '∞';
+    const min = alert.price_min
+      ? `${(alert.price_min / 1000).toFixed(0)}k`
+      : '0';
+    const max = alert.price_max
+      ? `${(alert.price_max / 1000).toFixed(0)}k`
+      : '∞';
     parts.push(`${min} – ${max} FCFA`);
   }
   if (alert.bedrooms_min) parts.push(`${alert.bedrooms_min}+ ch.`);
@@ -74,10 +75,7 @@ export default function SearchAlertsPage() {
   const [form, setForm] = useState<SearchAlertPayload>({});
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  const {
-    data: alertsData,
-    isLoading,
-  } = useQuery({
+  const { data: alertsData, isLoading } = useQuery({
     queryKey: [...ALERTS_QK],
     queryFn: () => searchAlertsService.list(),
     staleTime: 60_000,
@@ -87,7 +85,8 @@ export default function SearchAlertsPage() {
   const alerts = alertsData?.data ?? [];
 
   const createMutation = useMutation({
-    mutationFn: (payload: SearchAlertPayload) => searchAlertsService.create(payload),
+    mutationFn: (payload: SearchAlertPayload) =>
+      searchAlertsService.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ALERTS_QK });
       setEditOpen(false);
@@ -96,8 +95,13 @@ export default function SearchAlertsPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: SearchAlertPayload }) =>
-      searchAlertsService.update(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: SearchAlertPayload;
+    }) => searchAlertsService.update(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ALERTS_QK });
       setEditOpen(false);
@@ -157,7 +161,9 @@ export default function SearchAlertsPage() {
   if (!isAuthenticated) {
     return (
       <Container maxWidth="sm" sx={{ py: 8, textAlign: 'center' }}>
-        <NotificationsNone sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+        <NotificationsNone
+          sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }}
+        />
         <Typography variant="h6" color="text.secondary">
           Connectez-vous pour gérer vos alertes
         </Typography>
@@ -180,7 +186,12 @@ export default function SearchAlertsPage() {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <IconButton onClick={() => router.back()} size="small" aria-label="Retour" sx={{ border: '1px solid', borderColor: 'divider' }}>
+            <IconButton
+              onClick={() => router.back()}
+              size="small"
+              aria-label="Retour"
+              sx={{ border: '1px solid', borderColor: 'divider' }}
+            >
               <ChevronLeftIcon />
             </IconButton>
             <NotificationsActive sx={{ fontSize: 28, color: 'primary.main' }} />
@@ -212,160 +223,179 @@ export default function SearchAlertsPage() {
           sx={{ mb: 3, borderRadius: 2 }}
         >
           <Typography variant="body2">
-            Recevez une notification dès qu&apos;une annonce correspond à vos critères.{' '}
-            <strong>{alerts.length}/{MAX_ALERTS}</strong> alertes utilisées.
+            Recevez une notification dès qu&apos;une annonce correspond à vos
+            critères.{' '}
+            <strong>
+              {alerts.length}/{MAX_ALERTS}
+            </strong>{' '}
+            alertes utilisées.
           </Typography>
         </Alert>
 
         {/* Loading */}
         <Box aria-live="polite" aria-atomic="true">
-        {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <CircularProgress size={36} />
-          </Box>
-        ) : alerts.length === 0 ? (
-          /* Empty state */
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <SearchIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" fontWeight={600}>
-              Aucune alerte configurée
-            </Typography>
-            <Typography
-              variant="body2"
-              color="text.disabled"
-              sx={{ mt: 0.5, mb: 3, maxWidth: 400, mx: 'auto' }}
-            >
-              Créez votre première alerte pour être notifié automatiquement lorsqu&apos;une
-              annonce correspond à vos critères de recherche.
-            </Typography>
-            <Button
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={handleOpenCreate}
-              sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2 }}
-            >
-              Créer une alerte
-            </Button>
-          </Box>
-        ) : (
-          /* Alerts list */
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {alerts.map((alert) => {
-              const filters = buildFilterSummary(alert);
-              const isActive = alert.is_active !== false;
+          {isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress size={36} />
+            </Box>
+          ) : alerts.length === 0 ? (
+            /* Empty state */
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <SearchIcon
+                sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }}
+              />
+              <Typography variant="h6" color="text.secondary" fontWeight={600}>
+                Aucune alerte configurée
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.disabled"
+                sx={{ mt: 0.5, mb: 3, maxWidth: 400, mx: 'auto' }}
+              >
+                Créez votre première alerte pour être notifié automatiquement
+                lorsqu&apos;une annonce correspond à vos critères de recherche.
+              </Typography>
+              <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                onClick={handleOpenCreate}
+                sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2 }}
+              >
+                Créer une alerte
+              </Button>
+            </Box>
+          ) : (
+            /* Alerts list */
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {alerts.map((alert) => {
+                const filters = buildFilterSummary(alert);
+                const isActive = alert.is_active !== false;
 
-              return (
-                <Card
-                  key={alert.id}
-                  variant="outlined"
-                  sx={{
-                    borderRadius: 3,
-                    opacity: isActive ? 1 : 0.6,
-                    transition: 'opacity 0.2s',
-                  }}
-                >
-                  <CardContent sx={{ pb: 1 }}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        justifyContent: 'space-between',
-                        gap: 1,
-                      }}
-                    >
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="subtitle1" fontWeight={700} noWrap>
-                          {alert.label || 'Alerte sans nom'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Créée le{' '}
-                          {new Date(alert.created_at).toLocaleDateString('fr-FR', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
-                        </Typography>
-                      </Box>
-
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Tooltip title={isActive ? 'Désactiver' : 'Activer'}>
-                          <Switch
-                            checked={isActive}
-                            onChange={() =>
-                              toggleMutation.mutate({
-                                id: alert.id,
-                                is_active: !isActive,
-                              })
-                            }
-                            size="small"
-                            inputProps={{
-                              'aria-label': isActive
-                                ? "Désactiver l'alerte"
-                                : "Activer l'alerte",
-                            }}
-                          />
-                        </Tooltip>
-                      </Box>
-                    </Box>
-
-                    {/* Filter chips */}
-                    {filters.length > 0 && (
+                return (
+                  <Card
+                    key={alert.id}
+                    variant="outlined"
+                    sx={{
+                      borderRadius: 3,
+                      opacity: isActive ? 1 : 0.6,
+                      transition: 'opacity 0.2s',
+                    }}
+                  >
+                    <CardContent sx={{ pb: 1 }}>
                       <Box
                         sx={{
                           display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: 0.75,
-                          mt: 1.5,
+                          alignItems: 'flex-start',
+                          justifyContent: 'space-between',
+                          gap: 1,
                         }}
                       >
-                        {filters.map((f, i) => (
-                          <Chip
-                            key={i}
-                            label={f}
-                            size="small"
-                            variant="outlined"
-                            color="primary"
-                            sx={{ fontSize: '0.75rem' }}
-                          />
-                        ))}
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography
+                            variant="subtitle1"
+                            fontWeight={700}
+                            noWrap
+                          >
+                            {alert.label || 'Alerte sans nom'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Créée le{' '}
+                            {new Date(alert.created_at).toLocaleDateString(
+                              'fr-FR',
+                              {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              }
+                            )}
+                          </Typography>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                          }}
+                        >
+                          <Tooltip title={isActive ? 'Désactiver' : 'Activer'}>
+                            <Switch
+                              checked={isActive}
+                              onChange={() =>
+                                toggleMutation.mutate({
+                                  id: alert.id,
+                                  is_active: !isActive,
+                                })
+                              }
+                              size="small"
+                              inputProps={{
+                                'aria-label': isActive
+                                  ? "Désactiver l'alerte"
+                                  : "Activer l'alerte",
+                              }}
+                            />
+                          </Tooltip>
+                        </Box>
                       </Box>
-                    )}
 
-                    {filters.length === 0 && (
-                      <Typography
-                        variant="caption"
-                        color="text.disabled"
-                        sx={{ mt: 1, display: 'block' }}
+                      {/* Filter chips */}
+                      {filters.length > 0 && (
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 0.75,
+                            mt: 1.5,
+                          }}
+                        >
+                          {filters.map((f, i) => (
+                            <Chip
+                              key={i}
+                              label={f}
+                              size="small"
+                              variant="outlined"
+                              color="primary"
+                              sx={{ fontSize: '0.75rem' }}
+                            />
+                          ))}
+                        </Box>
+                      )}
+
+                      {filters.length === 0 && (
+                        <Typography
+                          variant="caption"
+                          color="text.disabled"
+                          sx={{ mt: 1, display: 'block' }}
+                        >
+                          Aucun filtre configuré — toutes les annonces
+                        </Typography>
+                      )}
+                    </CardContent>
+
+                    <CardActions sx={{ px: 2, pb: 1.5, pt: 0 }}>
+                      <Button
+                        size="small"
+                        startIcon={<EditIcon />}
+                        onClick={() => handleOpenEdit(alert)}
+                        sx={{ textTransform: 'none', fontWeight: 600 }}
                       >
-                        Aucun filtre configuré — toutes les annonces
-                      </Typography>
-                    )}
-                  </CardContent>
-
-                  <CardActions sx={{ px: 2, pb: 1.5, pt: 0 }}>
-                    <Button
-                      size="small"
-                      startIcon={<EditIcon />}
-                      onClick={() => handleOpenEdit(alert)}
-                      sx={{ textTransform: 'none', fontWeight: 600 }}
-                    >
-                      Modifier
-                    </Button>
-                    <Button
-                      size="small"
-                      color="error"
-                      startIcon={<DeleteIcon />}
-                      onClick={() => setDeleteConfirmId(alert.id)}
-                      sx={{ textTransform: 'none', fontWeight: 600 }}
-                    >
-                      Supprimer
-                    </Button>
-                  </CardActions>
-                </Card>
-              );
-            })}
-          </Box>
-        )}
+                        Modifier
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => setDeleteConfirmId(alert.id)}
+                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                      >
+                        Supprimer
+                      </Button>
+                    </CardActions>
+                  </Card>
+                );
+              })}
+            </Box>
+          )}
         </Box>
       </FadeIn>
 
@@ -396,7 +426,9 @@ export default function SearchAlertsPage() {
             <TextField
               label="Nom de l'alerte"
               value={form.label ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, label: e.target.value }))
+              }
               placeholder="Ex: Appartement Bastos budget 150k"
               size="small"
               fullWidth
@@ -404,7 +436,9 @@ export default function SearchAlertsPage() {
             <TextField
               label="Ville"
               value={form.city_name ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, city_name: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, city_name: e.target.value }))
+              }
               placeholder="Ex: Douala, Yaoundé"
               size="small"
               fullWidth
@@ -412,7 +446,9 @@ export default function SearchAlertsPage() {
             <TextField
               label="Type de bien"
               value={form.type_name ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, type_name: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, type_name: e.target.value }))
+              }
               placeholder="Ex: Appartement, Maison"
               size="small"
               fullWidth
@@ -425,7 +461,9 @@ export default function SearchAlertsPage() {
                 onChange={(e) =>
                   setForm((f) => ({
                     ...f,
-                    price_min: e.target.value ? Number(e.target.value) : undefined,
+                    price_min: e.target.value
+                      ? Number(e.target.value)
+                      : undefined,
                   }))
                 }
                 size="small"
@@ -439,7 +477,9 @@ export default function SearchAlertsPage() {
                 onChange={(e) =>
                   setForm((f) => ({
                     ...f,
-                    price_max: e.target.value ? Number(e.target.value) : undefined,
+                    price_max: e.target.value
+                      ? Number(e.target.value)
+                      : undefined,
                   }))
                 }
                 size="small"
@@ -455,7 +495,9 @@ export default function SearchAlertsPage() {
                 onChange={(e) =>
                   setForm((f) => ({
                     ...f,
-                    bedrooms_min: e.target.value ? Number(e.target.value) : undefined,
+                    bedrooms_min: e.target.value
+                      ? Number(e.target.value)
+                      : undefined,
                   }))
                 }
                 size="small"
@@ -469,7 +511,9 @@ export default function SearchAlertsPage() {
                 onChange={(e) =>
                   setForm((f) => ({
                     ...f,
-                    surface_min: e.target.value ? Number(e.target.value) : undefined,
+                    surface_min: e.target.value
+                      ? Number(e.target.value)
+                      : undefined,
                   }))
                 }
                 size="small"
@@ -480,7 +524,9 @@ export default function SearchAlertsPage() {
             <TextField
               label="Mots-clés"
               value={form.query ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, query: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, query: e.target.value }))
+              }
               placeholder="Ex: piscine, meublé, gardiennage"
               size="small"
               fullWidth
@@ -522,11 +568,13 @@ export default function SearchAlertsPage() {
         fullWidth
         PaperProps={{ sx: { borderRadius: 4 } }}
       >
-        <DialogTitle sx={{ fontWeight: 700 }}>Supprimer cette alerte ?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          Supprimer cette alerte ?
+        </DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary">
-            Cette action est irréversible. Vous ne recevrez plus de notifications pour
-            cette recherche.
+            Cette action est irréversible. Vous ne recevrez plus de
+            notifications pour cette recherche.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -534,7 +582,9 @@ export default function SearchAlertsPage() {
           <Button
             variant="contained"
             color="error"
-            onClick={() => deleteConfirmId && deleteMutation.mutate(deleteConfirmId)}
+            onClick={() =>
+              deleteConfirmId && deleteMutation.mutate(deleteConfirmId)
+            }
             disabled={deleteMutation.isPending}
             startIcon={
               deleteMutation.isPending ? (

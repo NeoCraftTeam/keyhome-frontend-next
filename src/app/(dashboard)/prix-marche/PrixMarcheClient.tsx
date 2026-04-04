@@ -2,8 +2,18 @@
 
 import PriceHeatmapLayer from '@/components/maps/PriceHeatmapLayer';
 import RentEstimatorWidget from '@/components/ads/RentEstimatorWidget';
-import { BarChart, Calculate, ChevronLeft as ChevronLeftIcon, Layers } from '@mui/icons-material';
-import { Box, Container, Grid, IconButton, Tab, Tabs, Typography } from '@mui/material';
+import Calculate from '@mui/icons-material/Calculate';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import Layers from '@mui/icons-material/Layers';
+import {
+  Box,
+  Container,
+  Grid,
+  IconButton,
+  Tab,
+  Tabs,
+  Typography,
+} from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -14,7 +24,12 @@ export default function PrixMarcheClient() {
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
       <Box sx={{ mb: 2 }}>
-        <IconButton onClick={() => router.back()} size="small" aria-label="Retour" sx={{ border: '1px solid', borderColor: 'divider' }}>
+        <IconButton
+          onClick={() => router.back()}
+          size="small"
+          aria-label="Retour"
+          sx={{ border: '1px solid', borderColor: 'divider' }}
+        >
           <ChevronLeftIcon />
         </IconButton>
       </Box>
@@ -22,7 +37,8 @@ export default function PrixMarcheClient() {
         Prix du marché
       </Typography>
       <Typography color="text.secondary" mb={4}>
-        Analysez les tendances de prix par quartier et estimez le loyer de votre bien.
+        Analysez les tendances de prix par quartier et estimez le loyer de votre
+        bien.
       </Typography>
 
       <Tabs
@@ -33,13 +49,18 @@ export default function PrixMarcheClient() {
         sx={{ mb: 4, borderBottom: '1px solid', borderColor: 'divider' }}
       >
         <Tab icon={<Layers />} iconPosition="start" label="Carte thermique" />
-        <Tab icon={<Calculate />} iconPosition="start" label="Estimateur de loyer" />
+        <Tab
+          icon={<Calculate />}
+          iconPosition="start"
+          label="Estimateur de loyer"
+        />
       </Tabs>
 
       {tab === 0 && (
         <Box>
           <Typography variant="body2" color="text.secondary" mb={3}>
-            Les zones rouges indiquent les quartiers les plus chers. Survolez un point pour voir le prix médian.
+            Les zones rouges indiquent les quartiers les plus chers. Survolez un
+            point pour voir le prix médian.
           </Typography>
           <PriceHeatmapLayer height={550} />
         </Box>

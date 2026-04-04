@@ -1,11 +1,11 @@
 'use client';
 
 import { Box, Button, Container, Typography } from '@mui/material';
-import { ErrorOutline as ErrorIcon } from '@mui/icons-material';
+import ErrorIcon from '@mui/icons-material/ErrorOutline';
 import { gradient } from '@/theme/tokens';
 
 export default function DashboardError({
-  error,
+  error: _error,
   reset,
 }: {
   error: Error & { digest?: string };
@@ -28,7 +28,11 @@ export default function DashboardError({
         <Typography variant="h5" fontWeight={700} gutterBottom>
           Quelque chose s&apos;est mal passé
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 400 }}>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{ mb: 3, maxWidth: 400 }}
+        >
           Une erreur inattendue est survenue. Veuillez réessayer.
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>

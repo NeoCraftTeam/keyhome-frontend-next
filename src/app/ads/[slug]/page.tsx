@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import AdDetailClient from './AdDetailClient';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 /**
  * Server-side metadata generation for ad detail pages.
@@ -12,12 +13,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string; slug: string }>;
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { id, slug } = await params;
+  const { slug } = await params;
 
   try {
-    const res = await fetch(`${API_URL}/ads/${id}`, {
+    const res = await fetch(`${API_URL}/ads/${slug}`, {
       next: { revalidate: 60 }, // cache for 60s
     });
 
@@ -39,7 +40,9 @@ export async function generateMetadata({
       ad.description?.slice(0, 160) ||
       `${title}${location ? ` à ${location}` : ''}${price ? ` — ${price}` : ''}. Annonce vérifiée sur KeyHome.`;
 
-    const primaryImage = ad.images?.find((img: { is_primary?: boolean }) => img.is_primary) || ad.images?.[0];
+    const primaryImage =
+      ad.images?.find((img: { is_primary?: boolean }) => img.is_primary) ||
+      ad.images?.[0];
     const imageUrl = primaryImage?.url || '/images/og-cover.png';
 
     return {
@@ -49,7 +52,7 @@ export async function generateMetadata({
         type: 'article',
         title: `${title}${price ? ` — ${price}` : ''}`,
         description,
-        url: `https://keyhome.app/ads/${id}/${slug}`,
+        url: `https://keyhome.app/ads/${slug}`,
         images: [
           {
             url: imageUrl,
@@ -68,7 +71,7 @@ export async function generateMetadata({
         images: [imageUrl],
       },
       alternates: {
-        canonical: `https://keyhome.app/ads/${id}/${slug}`,
+        canonical: `https://keyhome.app/ads/${slug}`,
       },
     };
   } catch {
@@ -84,14 +87,14 @@ export async function generateMetadata({
 export default async function AdDetailPage({
   params,
 }: {
-  params: Promise<{ id: string; slug: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id, slug } = await params;
+  const { slug } = await params;
 
   // Fetch ad data server-side for JSON-LD structured data
   let adJsonLd: React.JSX.Element | null = null;
   try {
-    const res = await fetch(`${API_URL}/ads/${id}`, {
+    const res = await fetch(`${API_URL}/ads/${slug}`, {
       next: { revalidate: 60 },
     });
     if (res.ok) {
@@ -108,7 +111,7 @@ export default async function AdDetailPage({
         '@type': 'RealEstateListing',
         name: ad.title,
         description: ad.description?.slice(0, 300),
-        url: `https://keyhome.app/ads/${id}/${slug}`,
+        url: `https://keyhome.app/ads/${slug}`,
         datePosted: ad.created_at,
         image: images,
         address: {
@@ -133,25 +136,30 @@ export default async function AdDetailPage({
           },
         }),
         ...(ad.bedrooms && { numberOfRooms: ad.bedrooms }),
-        ...((ad.rating != null && (ad.reviews_count ?? 0) > 0) && {
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: Number(ad.rating).toFixed(1),
-            reviewCount: ad.reviews_count,
-            bestRating: '5',
-            worstRating: '1',
-          },
-        }),
-        ...(ad.has_3d_tour && ad.tour_config?.scenes?.length && {
-          video: {
-            '@type': 'VideoObject',
-            name: `Visite 360° — ${ad.title}`,
-            description: `Visitez virtuellement ce bien immobilier : ${ad.title}`,
-            thumbnailUrl: images[0] ?? '/images/og-cover.png',
-            contentUrl: ad.tour_config.scenes[0]?.image_url ?? images[0] ?? '/images/og-cover.png',
-            uploadDate: ad.created_at,
-          },
-        }),
+        ...(ad.rating != null &&
+          (ad.reviews_count ?? 0) > 0 && {
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: Number(ad.rating).toFixed(1),
+              reviewCount: ad.reviews_count,
+              bestRating: '5',
+              worstRating: '1',
+            },
+          }),
+        ...(ad.has_3d_tour &&
+          ad.tour_config?.scenes?.length && {
+            video: {
+              '@type': 'VideoObject',
+              name: `Visite 360° — ${ad.title}`,
+              description: `Visitez virtuellement ce bien immobilier : ${ad.title}`,
+              thumbnailUrl: images[0] ?? '/images/og-cover.png',
+              contentUrl:
+                ad.tour_config.scenes[0]?.image_url ??
+                images[0] ??
+                '/images/og-cover.png',
+              uploadDate: ad.created_at,
+            },
+          }),
       };
 
       adJsonLd = (
@@ -172,4 +180,3 @@ export default async function AdDetailPage({
     </>
   );
 }
-

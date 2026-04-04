@@ -3,16 +3,9 @@
 import AppLoader from '@/components/ui/AppLoader';
 import { paymentsService } from '@/services/payments.service';
 import { FlutterwaveVerifyResponse } from '@/types';
-import {
-  Error as ErrorIcon,
-  Refresh,
-} from '@mui/icons-material';
-import {
-  Box,
-  Button,
-  Paper,
-  Typography,
-} from '@mui/material';
+import ErrorIcon from '@mui/icons-material/Error';
+import Refresh from '@mui/icons-material/Refresh';
+import { Box, Button, Paper, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
@@ -96,7 +89,9 @@ function CallbackContent(): React.ReactElement {
 
   // Run verify once on mount
   useEffect(() => {
-    if (verifiedRef.current) { return; }
+    if (verifiedRef.current) {
+      return;
+    }
     verifiedRef.current = true;
     queueMicrotask(() => {
       void verify();
@@ -105,7 +100,9 @@ function CallbackContent(): React.ReactElement {
 
   // Auto-redirect countdown when terminal + success
   useEffect(() => {
-    if (pageState !== 'success') { return; }
+    if (pageState !== 'success') {
+      return;
+    }
 
     countdownTimerRef.current = setInterval(() => {
       setCountdown((prev) => {
@@ -115,7 +112,7 @@ function CallbackContent(): React.ReactElement {
           // Redirect to unlocked ad page or home
           if (adId) {
             sessionStorage.setItem('kh_just_unlocked', adId);
-            router.push(`/ads/${adId}/annonce`);
+            router.push(`/ads/${adId}`);
           } else {
             router.push('/home');
           }
@@ -126,16 +123,33 @@ function CallbackContent(): React.ReactElement {
     }, 1000);
 
     return () => {
-      if (countdownTimerRef.current) { clearInterval(countdownTimerRef.current); }
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+      }
     };
   }, [pageState, result, router]);
 
   // ── VERIFYING ──
   if (pageState === 'verifying') {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, p: 3 }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 2,
+          p: 3,
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Image src="/images/logo.png" alt="KeyHome — Paiement" width={48} height={48} />
+          <Image
+            src="/images/logo.png"
+            alt="KeyHome — Paiement"
+            width={48}
+            height={48}
+          />
           <Typography variant="h5" fontWeight={700} color="primary.main">
             KeyHome
           </Typography>
@@ -154,9 +168,24 @@ function CallbackContent(): React.ReactElement {
   // ── SUCCESS (loader-style redirect screen) ──
   if (pageState === 'success') {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, p: 3 }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 2,
+          p: 3,
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Image src="/images/logo.png" alt="KeyHome — Paiement confirmé" width={48} height={48} />
+          <Image
+            src="/images/logo.png"
+            alt="KeyHome — Paiement confirmé"
+            width={48}
+            height={48}
+          />
           <Typography variant="h5" fontWeight={700} color="primary.main">
             KeyHome
           </Typography>
@@ -166,7 +195,11 @@ function CallbackContent(): React.ReactElement {
           Paiement confirmé !
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Redirection en cours dans <strong>{countdown} seconde{countdown > 1 ? 's' : ''}</strong>...
+          Redirection en cours dans{' '}
+          <strong>
+            {countdown} seconde{countdown > 1 ? 's' : ''}
+          </strong>
+          ...
         </Typography>
       </Box>
     );
@@ -201,14 +234,19 @@ function CallbackContent(): React.ReactElement {
           <Image src="/images/logo.png" alt="KeyHome" width={48} height={48} />
         </Box>
 
-        {(pageState === 'failed' || pageState === 'cancelled' || pageState === 'error') && (
+        {(pageState === 'failed' ||
+          pageState === 'cancelled' ||
+          pageState === 'error') && (
           <>
             <Box
               sx={{
                 width: 80,
                 height: 80,
                 borderRadius: '50%',
-                bgcolor: pageState === 'cancelled' ? 'rgba(100,100,100,0.1)' : 'rgba(211,47,47,0.1)',
+                bgcolor:
+                  pageState === 'cancelled'
+                    ? 'rgba(100,100,100,0.1)'
+                    : 'rgba(211,47,47,0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -216,20 +254,35 @@ function CallbackContent(): React.ReactElement {
                 mb: 3,
               }}
             >
-              <ErrorIcon sx={{ color: pageState === 'cancelled' ? 'text.secondary' : '#D32F2F', fontSize: 42 }} />
+              <ErrorIcon
+                sx={{
+                  color:
+                    pageState === 'cancelled' ? 'text.secondary' : '#D32F2F',
+                  fontSize: 42,
+                }}
+              />
             </Box>
 
             <Typography variant="h6" fontWeight={800} gutterBottom>
-              {pageState === 'cancelled' ? 'Paiement annulé' : 'Paiement échoué'}
+              {pageState === 'cancelled'
+                ? 'Paiement annulé'
+                : 'Paiement échoué'}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               {pageState === 'cancelled'
                 ? 'Vous avez annulé le paiement. Vous pouvez réessayer à tout moment.'
                 : pageState === 'error'
                   ? 'Une erreur est survenue lors de la vérification. Consultez votre historique de paiements.'
-                  : 'Le paiement n\'a pas pu être traité. Veuillez réessayer ou choisir un autre moyen de paiement.'}
+                  : "Le paiement n'a pas pu être traité. Veuillez réessayer ou choisir un autre moyen de paiement."}
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 1.5,
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+              }}
+            >
               <Button
                 variant="outlined"
                 startIcon={pageState !== 'cancelled' ? <Refresh /> : undefined}
@@ -241,7 +294,13 @@ function CallbackContent(): React.ReactElement {
               <Button
                 variant="text"
                 href="/home"
-                sx={{ borderRadius: 3, px: 3, py: 1.2, fontWeight: 600, color: 'text.secondary' }}
+                sx={{
+                  borderRadius: 3,
+                  px: 3,
+                  py: 1.2,
+                  fontWeight: 600,
+                  color: 'text.secondary',
+                }}
               >
                 Accueil
               </Button>
@@ -257,7 +316,14 @@ export default function PaymentCallbackPage(): React.ReactElement {
   return (
     <Suspense
       fallback={
-        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+          sx={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <AppLoader size={48} />
         </Box>
       }

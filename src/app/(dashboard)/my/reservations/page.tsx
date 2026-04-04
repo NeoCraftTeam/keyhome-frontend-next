@@ -5,16 +5,14 @@ import { getSafeErrorMessage } from '@/lib/error-messages';
 import { viewingsService } from '@/services/viewings.service';
 import { gradient } from '@/theme/tokens';
 import { CancelledBy, Reservation, ReservationStatus } from '@/types';
-import {
-  CalendarMonth,
-  Cancel as CancelIcon,
-  CheckCircle,
-  ChevronLeft as ChevronLeftIcon,
-  ErrorOutline,
-  HourglassTop,
-  OpenInNew,
-  Schedule,
-} from '@mui/icons-material';
+import CalendarMonth from '@mui/icons-material/CalendarMonth';
+import CancelIcon from '@mui/icons-material/Cancel';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ErrorOutline from '@mui/icons-material/ErrorOutline';
+import HourglassTop from '@mui/icons-material/HourglassTop';
+import OpenInNew from '@mui/icons-material/OpenInNew';
+import Schedule from '@mui/icons-material/Schedule';
 import {
   Alert,
   Avatar,

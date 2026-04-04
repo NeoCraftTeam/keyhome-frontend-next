@@ -40,44 +40,42 @@ import { adsService } from '@/services/ads.service';
 import { creditsService } from '@/services/credits.service';
 import { paymentsService } from '@/services/payments.service';
 import type { PointPackage, UnlockResponse } from '@/types';
-import {
-  AccountBalanceWallet,
-  ArrowBack,
-  BathtubOutlined,
-  BedOutlined,
-  CalendarMonth,
-  Call,
-  ChevronLeft,
-  CompareArrows,
-  ContentCopy,
-  Description,
-  DirectionsBus,
-  Email,
-  Favorite,
-  FavoriteBorder,
-  FlagOutlined,
-  LocalHospital,
-  LocalParking,
-  LocationOn,
-  Lock,
-  NearMe,
-  Phone,
-  PictureAsPdf as PdfIcon,
-  Print as PrintIcon,
-  ReceiptLong,
-  Bolt,
-  WaterDrop,
-  Schedule,
-  School,
-  Share,
-  SquareFootOutlined,
-  Star,
-  Storefront,
-  Verified,
-  Visibility,
-  ViewInAr,
-  WhatsApp,
-} from '@mui/icons-material';
+import AccountBalanceWallet from '@mui/icons-material/AccountBalanceWallet';
+import ArrowBack from '@mui/icons-material/ArrowBack';
+import BathtubOutlined from '@mui/icons-material/BathtubOutlined';
+import BedOutlined from '@mui/icons-material/BedOutlined';
+import CalendarMonth from '@mui/icons-material/CalendarMonth';
+import Call from '@mui/icons-material/Call';
+import ChevronLeft from '@mui/icons-material/ChevronLeft';
+import CompareArrows from '@mui/icons-material/CompareArrows';
+import ContentCopy from '@mui/icons-material/ContentCopy';
+import Description from '@mui/icons-material/Description';
+import DirectionsBus from '@mui/icons-material/DirectionsBus';
+import Email from '@mui/icons-material/Email';
+import Bookmark from '@mui/icons-material/Bookmark';
+import BookmarkBorder from '@mui/icons-material/BookmarkBorder';
+import FlagOutlined from '@mui/icons-material/FlagOutlined';
+import LocalHospital from '@mui/icons-material/LocalHospital';
+import LocalParking from '@mui/icons-material/LocalParking';
+import LocationOn from '@mui/icons-material/LocationOn';
+import Lock from '@mui/icons-material/Lock';
+import NearMe from '@mui/icons-material/NearMe';
+import Phone from '@mui/icons-material/Phone';
+import PdfIcon from '@mui/icons-material/PictureAsPdf';
+import PrintIcon from '@mui/icons-material/Print';
+import ReceiptLong from '@mui/icons-material/ReceiptLong';
+import Bolt from '@mui/icons-material/Bolt';
+import WaterDrop from '@mui/icons-material/WaterDrop';
+import Schedule from '@mui/icons-material/Schedule';
+import School from '@mui/icons-material/School';
+import Share from '@mui/icons-material/Share';
+import SquareFootOutlined from '@mui/icons-material/SquareFootOutlined';
+import Star from '@mui/icons-material/Star';
+import Storefront from '@mui/icons-material/Storefront';
+import Verified from '@mui/icons-material/Verified';
+import Visibility from '@mui/icons-material/Visibility';
+import ViewInAr from '@mui/icons-material/ViewInAr';
+import WhatsApp from '@mui/icons-material/WhatsApp';
 import AppLoader from '@/components/ui/AppLoader';
 import {
   Alert,
@@ -123,7 +121,7 @@ const MIN_UNLOCK_LOADER_MS = 3200;
 function AdDetailContent() {
   const params = useParams();
   const router = useRouter();
-  const adId = params.id as string;
+  const adSlug = params.slug as string;
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -160,29 +158,29 @@ function AdDetailContent() {
   const refreshedRef = useRef(false);
   const viewTrackedRef = useRef(false);
 
-  // After a successful payment, payment-success stores the adId in sessionStorage.
+  // After a successful payment, payment-success stores the ad identifier in sessionStorage.
   // We read it here to invalidate the cache and get fresh unlocked data — no URL param needed.
   useEffect(() => {
-    if (!adId || refreshedRef.current) {
+    if (!adSlug || refreshedRef.current) {
       return;
     }
-    const justUnlocked = sessionStorage.getItem('kh_just_unlocked') === adId;
+    const justUnlocked = sessionStorage.getItem('kh_just_unlocked') === adSlug;
     if (justUnlocked) {
       refreshedRef.current = true;
       sessionStorage.removeItem('kh_just_unlocked');
       queryClient.invalidateQueries({
-        queryKey: ['ad', adId, isAuthenticated],
+        queryKey: ['ad', adSlug, isAuthenticated],
       });
     }
-  }, [adId, isAuthenticated, queryClient]);
+  }, [adSlug, isAuthenticated, queryClient]);
 
   // Track view once per page load — feeds the recommendation engine.
   useEffect(() => {
-    if (adId && !viewTrackedRef.current) {
+    if (adSlug && !viewTrackedRef.current) {
       viewTrackedRef.current = true;
-      adsService.trackView(adId);
+      adsService.trackView(adSlug);
     }
-  }, [adId]);
+  }, [adSlug]);
 
   // Prevent a guest fetch flash on refresh when a token exists in storage
   // but AuthProvider has not finished hydrating the authenticated user yet.
@@ -200,10 +198,10 @@ function AdDetailContent() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['ad', adId, isAuthenticated],
-    queryFn: () => adsService.show(adId),
+    queryKey: ['ad', adSlug, isAuthenticated],
+    queryFn: () => adsService.show(adSlug),
     enabled:
-      !!adId &&
+      !!adSlug &&
       hasStoredSanctumToken !== null &&
       !isAuthLoading &&
       (isAuthenticated || !hasStoredSanctumToken),
@@ -211,7 +209,15 @@ function AdDetailContent() {
 
   useEffect(() => {
     setDesktopGalleryIndex(0);
-  }, [adId, ad?.is_unlocked]);
+  }, [adSlug, ad?.is_unlocked]);
+
+  // Auto-canonicalize: if the URL contains a UUID (e.g. redirected from payment pages),
+  // silently replace it with the human-readable slug once the ad has loaded.
+  useEffect(() => {
+    if (ad?.slug && adSlug !== ad.slug) {
+      router.replace(`/ads/${ad.slug}`);
+    }
+  }, [ad, adSlug, router]);
 
   const { addRecentlyViewed } = useRecentlyViewed();
   const { track } = useAnalytics();
@@ -298,7 +304,11 @@ function AdDetailContent() {
   const handleDownloadPdf = () => {
     const apiBase =
       process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-    window.open(`${apiBase}/ads/${adId}/pdf`, '_blank', 'noopener,noreferrer');
+    window.open(
+      `${apiBase}/ads/${adSlug}/pdf`,
+      '_blank',
+      'noopener,noreferrer'
+    );
   };
 
   const handleShare = async () => {
@@ -369,7 +379,7 @@ function AdDetailContent() {
       if (unlockSuccess) {
         // Refresh the ad to show unlocked content
         await queryClient.invalidateQueries({
-          queryKey: ['ad', adId, isAuthenticated],
+          queryKey: ['ad', adSlug, isAuthenticated],
         });
         queryClient.invalidateQueries({ queryKey: ['unlocked-ads'] });
         setPaymentDialogOpen(false);
@@ -1087,9 +1097,9 @@ function AdDetailContent() {
                 size="small"
                 startIcon={
                   checkFav(ad.id) ? (
-                    <Favorite sx={{ color: 'primary.main' }} />
+                    <Bookmark sx={{ color: 'primary.main' }} />
                   ) : (
-                    <FavoriteBorder />
+                    <BookmarkBorder />
                   )
                 }
                 onClick={() => {
@@ -1201,9 +1211,9 @@ function AdDetailContent() {
                   size="small"
                   startIcon={
                     checkFav(ad.id) ? (
-                      <Favorite sx={{ color: 'primary.main' }} />
+                      <Bookmark sx={{ color: 'primary.main' }} />
                     ) : (
-                      <FavoriteBorder />
+                      <BookmarkBorder />
                     )
                   }
                   onClick={() => {
@@ -3448,7 +3458,7 @@ function AdDetailContent() {
                   }}
                 >
                   <SimilarAds
-                    currentAdId={adId}
+                    currentAdId={ad.id}
                     variant="sidebar"
                     hideTitle
                     hideContext
@@ -3912,7 +3922,7 @@ function AdDetailContent() {
           display: { xs: 'block', md: 'block', lg: 'block', xl: 'none' },
         }}
       >
-        <SimilarAds currentAdId={adId} />
+        <SimilarAds currentAdId={ad.id} />
       </Container>
 
       {ad && (

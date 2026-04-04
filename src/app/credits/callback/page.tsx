@@ -1,13 +1,11 @@
 'use client';
 
 import { creditsService } from '@/services/credits.service';
-import {
-  CheckCircle,
-  Error as ErrorIcon,
-  HourglassEmpty as HourglassIcon,
-  Home as HomeIcon,
-  Toll,
-} from '@mui/icons-material';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
+import HourglassIcon from '@mui/icons-material/HourglassEmpty';
+import HomeIcon from '@mui/icons-material/Home';
+import Toll from '@mui/icons-material/Toll';
 import {
   Box,
   Button,
@@ -31,7 +29,9 @@ function CreditCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [verifying, setVerifying] = useState(true);
-  const [purchaseStatus, setPurchaseStatus] = useState<'completed' | 'pending' | 'failed' | 'cancelled' | null>(null);
+  const [purchaseStatus, setPurchaseStatus] = useState<
+    'completed' | 'pending' | 'failed' | 'cancelled' | null
+  >(null);
   const [pointBalance, setPointBalance] = useState<number | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [extendedPolling, setExtendedPolling] = useState(false);
@@ -63,8 +63,15 @@ function CreditCallbackContent() {
 
     if (attempt < MAX_RETRIES) {
       setRetryCount(attempt + 1);
-      const delay = Math.min(INITIAL_RETRY_MS * Math.pow(1.5, attempt), MAX_RETRY_MS);
-      retryTimerRef.current = setTimeout(() => attemptVerify(attempt + 1), delay);
+      const delay = Math.min(
+        INITIAL_RETRY_MS * Math.pow(1.5, attempt),
+        MAX_RETRY_MS
+      );
+      // eslint-disable-next-line react-hooks/immutability
+      retryTimerRef.current = setTimeout(
+        () => attemptVerify(attempt + 1),
+        delay
+      );
     } else {
       setExtendedPolling(true);
       setVerifying(false);
@@ -86,10 +93,16 @@ function CreditCallbackContent() {
         setExtendedPolling(false);
         return;
       }
-    } catch { /* swallow */ }
+    } catch {
+      /* swallow */
+    }
 
     if (attempt < EXTENDED_MAX_RETRIES) {
-      retryTimerRef.current = setTimeout(() => extendedPoll(attempt + 1), EXTENDED_POLL_MS);
+      // eslint-disable-next-line react-hooks/immutability
+      retryTimerRef.current = setTimeout(
+        () => extendedPoll(attempt + 1),
+        EXTENDED_POLL_MS
+      );
     } else {
       setPurchaseStatus('pending');
       setExtendedPolling(false);
@@ -112,21 +125,47 @@ function CreditCallbackContent() {
     }
     verifiedRef.current = true;
     attemptVerify(0);
-    return () => { if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); } };
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+      }
+    };
   }, [isApproved, status, attemptVerify]);
 
   useEffect(() => {
-    if (!extendedPolling || purchaseStatus === 'completed') { return; }
+    if (!extendedPolling || purchaseStatus === 'completed') {
+      return;
+    }
     extendedPoll(0);
-    return () => { if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); } };
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+      }
+    };
   }, [extendedPolling, purchaseStatus, extendedPoll]);
 
   if (verifying) {
     const progress = (retryCount / MAX_RETRIES) * 100;
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 3, p: 3 }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 3,
+          p: 3,
+        }}
+      >
         <Box sx={{ textAlign: 'center' }}>
-          <Image src="/images/logo.png" alt="KeyHome" width={52} height={52} style={{ marginBottom: 16 }} />
+          <Image
+            src="/images/logo.png"
+            alt="KeyHome"
+            width={52}
+            height={52}
+            style={{ marginBottom: 16 }}
+          />
           <Typography variant="h6" fontWeight={600} gutterBottom>
             Vérification du paiement...
           </Typography>
@@ -144,7 +183,10 @@ function CreditCallbackContent() {
               height: 6,
               borderRadius: 3,
               bgcolor: 'grey.200',
-              '& .MuiLinearProgress-bar': { bgcolor: brand.primary, borderRadius: 3 },
+              '& .MuiLinearProgress-bar': {
+                bgcolor: brand.primary,
+                borderRadius: 3,
+              },
             }}
           />
         </Box>
@@ -153,7 +195,16 @@ function CreditCallbackContent() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default', p: 3 }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        p: 3,
+      }}
+    >
       <Paper
         elevation={0}
         sx={{
@@ -227,7 +278,7 @@ function CreditCallbackContent() {
                   variant="contained"
                   size="large"
                   fullWidth
-                  onClick={() => router.push(`/ads/${adId}/annonce`)}
+                  onClick={() => router.push(`/ads/${adId}`)}
                   sx={{
                     py: 1.5,
                     fontWeight: 600,
@@ -259,15 +310,36 @@ function CreditCallbackContent() {
           </>
         ) : purchaseStatus === 'failed' || purchaseStatus === 'cancelled' ? (
           <>
-            <Box sx={{
-              width: 80, height: 80, borderRadius: '50%',
-              bgcolor: purchaseStatus === 'cancelled' ? 'rgba(100,100,100,0.1)' : 'rgba(193,53,21,0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3,
-            }}>
-              <ErrorIcon sx={{ fontSize: 48, color: purchaseStatus === 'cancelled' ? 'text.secondary' : 'error.main' }} />
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
+                bgcolor:
+                  purchaseStatus === 'cancelled'
+                    ? 'rgba(100,100,100,0.1)'
+                    : 'rgba(193,53,21,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3,
+              }}
+            >
+              <ErrorIcon
+                sx={{
+                  fontSize: 48,
+                  color:
+                    purchaseStatus === 'cancelled'
+                      ? 'text.secondary'
+                      : 'error.main',
+                }}
+              />
             </Box>
             <Typography variant="h5" fontWeight={700} gutterBottom>
-              {purchaseStatus === 'cancelled' ? 'Paiement annulé' : 'Paiement échoué'}
+              {purchaseStatus === 'cancelled'
+                ? 'Paiement annulé'
+                : 'Paiement échoué'}
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               {purchaseStatus === 'cancelled'
@@ -279,7 +351,13 @@ function CreditCallbackContent() {
                 variant="contained"
                 size="large"
                 fullWidth
-                onClick={() => adId ? router.push(`/ads/${adId}/annonce`) : purchaseStatus === 'cancelled' ? router.back() : router.push('/home')}
+                onClick={() =>
+                  adId
+                    ? router.push(`/ads/${adId}`)
+                    : purchaseStatus === 'cancelled'
+                      ? router.back()
+                      : router.push('/home')
+                }
                 sx={{
                   py: 1.5,
                   fontWeight: 600,
@@ -288,7 +366,11 @@ function CreditCallbackContent() {
                   '&:active': { transform: 'scale(0.97)' },
                 }}
               >
-                {adId ? 'Retourner à l&apos;annonce' : purchaseStatus === 'cancelled' ? 'Retour' : 'Réessayer'}
+                {adId
+                  ? 'Retourner à l&apos;annonce'
+                  : purchaseStatus === 'cancelled'
+                    ? 'Retour'
+                    : 'Réessayer'}
               </Button>
               {adId && (
                 <Button
@@ -308,10 +390,15 @@ function CreditCallbackContent() {
           <>
             <Box
               sx={{
-                width: 80, height: 80, borderRadius: '50%',
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
                 bgcolor: brand.primaryAlpha10,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                mx: 'auto', mb: 3,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3,
                 animation: 'pulse 2s ease-in-out infinite',
                 '@keyframes pulse': {
                   '0%, 100%': { transform: 'scale(1)', opacity: 1 },
@@ -326,7 +413,8 @@ function CreditCallbackContent() {
               Confirmation en cours…
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-              Votre paiement a bien été reçu. La confirmation bancaire peut prendre quelques instants.
+              Votre paiement a bien été reçu. La confirmation bancaire peut
+              prendre quelques instants.
             </Typography>
 
             {extendedPolling && (
@@ -337,20 +425,35 @@ function CreditCallbackContent() {
                     height: 4,
                     borderRadius: 2,
                     bgcolor: 'rgba(246,71,95,0.12)',
-                    '& .MuiLinearProgress-bar': { bgcolor: brand.primary, borderRadius: 2 },
+                    '& .MuiLinearProgress-bar': {
+                      bgcolor: brand.primary,
+                      borderRadius: 2,
+                    },
                   }}
                 />
               </Box>
             )}
 
-            <Box sx={{ display: 'flex', gap: 1.5, flexDirection: 'column', mt: 2 }}>
+            <Box
+              sx={{ display: 'flex', gap: 1.5, flexDirection: 'column', mt: 2 }}
+            >
               {adId && (
                 <Button
                   variant="outlined"
                   size="large"
                   fullWidth
-                  onClick={() => router.push(`/ads/${adId}/annonce`)}
-                  sx={{ py: 1.5, fontWeight: 600, borderColor: brand.primary, color: brand.primary, '&:hover': { borderColor: brand.primaryDark, color: brand.primaryDark, bgcolor: brand.primaryAlpha5 } }}
+                  onClick={() => router.push(`/ads/${adId}`)}
+                  sx={{
+                    py: 1.5,
+                    fontWeight: 600,
+                    borderColor: brand.primary,
+                    color: brand.primary,
+                    '&:hover': {
+                      borderColor: brand.primaryDark,
+                      color: brand.primaryDark,
+                      bgcolor: brand.primaryAlpha5,
+                    },
+                  }}
                 >
                   Retourner à l&apos;annonce
                 </Button>
@@ -377,7 +480,14 @@ export default function CreditCallbackPage() {
   return (
     <Suspense
       fallback={
-        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+          sx={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <CircularProgress />
         </Box>
       }

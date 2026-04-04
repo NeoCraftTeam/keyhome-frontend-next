@@ -9,18 +9,16 @@ import {
   quartersService,
 } from '@/services/cities.service';
 import { PropertyAttribute, UserRole } from '@/types';
-import {
-  AddPhotoAlternate,
-  Apartment,
-  ArrowBack,
-  ArrowForward,
-  Check,
-  Close,
-  Home,
-  LocationOn,
-  MyLocation,
-  Wifi,
-} from '@mui/icons-material';
+import AddPhotoAlternate from '@mui/icons-material/AddPhotoAlternate';
+import Apartment from '@mui/icons-material/Apartment';
+import ArrowBack from '@mui/icons-material/ArrowBack';
+import ArrowForward from '@mui/icons-material/ArrowForward';
+import Check from '@mui/icons-material/Check';
+import Close from '@mui/icons-material/Close';
+import Home from '@mui/icons-material/Home';
+import LocationOn from '@mui/icons-material/LocationOn';
+import MyLocation from '@mui/icons-material/MyLocation';
+import Wifi from '@mui/icons-material/Wifi';
 import {
   Alert,
   Box,

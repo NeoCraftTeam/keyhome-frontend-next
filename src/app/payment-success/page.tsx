@@ -1,12 +1,10 @@
 'use client';
 
 import { paymentsService } from '@/services/payments.service';
-import {
-  CheckCircle,
-  Error as ErrorIcon,
-  Home as HomeIcon,
-  HourglassEmpty as HourglassIcon,
-} from '@mui/icons-material';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
+import HomeIcon from '@mui/icons-material/Home';
+import HourglassIcon from '@mui/icons-material/HourglassEmpty';
 import {
   Box,
   Button,
@@ -36,7 +34,7 @@ function PaymentSuccessContent() {
   const [retryCount, setRetryCount] = useState(0);
   const [finalFailed, setFinalFailed] = useState(false);
   // Extended slow-poll counter (after initial 12 retries)
-  const [extendedRetry, setExtendedRetry] = useState(0);
+  const [_extendedRetry, setExtendedRetry] = useState(0);
   const verifiedRef = useRef(false);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -46,51 +44,74 @@ function PaymentSuccessContent() {
   const isApproved = status === 'approved';
   const isDeclinedOrCancelled = status === 'declined' || status === 'cancelled';
 
-  const attemptVerify = useCallback(async (attempt: number) => {
-    if (!adId || !txRef) { return; }
-    try {
-      const result = await paymentsService.flutterwaveVerify(txRef);
-      if (result.is_unlocked) {
-        sessionStorage.setItem('kh_just_unlocked', adId);
-        setIsUnlocked(true);
-        setVerifying(false);
+  const attemptVerify = useCallback(
+    async (attempt: number) => {
+      if (!adId || !txRef) {
         return;
       }
-    } catch {
-      // swallow — will retry
-    }
+      try {
+        const result = await paymentsService.flutterwaveVerify(txRef);
+        if (result.is_unlocked) {
+          sessionStorage.setItem('kh_just_unlocked', adId);
+          setIsUnlocked(true);
+          setVerifying(false);
+          return;
+        }
+      } catch {
+        // swallow — will retry
+      }
 
-    if (attempt < MAX_RETRIES) {
-      setRetryCount(attempt + 1);
-      const delay = Math.min(INITIAL_RETRY_MS * Math.pow(1.5, attempt), MAX_RETRY_MS);
-      retryTimerRef.current = setTimeout(() => attemptVerify(attempt + 1), delay);
-    } else {
-      // Initial retries exhausted — show pending UI and keep polling silently
-      setFinalFailed(true);
-      setVerifying(false);
-    }
-  }, [adId]);
+      if (attempt < MAX_RETRIES) {
+        setRetryCount(attempt + 1);
+        const delay = Math.min(
+          INITIAL_RETRY_MS * Math.pow(1.5, attempt),
+          MAX_RETRY_MS
+        );
+        // eslint-disable-next-line react-hooks/immutability
+        retryTimerRef.current = setTimeout(
+          () => attemptVerify(attempt + 1),
+          delay
+        );
+      } else {
+        // Initial retries exhausted — show pending UI and keep polling silently
+        setFinalFailed(true);
+        setVerifying(false);
+      }
+    },
+    [adId]
+  );
 
   // Silent extended polling: when status=approved but webhook hasn't arrived yet,
   // keep checking every 5s for up to 3 minutes before giving up entirely.
-  const extendedPoll = useCallback(async (attempt: number) => {
-    if (!adId || !txRef) { return; }
-    try {
-      const result = await paymentsService.flutterwaveVerify(txRef);
-      if (result.is_unlocked) {
-        sessionStorage.setItem('kh_just_unlocked', adId);
-        setIsUnlocked(true);
-        setFinalFailed(false);
+  const extendedPoll = useCallback(
+    async (attempt: number) => {
+      if (!adId || !txRef) {
         return;
       }
-    } catch { /* swallow */ }
+      try {
+        const result = await paymentsService.flutterwaveVerify(txRef);
+        if (result.is_unlocked) {
+          sessionStorage.setItem('kh_just_unlocked', adId);
+          setIsUnlocked(true);
+          setFinalFailed(false);
+          return;
+        }
+      } catch {
+        /* swallow */
+      }
 
-    if (attempt < EXTENDED_MAX_RETRIES) {
-      setExtendedRetry(attempt + 1);
-      retryTimerRef.current = setTimeout(() => extendedPoll(attempt + 1), EXTENDED_POLL_MS);
-    }
-    // after EXTENDED_MAX_RETRIES we stop silently — user sees the fallback CTA
-  }, [adId]);
+      if (attempt < EXTENDED_MAX_RETRIES) {
+        setExtendedRetry(attempt + 1);
+        // eslint-disable-next-line react-hooks/immutability
+        retryTimerRef.current = setTimeout(
+          () => extendedPoll(attempt + 1),
+          EXTENDED_POLL_MS
+        );
+      }
+      // after EXTENDED_MAX_RETRIES we stop silently — user sees the fallback CTA
+    },
+    [adId]
+  );
 
   useEffect(() => {
     // Declined or cancelled — skip verification entirely, show terminal UI
@@ -104,23 +125,39 @@ function PaymentSuccessContent() {
     }
     verifiedRef.current = true;
     attemptVerify(0);
-    return () => { if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); } };
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+      }
+    };
   }, [adId, txRef, isApproved, isDeclinedOrCancelled, attemptVerify]);
 
   // Start extended polling once initial retries are done and payment was approved
   useEffect(() => {
-    if (!finalFailed || !isApproved || isUnlocked) { return; }
+    if (!finalFailed || !isApproved || isUnlocked) {
+      return;
+    }
     extendedPoll(0);
-    return () => { if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); } };
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+      }
+    };
   }, [finalFailed, isApproved, isUnlocked, extendedPoll]);
 
   useEffect(() => {
-    if (verifying || !isUnlocked) { return; }
+    if (verifying || !isUnlocked) {
+      return;
+    }
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          if (adId) { router.push(`/ads/${adId}/annonce`); } else { router.push('/home'); }
+          if (adId) {
+            router.push(`/ads/${adId}`);
+          } else {
+            router.push('/home');
+          }
           return 0;
         }
         return prev - 1;
@@ -132,9 +169,25 @@ function PaymentSuccessContent() {
   if (verifying) {
     const progress = (retryCount / MAX_RETRIES) * 100;
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 3, p: 3 }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 3,
+          p: 3,
+        }}
+      >
         <Box sx={{ textAlign: 'center' }}>
-          <Image src="/images/logo.png" alt="KeyHome — Paiement confirmé" width={52} height={52} style={{ marginBottom: 16 }} />
+          <Image
+            src="/images/logo.png"
+            alt="KeyHome — Paiement confirmé"
+            width={52}
+            height={52}
+            style={{ marginBottom: 16 }}
+          />
           <Typography variant="h6" fontWeight={600} gutterBottom>
             Vérification du paiement...
           </Typography>
@@ -152,7 +205,10 @@ function PaymentSuccessContent() {
               height: 6,
               borderRadius: 3,
               bgcolor: 'grey.200',
-              '& .MuiLinearProgress-bar': { bgcolor: brand.primary, borderRadius: 3 },
+              '& .MuiLinearProgress-bar': {
+                bgcolor: brand.primary,
+                borderRadius: 3,
+              },
             }}
           />
         </Box>
@@ -185,7 +241,12 @@ function PaymentSuccessContent() {
         }}
       >
         <Box sx={{ mb: 3 }}>
-          <Image src="/images/logo.png" alt="KeyHome — Paiement confirmé" width={48} height={48} />
+          <Image
+            src="/images/logo.png"
+            alt="KeyHome — Paiement confirmé"
+            width={48}
+            height={48}
+          />
         </Box>
 
         {isApproved && isUnlocked ? (
@@ -215,8 +276,8 @@ function PaymentSuccessContent() {
               Paiement réussi !
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-              L&apos;annonce a été déverrouillée avec succès.
-              Vous avez maintenant accès à toutes les coordonnées de l&apos;annonceur.
+              L&apos;annonce a été déverrouillée avec succès. Vous avez
+              maintenant accès à toutes les coordonnées de l&apos;annonceur.
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Redirection dans {countdown} seconde{countdown > 1 ? 's' : ''}...
@@ -227,7 +288,7 @@ function PaymentSuccessContent() {
               size="large"
               fullWidth
               onClick={() =>
-                adId ? router.push(`/ads/${adId}/annonce`) : router.push('/home')
+                adId ? router.push(`/ads/${adId}`) : router.push('/home')
               }
               sx={{
                 py: 1.5,
@@ -245,29 +306,62 @@ function PaymentSuccessContent() {
             {/* ── Declined or Cancelled (terminal failure) ── */}
             {isDeclinedOrCancelled ? (
               <>
-                <Box sx={{
-                  width: 80, height: 80, borderRadius: '50%',
-                  bgcolor: status === 'cancelled' ? 'rgba(100,100,100,0.1)' : 'rgba(193,53,21,0.1)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3,
-                }}>
-                  <ErrorIcon sx={{ fontSize: 48, color: status === 'cancelled' ? 'text.secondary' : 'error.main' }} />
+                <Box
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: '50%',
+                    bgcolor:
+                      status === 'cancelled'
+                        ? 'rgba(100,100,100,0.1)'
+                        : 'rgba(193,53,21,0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 3,
+                  }}
+                >
+                  <ErrorIcon
+                    sx={{
+                      fontSize: 48,
+                      color:
+                        status === 'cancelled'
+                          ? 'text.secondary'
+                          : 'error.main',
+                    }}
+                  />
                 </Box>
                 <Typography variant="h5" fontWeight={700} gutterBottom>
-                  {status === 'cancelled' ? 'Paiement annulé' : 'Paiement refusé'}
+                  {status === 'cancelled'
+                    ? 'Paiement annulé'
+                    : 'Paiement refusé'}
                 </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{ mb: 3 }}
+                >
                   {status === 'cancelled'
                     ? 'Vous avez annulé le paiement. Aucun montant n\u2019a été débité. Vous pouvez réessayer à tout moment.'
                     : 'Le paiement n\u2019a pas abouti. Aucun montant n\u2019a été débité.'}
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1.5, flexDirection: 'column' }}>
+                <Box
+                  sx={{ display: 'flex', gap: 1.5, flexDirection: 'column' }}
+                >
                   {adId && (
                     <Button
                       variant="contained"
                       size="large"
                       fullWidth
-                      onClick={() => router.push(`/ads/${adId}/annonce`)}
-                      sx={{ py: 1.5, fontWeight: 600, background: gradient.primary, '&:hover': { background: gradient.primaryHover }, '&:active': { transform: 'scale(0.97)' } }}
+                      onClick={() => router.push(`/ads/${adId}`)}
+                      sx={{
+                        py: 1.5,
+                        fontWeight: 600,
+                        background: gradient.primary,
+                        '&:hover': { background: gradient.primaryHover },
+                        '&:active': { transform: 'scale(0.97)' },
+                      }}
                     >
                       Retourner à l&apos;annonce
                     </Button>
@@ -278,9 +372,16 @@ function PaymentSuccessContent() {
                     fullWidth
                     startIcon={!adId ? undefined : <HomeIcon />}
                     onClick={() => router.push('/home')}
-                    sx={adId
-                      ? { fontWeight: 600, color: 'text.secondary' }
-                      : { py: 1.5, fontWeight: 600, background: gradient.primary, '&:hover': { background: gradient.primaryHover }, '&:active': { transform: 'scale(0.97)' } }
+                    sx={
+                      adId
+                        ? { fontWeight: 600, color: 'text.secondary' }
+                        : {
+                            py: 1.5,
+                            fontWeight: 600,
+                            background: gradient.primary,
+                            '&:hover': { background: gradient.primaryHover },
+                            '&:active': { transform: 'scale(0.97)' },
+                          }
                     }
                   >
                     {adId ? 'Accueil' : 'Retour à l\u2019accueil'}
@@ -292,10 +393,15 @@ function PaymentSuccessContent() {
               <>
                 <Box
                   sx={{
-                    width: 80, height: 80, borderRadius: '50%',
+                    width: 80,
+                    height: 80,
+                    borderRadius: '50%',
                     bgcolor: brand.primaryAlpha10,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    mx: 'auto', mb: 3,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 3,
                     animation: 'pulse 2s ease-in-out infinite',
                     '@keyframes pulse': {
                       '0%, 100%': { transform: 'scale(1)', opacity: 1 },
@@ -309,12 +415,21 @@ function PaymentSuccessContent() {
                 <Typography variant="h5" fontWeight={700} gutterBottom>
                   Confirmation en cours…
                 </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-                  Votre paiement a bien été reçu. La confirmation bancaire peut prendre
-                  quelques instants supplémentaires.
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{ mb: 1 }}
+                >
+                  Votre paiement a bien été reçu. La confirmation bancaire peut
+                  prendre quelques instants supplémentaires.
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Vérification automatique en cours — vous n&apos;avez rien à faire.
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 3 }}
+                >
+                  Vérification automatique en cours — vous n&apos;avez rien à
+                  faire.
                 </Typography>
 
                 {/* Silent progress indicator */}
@@ -325,19 +440,34 @@ function PaymentSuccessContent() {
                       height: 4,
                       borderRadius: 2,
                       bgcolor: 'rgba(246,71,95,0.12)',
-                      '& .MuiLinearProgress-bar': { bgcolor: brand.primary, borderRadius: 2 },
+                      '& .MuiLinearProgress-bar': {
+                        bgcolor: brand.primary,
+                        borderRadius: 2,
+                      },
                     }}
                   />
                 </Box>
 
-                <Box sx={{ display: 'flex', gap: 1.5, flexDirection: 'column' }}>
+                <Box
+                  sx={{ display: 'flex', gap: 1.5, flexDirection: 'column' }}
+                >
                   {adId && (
                     <Button
                       variant="outlined"
                       size="large"
                       fullWidth
-                      onClick={() => router.push(`/ads/${adId}/annonce`)}
-                      sx={{ py: 1.5, fontWeight: 600, borderColor: brand.primary, color: brand.primary, '&:hover': { borderColor: brand.primaryDark, color: brand.primaryDark, bgcolor: brand.primaryAlpha5 } }}
+                      onClick={() => router.push(`/ads/${adId}`)}
+                      sx={{
+                        py: 1.5,
+                        fontWeight: 600,
+                        borderColor: brand.primary,
+                        color: brand.primary,
+                        '&:hover': {
+                          borderColor: brand.primaryDark,
+                          color: brand.primaryDark,
+                          bgcolor: brand.primaryAlpha5,
+                        },
+                      }}
                     >
                       Retourner à l&apos;annonce
                     </Button>
@@ -366,7 +496,14 @@ export default function PaymentSuccessPage() {
   return (
     <Suspense
       fallback={
-        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+          sx={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <CircularProgress />
         </Box>
       }

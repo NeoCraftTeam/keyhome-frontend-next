@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Button, Container, Typography } from '@mui/material';
-import { SearchOff } from '@mui/icons-material';
+import SearchOff from '@mui/icons-material/SearchOff';
 import Link from 'next/link';
 import { gradient } from '@/theme/tokens';
 
@@ -26,10 +26,21 @@ export default function NotFound() {
         <Typography variant="h5" fontWeight={600} gutterBottom>
           Page introuvable
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 380 }}>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{ mb: 4, maxWidth: 380 }}
+        >
           La page que vous cherchez n&apos;existe pas ou a été déplacée.
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+          }}
+        >
           <Button
             component={Link}
             href="/"

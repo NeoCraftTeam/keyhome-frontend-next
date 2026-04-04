@@ -4,16 +4,16 @@ import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
 import { gradient } from '@/theme/tokens';
-import { ArrowBack } from '@mui/icons-material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    IconButton,
-    Link,
-    TextField,
-    Typography,
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  IconButton,
+  Link,
+  TextField,
+  Typography,
 } from '@mui/material';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -54,7 +54,13 @@ function ResetPasswordForm() {
     <Box sx={{ width: '100%', maxWidth: 420 }}>
       <FadeIn direction="none">
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4 }}>
-          <Image src="/images/logo.png" alt="KeyHome — Réinitialiser mot de passe" width={36} height={36} priority />
+          <Image
+            src="/images/logo.png"
+            alt="KeyHome — Réinitialiser mot de passe"
+            width={36}
+            height={36}
+            priority
+          />
           <Typography variant="h6" fontWeight={700} color="primary.main">
             KeyHome
           </Typography>
@@ -69,7 +75,13 @@ function ResetPasswordForm() {
 
       {error && (
         <FadeIn direction="none" duration={0.3}>
-          <Alert severity="error" id="reset-password-error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+          <Alert
+            severity="error"
+            id="reset-password-error"
+            sx={{ mb: 2, borderRadius: 2 }}
+          >
+            {error}
+          </Alert>
         </FadeIn>
       )}
 
@@ -100,7 +112,11 @@ function ResetPasswordForm() {
             fullWidth
             variant="contained"
             size="large"
-            disabled={isSubmitting || password.length < 8 || password !== passwordConfirmation}
+            disabled={
+              isSubmitting ||
+              password.length < 8 ||
+              password !== passwordConfirmation
+            }
             sx={{
               py: 1.5,
               background: gradient.primary,
@@ -108,13 +124,25 @@ function ResetPasswordForm() {
               '&:active': { transform: 'scale(0.97)' },
             }}
           >
-            {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Réinitialiser'}
+            {isSubmitting ? (
+              <CircularProgress size={24} sx={{ color: '#fff' }} />
+            ) : (
+              'Réinitialiser'
+            )}
           </Button>
         </Box>
       </FadeIn>
 
       <FadeIn delay={0.3} direction="up">
-        <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            mt: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1,
+          }}
+        >
           <IconButton
             href="/login"
             component={Link}
@@ -128,7 +156,11 @@ function ResetPasswordForm() {
           >
             <ArrowBack sx={{ fontSize: 18 }} />
           </IconButton>
-          <Link href="/login" underline="hover" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
+          <Link
+            href="/login"
+            underline="hover"
+            sx={{ color: 'text.secondary', fontSize: '0.875rem' }}
+          >
             Retour à la connexion
           </Link>
         </Box>
@@ -139,7 +171,15 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', p: 3 }}>
+    <Box
+      sx={{
+        flex: 1,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        p: 3,
+      }}
+    >
       <Suspense fallback={<CircularProgress />}>
         <ResetPasswordForm />
       </Suspense>

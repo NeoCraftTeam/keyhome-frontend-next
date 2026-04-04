@@ -1,6 +1,10 @@
 'use client';
 
-import { usersService, PublicUserProfile, PublicReview } from '@/services/users.service';
+import {
+  usersService,
+  PublicUserProfile,
+  PublicReview,
+} from '@/services/users.service';
 import { Ad } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
@@ -21,18 +25,16 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import {
-  Bolt,
-  Business,
-  CalendarMonth,
-  CheckCircle,
-  Favorite,
-  FavoriteBorder,
-  Home,
-  LocationOn,
-  Person,
-  Star,
-} from '@mui/icons-material';
+import Bolt from '@mui/icons-material/Bolt';
+import Business from '@mui/icons-material/Business';
+import CalendarMonth from '@mui/icons-material/CalendarMonth';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import Favorite from '@mui/icons-material/Favorite';
+import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
+import Home from '@mui/icons-material/Home';
+import LocationOn from '@mui/icons-material/LocationOn';
+import Person from '@mui/icons-material/Person';
+import Star from '@mui/icons-material/Star';
 import AdCard from '@/components/ads/AdCard';
 import AppLoader from '@/components/ui/AppLoader';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
@@ -51,7 +53,10 @@ function useFollowBailleur(username: string) {
 
   useEffect(() => {
     if (!currentUser || !username) return;
-    api.get<{ following: boolean; followers_count: number }>(`/v1/bailleurs/${username}/follow`)
+    api
+      .get<{ following: boolean; followers_count: number }>(
+        `/v1/bailleurs/${username}/follow`
+      )
       .then(({ data }) => {
         setFollowing(data.following);
         setFollowersCount(data.followers_count);
@@ -63,7 +68,10 @@ function useFollowBailleur(username: string) {
     if (!currentUser) return;
     setLoading(true);
     try {
-      const { data } = await api.post<{ following: boolean; followers_count: number }>(`/v1/bailleurs/${username}/follow`);
+      const { data } = await api.post<{
+        following: boolean;
+        followers_count: number;
+      }>(`/v1/bailleurs/${username}/follow`);
       setFollowing(data.following);
       setFollowersCount(data.followers_count);
     } catch {
@@ -73,7 +81,13 @@ function useFollowBailleur(username: string) {
     }
   }, [username, currentUser]);
 
-  return { following, toggle, loading, followersCount, isAuthenticated: !!currentUser };
+  return {
+    following,
+    toggle,
+    loading,
+    followersCount,
+    isAuthenticated: !!currentUser,
+  };
 }
 
 function ReviewCard({ review }: { review: PublicReview }) {
@@ -84,28 +98,54 @@ function ReviewCard({ review }: { review: PublicReview }) {
     >
       <CardContent sx={{ p: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-          <Avatar sx={{ width: 30, height: 30, bgcolor: 'primary.main', fontSize: 13 }}>
+          <Avatar
+            sx={{
+              width: 30,
+              height: 30,
+              bgcolor: 'primary.main',
+              fontSize: 13,
+            }}
+          >
             {review.reviewer_name?.[0]?.toUpperCase() ?? '?'}
           </Avatar>
-          <Typography variant="body2" fontWeight={600}>{review.reviewer_name}</Typography>
-          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Typography variant="body2" fontWeight={600}>
+            {review.reviewer_name}
+          </Typography>
+          <Box
+            sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}
+          >
             {[1, 2, 3, 4, 5].map((i) => (
               <Star
                 key={i}
-                sx={{ fontSize: 14, color: i <= review.rating ? 'warning.main' : 'action.disabled' }}
+                sx={{
+                  fontSize: 14,
+                  color:
+                    i <= review.rating ? 'warning.main' : 'action.disabled',
+                }}
               />
             ))}
           </Box>
         </Box>
         {review.ad_title && (
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: 'block', mb: 0.5 }}
+          >
             {review.ad_title}
           </Typography>
         )}
-        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+        <Typography
+          variant="body2"
+          sx={{ fontStyle: 'italic', color: 'text.secondary' }}
+        >
           &ldquo;{review.comment}&rdquo;
         </Typography>
-        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
+        <Typography
+          variant="caption"
+          color="text.disabled"
+          sx={{ display: 'block', mt: 0.5 }}
+        >
           {format(new Date(review.created_at), 'dd MMM yyyy', { locale: fr })}
         </Typography>
       </CardContent>
@@ -129,7 +169,13 @@ export default function BailleurPublicProfilePage() {
   const ads: Ad[] = data?.ads ?? [];
   const meta = data?.meta;
 
-  const { following, toggle: toggleFollow, loading: followLoading, followersCount, isAuthenticated } = useFollowBailleur(username);
+  const {
+    following,
+    toggle: toggleFollow,
+    loading: followLoading,
+    followersCount,
+    isAuthenticated,
+  } = useFollowBailleur(username);
 
   if (isLoading) {
     return <AppLoader fullPage />;
@@ -150,7 +196,10 @@ export default function BailleurPublicProfilePage() {
   }
 
   const memberSince = profile.member_since
-    ? formatDistanceToNow(new Date(profile.member_since), { addSuffix: false, locale: fr })
+    ? formatDistanceToNow(new Date(profile.member_since), {
+        addSuffix: false,
+        locale: fr,
+      })
     : null;
 
   const isAgency = profile.type === 'agency' && profile.agency;
@@ -204,10 +253,29 @@ export default function BailleurPublicProfilePage() {
           </Avatar>
 
           {/* Main info */}
-          <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' }, minWidth: 0 }}>
+          <Box
+            sx={{
+              flex: 1,
+              textAlign: { xs: 'center', sm: 'left' },
+              minWidth: 0,
+            }}
+          >
             {/* Name + verified */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: { xs: 'center', sm: 'flex-start' }, flexWrap: 'wrap', mb: 0.5 }}>
-              <Typography variant="h4" fontWeight={800} sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                justifyContent: { xs: 'center', sm: 'flex-start' },
+                flexWrap: 'wrap',
+                mb: 0.5,
+              }}
+            >
+              <Typography
+                variant="h4"
+                fontWeight={800}
+                sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}
+              >
                 {profile.display_name}
               </Typography>
               {profile.is_verified && (
@@ -219,7 +287,12 @@ export default function BailleurPublicProfilePage() {
 
             {/* Verified label */}
             {profile.is_verified && (
-              <Typography variant="caption" color="success.main" fontWeight={600} sx={{ display: 'block', mb: 1 }}>
+              <Typography
+                variant="caption"
+                color="success.main"
+                fontWeight={600}
+                sx={{ display: 'block', mb: 1 }}
+              >
                 Bailleur Vérifié
               </Typography>
             )}
@@ -249,15 +322,32 @@ export default function BailleurPublicProfilePage() {
 
             {/* Bio */}
             {profile.bio && (
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, maxWidth: 560, lineHeight: 1.6 }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 1.5, maxWidth: 560, lineHeight: 1.6 }}
+              >
                 {profile.bio}
               </Typography>
             )}
 
             {/* Rating */}
             {hasReviews && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
-                <Rating value={avg_rating} precision={0.1} readOnly size="small" />
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  mb: 1.5,
+                  justifyContent: { xs: 'center', sm: 'flex-start' },
+                }}
+              >
+                <Rating
+                  value={avg_rating}
+                  precision={0.1}
+                  readOnly
+                  size="small"
+                />
                 <Typography variant="body2" fontWeight={700}>
                   {avg_rating.toFixed(1)}/5
                 </Typography>
@@ -268,7 +358,14 @@ export default function BailleurPublicProfilePage() {
             )}
 
             {/* Chips row */}
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 1,
+                flexWrap: 'wrap',
+                justifyContent: { xs: 'center', sm: 'flex-start' },
+              }}
+            >
               {profile.response_time_label && (
                 <Chip
                   icon={<Bolt sx={{ fontSize: 15 }} />}
@@ -308,7 +405,13 @@ export default function BailleurPublicProfilePage() {
           </Box>
 
           {/* Favoris button */}
-          <Box sx={{ flexShrink: 0, alignSelf: { xs: 'center', sm: 'flex-start' }, textAlign: 'center' }}>
+          <Box
+            sx={{
+              flexShrink: 0,
+              alignSelf: { xs: 'center', sm: 'flex-start' },
+              textAlign: 'center',
+            }}
+          >
             <Button
               variant={following ? 'contained' : 'outlined'}
               color={following ? 'primary' : 'inherit'}
@@ -317,12 +420,21 @@ export default function BailleurPublicProfilePage() {
               disabled={followLoading || (!isAuthenticated && false)}
               href={!isAuthenticated ? '/login' : undefined}
               size="medium"
-              sx={{ textTransform: 'none', fontWeight: 600, borderRadius: '20px', minWidth: 172 }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: '20px',
+                minWidth: 172,
+              }}
             >
               {following ? 'Retiré des favoris' : 'Mettre en favoris'}
             </Button>
             {followersCount !== null && followersCount > 0 && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mt: 0.5 }}
+              >
                 {followersCount} favori{followersCount > 1 ? 's' : ''}
               </Typography>
             )}
@@ -333,7 +445,14 @@ export default function BailleurPublicProfilePage() {
       <Grid container spacing={3}>
         {/* Left: listings */}
         <Grid size={{ xs: 12, lg: 8 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              mb: 2,
+            }}
+          >
             <Typography variant="h5" fontWeight={700}>
               Ses annonces ({meta?.total ?? ads.length})
             </Typography>
@@ -342,7 +461,13 @@ export default function BailleurPublicProfilePage() {
           {ads.length === 0 ? (
             <Paper
               elevation={0}
-              sx={{ p: 6, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}
+              sx={{
+                p: 6,
+                textAlign: 'center',
+                borderRadius: 3,
+                border: '1px dashed',
+                borderColor: 'divider',
+              }}
             >
               <Home sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
               <Typography variant="h6" fontWeight={600} gutterBottom>
@@ -372,7 +497,13 @@ export default function BailleurPublicProfilePage() {
           {recentReviews.length === 0 ? (
             <Paper
               elevation={0}
-              sx={{ p: 4, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}
+              sx={{
+                p: 4,
+                textAlign: 'center',
+                borderRadius: 3,
+                border: '1px dashed',
+                borderColor: 'divider',
+              }}
             >
               <Star sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
               <Typography variant="body2" color="text.secondary">
@@ -387,7 +518,11 @@ export default function BailleurPublicProfilePage() {
               {total_reviews > recentReviews.length && (
                 <>
                   <Divider />
-                  <Typography variant="caption" color="text.secondary" textAlign="center">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    textAlign="center"
+                  >
                     +{total_reviews - recentReviews.length} avis supplémentaires
                   </Typography>
                 </>

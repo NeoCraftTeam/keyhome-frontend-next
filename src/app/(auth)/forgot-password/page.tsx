@@ -4,15 +4,15 @@ import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
 import { gradient } from '@/theme/tokens';
-import { ArrowBack } from '@mui/icons-material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Link,
-    TextField,
-    Typography,
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Link,
+  TextField,
+  Typography,
 } from '@mui/material';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -31,9 +31,12 @@ export default function ForgotPasswordPage() {
 
     try {
       const res = await authService.forgotPassword(email);
-      setSuccess(res.message || 'Un lien de réinitialisation a été envoyé à votre adresse email.');
+      setSuccess(
+        res.message ||
+          'Un lien de réinitialisation a été envoyé à votre adresse email.'
+      );
     } catch (err) {
-      setError(getSafeErrorMessage(err, 'Erreur lors de l\'envoi du lien.'));
+      setError(getSafeErrorMessage(err, "Erreur lors de l'envoi du lien."));
     } finally {
       setIsSubmitting(false);
     }
@@ -52,7 +55,13 @@ export default function ForgotPasswordPage() {
       <Box sx={{ width: '100%', maxWidth: 420 }}>
         <FadeIn direction="none">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4 }}>
-            <Image src="/images/logo.png" alt="KeyHome — Mot de passe oublié" width={36} height={36} priority />
+            <Image
+              src="/images/logo.png"
+              alt="KeyHome — Mot de passe oublié"
+              width={36}
+              height={36}
+              priority
+            />
             <Typography variant="h6" fontWeight={700} color="primary.main">
               KeyHome
             </Typography>
@@ -64,18 +73,27 @@ export default function ForgotPasswordPage() {
             Mot de passe oublié
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Saisissez votre email et nous vous enverrons un lien de réinitialisation.
+            Saisissez votre email et nous vous enverrons un lien de
+            réinitialisation.
           </Typography>
         </FadeIn>
 
         {error && (
           <FadeIn direction="none" duration={0.3}>
-            <Alert severity="error" id="forgot-password-error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+            <Alert
+              severity="error"
+              id="forgot-password-error"
+              sx={{ mb: 2, borderRadius: 2 }}
+            >
+              {error}
+            </Alert>
           </FadeIn>
         )}
         {success && (
           <FadeIn direction="none" duration={0.3}>
-            <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{success}</Alert>
+            <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>
+              {success}
+            </Alert>
           </FadeIn>
         )}
 
@@ -104,7 +122,11 @@ export default function ForgotPasswordPage() {
                 '&:active': { transform: 'scale(0.97)' },
               }}
             >
-              {isSubmitting ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Envoyer le lien'}
+              {isSubmitting ? (
+                <CircularProgress size={24} sx={{ color: '#fff' }} />
+              ) : (
+                'Envoyer le lien'
+              )}
             </Button>
           </Box>
         </FadeIn>
@@ -114,7 +136,13 @@ export default function ForgotPasswordPage() {
             <Link
               href="/login"
               underline="hover"
-              sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, color: 'text.secondary', fontSize: '0.875rem' }}
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.5,
+                color: 'text.secondary',
+                fontSize: '0.875rem',
+              }}
             >
               <ArrowBack sx={{ fontSize: 16 }} /> Retour à la connexion
             </Link>

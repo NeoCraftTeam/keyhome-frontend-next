@@ -13,19 +13,17 @@ import { escapeHtml } from '@/lib/sanitize';
 import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { AdType, City, FacetsResponse, SearchParams } from '@/types';
-import {
-  Close as CloseIcon,
-  History as HistoryIcon,
-  List as ListIcon,
-  Map as MapIcon,
-  Search as SearchIcon,
-  SearchOff as SearchOffIcon,
-  Tune as TuneIcon,
-  Verified as VerifiedIcon,
-  ViewInAr as ViewInArIcon,
-  Whatshot as WhatshotIcon,
-  WifiOff as WifiOffIcon,
-} from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
+import HistoryIcon from '@mui/icons-material/History';
+import ListIcon from '@mui/icons-material/List';
+import MapIcon from '@mui/icons-material/Map';
+import SearchIcon from '@mui/icons-material/Search';
+import SearchOffIcon from '@mui/icons-material/SearchOff';
+import TuneIcon from '@mui/icons-material/Tune';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import ViewInArIcon from '@mui/icons-material/ViewInAr';
+import WhatshotIcon from '@mui/icons-material/Whatshot';
+import WifiOffIcon from '@mui/icons-material/WifiOff';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { propertyAttributesService } from '@/services/property-attributes.service';
 import {
@@ -52,7 +50,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { motion, MotionConfig } from 'framer-motion';
@@ -136,6 +134,9 @@ function SearchContent() {
   const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 1000]);
   const [bathrooms, setBathrooms] = useState<number | undefined>();
   const [hasParking, setHasParking] = useState(false);
+  const [transactionType, setTransactionType] = useState<
+    'location' | 'vente' | null
+  >(null);
   const [has3dTour, setHas3dTour] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
@@ -203,6 +204,11 @@ function SearchContent() {
 
     if (searchParams.get('parking') === '1') {
       setHasParking(true);
+    }
+
+    const urlTxType = searchParams.get('transaction_type');
+    if (urlTxType === 'location' || urlTxType === 'vente') {
+      setTransactionType(urlTxType);
     }
 
     if (searchParams.get('furnished') === '1') {
@@ -283,6 +289,7 @@ function SearchContent() {
     surface_min: surfaceRange[0] > 0 ? surfaceRange[0] : undefined,
     surface_max: surfaceRange[1] < 1000 ? surfaceRange[1] : undefined,
     has_parking: hasParking || undefined,
+    transaction_type: transactionType || undefined,
     has_3d_tour: has3dTour || undefined,
     is_verified: isVerified || undefined,
     attributes: selectedAmenities.length > 0 ? selectedAmenities : undefined,
@@ -307,6 +314,7 @@ function SearchContent() {
       priceRange,
       surfaceRange,
       hasParking,
+      transactionType,
       has3dTour,
       isVerified,
       selectedAmenities,
@@ -316,8 +324,8 @@ function SearchContent() {
       userLocation?.lat,
       userLocation?.lng,
     ],
-    queryFn: () => adsService.search(buildParams()),
-    placeholderData: keepPreviousData,
+    queryFn: () =>
+      adsService.search({ ...buildParams(), page: 1, per_page: 200 }),
     staleTime: 60 * 1000,
   });
 
@@ -686,6 +694,7 @@ function SearchContent() {
     setPriceRange([0, 5000000]);
     setSurfaceRange([0, 1000]);
     setHasParking(false);
+    setTransactionType(null);
     setHas3dTour(false);
     setIsVerified(false);
     setBathrooms(undefined);
@@ -705,6 +714,7 @@ function SearchContent() {
     surfaceRange[0] > 0,
     surfaceRange[1] < 1000,
     hasParking,
+    transactionType,
     has3dTour,
     isVerified,
     ...selectedAmenities,
@@ -1735,6 +1745,16 @@ function SearchContent() {
               <Chip
                 label={`${bedrooms}+ chambres`}
                 onDelete={() => setBedrooms(undefined)}
+                size="small"
+                variant="outlined"
+              />
+            )}
+            {transactionType && (
+              <Chip
+                label={
+                  transactionType === 'location' ? '🏠 Location' : '🏷️ Vente'
+                }
+                onDelete={() => setTransactionType(null)}
                 size="small"
                 variant="outlined"
               />

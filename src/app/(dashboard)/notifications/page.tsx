@@ -1,6 +1,7 @@
 'use client';
 
 import FadeIn from '@/components/ui/FadeIn';
+import SearchAlertDigestCard from '@/components/notifications/SearchAlertDigestCard';
 import {
   deleteNotification,
   fetchNotifications,
@@ -15,12 +16,17 @@ import {
 } from '@/lib/notification-routing';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { useAuth } from '@/providers/AuthProvider';
-import {
-  Delete as DeleteIcon,
-  DoneAll as DoneAllIcon,
-  Notifications as NotificationsIcon,
-  NotificationsNone as NotificationsNoneIcon,
-} from '@mui/icons-material';
+import ApartmentIcon from '@mui/icons-material/Apartment';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CampaignIcon from '@mui/icons-material/Campaign';
+import ChatIcon from '@mui/icons-material/Chat';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import StarIcon from '@mui/icons-material/Star';
 import {
   Avatar,
   Badge,
@@ -54,21 +60,21 @@ const UNREAD_QK = ['notifications', 'center', 'unread-count'] as const;
 
 function getNotificationIcon(type: string): React.ReactNode {
   if (type.includes('Payment') || type.includes('Subscription')) {
-    return '💳';
+    return <CreditCardIcon sx={{ fontSize: '1.1rem' }} />;
   }
   if (type.includes('Ad')) {
-    return '🏠';
+    return <ApartmentIcon sx={{ fontSize: '1.1rem' }} />;
   }
   if (type.includes('Review')) {
-    return '⭐';
+    return <StarIcon sx={{ fontSize: '1.1rem' }} />;
   }
-  if (type.includes('SearchAlert')) {
-    return '🔔';
+  if (type.includes('SearchAlert') || type === 'search_alert_digest') {
+    return <NotificationsActiveIcon sx={{ fontSize: '1.1rem' }} />;
   }
   if (type.includes('Message')) {
-    return '💬';
+    return <ChatIcon sx={{ fontSize: '1.1rem' }} />;
   }
-  return '📢';
+  return <CampaignIcon sx={{ fontSize: '1.1rem' }} />;
 }
 
 function getNotificationHref(n: LaravelNotification): string | null {
@@ -82,10 +88,17 @@ function getNotificationHref(n: LaravelNotification): string | null {
   if (n.type.includes('Payment')) {
     return '/payments';
   }
-  if (n.type.includes('SearchAlert')) {
+  if (
+    n.type.includes('SearchAlert') ||
+    String(data.type) === 'search_alert_digest'
+  ) {
     return '/search-alerts';
   }
   return null;
+}
+
+function isDigest(n: LaravelNotification): boolean {
+  return String(n.data.type) === 'search_alert_digest';
 }
 
 export default function NotificationsPage() {
@@ -187,7 +200,15 @@ export default function NotificationsPage() {
             gap: 1,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              onClick={() => router.back()}
+              aria-label="Retour"
+              size="small"
+              sx={{ color: 'text.secondary' }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
             <Badge badgeContent={unreadCount} color="error" max={99}>
               <NotificationsIcon sx={{ fontSize: 28, color: 'primary.main' }} />
             </Badge>
@@ -316,63 +337,98 @@ export default function NotificationsPage() {
                       </Tooltip>
                     }
                   >
-                    <ListItemButton
-                      onClick={() => handleClick(n)}
-                      sx={{
-                        py: 1.5,
-                        px: 2,
-                        bgcolor: n.read_at ? 'transparent' : 'action.hover',
-                        '&:hover': { bgcolor: 'action.selected' },
-                      }}
-                    >
-                      <ListItemAvatar>
-                        <Avatar
-                          sx={{
-                            bgcolor: n.read_at
-                              ? 'action.disabledBackground'
-                              : 'primary.50',
-                            width: 40,
-                            height: 40,
-                            fontSize: '1.2rem',
-                          }}
+                    {isDigest(n) ? (
+                      /* ── Digest card (expandable, non-navigating) ── */
+                      <Box
+                        onClick={() => {
+                          if (!n.read_at) markReadMutation.mutate(n.id);
+                        }}
+                        sx={{
+                          px: 2,
+                          py: 1.5,
+                          width: '100%',
+                          bgcolor: n.read_at ? 'transparent' : 'action.hover',
+                          cursor: 'default',
+                        }}
+                      >
+                        <SearchAlertDigestCard
+                          message={String(n.data.message ?? '')}
+                          totalAds={Number(n.data.total_ads ?? 0)}
+                          groups={
+                            (n.data.groups as Parameters<
+                              typeof SearchAlertDigestCard
+                            >[0]['groups']) ?? []
+                          }
+                          isUnread={!n.read_at}
+                        />
+                        <Typography
+                          variant="caption"
+                          color="text.disabled"
+                          sx={{ mt: 0.75, display: 'block' }}
                         >
-                          {getNotificationIcon(n.type)}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Typography
-                            variant="body2"
-                            fontWeight={n.read_at ? 400 : 600}
+                          {formatNotificationTime(n.created_at)}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      /* ── Standard notification row ── */
+                      <ListItemButton
+                        onClick={() => handleClick(n)}
+                        sx={{
+                          py: 1.5,
+                          px: 2,
+                          bgcolor: n.read_at ? 'transparent' : 'action.hover',
+                          '&:hover': { bgcolor: 'action.selected' },
+                        }}
+                      >
+                        <ListItemAvatar>
+                          <Avatar
                             sx={{
-                              color: n.read_at
-                                ? 'text.secondary'
-                                : 'text.primary',
-                              pr: 4,
+                              bgcolor: n.read_at
+                                ? 'action.disabledBackground'
+                                : 'primary.50',
+                              width: 40,
+                              height: 40,
+                              fontSize: '1.2rem',
                             }}
                           >
-                            {getNotificationMessage(n)}
-                          </Typography>
-                        }
-                        secondary={
-                          <Typography variant="caption" color="text.disabled">
-                            {formatNotificationTime(n.created_at)}
-                          </Typography>
-                        }
-                      />
-                      {!n.read_at && (
-                        <Box
-                          sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            bgcolor: 'primary.main',
-                            flexShrink: 0,
-                            mr: 4,
-                          }}
+                            {getNotificationIcon(n.type)}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={
+                            <Typography
+                              variant="body2"
+                              fontWeight={n.read_at ? 400 : 600}
+                              sx={{
+                                color: n.read_at
+                                  ? 'text.secondary'
+                                  : 'text.primary',
+                                pr: 4,
+                              }}
+                            >
+                              {getNotificationMessage(n)}
+                            </Typography>
+                          }
+                          secondary={
+                            <Typography variant="caption" color="text.disabled">
+                              {formatNotificationTime(n.created_at)}
+                            </Typography>
+                          }
                         />
-                      )}
-                    </ListItemButton>
+                        {!n.read_at && (
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              bgcolor: 'primary.main',
+                              flexShrink: 0,
+                              mr: 4,
+                            }}
+                          />
+                        )}
+                      </ListItemButton>
+                    )}
                   </ListItem>
                 </Box>
               ))}

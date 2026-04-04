@@ -5,20 +5,19 @@ import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
 import { surveysService } from '@/services/surveys.service';
 import { Survey } from '@/types';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
-import {
-  Apple,
-  ArrowForwardIos as ArrowIcon,
-  Assignment as AssignmentIcon,
-  DarkMode as DarkModeIcon,
-  Facebook,
-  Google,
-  HelpOutline as HelpIcon,
-  LightMode as LightModeIcon,
-  Logout as LogoutIcon,
-  MusicNote as SoundIcon,
-  NotificationsNone as NotificationsIcon,
-  SettingsBrightness as SystemIcon,
-} from '@mui/icons-material';
+import Apple from '@mui/icons-material/Apple';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowIcon from '@mui/icons-material/ArrowForwardIos';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import Facebook from '@mui/icons-material/Facebook';
+import Google from '@mui/icons-material/Google';
+import HelpIcon from '@mui/icons-material/HelpOutline';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import LogoutIcon from '@mui/icons-material/Logout';
+import SoundIcon from '@mui/icons-material/MusicNote';
+import NotificationsIcon from '@mui/icons-material/NotificationsNone';
+import SystemIcon from '@mui/icons-material/SettingsBrightness';
 import {
   Alert,
   Avatar,
@@ -27,6 +26,7 @@ import {
   Chip,
   Container,
   Grid,
+  IconButton,
   Skeleton,
   Stack,
   Switch,
@@ -284,6 +284,14 @@ export default function ParametresPage() {
 
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+        <IconButton
+          onClick={() => router.back()}
+          aria-label="Retour"
+          size="small"
+          sx={{ mr: 0.5, color: 'text.secondary' }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
         <Box>
           <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
             Paramètres

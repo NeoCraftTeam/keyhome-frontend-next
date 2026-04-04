@@ -27,18 +27,16 @@ import {
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { City } from '@/types';
-import {
-  Business as BusinessIcon,
-  Check as CheckIcon,
-  LocationCity as CityIcon,
-  Close as CloseIcon,
-  Email as EmailIcon,
-  Lock as LockIcon,
-  Person as PersonIcon,
-  PersonOutline,
-  Visibility,
-  VisibilityOff,
-} from '@mui/icons-material';
+import BusinessIcon from '@mui/icons-material/Business';
+import CheckIcon from '@mui/icons-material/Check';
+import CityIcon from '@mui/icons-material/LocationCity';
+import CloseIcon from '@mui/icons-material/Close';
+import EmailIcon from '@mui/icons-material/Email';
+import LockIcon from '@mui/icons-material/Lock';
+import PersonIcon from '@mui/icons-material/Person';
+import PersonOutline from '@mui/icons-material/PersonOutline';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
   Alert,
   Autocomplete,

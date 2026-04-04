@@ -17,16 +17,14 @@ import { citiesService } from '@/services/cities.service';
 import { recommendationsService } from '@/services/users.service';
 import { City } from '@/types';
 
-import {
-  AccessTime as AccessTimeIcon,
-  Apartment,
-  Home as HomeIcon,
-  Landscape,
-  MapsHomeWork,
-  Store,
-  Villa,
-  WavingHand as WavingHandIcon,
-} from '@mui/icons-material';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import Apartment from '@mui/icons-material/Apartment';
+import HomeIcon from '@mui/icons-material/Home';
+import Landscape from '@mui/icons-material/Landscape';
+import MapsHomeWork from '@mui/icons-material/MapsHomeWork';
+import Store from '@mui/icons-material/Store';
+import Villa from '@mui/icons-material/Villa';
+import WavingHandIcon from '@mui/icons-material/WavingHand';
 import {
   Box,
   Button,

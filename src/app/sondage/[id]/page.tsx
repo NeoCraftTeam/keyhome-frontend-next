@@ -1,7 +1,7 @@
 'use client';
 
 import { surveysService } from '@/services/surveys.service';
-import { Survey, SurveyAnswerPayload } from '@/types';
+import { SurveyAnswerPayload } from '@/types';
 import {
   Box,
   Button,
@@ -14,7 +14,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import SurveyForm from '@/components/surveys/SurveyForm';
-import { CheckCircleOutline, ArrowBack } from '@mui/icons-material';
+import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import FadeIn from '@/components/ui/FadeIn';
 
 export default function SurveyPage() {
@@ -24,26 +25,46 @@ export default function SurveyPage() {
   const queryClient = useQueryClient();
   const [submitted, setSubmitted] = useState(false);
 
-  const { data: survey, isLoading, error } = useQuery({
+  const {
+    data: survey,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['survey', surveyId],
     queryFn: () => surveysService.get(surveyId),
     enabled: !!surveyId,
   });
 
   const mutation = useMutation({
-    mutationFn: ({ answers, anonymous }: { answers: SurveyAnswerPayload[]; anonymous: boolean }) =>
-      surveysService.submitResponse(surveyId, answers, anonymous),
+    mutationFn: ({
+      answers,
+      anonymous,
+    }: {
+      answers: SurveyAnswerPayload[];
+      anonymous: boolean;
+    }) => surveysService.submitResponse(surveyId, answers, anonymous),
     onSuccess: () => {
       setSubmitted(true);
-      queryClient.invalidateQueries({ queryKey: ['survey-has-answered-global'] });
-      queryClient.invalidateQueries({ queryKey: ['survey-has-answered-owner'] });
+      queryClient.invalidateQueries({
+        queryKey: ['survey-has-answered-global'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['survey-has-answered-owner'],
+      });
       queryClient.invalidateQueries({ queryKey: ['auth-survey-has-answered'] });
     },
   });
 
   if (isLoading) {
     return (
-      <Box sx={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          minHeight: '80vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <CircularProgress size={48} />
       </Box>
     );
@@ -85,12 +106,18 @@ export default function SurveyPage() {
               bgcolor: 'background.paper',
             }}
           >
-            <CheckCircleOutline sx={{ fontSize: 80, color: 'success.main', mb: 3 }} />
+            <CheckCircleOutline
+              sx={{ fontSize: 80, color: 'success.main', mb: 3 }}
+            />
             <Typography variant="h4" fontWeight={800} gutterBottom>
               Merci !
             </Typography>
-            <Typography color="text.secondary" sx={{ mb: 4, fontSize: '1.1rem' }}>
-              Vos réponses ont bien été enregistrées. Votre avis nous aide à améliorer KeyHome pour tout le monde.
+            <Typography
+              color="text.secondary"
+              sx={{ mb: 4, fontSize: '1.1rem' }}
+            >
+              Vos réponses ont bien été enregistrées. Votre avis nous aide à
+              améliorer KeyHome pour tout le monde.
             </Typography>
             <Button
               variant="contained"
@@ -112,13 +139,20 @@ export default function SurveyPage() {
           variant="text"
           startIcon={<ArrowBack />}
           onClick={() => router.back()}
-          sx={{ mb: 3, borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+          sx={{
+            mb: 3,
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
         >
           Retour
         </Button>
         <SurveyForm
           survey={survey}
-          onSubmit={(answers, anonymous) => mutation.mutate({ answers, anonymous })}
+          onSubmit={(answers, anonymous) =>
+            mutation.mutate({ answers, anonymous })
+          }
           isSubmitting={mutation.isPending}
         />
       </FadeIn>

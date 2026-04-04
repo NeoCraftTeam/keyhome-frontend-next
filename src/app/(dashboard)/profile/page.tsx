@@ -20,20 +20,19 @@ import { citiesService } from '@/services/cities.service';
 import { surveysService } from '@/services/surveys.service';
 import { unlockedAdsService, usersService } from '@/services/users.service';
 import { City } from '@/types';
-import {
-  Assignment as AssignmentIcon,
-  Cancel as CancelIcon,
-  CheckCircleOutline as CheckCircleOutlineIcon,
-  Edit as EditIcon,
-  Favorite as FavoriteIcon,
-  Lock as LockIcon,
-  LockOpen as LockOpenIcon,
-  PhotoCamera,
-  ReceiptLong as ReceiptLongIcon,
-  Save as SaveIcon,
-  Visibility,
-  VisibilityOff,
-} from '@mui/icons-material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import CancelIcon from '@mui/icons-material/Cancel';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import EditIcon from '@mui/icons-material/Edit';
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
+import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import SaveIcon from '@mui/icons-material/Save';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
   Alert,
   Autocomplete,
@@ -265,6 +264,7 @@ export default function ProfilePage() {
     if (user.city_id && user.city_name && !isEditing) {
       setSelectedCity({ id: user.city_id, name: user.city_name });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.city_id, user?.city_name, isEditing]);
 
   if (!user) return null;
@@ -276,6 +276,16 @@ export default function ProfilePage() {
       <PageBreadcrumbs
         items={[{ label: 'Accueil', href: '/home' }, { label: 'Mon profil' }]}
       />
+      <Box sx={{ mb: 1 }}>
+        <IconButton
+          onClick={() => router.back()}
+          aria-label="Retour"
+          size="small"
+          sx={{ color: 'text.secondary' }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
+      </Box>
       {/* Profile header */}
       <FadeIn delay={0.1} direction="up">
         <Paper
@@ -415,7 +425,7 @@ export default function ProfilePage() {
             label="Informations"
           />
           <Tab
-            icon={<FavoriteIcon sx={{ fontSize: 18 }} />}
+            icon={<BookmarkBorderIcon sx={{ fontSize: 18 }} />}
             iconPosition="start"
             label={`Favoris (${favorites.length})`}
           />
@@ -617,14 +627,14 @@ export default function ProfilePage() {
       <TabPanel value={tab} index={1}>
         {favorites.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 6 }}>
-            <FavoriteIcon
+            <BookmarkBorderIcon
               sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }}
             />
             <Typography variant="h6" color="text.secondary">
               Aucun favori
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Ajoutez des annonces en favoris en cliquant sur le coeur
+              Ajoutez des annonces en favoris en cliquant sur le signet
             </Typography>
           </Box>
         ) : (

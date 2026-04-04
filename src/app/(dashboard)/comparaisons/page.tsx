@@ -3,7 +3,9 @@
 import ComparisonTable from '@/components/ads/ComparisonTable';
 import FadeIn from '@/components/ui/FadeIn';
 import { useComparator } from '@/providers/ComparatorProvider';
-import { ChevronLeft as ChevronLeftIcon, CompareArrows, MapsHomeWork } from '@mui/icons-material';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import CompareArrows from '@mui/icons-material/CompareArrows';
+import MapsHomeWork from '@mui/icons-material/MapsHomeWork';
 import { Box, Button, Container, IconButton, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
 
@@ -19,8 +21,13 @@ export default function ComparaisonsPage() {
           <Typography variant="h5" fontWeight={700} gutterBottom>
             Votre comparateur est vide
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
-            Ajoutez des annonces depuis les cartes ou les pages détail pour les comparer côte à côte.
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}
+          >
+            Ajoutez des annonces depuis les cartes ou les pages détail pour les
+            comparer côte à côte.
           </Typography>
           <Button
             variant="contained"
@@ -44,8 +51,13 @@ export default function ComparaisonsPage() {
           <Typography variant="h5" fontWeight={700} gutterBottom>
             Ajoutez au moins un autre bien
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
-            Vous avez 1 annonce dans votre comparateur. Ajoutez-en une autre pour les comparer.
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}
+          >
+            Vous avez 1 annonce dans votre comparateur. Ajoutez-en une autre
+            pour les comparer.
           </Typography>
           <Button
             variant="contained"
@@ -76,7 +88,12 @@ export default function ComparaisonsPage() {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <IconButton onClick={() => router.back()} size="small" aria-label="Retour" sx={{ border: '1px solid', borderColor: 'divider' }}>
+              <IconButton
+                onClick={() => router.back()}
+                size="small"
+                aria-label="Retour"
+                sx={{ border: '1px solid', borderColor: 'divider' }}
+              >
                 <ChevronLeftIcon />
               </IconButton>
               <CompareArrows color="primary" sx={{ fontSize: 28 }} />
@@ -85,7 +102,8 @@ export default function ComparaisonsPage() {
                   Comparaison de biens
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {items.length} annonce{items.length > 1 ? 's' : ''} sélectionnée{items.length > 1 ? 's' : ''}
+                  {items.length} annonce{items.length > 1 ? 's' : ''}{' '}
+                  sélectionnée{items.length > 1 ? 's' : ''}
                 </Typography>
               </Box>
             </Box>

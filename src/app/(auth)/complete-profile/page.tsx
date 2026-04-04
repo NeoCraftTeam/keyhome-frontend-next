@@ -10,7 +10,7 @@ import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { City, User } from '@/types';
 import { useSignUp } from '@clerk/nextjs';
-import { ArrowBack } from '@mui/icons-material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import {
   Alert,
   Autocomplete,

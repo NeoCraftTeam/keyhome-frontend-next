@@ -182,7 +182,7 @@ export default function DashboardLayout({
           justifyContent: 'center',
         }}
       >
-        <AppLoader size={48} />
+        <AppLoader />
       </Box>
     );
   }

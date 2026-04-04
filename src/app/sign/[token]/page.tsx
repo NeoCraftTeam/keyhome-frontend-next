@@ -1,13 +1,15 @@
 'use client';
 
-import { ownerService, type LeaseContract, type SignatureRequest } from '@/services/owner.service';
 import {
-  Cancel as CancelIcon,
-  CheckCircle as CheckCircleIcon,
-  Draw as DrawIcon,
-  Error as ErrorIcon,
-  Schedule as ScheduleIcon,
-} from '@mui/icons-material';
+  ownerService,
+  type LeaseContract,
+  type SignatureRequest,
+} from '@/services/owner.service';
+import CancelIcon from '@mui/icons-material/Cancel';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import DrawIcon from '@mui/icons-material/Draw';
+import ErrorIcon from '@mui/icons-material/Error';
+import ScheduleIcon from '@mui/icons-material/Schedule';
 import {
   Alert,
   Box,
@@ -59,7 +61,9 @@ export default function SignPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState('');
-  const [finalStatus, setFinalStatus] = useState<'signed' | 'declined' | null>(null);
+  const [finalStatus, setFinalStatus] = useState<'signed' | 'declined' | null>(
+    null
+  );
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['public-signature', token],
@@ -76,7 +80,8 @@ export default function SignPage() {
   });
 
   const declineMutation = useMutation({
-    mutationFn: () => ownerService.declineSignatureRequest(token, declineReason || undefined),
+    mutationFn: () =>
+      ownerService.declineSignatureRequest(token, declineReason || undefined),
     onSuccess: () => {
       setDeclineDialogOpen(false);
       setFinalStatus('declined');
@@ -85,7 +90,14 @@ export default function SignPage() {
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -93,14 +105,23 @@ export default function SignPage() {
 
   if (error || !data?.request) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', p: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          p: 3,
+        }}
+      >
         <Box sx={{ textAlign: 'center', maxWidth: 400 }}>
           <ErrorIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
           <Typography variant="h5" fontWeight={700} gutterBottom>
             Lien invalide ou expiré
           </Typography>
           <Typography color="text.secondary">
-            Ce lien de signature n&apos;est pas valide ou a expiré. Veuillez contacter le propriétaire.
+            Ce lien de signature n&apos;est pas valide ou a expiré. Veuillez
+            contacter le propriétaire.
           </Typography>
         </Box>
       </Box>
@@ -111,9 +132,11 @@ export default function SignPage() {
   const contract = request.contract;
 
   const effectiveStatus = finalStatus ?? request.status;
-  const expired = isExpired(request.expires_at) || effectiveStatus === 'expired';
+  const expired =
+    isExpired(request.expires_at) || effectiveStatus === 'expired';
 
-  const isDone = effectiveStatus === 'signed' || effectiveStatus === 'declined' || expired;
+  const isDone =
+    effectiveStatus === 'signed' || effectiveStatus === 'declined' || expired;
 
   return (
     <Container maxWidth="sm" sx={{ py: 6 }}>
@@ -126,12 +149,20 @@ export default function SignPage() {
           Signature de contrat de bail
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Bonjour <strong>{request.signer_name}</strong>, vous avez reçu une demande de signature.
+          Bonjour <strong>{request.signer_name}</strong>, vous avez reçu une
+          demande de signature.
         </Typography>
       </Box>
 
       {/* Contract Summary */}
-      <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 4 }}>
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+          mb: 4,
+        }}
+      >
         <CardContent>
           <Typography variant="subtitle1" fontWeight={700} gutterBottom>
             Détails du contrat
@@ -140,9 +171,18 @@ export default function SignPage() {
           <Stack spacing={1.5}>
             <InfoRow label="Locataire" value={contract.tenant_name} />
             <InfoRow label="Référence" value={contract.contract_number} />
-            <InfoRow label="Loyer mensuel" value={`${contract.monthly_rent?.toLocaleString('fr-FR')} FCFA`} />
-            <InfoRow label="Début du bail" value={formatDate(contract.lease_start)} />
-            <InfoRow label="Fin du bail" value={formatDate(contract.lease_end)} />
+            <InfoRow
+              label="Loyer mensuel"
+              value={`${contract.monthly_rent?.toLocaleString('fr-FR')} FCFA`}
+            />
+            <InfoRow
+              label="Début du bail"
+              value={formatDate(contract.lease_start)}
+            />
+            <InfoRow
+              label="Fin du bail"
+              value={formatDate(contract.lease_end)}
+            />
           </Stack>
         </CardContent>
       </Card>
@@ -152,18 +192,31 @@ export default function SignPage() {
         <Box sx={{ textAlign: 'center', py: 4 }}>
           {effectiveStatus === 'signed' ? (
             <>
-              <CheckCircleIcon sx={{ fontSize: 72, color: 'success.main', mb: 2 }} />
-              <Typography variant="h6" fontWeight={700} color="success.main" gutterBottom>
+              <CheckCircleIcon
+                sx={{ fontSize: 72, color: 'success.main', mb: 2 }}
+              />
+              <Typography
+                variant="h6"
+                fontWeight={700}
+                color="success.main"
+                gutterBottom
+              >
                 Contrat signé
               </Typography>
               <Typography color="text.secondary">
-                Ce contrat a été signé le {formatDate(request.signed_at ?? new Date().toISOString())}.
+                Ce contrat a été signé le{' '}
+                {formatDate(request.signed_at ?? new Date().toISOString())}.
               </Typography>
             </>
           ) : effectiveStatus === 'declined' ? (
             <>
               <CancelIcon sx={{ fontSize: 72, color: 'error.main', mb: 2 }} />
-              <Typography variant="h6" fontWeight={700} color="error.main" gutterBottom>
+              <Typography
+                variant="h6"
+                fontWeight={700}
+                color="error.main"
+                gutterBottom
+              >
                 Demande refusée
               </Typography>
               <Typography color="text.secondary">
@@ -172,12 +225,15 @@ export default function SignPage() {
             </>
           ) : (
             <>
-              <ScheduleIcon sx={{ fontSize: 72, color: 'text.disabled', mb: 2 }} />
+              <ScheduleIcon
+                sx={{ fontSize: 72, color: 'text.disabled', mb: 2 }}
+              />
               <Typography variant="h6" fontWeight={700} gutterBottom>
                 Lien expiré
               </Typography>
               <Typography color="text.secondary">
-                Ce lien de signature a expiré. Contactez le propriétaire pour en obtenir un nouveau.
+                Ce lien de signature a expiré. Contactez le propriétaire pour en
+                obtenir un nouveau.
               </Typography>
             </>
           )}
@@ -185,10 +241,16 @@ export default function SignPage() {
       ) : (
         <Stack spacing={2}>
           <Alert severity="info">
-            Lisez attentivement les détails du contrat ci-dessus avant de signer.
+            Lisez attentivement les détails du contrat ci-dessus avant de
+            signer.
           </Alert>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
-            En cliquant sur &quot;Je signe&quot;, vous confirmez avoir lu le contrat ci-dessus et vous engagez à en respecter les termes.
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: 'block', textAlign: 'center' }}
+          >
+            En cliquant sur &quot;Je signe&quot;, vous confirmez avoir lu le
+            contrat ci-dessus et vous engagez à en respecter les termes.
           </Typography>
           <Button
             variant="contained"
@@ -199,7 +261,12 @@ export default function SignPage() {
               setAcceptedTerms(false);
               setSignDialogOpen(true);
             }}
-            sx={{ borderRadius: 3, fontWeight: 700, textTransform: 'none', py: 1.5 }}
+            sx={{
+              borderRadius: 3,
+              fontWeight: 700,
+              textTransform: 'none',
+              py: 1.5,
+            }}
           >
             Je signe électroniquement ce contrat
           </Button>
@@ -228,7 +295,8 @@ export default function SignPage() {
         <DialogTitle fontWeight={700}>Confirmer la signature</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            En signant, vous acceptez les termes du contrat de bail <strong>{contract.contract_number}</strong>.
+            En signant, vous acceptez les termes du contrat de bail{' '}
+            <strong>{contract.contract_number}</strong>.
           </Typography>
           <FormControlLabel
             control={
@@ -252,7 +320,13 @@ export default function SignPage() {
             onClick={() => signMutation.mutate()}
             variant="contained"
             disabled={!acceptedTerms || signMutation.isPending}
-            startIcon={signMutation.isPending ? <CircularProgress size={16} /> : <CheckCircleIcon />}
+            startIcon={
+              signMutation.isPending ? (
+                <CircularProgress size={16} />
+              ) : (
+                <CheckCircleIcon />
+              )
+            }
             sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
           >
             {signMutation.isPending ? 'Signature…' : 'Signer'}
@@ -306,7 +380,14 @@ export default function SignPage() {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+        gap: 1,
+      }}
+    >
       <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
         {label}
       </Typography>

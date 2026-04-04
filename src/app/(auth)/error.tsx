@@ -1,11 +1,11 @@
 'use client';
 
 import { Box, Button, Typography } from '@mui/material';
-import { ErrorOutline as ErrorIcon } from '@mui/icons-material';
+import ErrorIcon from '@mui/icons-material/ErrorOutline';
 import { gradient } from '@/theme/tokens';
 
 export default function AuthError({
-  error,
+  error: _error,
   reset,
 }: {
   error: Error & { digest?: string };
@@ -27,7 +27,11 @@ export default function AuthError({
       <Typography variant="h5" fontWeight={700} gutterBottom>
         Quelque chose s&apos;est mal passé
       </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 400 }}>
+      <Typography
+        variant="body1"
+        color="text.secondary"
+        sx={{ mb: 3, maxWidth: 400 }}
+      >
         Une erreur est survenue. Veuillez réessayer ou retourner à la connexion.
       </Typography>
       <Box sx={{ display: 'flex', gap: 2 }}>
@@ -43,11 +47,7 @@ export default function AuthError({
         >
           Réessayer
         </Button>
-        <Button
-          variant="outlined"
-          href="/login"
-          sx={{ borderRadius: 2 }}
-        >
+        <Button variant="outlined" href="/login" sx={{ borderRadius: 2 }}>
           Retour à la connexion
         </Button>
       </Box>
