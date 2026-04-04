@@ -10,12 +10,17 @@ export const metadata: Metadata = {
     canonical: 'https://keyhome.app/register',
   },
   openGraph: {
-    title: 'Inscription gratuite — KeyHome, immobilier sans arnaque',
-    description: "Rejoignez des milliers d'utilisateurs qui trouvent leur logement en Afrique grâce à KeyHome. Inscription en 30s, annonces vérifiées, contact direct.",
+    title: "Inscription gratuite — KeyHome, l'immobilier de confiance",
+    description:
+      "Rejoignez des milliers d'utilisateurs qui trouvent leur logement en Afrique grâce à KeyHome. Inscription en 30s, annonces vérifiées, contact direct.",
     url: 'https://keyhome.app/register',
   },
 };
 
-export default function RegisterLayout({ children }: { children: React.ReactNode }) {
+export default function RegisterLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return <Suspense fallback={null}>{children}</Suspense>;
 }

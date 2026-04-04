@@ -20,11 +20,11 @@ const websiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'KeyHome',
-  alternateName: 'KeyHome — Immobilier sans arnaque en Afrique',
+  alternateName: "KeyHome — L'immobilier de confiance",
   url: BASE_URL,
   inLanguage: 'fr',
   description:
-    "Fini les arnaques et les intermédiaires douteux. KeyHome vous connecte directement aux propriétaires vérifiés à travers l'Afrique. " +
+    'KeyHome vous connecte directement aux propriétaires vérifiés, sans intermédiaire. ' +
     "Parcourez des milliers d'annonces avec photos réelles, prix transparents et coordonnées débloquées en un clic sécurisé.",
   potentialAction: {
     '@type': 'SearchAction',
@@ -46,13 +46,13 @@ const organizationSchema = {
   legalName: 'KeyHome by NeoCraftTeam',
   url: BASE_URL,
   logo: `${BASE_URL}/images/logo.png`,
-  image: `${BASE_URL}/images/og-cover.png`,
+  image: `${BASE_URL}/opengraph-image`,
   description:
-    "KeyHome est la plateforme immobilière de confiance en Afrique. " +
-    "Nous vérifions chaque annonce manuellement — photos authentiques, prix cohérents, propriétaires identifiés — " +
-    "pour que vous ne perdiez plus jamais de temps ni d'argent avec de faux annonceurs. " +
-    "Inscription gratuite, paiement sécurisé par Mobile Money, contact direct : votre futur logement est à portée de clic.",
-  slogan: 'Votre maison idéale, sans arnaque.',
+    'KeyHome est la plateforme immobilière de confiance. ' +
+    'Nous vérifions chaque annonce manuellement — photos authentiques, prix cohérents, propriétaires identifiés — ' +
+    'pour que vous trouviez votre bien en toute sécurité. ' +
+    'Inscription gratuite, paiement sécurisé, contact direct : votre futur logement est à portée de clic.',
+  slogan: "L'immobilier de confiance.",
   foundingDate: '2024',
   sameAs: [
     'https://twitter.com/keyhome_app',
@@ -89,9 +89,9 @@ const realEstateAgentSchema = {
   url: BASE_URL,
   logo: `${BASE_URL}/images/logo.png`,
   description:
-    "Vous cherchez un appartement à Douala, une villa à Abidjan ou un terrain à Cotonou ? " +
-    "KeyHome regroupe les meilleures offres immobilières en Afrique, vérifiées une par une par notre équipe. " +
-    "Zéro arnaque, zéro intermédiaire : vous contactez directement le propriétaire après un micro-paiement sécurisé.",
+    'Vous cherchez un appartement à Douala, une villa à Abidjan ou un terrain à Cotonou ? ' +
+    'KeyHome regroupe les meilleures offres immobilières en Afrique, vérifiées une par une par notre équipe. ' +
+    'Zéro arnaque, zéro intermédiaire : vous contactez directement le propriétaire après un micro-paiement sécurisé.',
   areaServed: [
     { '@type': 'Country', name: 'Cameroun' },
     { '@type': 'Country', name: 'Bénin' },
@@ -108,8 +108,8 @@ const realEstateAgentSchema = {
       '@type': 'Service',
       name: 'Mise en relation immobilière sécurisée',
       description:
-        "Accès direct aux coordonnées de propriétaires vérifiés (téléphone, WhatsApp, email) " +
-        "après un micro-paiement Mobile Money ou carte bancaire. Fini les faux numéros et les visites inutiles.",
+        'Accès direct aux coordonnées de propriétaires vérifiés (téléphone, WhatsApp, email) ' +
+        'après un micro-paiement Mobile Money ou carte bancaire. Fini les faux numéros et les visites inutiles.',
     },
   },
 };
@@ -126,10 +126,10 @@ const softwareApplicationSchema = {
   url: BASE_URL,
   description:
     "L'application qui révolutionne la recherche immobilière en Afrique. " +
-    "Carte interactive, filtres intelligents, photos vérifiées et contact direct avec les propriétaires. " +
-    "Plus besoin de faire confiance à des intermédiaires — débloquez les coordonnées en toute sécurité avec Mobile Money. " +
+    'Carte interactive, filtres intelligents, photos vérifiées et contact direct avec les propriétaires. ' +
+    'Plus besoin de faire confiance à des intermédiaires — débloquez les coordonnées en toute sécurité avec Mobile Money. ' +
     "Rejoignez des milliers d'utilisateurs qui ont déjà trouvé leur logement grâce à KeyHome.",
-  screenshot: `${BASE_URL}/images/og-cover.png`,
+  screenshot: `${BASE_URL}/opengraph-image`,
   featureList:
     'Recherche par carte interactive, Filtres avancés (ville, budget, superficie), ' +
     'Annonces vérifiées manuellement, Paiement sécurisé Mobile Money & carte, ' +
@@ -140,7 +140,7 @@ const softwareApplicationSchema = {
     price: '0',
     priceCurrency: 'XOF',
     description:
-      "Inscription 100% gratuite. Parcourez toutes les annonces sans frais. " +
+      'Inscription 100% gratuite. Parcourez toutes les annonces sans frais. ' +
       "Vous ne payez qu'un micro-montant (à partir de 500 FCFA) uniquement quand vous souhaitez obtenir les coordonnées d'un propriétaire.",
   },
   // NOTE: aggregateRating removed — only add back when real review data is
@@ -160,10 +160,10 @@ const faqPageSchema = {
       acceptedAnswer: {
         '@type': 'Answer',
         text:
-          "KeyHome est la seule plateforme immobilière en Afrique où chaque annonce est vérifiée manuellement par notre équipe. " +
-          "Contrairement aux sites classiques remplis de fausses annonces et de numéros qui ne répondent jamais, " +
-          "chez KeyHome vous avez la garantie de photos réelles, de prix cohérents et de propriétaires authentiques. " +
-          "Le secret ? Un micro-paiement sécurisé qui filtre les curieux et vous connecte uniquement à des contacts sérieux.",
+          'KeyHome est la seule plateforme immobilière en Afrique où chaque annonce est vérifiée manuellement par notre équipe. ' +
+          'Contrairement aux sites classiques remplis de fausses annonces et de numéros qui ne répondent jamais, ' +
+          'chez KeyHome vous avez la garantie de photos réelles, de prix cohérents et de propriétaires authentiques. ' +
+          'Le secret ? Un micro-paiement sécurisé qui filtre les curieux et vous connecte uniquement à des contacts sérieux.',
       },
     },
     {
@@ -173,46 +173,46 @@ const faqPageSchema = {
         '@type': 'Answer',
         text:
           "Oui, l'inscription est 100% gratuite et le restera toujours. " +
-          "Vous pouvez parcourir toutes les annonces, voir les photos, les descriptions et la localisation sans rien payer. " +
+          'Vous pouvez parcourir toutes les annonces, voir les photos, les descriptions et la localisation sans rien payer. ' +
           "Vous ne payez un petit montant (à partir de 500 FCFA) que lorsque vous décidez d'obtenir le numéro de téléphone ou le WhatsApp du propriétaire. " +
           "C'est ce système qui garantit que seuls les contacts sérieux vous joignent — et inversement.",
       },
     },
     {
       '@type': 'Question',
-      name: "Comment KeyHome vérifie les annonces pour éviter les arnaques ?",
+      name: 'Comment KeyHome vérifie les annonces pour éviter les arnaques ?',
       acceptedAnswer: {
         '@type': 'Answer',
         text:
-          "Chaque annonce publiée sur KeyHome passe par un processus de modération rigoureux en 3 étapes : " +
+          'Chaque annonce publiée sur KeyHome passe par un processus de modération rigoureux en 3 étapes : ' +
           "vérification de l'authenticité des photos (pas de stock photos), validation de la cohérence du prix par rapport au quartier et au type de bien, " +
           "et confirmation de l'identité du propriétaire ou de l'agence. " +
-          "Les annonces douteuses sont rejetées. Si malgré tout une annonce vous semble suspecte, notre équipe la retire sous 24h après signalement.",
+          'Les annonces douteuses sont rejetées. Si malgré tout une annonce vous semble suspecte, notre équipe la retire sous 24h après signalement.',
       },
     },
     {
       '@type': 'Question',
-      name: "Quels pays et villes sont disponibles sur KeyHome ?",
+      name: 'Quels pays et villes sont disponibles sur KeyHome ?',
       acceptedAnswer: {
         '@type': 'Answer',
         text:
-          "KeyHome couvre activement le Cameroun (Douala, Yaoundé, Bafoussam, Garoua), le Bénin (Cotonou, Porto-Novo), " +
+          'KeyHome couvre activement le Cameroun (Douala, Yaoundé, Bafoussam, Garoua), le Bénin (Cotonou, Porto-Novo), ' +
           "le Togo (Lomé, Kara), la Côte d'Ivoire (Abidjan, Bouaké), le Ghana (Accra, Kumasi), le Mali (Bamako) et le Sénégal (Dakar). " +
-          "Nous nous développons rapidement — de nouvelles villes et pays sont ajoutés chaque mois. " +
-          "Suivez-nous pour être informé dès que votre ville est disponible !",
+          'Nous nous développons rapidement — de nouvelles villes et pays sont ajoutés chaque mois. ' +
+          'Suivez-nous pour être informé dès que votre ville est disponible !',
       },
     },
     {
       '@type': 'Question',
-      name: "Quels moyens de paiement sont acceptés sur KeyHome ?",
+      name: 'Quels moyens de paiement sont acceptés sur KeyHome ?',
       acceptedAnswer: {
         '@type': 'Answer',
         text:
-          "KeyHome accepte tous les moyens de paiement les plus utilisés en Afrique : " +
-          "Mobile Money (MTN Mobile Money, Moov Money, Orange Money, Wave), " +
-          "cartes bancaires (Visa, Mastercard) et paiement par Flutterwave — le tout chiffré et sécurisé. " +
-          "Votre transaction est confirmée instantanément et vous recevez immédiatement les coordonnées du propriétaire. " +
-          "En cas de problème, notre support client vous rembourse.",
+          'KeyHome accepte tous les moyens de paiement les plus utilisés en Afrique : ' +
+          'Mobile Money (MTN Mobile Money, Moov Money, Orange Money, Wave), ' +
+          'cartes bancaires (Visa, Mastercard) et paiement par Flutterwave — le tout chiffré et sécurisé. ' +
+          'Votre transaction est confirmée instantanément et vous recevez immédiatement les coordonnées du propriétaire. ' +
+          'En cas de problème, notre support client vous rembourse.',
       },
     },
     {
@@ -222,20 +222,20 @@ const faqPageSchema = {
         '@type': 'Answer',
         text:
           "Le prix de déblocage est un micro-paiement à partir de 500 FCFA par annonce — c'est-à-dire moins que le coût d'un taxi. " +
-          "Ce montant vous donne un accès permanent aux coordonnées complètes : numéro de téléphone, WhatsApp et email. " +
+          'Ce montant vous donne un accès permanent aux coordonnées complètes : numéro de téléphone, WhatsApp et email. ' +
           "C'est ce petit investissement qui vous protège des faux annonceurs et garantit que le propriétaire est réel et joignable.",
       },
     },
     {
       '@type': 'Question',
-      name: "Je suis propriétaire, comment publier mon annonce sur KeyHome ?",
+      name: 'Je suis propriétaire, comment publier mon annonce sur KeyHome ?',
       acceptedAnswer: {
         '@type': 'Answer',
         text:
           "C'est simple et gratuit ! Créez votre compte, cliquez sur « Publier une annonce », " +
-          "ajoutez vos photos (minimum 3 recommandées), renseignez le prix, la localisation et la description détaillée. " +
-          "Après validation par notre équipe de modération (généralement sous 24h), votre annonce sera visible par des milliers de chercheurs qualifiés. " +
-          "Vous ne recevrez que des contacts sérieux, car chaque personne a payé pour obtenir vos coordonnées.",
+          'ajoutez vos photos (minimum 3 recommandées), renseignez le prix, la localisation et la description détaillée. ' +
+          'Après validation par notre équipe de modération (généralement sous 24h), votre annonce sera visible par des milliers de chercheurs qualifiés. ' +
+          'Vous ne recevrez que des contacts sérieux, car chaque personne a payé pour obtenir vos coordonnées.',
       },
     },
     {
@@ -247,30 +247,30 @@ const faqPageSchema = {
           "Exactement. KeyHome n'est pas une agence immobilière — c'est une plateforme de mise en relation directe. " +
           "Il n'y a aucune commission d'agence, aucun intermédiaire caché. " +
           "Quand vous débloquez les coordonnées, vous parlez directement au propriétaire ou à l'agence qui gère le bien. " +
-          "Vous négociez vous-même, vous visitez quand vous voulez, vous décidez librement.",
+          'Vous négociez vous-même, vous visitez quand vous voulez, vous décidez librement.',
       },
     },
     {
       '@type': 'Question',
-      name: "Puis-je utiliser KeyHome pour trouver un terrain à acheter ?",
+      name: 'Puis-je utiliser KeyHome pour trouver un terrain à acheter ?',
       acceptedAnswer: {
         '@type': 'Answer',
         text:
-          "Absolument ! KeyHome ne se limite pas à la location. Vous trouverez des terrains à vendre, " +
-          "des maisons en vente, des villas, des appartements et même des locaux commerciaux. " +
-          "Utilisez les filtres de recherche pour sélectionner « Terrain » et ajustez votre budget et la localisation souhaitée. " +
+          'Absolument ! KeyHome ne se limite pas à la location. Vous trouverez des terrains à vendre, ' +
+          'des maisons en vente, des villas, des appartements et même des locaux commerciaux. ' +
+          'Utilisez les filtres de recherche pour sélectionner « Terrain » et ajustez votre budget et la localisation souhaitée. ' +
           "La carte interactive vous permet de visualiser exactement l'emplacement de chaque terrain disponible.",
       },
     },
     {
       '@type': 'Question',
-      name: "Que se passe-t-il si les coordonnées débloquées ne fonctionnent pas ?",
+      name: 'Que se passe-t-il si les coordonnées débloquées ne fonctionnent pas ?',
       acceptedAnswer: {
         '@type': 'Answer',
         text:
           "Votre satisfaction est notre priorité. Si après déblocage le numéro ne répond pas ou s'avère invalide, " +
           "contactez immédiatement notre service client via l'application. " +
-          "Nous enquêtons sous 24h et si le contact est effectivement faux (ce qui est très rare grâce à notre vérification), " +
+          'Nous enquêtons sous 24h et si le contact est effectivement faux (ce qui est très rare grâce à notre vérification), ' +
           "vous êtes remboursé intégralement. Nous retirons également l'annonce pour protéger les autres utilisateurs.",
       },
     },
@@ -283,11 +283,11 @@ const faqPageSchema = {
 const howToSchema = {
   '@context': 'https://schema.org',
   '@type': 'HowTo',
-  name: 'Comment trouver un logement sans arnaque en Afrique avec KeyHome',
+  name: 'Comment trouver un logement vérifié avec KeyHome',
   description:
-    "Marre de perdre du temps avec de fausses annonces ? " +
-    "Voici comment trouver et contacter un vrai propriétaire en moins de 5 minutes sur KeyHome — " +
-    "la méthode la plus sûre pour chercher un logement en Afrique.",
+    'Marre de perdre du temps avec de fausses annonces ? ' +
+    'Voici comment trouver et contacter un vrai propriétaire en moins de 5 minutes sur KeyHome — ' +
+    'la méthode la plus sûre pour chercher un logement.',
   totalTime: 'PT5M',
   estimatedCost: {
     '@type': 'MonetaryAmount',
@@ -302,8 +302,8 @@ const howToSchema = {
       position: 1,
       name: 'Créez votre compte gratuitement',
       text:
-        "En 30 secondes, créez votre compte KeyHome. Aucune carte bancaire requise. " +
-        "Vous pouvez aussi vous inscrire avec votre compte Google ou Facebook pour aller encore plus vite.",
+        'En 30 secondes, créez votre compte KeyHome. Aucune carte bancaire requise. ' +
+        'Vous pouvez aussi vous inscrire avec votre compte Google ou Facebook pour aller encore plus vite.',
       url: `${BASE_URL}/register`,
     },
     {
@@ -311,9 +311,9 @@ const howToSchema = {
       position: 2,
       name: 'Recherchez votre logement idéal',
       text:
-        "Utilisez la barre de recherche ou la carte interactive pour explorer les annonces par ville, quartier, type de bien et budget. " +
-        "Chaque annonce affiche des photos réelles, le prix, la superficie et la localisation précise. " +
-        "Ajoutez vos coups de cœur en favoris pour les retrouver facilement.",
+        'Utilisez la barre de recherche ou la carte interactive pour explorer les annonces par ville, quartier, type de bien et budget. ' +
+        'Chaque annonce affiche des photos réelles, le prix, la superficie et la localisation précise. ' +
+        'Ajoutez vos coups de cœur en favoris pour les retrouver facilement.',
       url: `${BASE_URL}/search`,
     },
     {
@@ -321,17 +321,17 @@ const howToSchema = {
       position: 3,
       name: 'Débloquez les coordonnées en un clic',
       text:
-        "Vous avez trouvé le bien parfait ? Payez un micro-montant sécurisé (à partir de 500 FCFA) via Mobile Money ou carte bancaire. " +
-        "Les coordonnées du propriétaire (téléphone, WhatsApp, email) sont débloquées instantanément et accessibles à tout moment dans votre compte.",
+        'Vous avez trouvé le bien parfait ? Payez un micro-montant sécurisé (à partir de 500 FCFA) via Mobile Money ou carte bancaire. ' +
+        'Les coordonnées du propriétaire (téléphone, WhatsApp, email) sont débloquées instantanément et accessibles à tout moment dans votre compte.',
     },
     {
       '@type': 'HowToStep',
       position: 4,
       name: 'Contactez le propriétaire et organisez votre visite',
       text:
-        "Appelez, envoyez un WhatsApp ou un mail directement au propriétaire — sans aucun intermédiaire. " +
-        "Organisez votre visite, négociez le prix et emménagez dans votre nouveau chez-vous. " +
-        "Des milliers de personnes ont déjà trouvé leur logement grâce à KeyHome !",
+        'Appelez, envoyez un WhatsApp ou un mail directement au propriétaire — sans aucun intermédiaire. ' +
+        'Organisez votre visite, négociez le prix et emménagez dans votre nouveau chez-vous. ' +
+        'Des milliers de personnes ont déjà trouvé leur logement grâce à KeyHome !',
     },
   ],
 };

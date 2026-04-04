@@ -2,9 +2,9 @@ import LandingPage from '@/components/landing/LandingPage';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'KeyHome — Trouvez votre logement idéal en Afrique',
+  title: "KeyHome — L'immobilier de confiance",
   description:
-    'Plateforme immobilière panafricaine : des milliers d\'annonces vérifiées de maisons, appartements, terrains et villas. Recherchez, comparez et contactez directement les propriétaires.',
+    "KeyHome : des milliers d'annonces immobilières vérifiées — maisons, appartements, terrains et villas. Recherchez, comparez et contactez directement les propriétaires.",
   keywords: [
     'immobilier Afrique',
     'location maison',
@@ -19,19 +19,18 @@ export const metadata: Metadata = {
     'KeyHome',
   ],
   openGraph: {
-    title: 'KeyHome — Trouvez votre logement idéal en Afrique',
+    title: "KeyHome — L'immobilier de confiance",
     description:
-      'Des milliers d\'annonces immobilières vérifiées à travers l\'Afrique. Accédez aux coordonnées en toute sécurité.',
+      "Des milliers d'annonces immobilières vérifiées. Accédez aux coordonnées en toute sécurité.",
     type: 'website',
     locale: 'fr_FR',
     siteName: 'KeyHome',
-    images: [{ url: 'https://keyhome.app/images/og-cover.png', width: 1200, height: 630, alt: 'KeyHome — Plateforme immobilière en Afrique' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KeyHome — Immobilier en Afrique',
+    title: "KeyHome — L'immobilier de confiance",
     description:
-      'Trouvez votre maison, appartement ou terrain idéal parmi des milliers d\'annonces vérifiées.',
+      "Trouvez votre maison, appartement ou terrain idéal parmi des milliers d'annonces vérifiées.",
   },
   alternates: {
     canonical: 'https://keyhome.app/',
@@ -48,5 +47,3 @@ export const metadata: Metadata = {
 export default function RootPage() {
   return <LandingPage />;
 }
-
-

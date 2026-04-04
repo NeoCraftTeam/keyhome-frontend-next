@@ -31,7 +31,7 @@ export async function generateMetadata({
       siteName: 'KeyHome',
       images: [
         {
-          url: 'https://keyhome.app/images/og-cover.png',
+          url: 'https://keyhome.app/opengraph-image',
           width: 1200,
           height: 630,
           alt: data.metaTitle,

@@ -34,11 +34,12 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL('https://keyhome.app'),
   title: {
-    default: 'KeyHome — Immobilier en Afrique : Location, Vente, Terrains',
+    default:
+      'KeyHome — Annonces immobilières vérifiées | Location, Vente, Terrains',
     template: '%s | KeyHome',
   },
   description:
-    'KeyHome : annonces immobilières vérifiées en Afrique. Maisons, appartements, terrains à Douala, Abidjan, Cotonou, Lomé. Inscription gratuite, zéro arnaque.',
+    "KeyHome : des milliers d'annonces immobilières vérifiées. Maisons, appartements, terrains et villas à Douala, Abidjan, Cotonou, Lomé et partout dans le monde. Inscription gratuite, paiement sécurisé.",
   keywords: [
     'immobilier Afrique',
     'location appartement',
@@ -83,26 +84,16 @@ export const metadata: Metadata = {
     locale: 'fr_FR',
     url: 'https://keyhome.app',
     siteName: 'KeyHome',
-    title: 'KeyHome — Trouvez votre logement en Afrique',
+    title: "KeyHome — L'immobilier de confiance",
     description:
-      "Des milliers d'annonces immobilières vérifiées. Maisons, appartements, terrains et villas à travers l'Afrique. " +
-      'Inscription gratuite, paiement sécurisé Mobile Money, contact direct avec les propriétaires. Zéro intermédiaire.',
-    images: [
-      {
-        url: '/images/og-cover.png',
-        width: 1200,
-        height: 630,
-        alt: 'KeyHome — Immobilier en Afrique',
-        type: 'image/png',
-      },
-    ],
+      "Des milliers d'annonces immobilières vérifiées. Maisons, appartements, terrains et villas partout dans le monde. " +
+      'Inscription gratuite, paiement sécurisé, contact direct avec les propriétaires. Zéro intermédiaire.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KeyHome — Immobilier en Afrique',
+    title: "KeyHome — L'immobilier de confiance",
     description:
-      "Trouvez votre logement idéal parmi des milliers d'annonces vérifiées. Inscription gratuite, paiement sécurisé, contact direct propriétaire.",
-    images: ['/images/og-cover.png'],
+      "Trouvez votre bien idéal parmi des milliers d'annonces vérifiées. Inscription gratuite, paiement sécurisé, contact direct propriétaire.",
     creator: '@keyhome_app',
   },
   icons: {
