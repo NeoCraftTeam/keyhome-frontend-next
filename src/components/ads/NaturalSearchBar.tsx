@@ -14,7 +14,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
+import { motion, useAnimation } from 'framer-motion';
 
 const EXAMPLES = [
   'Appartement 3 pièces à Bastos moins de 150 000 FCFA',
@@ -27,8 +28,37 @@ export default function NaturalSearchBar() {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMultiline, setIsMultiline] = useState(false);
   const router = useRouter();
   const [, startTransition] = useTransition();
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const boxControls = useAnimation();
+  const prevLen = useRef(0);
+
+  useEffect(() => {
+    const len = query.length;
+    const prev = prevLen.current;
+    prevLen.current = len;
+
+    if (len === 0) {
+      setIsMultiline(false);
+      return;
+    }
+
+    const el = inputRef.current;
+    if (!isMultiline && el && el.scrollWidth > el.clientWidth) {
+      setIsMultiline(true);
+      void boxControls.start({
+        y: [0, -9, 4, -2, 0],
+        transition: { duration: 0.5, ease: 'easeOut' },
+      });
+    } else if (prev === 0) {
+      void boxControls.start({
+        y: [0, -7, 3, -1.5, 0],
+        transition: { duration: 0.55, ease: 'easeOut' },
+      });
+    }
+  }, [query, boxControls, isMultiline]);
 
   const handleSearch = async (q?: string) => {
     const searchQuery = q ?? query;
@@ -92,69 +122,87 @@ export default function NaturalSearchBar() {
 
   return (
     <Box>
-      <Paper
-        elevation={0}
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          border: '2px solid',
-          borderColor: 'primary.main',
-          borderRadius: 3,
-          overflow: 'hidden',
-          transition: 'box-shadow 0.2s',
-          '&:focus-within': {
-            boxShadow: (theme) => `0 0 0 4px ${theme.palette.primary.main}22`,
-          },
-        }}
-      >
-        <TextField
-          fullWidth
-          placeholder="Décrivez votre bien idéal en français..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleSearch();
-            }
+      <motion.div animate={boxControls} style={{ width: '100%' }}>
+        <Paper
+          elevation={0}
+          sx={{
+            display: 'flex',
+            alignItems: isMultiline ? 'flex-start' : 'center',
+            border: '2px solid',
+            borderColor: 'primary.main',
+            borderRadius: 3,
+            overflow: 'hidden',
+            transition: 'box-shadow 0.2s',
+            '&:focus-within': {
+              boxShadow: (theme) => `0 0 0 4px ${theme.palette.primary.main}22`,
+            },
           }}
-          variant="standard"
-          InputProps={{
-            disableUnderline: true,
-            startAdornment: (
-              <InputAdornment position="start" sx={{ pl: 2 }}>
-                <AutoAwesome color="primary" sx={{ fontSize: 20 }} />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end" sx={{ pr: 1 }}>
-                {isLoading ? (
-                  <CircularProgress size={20} />
-                ) : (
-                  <Tooltip title="Rechercher">
-                    <Box
-                      onClick={() => handleSearch()}
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 2,
-                        bgcolor: 'primary.main',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        '&:hover': { bgcolor: 'primary.dark' },
-                      }}
-                    >
-                      <Search sx={{ color: 'white', fontSize: 20 }} />
-                    </Box>
-                  </Tooltip>
-                )}
-              </InputAdornment>
-            ),
-            sx: { px: 1, py: 1.5, fontSize: 16 },
-          }}
-        />
-      </Paper>
+        >
+          <TextField
+            fullWidth
+            multiline={isMultiline}
+            maxRows={isMultiline ? 4 : undefined}
+            inputRef={inputRef}
+            placeholder="Décrivez votre bien idéal en français..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSearch();
+              }
+            }}
+            variant="standard"
+            InputProps={{
+              disableUnderline: true,
+              startAdornment: (
+                <InputAdornment
+                  position="start"
+                  sx={[
+                    { pl: 2 },
+                    isMultiline && { alignSelf: 'flex-start', pt: '18px' },
+                  ]}
+                >
+                  <AutoAwesome color="primary" sx={{ fontSize: 20 }} />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment
+                  position="end"
+                  sx={[
+                    { pr: 1 },
+                    isMultiline && { alignSelf: 'flex-start', pt: '10px' },
+                  ]}
+                >
+                  {isLoading ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    <Tooltip title="Rechercher">
+                      <Box
+                        onClick={() => handleSearch()}
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 2,
+                          bgcolor: 'primary.main',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          '&:hover': { bgcolor: 'primary.dark' },
+                        }}
+                      >
+                        <Search sx={{ color: 'white', fontSize: 20 }} />
+                      </Box>
+                    </Tooltip>
+                  )}
+                </InputAdornment>
+              ),
+              sx: { px: 1, py: 1.5, fontSize: 16 },
+            }}
+          />
+        </Paper>
+      </motion.div>
 
       {error && (
         <Typography variant="caption" color="error" mt={1} display="block">
