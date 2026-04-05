@@ -32,7 +32,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import AdForm, {
   type AdFormValues,
   type TourScene,
@@ -194,10 +194,11 @@ export default function OwnerAdEditPage() {
         const existingScenes = tourScenes.filter(
           (s) => s.id && !s.id.startsWith('new-') && !s.file
         );
-        for (const scene of existingScenes) {
-          if (scene.hotspots && scene.hotspots.length > 0) {
-            try {
-              await adsService.updateHotspots(
+        await Promise.allSettled(
+          existingScenes
+            .filter((s) => s.hotspots && s.hotspots.length > 0)
+            .map((scene) =>
+              adsService.updateHotspots(
                 id,
                 scene.id!,
                 scene.hotspots.map((h) => ({
@@ -206,12 +207,9 @@ export default function OwnerAdEditPage() {
                   target_scene: h.target_scene,
                   label: h.label,
                 }))
-              );
-            } catch {
-              // Silently fail for hotspot updates — the main ad was already saved
-            }
-          }
-        }
+              )
+            )
+        );
       }
 
       return updatedAd;
@@ -260,6 +258,79 @@ export default function OwnerAdEditPage() {
     },
   });
 
+  /** Publish a DRAFT ad → PENDING for admin review. */
+  const publishDraftMutation = useMutation({
+    mutationFn: () => adsService.publishDraft(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ad', id] });
+      queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
+      setSnackbar({
+        message: 'Annonce soumise pour validation !',
+        severity: 'success',
+      });
+    },
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? 'Erreur lors de la publication';
+      setSnackbar({ message: msg, severity: 'error' });
+    },
+  });
+
+  /** Save changes to an existing draft without publishing. */
+  const saveDraftMutation = useMutation({
+    mutationFn: async ({
+      values,
+      images,
+      imagesToDelete,
+    }: {
+      values: AdFormValues;
+      images: File[];
+      imagesToDelete?: number[];
+    }) => {
+      const formData = new FormData();
+      formData.append('_method', 'PUT');
+      formData.append('is_draft', '1');
+      if (values.title) formData.append('title', values.title);
+      if (values.description)
+        formData.append('description', values.description);
+      if (values.adresse) formData.append('adresse', values.adresse);
+      if (values.price) formData.append('price', values.price);
+      if (values.surface_area)
+        formData.append('surface_area', values.surface_area);
+      if (values.bedrooms) formData.append('bedrooms', values.bedrooms);
+      if (values.bathrooms) formData.append('bathrooms', values.bathrooms);
+      formData.append('has_parking', values.has_parking ? '1' : '0');
+      if (values.latitude) formData.append('latitude', String(values.latitude));
+      if (values.longitude)
+        formData.append('longitude', String(values.longitude));
+      if (values.quarter_id) formData.append('quarter_id', values.quarter_id);
+      if (values.type_id) formData.append('type_id', values.type_id);
+      values.attributes.forEach((a) => formData.append('attributes[]', a));
+      images.forEach((f, i) => formData.append(`images[${i}]`, f));
+      if (imagesToDelete?.length) {
+        imagesToDelete.forEach((mid) =>
+          formData.append('images_to_delete[]', String(mid))
+        );
+      }
+      return adsService.update(id, formData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ad', id] });
+      queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
+      setSnackbar({
+        message: 'Brouillon mis à jour',
+        severity: 'success',
+      });
+    },
+    onError: () => {
+      setSnackbar({
+        message: 'Erreur lors de la sauvegarde du brouillon',
+        severity: 'error',
+      });
+    },
+  });
+
   const contractMutation = useMutation({
     mutationFn: () =>
       ownerService.generateLeaseContract(id, {
@@ -294,28 +365,111 @@ export default function OwnerAdEditPage() {
     },
   });
 
-  const handleSubmit = async (
-    values: AdFormValues,
-    images: File[],
-    options?: {
-      imagesToDelete?: number[];
-      tourScenes?: TourScene[];
-      propertyConditionPdf?: File | null;
-    }
-  ) => {
-    await updateMutation.mutateAsync({
-      values,
-      images,
-      imagesToDelete: options?.imagesToDelete,
-      tourScenes: options?.tourScenes,
-      propertyConditionPdf: options?.propertyConditionPdf,
-    });
-  };
+  const handleSubmit = useCallback(
+    async (
+      values: AdFormValues,
+      images: File[],
+      options?: {
+        imagesToDelete?: number[];
+        tourScenes?: TourScene[];
+        propertyConditionPdf?: File | null;
+      }
+    ) => {
+      // Save the update first
+      await updateMutation.mutateAsync({
+        values,
+        images,
+        imagesToDelete: options?.imagesToDelete,
+        tourScenes: options?.tourScenes,
+        propertyConditionPdf: options?.propertyConditionPdf,
+      });
+      // If this is a draft, also publish it (DRAFT → PENDING)
+      if (ad?.status === AdStatus.DRAFT) {
+        await publishDraftMutation.mutateAsync();
+      }
+    },
+    [updateMutation.mutateAsync, publishDraftMutation.mutateAsync, ad?.status]
+  );
 
-  const handleEnhance = async (description: string) => {
+  const handleSaveDraft = useCallback(
+    async (
+      values: AdFormValues,
+      images: File[],
+      options?: { imagesToDelete?: number[] }
+    ) => {
+      await saveDraftMutation.mutateAsync({
+        values,
+        images,
+        imagesToDelete: options?.imagesToDelete,
+      });
+    },
+    [saveDraftMutation.mutateAsync]
+  );
+
+  const handleEnhance = useCallback(async (description: string) => {
     const { enhanced } = await adsService.enhanceDescription(description);
     return enhanced;
-  };
+  }, []);
+
+  const initialData = useMemo((): Partial<AdFormValues> => {
+    if (!ad) return {};
+    return {
+      title: ad.title,
+      description: ad.description,
+      adresse: ad.adresse,
+      price: ad.price != null ? String(ad.price) : '',
+      surface_area: String(ad.surface_area),
+      bedrooms: String(ad.bedrooms),
+      bathrooms: String(ad.bathrooms),
+      has_parking: ad.has_parking ?? false,
+      latitude: ad.location?.latitude ?? 4.0511,
+      longitude: ad.location?.longitude ?? 9.7679,
+      quarter_id: ad.quarter?.id ?? '',
+      type_id: ad.type?.id ?? '',
+      attributes: ad.attributes ?? [],
+      deposit_amount: ad.deposit_amount ?? '',
+      minimum_lease_duration: ad.minimum_lease_duration ?? '',
+      charges_forfaitaires: !!ad.charges_forfaitaires,
+      charges_montant_forfait:
+        ad.charges_montant_forfait != null
+          ? String(ad.charges_montant_forfait)
+          : '',
+      charges_eau: ad.charges_eau != null ? String(ad.charges_eau) : '',
+      charges_electricite:
+        ad.charges_electricite != null ? String(ad.charges_electricite) : '',
+      charges_autres: ad.charges_autres ?? '',
+      charges_autres_items: (ad.charges_autres ?? '')
+        .split('\n')
+        .filter((line: string) => line.includes(':'))
+        .map((line: string) => {
+          const [label, rest] = line.split(':').map((s: string) => s.trim());
+          const amountMatch = rest?.match(/^([\d.]+)/);
+          const isYearly = rest?.includes('/an');
+          return {
+            label: label ?? '',
+            amount: amountMatch?.[1] ?? '',
+            period: isYearly ? 'yearly' : 'monthly',
+          } as { label: string; amount: string; period: 'monthly' | 'yearly' };
+        })
+        .filter(
+          (item: {
+            label: string;
+            amount: string;
+            period: 'monthly' | 'yearly';
+          }) => item.label
+        ),
+      distance_main_road_m:
+        ad.distance_main_road_m != null ? String(ad.distance_main_road_m) : '',
+      distance_shops_m:
+        ad.distance_shops_m != null ? String(ad.distance_shops_m) : '',
+      distance_transport_m:
+        ad.distance_transport_m != null ? String(ad.distance_transport_m) : '',
+      distance_school_m:
+        ad.distance_school_m != null ? String(ad.distance_school_m) : '',
+      distance_hospital_m:
+        ad.distance_hospital_m != null ? String(ad.distance_hospital_m) : '',
+    };
+  }, [ad]);
 
   /* ─── Loading ─── */
   if (isLoading) {
@@ -355,63 +509,7 @@ export default function OwnerAdEditPage() {
     );
   }
 
-  const initialData: Partial<AdFormValues> = {
-    title: ad.title,
-    description: ad.description,
-    adresse: ad.adresse,
-    price: ad.price != null ? String(ad.price) : '',
-    surface_area: String(ad.surface_area),
-    bedrooms: String(ad.bedrooms),
-    bathrooms: String(ad.bathrooms),
-    has_parking: ad.has_parking ?? false,
-    latitude: ad.location?.latitude ?? 4.0511,
-    longitude: ad.location?.longitude ?? 9.7679,
-    quarter_id: ad.quarter?.id ?? '',
-    type_id: ad.type?.id ?? '',
-    attributes: ad.attributes ?? [],
-    // Premium info
-    deposit_amount: ad.deposit_amount ?? '',
-    minimum_lease_duration: ad.minimum_lease_duration ?? '',
-    charges_forfaitaires: !!ad.charges_forfaitaires,
-    charges_montant_forfait:
-      ad.charges_montant_forfait != null
-        ? String(ad.charges_montant_forfait)
-        : '',
-    charges_eau: ad.charges_eau != null ? String(ad.charges_eau) : '',
-    charges_electricite:
-      ad.charges_electricite != null ? String(ad.charges_electricite) : '',
-    charges_autres: ad.charges_autres ?? '',
-    charges_autres_items: (ad.charges_autres ?? '')
-      .split('\n')
-      .filter((line: string) => line.includes(':'))
-      .map((line: string) => {
-        const [label, rest] = line.split(':').map((s: string) => s.trim());
-        const amountMatch = rest?.match(/^([\d.]+)/);
-        const isYearly = rest?.includes('/an');
-        return {
-          label: label ?? '',
-          amount: amountMatch?.[1] ?? '',
-          period: isYearly ? 'yearly' : 'monthly',
-        } as { label: string; amount: string; period: 'monthly' | 'yearly' };
-      })
-      .filter(
-        (item: {
-          label: string;
-          amount: string;
-          period: 'monthly' | 'yearly';
-        }) => item.label
-      ),
-    distance_main_road_m:
-      ad.distance_main_road_m != null ? String(ad.distance_main_road_m) : '',
-    distance_shops_m:
-      ad.distance_shops_m != null ? String(ad.distance_shops_m) : '',
-    distance_transport_m:
-      ad.distance_transport_m != null ? String(ad.distance_transport_m) : '',
-    distance_school_m:
-      ad.distance_school_m != null ? String(ad.distance_school_m) : '',
-    distance_hospital_m:
-      ad.distance_hospital_m != null ? String(ad.distance_hospital_m) : '',
-  };
+  const isDraft = ad.status === AdStatus.DRAFT;
 
   const statusColor =
     ad.status === AdStatus.AVAILABLE
@@ -420,7 +518,9 @@ export default function OwnerAdEditPage() {
         ? 'warning'
         : ad.status === AdStatus.DECLINED
           ? 'error'
-          : 'default';
+          : ad.status === AdStatus.DRAFT
+            ? 'secondary'
+            : 'default';
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
@@ -556,6 +656,27 @@ export default function OwnerAdEditPage() {
                   </>
                 )}
             </ButtonGroup>
+            {isDraft && (
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                onClick={() => publishDraftMutation.mutate()}
+                disabled={publishDraftMutation.isPending}
+                startIcon={
+                  publishDraftMutation.isPending ? (
+                    <CircularProgress size={16} />
+                  ) : null
+                }
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                }}
+              >
+                Publier l&apos;annonce
+              </Button>
+            )}
             {(ad.status === AdStatus.AVAILABLE ||
               ad.status === AdStatus.RESERVED) && (
               <Button
@@ -614,14 +735,44 @@ export default function OwnerAdEditPage() {
         </Alert>
       )}
 
+      {/* ═══ Draft Banner ═══ */}
+      {isDraft && (
+        <Alert
+          severity="info"
+          sx={{ borderRadius: 2, mb: 3 }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => publishDraftMutation.mutate()}
+              disabled={publishDraftMutation.isPending}
+              sx={{ fontWeight: 700 }}
+            >
+              Publier maintenant
+            </Button>
+          }
+        >
+          Cette annonce est un <strong>brouillon</strong>. Complétez les
+          informations et publiez-la pour qu&apos;elle soit soumise à
+          validation.
+        </Alert>
+      )}
+
       {/* ═══ Form ═══ */}
       <AdForm
         initialData={initialData}
         ad={ad}
         onSubmit={handleSubmit}
+        onSaveDraft={isDraft ? handleSaveDraft : undefined}
         onCancel={() => router.push('/owner/ads')}
-        submitLabel="Enregistrer les modifications"
-        isSubmitting={updateMutation.isPending}
+        submitLabel={
+          isDraft ? "Publier l'annonce" : 'Enregistrer les modifications'
+        }
+        draftLabel="Mettre à jour le brouillon"
+        isSubmitting={
+          isDraft ? publishDraftMutation.isPending : updateMutation.isPending
+        }
+        isSavingDraft={saveDraftMutation.isPending}
         onEnhanceDescription={handleEnhance}
       />
 

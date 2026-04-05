@@ -45,41 +45,120 @@ import Person from '@mui/icons-material/Person';
 import Phone from '@mui/icons-material/Phone';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AdForm, { type TourScene } from '@/components/owner/AdForm';
 import { adsService } from '@/services/ads.service';
 
+const PROFILE_STEP_ICONS = {
+  name: <Person sx={{ fontSize: 20 }} />,
+  phone: <Phone sx={{ fontSize: 20 }} />,
+  city: <LocationOn sx={{ fontSize: 20 }} />,
+  bio: <Description sx={{ fontSize: 20 }} />,
+};
+
 function useProfileCompleteness(user: ReturnType<typeof useAuth>['user']) {
-  const steps = [
-    {
-      key: 'name',
-      label: 'Prénom & Nom',
-      done: !!(user?.firstname && user?.lastname),
-      icon: <Person sx={{ fontSize: 20 }} />,
-    },
-    {
-      key: 'phone',
-      label: 'Numéro de téléphone',
-      done: !!user?.phone_number,
-      icon: <Phone sx={{ fontSize: 20 }} />,
-    },
-    {
-      key: 'city',
-      label: 'Ville de résidence',
-      done: !!user?.city_id,
-      icon: <LocationOn sx={{ fontSize: 20 }} />,
-    },
-    {
-      key: 'bio',
-      label: 'Bio publique',
-      done: !!user?.bio?.trim(),
-      icon: <Description sx={{ fontSize: 20 }} />,
-    },
-  ];
+  const steps = useMemo(
+    () => [
+      {
+        key: 'name',
+        label: 'Prénom & Nom',
+        done: !!(user?.firstname && user?.lastname),
+        icon: PROFILE_STEP_ICONS.name,
+      },
+      {
+        key: 'phone',
+        label: 'Numéro de téléphone',
+        done: !!user?.phone_number,
+        icon: PROFILE_STEP_ICONS.phone,
+      },
+      {
+        key: 'city',
+        label: 'Ville de résidence',
+        done: !!user?.city_id,
+        icon: PROFILE_STEP_ICONS.city,
+      },
+      {
+        key: 'bio',
+        label: 'Bio publique',
+        done: !!user?.bio?.trim(),
+        icon: PROFILE_STEP_ICONS.bio,
+      },
+    ],
+    [
+      user?.firstname,
+      user?.lastname,
+      user?.phone_number,
+      user?.city_id,
+      user?.bio,
+    ]
+  );
   const doneCount = steps.filter((s) => s.done).length;
   const isComplete = doneCount === steps.length;
   const progress = Math.round((doneCount / steps.length) * 100);
   return { steps, isComplete, progress, doneCount };
+}
+
+/** Build FormData from ad form values + images. Pure utility — hoisted outside component. */
+function buildAdFormData(
+  values: AdFormValues,
+  images: File[],
+  options?: { idempotencyKey?: string }
+): FormData {
+  const formData = new FormData();
+  if (options?.idempotencyKey)
+    formData.append('_idempotency_key', options.idempotencyKey);
+  if (values.title) formData.append('title', values.title);
+  if (values.description) formData.append('description', values.description);
+  if (values.adresse) formData.append('adresse', values.adresse);
+  if (values.price) formData.append('price', values.price);
+  if (values.surface_area) formData.append('surface_area', values.surface_area);
+  if (values.bedrooms) formData.append('bedrooms', values.bedrooms);
+  if (values.bathrooms) formData.append('bathrooms', values.bathrooms);
+  formData.append('has_parking', values.has_parking ? '1' : '0');
+  if (values.latitude) formData.append('latitude', String(values.latitude));
+  if (values.longitude) formData.append('longitude', String(values.longitude));
+  if (values.quarter_id) formData.append('quarter_id', values.quarter_id);
+  if (values.type_id) formData.append('type_id', values.type_id);
+  values.attributes.forEach((a) => formData.append('attributes[]', a));
+  images.forEach((f, i) => formData.append(`images[${i}]`, f));
+  if (values.deposit_amount)
+    formData.append('deposit_amount', values.deposit_amount);
+  if (values.minimum_lease_duration)
+    formData.append('minimum_lease_duration', values.minimum_lease_duration);
+  formData.append(
+    'charges_forfaitaires',
+    values.charges_forfaitaires ? '1' : '0'
+  );
+  if (values.charges_forfaitaires && values.charges_montant_forfait) {
+    formData.append('charges_montant_forfait', values.charges_montant_forfait);
+  }
+  if (!values.charges_forfaitaires) {
+    if (values.charges_eau) formData.append('charges_eau', values.charges_eau);
+    if (values.charges_electricite)
+      formData.append('charges_electricite', values.charges_electricite);
+  }
+  const chargesAutresStr = (values.charges_autres_items ?? [])
+    .filter((item) => item.label.trim() && item.amount.trim())
+    .map(
+      (item) =>
+        `${item.label}: ${item.amount} FCFA/${item.period === 'monthly' ? 'mois' : 'an'}`
+    )
+    .join('\n');
+  if (chargesAutresStr) formData.append('charges_autres', chargesAutresStr);
+  if (values.distance_main_road_m)
+    formData.append('distance_main_road_m', values.distance_main_road_m);
+  if (values.distance_shops_m)
+    formData.append('distance_shops_m', values.distance_shops_m);
+  if (values.distance_transport_m)
+    formData.append('distance_transport_m', values.distance_transport_m);
+  if (values.distance_school_m)
+    formData.append('distance_school_m', values.distance_school_m);
+  if (values.distance_hospital_m)
+    formData.append('distance_hospital_m', values.distance_hospital_m);
+  if (values.is_boost_requested) {
+    formData.append('is_boost_requested', '1');
+  }
+  return formData;
 }
 
 export default function OwnerNewAdPage() {
@@ -105,13 +184,23 @@ export default function OwnerNewAdPage() {
   const [profileCityInput, setProfileCityInput] = useState(
     user?.city_name ?? ''
   );
+  const [debouncedProfileCityInput, setDebouncedProfileCityInput] =
+    useState(profileCityInput);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setDebouncedProfileCityInput(profileCityInput),
+      300
+    );
+    return () => clearTimeout(timer);
+  }, [profileCityInput]);
+
   const { data: profileCitiesData } = useQuery({
-    queryKey: ['new-ad-profile-cities', profileCityInput],
-    queryFn: () => citiesService.list({ q: profileCityInput }),
-    enabled: profileCityInput.length >= 1,
+    queryKey: ['new-ad-profile-cities', debouncedProfileCityInput],
+    queryFn: () => citiesService.list({ q: debouncedProfileCityInput }),
+    enabled: debouncedProfileCityInput.length >= 1,
     staleTime: 5 * 60 * 1000,
   });
   const profileCities = (profileCitiesData?.data ?? []) as {
@@ -173,6 +262,39 @@ export default function OwnerNewAdPage() {
     }
   }, [hasDraft]);
 
+  // ── Draft mutation — save partial data to server ──
+  const [draftSnackbar, setDraftSnackbar] = useState<{
+    message: string;
+    severity: 'success' | 'error';
+  } | null>(null);
+
+  const draftMutation = useMutation({
+    mutationFn: async ({
+      values,
+      images,
+    }: {
+      values: AdFormValues;
+      images: File[];
+    }) => {
+      const formData = buildAdFormData(values, images);
+      return adsService.saveDraft(formData);
+    },
+    onSuccess: (ad) => {
+      setDraftSnackbar({
+        message: 'Brouillon enregistré sur le serveur.',
+        severity: 'success',
+      });
+      // Redirect to edit page so further saves update the same ad
+      router.push(`/owner/ads/${ad.id}`);
+    },
+    onError: () => {
+      setDraftSnackbar({
+        message: "Erreur lors de l'enregistrement du brouillon.",
+        severity: 'error',
+      });
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: async ({
       values,
@@ -187,75 +309,11 @@ export default function OwnerNewAdPage() {
       propertyConditionPdf?: File | null;
       idempotencyKey?: string;
     }) => {
-      const formData = new FormData();
-      if (idempotencyKey) formData.append('_idempotency_key', idempotencyKey);
-      formData.append('title', values.title);
-      formData.append('description', values.description);
-      formData.append('adresse', values.adresse);
-      formData.append('price', values.price);
-      formData.append('surface_area', values.surface_area);
-      formData.append('bedrooms', values.bedrooms);
-      formData.append('bathrooms', values.bathrooms);
-      formData.append('has_parking', values.has_parking ? '1' : '0');
-      formData.append('latitude', String(values.latitude));
-      formData.append('longitude', String(values.longitude));
-      formData.append('quarter_id', values.quarter_id);
-      formData.append('type_id', values.type_id);
-      values.attributes.forEach((a) => formData.append('attributes[]', a));
-      images.forEach((f, i) => formData.append(`images[${i}]`, f));
-
-      // Premium info
-      if (values.deposit_amount)
-        formData.append('deposit_amount', values.deposit_amount);
-      if (values.minimum_lease_duration)
-        formData.append(
-          'minimum_lease_duration',
-          values.minimum_lease_duration
-        );
-      formData.append(
-        'charges_forfaitaires',
-        values.charges_forfaitaires ? '1' : '0'
-      );
-      if (values.charges_forfaitaires && values.charges_montant_forfait) {
-        formData.append(
-          'charges_montant_forfait',
-          values.charges_montant_forfait
-        );
-      }
-      if (!values.charges_forfaitaires) {
-        if (values.charges_eau)
-          formData.append('charges_eau', values.charges_eau);
-        if (values.charges_electricite)
-          formData.append('charges_electricite', values.charges_electricite);
-      }
-      const chargesAutresStr = (values.charges_autres_items ?? [])
-        .filter((item) => item.label.trim() && item.amount.trim())
-        .map(
-          (item) =>
-            `${item.label}: ${item.amount} FCFA/${item.period === 'monthly' ? 'mois' : 'an'}`
-        )
-        .join('\n');
-      if (chargesAutresStr) formData.append('charges_autres', chargesAutresStr);
-
-      // Proximity & distance fields
-      if (values.distance_main_road_m)
-        formData.append('distance_main_road_m', values.distance_main_road_m);
-      if (values.distance_shops_m)
-        formData.append('distance_shops_m', values.distance_shops_m);
-      if (values.distance_transport_m)
-        formData.append('distance_transport_m', values.distance_transport_m);
-      if (values.distance_school_m)
-        formData.append('distance_school_m', values.distance_school_m);
-      if (values.distance_hospital_m)
-        formData.append('distance_hospital_m', values.distance_hospital_m);
+      const formData = buildAdFormData(values, images, { idempotencyKey });
 
       // Property condition PDF
       if (propertyConditionPdf) {
         formData.append('property_condition', propertyConditionPdf);
-      }
-
-      if (values.is_boost_requested) {
-        formData.append('is_boost_requested', '1');
       }
 
       const ad = await adsService.create(formData);
@@ -294,29 +352,39 @@ export default function OwnerNewAdPage() {
     },
   });
 
-  const handleSubmit = async (
-    values: AdFormValues,
-    images: File[],
-    options?: {
-      imagesToDelete?: number[];
-      tourScenes?: TourScene[];
-      propertyConditionPdf?: File | null;
-      idempotencyKey?: string;
-    }
-  ) => {
-    await createMutation.mutateAsync({
-      values,
-      images,
-      tourScenes: options?.tourScenes,
-      propertyConditionPdf: options?.propertyConditionPdf,
-      idempotencyKey: options?.idempotencyKey,
-    });
-  };
+  const handleSaveDraft = useCallback(
+    async (values: AdFormValues, images: File[]) => {
+      await draftMutation.mutateAsync({ values, images });
+    },
+    [draftMutation.mutateAsync]
+  );
 
-  const handleEnhance = async (description: string) => {
+  const handleSubmit = useCallback(
+    async (
+      values: AdFormValues,
+      images: File[],
+      options?: {
+        imagesToDelete?: number[];
+        tourScenes?: TourScene[];
+        propertyConditionPdf?: File | null;
+        idempotencyKey?: string;
+      }
+    ) => {
+      await createMutation.mutateAsync({
+        values,
+        images,
+        tourScenes: options?.tourScenes,
+        propertyConditionPdf: options?.propertyConditionPdf,
+        idempotencyKey: options?.idempotencyKey,
+      });
+    },
+    [createMutation.mutateAsync]
+  );
+
+  const handleEnhance = useCallback(async (description: string) => {
     const { enhanced } = await adsService.enhanceDescription(description);
     return enhanced;
-  };
+  }, []);
 
   /**
    * Called by AdForm before the API call.
@@ -324,21 +392,24 @@ export default function OwnerNewAdPage() {
    * open the "complete your profile" dialog, and return false to abort the submit.
    * The draft key matches what AdForm’s useAutoSave uses so it will be restored on return.
    */
-  const handleBeforeSubmit = async (values: AdFormValues): Promise<boolean> => {
-    if (!isComplete) {
-      try {
-        localStorage.setItem(
-          'kh_autosave_ad-new',
-          JSON.stringify({ data: values, ts: Date.now() })
-        );
-      } catch {
-        // localStorage unavailable — best effort
+  const handleBeforeSubmit = useCallback(
+    async (values: AdFormValues): Promise<boolean> => {
+      if (!isComplete) {
+        try {
+          localStorage.setItem(
+            'kh_autosave_ad-new',
+            JSON.stringify({ data: values, ts: Date.now() })
+          );
+        } catch {
+          // localStorage unavailable — best effort
+        }
+        setActivePanel('profile');
+        return false;
       }
-      setActivePanel('profile');
-      return false;
-    }
-    return true;
-  };
+      return true;
+    },
+    [isComplete]
+  );
 
   return (
     <>
@@ -355,9 +426,12 @@ export default function OwnerNewAdPage() {
           initialData={restoredDraft}
           onSubmit={handleSubmit}
           onBeforeSubmit={handleBeforeSubmit}
+          onSaveDraft={handleSaveDraft}
           onCancel={() => router.back()}
-          submitLabel="Créer l'annonce"
+          submitLabel="Publier l'annonce"
+          draftLabel="Enregistrer le brouillon"
           isSubmitting={createMutation.isPending}
+          isSavingDraft={draftMutation.isPending}
           onEnhanceDescription={handleEnhance}
           stepperMode
         />
@@ -702,6 +776,22 @@ export default function OwnerNewAdPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Draft save feedback */}
+      <Snackbar
+        open={!!draftSnackbar}
+        autoHideDuration={4000}
+        onClose={() => setDraftSnackbar(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={draftSnackbar?.severity ?? 'success'}
+          onClose={() => setDraftSnackbar(null)}
+          variant="filled"
+        >
+          {draftSnackbar?.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

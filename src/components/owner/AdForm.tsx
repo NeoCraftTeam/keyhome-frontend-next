@@ -1,12 +1,13 @@
 'use client';
 
 import { Box, Button, CircularProgress, Typography } from '@mui/material';
+import SaveOutlined from '@mui/icons-material/SaveOutlined';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import { compressAdPhotos } from '@/lib/image-compression';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import type { Ad, AdImage, AdType, City, Quarter } from '@/types';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   adTypesService,
   citiesService,
@@ -47,21 +48,36 @@ interface AdFormProps {
   ) => Promise<void>;
   /** Called right before the API submit. Return `false` to abort (e.g. profile incomplete). The draft is NOT cleared on abort. */
   onBeforeSubmit?: (values: AdFormValues) => Promise<boolean>;
+  /** Save partial form data as a server-side draft. */
+  onSaveDraft?: (
+    values: AdFormValues,
+    images: File[],
+    options?: {
+      imagesToDelete?: number[];
+      tourScenes?: TourScene[];
+      propertyConditionPdf?: File | null;
+    }
+  ) => Promise<void>;
   onCancel?: () => void;
   submitLabel?: string;
+  draftLabel?: string;
   isSubmitting?: boolean;
+  isSavingDraft?: boolean;
   onEnhanceDescription?: (description: string) => Promise<string>;
   stepperMode?: boolean;
 }
 
-export default function AdForm({
+function AdForm({
   initialData,
   ad,
   onSubmit,
   onBeforeSubmit,
+  onSaveDraft,
   onCancel,
   submitLabel = "Créer l'annonce",
+  draftLabel = 'Enregistrer le brouillon',
   isSubmitting = false,
+  isSavingDraft = false,
   onEnhanceDescription,
 }: AdFormProps) {
   const [values, setValues] = useState<AdFormValues>(() => ({
@@ -349,6 +365,28 @@ export default function AdForm({
     return Object.keys(e).length === 0;
   };
 
+  /** Save to server as draft — only requires a title. */
+  const handleSaveDraft = async () => {
+    if (isSavingDraft || isSubmitting) return;
+    if (!values.title.trim()) {
+      setErrors({
+        title: 'Le titre est obligatoire pour enregistrer un brouillon.',
+      });
+      return;
+    }
+    if (!onSaveDraft) return;
+    try {
+      await onSaveDraft(values, images, {
+        imagesToDelete: imagesToDelete.length > 0 ? imagesToDelete : undefined,
+        tourScenes: tourScenes.length > 0 ? tourScenes : undefined,
+        propertyConditionPdf,
+      });
+      clearDraft();
+    } catch {
+      // Error is handled by the caller's mutation onError callback
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || !validate()) return;
@@ -466,6 +504,7 @@ export default function AdForm({
             display: 'flex',
             gap: 2,
             justifyContent: 'flex-end',
+            flexWrap: 'wrap',
             pt: 1,
             borderTop: '1px solid',
             borderColor: 'divider',
@@ -477,7 +516,7 @@ export default function AdForm({
               color="text.disabled"
               sx={{ mr: 'auto', alignSelf: 'center' }}
             >
-              Brouillon sauvegardé à{' '}
+              Brouillon local sauvegardé à{' '}
               {savedAt.toLocaleTimeString('fr-FR', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -487,16 +526,36 @@ export default function AdForm({
           {onCancel && (
             <Button
               onClick={onCancel}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isSavingDraft}
               sx={{ borderRadius: 2 }}
             >
               Annuler
             </Button>
           )}
+          {onSaveDraft && (
+            <Button
+              variant="outlined"
+              onClick={handleSaveDraft}
+              disabled={isSubmitting || isSavingDraft}
+              startIcon={
+                isSavingDraft ? (
+                  <CircularProgress size={18} />
+                ) : (
+                  <SaveOutlined />
+                )
+              }
+              sx={{
+                borderRadius: 2,
+                fontWeight: 600,
+              }}
+            >
+              {draftLabel}
+            </Button>
+          )}
           <Button
             type="submit"
             variant="contained"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isSavingDraft}
             startIcon={isSubmitting ? <CircularProgress size={18} /> : null}
             sx={{
               borderRadius: 2,
@@ -519,3 +578,4 @@ export default function AdForm({
     </form>
   );
 }
+export default memo(AdForm);

@@ -124,6 +124,14 @@ export default function OwnerAdsPage() {
     queryFn: () => adTypesService.list(),
   });
 
+  // Separate lightweight query for draft count (shown in header)
+  const { data: draftData } = useQuery({
+    queryKey: ['owner-ads', 'draft-count'],
+    queryFn: () =>
+      ownerService.getMyAds({ page: 1, per_page: 1, status: 'draft' }),
+  });
+  const draftCount = draftData?.meta?.total ?? 0;
+
   const toggleMutation = useMutation({
     mutationFn: (adId: string) => adsService.toggleVisibility(adId),
     onSuccess: () => {
@@ -145,6 +153,15 @@ export default function OwnerAdsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (adId: string) => adsService.destroy(adId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
+      setAnchorEl(null);
+      setSelectedAd(null);
+    },
+  });
+
+  const publishDraftMutation = useMutation({
+    mutationFn: (adId: string) => adsService.publishDraft(adId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
       setAnchorEl(null);
@@ -203,6 +220,18 @@ export default function OwnerAdsPage() {
             Annonces
           </Box>
         </Typography>
+        {draftCount > 0 && (
+          <Chip
+            label={`${draftCount} brouillon${draftCount > 1 ? 's' : ''}`}
+            color="secondary"
+            size="small"
+            onClick={() => {
+              setStatusFilter('draft');
+              setPage(0);
+            }}
+            sx={{ fontWeight: 700, cursor: 'pointer' }}
+          />
+        )}
       </Box>
 
       <Paper sx={{ overflow: 'hidden', mb: 4 }}>
@@ -617,6 +646,18 @@ export default function OwnerAdsPage() {
                 ? "Continuer l'édition"
                 : 'Modifier'}
             </MenuItem>
+            {selectedAd.status === AdStatus.DRAFT && (
+              <MenuItem
+                onClick={() => {
+                  publishDraftMutation.mutate(selectedAd.id);
+                }}
+                disabled={publishDraftMutation.isPending}
+                sx={{ color: 'primary.main', fontWeight: 600 }}
+              >
+                <VisibleIcon fontSize="small" sx={{ mr: 1 }} />
+                Publier l&apos;annonce
+              </MenuItem>
+            )}
             <MenuItem
               onClick={() => {
                 toggleMutation.mutate(selectedAd.id);

@@ -90,6 +90,45 @@ export const adsService = {
     return body.ad ?? body;
   },
 
+  /** Create or update a server-side draft (is_draft=1 flag). */
+  async saveDraft(formData: FormData): Promise<Ad> {
+    formData.append('is_draft', '1');
+    const { data } = await api.post('/ads', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: MULTIPART_AD_TIMEOUT_MS,
+    });
+    const body = data.data ?? data;
+    return body.ad ?? body;
+  },
+
+  /** Update an existing draft on the server. */
+  async updateDraft(id: string, formData: FormData): Promise<Ad> {
+    formData.append('_method', 'PUT');
+    formData.append('is_draft', '1');
+    const { data } = await api.post(`/ads/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: MULTIPART_AD_TIMEOUT_MS,
+    });
+    const body = data.data ?? data;
+    return body.ad ?? body;
+  },
+
+  /** Publish a draft ad (DRAFT → PENDING for admin review). */
+  async publishDraft(
+    adId: string
+  ): Promise<{ old_status: string; new_status: string }> {
+    const { data } = await api.post<{
+      data?: { old_status: string; new_status: string };
+      old_status?: string;
+      new_status?: string;
+    }>(`/ads/${adId}/publish`);
+    const d = data?.data ?? data;
+    return {
+      old_status: d?.old_status ?? 'draft',
+      new_status: d?.new_status ?? 'pending',
+    };
+  },
+
   async update(id: string, formData: FormData): Promise<Ad> {
     // Laravel requires POST + _method for multipart/form-data uploads
     formData.append('_method', 'PUT');
