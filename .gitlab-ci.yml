@@ -2,8 +2,8 @@
 # KeyHome — Frontend CI/CD Pipeline
 #
 # Branches :
-#   main       → déploiement Production  (Vercel prod)
-#   cedrickdev → déploiement Preprod     (Vercel preview)
+#   main       → déploiement Production  (Vercel prod via CI)
+#   cedrickdev → déploiement Preprod     (Vercel gère le déploiement automatiquement)
 #   autres     → quality + build:check uniquement (pas de deploy)
 #
 # Required GitLab CI/CD Variables (Settings → CI/CD → Variables):
@@ -168,13 +168,11 @@ test:unit:
 # ── 4. BUILD ─────────────────────────────────────────────────────────────────
 #
 # STRATÉGIE :
-#   - Branches feature     → build:check (vérifie que ça compile, pas d'artifact)
-#   - main                 → build:prod  (vercel build prod, artifact .vercel/output)
-#   - cedrickdev           → build:preprod (vercel build preview, artifact .vercel/output)
+#   - Branches feature + cedrickdev → build:check (vérifie que ça compile, sans artifact)
+#   - main                          → build:prod  (vercel build prod, artifact .vercel/output)
 #
-# On utilise `vercel build` (pas `npm run build`) pour produire directement
-# le .vercel/output prêt à déployer avec `vercel deploy --prebuilt`.
-# → UN SEUL BUILD par pipeline, pas de double build.
+# cedrickdev : Vercel gère le déploiement preview directement depuis GitHub/GitLab.
+# → PAS de build ni deploy Vercel dans la CI pour cedrickdev.
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Branches feature : vérifie que next build passe, sans stocker d'artifact
@@ -191,7 +189,7 @@ build:check:
     when: runner_system_failure
   timeout: 15 minutes
   rules:
-    - if: $CI_COMMIT_BRANCH != "main" && $CI_COMMIT_BRANCH != "cedrickdev"
+    - if: $CI_COMMIT_BRANCH != "main"
 
 # main → build Vercel production
 build:prod:
@@ -213,27 +211,6 @@ build:prod:
   timeout: 15 minutes
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-
-# cedrickdev → build Vercel preview (pointe sur API preprod)
-build:preprod:
-  stage: build
-  extends:
-    - .node_job
-    - .build_vars_preprod
-  needs: [test:unit]
-  script:
-    - npx vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
-    - npx vercel build --token=$VERCEL_TOKEN
-  artifacts:
-    paths:
-      - .vercel/output/
-    expire_in: 1 hour
-  retry:
-    max: 2
-    when: runner_system_failure
-  timeout: 15 minutes
-  rules:
-    - if: $CI_COMMIT_BRANCH == "cedrickdev"
 
 # Storybook — non bloquant, uniquement sur les branches déployées
 build:storybook:
@@ -265,7 +242,7 @@ test:e2e:
   needs:
     - job: build:prod
       optional: true
-    - job: build:preprod
+    - job: build:check
       optional: true
   script:
     - npm ci --prefer-offline
@@ -311,7 +288,7 @@ lighthouse:
   needs:
     - job: build:prod
       optional: true
-    - job: build:preprod
+    - job: build:check
       optional: true
   before_script:
     - npm ci --prefer-offline
@@ -335,8 +312,8 @@ lighthouse:
 
 # ── 8. DEPLOY ─────────────────────────────────────────────────────────────────
 #
-# `vercel deploy --prebuilt` utilise le .vercel/output produit par build:prod
-# ou build:preprod. PAS de second build ici.
+# `vercel deploy --prebuilt` utilise le .vercel/output produit par build:prod.
+# Uniquement sur main — cedrickdev est déployé directement par Vercel.
 # interruptible: false → un deploy ne doit jamais être interrompu.
 # ─────────────────────────────────────────────────────────────────────────────
 deploy:production:
@@ -361,29 +338,6 @@ deploy:production:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
-deploy:preprod:
-  stage: deploy
-  extends:
-    - .node_job
-    - .build_vars_preprod
-  interruptible: false                   # ← CRITIQUE : ne jamais interrompre un deploy
-  needs: [build:preprod, test:e2e]
-  script:
-    - DEPLOY_URL=$(npx vercel deploy --prebuilt --token=$VERCEL_TOKEN 2>&1 | tail -1)
-    - echo "Preprod URL → $DEPLOY_URL"
-    - echo "DEPLOY_URL=$DEPLOY_URL" >> deploy.env
-  artifacts:
-    reports:
-      dotenv: deploy.env
-    expire_in: 1 hour
-  environment:
-    name: preview/cedrickdev
-    url: $DEPLOY_URL
-    auto_stop_in: 7 days
-  timeout: 10 minutes
-  rules:
-    - if: $CI_COMMIT_BRANCH == "cedrickdev"
-
 # ── 9. NOTIFY ─────────────────────────────────────────────────────────────────
 #
 # Succès → uniquement sur main et cedrickdev (branches déployées)
@@ -405,13 +359,11 @@ notify:success:
       optional: true
     - job: build:prod
       optional: true
-    - job: build:preprod
+    - job: build:check
       optional: true
     - job: lighthouse
       optional: true
     - job: deploy:production
-      optional: true
-    - job: deploy:preprod
       optional: true
   when: on_success
   script:
@@ -457,15 +409,13 @@ notify:failure:
       optional: true
     - job: build:prod
       optional: true
-    - job: build:preprod
+    - job: build:check
       optional: true
     - job: test:e2e
       optional: true
     - job: lighthouse
       optional: true
     - job: deploy:production
-      optional: true
-    - job: deploy:preprod
       optional: true
   when: on_failure
   script:
