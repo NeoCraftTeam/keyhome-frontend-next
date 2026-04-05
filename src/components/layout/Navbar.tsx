@@ -9,6 +9,7 @@ import { useNavbarState } from '@/hooks/useNavbarState';
 import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -32,6 +33,15 @@ import { Typography } from '@/components/ui/Typography';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 
+const ROOT_PATHS = [
+  '/home',
+  '/search',
+  '/nearby',
+  '/comparaisons',
+  '/prix-marche',
+  '/aide',
+];
+
 const NAV_LINKS = [
   { label: 'Rechercher', href: '/search', icon: <SearchIcon /> },
   { label: 'Explorer la carte', href: '/nearby', icon: <ExploreIcon /> },
@@ -48,6 +58,7 @@ export default function Navbar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isStandalone = useIsStandalone();
+  const isRootPage = ROOT_PATHS.some((p) => pathname === p);
 
   const {
     anchorEl,
@@ -126,8 +137,18 @@ export default function Navbar() {
             alignItems: 'center',
           }}
         >
-          {/* LEFT — desktop nav links */}
+          {/* LEFT — desktop nav links / mobile back button */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {isMobile && !isRootPage && (
+              <IconButton
+                size="small"
+                onClick={() => router.back()}
+                aria-label="Retour"
+                sx={{ color: 'text.primary' }}
+              >
+                <ArrowBackIcon sx={{ fontSize: 22 }} />
+              </IconButton>
+            )}
             {!isMobile &&
               NAV_LINKS.map((link) => (
                 <Button
