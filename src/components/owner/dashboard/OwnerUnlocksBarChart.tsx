@@ -32,7 +32,13 @@ export default function OwnerUnlocksBarChart({
   const tooltipBorder = theme.palette.divider;
 
   if (loading) {
-    return <Skeleton variant="rounded" height={chartHeight} sx={{ borderRadius: 2, width: '100%' }} />;
+    return (
+      <Skeleton
+        variant="rounded"
+        height={chartHeight}
+        sx={{ borderRadius: 2, width: '100%' }}
+      />
+    );
   }
 
   const maxVal = Math.max(...data.map((d) => d.unlocks), 1);
@@ -40,8 +46,21 @@ export default function OwnerUnlocksBarChart({
   return (
     <Box sx={{ width: '100%', minWidth: 0, height: chartHeight }}>
       <ResponsiveContainer width="100%" height="100%" debounce={50}>
-        <BarChart data={data} margin={{ top: 4, right: isXs ? 4 : 8, left: isXs ? -8 : 0, bottom: isXs ? 4 : 8 }} barSize={isXs ? 8 : 12}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} />
+        <BarChart
+          data={data}
+          margin={{
+            top: 4,
+            right: isXs ? 4 : 8,
+            left: isXs ? -8 : 0,
+            bottom: isXs ? 4 : 8,
+          }}
+          barSize={isXs ? 8 : 12}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            vertical={false}
+            stroke={gridStroke}
+          />
           <XAxis
             dataKey="label"
             tick={{ fill: axisColor, fontSize: isXs ? 9 : 11 }}
@@ -69,13 +88,21 @@ export default function OwnerUnlocksBarChart({
             }}
             labelStyle={{ fontWeight: 700, marginBottom: 4 }}
             formatter={(value) => [value, 'Déverrouillages']}
-            cursor={{ fill: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}
+            cursor={{
+              fill: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+            }}
           />
           <Bar dataKey="unlocks" radius={[6, 6, 0, 0]}>
             {data.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={entry.unlocks === maxVal ? brand.primary : isDark ? 'rgba(246,71,95,0.45)' : 'rgba(246,71,95,0.55)'}
+                fill={
+                  entry.unlocks === maxVal
+                    ? brand.primary
+                    : isDark
+                      ? 'rgba(246,71,95,0.45)'
+                      : 'rgba(246,71,95,0.55)'
+                }
               />
             ))}
           </Bar>

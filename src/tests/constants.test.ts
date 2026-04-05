@@ -1,4 +1,10 @@
-import { formatDate, formatPrice, formatPriceCompact, formatRelativeDate, truncate } from '@/lib/constants';
+import {
+  formatDate,
+  formatPrice,
+  formatPriceCompact,
+  formatRelativeDate,
+  truncate,
+} from '@/lib/constants';
 import { describe, expect, it } from 'vitest';
 
 describe('formatPrice', () => {

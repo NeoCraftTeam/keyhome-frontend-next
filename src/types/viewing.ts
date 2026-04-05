@@ -2,16 +2,16 @@ import type { Ad } from './ad';
 import type { User } from './user';
 
 export enum ReservationStatus {
-  Pending   = 'pending',
+  Pending = 'pending',
   Confirmed = 'confirmed',
   Cancelled = 'cancelled',
-  Expired   = 'expired',
+  Expired = 'expired',
 }
 
 export enum CancelledBy {
-  Client   = 'client',
+  Client = 'client',
   Landlord = 'landlord',
-  System   = 'system',
+  System = 'system',
 }
 
 export interface BookableSlot {

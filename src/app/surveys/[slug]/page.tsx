@@ -57,7 +57,11 @@ export default function SurveySlugPage() {
   const mutation = useMutation({
     mutationFn: async (answers: SurveyAnswerPayload[]) => {
       if (isAuthenticated && survey?.id) {
-        await surveysService.submitResponse(survey.id, answers, submitAnonymously);
+        await surveysService.submitResponse(
+          survey.id,
+          answers,
+          submitAnonymously
+        );
         return { submitted: true };
       }
 
@@ -65,8 +69,12 @@ export default function SurveySlugPage() {
     },
     onSuccess: () => {
       setShowThankYou(true);
-      queryClient.invalidateQueries({ queryKey: ['survey-has-answered-global'] });
-      queryClient.invalidateQueries({ queryKey: ['survey-has-answered-owner'] });
+      queryClient.invalidateQueries({
+        queryKey: ['survey-has-answered-global'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['survey-has-answered-owner'],
+      });
       queryClient.invalidateQueries({ queryKey: ['auth-survey-has-answered'] });
     },
   });
@@ -87,8 +95,18 @@ export default function SurveySlugPage() {
   if (isLoading) {
     return (
       <Container maxWidth="md" sx={{ py: { xs: 5, md: 8 } }}>
-        <Skeleton variant="rounded" height={48} width="60%" sx={{ mb: 2, borderRadius: 2 }} />
-        <Skeleton variant="rounded" height={24} width="40%" sx={{ mb: 5, borderRadius: 2 }} />
+        <Skeleton
+          variant="rounded"
+          height={48}
+          width="60%"
+          sx={{ mb: 2, borderRadius: 2 }}
+        />
+        <Skeleton
+          variant="rounded"
+          height={24}
+          width="40%"
+          sx={{ mb: 5, borderRadius: 2 }}
+        />
         <Skeleton variant="rounded" height={320} sx={{ borderRadius: 4 }} />
       </Container>
     );
@@ -98,7 +116,9 @@ export default function SurveySlugPage() {
   if (error || !survey) {
     return (
       <Container maxWidth="sm" sx={{ py: 12, textAlign: 'center' }}>
-        <SentimentDissatisfiedOutlinedIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+        <SentimentDissatisfiedOutlinedIcon
+          sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }}
+        />
         <Typography variant="h5" fontWeight={700} gutterBottom>
           Sondage introuvable
         </Typography>
@@ -118,7 +138,10 @@ export default function SurveySlugPage() {
   }
 
   /* ── Already submitted ── */
-  if (survey.already_submitted || (isAuthenticated && authAnswered?.has_answered)) {
+  if (
+    survey.already_submitted ||
+    (isAuthenticated && authAnswered?.has_answered)
+  ) {
     return (
       <Container maxWidth="sm" sx={{ py: 12 }}>
         <FadeIn direction="up">
@@ -150,7 +173,8 @@ export default function SurveySlugPage() {
               Déjà répondu !
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 4 }}>
-              Vous avez déjà participé à ce sondage. Merci pour votre contribution.
+              Vous avez déjà participé à ce sondage. Merci pour votre
+              contribution.
             </Typography>
             <Button
               variant="outlined"
@@ -180,7 +204,10 @@ export default function SurveySlugPage() {
               textTransform: 'none',
               fontWeight: 600,
               color: 'text.secondary',
-              '&:hover': { color: 'primary.main', bgcolor: brand.primaryAlpha5 },
+              '&:hover': {
+                color: 'primary.main',
+                bgcolor: brand.primaryAlpha5,
+              },
             }}
           >
             Tous les sondages
@@ -213,7 +240,9 @@ export default function SurveySlugPage() {
                 control={
                   <Switch
                     checked={submitAnonymously}
-                    onChange={(event) => setSubmitAnonymously(event.target.checked)}
+                    onChange={(event) =>
+                      setSubmitAnonymously(event.target.checked)
+                    }
                   />
                 }
                 label={
@@ -255,7 +284,8 @@ export default function SurveySlugPage() {
               mb: 3,
               p: 2.5,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(46,125,50,0.12) 0%, rgba(46,125,50,0.06) 100%)',
+              background:
+                'linear-gradient(135deg, rgba(46,125,50,0.12) 0%, rgba(46,125,50,0.06) 100%)',
               '@keyframes popIn': {
                 '0%': { transform: 'scale(0.5)', opacity: 0 },
                 '70%': { transform: 'scale(1.15)' },
@@ -282,8 +312,12 @@ export default function SurveySlugPage() {
             Merci pour votre avis&nbsp;!
           </Typography>
 
-          <Typography color="text.secondary" sx={{ mb: 4, lineHeight: 1.7, fontSize: '1.05rem' }}>
-            Merci pour votre retour. Nous vous redirigeons vers les dernières annonces.
+          <Typography
+            color="text.secondary"
+            sx={{ mb: 4, lineHeight: 1.7, fontSize: '1.05rem' }}
+          >
+            Merci pour votre retour. Nous vous redirigeons vers les dernières
+            annonces.
           </Typography>
 
           {submitAnonymously && (
@@ -297,7 +331,11 @@ export default function SurveySlugPage() {
                 border: '1px solid rgba(246,71,95,0.15)',
               }}
             >
-              <Typography variant="caption" color="text.secondary" fontWeight={500}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                fontWeight={500}
+              >
                 🔒&nbsp; Réponse enregistrée en mode anonyme.
               </Typography>
             </Box>
@@ -316,7 +354,8 @@ export default function SurveySlugPage() {
                 background: gradient.primary135Stops,
                 boxShadow: '0 6px 20px rgba(246,71,95,0.30)',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #E83D55 0%, #C93248 100%)',
+                  background:
+                    'linear-gradient(135deg, #E83D55 0%, #C93248 100%)',
                   boxShadow: '0 8px 24px rgba(246,71,95,0.40)',
                   transform: 'translateY(-1px)',
                 },
@@ -345,4 +384,3 @@ export default function SurveySlugPage() {
     </>
   );
 }
-

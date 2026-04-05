@@ -14,7 +14,11 @@ function OAuthCallbackContent() {
   const error = useMemo(() => {
     const errorParam = searchParams.get('error');
     const errorMessage = searchParams.get('message');
-    return errorMessage || errorParam || 'Cette route OAuth est obsolete. Veuillez vous reconnecter.';
+    return (
+      errorMessage ||
+      errorParam ||
+      'Cette route OAuth est obsolete. Veuillez vous reconnecter.'
+    );
   }, [searchParams]);
 
   useEffect(() => {
@@ -38,7 +42,12 @@ function OAuthCallbackContent() {
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
-        <Image src="/images/logo.png" alt="KeyHome — Connexion en cours" width={48} height={48} />
+        <Image
+          src="/images/logo.png"
+          alt="KeyHome — Connexion en cours"
+          width={48}
+          height={48}
+        />
         <Typography variant="h4" fontWeight={700} color="primary.main">
           KeyHome
         </Typography>

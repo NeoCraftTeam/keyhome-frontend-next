@@ -38,12 +38,22 @@ export default function ScrollReveal({
     <motion.div
       ref={ref}
       initial={shouldReduce ? false : { opacity: 0, y: yOffset }}
-      animate={isInView ? { opacity: 1, y: 0 } : (shouldReduce ? {} : { opacity: 0, y: yOffset })}
-      transition={shouldReduce ? { duration: 0 } : {
-        duration: 0.55,
-        delay,
-        ease: [0.22, 1, 0.36, 1],
-      }}
+      animate={
+        isInView
+          ? { opacity: 1, y: 0 }
+          : shouldReduce
+            ? {}
+            : { opacity: 0, y: yOffset }
+      }
+      transition={
+        shouldReduce
+          ? { duration: 0 }
+          : {
+              duration: 0.55,
+              delay,
+              ease: [0.22, 1, 0.36, 1],
+            }
+      }
       className={className}
       style={style}
     >

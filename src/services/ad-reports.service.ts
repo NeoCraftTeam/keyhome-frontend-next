@@ -30,9 +30,11 @@ export interface CreateAdReportResponse {
 }
 
 export const adReportsService = {
-  async create(adId: string, payload: CreateAdReportPayload): Promise<CreateAdReportResponse> {
+  async create(
+    adId: string,
+    payload: CreateAdReportPayload
+  ): Promise<CreateAdReportResponse> {
     const { data } = await api.post(`/ads/${adId}/reports`, payload);
     return data as CreateAdReportResponse;
   },
 };
-

@@ -18,9 +18,14 @@ export default function MiniMetricSparkline({
   const max = Math.max(...data, 1);
 
   return (
-    <Box sx={{ width: '100%', minWidth: 0, height: CHART_H, overflow: 'hidden' }}>
+    <Box
+      sx={{ width: '100%', minWidth: 0, height: CHART_H, overflow: 'hidden' }}
+    >
       <ResponsiveContainer width="100%" height="100%" debounce={50}>
-        <AreaChart data={chartData} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+        <AreaChart
+          data={chartData}
+          margin={{ top: 2, right: 0, left: 0, bottom: 0 }}
+        >
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={color} stopOpacity={0.35} />

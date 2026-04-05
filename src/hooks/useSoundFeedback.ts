@@ -2,7 +2,12 @@
 
 import { useCallback } from 'react';
 
-type SoundType = 'favorite' | 'unfavorite' | 'success' | 'unlock' | 'notification';
+type SoundType =
+  | 'favorite'
+  | 'unfavorite'
+  | 'success'
+  | 'unlock'
+  | 'notification';
 
 const SOUND_ENABLED_KEY = 'keyhome_sound_enabled';
 
@@ -22,7 +27,7 @@ function playTone(
   frequency: number,
   duration: number,
   type: OscillatorType = 'sine',
-  volume = 0.08,
+  volume = 0.08
 ): void {
   try {
     const ctx = new AudioContext();
@@ -47,7 +52,14 @@ function playTone(
   }
 }
 
-function playSequence(notes: Array<{ freq: number; delay: number; duration: number; volume?: number }>): void {
+function playSequence(
+  notes: Array<{
+    freq: number;
+    delay: number;
+    duration: number;
+    volume?: number;
+  }>
+): void {
   if (!isSoundEnabled()) {
     return;
   }

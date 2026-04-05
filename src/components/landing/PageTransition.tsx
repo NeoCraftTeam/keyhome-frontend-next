@@ -3,7 +3,7 @@
 import { gradient } from '@/theme/tokens';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 interface PageTransitionLinkProps {
   href: string;
@@ -21,7 +21,13 @@ let _setTarget: ((href: string) => void) | null = null;
  * Drop-in replacement for <Link> on the landing page.
  * Plays a full-screen crimson curtain wipe before navigating.
  */
-export function PageTransitionLink({ href, children, style, className, onClick }: PageTransitionLinkProps) {
+export function PageTransitionLink({
+  href,
+  children,
+  style,
+  className,
+  onClick,
+}: PageTransitionLinkProps) {
   const router = useRouter();
 
   const handleClick = (e: React.MouseEvent) => {
@@ -50,9 +56,12 @@ export function PageTransitionOverlay() {
   const [active, setActive] = useState(false);
   const [target, setTarget] = useState('');
 
-  // Register global setters so PageTransitionLink can trigger this
-  _setActive = setActive;
-  _setTarget = setTarget;
+  // Register global setters so PageTransitionLink can trigger this overlay.
+  // useEffect keeps the assignment out of the render phase (react-hooks/globals).
+  useEffect(() => {
+    _setActive = setActive;
+    _setTarget = setTarget;
+  });
 
   return (
     <AnimatePresence>
@@ -101,7 +110,11 @@ export function PageTransitionOverlay() {
             {/* Pulsing ring */}
             <motion.div
               animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
-              transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
+              transition={{
+                repeat: Infinity,
+                duration: 1.2,
+                ease: 'easeInOut',
+              }}
               style={{
                 width: 72,
                 height: 72,

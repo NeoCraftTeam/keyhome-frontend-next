@@ -29,7 +29,9 @@ export function useGreeting(): string {
       return;
     }
 
-    const lastVisit = user.last_home_visit_at ? new Date(user.last_home_visit_at).getTime() : 0;
+    const lastVisit = user.last_home_visit_at
+      ? new Date(user.last_home_visit_at).getTime()
+      : 0;
     const now = Date.now();
     const isReturning = lastVisit > 0 && now - lastVisit > RETURN_THRESHOLD_MS;
 
@@ -37,9 +39,12 @@ export function useGreeting(): string {
 
     if (!trackedRef.current) {
       trackedRef.current = true;
-      authService.trackHomeVisit()
+      authService
+        .trackHomeVisit()
         .then(() => refreshUser())
-        .catch(() => { /* ignore */ });
+        .catch(() => {
+          /* ignore */
+        });
     }
   }, [isAuthenticated, user?.last_home_visit_at, refreshUser]);
 

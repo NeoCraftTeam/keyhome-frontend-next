@@ -22,7 +22,9 @@ export default function ThreeCanvas() {
     const dpr = Math.min(window.devicePixelRatio, 2);
 
     // Respect prefers-reduced-motion
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
 
     // Configuration
     const PARTICLE_COUNT = 80;
@@ -78,8 +80,8 @@ export default function ThreeCanvas() {
         const a = particles[i];
         for (let j = i + 1; j < particles.length; j++) {
           const b = particles[j];
-          const dx = (a.x + ox) - (b.x + ox);
-          const dy = (a.y + oy) - (b.y + oy);
+          const dx = a.x + ox - (b.x + ox);
+          const dy = a.y + oy - (b.y + oy);
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < MAX_DIST) {
             const opacity = (1 - dist / MAX_DIST) * 0.15;

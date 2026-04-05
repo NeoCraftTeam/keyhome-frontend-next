@@ -16,11 +16,15 @@ import {
 
 interface QuestionRendererProps {
   question: SurveyQuestion;
-  value: any;
-  onChange: (value: any) => void;
+  value: string | number | string[] | null | undefined;
+  onChange: (value: string | number | string[] | null) => void;
 }
 
-export default function QuestionRenderer({ question, value, onChange }: QuestionRendererProps) {
+export default function QuestionRenderer({
+  question,
+  value,
+  onChange,
+}: QuestionRendererProps) {
   const renderInput = () => {
     switch (question.type) {
       case 'multiple_choice':
@@ -59,7 +63,9 @@ export default function QuestionRenderer({ question, value, onChange }: Question
                 control={
                   <Checkbox
                     checked={currentValues.includes(option)}
-                    onChange={(e) => handleCheckboxChange(option, e.target.checked)}
+                    onChange={(e) =>
+                      handleCheckboxChange(option, e.target.checked)
+                    }
                   />
                 }
                 label={option}
@@ -77,9 +83,13 @@ export default function QuestionRenderer({ question, value, onChange }: Question
               onChange={(_, newValue) => onChange(newValue)}
               sx={{ color: 'warning.main' }}
             />
-            {value > 0 && (
-              <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                {value}/5
+            {Number(value) > 0 && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                fontWeight={500}
+              >
+                {Number(value)}/5
               </Typography>
             )}
           </Box>
@@ -113,9 +123,7 @@ export default function QuestionRenderer({ question, value, onChange }: Question
       <Typography variant="subtitle1" fontWeight={600} gutterBottom>
         {question.text}
       </Typography>
-      <Box sx={{ mt: 1 }}>
-        {renderInput()}
-      </Box>
+      <Box sx={{ mt: 1 }}>{renderInput()}</Box>
     </Box>
   );
 }

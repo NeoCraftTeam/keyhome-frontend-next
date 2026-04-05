@@ -29,11 +29,17 @@ function applyHeroPlaybackRate(el: HTMLVideoElement): void {
   el.playbackRate = VIDEO_PLAYBACK_SPEED;
 }
 
-function handleVideoPlaybackRateSync(e: SyntheticEvent<HTMLVideoElement>): void {
+function handleVideoPlaybackRateSync(
+  e: SyntheticEvent<HTMLVideoElement>
+): void {
   applyHeroPlaybackRate(e.currentTarget);
 }
 
-function slotElement(slot: 0 | 1, a: HTMLVideoElement | null, b: HTMLVideoElement | null): HTMLVideoElement | null {
+function slotElement(
+  slot: 0 | 1,
+  a: HTMLVideoElement | null,
+  b: HTMLVideoElement | null
+): HTMLVideoElement | null {
   return slot === 0 ? a : b;
 }
 
@@ -140,7 +146,11 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
         return;
       }
       const incoming: 0 | 1 = endedSlot === 0 ? 1 : 0;
-      const nextEl = slotElement(incoming, videoRef.current, nextVideoRef.current);
+      const nextEl = slotElement(
+        incoming,
+        videoRef.current,
+        nextVideoRef.current
+      );
       if (!nextEl) {
         return;
       }
@@ -158,7 +168,11 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
 
       window.setTimeout(() => {
         const oldSlot = endedSlot;
-        const oldEl = slotElement(oldSlot, videoRef.current, nextVideoRef.current);
+        const oldEl = slotElement(
+          oldSlot,
+          videoRef.current,
+          nextVideoRef.current
+        );
         oldEl?.pause();
 
         setActiveSlot(incoming);
@@ -167,7 +181,7 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
         setCrossfadeTo(null);
       }, CROSSFADE_MS);
     },
-    [videoError],
+    [videoError]
   );
 
   function slotOpacity(slot: 0 | 1): number {

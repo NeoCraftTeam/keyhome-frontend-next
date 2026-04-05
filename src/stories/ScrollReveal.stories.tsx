@@ -13,7 +13,8 @@ const meta: Meta<typeof ScrollReveal> = {
   parameters: {
     docs: {
       description: {
-        component: 'Scroll-linked fade + slide-up reveal using Framer Motion `useInView`. Respects `prefers-reduced-motion`.',
+        component:
+          'Scroll-linked fade + slide-up reveal using Framer Motion `useInView`. Respects `prefers-reduced-motion`.',
       },
     },
   },
@@ -28,7 +29,15 @@ export const Default: Story = {
     yOffset: 24,
     once: true,
     children: (
-      <Box sx={{ p: 3, bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 2 }}>
+      <Box
+        sx={{
+          p: 3,
+          bgcolor: 'background.paper',
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: 2,
+        }}
+      >
         <Typography variant="h6">Scroll to reveal</Typography>
         <Typography variant="body2" color="text.secondary">
           This content fades in as you scroll down.

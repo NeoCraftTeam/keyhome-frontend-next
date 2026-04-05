@@ -6,7 +6,9 @@ const DEFAULT_ERROR = 'Une erreur est survenue. Veuillez réessayer.';
  * Extract validation errors from a 422 response (Laravel format).
  * Returns all field errors joined, or null.
  */
-function getValidationErrors(error: AxiosError<{ message?: string; errors?: Record<string, string[]> }>): string | null {
+function getValidationErrors(
+  error: AxiosError<{ message?: string; errors?: Record<string, string[]> }>
+): string | null {
   const data = error.response?.data;
   const errors = data?.errors;
   if (!errors) return data?.message || null;
@@ -28,7 +30,11 @@ function isAxiosNetworkOrTimeout(error: unknown): boolean {
     return false;
   }
   const code = error.code;
-  if (code === 'ECONNABORTED' || code === 'ERR_NETWORK' || code === 'ETIMEDOUT') {
+  if (
+    code === 'ECONNABORTED' ||
+    code === 'ERR_NETWORK' ||
+    code === 'ETIMEDOUT'
+  ) {
     return true;
   }
   const msg = (error.message || '').toLowerCase();
@@ -52,11 +58,18 @@ export function getSafeErrorMessage(
   }
 
   const status = error.response.status;
-  const data = error.response.data as { message?: string; errors?: Record<string, string[]> } | undefined;
+  const data = error.response.data as
+    | { message?: string; errors?: Record<string, string[]> }
+    | undefined;
 
   // For validation errors, return specific field errors from Laravel
   if (status === 422) {
-    const validationMsg = getValidationErrors(error as AxiosError<{ message?: string; errors?: Record<string, string[]> }>);
+    const validationMsg = getValidationErrors(
+      error as AxiosError<{
+        message?: string;
+        errors?: Record<string, string[]>;
+      }>
+    );
     if (validationMsg) return validationMsg;
   }
 

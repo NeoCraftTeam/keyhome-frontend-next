@@ -67,7 +67,7 @@ Des photos de luxe pour un bien ordinaire. Faites une recherche inversée d'imag
     slug: 'prix-loyers-douala-2026',
     title: 'Prix des loyers à Douala en 2026 : quartier par quartier',
     excerpt:
-      "Analyse complète des prix des loyers à Douala par quartier (Akwa, Bonapriso, Bonamoussadi, Deido). Évolution vs 2025 et carte interactive des prix.",
+      'Analyse complète des prix des loyers à Douala par quartier (Akwa, Bonapriso, Bonamoussadi, Deido). Évolution vs 2025 et carte interactive des prix.',
     date: '2026-05-01',
     readTime: '6 min',
     category: 'Marché',
@@ -176,18 +176,19 @@ Rapport qualité-prix excellent. Quartiers en développement, transports en comm
   },
   {
     slug: 'investir-immobilier-afrique-2026',
-    title: "Investir dans l'immobilier en Afrique : opportunités et risques en 2026",
+    title:
+      "Investir dans l'immobilier en Afrique : opportunités et risques en 2026",
     excerpt:
       "Cameroun, Côte d'Ivoire, Sénégal — où investir dans l'immobilier en Afrique en 2026 ? Rendements locatifs, risques à connaître et conseils d'experts.",
     date: '2026-07-01',
     readTime: '9 min',
-    category: "Investissement",
+    category: 'Investissement',
   },
   {
     slug: 'droit-bail-cameroun-locataire',
     title: 'Vos droits en tant que locataire au Cameroun : ce que dit la loi',
     excerpt:
-      "Durée du préavis, restitution de caution, obligations du bailleur, recours en cas de litige — tout ce que vous devez savoir sur le droit du bail au Cameroun.",
+      'Durée du préavis, restitution de caution, obligations du bailleur, recours en cas de litige — tout ce que vous devez savoir sur le droit du bail au Cameroun.',
     date: '2026-08-01',
     readTime: '10 min',
     category: 'Juridique',
@@ -199,7 +200,6 @@ Rapport qualité-prix excellent. Quartiers en développement, transports en comm
       "De l'estimation à la signature chez le notaire, découvrez le processus complet de vente immobilière au Cameroun : documents, délais, frais et pièges à éviter.",
     date: '2026-09-01',
     readTime: '8 min',
-    category: "Vente",
+    category: 'Vente',
   },
 ];
-

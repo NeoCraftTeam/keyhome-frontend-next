@@ -1,6 +1,9 @@
 'use client';
 
-import { LandingThemeProvider, useLandingTheme } from '@/components/landing/LandingThemeContext';
+import {
+  LandingThemeProvider,
+  useLandingTheme,
+} from '@/components/landing/LandingThemeContext';
 import { PageTransitionOverlay } from '@/components/landing/PageTransition';
 import CTASection from '@/components/landing/CTASection';
 import NewsletterSection from '@/components/landing/NewsletterSection';
@@ -70,7 +73,12 @@ function LandingInner() {
   return (
     <motion.div
       className="landing-page-wrapper"
-      style={{ fontFamily: 'var(--font-inter), Inter, sans-serif', background: bg, transition: 'background 0.4s ease', overflowX: 'hidden' }}
+      style={{
+        fontFamily: 'var(--font-inter), Inter, sans-serif',
+        background: bg,
+        transition: 'background 0.4s ease',
+        overflowX: 'hidden',
+      }}
     >
       <LandingNav />
       <main>

@@ -23,7 +23,14 @@ export default function ProprietairesRedirect() {
   }, [data, id, router]);
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '60vh',
+      }}
+    >
       <CircularProgress />
     </Box>
   );

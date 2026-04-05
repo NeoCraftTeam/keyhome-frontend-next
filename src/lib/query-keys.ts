@@ -75,7 +75,8 @@ export const subscriptionKeys = {
 export const notificationKeys = {
   all: ['notifications'] as const,
   owner: ['notifications', 'owner'] as const,
-  unreadCount: (scope: string) => ['notifications', scope, 'unread-count'] as const,
+  unreadCount: (scope: string) =>
+    ['notifications', scope, 'unread-count'] as const,
   recent: (scope: string) => ['notifications', scope, 'recent'] as const,
 } as const;
 
@@ -95,7 +96,8 @@ export const teamKeys = {
 // ── E-Signature ───────────────────────────────────────────────────────────────
 
 export const signatureRequestKeys = {
-  list: (leaseContractId: string) => ['signature-requests', leaseContractId] as const,
+  list: (leaseContractId: string) =>
+    ['signature-requests', leaseContractId] as const,
 } as const;
 
 // ── Ad Form ───────────────────────────────────────────────────────────────────────

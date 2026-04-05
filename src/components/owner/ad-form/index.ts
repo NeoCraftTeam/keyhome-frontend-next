@@ -7,5 +7,10 @@ export { default as AdFormPremiumInfo } from './AdFormPremiumInfo';
 export { default as AdFormTour } from './AdFormTour';
 export { default as AdFormBoost } from './AdFormBoost';
 export { default as AdFormMapLocation } from './AdFormMapLocation';
-export type { AdFormValues, TourScene, AttributeOption, UpdateFn } from './types';
+export type {
+  AdFormValues,
+  TourScene,
+  AttributeOption,
+  UpdateFn,
+} from './types';
 export { initialValues, sectionSx, sectionTitleSx } from './types';

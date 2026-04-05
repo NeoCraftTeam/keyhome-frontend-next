@@ -4,15 +4,15 @@ import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { reviewsService } from '@/services/reviews.service';
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Collapse,
-    Divider,
-    Rating,
-    TextField,
-    Typography,
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Collapse,
+  Divider,
+  Rating,
+  TextField,
+  Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -104,7 +104,15 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
       </Typography>
 
       {/* Star rating */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, mb: 2, flexWrap: 'wrap' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: { xs: 1, sm: 2 },
+          mb: 2,
+          flexWrap: 'wrap',
+        }}
+      >
         <Rating
           size="large"
           value={rating}
@@ -116,7 +124,10 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
             '& .MuiRating-icon': { fontSize: { xs: 28, sm: 32 } },
           }}
         />
-        <Collapse in={activeRating != null && activeRating > 0} orientation="horizontal">
+        <Collapse
+          in={activeRating != null && activeRating > 0}
+          orientation="horizontal"
+        >
           <Typography
             variant="body2"
             fontWeight={500}
@@ -130,7 +141,9 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
               fontSize: { xs: '0.8rem', sm: '0.875rem' },
             }}
           >
-            {activeRating != null && activeRating > 0 ? labels[activeRating] : ''}
+            {activeRating != null && activeRating > 0
+              ? labels[activeRating]
+              : ''}
           </Typography>
         </Collapse>
       </Box>
@@ -158,7 +171,10 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
       {/* Error feedback */}
       {mutation.isError && (
         <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-          {getSafeErrorMessage(mutation.error, 'Une erreur est survenue. Veuillez réessayer.')}
+          {getSafeErrorMessage(
+            mutation.error,
+            'Une erreur est survenue. Veuillez réessayer.'
+          )}
         </Alert>
       )}
 
@@ -181,7 +197,11 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
           mb: { xs: 2, md: 0 },
           maxWidth: { md: 'fit-content' },
         }}
-        startIcon={mutation.isPending ? <CircularProgress size={18} color="inherit" /> : null}
+        startIcon={
+          mutation.isPending ? (
+            <CircularProgress size={18} color="inherit" />
+          ) : null
+        }
       >
         {mutation.isPending ? 'Envoi...' : 'Publier mon avis'}
       </Button>

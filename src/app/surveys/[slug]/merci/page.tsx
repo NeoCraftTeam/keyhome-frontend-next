@@ -43,7 +43,8 @@ export default function SurveyMerciPage() {
               mb: 3,
               p: 2.5,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(46,125,50,0.12) 0%, rgba(46,125,50,0.06) 100%)',
+              background:
+                'linear-gradient(135deg, rgba(46,125,50,0.12) 0%, rgba(46,125,50,0.06) 100%)',
               '@keyframes popIn': {
                 '0%': { transform: 'scale(0.6)', opacity: 0 },
                 '70%': { transform: 'scale(1.12)' },
@@ -74,8 +75,8 @@ export default function SurveyMerciPage() {
             color="text.secondary"
             sx={{ mb: 5, lineHeight: 1.7, fontSize: '1.05rem' }}
           >
-            Vos réponses ont bien été enregistrées anonymement. Votre retour nous aide à améliorer
-            KeyHome pour toute notre communauté.
+            Vos réponses ont bien été enregistrées anonymement. Votre retour
+            nous aide à améliorer KeyHome pour toute notre communauté.
           </Typography>
 
           {/* Anonymity reminder */}
@@ -89,8 +90,13 @@ export default function SurveyMerciPage() {
               border: '1px solid rgba(246,71,95,0.15)',
             }}
           >
-            <Typography variant="caption" color="text.secondary" fontWeight={500}>
-              🔒&nbsp; Vos réponses ne peuvent en aucun cas être reliées à votre identité.
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              fontWeight={500}
+            >
+              🔒&nbsp; Vos réponses ne peuvent en aucun cas être reliées à votre
+              identité.
             </Typography>
           </Box>
 
@@ -126,7 +132,10 @@ export default function SurveyMerciPage() {
                 fontWeight: 600,
                 borderColor: 'divider',
                 color: 'text.secondary',
-                '&:hover': { borderColor: 'primary.main', color: 'primary.main' },
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                },
               }}
             >
               Partager ce sondage
@@ -136,7 +145,11 @@ export default function SurveyMerciPage() {
               variant="text"
               startIcon={<ArrowBackIcon />}
               onClick={() => router.push('/')}
-              sx={{ borderRadius: 2.5, color: 'text.disabled', fontWeight: 500 }}
+              sx={{
+                borderRadius: 2.5,
+                color: 'text.disabled',
+                fontWeight: 500,
+              }}
             >
               Retour à l&apos;accueil
             </Button>

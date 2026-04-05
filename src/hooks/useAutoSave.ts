@@ -18,7 +18,11 @@ interface UseAutoSaveReturn<T> {
   clearDraft: () => void;
 }
 
-export function useAutoSave<T>({ key, data, enabled = true }: UseAutoSaveOptions<T>): UseAutoSaveReturn<T> {
+export function useAutoSave<T>({
+  key,
+  data,
+  enabled = true,
+}: UseAutoSaveOptions<T>): UseAutoSaveReturn<T> {
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const storageKey = STORAGE_PREFIX + key;
@@ -34,7 +38,10 @@ export function useAutoSave<T>({ key, data, enabled = true }: UseAutoSaveOptions
 
     timerRef.current = setTimeout(() => {
       try {
-        localStorage.setItem(storageKey, JSON.stringify({ data, ts: Date.now() }));
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({ data, ts: Date.now() })
+        );
         setSavedAt(new Date());
       } catch {
         // localStorage full or unavailable
@@ -48,7 +55,8 @@ export function useAutoSave<T>({ key, data, enabled = true }: UseAutoSaveOptions
     };
   }, [data, enabled, storageKey]);
 
-  const hasDraft = typeof window !== 'undefined' && !!localStorage.getItem(storageKey);
+  const hasDraft =
+    typeof window !== 'undefined' && !!localStorage.getItem(storageKey);
 
   const restoreDraft = useCallback((): T | null => {
     try {

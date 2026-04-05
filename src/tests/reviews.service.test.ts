@@ -64,18 +64,14 @@ describe('reviewsService', () => {
     // BUG CATCH: If review creation fails (e.g., duplicate review,
     // unauthenticated), the error must propagate to show a toast.
     it('propagates validation errors', async () => {
-      mockPost.mockRejectedValue(
-        new AxiosError('Unprocessable Entity', '422')
-      );
+      mockPost.mockRejectedValue(new AxiosError('Unprocessable Entity', '422'));
       await expect(
         reviewsService.create({ rating: 6, ad_id: 'ad-1' })
       ).rejects.toThrow();
     });
 
     it('propagates authentication errors', async () => {
-      mockPost.mockRejectedValue(
-        new AxiosError('Unauthenticated', '401')
-      );
+      mockPost.mockRejectedValue(new AxiosError('Unauthenticated', '401'));
       await expect(
         reviewsService.create({ rating: 3, ad_id: 'ad-1' })
       ).rejects.toThrow();

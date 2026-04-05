@@ -17,7 +17,8 @@ const meta: Meta<typeof FadeIn> = {
   parameters: {
     docs: {
       description: {
-        component: 'CSS keyframe-based fade-in animation with configurable direction, delay, and distance.',
+        component:
+          'CSS keyframe-based fade-in animation with configurable direction, delay, and distance.',
       },
     },
   },
@@ -33,9 +34,13 @@ export const Default: Story = {
     duration: 0.5,
     distance: 20,
     children: (
-      <Box sx={{ p: 3, bgcolor: 'primary.main', borderRadius: 2, color: '#fff' }}>
+      <Box
+        sx={{ p: 3, bgcolor: 'primary.main', borderRadius: 2, color: '#fff' }}
+      >
         <Typography variant="h6">Animated Content</Typography>
-        <Typography variant="body2">This card fades in from the specified direction.</Typography>
+        <Typography variant="body2">
+          This card fades in from the specified direction.
+        </Typography>
       </Box>
     ),
   },
@@ -46,7 +51,15 @@ export const Staggered: Story = {
     <Box sx={{ display: 'flex', gap: 2 }}>
       {[0, 0.15, 0.3, 0.45].map((delay, i) => (
         <FadeIn key={i} delay={delay} direction="up">
-          <Box sx={{ p: 2, bgcolor: 'grey.200', borderRadius: 2, minWidth: 100, textAlign: 'center' }}>
+          <Box
+            sx={{
+              p: 2,
+              bgcolor: 'grey.200',
+              borderRadius: 2,
+              minWidth: 100,
+              textAlign: 'center',
+            }}
+          >
             <Typography>Card {i + 1}</Typography>
           </Box>
         </FadeIn>

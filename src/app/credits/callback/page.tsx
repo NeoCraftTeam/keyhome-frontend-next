@@ -67,11 +67,12 @@ function CreditCallbackContent() {
         INITIAL_RETRY_MS * Math.pow(1.5, attempt),
         MAX_RETRY_MS
       );
-      // eslint-disable-next-line react-hooks/immutability
+      /* eslint-disable react-hooks/immutability */
       retryTimerRef.current = setTimeout(
         () => attemptVerify(attempt + 1),
         delay
       );
+      /* eslint-enable react-hooks/immutability */
     } else {
       setExtendedPolling(true);
       setVerifying(false);
@@ -98,11 +99,12 @@ function CreditCallbackContent() {
     }
 
     if (attempt < EXTENDED_MAX_RETRIES) {
-      // eslint-disable-next-line react-hooks/immutability
+      /* eslint-disable react-hooks/immutability */
       retryTimerRef.current = setTimeout(
         () => extendedPoll(attempt + 1),
         EXTENDED_POLL_MS
       );
+      /* eslint-enable react-hooks/immutability */
     } else {
       setPurchaseStatus('pending');
       setExtendedPolling(false);

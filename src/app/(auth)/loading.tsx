@@ -59,14 +59,11 @@ export default function AuthLoading() {
           />
 
           {/* Social buttons */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}
+          >
             {[1, 2, 3].map((i) => (
-              <Skeleton
-                key={i}
-                variant="circular"
-                width={48}
-                height={48}
-              />
+              <Skeleton key={i} variant="circular" width={48} height={48} />
             ))}
           </Box>
         </Box>

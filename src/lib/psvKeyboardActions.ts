@@ -22,7 +22,7 @@ export const PSV_SHORTCUTS_HELP_HTML_FR = `
  * Default PSV arrow / page / zoom keys plus <kbd>H</kbd> (help panel) and <kbd>F</kbd> (fullscreen).
  */
 export function buildPsvKeyboardActions(
-  helpContentHtml: string = PSV_SHORTCUTS_HELP_HTML_FR,
+  helpContentHtml: string = PSV_SHORTCUTS_HELP_HTML_FR
 ): NonNullable<ViewerConfig['keyboardActions']> {
   return {
     ...DEFAULTS.keyboardActions,

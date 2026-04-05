@@ -22,7 +22,7 @@ export const viewingsService = {
    */
   async reserve(
     adId: string,
-    payload: CreateReservationPayload,
+    payload: CreateReservationPayload
   ): Promise<Reservation> {
     const { data } = await api.post(`/ads/${adId}/reservations`, payload);
     return data.data ?? data;
@@ -34,8 +34,12 @@ export const viewingsService = {
    */
   async myReservations(adId?: string, status?: string): Promise<Reservation[]> {
     const params: Record<string, string> = {};
-    if (adId) { params.ad_id = adId; }
-    if (status) { params.status = status; }
+    if (adId) {
+      params.ad_id = adId;
+    }
+    if (status) {
+      params.status = status;
+    }
     const { data } = await api.get('/my/reservations', { params });
     return data.data ?? data;
   },
@@ -47,7 +51,7 @@ export const viewingsService = {
   async cancel(
     _adId: string,
     reservationId: string,
-    reason?: string,
+    reason?: string
   ): Promise<Reservation> {
     const { data } = await api.delete(`/reservations/${reservationId}`, {
       data: reason ? { cancellation_reason: reason } : undefined,

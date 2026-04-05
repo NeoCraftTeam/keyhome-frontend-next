@@ -162,7 +162,6 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
   'jouets-enfants': 'Jouets enfants',
   'aire-de-jeux': 'Aire de jeux',
 
-
   // Anciens attributs (legacy)
   air_conditioning: 'Climatisation',
   furnished: 'Meublé',
@@ -177,5 +176,8 @@ const slugRegex = /[^a-z0-9]+/g;
 
 export function getAttributeLabel(slug: string): string {
   const normalized = slug.toLowerCase().trim();
-  return ATTRIBUTE_LABELS[normalized] ?? slug.replace(slugRegex, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  return (
+    ATTRIBUTE_LABELS[normalized] ??
+    slug.replace(slugRegex, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  );
 }

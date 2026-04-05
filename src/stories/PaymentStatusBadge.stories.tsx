@@ -14,7 +14,8 @@ const meta: Meta<typeof PaymentStatusBadge> = {
   parameters: {
     docs: {
       description: {
-        component: 'Status chip for payment transactions. Maps status strings to French labels and semantic colors.',
+        component:
+          'Status chip for payment transactions. Maps status strings to French labels and semantic colors.',
       },
     },
   },

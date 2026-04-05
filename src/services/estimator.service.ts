@@ -56,7 +56,9 @@ export const estimatorService = {
 
 export const heatmapService = {
   get: (cityId?: string, typeId?: string): Promise<HeatmapResult> =>
-    api.get('/price-heatmap', { params: { city_id: cityId, type_id: typeId } }).then((r) => r.data),
+    api
+      .get('/price-heatmap', { params: { city_id: cityId, type_id: typeId } })
+      .then((r) => r.data),
 };
 
 export const keyScoreService = {

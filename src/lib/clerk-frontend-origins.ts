@@ -21,7 +21,8 @@ export function getClerkFrontendOrigins(): string[] {
     origins.add('https://clerk.neocraft.dev');
   }
 
-  const deploymentHint = `${process.env.NEXT_PUBLIC_APP_URL ?? ''} ${process.env.VERCEL_URL ?? ''} ${process.env.NEXT_PUBLIC_VERCEL_URL ?? ''}`.toLowerCase();
+  const deploymentHint =
+    `${process.env.NEXT_PUBLIC_APP_URL ?? ''} ${process.env.VERCEL_URL ?? ''} ${process.env.NEXT_PUBLIC_VERCEL_URL ?? ''}`.toLowerCase();
   if (deploymentHint.includes('neocraft.dev')) {
     origins.add('https://clerk.neocraft.dev');
   }
@@ -45,8 +46,12 @@ export function getClerkPreconnectOrigin(): string | null {
   }
 
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
-  const deploymentHint = `${process.env.NEXT_PUBLIC_APP_URL ?? ''} ${process.env.VERCEL_URL ?? ''} ${process.env.NEXT_PUBLIC_VERCEL_URL ?? ''}`.toLowerCase();
-  if (publishableKey.startsWith('pk_live_') || deploymentHint.includes('neocraft.dev')) {
+  const deploymentHint =
+    `${process.env.NEXT_PUBLIC_APP_URL ?? ''} ${process.env.VERCEL_URL ?? ''} ${process.env.NEXT_PUBLIC_VERCEL_URL ?? ''}`.toLowerCase();
+  if (
+    publishableKey.startsWith('pk_live_') ||
+    deploymentHint.includes('neocraft.dev')
+  ) {
     return 'https://clerk.neocraft.dev';
   }
 

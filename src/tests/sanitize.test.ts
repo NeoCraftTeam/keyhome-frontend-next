@@ -46,7 +46,9 @@ describe('escapeHtml', () => {
   it('handles combined XSS payload without double-encoding', () => {
     const combined = '<script>alert("xss" & \'more\')</script>';
     const result = escapeHtml(combined);
-    expect(result).toBe('&lt;script&gt;alert(&quot;xss&quot; &amp; &#039;more&#039;)&lt;/script&gt;');
+    expect(result).toBe(
+      '&lt;script&gt;alert(&quot;xss&quot; &amp; &#039;more&#039;)&lt;/script&gt;'
+    );
     // Verify no double encoding — &amp;lt; would be wrong
     expect(result).not.toContain('&amp;lt;');
     expect(result).not.toContain('&amp;gt;');
@@ -64,7 +66,9 @@ describe('escapeHtml', () => {
   // BUG CATCH: Unicode and emoji must pass through unmodified.
   // Only HTML-special chars should be escaped.
   it('preserves unicode and emoji characters', () => {
-    expect(escapeHtml('Quartier résidentiel 🏠')).toBe('Quartier résidentiel 🏠');
+    expect(escapeHtml('Quartier résidentiel 🏠')).toBe(
+      'Quartier résidentiel 🏠'
+    );
   });
 
   // BUG CATCH: Whitespace-only strings should pass through as-is.

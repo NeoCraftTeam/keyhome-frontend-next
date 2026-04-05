@@ -67,11 +67,12 @@ function PaymentSuccessContent() {
           INITIAL_RETRY_MS * Math.pow(1.5, attempt),
           MAX_RETRY_MS
         );
-        // eslint-disable-next-line react-hooks/immutability
+        /* eslint-disable react-hooks/immutability */
         retryTimerRef.current = setTimeout(
           () => attemptVerify(attempt + 1),
           delay
         );
+        /* eslint-enable react-hooks/immutability */
       } else {
         // Initial retries exhausted — show pending UI and keep polling silently
         setFinalFailed(true);
@@ -102,11 +103,12 @@ function PaymentSuccessContent() {
 
       if (attempt < EXTENDED_MAX_RETRIES) {
         setExtendedRetry(attempt + 1);
-        // eslint-disable-next-line react-hooks/immutability
+        /* eslint-disable react-hooks/immutability */
         retryTimerRef.current = setTimeout(
           () => extendedPoll(attempt + 1),
           EXTENDED_POLL_MS
         );
+        /* eslint-enable react-hooks/immutability */
       }
       // after EXTENDED_MAX_RETRIES we stop silently — user sees the fallback CTA
     },

@@ -1,16 +1,16 @@
 'use client';
 
 import {
-    Box,
-    ClickAwayListener,
-    Divider,
-    InputAdornment,
-    List,
-    ListItemButton,
-    Paper,
-    Popper,
-    TextField,
-    Typography,
+  Box,
+  ClickAwayListener,
+  Divider,
+  InputAdornment,
+  List,
+  ListItemButton,
+  Paper,
+  Popper,
+  TextField,
+  Typography,
 } from '@mui/material';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -68,7 +68,9 @@ function realDialCode(dialCode: string): string {
 function parsePhone(value: string): { country: Country; number: string } {
   const defaultCountry = COUNTRIES[0];
   const cleaned = value?.trim() ?? '';
-  if (!cleaned) { return { country: defaultCountry, number: '' }; }
+  if (!cleaned) {
+    return { country: defaultCountry, number: '' };
+  }
 
   const normalized = cleaned.replace(/[\s\-()]/g, '');
   const sorted = [...COUNTRIES].sort(
@@ -104,7 +106,7 @@ export default function PhoneField({
   helperText,
   required = false,
 }: PhoneFieldProps) {
-  const anchorRef = useRef<HTMLButtonElement>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const parsed = useMemo(() => parsePhone(value), [value]);
@@ -128,7 +130,9 @@ export default function PhoneField({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) { return COUNTRIES; }
+    if (!q) {
+      return COUNTRIES;
+    }
     return COUNTRIES.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
@@ -170,7 +174,7 @@ export default function PhoneField({
                 {/* Flag + dial code button */}
                 <Box
                   component="button"
-                  ref={anchorRef}
+                  ref={setAnchorEl}
                   type="button"
                   disabled={disabled}
                   onClick={() => setOpen((v) => !v)}
@@ -187,10 +191,15 @@ export default function PhoneField({
                     borderRadius: 1,
                     transition: 'background 0.15s',
                     '&:hover:not(:disabled)': { bgcolor: 'action.hover' },
-                    '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
+                    '&:focus-visible': {
+                      outline: '2px solid',
+                      outlineColor: 'primary.main',
+                    },
                   }}
                 >
-                  <span style={{ fontSize: 20, lineHeight: 1 }}>{country.flag}</span>
+                  <span style={{ fontSize: 20, lineHeight: 1 }}>
+                    {country.flag}
+                  </span>
                   <Typography
                     sx={{
                       fontSize: '0.8125rem',
@@ -212,7 +221,11 @@ export default function PhoneField({
                     ▾
                   </Typography>
                 </Box>
-                <Divider orientation="vertical" flexItem sx={{ mr: 1, my: 0.5 }} />
+                <Divider
+                  orientation="vertical"
+                  flexItem
+                  sx={{ mr: 1, my: 0.5 }}
+                />
               </InputAdornment>
             ),
           },
@@ -220,9 +233,17 @@ export default function PhoneField({
       />
 
       {/* ── Country picker dropdown ────────── */}
-      <Popper open={open} anchorEl={anchorRef.current} placement="bottom-start" sx={{ zIndex: 1400 }}>
+      <Popper
+        open={open}
+        anchorEl={anchorEl}
+        placement="bottom-start"
+        sx={{ zIndex: 1400 }}
+      >
         <ClickAwayListener onClickAway={() => setOpen(false)}>
-          <Paper elevation={8} sx={{ width: 280, borderRadius: 2, overflow: 'hidden', mt: 0.5 }}>
+          <Paper
+            elevation={8}
+            sx={{ width: 280, borderRadius: 2, overflow: 'hidden', mt: 0.5 }}
+          >
             {/* Search box */}
             <Box sx={{ p: 1 }}>
               <TextField
@@ -233,14 +254,22 @@ export default function PhoneField({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Escape') { setOpen(false); }
-                  if (e.key === 'Enter' && filtered.length > 0) { handleSelectCountry(filtered[0]); }
+                  if (e.key === 'Escape') {
+                    setOpen(false);
+                  }
+                  if (e.key === 'Enter' && filtered.length > 0) {
+                    handleSelectCountry(filtered[0]);
+                  }
                 }}
               />
             </Box>
             <Divider />
             {/* Results */}
-            <List dense disablePadding sx={{ maxHeight: 240, overflowY: 'auto' }}>
+            <List
+              dense
+              disablePadding
+              sx={{ maxHeight: 240, overflowY: 'auto' }}
+            >
               {filtered.length === 0 && (
                 <Box sx={{ px: 2, py: 1.5 }}>
                   <Typography variant="body2" color="text.secondary">
@@ -255,10 +284,16 @@ export default function PhoneField({
                   onClick={() => handleSelectCountry(c)}
                   sx={{ px: 1.5, py: 0.75, gap: 1 }}
                 >
-                  <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>{c.flag}</span>
+                  <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>
+                    {c.flag}
+                  </span>
                   <Typography
                     variant="body2"
-                    sx={{ minWidth: 40, color: 'text.secondary', flexShrink: 0 }}
+                    sx={{
+                      minWidth: 40,
+                      color: 'text.secondary',
+                      flexShrink: 0,
+                    }}
                   >
                     {realDialCode(c.dialCode)}
                   </Typography>

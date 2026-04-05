@@ -1,7 +1,13 @@
 'use client';
 
 import { Ad } from '@/types';
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 export type CompareDrawerMode = 'table' | 'recently_viewed';
 
@@ -26,7 +32,9 @@ const STORAGE_KEY = 'keyhome_comparator';
 export const COMPARATOR_MAX_ITEMS = 4;
 
 function loadItems(): Ad[] {
-  if (typeof window === 'undefined') { return []; }
+  if (typeof window === 'undefined') {
+    return [];
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
@@ -35,7 +43,11 @@ function loadItems(): Ad[] {
   }
 }
 
-export function ComparatorProvider({ children }: { children: React.ReactNode }) {
+export function ComparatorProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [items, setItems] = useState<Ad[]>(loadItems);
   const [isOpen, setOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<CompareDrawerMode | null>(null);
@@ -52,7 +64,9 @@ export function ComparatorProvider({ children }: { children: React.ReactNode }) 
 
   const add = useCallback((ad: Ad) => {
     setItems((prev) => {
-      if (prev.find((a) => a.id === ad.id)) { return prev; }
+      if (prev.find((a) => a.id === ad.id)) {
+        return prev;
+      }
       if (prev.length >= COMPARATOR_MAX_ITEMS) {
         setMaxReached(true);
         return prev;
@@ -69,7 +83,10 @@ export function ComparatorProvider({ children }: { children: React.ReactNode }) 
 
   const clear = useCallback(() => setItems([]), []);
 
-  const isSelected = useCallback((id: string) => items.some((a) => a.id === id), [items]);
+  const isSelected = useCallback(
+    (id: string) => items.some((a) => a.id === id),
+    [items]
+  );
 
   const handleSetOpen = useCallback((v: boolean) => {
     setOpen(v);
@@ -77,7 +94,21 @@ export function ComparatorProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   return (
-    <ComparatorContext.Provider value={{ items, add, remove, clear, isSelected, isOpen, setOpen: handleSetOpen, openDrawer, drawerMode, maxReached, clearMaxReached }}>
+    <ComparatorContext.Provider
+      value={{
+        items,
+        add,
+        remove,
+        clear,
+        isSelected,
+        isOpen,
+        setOpen: handleSetOpen,
+        openDrawer,
+        drawerMode,
+        maxReached,
+        clearMaxReached,
+      }}
+    >
       {children}
     </ComparatorContext.Provider>
   );
@@ -85,6 +116,8 @@ export function ComparatorProvider({ children }: { children: React.ReactNode }) 
 
 export function useComparator() {
   const ctx = useContext(ComparatorContext);
-  if (!ctx) { throw new Error('useComparator must be used inside ComparatorProvider'); }
+  if (!ctx) {
+    throw new Error('useComparator must be used inside ComparatorProvider');
+  }
   return ctx;
 }

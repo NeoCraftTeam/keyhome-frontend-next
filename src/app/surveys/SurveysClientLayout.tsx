@@ -14,10 +14,21 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function SurveysClientLayout({ children }: { children: React.ReactNode }) {
+export default function SurveysClientLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <MuiThemeProvider theme={lightTheme}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#F7F7F8' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+          bgcolor: '#F7F7F8',
+        }}
+      >
         {/* ── Navbar ── */}
         <AppBar
           position="sticky"
@@ -41,7 +52,15 @@ export default function SurveysClientLayout({ children }: { children: React.Reac
             }}
           >
             {/* Logo */}
-            <Link href="/surveys" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Link
+              href="/surveys"
+              style={{
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
               <Image
                 src="/images/logo.png"
                 alt="KeyHome"
@@ -62,9 +81,15 @@ export default function SurveysClientLayout({ children }: { children: React.Reac
               >
                 <Box component="span" sx={{ color: 'primary.main' }}>
                   KeyHome
-                </Box>
-                {' '}
-                <Box component="span" sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '0.85em' }}>
+                </Box>{' '}
+                <Box
+                  component="span"
+                  sx={{
+                    color: 'text.secondary',
+                    fontWeight: 500,
+                    fontSize: '0.85em',
+                  }}
+                >
                   Sondages
                 </Box>
               </Typography>
@@ -104,7 +129,12 @@ export default function SurveysClientLayout({ children }: { children: React.Reac
           }}
         >
           <Container maxWidth="md">
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              display="block"
+              sx={{ mb: 0.5 }}
+            >
               © {new Date().getFullYear()} KeyHome · Tous droits réservés
             </Typography>
             <Typography variant="caption" color="text.secondary">

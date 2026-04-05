@@ -42,9 +42,18 @@ export default function AdCardSkeleton() {
       />
 
       {/* Text content */}
-      <Box sx={{ mt: 1.25, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+      <Box
+        sx={{ mt: 1.25, display: 'flex', flexDirection: 'column', gap: 0.5 }}
+      >
         {/* Title row */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
           <Box
             sx={{
               height: 14,
@@ -75,15 +84,32 @@ export default function AdCardSkeleton() {
 
         {/* Features row */}
         <Box sx={{ display: 'flex', gap: 1.5, mt: 0.25 }}>
-          <Box sx={{ height: 11, width: '18%', borderRadius: 1, ...shimmerBase }} />
-          <Box sx={{ height: 11, width: '18%', borderRadius: 1, ...shimmerBase }} />
-          <Box sx={{ height: 11, width: '22%', borderRadius: 1, ...shimmerBase }} />
+          <Box
+            sx={{ height: 11, width: '18%', borderRadius: 1, ...shimmerBase }}
+          />
+          <Box
+            sx={{ height: 11, width: '18%', borderRadius: 1, ...shimmerBase }}
+          />
+          <Box
+            sx={{ height: 11, width: '22%', borderRadius: 1, ...shimmerBase }}
+          />
         </Box>
 
         {/* Price row */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.25 }}>
-          <Box sx={{ height: 14, width: '40%', borderRadius: 1, ...shimmerBase }} />
-          <Box sx={{ height: 20, width: 36, borderRadius: 1, ...shimmerBase }} />
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mt: 0.25,
+          }}
+        >
+          <Box
+            sx={{ height: 14, width: '40%', borderRadius: 1, ...shimmerBase }}
+          />
+          <Box
+            sx={{ height: 20, width: 36, borderRadius: 1, ...shimmerBase }}
+          />
         </Box>
       </Box>
     </Box>

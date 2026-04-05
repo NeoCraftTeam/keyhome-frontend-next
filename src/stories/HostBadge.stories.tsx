@@ -13,7 +13,8 @@ const meta: Meta<typeof HostBadge> = {
   parameters: {
     docs: {
       description: {
-        component: 'Trust-signal pill for verified owners (gold) and agencies (indigo). Shows a tooltip with verification context.',
+        component:
+          'Trust-signal pill for verified owners (gold) and agencies (indigo). Shows a tooltip with verification context.',
       },
     },
   },

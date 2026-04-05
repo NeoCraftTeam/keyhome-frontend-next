@@ -13,9 +13,13 @@ import { useEffect } from 'react';
  */
 export default function ServiceWorkerRegistrar() {
   useEffect(() => {
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator))
+      return;
     // En dev, le SW n’est pas enregistré sauf NEXT_PUBLIC_ENABLE_SW=1 (test PWA / push en local).
-    if (process.env.NODE_ENV !== 'production' && !process.env.NEXT_PUBLIC_ENABLE_SW) {
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      !process.env.NEXT_PUBLIC_ENABLE_SW
+    ) {
       return;
     }
 
@@ -33,7 +37,10 @@ export default function ServiceWorkerRegistrar() {
         const trackInstalling = (worker: ServiceWorker) => {
           worker.addEventListener('statechange', () => {
             // 'installed' + existing controller  → update is ready
-            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+            if (
+              worker.state === 'installed' &&
+              navigator.serviceWorker.controller
+            ) {
               window.dispatchEvent(new CustomEvent('sw-updated'));
             }
           });

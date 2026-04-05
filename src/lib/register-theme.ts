@@ -24,7 +24,10 @@ export type RegisterThemeTokens = {
 /** Hero teal (fichier avec espaces — encodé pour Next/Image). */
 const OWNER_HERO_ENCODED = '/images/owner/Real%20Estate%20Teal.webp';
 
-export const REGISTER_THEME: Record<RegisterAccountVisual, RegisterThemeTokens> = {
+export const REGISTER_THEME: Record<
+  RegisterAccountVisual,
+  RegisterThemeTokens
+> = {
   customer: {
     visual: 'customer',
     primary: brand.primary,
@@ -34,7 +37,8 @@ export const REGISTER_THEME: Record<RegisterAccountVisual, RegisterThemeTokens> 
     gradientHover: `linear-gradient(to right, ${brand.primaryHover}, ${brand.primaryActive})`,
     selectedBgAlpha: brand.primaryAlpha10,
     heroSrc: '/images/02Register.webp',
-    overlayGradient: 'linear-gradient(to bottom, rgba(34,34,34,0.15) 0%, rgba(34,34,34,0.62) 100%)',
+    overlayGradient:
+      'linear-gradient(to bottom, rgba(34,34,34,0.15) 0%, rgba(34,34,34,0.62) 100%)',
     tagline: 'Trouvez votre prochain chez-vous',
     formSubtitle: 'Inscrivez-vous pour accéder aux annonces immobilières',
     logoSrc: '/images/logo.png',
@@ -48,14 +52,17 @@ export const REGISTER_THEME: Record<RegisterAccountVisual, RegisterThemeTokens> 
     gradientHover: `linear-gradient(to right, ${brandAgent.primary}, ${brandAgent.primaryDark})`,
     selectedBgAlpha: 'rgba(13,148,136,0.14)',
     heroSrc: OWNER_HERO_ENCODED,
-    overlayGradient: 'linear-gradient(to bottom, rgba(15,118,110,0.28) 0%, rgba(15,23,42,0.78) 100%)',
+    overlayGradient:
+      'linear-gradient(to bottom, rgba(15,118,110,0.28) 0%, rgba(15,23,42,0.78) 100%)',
     tagline: 'Publiez et gérez vos annonces en toute simplicité',
     formSubtitle: 'Inscrivez-vous pour diffuser vos biens sur KeyHome',
     logoSrc: '/images/logo-teal.png',
   },
 };
 
-export function getRegisterThemeTokens(visual: RegisterAccountVisual): RegisterThemeTokens {
+export function getRegisterThemeTokens(
+  visual: RegisterAccountVisual
+): RegisterThemeTokens {
   return REGISTER_THEME[visual];
 }
 

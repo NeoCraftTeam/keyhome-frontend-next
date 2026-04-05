@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -11,24 +12,44 @@ vi.mock('next/navigation', () => ({
 vi.mock('next/image', () => ({
   default: (props: Record<string, unknown>) => {
     const { fill, priority, ...rest } = props;
-    return <img {...rest} data-fill={fill ? 'true' : undefined} data-priority={priority ? 'true' : undefined} />;
+    return (
+      <img
+        {...rest}
+        data-fill={fill ? 'true' : undefined}
+        data-priority={priority ? 'true' : undefined}
+      />
+    );
   },
 }));
 
 // Mock framer-motion
 vi.mock('framer-motion', () => {
-  const React = require('react');
   return {
-    motion: new Proxy({}, {
-      get: (_target: object, prop: string) => {
-        const Comp = React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
-          const { children, whileTap, whileHover, transition, initial, animate, exit, variants, ...rest } = props;
-          return React.createElement(prop, { ...rest, ref }, children);
-        });
-        Comp.displayName = `motion.${String(prop)}`;
-        return Comp;
-      },
-    }),
+    motion: new Proxy(
+      {},
+      {
+        get: (_target: object, prop: string) => {
+          const Comp = React.forwardRef(
+            (props: Record<string, unknown>, ref: unknown) => {
+              const {
+                children,
+                whileTap,
+                whileHover,
+                transition,
+                initial,
+                animate,
+                exit,
+                variants,
+                ...rest
+              } = props;
+              return React.createElement(prop, { ...rest, ref }, children);
+            }
+          );
+          Comp.displayName = `motion.${String(prop)}`;
+          return Comp;
+        },
+      }
+    ),
     AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
     MotionConfig: ({ children }: { children: React.ReactNode }) => children,
   };
@@ -37,7 +58,7 @@ vi.mock('framer-motion', () => {
 // Mock MUI theme
 vi.mock('@mui/material/styles', async () => {
   const actual = await vi.importActual('@mui/material/styles');
-  return { ...actual as object };
+  return { ...(actual as object) };
 });
 
 // Mock providers/hooks used by AdCard
@@ -142,13 +163,17 @@ describe('AdCard', () => {
   it('handles arrow key right without error', () => {
     renderAdCard();
     const carousel = screen.getByRole('region');
-    expect(() => fireEvent.keyDown(carousel, { key: 'ArrowRight' })).not.toThrow();
+    expect(() =>
+      fireEvent.keyDown(carousel, { key: 'ArrowRight' })
+    ).not.toThrow();
   });
 
   it('handles arrow key left without error', () => {
     renderAdCard();
     const carousel = screen.getByRole('region');
-    expect(() => fireEvent.keyDown(carousel, { key: 'ArrowLeft' })).not.toThrow();
+    expect(() =>
+      fireEvent.keyDown(carousel, { key: 'ArrowLeft' })
+    ).not.toThrow();
   });
 
   it('renders dot indicators for multiple images', () => {

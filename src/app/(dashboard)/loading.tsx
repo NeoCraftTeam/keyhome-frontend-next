@@ -43,7 +43,12 @@ export default function DashboardLoading() {
                 />
                 <Skeleton variant="text" width="80%" height={20} />
                 <Skeleton variant="text" width="60%" height={16} />
-                <Skeleton variant="text" width="40%" height={20} sx={{ mt: 0.5 }} />
+                <Skeleton
+                  variant="text"
+                  width="40%"
+                  height={20}
+                  sx={{ mt: 0.5 }}
+                />
               </Box>
             </Grid>
           ))}

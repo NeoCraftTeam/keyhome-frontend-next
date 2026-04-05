@@ -14,7 +14,9 @@ const outlinedStartIconInputLabelSx: SxProps<Theme> = {
 /**
  * @param shrink — use `useOutlinedInputLabelShrink(value.length > 0).shrink` (or equivalent).
  */
-export function outlinedStartIconInputLabelProps(shrink: boolean): Partial<InputLabelProps> {
+export function outlinedStartIconInputLabelProps(
+  shrink: boolean
+): Partial<InputLabelProps> {
   return {
     shrink,
     sx: outlinedStartIconInputLabelSx,
@@ -26,7 +28,7 @@ export function outlinedStartIconInputLabelProps(shrink: boolean): Partial<Input
  */
 export function mergeOutlinedStartIconInputLabelProps(
   base: InputLabelProps | undefined,
-  shrink: boolean,
+  shrink: boolean
 ): InputLabelProps {
   const { shrink: _ignored, sx: baseSx, ...rest } = base ?? {};
 

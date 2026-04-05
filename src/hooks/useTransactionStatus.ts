@@ -18,8 +18,11 @@ interface UseTransactionStatusReturn {
  * Polls the Flutterwave verify endpoint every 3 seconds until the payment
  * reaches a terminal state (success | failed | cancelled) or 5 minutes elapse.
  */
-export function useTransactionStatus(txRef: string | null): UseTransactionStatusReturn {
-  const [transaction, setTransaction] = useState<FlutterwaveVerifyResponse | null>(null);
+export function useTransactionStatus(
+  txRef: string | null
+): UseTransactionStatusReturn {
+  const [transaction, setTransaction] =
+    useState<FlutterwaveVerifyResponse | null>(null);
   const [isPolling, setIsPolling] = useState<boolean>(false);
   const [timedOut, setTimedOut] = useState<boolean>(false);
 
@@ -41,7 +44,9 @@ export function useTransactionStatus(txRef: string | null): UseTransactionStatus
   }, []);
 
   useEffect(() => {
-    if (!txRef) { return; }
+    if (!txRef) {
+      return;
+    }
 
     stoppedRef.current = false;
     setIsPolling(true);
@@ -49,13 +54,18 @@ export function useTransactionStatus(txRef: string | null): UseTransactionStatus
     setTransaction(null);
 
     const poll = async (): Promise<void> => {
-      if (stoppedRef.current) { return; }
+      if (stoppedRef.current) {
+        return;
+      }
 
       try {
         const result = await paymentsService.flutterwaveVerify(txRef);
         setTransaction(result);
 
-        const isTerminal = result.status === 'success' || result.status === 'failed' || result.status === 'cancelled';
+        const isTerminal =
+          result.status === 'success' ||
+          result.status === 'failed' ||
+          result.status === 'cancelled';
         if (isTerminal) {
           stop();
         }
@@ -76,7 +86,9 @@ export function useTransactionStatus(txRef: string | null): UseTransactionStatus
       }
     }, TIMEOUT_MS);
 
-    return () => { stop(); };
+    return () => {
+      stop();
+    };
   }, [txRef, stop]);
 
   return { transaction, isPolling, timedOut, stop };

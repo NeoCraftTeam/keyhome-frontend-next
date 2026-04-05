@@ -25,7 +25,7 @@ export default function BottomNav() {
   if (!isMobile || !isStandalone) return null;
 
   const activeIndex = BOTTOM_NAV_ITEMS.findIndex(
-    (item) => pathname === item.href || pathname?.startsWith(item.href + '/'),
+    (item) => pathname === item.href || pathname?.startsWith(item.href + '/')
   );
 
   const handleNav = (index: number) => {

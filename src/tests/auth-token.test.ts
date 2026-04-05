@@ -49,7 +49,9 @@ describe('auth-token', () => {
     // Without this catch, every subsequent API call would crash instead of
     // falling back to an unauthenticated request.
     it('returns null when the getter throws an error', async () => {
-      registerTokenGetter(vi.fn().mockRejectedValue(new Error('Clerk session expired')));
+      registerTokenGetter(
+        vi.fn().mockRejectedValue(new Error('Clerk session expired'))
+      );
       const token = await getAuthToken();
       expect(token).toBeNull();
     });
@@ -78,10 +80,12 @@ describe('auth-token', () => {
     // each time (fresh token), not cache the first result.
     it('getter is called on every getAuthToken invocation (no caching)', async () => {
       let callCount = 0;
-      registerTokenGetter(vi.fn(async () => {
-        callCount++;
-        return `token-${callCount}`;
-      }));
+      registerTokenGetter(
+        vi.fn(async () => {
+          callCount++;
+          return `token-${callCount}`;
+        })
+      );
 
       const first = await getAuthToken();
       const second = await getAuthToken();

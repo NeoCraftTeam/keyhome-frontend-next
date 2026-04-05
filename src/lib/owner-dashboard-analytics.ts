@@ -30,7 +30,11 @@ function formatUtcDayLabel(utcMidnightMs: number): string {
 
 function utcDayRangeEndingToday(days: number): number[] {
   const now = new Date();
-  const endUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const endUtc = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate()
+  );
   const keys: number[] = [];
   for (let i = days - 1; i >= 0; i--) {
     keys.push(endUtc - i * 86_400_000);
@@ -44,8 +48,13 @@ function utcDayRangeEndingToday(days: number): number[] {
  */
 export function mergeViewsAndFavoritesSeries(
   trends: Record<string, TrendRow[]> | undefined,
-  days: number,
-): Array<{ label: string; fullDate: string; views: number; favorites: number }> {
+  days: number
+): Array<{
+  label: string;
+  fullDate: string;
+  views: number;
+  favorites: number;
+}> {
   const views = trends?.view ?? [];
   const favorites = trends?.favorite ?? [];
 
@@ -62,7 +71,12 @@ export function mergeViewsAndFavoritesSeries(
     byDate.set(p.date, cur);
   }
 
-  const out: Array<{ label: string; fullDate: string; views: number; favorites: number }> = [];
+  const out: Array<{
+    label: string;
+    fullDate: string;
+    views: number;
+    favorites: number;
+  }> = [];
   for (const utcMs of utcDayRangeEndingToday(days)) {
     const key = toUtcDateKeyFromMillis(utcMs);
     const row = byDate.get(key) ?? { views: 0, favorites: 0 };
@@ -77,7 +91,7 @@ export function mergeViewsAndFavoritesSeries(
 export function extractMetricSeries(
   trends: Record<string, TrendRow[]> | undefined,
   typeKey: string,
-  days: number,
+  days: number
 ): number[] {
   const rows = trends?.[typeKey] ?? [];
   const map = new Map(rows.map((r) => [r.date, r.count]));

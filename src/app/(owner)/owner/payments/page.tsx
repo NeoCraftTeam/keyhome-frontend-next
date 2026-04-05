@@ -7,7 +7,12 @@ import { Container, Typography } from '@mui/material';
 export default function OwnerPaymentsPage() {
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
-      <PageBreadcrumbs items={[{ label: 'Tableau de bord', href: '/owner/dashboard' }, { label: 'Mes Paiements' }]} />
+      <PageBreadcrumbs
+        items={[
+          { label: 'Tableau de bord', href: '/owner/dashboard' },
+          { label: 'Mes Paiements' },
+        ]}
+      />
       <Typography variant="h4" fontWeight={700} gutterBottom>
         Mes Paiements
       </Typography>

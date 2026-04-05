@@ -25,20 +25,56 @@ export default function SkeletonCard() {
       {/* Text content placeholder */}
       <Box sx={{ pt: 1.25, pb: 0.5 }}>
         {/* Title line */}
-        <Skeleton variant="text" width="75%" height={18} animation="wave" sx={{ borderRadius: 1 }} />
+        <Skeleton
+          variant="text"
+          width="75%"
+          height={18}
+          animation="wave"
+          sx={{ borderRadius: 1 }}
+        />
 
         {/* Location line */}
-        <Skeleton variant="text" width="55%" height={15} animation="wave" sx={{ mt: 0.5, borderRadius: 1 }} />
+        <Skeleton
+          variant="text"
+          width="55%"
+          height={15}
+          animation="wave"
+          sx={{ mt: 0.5, borderRadius: 1 }}
+        />
 
         {/* Features row */}
         <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-          <Skeleton variant="text" width={32} height={14} animation="wave" sx={{ borderRadius: 1 }} />
-          <Skeleton variant="text" width={32} height={14} animation="wave" sx={{ borderRadius: 1 }} />
-          <Skeleton variant="text" width={48} height={14} animation="wave" sx={{ borderRadius: 1 }} />
+          <Skeleton
+            variant="text"
+            width={32}
+            height={14}
+            animation="wave"
+            sx={{ borderRadius: 1 }}
+          />
+          <Skeleton
+            variant="text"
+            width={32}
+            height={14}
+            animation="wave"
+            sx={{ borderRadius: 1 }}
+          />
+          <Skeleton
+            variant="text"
+            width={48}
+            height={14}
+            animation="wave"
+            sx={{ borderRadius: 1 }}
+          />
         </Box>
 
         {/* Price line */}
-        <Skeleton variant="text" width="40%" height={18} animation="wave" sx={{ mt: 0.5, borderRadius: 1 }} />
+        <Skeleton
+          variant="text"
+          width="40%"
+          height={18}
+          animation="wave"
+          sx={{ mt: 0.5, borderRadius: 1 }}
+        />
       </Box>
     </Box>
   );

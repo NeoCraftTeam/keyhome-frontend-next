@@ -47,7 +47,7 @@ const FORWARD_RESPONSE_HEADERS = [
  */
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ path?: string[] }> },
+  context: { params: Promise<{ path?: string[] }> }
 ): Promise<NextResponse> {
   const { path: segments } = await context.params;
   if (!segments?.length) {
@@ -56,9 +56,12 @@ export async function GET(
 
   const origin = tourProxyBackendOrigin();
   if (!origin) {
-    return new NextResponse('Tour proxy: set NEXT_PUBLIC_API_URL or TOUR_PROXY_BACKEND_ORIGIN', {
-      status: 500,
-    });
+    return new NextResponse(
+      'Tour proxy: set NEXT_PUBLIC_API_URL or TOUR_PROXY_BACKEND_ORIGIN',
+      {
+        status: 500,
+      }
+    );
   }
 
   const target = `${origin}/tour-image/${segments.join('/')}`;

@@ -1,5 +1,9 @@
 import api from '@/lib/api';
-import { CreditPurchaseResponse, CreditVerifyResponse, PointPackage } from '@/types';
+import {
+  CreditPurchaseResponse,
+  CreditVerifyResponse,
+  PointPackage,
+} from '@/types';
 
 type ResourceCollection<T> = {
   data?: T[];
@@ -8,7 +12,9 @@ type ResourceCollection<T> = {
 export const creditsService = {
   async listPackages(): Promise<PointPackage[]> {
     const response = await api.get('/credits/packages');
-    const payload = response.data as PointPackage[] | ResourceCollection<PointPackage>;
+    const payload = response.data as
+      | PointPackage[]
+      | ResourceCollection<PointPackage>;
 
     if (Array.isArray(payload)) {
       return payload;
@@ -33,7 +39,7 @@ export const creditsService = {
    */
   async purchase(
     packageId: string,
-    callbackUrl?: string,
+    callbackUrl?: string
   ): Promise<CreditPurchaseResponse> {
     const { data } = await api.post(`/credits/purchase/${packageId}`, {
       callback_url: callbackUrl,

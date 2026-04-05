@@ -30,7 +30,9 @@ export async function fetchNotifications(params?: {
 }
 
 export async function fetchUnreadNotificationCount(): Promise<number> {
-  const res = await api.get<{ success: boolean; data: { count: number } }>('/notifications/unread-count');
+  const res = await api.get<{ success: boolean; data: { count: number } }>(
+    '/notifications/unread-count'
+  );
   return res.data.data.count;
 }
 

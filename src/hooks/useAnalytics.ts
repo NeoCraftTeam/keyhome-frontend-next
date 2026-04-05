@@ -4,7 +4,13 @@ import { useCallback, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 /** UTM parameter keys we capture from the URL. */
-const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const;
+const UTM_KEYS = [
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_term',
+  'utm_content',
+] as const;
 type UtmKey = (typeof UTM_KEYS)[number];
 
 /** Session-storage key for persisted UTM data. */
@@ -48,7 +54,10 @@ export function getStoredUtm(): Record<UtmKey, string> | null {
 /**
  * Sends a GA4 event via gtag if available, enriched with persisted UTM data.
  */
-export function trackEvent(name: FunnelEvent, params: Record<string, unknown> = {}): void {
+export function trackEvent(
+  name: FunnelEvent,
+  params: Record<string, unknown> = {}
+): void {
   if (typeof window === 'undefined') return;
   const utm = getStoredUtm();
   const enriched = {
@@ -96,7 +105,10 @@ export function useAnalytics() {
     }
 
     if (hasAny) {
-      const merged = { ...(existing ?? {}), ...captured } as Record<UtmKey, string>;
+      const merged = { ...(existing ?? {}), ...captured } as Record<
+        UtmKey,
+        string
+      >;
       try {
         sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(merged));
       } catch {
@@ -105,9 +117,12 @@ export function useAnalytics() {
     }
   }, [searchParams]);
 
-  const track = useCallback((name: FunnelEvent, params: Record<string, unknown> = {}): void => {
-    trackEvent(name, params);
-  }, []);
+  const track = useCallback(
+    (name: FunnelEvent, params: Record<string, unknown> = {}): void => {
+      trackEvent(name, params);
+    },
+    []
+  );
 
   return { track };
 }

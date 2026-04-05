@@ -9,7 +9,10 @@ export type RegisterAccountRole = 'customer' | 'agent';
 
 const STORAGE_KEY = 'kh_register_account_role';
 
-export function deriveRegisterRoleFromQuery(role: string | null, intent: string | null): RegisterAccountRole {
+export function deriveRegisterRoleFromQuery(
+  role: string | null,
+  intent: string | null
+): RegisterAccountRole {
   if (role === 'agent' || role === 'bailleur' || intent === 'owner') {
     return 'agent';
   }
@@ -20,7 +23,9 @@ export function deriveRegisterRoleFromQuery(role: string | null, intent: string 
   return 'customer';
 }
 
-export function registerUrlHasRoleIntent(searchParams: URLSearchParams): boolean {
+export function registerUrlHasRoleIntent(
+  searchParams: URLSearchParams
+): boolean {
   return searchParams.has('role') || searchParams.has('intent');
 }
 
@@ -36,7 +41,9 @@ export function readStoredRegisterAccountRole(): RegisterAccountRole | null {
   return null;
 }
 
-export function writeStoredRegisterAccountRole(role: RegisterAccountRole): void {
+export function writeStoredRegisterAccountRole(
+  role: RegisterAccountRole
+): void {
   if (typeof window === 'undefined') {
     return;
   }

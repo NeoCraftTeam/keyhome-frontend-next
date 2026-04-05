@@ -7,20 +7,27 @@ function str(v: unknown): string | undefined {
 /**
  * Lien cible dans le panneau propriétaire (Next) à partir du payload Laravel.
  */
-export function getOwnerNotificationHref(n: LaravelNotification): string | null {
+export function getOwnerNotificationHref(
+  n: LaravelNotification
+): string | null {
   const data = n.data;
   const type = n.type;
 
   const adId = str(data.ad_id);
-  if (adId && (type.includes('Ad') || type.includes('Review') || str(data.type)?.includes('ad'))) {
+  if (
+    adId &&
+    (type.includes('Ad') ||
+      type.includes('Review') ||
+      str(data.type)?.includes('ad'))
+  ) {
     return `/owner/ads/${adId}`;
   }
 
   if (
-    type.includes('Reservation')
-    || type.includes('Viewing')
-    || str(data.type)?.includes('viewing')
-    || data.reservation_id != null
+    type.includes('Reservation') ||
+    type.includes('Viewing') ||
+    str(data.type)?.includes('viewing') ||
+    data.reservation_id != null
   ) {
     return '/owner/viewings';
   }

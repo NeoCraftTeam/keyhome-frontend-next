@@ -40,8 +40,13 @@ export function useSearchHistory() {
     if (!q || q.length < 2) return;
 
     setHistory((prev) => {
-      const filtered = prev.filter((item) => item.query.toLowerCase() !== q.toLowerCase());
-      const updated = [{ query: q, timestamp: Date.now() }, ...filtered].slice(0, MAX_ITEMS);
+      const filtered = prev.filter(
+        (item) => item.query.toLowerCase() !== q.toLowerCase()
+      );
+      const updated = [{ query: q, timestamp: Date.now() }, ...filtered].slice(
+        0,
+        MAX_ITEMS
+      );
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       } catch {
@@ -53,7 +58,9 @@ export function useSearchHistory() {
 
   const removeSearch = useCallback((query: string) => {
     setHistory((prev) => {
-      const updated = prev.filter((item) => item.query.toLowerCase() !== query.toLowerCase());
+      const updated = prev.filter(
+        (item) => item.query.toLowerCase() !== query.toLowerCase()
+      );
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       } catch {

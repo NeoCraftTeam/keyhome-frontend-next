@@ -52,17 +52,24 @@ function resolvePanoramaUrl(url: string): string {
 
 /** Same-origin absolute URL for probing dimensions (Image + relative path). */
 function toAbsoluteImageSrc(url: string): string {
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:') || url.startsWith('data:')) {
+  if (
+    url.startsWith('http://') ||
+    url.startsWith('https://') ||
+    url.startsWith('blob:') ||
+    url.startsWith('data:')
+  ) {
     return url;
   }
   if (typeof window === 'undefined') {
     return url;
   }
-  return url.startsWith('/') ? `${window.location.origin}${url}` : `${window.location.origin}/${url}`;
+  return url.startsWith('/')
+    ? `${window.location.origin}${url}`
+    : `${window.location.origin}/${url}`;
 }
 
 async function inferPanoDataFromImageDimensions(
-  imageUrl: string,
+  imageUrl: string
 ): Promise<EquirectPanoDataRect | undefined> {
   const src = toAbsoluteImageSrc(imageUrl);
 
@@ -275,10 +282,11 @@ export default function PanoramaViewer({
       }
 
       // Dynamic import PSV modules (avoids SSR issues)
-      const [{ Viewer, EquirectangularAdapter }, { MarkersPlugin }] = await Promise.all([
-        import('@photo-sphere-viewer/core'),
-        import('@photo-sphere-viewer/markers-plugin'),
-      ]);
+      const [{ Viewer, EquirectangularAdapter }, { MarkersPlugin }] =
+        await Promise.all([
+          import('@photo-sphere-viewer/core'),
+          import('@photo-sphere-viewer/markers-plugin'),
+        ]);
 
       if (!containerRef.current) return;
 
@@ -297,7 +305,9 @@ export default function PanoramaViewer({
       const minFov = 30;
       const maxFov = 120;
       const clampedFov = Math.min(Math.max(hfov, minFov), maxFov);
-      let defaultZoomLvl = Math.round(((maxFov - clampedFov) / (maxFov - minFov)) * 100);
+      let defaultZoomLvl = Math.round(
+        ((maxFov - clampedFov) / (maxFov - minFov)) * 100
+      );
       if (panoData) {
         const fh = panoData.fullHeight ?? panoData.fullWidth / 2;
         if (panoData.croppedHeight < fh * 0.99) {
@@ -369,7 +379,7 @@ export default function PanoramaViewer({
           viewer.setOption('mousemove', !placingRef.current);
           viewer.setOption(
             'keyboard',
-            showNavbar && !placingRef.current ? 'always' : false,
+            showNavbar && !placingRef.current ? 'always' : false
           );
         } catch {
           // ignore
@@ -379,9 +389,10 @@ export default function PanoramaViewer({
         if (evt.error?.name === 'AbortError') {
           return;
         }
-        const detail = evt.error?.message?.trim() || 'Fichier ou réseau inaccessible.';
+        const detail =
+          evt.error?.message?.trim() || 'Fichier ou réseau inaccessible.';
         setError(
-          `Impossible de charger le panorama. ${detail} Vérifiez le format (JPEG/PNG/WebP), la taille du fichier, et que NEXT_PUBLIC_API_URL pointe vers Laravel (rewrite /tour-proxy).`,
+          `Impossible de charger le panorama. ${detail} Vérifiez le format (JPEG/PNG/WebP), la taille du fichier, et que NEXT_PUBLIC_API_URL pointe vers Laravel (rewrite /tour-proxy).`
         );
         setLoading(false);
       });
@@ -405,16 +416,21 @@ export default function PanoramaViewer({
         onClickRef.current({ pitch: pitchDeg, yaw: yawDeg });
       };
 
-      viewer.addEventListener('click', (e: { data?: { yaw: number; pitch: number; rightclick?: boolean } }) => {
-        const data = e?.data;
-        if (!data || data.rightclick) {
-          return;
+      viewer.addEventListener(
+        'click',
+        (e: {
+          data?: { yaw: number; pitch: number; rightclick?: boolean };
+        }) => {
+          const data = e?.data;
+          if (!data || data.rightclick) {
+            return;
+          }
+          if (typeof data.yaw !== 'number' || typeof data.pitch !== 'number') {
+            return;
+          }
+          fireClick(data.yaw, data.pitch);
         }
-        if (typeof data.yaw !== 'number' || typeof data.pitch !== 'number') {
-          return;
-        }
-        fireClick(data.yaw, data.pitch);
-      });
+      );
 
       const PLACE_MOVE_THRESHOLD_PX = 22;
       let downPos: { x: number; y: number } | null = null;
@@ -454,7 +470,10 @@ export default function PanoramaViewer({
         const viewerX = ev.clientX - rect.left;
         const viewerY = ev.clientY - rect.top;
         try {
-          const coords = v.dataHelper.viewerCoordsToSphericalCoords({ x: viewerX, y: viewerY });
+          const coords = v.dataHelper.viewerCoordsToSphericalCoords({
+            x: viewerX,
+            y: viewerY,
+          });
           if (coords) {
             fireClick(coords.yaw, coords.pitch);
           }
@@ -465,14 +484,27 @@ export default function PanoramaViewer({
 
       const ac = new AbortController();
       placementListenersAbortRef.current = ac;
-      containerRef.current.addEventListener('pointerdown', onPointerDown, { signal: ac.signal });
-      containerRef.current.addEventListener('pointerup', onPointerUp, { signal: ac.signal });
+      containerRef.current.addEventListener('pointerdown', onPointerDown, {
+        signal: ac.signal,
+      });
+      containerRef.current.addEventListener('pointerup', onPointerUp, {
+        signal: ac.signal,
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erreur inconnue';
       setError(`Impossible de charger le panorama: ${msg}`);
       setLoading(false);
     }
-  }, [panoramaInputUrl, haov, vaov, vOffset, initialView?.pitch, initialView?.yaw, initialView?.hfov, showNavbar]);
+  }, [
+    panoramaInputUrl,
+    haov,
+    vaov,
+    vOffset,
+    initialView?.pitch,
+    initialView?.yaw,
+    initialView?.hfov,
+    showNavbar,
+  ]);
 
   // Update markers without reinitializing the viewer
   useEffect(() => {
@@ -510,7 +542,7 @@ export default function PanoramaViewer({
     try {
       v.setOption(
         'navbar',
-        placingMode ? false : ['zoom', 'move', 'caption', 'fullscreen'],
+        placingMode ? false : ['zoom', 'move', 'caption', 'fullscreen']
       );
       v.setOption('keyboard', showNavbar && !placingMode ? 'always' : false);
       if (!placingMode) {
@@ -632,8 +664,8 @@ export default function PanoramaViewer({
           }}
         >
           <Typography variant="caption" fontWeight={700}>
-            Mode placement : la rotation à la souris est désactivée — orientez la vue avant « Placer », puis
-            cliquez sur le panorama
+            Mode placement : la rotation à la souris est désactivée — orientez
+            la vue avant « Placer », puis cliquez sur le panorama
           </Typography>
         </Box>
       )}

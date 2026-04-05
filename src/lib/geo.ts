@@ -6,7 +6,7 @@ export function haversineDistance(
   lat1: number,
   lng1: number,
   lat2: number,
-  lng2: number,
+  lng2: number
 ): number {
   const valid = (n: number) => typeof n === 'number' && Number.isFinite(n);
   if (!valid(lat1) || !valid(lng1) || !valid(lat2) || !valid(lng2)) {

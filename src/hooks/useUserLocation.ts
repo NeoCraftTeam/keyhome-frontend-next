@@ -110,7 +110,7 @@ export function useUserLocation(): UseUserLocationReturn {
     watchIdRef.current = navigator.geolocation.watchPosition(
       handleSuccess,
       handleError,
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 }
     );
   }, []);
 

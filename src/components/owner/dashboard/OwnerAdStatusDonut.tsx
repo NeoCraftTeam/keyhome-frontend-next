@@ -48,7 +48,12 @@ export default function OwnerAdStatusDonut({
         <Skeleton variant="circular" width={140} height={140} />
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} variant="rounded" height={18} sx={{ borderRadius: 1 }} />
+            <Skeleton
+              key={i}
+              variant="rounded"
+              height={18}
+              sx={{ borderRadius: 1 }}
+            />
           ))}
         </Box>
       </Box>
@@ -66,9 +71,18 @@ export default function OwnerAdStatusDonut({
   }
 
   return (
-    <Box sx={{ display: 'flex', gap: { xs: 2, sm: 3 }, alignItems: 'center', flexWrap: 'wrap' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        gap: { xs: 2, sm: 3 },
+        alignItems: 'center',
+        flexWrap: 'wrap',
+      }}
+    >
       {/* Donut */}
-      <Box sx={{ position: 'relative', width: 130, height: 130, flexShrink: 0 }}>
+      <Box
+        sx={{ position: 'relative', width: 130, height: 130, flexShrink: 0 }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -121,14 +135,42 @@ export default function OwnerAdStatusDonut({
       </Box>
 
       {/* Legend */}
-      <Box sx={{ flex: 1, minWidth: 100, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+      <Box
+        sx={{
+          flex: 1,
+          minWidth: 100,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.75,
+        }}
+      >
         {data.map((item) => (
-          <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+          <Box
+            key={item.label}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
+            }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: item.color, flexShrink: 0 }} />
-              <Typography variant="caption" color="text.secondary">{item.label}</Typography>
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  bgcolor: item.color,
+                  flexShrink: 0,
+                }}
+              />
+              <Typography variant="caption" color="text.secondary">
+                {item.label}
+              </Typography>
             </Box>
-            <Typography variant="caption" fontWeight={700}>{item.value}</Typography>
+            <Typography variant="caption" fontWeight={700}>
+              {item.value}
+            </Typography>
           </Box>
         ))}
       </Box>

@@ -30,4 +30,3 @@ export default function robots(): MetadataRoute.Robots {
     sitemap: 'https://keyhome.app/sitemap.xml',
   };
 }
-

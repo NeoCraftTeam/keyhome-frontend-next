@@ -17,10 +17,15 @@ export function useIsStandalone(): boolean {
     if (typeof window === 'undefined') return;
 
     const check = (): boolean => {
-      const standalone = window.matchMedia('(display-mode: standalone)').matches;
-      const fullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+      const standalone = window.matchMedia(
+        '(display-mode: standalone)'
+      ).matches;
+      const fullscreen = window.matchMedia(
+        '(display-mode: fullscreen)'
+      ).matches;
       const minimalUi = window.matchMedia('(display-mode: minimal-ui)').matches;
-      const iosStandalone = (navigator as Navigator & { standalone?: boolean }).standalone === true;
+      const iosStandalone =
+        (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
       return standalone || fullscreen || minimalUi || iosStandalone;
     };

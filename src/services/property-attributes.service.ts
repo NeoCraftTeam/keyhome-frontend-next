@@ -16,7 +16,10 @@ export interface PropertyAttributeGroup {
 }
 
 export const propertyAttributesService = {
-  async list(): Promise<{ data: PropertyAttributeItem[]; grouped: PropertyAttributeGroup[] }> {
+  async list(): Promise<{
+    data: PropertyAttributeItem[];
+    grouped: PropertyAttributeGroup[];
+  }> {
     const { data } = await api.get<{
       data: PropertyAttributeItem[];
       grouped: PropertyAttributeGroup[];

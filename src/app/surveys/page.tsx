@@ -34,7 +34,12 @@ export default function SurveysIndexPage() {
     <Container maxWidth="md" sx={{ py: { xs: 5, md: 8 } }}>
       {/* Back button */}
       <Box sx={{ mb: 2 }}>
-        <IconButton onClick={() => router.back()} size="small" aria-label="Retour" sx={{ border: '1px solid', borderColor: 'divider' }}>
+        <IconButton
+          onClick={() => router.back()}
+          size="small"
+          aria-label="Retour"
+          sx={{ border: '1px solid', borderColor: 'divider' }}
+        >
           <ChevronLeftIcon />
         </IconButton>
       </Box>
@@ -47,16 +52,29 @@ export default function SurveysIndexPage() {
               mb: 2,
               p: 2,
               borderRadius: 3,
-              background: 'linear-gradient(135deg, rgba(246,71,95,0.1) 0%, rgba(217,58,80,0.05) 100%)',
+              background:
+                'linear-gradient(135deg, rgba(246,71,95,0.1) 0%, rgba(217,58,80,0.05) 100%)',
             }}
           >
-            <AssignmentOutlinedIcon sx={{ fontSize: 36, color: 'primary.main' }} />
+            <AssignmentOutlinedIcon
+              sx={{ fontSize: 36, color: 'primary.main' }}
+            />
           </Box>
-          <Typography variant="h3" fontWeight={800} gutterBottom sx={{ letterSpacing: '-0.02em' }}>
+          <Typography
+            variant="h3"
+            fontWeight={800}
+            gutterBottom
+            sx={{ letterSpacing: '-0.02em' }}
+          >
             Donnez votre avis
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 480, mx: 'auto', lineHeight: 1.7 }}>
-            Vos réponses sont totalement anonymes et nous aident à améliorer KeyHome pour tout le monde.
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ maxWidth: 480, mx: 'auto', lineHeight: 1.7 }}
+          >
+            Vos réponses sont totalement anonymes et nous aident à améliorer
+            KeyHome pour tout le monde.
           </Typography>
         </Box>
       </FadeIn>
@@ -65,7 +83,12 @@ export default function SurveysIndexPage() {
       {isLoading ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} variant="rounded" height={96} sx={{ borderRadius: 3 }} />
+            <Skeleton
+              key={i}
+              variant="rounded"
+              height={96}
+              sx={{ borderRadius: 3 }}
+            />
           ))}
         </Box>
       ) : !surveys || surveys.length === 0 ? (
@@ -79,7 +102,9 @@ export default function SurveysIndexPage() {
               borderRadius: 4,
             }}
           >
-            <QuizOutlinedIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+            <QuizOutlinedIcon
+              sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }}
+            />
             <Typography fontWeight={600} color="text.secondary">
               Aucun sondage disponible pour l&apos;instant
             </Typography>
@@ -133,7 +158,9 @@ export default function SurveysIndexPage() {
                         boxShadow: '0 4px 12px rgba(246,71,95,0.25)',
                       }}
                     >
-                      <AssignmentOutlinedIcon sx={{ color: 'white', fontSize: 22 }} />
+                      <AssignmentOutlinedIcon
+                        sx={{ color: 'white', fontSize: 22 }}
+                      />
                     </Box>
 
                     <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -159,12 +186,19 @@ export default function SurveysIndexPage() {
                         <Chip
                           label={`${survey.questions_count} question${survey.questions_count > 1 ? 's' : ''}`}
                           size="small"
-                          sx={{ mt: 1, height: 22, fontSize: '0.7rem', fontWeight: 600 }}
+                          sx={{
+                            mt: 1,
+                            height: 22,
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                          }}
                         />
                       )}
                     </Box>
 
-                    <ChevronRightIcon sx={{ color: 'text.disabled', flexShrink: 0 }} />
+                    <ChevronRightIcon
+                      sx={{ color: 'text.disabled', flexShrink: 0 }}
+                    />
                   </CardContent>
                 </CardActionArea>
               </Card>

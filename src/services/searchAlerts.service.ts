@@ -30,9 +30,11 @@ export const searchAlertsService = {
   create: (payload: SearchAlertPayload): Promise<{ data: SearchAlert }> =>
     api.post('/search-alerts', payload).then((r) => r.data),
 
-  update: (id: string, payload: SearchAlertPayload): Promise<{ data: SearchAlert }> =>
+  update: (
+    id: string,
+    payload: SearchAlertPayload
+  ): Promise<{ data: SearchAlert }> =>
     api.put(`/search-alerts/${id}`, payload).then((r) => r.data),
 
-  remove: (id: string): Promise<void> =>
-    api.delete(`/search-alerts/${id}`),
+  remove: (id: string): Promise<void> => api.delete(`/search-alerts/${id}`),
 };

@@ -26,10 +26,15 @@ function getConfiguredTrustedHosts(): string[] {
 
 function isAllowedHost(hostname: string): boolean {
   const normalizedHost = hostname.toLowerCase();
-  const trustedHosts = [...DEFAULT_TRUSTED_HOSTS, ...getConfiguredTrustedHosts()];
+  const trustedHosts = [
+    ...DEFAULT_TRUSTED_HOSTS,
+    ...getConfiguredTrustedHosts(),
+  ];
 
-  return trustedHosts.some((trustedHost) =>
-    normalizedHost === trustedHost || normalizedHost.endsWith(`.${trustedHost}`)
+  return trustedHosts.some(
+    (trustedHost) =>
+      normalizedHost === trustedHost ||
+      normalizedHost.endsWith(`.${trustedHost}`)
   );
 }
 
@@ -52,7 +57,10 @@ export function isTrustedRedirectUrl(rawUrl: string): boolean {
 
     if (parsed.protocol === 'http:') {
       const isDev = process.env.NODE_ENV === 'development';
-      return isDev && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1');
+      return (
+        isDev &&
+        (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')
+      );
     }
 
     return false;

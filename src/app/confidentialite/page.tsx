@@ -9,7 +9,14 @@ export default function PrivacyPolicyPage() {
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <Link href="/" className={styles.backLink} aria-label="Retour">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
           </Link>
@@ -22,7 +29,9 @@ export default function PrivacyPolicyPage() {
       <div className={styles.hero}>
         <div className={styles.container}>
           <h1 className={styles.heroTitle}>Politique de Confidentialité</h1>
-          <p className={styles.heroSub}>Dernière mise à jour : 20 février 2026</p>
+          <p className={styles.heroSub}>
+            Dernière mise à jour : 20 février 2026
+          </p>
         </div>
       </div>
 
@@ -48,9 +57,18 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul className={styles.list}>
               <li>Informations de compte : nom, e-mail, téléphone, photo</li>
-              <li>Localisation : ville et quartier pour personnaliser les résultats</li>
-              <li>Données d&apos;utilisation : annonces consultées, recherches, favoris</li>
-              <li>Informations de paiement : traitées par nos partenaires sécurisés</li>
+              <li>
+                Localisation : ville et quartier pour personnaliser les
+                résultats
+              </li>
+              <li>
+                Données d&apos;utilisation : annonces consultées, recherches,
+                favoris
+              </li>
+              <li>
+                Informations de paiement : traitées par nos partenaires
+                sécurisés
+              </li>
             </ul>
           </section>
 
@@ -79,7 +97,9 @@ export default function PrivacyPolicyPage() {
               les partager uniquement avec :
             </p>
             <ul className={styles.list}>
-              <li>Les propriétaires/agents pour les contacts liés aux annonces</li>
+              <li>
+                Les propriétaires/agents pour les contacts liés aux annonces
+              </li>
               <li>Nos prestataires techniques (hébergement, paiement)</li>
               <li>Les autorités si requis par la loi</li>
             </ul>
@@ -88,12 +108,14 @@ export default function PrivacyPolicyPage() {
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
               <span className={styles.iconBox}>4</span>
-              <h2 className={styles.sectionTitle}>Connexion via Google, Facebook, Apple</h2>
+              <h2 className={styles.sectionTitle}>
+                Connexion via Google, Facebook, Apple
+              </h2>
             </div>
             <p>
               Si vous utilisez la connexion sociale, nous recevons uniquement
-              votre nom, e-mail et photo de profil. Nous n&apos;accédons jamais à vos
-              contacts, messages ou autres données privées.
+              votre nom, e-mail et photo de profil. Nous n&apos;accédons jamais
+              à vos contacts, messages ou autres données privées.
             </p>
           </section>
 

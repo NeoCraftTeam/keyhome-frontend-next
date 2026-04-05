@@ -71,21 +71,31 @@ describe('isTrustedRedirectUrl', () => {
     });
 
     it('allows flutterwave.com', () => {
-      expect(isTrustedRedirectUrl('https://flutterwave.com/pay/abc123')).toBe(true);
+      expect(isTrustedRedirectUrl('https://flutterwave.com/pay/abc123')).toBe(
+        true
+      );
     });
 
     // BUG CATCH: Subdomains of trusted hosts must be allowed, e.g.
     // accounts.clerk.com used during SSO flows.
     it('allows subdomains of trusted hosts', () => {
-      expect(isTrustedRedirectUrl('https://accounts.clerk.com/sign-in')).toBe(true);
+      expect(isTrustedRedirectUrl('https://accounts.clerk.com/sign-in')).toBe(
+        true
+      );
     });
 
     it('allows deep subdomains of trusted hosts', () => {
-      expect(isTrustedRedirectUrl('https://checkout.flutterwave.com/pay/123')).toBe(true);
+      expect(
+        isTrustedRedirectUrl('https://checkout.flutterwave.com/pay/123')
+      ).toBe(true);
     });
 
     it('allows dev-flutterwave.com sandbox checkout', () => {
-      expect(isTrustedRedirectUrl('https://checkout-v2.dev-flutterwave.com/v3/hosted/pay/abc123')).toBe(true);
+      expect(
+        isTrustedRedirectUrl(
+          'https://checkout-v2.dev-flutterwave.com/v3/hosted/pay/abc123'
+        )
+      ).toBe(true);
     });
   });
 
@@ -109,13 +119,17 @@ describe('isTrustedRedirectUrl', () => {
 
     // BUG CATCH: data: URLs can execute arbitrary code (data:text/html,<script>...)
     it('rejects data: protocol URLs', () => {
-      expect(isTrustedRedirectUrl('data:text/html,<script>alert(1)</script>')).toBe(false);
+      expect(
+        isTrustedRedirectUrl('data:text/html,<script>alert(1)</script>')
+      ).toBe(false);
     });
 
     // BUG CATCH: Hostnames that look similar but aren't subdomains should be blocked.
     // e.g., "notkeyhome.app" should NOT match "keyhome.app".
     it('rejects hosts that look like trusted hosts but are not subdomains', () => {
-      expect(isTrustedRedirectUrl('https://notkeyhome.app/dashboard')).toBe(false);
+      expect(isTrustedRedirectUrl('https://notkeyhome.app/dashboard')).toBe(
+        false
+      );
     });
 
     it('rejects hosts that end with trusted host name but are different domains', () => {
@@ -124,7 +138,9 @@ describe('isTrustedRedirectUrl', () => {
 
     // BUG CATCH: FTP and other non-HTTP protocols must be blocked.
     it('rejects ftp: protocol', () => {
-      expect(isTrustedRedirectUrl('ftp://files.keyhome.app/secret')).toBe(false);
+      expect(isTrustedRedirectUrl('ftp://files.keyhome.app/secret')).toBe(
+        false
+      );
     });
   });
 
@@ -149,7 +165,9 @@ describe('isTrustedRedirectUrl', () => {
     // BUG CATCH: URL with special characters in path should still work
     // if the host is trusted.
     it('allows trusted host with unicode in path', () => {
-      expect(isTrustedRedirectUrl('https://keyhome.app/recherche/Yaoundé')).toBe(true);
+      expect(
+        isTrustedRedirectUrl('https://keyhome.app/recherche/Yaoundé')
+      ).toBe(true);
     });
   });
 
@@ -163,7 +181,9 @@ describe('isTrustedRedirectUrl', () => {
         mockWindowLocation('http://localhost:3000');
 
         const mod = await import('@/lib/trusted-redirect');
-        expect(mod.isTrustedRedirectUrl('http://localhost:8000/api')).toBe(true);
+        expect(mod.isTrustedRedirectUrl('http://localhost:8000/api')).toBe(
+          true
+        );
       } finally {
         vi.unstubAllEnvs();
       }
@@ -176,7 +196,9 @@ describe('isTrustedRedirectUrl', () => {
         mockWindowLocation('http://localhost:3000');
 
         const mod = await import('@/lib/trusted-redirect');
-        expect(mod.isTrustedRedirectUrl('http://127.0.0.1:8000/api')).toBe(true);
+        expect(mod.isTrustedRedirectUrl('http://127.0.0.1:8000/api')).toBe(
+          true
+        );
       } finally {
         vi.unstubAllEnvs();
       }

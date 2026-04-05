@@ -8,15 +8,23 @@ interface PaymentStatusBadgeProps {
   status: Status;
 }
 
-const STATUS_CONFIG: Record<Status, { label: string; color: 'success' | 'error' | 'warning' | 'default' }> = {
-  success:   { label: 'Payé',     color: 'success' },
-  failed:    { label: 'Échoué',   color: 'error' },
-  cancelled: { label: 'Annulé',   color: 'error' },
-  pending:   { label: 'En attente', color: 'warning' },
+const STATUS_CONFIG: Record<
+  Status,
+  { label: string; color: 'success' | 'error' | 'warning' | 'default' }
+> = {
+  success: { label: 'Payé', color: 'success' },
+  failed: { label: 'Échoué', color: 'error' },
+  cancelled: { label: 'Annulé', color: 'error' },
+  pending: { label: 'En attente', color: 'warning' },
 };
 
-export default function PaymentStatusBadge({ status }: PaymentStatusBadgeProps): React.ReactElement {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, color: 'default' as const };
+export default function PaymentStatusBadge({
+  status,
+}: PaymentStatusBadgeProps): React.ReactElement {
+  const cfg = STATUS_CONFIG[status] ?? {
+    label: status,
+    color: 'default' as const,
+  };
 
   return (
     <Box component="span">

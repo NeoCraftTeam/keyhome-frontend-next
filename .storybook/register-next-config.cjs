@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /**
  * Preload script injected via NODE_OPTIONS=--require.
  * Patches the Node.js module registry so that any require('next/config')

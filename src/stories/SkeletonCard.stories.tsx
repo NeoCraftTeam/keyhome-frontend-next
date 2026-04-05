@@ -8,7 +8,8 @@ const meta: Meta<typeof SkeletonCard> = {
   parameters: {
     docs: {
       description: {
-        component: 'Loading placeholder that mirrors the exact shape of AdCard for zero-CLS loading states.',
+        component:
+          'Loading placeholder that mirrors the exact shape of AdCard for zero-CLS loading states.',
       },
     },
   },
@@ -21,7 +22,14 @@ export const Default: Story = {};
 
 export const Grid: Story = {
   render: () => (
-    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, maxWidth: 900 }}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 2,
+        maxWidth: 900,
+      }}
+    >
       <SkeletonCard />
       <SkeletonCard />
       <SkeletonCard />

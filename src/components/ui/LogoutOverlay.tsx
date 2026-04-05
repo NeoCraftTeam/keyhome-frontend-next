@@ -49,7 +49,13 @@ export default function LogoutOverlay() {
           },
         }}
       >
-        <Image src="/images/logo.png" alt="KeyHome" width={56} height={56} priority />
+        <Image
+          src="/images/logo.png"
+          alt="KeyHome"
+          width={56}
+          height={56}
+          priority
+        />
       </Box>
       <Typography
         variant="h6"

@@ -36,7 +36,10 @@ export function usePushNotifications() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    const supported =
+      'serviceWorker' in navigator &&
+      'PushManager' in window &&
+      'Notification' in window;
     const dismissed = localStorage.getItem(PUSH_DISMISSED_KEY) === '1';
 
     if (!supported || !VAPID_PUBLIC_KEY) {

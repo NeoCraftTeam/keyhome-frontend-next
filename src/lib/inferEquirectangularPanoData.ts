@@ -15,7 +15,7 @@ export type EquirectPanoDataRect = {
 export function buildPanoDataFromAngles(
   haovDeg: number,
   vaovDeg: number,
-  vOffDeg: number,
+  vOffDeg: number
 ): EquirectPanoDataRect {
   const fullWidth = 4000;
   const fullHeight = fullWidth / 2;
@@ -23,10 +23,17 @@ export function buildPanoDataFromAngles(
   const croppedHeight = Math.round(fullHeight * (vaovDeg / 180));
   const croppedX = Math.round((fullWidth - croppedWidth) / 2);
   const croppedY = Math.round(
-    (fullHeight - croppedHeight) / 2 - (vOffDeg / 180) * fullHeight,
+    (fullHeight - croppedHeight) / 2 - (vOffDeg / 180) * fullHeight
   );
 
-  return { fullWidth, fullHeight, croppedWidth, croppedHeight, croppedX, croppedY };
+  return {
+    fullWidth,
+    fullHeight,
+    croppedWidth,
+    croppedHeight,
+    croppedX,
+    croppedY,
+  };
 }
 
 /**
@@ -37,7 +44,7 @@ export function buildPanoDataFromAngles(
  */
 export function inferPanoDataFromImageSize(
   w: number,
-  h: number,
+  h: number
 ): EquirectPanoDataRect | undefined {
   if (w <= 0 || h <= 0) {
     return undefined;

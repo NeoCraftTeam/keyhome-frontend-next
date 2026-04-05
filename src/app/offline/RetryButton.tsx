@@ -17,7 +17,9 @@ export default function RetryButton() {
         cursor: 'pointer',
         transition: 'opacity 0.2s',
       }}
-      onMouseOver={(e) => ((e.target as HTMLButtonElement).style.opacity = '0.9')}
+      onMouseOver={(e) =>
+        ((e.target as HTMLButtonElement).style.opacity = '0.9')
+      }
       onMouseOut={(e) => ((e.target as HTMLButtonElement).style.opacity = '1')}
     >
       Réessayer

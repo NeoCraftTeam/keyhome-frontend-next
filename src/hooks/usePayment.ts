@@ -1,7 +1,10 @@
 'use client';
 
 import { paymentsService } from '@/services/payments.service';
-import { FlutterwaveInitiatePayload, FlutterwaveInitiateResponse } from '@/types';
+import {
+  FlutterwaveInitiatePayload,
+  FlutterwaveInitiateResponse,
+} from '@/types';
 import { useCallback, useState } from 'react';
 
 interface UsePaymentState {
@@ -29,31 +32,35 @@ export function usePayment(): UsePaymentReturn {
     response: null,
   });
 
-  const initiatePayment = useCallback(async (payload: FlutterwaveInitiatePayload): Promise<void> => {
-    setState({ isLoading: true, error: null, response: null });
+  const initiatePayment = useCallback(
+    async (payload: FlutterwaveInitiatePayload): Promise<void> => {
+      setState({ isLoading: true, error: null, response: null });
 
-    try {
-      const result = await paymentsService.flutterwaveInitiate(payload);
+      try {
+        const result = await paymentsService.flutterwaveInitiate(payload);
 
-      setState({ isLoading: false, error: null, response: result });
+        setState({ isLoading: false, error: null, response: result });
 
-      // Persist tx_ref so the callback page can retrieve it even if the
-      // user comes back from a different tab.
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('kh_flw_tx_ref', result.tx_ref);
-        sessionStorage.setItem('kh_flw_reference', result.reference);
+        // Persist tx_ref so the callback page can retrieve it even if the
+        // user comes back from a different tab.
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('kh_flw_tx_ref', result.tx_ref);
+          sessionStorage.setItem('kh_flw_reference', result.reference);
+        }
+
+        // Redirect to Flutterwave hosted checkout
+        window.location.href = result.payment_link;
+      } catch (err: unknown) {
+        const message =
+          (err as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ||
+          "Une erreur est survenue lors de l'initialisation du paiement.";
+
+        setState({ isLoading: false, error: message, response: null });
       }
-
-      // Redirect to Flutterwave hosted checkout
-      window.location.href = result.payment_link;
-    } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Une erreur est survenue lors de l\'initialisation du paiement.';
-
-      setState({ isLoading: false, error: message, response: null });
-    }
-  }, []);
+    },
+    []
+  );
 
   const resetPayment = useCallback((): void => {
     setState({ isLoading: false, error: null, response: null });

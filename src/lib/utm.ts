@@ -7,7 +7,13 @@
 const SESSION_ID_KEY = 'kh_visit_session_id';
 const VISIT_TRACKED_KEY = 'kh_track_visit_posted_v1';
 
-const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
+const UTM_KEYS = [
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_content',
+  'utm_term',
+] as const;
 
 export type UtmKey = (typeof UTM_KEYS)[number];
 

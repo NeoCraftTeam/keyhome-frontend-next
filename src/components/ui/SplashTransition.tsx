@@ -20,17 +20,17 @@ export default function SplashTransition({
   duration = 1400,
   onComplete,
 }: SplashTransitionProps) {
-  const [progress, setProgress]   = useState(0);
-  const [fading,  setFading]      = useState(false);
-  const calledRef                  = useRef(false);
+  const [progress, setProgress] = useState(0);
+  const [fading, setFading] = useState(false);
+  const calledRef = useRef(false);
 
   useEffect(() => {
     const startTime = performance.now();
     let raf: number;
 
     const tick = (now: number) => {
-      const elapsed  = now - startTime;
-      const pct      = Math.min((elapsed / duration) * 100, 100);
+      const elapsed = now - startTime;
+      const pct = Math.min((elapsed / duration) * 100, 100);
       setProgress(pct);
 
       if (pct < 100) {
@@ -56,17 +56,17 @@ export default function SplashTransition({
       aria-live="polite"
       aria-label="Chargement de l'application"
       sx={{
-        position:        'fixed',
-        inset:           0,
-        zIndex:          9999,
-        display:         'flex',
-        flexDirection:   'column',
-        alignItems:      'center',
-        justifyContent:  'center',
-        bgcolor:         'background.default',
-        opacity:         fading ? 0 : 1,
-        transition:      'opacity 0.35s ease',
-        pointerEvents:   fading ? 'none' : 'auto',
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        opacity: fading ? 0 : 1,
+        transition: 'opacity 0.35s ease',
+        pointerEvents: fading ? 'none' : 'auto',
         '@media (prefers-reduced-motion: reduce)': {
           transition: 'none',
         },
@@ -75,9 +75,10 @@ export default function SplashTransition({
       {/* Logo — spring scale in */}
       <Box
         sx={{
-          animation: 'kh-splash-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+          animation:
+            'kh-splash-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both',
           '@keyframes kh-splash-in': {
-            '0%':   { opacity: 0, transform: 'scale(0.55)' },
+            '0%': { opacity: 0, transform: 'scale(0.55)' },
             '100%': { opacity: 1, transform: 'scale(1)' },
           },
           '@media (prefers-reduced-motion: reduce)': {
@@ -99,14 +100,14 @@ export default function SplashTransition({
       <Box
         component="span"
         sx={{
-          mt:           1.5,
-          fontSize:     '1.375rem',
-          fontWeight:   900,
-          letterSpacing:'-0.5px',
-          color:        'primary.main',
-          animation:    'kh-fade-up 0.45s ease 0.2s both',
+          mt: 1.5,
+          fontSize: '1.375rem',
+          fontWeight: 900,
+          letterSpacing: '-0.5px',
+          color: 'primary.main',
+          animation: 'kh-fade-up 0.45s ease 0.2s both',
           '@keyframes kh-fade-up': {
-            '0%':   { opacity: 0, transform: 'translateY(8px)' },
+            '0%': { opacity: 0, transform: 'translateY(8px)' },
             '100%': { opacity: 1, transform: 'translateY(0)' },
           },
           '@media (prefers-reduced-motion: reduce)': {
@@ -121,21 +122,21 @@ export default function SplashTransition({
       <Box
         sx={{
           position: 'absolute',
-          bottom:   0,
-          left:     0,
-          right:    0,
+          bottom: 0,
+          left: 0,
+          right: 0,
         }}
       >
         <LinearProgress
           variant="determinate"
           value={progress}
           sx={{
-            height:                    3,
-            borderRadius:              0,
-            backgroundColor:           'transparent',
+            height: 3,
+            borderRadius: 0,
+            backgroundColor: 'transparent',
             '& .MuiLinearProgress-bar': {
               backgroundColor: 'primary.main',
-              transition:       'none',   // driven by RAF, no CSS transition needed
+              transition: 'none', // driven by RAF, no CSS transition needed
             },
           }}
         />

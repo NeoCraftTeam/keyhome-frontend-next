@@ -15,7 +15,11 @@ vi.mock('@mui/icons-material', () => ({
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-function ThrowOnRender({ message = 'Test error' }: { message?: string }): React.ReactNode {
+function ThrowOnRender({
+  message = 'Test error',
+}: {
+  message?: string;
+}): React.ReactNode {
   throw new Error(message);
 }
 
@@ -42,7 +46,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <SafeChild label="Contenu normal" />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
     expect(screen.getByTestId('safe-child')).toBeInTheDocument();
     expect(screen.getByText('Contenu normal')).toBeInTheDocument();
@@ -54,9 +58,11 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <ThrowOnRender />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
-    expect(screen.getByText(/quelque chose s.est mal passé/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/quelque chose s.est mal passé/i)
+    ).toBeInTheDocument();
     expect(screen.getByText(/erreur inattendue/i)).toBeInTheDocument();
   });
 
@@ -73,10 +79,12 @@ describe('ErrorBoundary', () => {
     const { rerender } = render(
       <ErrorBoundary>
         <MaybeThrow />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
 
-    expect(screen.getByText(/quelque chose s.est mal passé/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/quelque chose s.est mal passé/i)
+    ).toBeInTheDocument();
 
     shouldThrow = false;
     fireEvent.click(screen.getByRole('button', { name: /réessayer/i }));
@@ -84,7 +92,7 @@ describe('ErrorBoundary', () => {
     rerender(
       <ErrorBoundary>
         <MaybeThrow />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
 
     expect(screen.getByTestId('recovered')).toBeInTheDocument();
@@ -93,16 +101,20 @@ describe('ErrorBoundary', () => {
   // BUG CATCH: If the custom fallback prop is ignored and the default UI shows
   // instead, feature teams can't customize error states per-section.
   it('renders the custom fallback prop when provided', () => {
-    const customFallback = <div data-testid="custom-fallback">Oops, section unavailable</div>;
+    const customFallback = (
+      <div data-testid="custom-fallback">Oops, section unavailable</div>
+    );
 
     render(
       <ErrorBoundary fallback={customFallback}>
         <ThrowOnRender />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
 
     expect(screen.getByTestId('custom-fallback')).toBeInTheDocument();
-    expect(screen.queryByText(/quelque chose s.est mal passé/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/quelque chose s.est mal passé/i)
+    ).not.toBeInTheDocument();
   });
 
   // BUG CATCH: Both "Réessayer" and "Recharger la page" buttons must be present
@@ -111,10 +123,14 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <ThrowOnRender />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
-    expect(screen.getByRole('button', { name: /réessayer/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /recharger/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /réessayer/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /recharger/i })
+    ).toBeInTheDocument();
   });
 
   // BUG CATCH: If ErrorBoundary doesn't catch a second error after reset,
@@ -130,20 +146,24 @@ describe('ErrorBoundary', () => {
     const { rerender } = render(
       <ErrorBoundary>
         <CountingThrow />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
 
-    expect(screen.getByText(/quelque chose s.est mal passé/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/quelque chose s.est mal passé/i)
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /réessayer/i }));
 
     rerender(
       <ErrorBoundary>
         <CountingThrow />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
 
-    expect(screen.getByText(/quelque chose s.est mal passé/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/quelque chose s.est mal passé/i)
+    ).toBeInTheDocument();
   });
 
   // BUG CATCH: Multiple independent ErrorBoundary instances must not share
@@ -157,10 +177,12 @@ describe('ErrorBoundary', () => {
         <ErrorBoundary>
           <SafeChild label="Section B is fine" />
         </ErrorBoundary>
-      </div>,
+      </div>
     );
 
-    expect(screen.getByText(/quelque chose s.est mal passé/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/quelque chose s.est mal passé/i)
+    ).toBeInTheDocument();
     expect(screen.getByText('Section B is fine')).toBeInTheDocument();
   });
 });

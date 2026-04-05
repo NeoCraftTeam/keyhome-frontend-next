@@ -11,7 +11,13 @@ function makeAxiosError(status: number, data: unknown): AxiosError {
     statusText: String(status),
   } as AxiosResponse;
 
-  const error = new AxiosError('Request failed', String(status), {} as InternalAxiosRequestConfig, null, response);
+  const error = new AxiosError(
+    'Request failed',
+    String(status),
+    {} as InternalAxiosRequestConfig,
+    null,
+    response
+  );
   return error;
 }
 
@@ -21,12 +27,17 @@ describe('getSafeErrorMessage', () => {
   });
 
   it('returns the error message for plain Error instances', () => {
-    expect(getSafeErrorMessage(new Error('Compte inexistant'))).toBe('Compte inexistant');
+    expect(getSafeErrorMessage(new Error('Compte inexistant'))).toBe(
+      'Compte inexistant'
+    );
   });
 
   it('returns Laravel validation error messages (422)', () => {
     const err = makeAxiosError(422, {
-      errors: { email: ['Email déjà utilisé.'], phone_number: ['Numéro invalide.'] },
+      errors: {
+        email: ['Email déjà utilisé.'],
+        phone_number: ['Numéro invalide.'],
+      },
     });
     const msg = getSafeErrorMessage(err);
     expect(msg).toContain('Email déjà utilisé.');
@@ -61,12 +72,16 @@ describe('getSafeErrorMessage', () => {
   // BUG CATCH: `null` slipping through as error argument should not crash
   // the error handler. It must return the fallback.
   it('returns fallback for null error', () => {
-    expect(getSafeErrorMessage(null)).toBe('Une erreur est survenue. Veuillez réessayer.');
+    expect(getSafeErrorMessage(null)).toBe(
+      'Une erreur est survenue. Veuillez réessayer.'
+    );
   });
 
   // BUG CATCH: `undefined` error must be handled gracefully.
   it('returns fallback for undefined error', () => {
-    expect(getSafeErrorMessage(undefined)).toBe('Une erreur est survenue. Veuillez réessayer.');
+    expect(getSafeErrorMessage(undefined)).toBe(
+      'Une erreur est survenue. Veuillez réessayer.'
+    );
   });
 
   // BUG CATCH: A string thrown (e.g., `throw "something went wrong"`)
@@ -87,7 +102,9 @@ describe('getSafeErrorMessage', () => {
   // the message field or fallback, not return empty string.
   it('handles 422 with empty errors object', () => {
     const err = makeAxiosError(422, { errors: {} });
-    expect(getSafeErrorMessage(err)).toBe('Une erreur est survenue. Veuillez réessayer.');
+    expect(getSafeErrorMessage(err)).toBe(
+      'Une erreur est survenue. Veuillez réessayer.'
+    );
   });
 
   // BUG CATCH: 404 responses should return the API message.
@@ -98,11 +115,15 @@ describe('getSafeErrorMessage', () => {
 
   // BUG CATCH: The default fallback (no custom fallback) must be the French message.
   it('uses the default French error message when no fallback is provided', () => {
-    expect(getSafeErrorMessage({})).toBe('Une erreur est survenue. Veuillez réessayer.');
+    expect(getSafeErrorMessage({})).toBe(
+      'Une erreur est survenue. Veuillez réessayer.'
+    );
   });
 
   // BUG CATCH: Error with an empty .message value should return fallback.
   it('returns fallback for Error with empty message', () => {
-    expect(getSafeErrorMessage(new Error(''))).toBe('Une erreur est survenue. Veuillez réessayer.');
+    expect(getSafeErrorMessage(new Error(''))).toBe(
+      'Une erreur est survenue. Veuillez réessayer.'
+    );
   });
 });

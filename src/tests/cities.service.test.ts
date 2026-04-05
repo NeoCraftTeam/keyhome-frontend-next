@@ -9,7 +9,11 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import api from '@/lib/api';
-import { adTypesService, citiesService, quartersService } from '@/services/cities.service';
+import {
+  adTypesService,
+  citiesService,
+  quartersService,
+} from '@/services/cities.service';
 
 const mockedApi = vi.mocked(api);
 const mockGet = mockedApi.get as Mock;
@@ -28,14 +32,28 @@ describe('citiesService', () => {
           { id: '1', name: 'Yaoundé' },
           { id: '2', name: 'Douala' },
         ],
-        meta: { current_page: 1, last_page: 1, per_page: 50, total: 2, from: 1, to: 2 },
-        links: { first: '/cities?page=1', last: '/cities?page=1', prev: null, next: null },
+        meta: {
+          current_page: 1,
+          last_page: 1,
+          per_page: 50,
+          total: 2,
+          from: 1,
+          to: 2,
+        },
+        links: {
+          first: '/cities?page=1',
+          last: '/cities?page=1',
+          prev: null,
+          next: null,
+        },
       };
       mockGet.mockResolvedValue({ data: response });
 
       const result = await citiesService.list({ q: 'Yao', page: 1 });
 
-      expect(mockGet).toHaveBeenCalledWith('/cities', { params: { q: 'Yao', page: 1 } });
+      expect(mockGet).toHaveBeenCalledWith('/cities', {
+        params: { q: 'Yao', page: 1 },
+      });
       expect(result.data).toHaveLength(2);
     });
 
@@ -49,7 +67,9 @@ describe('citiesService', () => {
   describe('show', () => {
     // BUG CATCH: Must unwrap data.data or city detail will be the wrapper object.
     it('unwraps city data from response', async () => {
-      mockGet.mockResolvedValue({ data: { data: { id: '1', name: 'Yaoundé' } } });
+      mockGet.mockResolvedValue({
+        data: { data: { id: '1', name: 'Yaoundé' } },
+      });
       const city = await citiesService.show('1');
       expect(city.name).toBe('Yaoundé');
     });
@@ -66,9 +86,23 @@ describe('quartersService', () => {
     it('fetches quarters with pagination', async () => {
       mockGet.mockResolvedValue({
         data: {
-          data: [{ id: '1', name: 'Bastos', city_id: '1', city_name: 'Yaoundé' }],
-          meta: { current_page: 1, last_page: 1, per_page: 50, total: 1, from: 1, to: 1 },
-          links: { first: '/quarters?page=1', last: '/quarters?page=1', prev: null, next: null },
+          data: [
+            { id: '1', name: 'Bastos', city_id: '1', city_name: 'Yaoundé' },
+          ],
+          meta: {
+            current_page: 1,
+            last_page: 1,
+            per_page: 50,
+            total: 1,
+            from: 1,
+            to: 1,
+          },
+          links: {
+            first: '/quarters?page=1',
+            last: '/quarters?page=1',
+            prev: null,
+            next: null,
+          },
         },
       });
 
@@ -80,7 +114,9 @@ describe('quartersService', () => {
   describe('show', () => {
     it('unwraps quarter data', async () => {
       mockGet.mockResolvedValue({
-        data: { data: { id: '1', name: 'Bastos', city_id: '1', city_name: 'Yaoundé' } },
+        data: {
+          data: { id: '1', name: 'Bastos', city_id: '1', city_name: 'Yaoundé' },
+        },
       });
       const quarter = await quartersService.show('1');
       expect(quarter.city_name).toBe('Yaoundé');

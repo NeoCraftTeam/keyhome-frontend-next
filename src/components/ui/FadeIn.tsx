@@ -21,11 +21,16 @@ export default function FadeIn({
 }: FadeInProps) {
   const getTransform = () => {
     switch (direction) {
-      case 'up': return `translateY(${distance}px)`;
-      case 'down': return `translateY(-${distance}px)`;
-      case 'left': return `translateX(${distance}px)`;
-      case 'right': return `translateX(-${distance}px)`;
-      case 'none': return 'none';
+      case 'up':
+        return `translateY(${distance}px)`;
+      case 'down':
+        return `translateY(-${distance}px)`;
+      case 'left':
+        return `translateX(${distance}px)`;
+      case 'right':
+        return `translateX(-${distance}px)`;
+      case 'none':
+        return 'none';
     }
   };
 

@@ -1,7 +1,8 @@
 import { PublicSurvey, SurveyAnswerPayload } from '@/types';
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 /** Unauthenticated axios instance — no Bearer token, no credentials needed. */
 const publicApi = axios.create({
@@ -38,7 +39,10 @@ export const publicSurveysService = {
   },
 
   /** Submit anonymous answers for a public survey. */
-  async submit(slug: string, answers: SurveyAnswerPayload[]): Promise<{ submitted: boolean; already_submitted?: boolean }> {
+  async submit(
+    slug: string,
+    answers: SurveyAnswerPayload[]
+  ): Promise<{ submitted: boolean; already_submitted?: boolean }> {
     const clientToken = getClientToken();
     const { data } = await publicApi.post(`/public/surveys/${slug}/respond`, {
       client_token: clientToken,

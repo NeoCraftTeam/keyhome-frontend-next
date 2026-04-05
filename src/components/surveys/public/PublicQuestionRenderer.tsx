@@ -65,7 +65,10 @@ export default function PublicQuestionRenderer({
                     borderRadius: 2,
                     border: '1.5px solid',
                     borderColor: value === option ? 'primary.main' : 'divider',
-                    bgcolor: value === option ? 'rgba(246,71,95,0.04)' : 'background.paper',
+                    bgcolor:
+                      value === option
+                        ? 'rgba(246,71,95,0.04)'
+                        : 'background.paper',
                     transition: 'all 0.18s ease',
                     '& .MuiFormControlLabel-label': {
                       fontWeight: value === option ? 600 : 400,
@@ -101,7 +104,9 @@ export default function PublicQuestionRenderer({
                   control={
                     <Checkbox
                       checked={checked}
-                      onChange={(e) => handleCheckboxChange(option, e.target.checked)}
+                      onChange={(e) =>
+                        handleCheckboxChange(option, e.target.checked)
+                      }
                       sx={{
                         color: 'divider',
                         '&.Mui-checked': { color: 'primary.main' },
@@ -116,7 +121,9 @@ export default function PublicQuestionRenderer({
                     borderRadius: 2,
                     border: '1.5px solid',
                     borderColor: checked ? 'primary.main' : 'divider',
-                    bgcolor: checked ? 'rgba(246,71,95,0.04)' : 'background.paper',
+                    bgcolor: checked
+                      ? 'rgba(246,71,95,0.04)'
+                      : 'background.paper',
                     transition: 'all 0.18s ease',
                     '& .MuiFormControlLabel-label': {
                       fontWeight: checked ? 600 : 400,
@@ -144,7 +151,9 @@ export default function PublicQuestionRenderer({
                 value={numVal}
                 onChange={(_, newValue) => onChange(newValue ?? 0)}
                 icon={<StarIcon sx={{ fontSize: 40, color: '#F59E0B' }} />}
-                emptyIcon={<StarBorderIcon sx={{ fontSize: 40, color: '#E5E7EB' }} />}
+                emptyIcon={
+                  <StarBorderIcon sx={{ fontSize: 40, color: '#E5E7EB' }} />
+                }
               />
               {numVal > 0 && (
                 <Typography
