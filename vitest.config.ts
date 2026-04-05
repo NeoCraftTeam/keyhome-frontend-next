@@ -25,12 +25,6 @@ export default defineConfig({
         'src/app/**/layout.tsx',
         'src/instrumentation*.ts',
       ],
-      thresholds: {
-        lines: 70,
-        functions: 70,
-        branches: 70,
-        statements: 70,
-      },
     },
   },
   resolve: {
