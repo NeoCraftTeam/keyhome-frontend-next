@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPriceCompact } from '@/lib/constants';
+import { formatPrice } from '@/lib/constants';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useFavorites } from '@/providers/FavoritesProvider';
 import { useComparator } from '@/providers/ComparatorProvider';
@@ -641,7 +641,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
                   color: 'text.primary',
                 }}
               >
-                {formatPriceCompact(ad.price)}
+                {formatPrice(ad.price)}
               </Typography>
               <Tooltip
                 title={
