@@ -204,12 +204,9 @@ audit:deps:
     - npm audit --audit-level=high --omit=dev
   allow_failure: true
   timeout: 3 minutes
-  rules:
-    - if: $CI_COMMIT_BRANCH
-
 # ── 5b. E2E TESTS (Playwright) ──────────────────────────────────────────────────────
 test:e2e:
-  stage: test
+  stage: build
   image: mcr.microsoft.com/playwright:v1.44.0-jammy
   extends: .build_vars
   needs: [build:app]
