@@ -54,18 +54,35 @@ export default function HeroSearch({
   const [, startTransition] = useTransition();
 
   const aiBoxControls = useAnimation();
-  const prevAiLength = useRef(0);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [isMultiline, setIsMultiline] = useState(false);
+  const prevAiLen = useRef(0);
   const isAiActive = aiFocused || aiQuery.length > 0;
 
   useEffect(() => {
-    if (aiQuery.length > 0 && prevAiLength.current === 0) {
+    const len = aiQuery.length;
+    const prev = prevAiLen.current;
+    prevAiLen.current = len;
+
+    if (len === 0) {
+      setIsMultiline(false);
+      return;
+    }
+
+    const el = inputRef.current;
+    if (!isMultiline && el && el.scrollWidth > el.clientWidth) {
+      setIsMultiline(true);
+      void aiBoxControls.start({
+        y: [0, -9, 4, -2, 0],
+        transition: { duration: 0.5, ease: 'easeOut' },
+      });
+    } else if (prev === 0) {
       void aiBoxControls.start({
         y: [0, -7, 3, -1.5, 0],
         transition: { duration: 0.55, ease: 'easeOut' },
       });
     }
-    prevAiLength.current = aiQuery.length;
-  }, [aiQuery.length, aiBoxControls]);
+  }, [aiQuery, aiBoxControls, isMultiline]);
 
   const handleAiSearch = async (q?: string) => {
     const searchQuery = q ?? aiQuery;
@@ -269,27 +286,28 @@ export default function HeroSearch({
               sx={{
                 borderRadius: 2,
                 overflow: 'hidden',
-                border: '1.5px solid',
-                borderColor: isAiActive
-                  ? alpha(theme.palette.primary.main, 0.55)
-                  : 'divider',
+                border: '1px solid',
+                borderColor: 'divider',
                 bgcolor: isDark ? theme.palette.background.paper : '#F8F7F5',
                 boxShadow: isAiActive
-                  ? `0 8px 36px rgba(0,0,0,0.28), 0 0 0 3px ${alpha(theme.palette.primary.main, 0.08)}`
-                  : '0 4px 24px rgba(0,0,0,0.25)',
-                transition:
-                  'border-color 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+                  ? '0 8px 32px rgba(0,0,0,0.22)'
+                  : '0 4px 24px rgba(0,0,0,0.18)',
+                transition: 'box-shadow 0.3s cubic-bezier(0.34,1.56,0.64,1)',
               }}
             >
               <TextField
                 fullWidth
+                multiline={isMultiline}
+                maxRows={isMultiline ? 4 : undefined}
                 placeholder="Ex: Appartement 3 pièces à Bastos moins de 150 000 FCFA…"
                 value={aiQuery}
+                inputRef={inputRef}
                 onChange={(e) => setAiQuery(e.target.value)}
                 onFocus={() => setAiFocused(true)}
                 onBlur={() => setAiFocused(false)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
                     handleAiSearch();
                   }
                 }}
@@ -297,23 +315,40 @@ export default function HeroSearch({
                   ...inputSx,
                   '& .MuiOutlinedInput-root': {
                     ...(inputSx['& .MuiOutlinedInput-root'] as object),
-                    minHeight: isAiActive
-                      ? { xs: 66, md: 64 }
-                      : { xs: 54, md: 52 },
-                    transition:
-                      'min-height 0.35s cubic-bezier(0.34,1.56,0.64,1), font-size 0.3s ease',
+                    minHeight: { xs: 54, md: 52 },
+                    alignItems: isMultiline ? 'flex-start' : 'center',
+                    transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                  },
+                  '& .MuiInputBase-inputMultiline': {
+                    pt: isMultiline ? '14px' : 0,
+                    pb: isMultiline ? '12px' : 0,
+                    resize: 'none',
                   },
                 }}
                 InputProps={{
                   startAdornment: (
-                    <InputAdornment position="start">
+                    <InputAdornment
+                      position="start"
+                      sx={
+                        isMultiline
+                          ? { alignSelf: 'flex-start', mt: '13px' }
+                          : {}
+                      }
+                    >
                       <AutoAwesome
                         sx={{ color: 'primary.main', fontSize: 20 }}
                       />
                     </InputAdornment>
                   ),
                   endAdornment: (
-                    <InputAdornment position="end">
+                    <InputAdornment
+                      position="end"
+                      sx={
+                        isMultiline
+                          ? { alignSelf: 'flex-start', mt: '8px' }
+                          : {}
+                      }
+                    >
                       {aiLoading ? (
                         <Box
                           sx={{
