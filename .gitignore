@@ -48,3 +48,5 @@ data.mspackage-lock.json
 .idea/
 
 .pnpm-store/
+
+data.ms/*
