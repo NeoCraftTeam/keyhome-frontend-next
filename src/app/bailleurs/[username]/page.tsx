@@ -41,6 +41,7 @@ import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import api from '@/lib/api';
@@ -320,15 +321,44 @@ export default function BailleurPublicProfilePage() {
               />
             )}
 
-            {/* Bio */}
+            {/* Bio — rendered as markdown */}
             {profile.bio && (
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mb: 1.5, maxWidth: 560, lineHeight: 1.6 }}
+              <Box
+                sx={{
+                  mb: 1.5,
+                  maxWidth: 560,
+                  '& p': {
+                    my: 0.5,
+                    lineHeight: 1.7,
+                    fontSize: '0.875rem',
+                    color: 'text.secondary',
+                  },
+                  '& h1, & h2, & h3': {
+                    fontWeight: 700,
+                    mt: 1.5,
+                    mb: 0.5,
+                    fontSize: '0.95rem',
+                  },
+                  '& ul, & ol': { pl: 2.5, my: 0.5 },
+                  '& li': {
+                    fontSize: '0.875rem',
+                    color: 'text.secondary',
+                    lineHeight: 1.7,
+                  },
+                  '& strong': { fontWeight: 700, color: 'text.primary' },
+                  '& em': { fontStyle: 'italic' },
+                  '& a': { color: 'primary.main', textDecoration: 'underline' },
+                  '& code': {
+                    bgcolor: 'action.hover',
+                    px: 0.5,
+                    borderRadius: 1,
+                    fontSize: '0.8rem',
+                    fontFamily: 'monospace',
+                  },
+                }}
               >
-                {profile.bio}
-              </Typography>
+                <ReactMarkdown>{profile.bio}</ReactMarkdown>
+              </Box>
             )}
 
             {/* Rating */}
