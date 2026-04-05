@@ -17,16 +17,18 @@ import { surveysService } from '@/services/surveys.service';
 import { usersService } from '@/services/users.service';
 import { City } from '@/types';
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import CancelIcon from '@mui/icons-material/Cancel';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import EditIcon from '@mui/icons-material/Edit';
-import LockIcon from '@mui/icons-material/Lock';
-import PhotoCamera from '@mui/icons-material/PhotoCamera';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import SaveIcon from '@mui/icons-material/Save';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import {
+  Assignment as AssignmentIcon,
+  Cancel as CancelIcon,
+  CheckCircleOutline as CheckCircleOutlineIcon,
+  Edit as EditIcon,
+  Lock as LockIcon,
+  PhotoCamera,
+  ReceiptLong as ReceiptLongIcon,
+  Save as SaveIcon,
+  Visibility,
+  VisibilityOff,
+} from '@mui/icons-material';
 import {
   Alert,
   Autocomplete,

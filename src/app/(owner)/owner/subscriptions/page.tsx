@@ -5,9 +5,11 @@ import {
   subscriptionsService,
   type SubscriptionPlan,
 } from '@/services/subscriptions.service';
-import CalendarIcon from '@mui/icons-material/CalendarMonth';
-import CheckIcon from '@mui/icons-material/CheckCircle';
-import SubscriptionsIcon from '@mui/icons-material/Subscriptions';
+import {
+  CalendarMonth as CalendarIcon,
+  CheckCircle as CheckIcon,
+  Subscriptions as SubscriptionsIcon,
+} from '@mui/icons-material';
 import {
   Box,
   Button,

@@ -1,24 +1,26 @@
 'use client';
 
 import { ownerService } from '@/services/owner.service';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import DescriptionIcon from '@mui/icons-material/Description';
-import GroupsIcon from '@mui/icons-material/Groups';
-import HomeIcon from '@mui/icons-material/Home';
-import PaymentIcon from '@mui/icons-material/Payment';
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
-import PersonIcon from '@mui/icons-material/Person';
-import RateReviewIcon from '@mui/icons-material/RateReview';
-import SecurityIcon from '@mui/icons-material/Security';
-import SettingsIcon from '@mui/icons-material/Settings';
-import SubscriptionsIcon from '@mui/icons-material/Subscriptions';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import {
+  AccountBalance as AccountBalanceIcon,
+  AddCircleOutline as AddCircleOutlineIcon,
+  CalendarMonth as CalendarMonthIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  Dashboard as DashboardIcon,
+  Description as DescriptionIcon,
+  Groups as GroupsIcon,
+  Home as HomeIcon,
+  Payment as PaymentIcon,
+  PeopleAlt as PeopleAltIcon,
+  Person as PersonIcon,
+  RateReview as RateReviewIcon,
+  Security as SecurityIcon,
+  Settings as SettingsIcon,
+  Subscriptions as SubscriptionsIcon,
+  Visibility as VisibilityIcon,
+  WorkspacePremium as WorkspacePremiumIcon,
+} from '@mui/icons-material';
 import {
   Badge,
   Box,

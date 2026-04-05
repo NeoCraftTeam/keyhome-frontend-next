@@ -1,9 +1,11 @@
 'use client';
 
-import CopyIcon from '@mui/icons-material/ContentCopy';
-import FacebookIcon from '@mui/icons-material/Facebook';
-import ShareIcon from '@mui/icons-material/Share';
-import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import {
+  ContentCopy as CopyIcon,
+  Facebook as FacebookIcon,
+  Share as ShareIcon,
+  WhatsApp as WhatsAppIcon,
+} from '@mui/icons-material';
 import { IconButton, Snackbar, Stack, Tooltip } from '@mui/material';
 import { useCallback, useState } from 'react';
 

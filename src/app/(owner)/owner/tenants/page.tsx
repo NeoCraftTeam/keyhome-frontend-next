@@ -6,10 +6,12 @@ import {
   type Tenant,
   type TenantPayload,
 } from '@/services/owner.service';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  PeopleAlt as PeopleAltIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,

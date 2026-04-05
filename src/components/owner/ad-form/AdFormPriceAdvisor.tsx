@@ -1,10 +1,12 @@
 'use client';
 
 import { ownerService } from '@/services/owner.service';
-import AiIcon from '@mui/icons-material/AutoAwesome';
-import LowIcon from '@mui/icons-material/TrendingDown';
-import OkIcon from '@mui/icons-material/TrendingFlat';
-import HighIcon from '@mui/icons-material/TrendingUp';
+import {
+  AutoAwesome as AiIcon,
+  TrendingDown as LowIcon,
+  TrendingFlat as OkIcon,
+  TrendingUp as HighIcon,
+} from '@mui/icons-material';
 import { Alert, Box, Chip, Paper, Skeleton, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import type { AdFormValues } from './types';

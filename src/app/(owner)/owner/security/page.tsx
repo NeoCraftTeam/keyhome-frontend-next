@@ -8,16 +8,18 @@ import { useAuth } from '@/providers/AuthProvider';
 
 import { ownerService, type LoginHistoryEntry } from '@/services/owner.service';
 import { useUser } from '@clerk/nextjs';
-import CancelIcon from '@mui/icons-material/Cancel';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ComputerIcon from '@mui/icons-material/Computer';
-import DeleteIcon from '@mui/icons-material/Delete';
-import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
-import DownloadIcon from '@mui/icons-material/Download';
-import HistoryIcon from '@mui/icons-material/History';
-import LogoutIcon from '@mui/icons-material/Logout';
-import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
-import TabletMacIcon from '@mui/icons-material/TabletMac';
+import {
+  Cancel as CancelIcon,
+  CheckCircle as CheckCircleIcon,
+  Computer as ComputerIcon,
+  Delete as DeleteIcon,
+  DevicesOther as DevicesOtherIcon,
+  Download as DownloadIcon,
+  History as HistoryIcon,
+  Logout as LogoutIcon,
+  PhoneAndroid as PhoneAndroidIcon,
+  TabletMac as TabletMacIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,

@@ -2,7 +2,7 @@
 
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ownerService, type OwnerReview } from '@/services/owner.service';
-import StarIcon from '@mui/icons-material/Star';
+import { Star as StarIcon } from '@mui/icons-material';
 import {
   Avatar,
   Box,

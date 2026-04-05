@@ -1,10 +1,12 @@
 'use client';
 
 import { useAuth } from '@/providers/AuthProvider';
-import CheckIcon from '@mui/icons-material/CheckCircle';
-import ChevronRight from '@mui/icons-material/ChevronRight';
-import UncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import RocketIcon from '@mui/icons-material/Rocket';
+import {
+  CheckCircle as CheckIcon,
+  ChevronRight,
+  RadioButtonUnchecked as UncheckedIcon,
+  Rocket as RocketIcon,
+} from '@mui/icons-material';
 import { Box, Card, LinearProgress, Stack, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';

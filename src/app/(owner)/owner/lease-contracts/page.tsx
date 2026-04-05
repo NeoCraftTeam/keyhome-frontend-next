@@ -6,13 +6,15 @@ import {
   type LeaseContract,
   type SignatureRequest,
 } from '@/services/owner.service';
-import AiIcon from '@mui/icons-material/AutoAwesome';
-import CloseIcon from '@mui/icons-material/Close';
-import DownloadIcon from '@mui/icons-material/Download';
-import DrawIcon from '@mui/icons-material/Draw';
-import EditIcon from '@mui/icons-material/Edit';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ViewIcon from '@mui/icons-material/Visibility';
+import {
+  AutoAwesome as AiIcon,
+  Close as CloseIcon,
+  Download as DownloadIcon,
+  Draw as DrawIcon,
+  Edit as EditIcon,
+  ExpandMore as ExpandMoreIcon,
+  Visibility as ViewIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,

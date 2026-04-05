@@ -8,10 +8,12 @@ import {
 } from '@/services/owner.service';
 import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import LogoutIcon from '@mui/icons-material/Logout';
-import SystemIcon from '@mui/icons-material/SettingsBrightness';
+import {
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
+  Logout as LogoutIcon,
+  SettingsBrightness as SystemIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,

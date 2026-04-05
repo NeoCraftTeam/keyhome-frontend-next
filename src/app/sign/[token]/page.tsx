@@ -5,11 +5,13 @@ import {
   type LeaseContract,
   type SignatureRequest,
 } from '@/services/owner.service';
-import CancelIcon from '@mui/icons-material/Cancel';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import DrawIcon from '@mui/icons-material/Draw';
-import ErrorIcon from '@mui/icons-material/Error';
-import ScheduleIcon from '@mui/icons-material/Schedule';
+import {
+  Cancel as CancelIcon,
+  CheckCircle as CheckCircleIcon,
+  Draw as DrawIcon,
+  Error as ErrorIcon,
+  Schedule as ScheduleIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,

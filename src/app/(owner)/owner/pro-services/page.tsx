@@ -1,11 +1,13 @@
 'use client';
 
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
-import BoostIcon from '@mui/icons-material/RocketLaunch';
-import VerifiedIcon from '@mui/icons-material/Verified';
-import AiIcon from '@mui/icons-material/AutoAwesome';
-import PhotoIcon from '@mui/icons-material/CameraAlt';
-import CheckIcon from '@mui/icons-material/CheckCircle';
+import {
+  RocketLaunch as BoostIcon,
+  Verified as VerifiedIcon,
+  AutoAwesome as AiIcon,
+  CameraAlt as PhotoIcon,
+  CheckCircle as CheckIcon,
+} from '@mui/icons-material';
 import {
   Box,
   Button,

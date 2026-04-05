@@ -11,13 +11,15 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { frFR } from '@mui/x-date-pickers/locales';
-import AddIcon from '@mui/icons-material/Add';
-import CalendarIcon from '@mui/icons-material/CalendarMonth';
-import CloseIcon from '@mui/icons-material/Close';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import EventIcon from '@mui/icons-material/EventAvailable';
-import ScheduleIcon from '@mui/icons-material/Schedule';
+import {
+  Add as AddIcon,
+  CalendarMonth as CalendarIcon,
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  EventAvailable as EventIcon,
+  Schedule as ScheduleIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,

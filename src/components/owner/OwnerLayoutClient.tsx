@@ -23,7 +23,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { surveysService } from '@/services/surveys.service';
 import { UserRole } from '@/types';
-import AddIcon from '@mui/icons-material/Add';
+import { Add as AddIcon } from '@mui/icons-material';
 import { Box, Drawer, Fab, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';

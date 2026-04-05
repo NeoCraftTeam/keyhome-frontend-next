@@ -6,9 +6,11 @@ import {
   type Expense,
   type ExpensePayload,
 } from '@/services/owner.service';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
+import {
+  AccountBalance as AccountBalanceIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
