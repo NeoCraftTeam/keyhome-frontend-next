@@ -177,14 +177,19 @@ export default function HeroSection() {
         const parsed = res.data;
         const params = new URLSearchParams();
         if (parsed.q) params.set('q', parsed.q);
-        if (parsed.city_id) params.set('city', parsed.city_id);
-        if (parsed.type_id) params.set('type', parsed.type_id);
+        if (parsed.city_name) params.set('city', parsed.city_name);
+        if (parsed.type_id) params.set('type_id', String(parsed.type_id));
+        else if (parsed.type_name) params.set('type', parsed.type_name);
         if (parsed.bedrooms) params.set('bedrooms', String(parsed.bedrooms));
         if (parsed.price_max) params.set('price_max', String(parsed.price_max));
         if (parsed.price_min) params.set('price_min', String(parsed.price_min));
-        if (parsed.has_parking) params.set('parking', '1');
         if (parsed.surface_min)
           params.set('surface_min', String(parsed.surface_min));
+        if (parsed.quarter_name) params.set('quarter', parsed.quarter_name);
+        if (parsed.transaction_type)
+          params.set('transaction_type', parsed.transaction_type);
+        if (parsed.has_parking) params.set('parking', '1');
+        if (parsed.furnished) params.set('furnished', '1');
 
         startTransition(() => {
           router.push(`/search?${params.toString()}`);

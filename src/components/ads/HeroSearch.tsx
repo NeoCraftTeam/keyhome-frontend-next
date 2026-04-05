@@ -248,78 +248,89 @@ export default function HeroSearch({
       {/* Tab 1 — AI natural language search */}
       {tab === 1 && (
         <Box>
-          <TextField
-            fullWidth
-            placeholder="Ex: Appartement 3 pièces à Bastos moins de 150 000 FCFA…"
-            value={aiQuery}
-            onChange={(e) => setAiQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleAiSearch();
-              }
+          <Box
+            sx={{
+              borderRadius: 2,
+              overflow: 'hidden',
+              border: '1px solid',
+              borderColor: 'divider',
+              bgcolor: isDark ? theme.palette.background.paper : '#F8F7F5',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
             }}
-            sx={inputSx}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <AutoAwesome sx={{ color: 'primary.main', fontSize: 20 }} />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  {aiLoading ? (
-                    <Box
-                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-                    >
-                      <CircularProgress
-                        size={20}
-                        sx={{ color: 'primary.main' }}
-                      />
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+          >
+            <TextField
+              fullWidth
+              placeholder="Ex: Appartement 3 pièces à Bastos moins de 150 000 FCFA…"
+              value={aiQuery}
+              onChange={(e) => setAiQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleAiSearch();
+                }
+              }}
+              sx={inputSx}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AutoAwesome sx={{ color: 'primary.main', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {aiLoading ? (
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
                       >
-                        Recherche…
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <Box
-                      role="button"
-                      tabIndex={0}
-                      aria-label="Lancer la recherche IA"
-                      onClick={() => handleAiSearch()}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleAiSearch();
-                        }
-                      }}
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: '50%',
-                        bgcolor: 'primary.main',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        mr: 0.5,
-                        '&:hover': { bgcolor: 'primary.dark' },
-                        '&:focus-visible': {
-                          outline: '2px solid',
-                          outlineColor: 'primary.main',
-                          outlineOffset: 2,
-                        },
-                      }}
-                    >
-                      <SearchIcon sx={{ color: 'white', fontSize: 18 }} />
-                    </Box>
-                  )}
-                </InputAdornment>
-              ),
-            }}
-          />
+                        <CircularProgress
+                          size={20}
+                          sx={{ color: 'primary.main' }}
+                        />
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                        >
+                          Recherche…
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Box
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Lancer la recherche IA"
+                        onClick={() => handleAiSearch()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleAiSearch();
+                          }
+                        }}
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '50%',
+                          bgcolor: 'primary.main',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          mr: 0.5,
+                          '&:hover': { bgcolor: 'primary.dark' },
+                          '&:focus-visible': {
+                            outline: '2px solid',
+                            outlineColor: 'primary.main',
+                            outlineOffset: 2,
+                          },
+                        }}
+                      >
+                        <SearchIcon sx={{ color: 'white', fontSize: 18 }} />
+                      </Box>
+                    )}
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Box>
           {/* Example chips */}
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1.5 }}>
             {EXAMPLES.map((ex) => (
