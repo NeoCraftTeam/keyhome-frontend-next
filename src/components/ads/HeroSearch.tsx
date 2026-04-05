@@ -18,8 +18,9 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
+import { motion, useAnimation } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 const EXAMPLES = [
   'Appartement 3 pièces à Bastos moins de 150 000 FCFA',
@@ -48,8 +49,23 @@ export default function HeroSearch({
   const [tab, setTab] = useState(0);
   const [aiQuery, setAiQuery] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiFocused, setAiFocused] = useState(false);
   const router = useRouter();
   const [, startTransition] = useTransition();
+
+  const aiBoxControls = useAnimation();
+  const prevAiLength = useRef(0);
+  const isAiActive = aiFocused || aiQuery.length > 0;
+
+  useEffect(() => {
+    if (aiQuery.length > 0 && prevAiLength.current === 0) {
+      void aiBoxControls.start({
+        y: [0, -7, 3, -1.5, 0],
+        transition: { duration: 0.55, ease: 'easeOut' },
+      });
+    }
+    prevAiLength.current = aiQuery.length;
+  }, [aiQuery.length, aiBoxControls]);
 
   const handleAiSearch = async (q?: string) => {
     const searchQuery = q ?? aiQuery;
@@ -248,89 +264,115 @@ export default function HeroSearch({
       {/* Tab 1 — AI natural language search */}
       {tab === 1 && (
         <Box>
-          <Box
-            sx={{
-              borderRadius: 2,
-              overflow: 'hidden',
-              border: '1px solid',
-              borderColor: 'divider',
-              bgcolor: isDark ? theme.palette.background.paper : '#F8F7F5',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-            }}
-          >
-            <TextField
-              fullWidth
-              placeholder="Ex: Appartement 3 pièces à Bastos moins de 150 000 FCFA…"
-              value={aiQuery}
-              onChange={(e) => setAiQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleAiSearch();
-                }
+          <motion.div animate={aiBoxControls} style={{ width: '100%' }}>
+            <Box
+              sx={{
+                borderRadius: 2,
+                overflow: 'hidden',
+                border: '1.5px solid',
+                borderColor: isAiActive
+                  ? alpha(theme.palette.primary.main, 0.55)
+                  : 'divider',
+                bgcolor: isDark ? theme.palette.background.paper : '#F8F7F5',
+                boxShadow: isAiActive
+                  ? `0 8px 36px rgba(0,0,0,0.28), 0 0 0 3px ${alpha(theme.palette.primary.main, 0.08)}`
+                  : '0 4px 24px rgba(0,0,0,0.25)',
+                transition:
+                  'border-color 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s cubic-bezier(0.34,1.56,0.64,1)',
               }}
-              sx={inputSx}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <AutoAwesome sx={{ color: 'primary.main', fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {aiLoading ? (
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-                      >
-                        <CircularProgress
-                          size={20}
-                          sx={{ color: 'primary.main' }}
-                        />
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+            >
+              <TextField
+                fullWidth
+                placeholder="Ex: Appartement 3 pièces à Bastos moins de 150 000 FCFA…"
+                value={aiQuery}
+                onChange={(e) => setAiQuery(e.target.value)}
+                onFocus={() => setAiFocused(true)}
+                onBlur={() => setAiFocused(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAiSearch();
+                  }
+                }}
+                sx={{
+                  ...inputSx,
+                  '& .MuiOutlinedInput-root': {
+                    ...(inputSx['& .MuiOutlinedInput-root'] as object),
+                    minHeight: isAiActive
+                      ? { xs: 66, md: 64 }
+                      : { xs: 54, md: 52 },
+                    transition:
+                      'min-height 0.35s cubic-bezier(0.34,1.56,0.64,1), font-size 0.3s ease',
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <AutoAwesome
+                        sx={{ color: 'primary.main', fontSize: 20 }}
+                      />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      {aiLoading ? (
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                          }}
                         >
-                          Recherche…
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <Box
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Lancer la recherche IA"
-                        onClick={() => handleAiSearch()}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            handleAiSearch();
-                          }
-                        }}
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: '50%',
-                          bgcolor: 'primary.main',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          mr: 0.5,
-                          '&:hover': { bgcolor: 'primary.dark' },
-                          '&:focus-visible': {
-                            outline: '2px solid',
-                            outlineColor: 'primary.main',
-                            outlineOffset: 2,
-                          },
-                        }}
-                      >
-                        <SearchIcon sx={{ color: 'white', fontSize: 18 }} />
-                      </Box>
-                    )}
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
+                          <CircularProgress
+                            size={20}
+                            sx={{ color: 'primary.main' }}
+                          />
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                          >
+                            Recherche…
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Box
+                          role="button"
+                          tabIndex={0}
+                          aria-label="Lancer la recherche IA"
+                          onClick={() => handleAiSearch()}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleAiSearch();
+                            }
+                          }}
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: '50%',
+                            bgcolor: 'primary.main',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            mr: 0.5,
+                            '&:hover': { bgcolor: 'primary.dark' },
+                            '&:focus-visible': {
+                              outline: '2px solid',
+                              outlineColor: 'primary.main',
+                              outlineOffset: 2,
+                            },
+                          }}
+                        >
+                          <SearchIcon sx={{ color: 'white', fontSize: 18 }} />
+                        </Box>
+                      )}
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+          </motion.div>
           {/* Example chips */}
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1.5 }}>
             {EXAMPLES.map((ex) => (
