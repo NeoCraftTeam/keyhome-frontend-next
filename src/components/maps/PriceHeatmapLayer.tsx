@@ -16,16 +16,27 @@ import {
   useTheme,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import mapboxgl from 'mapbox-gl';
 import { useEffect, useRef, useState } from 'react';
 import { MAPBOX_TOKEN, DEFAULT_CENTER } from '@/lib/constants';
 
-mapboxgl.accessToken = MAPBOX_TOKEN;
-if (process.env.NODE_ENV === 'development') {
-  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', {
-    value: '',
-    writable: false,
-  });
+type MapboxGL = typeof import('mapbox-gl');
+
+let mapboxPromise: Promise<MapboxGL> | null = null;
+function loadMapbox(): Promise<MapboxGL> {
+  if (!mapboxPromise) {
+    mapboxPromise = import('mapbox-gl').then((mod) => {
+      const mb = mod.default;
+      mb.accessToken = MAPBOX_TOKEN;
+      if (process.env.NODE_ENV === 'development') {
+        Object.defineProperty(mb.config, 'EVENTS_URL', {
+          value: '',
+          writable: false,
+        });
+      }
+      return mod;
+    });
+  }
+  return mapboxPromise;
 }
 
 interface Props {
@@ -45,7 +56,8 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
     inputSx: cityInputSx,
   } = useCityAutocompleteConfig();
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
   const [cityInput, setCityInput] = useState('');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [typeId, setTypeId] = useState('');
@@ -83,25 +95,36 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
       return;
     }
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: mapStyle,
-      center: DEFAULT_CENTER,
-      zoom: 11,
-      attributionControl: false,
+    let cancelled = false;
+    const container = mapContainerRef.current;
+
+    loadMapbox().then((mb) => {
+      if (cancelled || !container) return;
+      const mapboxgl = mb.default;
+
+      const map = new mapboxgl.Map({
+        container,
+        style: mapStyle,
+        center: DEFAULT_CENTER,
+        zoom: 11,
+        attributionControl: false,
+      });
+
+      map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+      map.addControl(
+        new mapboxgl.AttributionControl({ compact: true }),
+        'bottom-right'
+      );
+      mapRef.current = map;
     });
 
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-    map.addControl(
-      new mapboxgl.AttributionControl({ compact: true }),
-      'bottom-right'
-    );
-    mapRef.current = map;
-
     return () => {
-      map.remove();
-      mapRef.current = null;
+      cancelled = true;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
   }, [mapStyle]);
 
@@ -130,9 +153,8 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
       };
 
       if (map.getSource('price-heatmap')) {
-        (map.getSource('price-heatmap') as mapboxgl.GeoJSONSource).setData(
-          geojson
-        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (map.getSource('price-heatmap') as any).setData(geojson);
       } else {
         map.addSource('price-heatmap', { type: 'geojson', data: geojson });
 
@@ -190,18 +212,26 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
           },
         });
 
-        map.on('mouseenter', 'price-points', (e) => {
-          map.getCanvas().style.cursor = 'pointer';
-          const props = e.features?.[0]?.properties;
-          if (props) {
-            setHoveredFeature({
-              quarter_name: props.quarter_name,
-              median_price: props.median_price,
-              ad_count: props.ad_count,
-              intensity: props.intensity,
-            } as HeatmapFeature);
+        map.on(
+          'mouseenter',
+          'price-points',
+          (
+            e: Record<string, unknown> & {
+              features?: Array<{ properties?: Record<string, unknown> }>;
+            }
+          ) => {
+            map.getCanvas().style.cursor = 'pointer';
+            const props = e.features?.[0]?.properties;
+            if (props) {
+              setHoveredFeature({
+                quarter_name: props.quarter_name,
+                median_price: props.median_price,
+                ad_count: props.ad_count,
+                intensity: props.intensity,
+              } as HeatmapFeature);
+            }
           }
-        });
+        );
 
         map.on('mouseleave', 'price-points', () => {
           map.getCanvas().style.cursor = '';

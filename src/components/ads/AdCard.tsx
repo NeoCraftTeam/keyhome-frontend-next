@@ -20,7 +20,7 @@ import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { shadow, neutral, semantic } from '@/theme/tokens';
-import { useCallback, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 /** Tiny inline blur placeholder — avoids layout shift while image loads */
 const BLUR_DATA_URL =
@@ -40,7 +40,7 @@ interface AdCardProps {
  *  - Clean typography directly below image, no wrapper box
  *  - Price on its own line, features compact row above it
  */
-export default function AdCard({ ad, showDistance }: AdCardProps) {
+function AdCard({ ad, showDistance }: AdCardProps) {
   const router = useRouter();
   const [currentImage, setCurrentImage] = useState(0);
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
@@ -56,18 +56,35 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
   const [heartBurst, setHeartBurst] = useState(false);
   const { play } = useSoundFeedback();
 
-  const handleToggleFavorite = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isFavorite) {
-      setHeartBurst(true);
-      setTimeout(() => setHeartBurst(false), 600);
-      play('favorite');
-    } else {
-      play('unfavorite');
-    }
-    toggleFav(ad);
-  };
+  const handleToggleFavorite = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!isFavorite) {
+        setHeartBurst(true);
+        play('favorite');
+      } else {
+        play('unfavorite');
+      }
+      toggleFav(ad);
+    },
+    [isFavorite, play, toggleFav, ad]
+  );
+
+  // Clean up heartBurst animation timeout
+  useEffect(() => {
+    if (!heartBurst) return;
+    const timer = setTimeout(() => setHeartBurst(false), 600);
+    return () => clearTimeout(timer);
+  }, [heartBurst]);
+
+  const handleCardClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      router.push(`/ads/${ad.slug}`);
+    },
+    [router, ad.slug]
+  );
 
   const images =
     ad.images?.length > 0
@@ -106,10 +123,7 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
     <MotionConfig reducedMotion="user">
       <motion.a
         href={`/ads/${ad.slug}`}
-        onClick={(e: React.MouseEvent) => {
-          e.preventDefault();
-          router.push(`/ads/${ad.slug}`);
-        }}
+        onClick={handleCardClick}
         whileTap={{ scale: 0.97 }}
         transition={{ type: 'spring', stiffness: 400, damping: 20 }}
         style={{
@@ -705,3 +719,11 @@ export default function AdCard({ ad, showDistance }: AdCardProps) {
     </MotionConfig>
   );
 }
+
+export default memo(
+  AdCard,
+  (prev, next) =>
+    prev.ad.id === next.ad.id &&
+    prev.ad.updated_at === next.ad.updated_at &&
+    prev.showDistance === next.showDistance
+);
