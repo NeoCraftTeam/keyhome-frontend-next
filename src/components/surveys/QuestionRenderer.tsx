@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { SurveyQuestion } from '@/types';
 import {
   Box,
@@ -20,7 +21,7 @@ interface QuestionRendererProps {
   onChange: (value: string | number | string[]) => void;
 }
 
-export default function QuestionRenderer({
+function QuestionRenderer({
   question,
   value,
   onChange,
@@ -127,3 +128,4 @@ export default function QuestionRenderer({
     </Box>
   );
 }
+export default memo(QuestionRenderer);

@@ -24,8 +24,11 @@ export function useAutoSave<T>({
   enabled = true,
 }: UseAutoSaveOptions<T>): UseAutoSaveReturn<T> {
   const [savedAt, setSavedAt] = useState<Date | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const storageKey = STORAGE_PREFIX + key;
+  const [hasDraft, setHasDraft] = useState<boolean>(
+    () => typeof window !== 'undefined' && !!localStorage.getItem(storageKey)
+  );
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!enabled) {
@@ -43,6 +46,7 @@ export function useAutoSave<T>({
           JSON.stringify({ data, ts: Date.now() })
         );
         setSavedAt(new Date());
+        setHasDraft(true);
       } catch {
         // localStorage full or unavailable
       }
@@ -54,9 +58,6 @@ export function useAutoSave<T>({
       }
     };
   }, [data, enabled, storageKey]);
-
-  const hasDraft =
-    typeof window !== 'undefined' && !!localStorage.getItem(storageKey);
 
   const restoreDraft = useCallback((): T | null => {
     try {
@@ -74,6 +75,7 @@ export function useAutoSave<T>({
   const clearDraft = useCallback(() => {
     localStorage.removeItem(storageKey);
     setSavedAt(null);
+    setHasDraft(false);
   }, [storageKey]);
 
   return { savedAt, hasDraft, restoreDraft, clearDraft };

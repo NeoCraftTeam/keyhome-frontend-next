@@ -6,6 +6,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
@@ -93,22 +94,37 @@ export function ComparatorProvider({
     if (!v) setDrawerMode(null);
   }, []);
 
+  const contextValue = useMemo(
+    () => ({
+      items,
+      add,
+      remove,
+      clear,
+      isSelected,
+      isOpen,
+      setOpen: handleSetOpen,
+      openDrawer,
+      drawerMode,
+      maxReached,
+      clearMaxReached,
+    }),
+    [
+      items,
+      add,
+      remove,
+      clear,
+      isSelected,
+      isOpen,
+      handleSetOpen,
+      openDrawer,
+      drawerMode,
+      maxReached,
+      clearMaxReached,
+    ]
+  );
+
   return (
-    <ComparatorContext.Provider
-      value={{
-        items,
-        add,
-        remove,
-        clear,
-        isSelected,
-        isOpen,
-        setOpen: handleSetOpen,
-        openDrawer,
-        drawerMode,
-        maxReached,
-        clearMaxReached,
-      }}
-    >
+    <ComparatorContext.Provider value={contextValue}>
       {children}
     </ComparatorContext.Provider>
   );

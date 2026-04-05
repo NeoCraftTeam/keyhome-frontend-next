@@ -1,6 +1,5 @@
 'use client';
 
-import MarkdownBioEditor from '@/components/owner/MarkdownBioEditor';
 import PaymentHistoryTable from '@/components/payment/PaymentHistoryTable';
 import FadeIn from '@/components/ui/FadeIn';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
@@ -532,30 +531,28 @@ export default function OwnerProfilePage() {
             )}
           </Grid>
           <Grid size={{ xs: 12 }}>
-            <Typography
-              variant="body2"
-              fontWeight={600}
-              color="text.secondary"
-              sx={{ mb: 1 }}
-            >
-              Bio publique
-            </Typography>
-            <MarkdownBioEditor
+            <TextField
+              fullWidth
+              label="Bio publique"
+              multiline
+              rows={isEditing ? 3 : 2}
               value={isEditing ? editForm.bio : user.bio || ''}
-              onChange={(val) => setEditForm((prev) => ({ ...prev, bio: val }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, bio: e.target.value }))
+              }
               disabled={!isEditing}
-              maxLength={2000}
+              placeholder={
+                isEditing
+                  ? "Décrivez-vous : votre expérience, vos biens, votre zone d'activité…"
+                  : undefined
+              }
+              helperText={
+                isEditing
+                  ? 'Visible par les locataires sur votre profil public — recommandé pour inspirer confiance.'
+                  : undefined
+              }
+              slotProps={{ htmlInput: { maxLength: 500 } }}
             />
-            {isEditing && (
-              <Typography
-                variant="caption"
-                color="text.disabled"
-                sx={{ display: 'block', mt: 0.75 }}
-              >
-                Visible par les locataires sur votre profil public — recommandé
-                pour inspirer confiance.
-              </Typography>
-            )}
           </Grid>
 
           {isEditing && (

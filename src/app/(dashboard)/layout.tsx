@@ -23,7 +23,7 @@ import { useUserLocation } from '@/hooks/useUserLocation';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 /** Silently warms up the geolocation cache on first visit so ad-detail maps are instant */
 function LocationPrimer() {
@@ -86,6 +86,26 @@ export default function DashboardLayout({
   });
 
   const activeSurveyId = activeSurvey?.id ?? null;
+
+  const handleSurveyPostponed = useCallback(async () => {
+    if (!activeSurveyId) return;
+    setSurveyPostponed((p) => ({ ...p, [activeSurveyId]: true }));
+    if (user) {
+      const ids = user.preferences?.survey_postponed_ids ?? [];
+      if (!ids.includes(activeSurveyId)) {
+        try {
+          await authService.updatePreferences({
+            survey_postponed_ids: [...ids, activeSurveyId],
+          });
+          await refreshUser();
+        } catch {
+          /* ignore */
+        }
+      }
+    } else {
+      persistSurveyPostponed(activeSurveyId);
+    }
+  }, [activeSurveyId, user, refreshUser]);
 
   const { data: surveyAnsweredData } = useQuery({
     queryKey: ['survey-has-answered-global', activeSurveyId, isAuthenticated],
@@ -236,24 +256,7 @@ export default function DashboardLayout({
               activeSurvey.description ??
               'Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience.'
             }
-            onPostponed={async () => {
-              setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
-              if (user) {
-                const ids = user.preferences?.survey_postponed_ids ?? [];
-                if (!ids.includes(activeSurvey.id)) {
-                  try {
-                    await authService.updatePreferences({
-                      survey_postponed_ids: [...ids, activeSurvey.id],
-                    });
-                    await refreshUser();
-                  } catch {
-                    /* ignore */
-                  }
-                }
-              } else {
-                persistSurveyPostponed(activeSurvey.id);
-              }
-            }}
+            onPostponed={handleSurveyPostponed}
             isPostponed={
               surveyPostponed[activeSurvey.id] ??
               getSurveyPostponed(activeSurvey.id, user)

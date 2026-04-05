@@ -42,7 +42,14 @@ import {
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useMemo, useRef, useState, useTransition } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 
 const AppTour = dynamic(() => import('@/components/ui/AppTour'), {
   ssr: false,
@@ -88,33 +95,45 @@ export default function HomePage() {
 
   // Hero search autocomplete state
   const [cityInput, setCityInput] = useState('');
+  const [debouncedCityInput, setDebouncedCityInput] = useState('');
   const [pendingCity, setPendingCity] = useState<City | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedCityInput(cityInput), 300);
+    return () => clearTimeout(timer);
+  }, [cityInput]);
   const [intentOpen, setIntentOpen] = useState(false);
 
   const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
-    queryKey: ['hero-cities', cityInput],
-    queryFn: () => citiesService.list({ q: cityInput, per_page: 10 }),
-    enabled: cityInput.length >= 1,
+    queryKey: ['hero-cities', debouncedCityInput],
+    queryFn: () => citiesService.list({ q: debouncedCityInput, per_page: 10 }),
+    enabled: debouncedCityInput.length >= 1,
     staleTime: 5 * 60 * 1000,
   });
 
   const cities = citiesData?.data || [];
 
-  const handleCitySelect = (_: React.SyntheticEvent, city: City | null) => {
-    if (!city) return;
-    setPendingCity(city);
-    setIntentOpen(true);
-  };
+  const handleCitySelect = useCallback(
+    (_: React.SyntheticEvent, city: City | null) => {
+      if (!city) return;
+      setPendingCity(city);
+      setIntentOpen(true);
+    },
+    []
+  );
 
-  const handleIntentChoice = (intent: 'louer' | 'acheter' | null) => {
-    setIntentOpen(false);
-    if (!pendingCity) return;
-    const params = new URLSearchParams({ city: pendingCity.name });
-    if (intent) params.set('intent', intent);
-    router.push(`/search?${params.toString()}`);
-    setCityInput('');
-    setPendingCity(null);
-  };
+  const handleIntentChoice = useCallback(
+    (intent: 'louer' | 'acheter' | null) => {
+      setIntentOpen(false);
+      if (!pendingCity) return;
+      const params = new URLSearchParams({ city: pendingCity.name });
+      if (intent) params.set('intent', intent);
+      router.push(`/search?${params.toString()}`);
+      setCityInput('');
+      setPendingCity(null);
+    },
+    [pendingCity, router]
+  );
 
   // Recommendations
   const { data: recommendationsData } = useQuery({
@@ -156,19 +175,22 @@ export default function HomePage() {
   const showShimmer =
     isLoading || (isFetching && ads.length === 0) || isPending;
 
-  const handleCategoryChange = (val: string) => {
-    startTransition(() => {
-      setSelectedCategory(val);
-      setPage(1);
-    });
-  };
+  const handleCategoryChange = useCallback(
+    (val: string) => {
+      startTransition(() => {
+        setSelectedCategory(val);
+        setPage(1);
+      });
+    },
+    [startTransition]
+  );
 
-  const handlePageChange = (_: unknown, val: number) => {
+  const handlePageChange = useCallback((_: unknown, val: number) => {
     setPage(val);
     if (gridRef.current) {
       gridRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  };
+  }, []);
 
   return (
     <Box sx={{ pb: { xs: 12, sm: 6 } }}>

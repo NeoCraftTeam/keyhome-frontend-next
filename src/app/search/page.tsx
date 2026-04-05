@@ -55,7 +55,14 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { motion, MotionConfig } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { gradient } from '@/theme/tokens';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -128,6 +135,14 @@ function SearchContent() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [cityInput, setCityInput] = useState(searchParams.get('city') || '');
+  const [debouncedCityInput, setDebouncedCityInput] = useState(
+    searchParams.get('city') || ''
+  );
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedCityInput(cityInput), 300);
+    return () => clearTimeout(timer);
+  }, [cityInput]);
   const [selectedType, setSelectedType] = useState<AdType | null>(null);
   const [bedrooms, setBedrooms] = useState<number | undefined>();
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]);
@@ -226,9 +241,9 @@ function SearchContent() {
   }, [searchParams]);
 
   const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
-    queryKey: ['cities', cityInput],
-    queryFn: () => citiesService.list({ q: cityInput, per_page: 20 }),
-    enabled: cityInput.length >= 1,
+    queryKey: ['cities', debouncedCityInput],
+    queryFn: () => citiesService.list({ q: debouncedCityInput, per_page: 20 }),
+    enabled: debouncedCityInput.length >= 1,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -685,7 +700,7 @@ function SearchContent() {
     }
   }, [showHeatmap, mapStyleUrl]);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setQuery('');
     setSelectedCity(null);
     setCityInput('');
@@ -702,44 +717,63 @@ function SearchContent() {
     setSortBy('created_at');
     setSortOrder('desc');
     setPage(1);
-  };
+  }, []);
 
-  const activeFilterCount = [
-    selectedCity,
-    selectedType,
-    bedrooms,
-    bathrooms,
-    priceRange[0] > 0,
-    priceRange[1] < 5000000,
-    surfaceRange[0] > 0,
-    surfaceRange[1] < 1000,
-    hasParking,
-    transactionType,
-    has3dTour,
-    isVerified,
-    ...selectedAmenities,
-  ].filter(Boolean).length;
+  const activeFilterCount = useMemo(
+    () =>
+      [
+        selectedCity,
+        selectedType,
+        bedrooms,
+        bathrooms,
+        priceRange[0] > 0,
+        priceRange[1] < 5000000,
+        surfaceRange[0] > 0,
+        surfaceRange[1] < 1000,
+        hasParking,
+        transactionType,
+        has3dTour,
+        isVerified,
+        ...selectedAmenities,
+      ].filter(Boolean).length,
+    [
+      selectedCity,
+      selectedType,
+      bedrooms,
+      bathrooms,
+      priceRange,
+      surfaceRange,
+      hasParking,
+      transactionType,
+      has3dTour,
+      isVerified,
+      selectedAmenities,
+    ]
+  );
 
   const cities = citiesData?.data || [];
 
-  const sortLabel =
-    sortBy === 'boost_score'
-      ? 'Pertinence'
-      : sortBy === 'price' && sortOrder === 'asc'
-        ? 'Prix ↑'
-        : sortBy === 'price' && sortOrder === 'desc'
-          ? 'Prix ↓'
-          : sortBy === 'surface_area' && sortOrder === 'asc'
-            ? 'Surface ↑'
-            : sortBy === 'surface_area' && sortOrder === 'desc'
-              ? 'Surface ↓'
-              : sortBy === 'reviews_avg_rating'
-                ? 'Mieux notés'
-                : sortBy === '_geoPoint'
-                  ? 'Distance'
-                  : sortBy === 'views_count'
-                    ? 'Populaires'
-                    : 'Plus récents';
+  const sortLabel = useMemo(
+    () =>
+      sortBy === 'boost_score'
+        ? 'Pertinence'
+        : sortBy === 'price' && sortOrder === 'asc'
+          ? 'Prix ↑'
+          : sortBy === 'price' && sortOrder === 'desc'
+            ? 'Prix ↓'
+            : sortBy === 'surface_area' && sortOrder === 'asc'
+              ? 'Surface ↑'
+              : sortBy === 'surface_area' && sortOrder === 'desc'
+                ? 'Surface ↓'
+                : sortBy === 'reviews_avg_rating'
+                  ? 'Mieux notés'
+                  : sortBy === '_geoPoint'
+                    ? 'Distance'
+                    : sortBy === 'views_count'
+                      ? 'Populaires'
+                      : 'Plus récents',
+    [sortBy, sortOrder]
+  );
 
   const MoreFiltersDrawer = (
     <Box sx={{ p: 3, width: isMobile ? '100%' : 380 }}>
