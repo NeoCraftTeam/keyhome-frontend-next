@@ -137,7 +137,15 @@ export default function OwnerAdEditPage() {
         if (values.charges_electricite)
           formData.append('charges_electricite', values.charges_electricite);
       }
-      if (values.charges_autres)
+      const chargesAutresStr = (values.charges_autres_items ?? [])
+        .filter((item) => item.label.trim() && item.amount.trim())
+        .map(
+          (item) =>
+            `${item.label}: ${item.amount} FCFA/${item.period === 'monthly' ? 'mois' : 'an'}`
+        )
+        .join('\n');
+      if (chargesAutresStr) formData.append('charges_autres', chargesAutresStr);
+      else if (values.charges_autres)
         formData.append('charges_autres', values.charges_autres);
 
       // Proximity & distance fields
@@ -373,6 +381,26 @@ export default function OwnerAdEditPage() {
     charges_electricite:
       ad.charges_electricite != null ? String(ad.charges_electricite) : '',
     charges_autres: ad.charges_autres ?? '',
+    charges_autres_items: (ad.charges_autres ?? '')
+      .split('\n')
+      .filter((line: string) => line.includes(':'))
+      .map((line: string) => {
+        const [label, rest] = line.split(':').map((s: string) => s.trim());
+        const amountMatch = rest?.match(/^([\d.]+)/);
+        const isYearly = rest?.includes('/an');
+        return {
+          label: label ?? '',
+          amount: amountMatch?.[1] ?? '',
+          period: isYearly ? 'yearly' : 'monthly',
+        } as { label: string; amount: string; period: 'monthly' | 'yearly' };
+      })
+      .filter(
+        (item: {
+          label: string;
+          amount: string;
+          period: 'monthly' | 'yearly';
+        }) => item.label
+      ),
     distance_main_road_m:
       ad.distance_main_road_m != null ? String(ad.distance_main_road_m) : '',
     distance_shops_m:

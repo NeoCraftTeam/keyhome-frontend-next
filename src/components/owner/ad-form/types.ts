@@ -1,5 +1,11 @@
 import type { TourHotspot } from '@/types';
 
+export interface ChargeItem {
+  label: string;
+  amount: string;
+  period: 'monthly' | 'yearly';
+}
+
 export interface AdFormValues {
   title: string;
   description: string;
@@ -21,6 +27,7 @@ export interface AdFormValues {
   charges_eau: string;
   charges_electricite: string;
   charges_autres: string;
+  charges_autres_items: ChargeItem[];
   is_boost_requested?: boolean;
   distance_main_road_m: string;
   distance_shops_m: string;
@@ -37,9 +44,17 @@ export interface TourScene {
   hotspots: TourHotspot[];
 }
 
-export type AttributeOption = { value: string; label: string; group: string; icon?: string };
+export type AttributeOption = {
+  value: string;
+  label: string;
+  group: string;
+  icon?: string;
+};
 
-export type UpdateFn = (field: keyof AdFormValues, value: AdFormValues[keyof AdFormValues]) => void;
+export type UpdateFn = (
+  field: keyof AdFormValues,
+  value: AdFormValues[keyof AdFormValues]
+) => void;
 
 export const sectionSx = {
   p: { xs: 2, sm: 3 },
@@ -78,6 +93,7 @@ export const initialValues: AdFormValues = {
   charges_eau: '',
   charges_electricite: '',
   charges_autres: '',
+  charges_autres_items: [],
   distance_main_road_m: '',
   distance_shops_m: '',
   distance_transport_m: '',

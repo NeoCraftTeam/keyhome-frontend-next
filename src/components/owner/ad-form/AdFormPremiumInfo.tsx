@@ -1,3 +1,4 @@
+import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandIcon from '@mui/icons-material/ExpandMore';
 import InfoIcon from '@mui/icons-material/Info';
@@ -7,6 +8,8 @@ import {
   AccordionSummary,
   Box,
   Button,
+  Checkbox,
+  Chip,
   FormControl,
   FormControlLabel,
   Grid,
@@ -20,7 +23,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import type { AdFormValues, UpdateFn } from './types';
+import type { AdFormValues, ChargeItem, UpdateFn } from './types';
 
 interface AdFormPremiumInfoProps {
   values: AdFormValues;
@@ -233,16 +236,152 @@ export default function AdFormPremiumInfo({
             </>
           )}
           <Grid size={{ xs: 12 }}>
-            <TextField
-              fullWidth
+            <Box sx={{ mb: 0.5 }}>
+              <Typography
+                variant="caption"
+                fontWeight={600}
+                color="text.secondary"
+                sx={{
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.4,
+                  fontSize: '0.68rem',
+                }}
+              >
+                Autres charges
+              </Typography>
+            </Box>
+            {values.charges_autres_items.length === 0 && (
+              <Typography
+                variant="caption"
+                color="text.disabled"
+                sx={{ display: 'block', mb: 1 }}
+              >
+                Aucune charge supplémentaire ajoutée.
+              </Typography>
+            )}
+            {values.charges_autres_items.map(
+              (item: ChargeItem, idx: number) => (
+                <Box
+                  key={idx}
+                  sx={{
+                    display: 'flex',
+                    gap: 1,
+                    mb: 1,
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <TextField
+                    size="small"
+                    label="Libellé"
+                    placeholder="Ex : Gardiennage"
+                    value={item.label}
+                    onChange={(e) => {
+                      const next = [...values.charges_autres_items];
+                      next[idx] = { ...next[idx], label: e.target.value };
+                      update('charges_autres_items', next);
+                    }}
+                    sx={{ flex: '1 1 140px', minWidth: 120 }}
+                  />
+                  <TextField
+                    size="small"
+                    label="Montant"
+                    type="number"
+                    inputProps={{ min: 0, inputMode: 'numeric' }}
+                    value={item.amount}
+                    onChange={(e) => {
+                      const next = [...values.charges_autres_items];
+                      next[idx] = { ...next[idx], amount: e.target.value };
+                      update('charges_autres_items', next);
+                    }}
+                    placeholder="5000"
+                    sx={{ width: 150 }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ whiteSpace: 'nowrap' }}
+                          >
+                            FCFA
+                          </Typography>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={item.period === 'yearly'}
+                          onChange={(e) => {
+                            const next = [...values.charges_autres_items];
+                            next[idx] = {
+                              ...next[idx],
+                              period: e.target.checked ? 'yearly' : 'monthly',
+                            };
+                            update('charges_autres_items', next);
+                          }}
+                          sx={{ p: 0.5 }}
+                        />
+                      }
+                      label={
+                        <Chip
+                          label={
+                            item.period === 'yearly' ? 'Annuel' : 'Mensuel'
+                          }
+                          size="small"
+                          color={
+                            item.period === 'yearly' ? 'secondary' : 'default'
+                          }
+                          sx={{
+                            height: 22,
+                            fontSize: '0.7rem',
+                            cursor: 'pointer',
+                          }}
+                        />
+                      }
+                      sx={{ m: 0 }}
+                    />
+                  </Box>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      update(
+                        'charges_autres_items',
+                        values.charges_autres_items.filter(
+                          (_: ChargeItem, i: number) => i !== idx
+                        )
+                      );
+                    }}
+                    sx={{ color: 'error.main', flexShrink: 0 }}
+                  >
+                    <DeleteIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Box>
+              )
+            )}
+            <Button
               size="small"
-              label="Autres charges"
-              placeholder="Ex: Gardiennage: 5 000 FCFA/mois, Ordures: 2 000 FCFA/mois"
-              multiline
-              rows={2}
-              value={values.charges_autres}
-              onChange={(e) => update('charges_autres', e.target.value)}
-            />
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={() =>
+                update('charges_autres_items', [
+                  ...values.charges_autres_items,
+                  { label: '', amount: '', period: 'monthly' } as ChargeItem,
+                ])
+              }
+              sx={{
+                mt: 0.5,
+                borderRadius: 2,
+                textTransform: 'none',
+                borderStyle: 'dashed',
+              }}
+            >
+              Ajouter une charge
+            </Button>
           </Grid>
         </Grid>
 
