@@ -3,20 +3,36 @@
 import { useAuth } from '@/providers/AuthProvider';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import type { AdFormValues } from '@/components/owner/AdForm';
+import MarkdownBioEditor from '@/components/owner/MarkdownBioEditor';
+import PhoneField from '@/components/ui/PhoneField';
+import { usersService } from '@/services/users.service';
+import { citiesService } from '@/services/cities.service';
+import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import {
+  normalizePhoneLikeBackend,
+  shouldSendPhoneNumberForUserUpdate,
+} from '@/lib/profile-phone';
+import {
+  Alert,
+  Autocomplete,
   Box,
   Button,
   Chip,
+  CircularProgress,
   Container,
   Dialog,
   DialogActions,
   DialogContent,
   LinearProgress,
   DialogTitle,
+  Grid,
+  IconButton,
+  Paper,
   Snackbar,
-  Stack,
+  TextField,
   Typography,
 } from '@mui/material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import ArrowForward from '@mui/icons-material/ArrowForward';
 import BookmarkAdded from '@mui/icons-material/BookmarkAdded';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
@@ -25,9 +41,10 @@ import Description from '@mui/icons-material/Description';
 import Person from '@mui/icons-material/Person';
 import Phone from '@mui/icons-material/Phone';
 import LocationOn from '@mui/icons-material/LocationOn';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import AdForm, { type TourScene } from '@/components/owner/AdForm';
 import { adsService } from '@/services/ads.service';
 
@@ -65,23 +82,85 @@ function useProfileCompleteness(user: ReturnType<typeof useAuth>['user']) {
 }
 
 export default function OwnerNewAdPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const router = useRouter();
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
-  const [profileIncompleteDialogOpen, setProfileIncompleteDialogOpen] =
-    useState(false);
+  const [activePanel, setActivePanel] = useState<'form' | 'profile'>('form');
   const { steps, isComplete, progress } = useProfileCompleteness(user);
+
+  // Inline profile completion state
+  const [profileForm, setProfileForm] = useState({
+    firstname: user?.firstname ?? '',
+    lastname: user?.lastname ?? '',
+    phone_number: user?.phone_number ?? '',
+    bio: user?.bio ?? '',
+  });
+  const [profileCity, setProfileCity] = useState<{
+    id: string;
+    name: string;
+  } | null>(
+    user?.city_id ? { id: user.city_id, name: user.city_name ?? '' } : null
+  );
+  const [profileCityInput, setProfileCityInput] = useState(
+    user?.city_name ?? ''
+  );
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
+
+  const { data: profileCitiesData } = useQuery({
+    queryKey: ['new-ad-profile-cities', profileCityInput],
+    queryFn: () => citiesService.list({ q: profileCityInput }),
+    enabled: profileCityInput.length >= 1,
+    staleTime: 5 * 60 * 1000,
+  });
+  const profileCities = (profileCitiesData?.data ?? []) as {
+    id: string;
+    name: string;
+  }[];
+  const {
+    slotProps: profileCitySlotProps,
+    renderOption: renderProfileCityOption,
+    inputSx: profileCityInputSx,
+  } = useCityAutocompleteConfig();
+
+  const handleSaveInlineProfile = async () => {
+    if (!user) return;
+    setIsSavingProfile(true);
+    setProfileSaveError(null);
+    try {
+      const formData = new FormData();
+      formData.append('firstname', profileForm.firstname);
+      formData.append('lastname', profileForm.lastname);
+      if (shouldSendPhoneNumberForUserUpdate(profileForm.phone_number)) {
+        formData.append(
+          'phone_number',
+          normalizePhoneLikeBackend(profileForm.phone_number)
+        );
+      }
+      if (profileCity?.id) formData.append('city_id', profileCity.id);
+      if (profileForm.bio) formData.append('bio', profileForm.bio);
+      await usersService.update(user.id, formData);
+      await refreshUser();
+      setActivePanel('form');
+    } catch {
+      setProfileSaveError('Une erreur est survenue. Veuillez réessayer.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   // QW11: draft restore — check for a saved auto-save on first render
   const [showRestorePrompt, setShowRestorePrompt] = useState(false);
   const [restoredDraft, setRestoredDraft] =
     useState<Partial<AdFormValues> | null>(null);
+  // formKey forces AdForm to remount with the restored draft as initialData
+  const [formKey, setFormKey] = useState(0);
   const { hasDraft, restoreDraft, clearDraft } = useAutoSave<
     Partial<AdFormValues>
   >({
     key: 'ad-new',
-    data: {} as Partial<AdFormValues>, // placeholder — AdForm manages the live data
-    enabled: false, // disable auto-save here; AdForm does it internally
+    data: {} as Partial<AdFormValues>,
+    enabled: false,
   });
   const draftCheckedRef = useRef(false);
 
@@ -148,8 +227,14 @@ export default function OwnerNewAdPage() {
         if (values.charges_electricite)
           formData.append('charges_electricite', values.charges_electricite);
       }
-      if (values.charges_autres)
-        formData.append('charges_autres', values.charges_autres);
+      const chargesAutresStr = (values.charges_autres_items ?? [])
+        .filter((item) => item.label.trim() && item.amount.trim())
+        .map(
+          (item) =>
+            `${item.label}: ${item.amount} FCFA/${item.period === 'monthly' ? 'mois' : 'an'}`
+        )
+        .join('\n');
+      if (chargesAutresStr) formData.append('charges_autres', chargesAutresStr);
 
       // Proximity & distance fields
       if (values.distance_main_road_m)
@@ -248,7 +333,7 @@ export default function OwnerNewAdPage() {
       } catch {
         // localStorage unavailable — best effort
       }
-      setProfileIncompleteDialogOpen(true);
+      setActivePanel('profile');
       return false;
     }
     return true;
@@ -256,26 +341,263 @@ export default function OwnerNewAdPage() {
 
   return (
     <>
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Nouvelle annonce
-        </Typography>
-        <Typography color="text.secondary" sx={{ mb: 4 }}>
-          Suivez les étapes pour publier votre annonce rapidement.
-        </Typography>
-        <Box>
-          <AdForm
-            initialData={restoredDraft}
-            onSubmit={handleSubmit}
-            onBeforeSubmit={handleBeforeSubmit}
-            onCancel={() => router.back()}
-            submitLabel="Créer l'annonce"
-            isSubmitting={createMutation.isPending}
-            onEnhanceDescription={handleEnhance}
-            stepperMode
-          />
-        </Box>
-      </Container>
+      {/* Two-panel slider — AdForm never unmounts; profile panel slides in */}
+      <Box sx={{ overflow: 'hidden', position: 'relative' }}>
+        <motion.div
+          animate={{ x: activePanel === 'form' ? '0%' : '-50%' }}
+          transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+          style={{ display: 'flex', width: '200%' }}
+        >
+          {/* ── Panel 1: Ad form (always mounted, state always preserved) ── */}
+          <Box sx={{ width: '50%', minWidth: '50%' }}>
+            <Container maxWidth="md" sx={{ py: 4 }}>
+              <Typography variant="h4" fontWeight={700} gutterBottom>
+                Nouvelle annonce
+              </Typography>
+              <Typography color="text.secondary" sx={{ mb: 4 }}>
+                Suivez les étapes pour publier votre annonce rapidement.
+              </Typography>
+              <AdForm
+                key={formKey}
+                initialData={restoredDraft}
+                onSubmit={handleSubmit}
+                onBeforeSubmit={handleBeforeSubmit}
+                onCancel={() => router.back()}
+                submitLabel="Créer l'annonce"
+                isSubmitting={createMutation.isPending}
+                onEnhanceDescription={handleEnhance}
+                stepperMode
+              />
+            </Container>
+          </Box>
+
+          {/* ── Panel 2: Inline profile completion ── */}
+          <Box sx={{ width: '50%', minWidth: '50%' }}>
+            <Container maxWidth="md" sx={{ py: 4 }}>
+              {/* Header */}
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}
+              >
+                <IconButton onClick={() => setActivePanel('form')} size="small">
+                  <ArrowBack />
+                </IconButton>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h5" fontWeight={700}>
+                    Compléter votre profil
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Votre annonce est sauvegardée — complétez ces infos pour la
+                    publier.
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <BookmarkAdded sx={{ color: 'primary.main', fontSize: 20 }} />
+                  <Typography
+                    variant="caption"
+                    color="primary.main"
+                    fontWeight={700}
+                  >
+                    Brouillon sauvegardé
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Progress */}
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 3, mb: 3 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    mb: 0.75,
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    fontWeight={600}
+                    color="text.secondary"
+                  >
+                    Profil complété
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    fontWeight={700}
+                    color="#0d9488"
+                  >
+                    {progress}%
+                  </Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={progress}
+                  sx={{
+                    height: 7,
+                    borderRadius: 4,
+                    '& .MuiLinearProgress-bar': { bgcolor: '#0d9488' },
+                  }}
+                />
+                <Box
+                  sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.5 }}
+                >
+                  {steps.map((s) => (
+                    <Chip
+                      key={s.key}
+                      label={s.label}
+                      size="small"
+                      icon={
+                        s.done ? (
+                          <CheckCircle
+                            sx={{
+                              fontSize: '14px !important',
+                              color: 'success.main',
+                            }}
+                          />
+                        ) : undefined
+                      }
+                      color={s.done ? 'default' : 'warning'}
+                      variant={s.done ? 'outlined' : 'filled'}
+                      sx={{
+                        height: 26,
+                        fontSize: '0.72rem',
+                        textDecoration: s.done ? 'line-through' : 'none',
+                        opacity: s.done ? 0.6 : 1,
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Paper>
+
+              {/* Inline profile fields */}
+              <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
+                <Grid container spacing={2.5}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Prénom"
+                      size="small"
+                      value={profileForm.firstname}
+                      onChange={(e) =>
+                        setProfileForm((f) => ({
+                          ...f,
+                          firstname: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Nom"
+                      size="small"
+                      value={profileForm.lastname}
+                      onChange={(e) =>
+                        setProfileForm((f) => ({
+                          ...f,
+                          lastname: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <PhoneField
+                      value={profileForm.phone_number}
+                      onChange={(val) =>
+                        setProfileForm((f) => ({ ...f, phone_number: val }))
+                      }
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Autocomplete
+                      options={profileCities}
+                      getOptionLabel={(o) => o.name}
+                      isOptionEqualToValue={(o, v) => o.id === v.id}
+                      value={profileCity}
+                      inputValue={profileCityInput}
+                      onInputChange={(_, v) => setProfileCityInput(v)}
+                      onChange={(_, v) => setProfileCity(v)}
+                      slotProps={profileCitySlotProps}
+                      renderOption={renderProfileCityOption}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Ville"
+                          size="small"
+                          sx={profileCityInputSx}
+                        />
+                      )}
+                      noOptionsText="Aucune ville trouvée"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Typography
+                      variant="body2"
+                      fontWeight={600}
+                      color="text.secondary"
+                      sx={{ mb: 1 }}
+                    >
+                      Bio publique
+                    </Typography>
+                    <MarkdownBioEditor
+                      value={profileForm.bio}
+                      onChange={(val) =>
+                        setProfileForm((f) => ({ ...f, bio: val }))
+                      }
+                      maxLength={2000}
+                      placeholder="Décrivez-vous : votre expérience, vos biens, votre zone d'activité…"
+                    />
+                  </Grid>
+                </Grid>
+
+                {profileSaveError && (
+                  <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
+                    {profileSaveError}
+                  </Alert>
+                )}
+
+                <Box
+                  sx={{ display: 'flex', gap: 1.5, mt: 3, flexWrap: 'wrap' }}
+                >
+                  <Button
+                    variant="text"
+                    startIcon={<ArrowBack />}
+                    onClick={() => setActivePanel('form')}
+                    sx={{ textTransform: 'none', color: 'text.secondary' }}
+                  >
+                    Retour au formulaire
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={handleSaveInlineProfile}
+                    disabled={
+                      isSavingProfile ||
+                      !profileForm.firstname ||
+                      !profileForm.lastname
+                    }
+                    startIcon={
+                      isSavingProfile ? (
+                        <CircularProgress size={16} sx={{ color: 'inherit' }} />
+                      ) : (
+                        <CheckCircle />
+                      )
+                    }
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      borderRadius: 2,
+                      boxShadow: 'none',
+                      flex: 1,
+                      maxWidth: 280,
+                    }}
+                  >
+                    {isSavingProfile ? 'Sauvegarde…' : 'Sauvegarder et revenir'}
+                  </Button>
+                </Box>
+              </Paper>
+            </Container>
+          </Box>
+        </motion.div>
+      </Box>
 
       {/* QW11: draft restore prompt */}
       <Snackbar
@@ -291,7 +613,10 @@ export default function OwnerNewAdPage() {
               sx={{ fontWeight: 700 }}
               onClick={() => {
                 const draft = restoreDraft();
-                if (draft) setRestoredDraft(draft);
+                if (draft) {
+                  setRestoredDraft(draft);
+                  setFormKey((k) => k + 1);
+                }
                 setShowRestorePrompt(false);
               }}
             >
@@ -311,182 +636,6 @@ export default function OwnerNewAdPage() {
           </Box>
         }
       />
-
-      {/* ─── Profile incomplete → draft saved dialog ─────────────────────── */}
-      <Dialog
-        open={profileIncompleteDialogOpen}
-        onClose={() => setProfileIncompleteDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden', p: 0 } }}
-      >
-        {/* Teal gradient header */}
-        <Box
-          sx={{
-            bgcolor: 'primary.main',
-            px: 3,
-            py: 3,
-          }}
-        >
-          <Box
-            sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}
-          >
-            <BookmarkAdded
-              sx={{ color: 'rgba(255,255,255,0.9)', fontSize: 28 }}
-            />
-            <Typography variant="h6" fontWeight={700} color="white">
-              Annonce sauvegardée en brouillon
-            </Typography>
-          </Box>
-          <Typography
-            variant="body2"
-            sx={{ color: 'rgba(255,255,255,0.82)', ml: 0.5 }}
-          >
-            Complétez votre profil pour la publier.
-          </Typography>
-        </Box>
-
-        <DialogContent sx={{ pt: 2.5 }}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-            Votre annonce a été automatiquement sauvegardée en tant que
-            brouillon. Complétez les informations manquantes, puis revenez sur
-            ce formulaire pour finaliser la publication — tout sera restauré.
-          </Typography>
-
-          {/* Progress */}
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 0.75,
-            }}
-          >
-            <Typography
-              variant="caption"
-              fontWeight={600}
-              color="text.secondary"
-            >
-              Profil complété
-            </Typography>
-            <Typography variant="caption" fontWeight={700} color="#0d9488">
-              {progress}%
-            </Typography>
-          </Box>
-          <LinearProgress
-            variant="determinate"
-            value={progress}
-            sx={{
-              height: 7,
-              borderRadius: 4,
-              mb: 2.5,
-              '& .MuiLinearProgress-bar': { bgcolor: '#0d9488' },
-            }}
-          />
-
-          {/* Steps */}
-          <Stack spacing={1.25}>
-            {steps.map((step) => (
-              <Box
-                key={step.key}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  p: 1.5,
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: step.done ? 'success.light' : 'warning.light',
-                  bgcolor: step.done
-                    ? 'rgba(34,197,94,0.04)'
-                    : (t) =>
-                        t.palette.mode === 'dark'
-                          ? 'rgba(245,158,11,0.07)'
-                          : 'rgba(245,158,11,0.05)',
-                }}
-              >
-                <Box
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 32,
-                    height: 32,
-                    borderRadius: 1.5,
-                    flexShrink: 0,
-                    bgcolor: step.done
-                      ? 'rgba(34,197,94,0.12)'
-                      : 'rgba(245,158,11,0.12)',
-                    color: step.done ? 'success.main' : 'warning.main',
-                  }}
-                >
-                  {step.done ? (
-                    <CheckCircle sx={{ fontSize: 18 }} />
-                  ) : (
-                    step.icon
-                  )}
-                </Box>
-                <Typography
-                  variant="body2"
-                  fontWeight={500}
-                  sx={{
-                    flex: 1,
-                    color: step.done ? 'text.disabled' : 'text.primary',
-                    textDecoration: step.done ? 'line-through' : 'none',
-                  }}
-                >
-                  {step.label}
-                </Typography>
-                {!step.done && (
-                  <Chip
-                    label="Requis"
-                    size="small"
-                    sx={{
-                      height: 22,
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      bgcolor: 'rgba(245,158,11,0.12)',
-                      color: 'warning.dark',
-                      border: '1px solid',
-                      borderColor: 'warning.light',
-                    }}
-                  />
-                )}
-              </Box>
-            ))}
-          </Stack>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, pb: 3, pt: 0.5, gap: 1 }}>
-          <Button
-            variant="text"
-            onClick={() => setProfileIncompleteDialogOpen(false)}
-            sx={{
-              textTransform: 'none',
-              color: 'text.secondary',
-              borderRadius: 2,
-            }}
-          >
-            Continuer à remplir
-          </Button>
-          <Button
-            variant="contained"
-            endIcon={<ArrowForward />}
-            onClick={() => {
-              setProfileIncompleteDialogOpen(false);
-              router.push('/owner/profile');
-            }}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              borderRadius: 2,
-              boxShadow: 'none',
-            }}
-          >
-            Compléter mon profil
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Post-creation: configure schedules dialog */}
       <Dialog
