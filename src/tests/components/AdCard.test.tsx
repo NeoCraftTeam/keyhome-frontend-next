@@ -42,7 +42,11 @@ vi.mock('framer-motion', () => {
                 variants,
                 ...rest
               } = props;
-              return React.createElement(prop, { ...rest, ref }, children);
+              return React.createElement(
+                prop,
+                { ...rest, ref },
+                children as React.ReactNode
+              );
             }
           );
           Comp.displayName = `motion.${String(prop)}`;
