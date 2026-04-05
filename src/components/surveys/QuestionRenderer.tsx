@@ -17,7 +17,7 @@ import {
 interface QuestionRendererProps {
   question: SurveyQuestion;
   value: string | number | string[] | null | undefined;
-  onChange: (value: string | number | string[] | null) => void;
+  onChange: (value: string | number | string[]) => void;
 }
 
 export default function QuestionRenderer({
@@ -80,7 +80,7 @@ export default function QuestionRenderer({
             <Rating
               size="large"
               value={Number(value) || 0}
-              onChange={(_, newValue) => onChange(newValue)}
+              onChange={(_, newValue) => onChange(newValue ?? 0)}
               sx={{ color: 'warning.main' }}
             />
             {Number(value) > 0 && (
