@@ -4,6 +4,7 @@ import Facebook from '@mui/icons-material/Facebook';
 import Instagram from '@mui/icons-material/Instagram';
 import X from '@mui/icons-material/X';
 import { Box, Container, Link, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
 
 const LEGAL_LINKS = [
   { label: 'Confidentialité', href: '/confidentialite' },
@@ -25,8 +26,29 @@ const SOCIAL_LINKS = [
   },
 ];
 
+function getLocaleLabel(locale: string): string {
+  try {
+    const [lang, region] = locale.split('-');
+    const langDisplay = new Intl.DisplayNames([locale], { type: 'language' });
+    const name = langDisplay.of(lang) ?? lang;
+    const label = name.charAt(0).toUpperCase() + name.slice(1);
+    if (region) {
+      const regionDisplay = new Intl.DisplayNames([locale], { type: 'region' });
+      return `${label} (${regionDisplay.of(region) ?? region})`;
+    }
+    return label;
+  } catch {
+    return locale;
+  }
+}
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [localeLabel, setLocaleLabel] = useState('Français');
+  useEffect(() => {
+    const lang = navigator.language || document.documentElement.lang || 'fr';
+    setLocaleLabel(getLocaleLabel(lang));
+  }, []);
 
   return (
     <Box
@@ -105,7 +127,7 @@ export default function Footer() {
               whiteSpace: 'nowrap',
             }}
           >
-            Français (CM)
+            {localeLabel}
           </Typography>
           <Typography variant="caption" color="text.disabled">
             ·
