@@ -108,6 +108,24 @@ export default function CompleteProfilePage() {
     }
   }, []);
 
+  // ── OTP flow: skip (complete with empty payload) ─────────────────────────────────
+
+  const handleSkip = async () => {
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const result = await authService.completeClerkProfile({});
+      sessionStorage.removeItem('clerk_auth_prefill');
+      finalizeAuth(result.token, result.user, result.panel_sso_url);
+    } catch (err) {
+      setError(
+        getSafeErrorMessage(err, 'Une erreur est survenue. Veuillez réessayer.')
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // ── OTP flow: create Laravel account ─────────────────────────────────────────────
 
   const handleOtpFlowSubmit = async (e: React.FormEvent) => {
@@ -451,6 +469,20 @@ export default function CompleteProfilePage() {
                   'Continuer'
                 )}
               </Button>
+
+              {isOtpFlow && (
+                <Button
+                  type="button"
+                  variant="text"
+                  size="small"
+                  fullWidth
+                  onClick={handleSkip}
+                  disabled={isSubmitting}
+                  sx={{ color: 'text.secondary', fontSize: '0.8125rem' }}
+                >
+                  Passer cette étape
+                </Button>
+              )}
             </Box>
           </FadeIn>
         </Box>
