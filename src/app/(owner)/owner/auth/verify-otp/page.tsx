@@ -2,18 +2,14 @@
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
-import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { KH_OWNER_POST_OTP_TOKEN_KEY } from '@/lib/owner-auth-flow';
 import { registerTokenGetter } from '@/lib/auth-token';
 import { persistInMemoryToken } from '@/lib/auth-session';
-import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { User, UserRole } from '@/types';
 import { brandAgent } from '@/theme/tokens';
-import ArrowBack from '@mui/icons-material/ArrowBack';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -22,7 +18,6 @@ import {
   IconButton,
   Typography,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
@@ -37,7 +32,6 @@ const RESEND_COOLDOWN = 60;
 
 export default function OwnerVerifyOtpPage() {
   const router = useRouter();
-  const { finalizeAuth } = useAuth();
 
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [email, setEmail] = useState('');
@@ -46,22 +40,8 @@ export default function OwnerVerifyOtpPage() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendMessage, setResendMessage] = useState('');
   const [isReady, setIsReady] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [welcomeName, setWelcomeName] = useState<string | null>(null);
-  const verifyResultRef = useRef<{
-    token: string;
-    user: User;
-  } | null>(null);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const welcomeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Cleanup timeout on unmount to prevent stale finalizeAuth calls
-  useEffect(() => {
-    return () => {
-      if (welcomeTimeoutRef.current) clearTimeout(welcomeTimeoutRef.current);
-    };
-  }, []);
 
   useLayoutEffect(() => {
     const stored = sessionStorage.getItem('kh_verify_token_owner');
@@ -108,6 +88,8 @@ export default function OwnerVerifyOtpPage() {
   const isComplete = otp.length === 6 && digits.every((d) => d !== '');
 
   const accentColor = brandAgent.primary;
+  const buttonGradient = `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`;
+  const buttonGradientHover = `linear-gradient(to right, ${brandAgent.primary}, ${brandAgent.primaryDark})`;
 
   const logoSrc = OWNER_LOGO_SRC;
   const heroSrc = '/images/owner/Real%20Estate%20Teal.webp';
@@ -147,45 +129,28 @@ export default function OwnerVerifyOtpPage() {
   };
 
   const handleSubmit = async () => {
-    if (!isComplete) return;
-    // Re-read from sessionStorage as fallback (e.g. page refresh wipes React state)
-    const effectiveEmail =
-      email || sessionStorage.getItem('kh_verify_email_owner') || '';
-    if (!effectiveEmail) {
-      setError(
-        "Session expirée. Veuillez recommencer le processus d'inscription."
-      );
-      return;
-    }
+    if (!isComplete || !email) return;
     setError('');
     setIsSubmitting(true);
     try {
-      const result = await authService.verifyEmailOtp(effectiveEmail, otp);
+      const result = await authService.verifyEmailOtp(email, otp);
 
+      // Same sequence as OAuth → Clerk: OTP → complete-profile (welcome) → finalize → dashboard + tours/surveys.
       persistInMemoryToken(result.access_token);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(
+          KH_OWNER_POST_OTP_TOKEN_KEY,
+          result.access_token
+        );
+      }
 
       sessionStorage.removeItem('kh_verify_token_owner');
       sessionStorage.removeItem('kh_verify_email_owner');
       sessionStorage.removeItem('kh_register_role');
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user_id');
-      sessionStorage.removeItem(KH_OWNER_POST_OTP_TOKEN_KEY);
 
-      // Email/password flow already collected phone + city at registration.
-      // Go straight to dashboard — no complete-profile step needed.
-      verifyResultRef.current = {
-        token: result.access_token,
-        user: result.user,
-      };
-      setWelcomeName(result.user?.firstname ?? null);
-      setShowWelcome(true);
-      welcomeTimeoutRef.current = setTimeout(() => {
-        finalizeAuth(
-          result.access_token,
-          { ...result.user, role: result.user?.role ?? UserRole.AGENT },
-          null
-        );
-      }, 3800);
+      router.replace('/owner/auth/complete-profile');
     } catch (err) {
       setError(
         getSafeErrorMessage(err, 'Code invalide ou expiré. Veuillez réessayer.')
@@ -198,13 +163,11 @@ export default function OwnerVerifyOtpPage() {
   };
 
   const handleResendOtp = useCallback(async () => {
-    const effectiveEmail =
-      email || sessionStorage.getItem('kh_verify_email_owner') || '';
-    if (resendCooldown > 0 || !effectiveEmail) return;
+    if (resendCooldown > 0 || !email) return;
     setError('');
     setResendMessage('');
     try {
-      await authService.resendVerification(effectiveEmail);
+      await authService.resendVerification(email);
       setResendMessage('Un nouveau code professionnel a été envoyé.');
       setResendCooldown(RESEND_COOLDOWN);
       setDigits(['', '', '', '', '', '']);
@@ -237,25 +200,6 @@ export default function OwnerVerifyOtpPage() {
       >
         <CircularProgress sx={{ color: brandAgent.primary }} />
       </Box>
-    );
-  }
-
-  if (showWelcome) {
-    return (
-      <WelcomeOverlay
-        firstName={welcomeName}
-        isOwner
-        onSkip={() => {
-          const r = verifyResultRef.current;
-          if (r) {
-            finalizeAuth(
-              r.token,
-              { ...r.user, role: r.user?.role ?? UserRole.AGENT },
-              null
-            );
-          }
-        }}
-      />
     );
   }
 
@@ -372,11 +316,7 @@ export default function OwnerVerifyOtpPage() {
 
         <Box sx={{ width: '100%', maxWidth: 400 }}>
           <FadeIn delay={0.05} direction="none">
-            <AuthFlowStepper
-              labels={stepperLabels}
-              activeStep={1}
-              accentColor={brandAgent.primary}
-            />
+            <AuthFlowStepper labels={stepperLabels} activeStep={1} />
           </FadeIn>
 
           <FadeIn delay={0.1} direction="up">
@@ -463,6 +403,8 @@ export default function OwnerVerifyOtpPage() {
               sx={{
                 py: 1.8,
                 borderRadius: '14px',
+                background: buttonGradient,
+                '&:hover': { background: buttonGradientHover },
                 boxShadow: `0 8px 20px ${alpha(accentColor, 0.25)}`,
                 textTransform: 'none',
                 fontWeight: 700,
@@ -499,5 +441,14 @@ export default function OwnerVerifyOtpPage() {
         </Box>
       </Box>
     </Box>
+  );
+}
+
+function alpha(color: string, opacity: number): string {
+  return (
+    color +
+    Math.round(opacity * 255)
+      .toString(16)
+      .padStart(2, '0')
   );
 }
