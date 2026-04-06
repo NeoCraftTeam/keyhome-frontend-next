@@ -52,8 +52,8 @@ export default function OwnerNavbar() {
       <AppBar
         position="fixed"
         elevation={0}
-        color="inherit"
         sx={{
+          color: 'common.white',
           top: 0,
           left: 0,
           right: 0,
@@ -140,7 +140,7 @@ export default function OwnerNavbar() {
           >
             {!isMobile && (
               <Button
-                variant="outlined"
+                variant="contained"
                 size="small"
                 startIcon={<AddCircleOutlineIcon />}
                 onClick={() => router.push('/owner/ads/new')}
@@ -148,12 +148,7 @@ export default function OwnerNavbar() {
                   borderRadius: 99,
                   fontWeight: 700,
                   textTransform: 'none',
-                  color: '#fff',
-                  borderColor: 'rgba(255,255,255,0.55)',
-                  '&:hover': {
-                    borderColor: '#fff',
-                    bgcolor: 'rgba(255,255,255,0.12)',
-                  },
+                  boxShadow: 'none',
                   transition: 'all 0.2s ease',
                 }}
               >
@@ -179,28 +174,31 @@ export default function OwnerNavbar() {
                 alignItems: 'center',
                 gap: 1,
                 border: '1px solid',
-                borderColor: 'rgba(255,255,255,0.35)',
+                borderColor: 'rgba(255,255,255,0.3)',
                 borderRadius: '40px',
                 px: 1.5,
                 py: 0.5,
                 cursor: 'pointer',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                '&:hover': {
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  bgcolor: 'rgba(255,255,255,0.08)',
+                },
                 '&:focus-visible': {
                   outline: '2px solid',
-                  outlineColor: 'rgba(255,255,255,0.8)',
+                  outlineColor: 'rgba(255,255,255,0.6)',
                   outlineOffset: 2,
                 },
               }}
             >
               <ExpandMoreIcon
-                sx={{ fontSize: 18, color: 'rgba(255,255,255,0.8)' }}
+                sx={{ fontSize: 18, color: 'rgba(255,255,255,0.75)' }}
               />
               <Avatar
                 src={user?.avatar || undefined}
                 sx={{
                   width: 28,
                   height: 28,
-                  bgcolor: user?.avatar ? undefined : 'primary.main',
+                  bgcolor: user?.avatar ? undefined : 'rgba(255,255,255,0.22)',
                   fontSize: '0.75rem',
                   fontWeight: 700,
                 }}

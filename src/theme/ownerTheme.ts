@@ -79,9 +79,10 @@ export const ownerLightTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: brandAgent.primary,
-          color: '#ffffff',
-          borderBottom: '1px solid rgba(255,255,255,0.15)',
-          boxShadow: '0 1px 16px rgba(13,148,136,0.20)',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
+          borderBottom: 'none',
+          boxShadow: '0 1px 8px rgba(13,148,136,0.18)',
         },
       },
     },
@@ -155,9 +156,10 @@ export const ownerDarkTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: brandAgent.primaryDark,
-          color: '#ffffff',
-          borderBottom: '1px solid rgba(255,255,255,0.12)',
-          boxShadow: '0 1px 16px rgba(13,148,136,0.30)',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
+          borderBottom: 'none',
+          boxShadow: '0 1px 8px rgba(13,148,136,0.25)',
         },
       },
     },
