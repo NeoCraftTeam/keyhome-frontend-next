@@ -46,7 +46,6 @@ import BathtubOutlined from '@mui/icons-material/BathtubOutlined';
 import BedOutlined from '@mui/icons-material/BedOutlined';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import Call from '@mui/icons-material/Call';
-import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import CompareArrows from '@mui/icons-material/CompareArrows';
 import ContentCopy from '@mui/icons-material/ContentCopy';
 import Description from '@mui/icons-material/Description';
@@ -644,7 +643,7 @@ function AdDetailContent() {
               onClick={() => openLightbox(0)}
               sx={{
                 position: 'absolute',
-                bottom: 16,
+                bottom: 56,
                 right: 16,
                 zIndex: 2,
                 px: 1.5,
@@ -659,26 +658,6 @@ function AdDetailContent() {
               1/{images.length}
             </Box>
           )}
-          {/* Floating back button */}
-          <IconButton
-            onClick={() => router.back()}
-            aria-label="Retour"
-            sx={{
-              position: 'absolute',
-              top: 12,
-              left: 12,
-              zIndex: 3,
-              bgcolor: (t) =>
-                t.palette.mode === 'dark'
-                  ? 'rgba(19,19,26,0.92)'
-                  : 'rgba(255,255,255,0.95)',
-              color: 'text.primary',
-              '&:hover': { bgcolor: 'background.paper' },
-              boxShadow: 1,
-            }}
-          >
-            <ChevronLeft />
-          </IconButton>
         </Box>
 
         <Container

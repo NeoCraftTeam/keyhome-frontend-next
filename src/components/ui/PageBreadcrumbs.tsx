@@ -21,7 +21,7 @@ export interface BreadcrumbItem {
 
 interface PageBreadcrumbsProps {
   items: BreadcrumbItem[];
-  /** Show a back arrow button (auto-shown on mobile) */
+  /** Show a back arrow button. Defaults to false — nav bar handles back on mobile/PWA. */
   showBack?: boolean;
 }
 
@@ -32,7 +32,7 @@ interface PageBreadcrumbsProps {
  */
 export default function PageBreadcrumbs({
   items,
-  showBack = true,
+  showBack = false,
 }: PageBreadcrumbsProps) {
   const router = useRouter();
   const theme = useTheme();

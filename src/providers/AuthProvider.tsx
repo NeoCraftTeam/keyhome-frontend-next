@@ -42,7 +42,7 @@ import {
 export { __resetModuleStateForTests } from '@/lib/auth-session';
 
 const LOGOUT_OVERLAY_DURATION_MS = 3500;
-const CLERK_SIGN_OUT_FALLBACK_MS = 1200;
+const CLERK_SIGN_OUT_FALLBACK_MS = 4000;
 
 /** Set by register flow; Bearer for verification APIs only (not full session). */
 const KH_VERIFY_TOKEN_CLIENT = 'kh_verify_token_client';
@@ -618,19 +618,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(
-    async (redirectTo = '/home') => {
+    async (redirectTo = '/login') => {
       ++authRunRef.current;
-      clerkExchangeDoneRef.current = false;
+      // NOTE: do NOT reset clerkExchangeDoneRef here. Resetting it while
+      // isSignedIn is still true allows the auth effect to re-run the Clerk
+      // JWT exchange BEFORE signOut() completes, logging the user back in.
+      // The flag is reset naturally in the !isSignedIn branch once Clerk
+      // session invalidation propagates (line ~130).
       setIsLoggingOut(true);
       resetCsrfState();
 
       // Snapshot the Sanctum Bearer BEFORE wiping in-memory slots.
-      // The Axios request interceptor is a microtask — by the time it runs,
-      // clearAllInMemoryTokens() below has already nulled the getter, so the
-      // interceptor would send no Authorization header and the backend would
-      // only revoke the session cookie, not the Bearer token record.
-      // Passing it explicitly in the header bypasses the interceptor race.
       const bearerSnapshot = getInMemoryToken();
+
+      // Wipe all cached API responses so no stale data leaks to the next session.
+      queryClient.clear();
+
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        clearSessionStorage();
+      }
+      clearRoleCookie();
+      clearAllInMemoryTokens();
+      setToken(null);
+      setUserState(null);
+
+      // Fire the backend logout concurrently with the overlay wait.
+      // The 3.5 s overlay is more than enough time for a <100 ms API call.
       void api
         .post(
           '/auth/logout',
@@ -641,47 +655,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         )
         .catch(() => {});
 
-      // Wipe all cached API responses so no stale data leaks to the next session.
-      queryClient.clear();
-
-      if (typeof window !== 'undefined') {
-        localStorage.clear();
-        clearSessionStorage(); // clear both client and owner contexts
-      }
-      clearRoleCookie();
-      clearAllInMemoryTokens(); // clear both token slots
-      setToken(null);
-      setUserState(null);
-
       await new Promise((resolve) =>
         setTimeout(resolve, LOGOUT_OVERLAY_DURATION_MS)
       );
 
-      const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/home';
+      const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/login';
 
       if (isSignedIn) {
         try {
+          // Call signOut WITHOUT redirectUrl — we navigate ourselves below.
+          // Passing redirectUrl causes Clerk to navigate concurrently, creating
+          // a race where window.location.replace fires before the session is
+          // fully invalidated on Clerk's servers (especially on mobile).
           await Promise.race([
-            signOut({
-              redirectUrl: `${window.location.origin}${safeRedirect}`,
-            }),
+            signOut(),
             new Promise((resolve) =>
               setTimeout(resolve, CLERK_SIGN_OUT_FALLBACK_MS)
             ),
           ]);
         } catch {
-          // Fall through to hard redirect fallback.
+          // Fall through to hard redirect.
         }
-
-        window.location.replace(safeRedirect);
-
-        return;
       }
 
-      setIsLoggingOut(false);
-      router.replace(safeRedirect);
+      // Always use a hard navigation so the React tree — including the auth
+      // resolution effect — is fully torn down and rebuilt from a clean state.
+      // A soft router.replace() can re-trigger the Clerk exchange before the
+      // new page loads, bouncing the user back to a logged-in state.
+      window.location.replace(safeRedirect);
     },
-    [isSignedIn, signOut, router, queryClient]
+    [isSignedIn, signOut, queryClient]
   );
 
   const refreshUser = useCallback(async () => {
