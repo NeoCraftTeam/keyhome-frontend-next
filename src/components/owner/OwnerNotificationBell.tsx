@@ -111,8 +111,9 @@ export default function OwnerNotificationBell() {
           color="inherit"
           sx={{
             border: '1px solid',
-            borderColor: 'divider',
+            borderColor: 'rgba(255,255,255,0.35)',
             borderRadius: 2,
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
           }}
         >
           <Badge
@@ -129,7 +130,7 @@ export default function OwnerNotificationBell() {
               },
             }}
           >
-            <NotificationsIcon sx={{ color: 'text.secondary' }} />
+            <NotificationsIcon sx={{ color: 'rgba(255,255,255,0.9)' }} />
           </Badge>
         </IconButton>
       </Tooltip>

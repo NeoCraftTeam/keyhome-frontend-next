@@ -52,8 +52,8 @@ export default function OwnerNavbar() {
       <AppBar
         position="fixed"
         elevation={0}
+        color="inherit"
         sx={{
-          color: 'text.primary',
           top: 0,
           left: 0,
           right: 0,
@@ -103,7 +103,7 @@ export default function OwnerNavbar() {
                 <Typography
                   variant="h6"
                   sx={{
-                    color: 'primary.main',
+                    color: 'inherit',
                     fontWeight: 800,
                     fontSize: { xs: '1.05rem', md: '1.2rem' },
                     letterSpacing: -0.5,
@@ -119,7 +119,7 @@ export default function OwnerNavbar() {
                     fontSize: '0.62rem',
                     fontWeight: 700,
                     letterSpacing: 0.3,
-                    bgcolor: 'primary.main',
+                    bgcolor: 'rgba(255,255,255,0.18)',
                     color: '#fff',
                     border: 'none',
                     display: { xs: 'none', sm: 'flex' },
@@ -140,7 +140,7 @@ export default function OwnerNavbar() {
           >
             {!isMobile && (
               <Button
-                variant="contained"
+                variant="outlined"
                 size="small"
                 startIcon={<AddCircleOutlineIcon />}
                 onClick={() => router.push('/owner/ads/new')}
@@ -148,7 +148,12 @@ export default function OwnerNavbar() {
                   borderRadius: 99,
                   fontWeight: 700,
                   textTransform: 'none',
-                  boxShadow: 'none',
+                  color: '#fff',
+                  borderColor: 'rgba(255,255,255,0.55)',
+                  '&:hover': {
+                    borderColor: '#fff',
+                    bgcolor: 'rgba(255,255,255,0.12)',
+                  },
                   transition: 'all 0.2s ease',
                 }}
               >
@@ -174,20 +179,22 @@ export default function OwnerNavbar() {
                 alignItems: 'center',
                 gap: 1,
                 border: '1px solid',
-                borderColor: 'divider',
+                borderColor: 'rgba(255,255,255,0.35)',
                 borderRadius: '40px',
                 px: 1.5,
                 py: 0.5,
                 cursor: 'pointer',
-                '&:hover': { boxShadow: '0 2px 4px rgba(0,0,0,0.08)' },
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
                 '&:focus-visible': {
                   outline: '2px solid',
-                  outlineColor: 'primary.main',
+                  outlineColor: 'rgba(255,255,255,0.8)',
                   outlineOffset: 2,
                 },
               }}
             >
-              <ExpandMoreIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+              <ExpandMoreIcon
+                sx={{ fontSize: 18, color: 'rgba(255,255,255,0.8)' }}
+              />
               <Avatar
                 src={user?.avatar || undefined}
                 sx={{
