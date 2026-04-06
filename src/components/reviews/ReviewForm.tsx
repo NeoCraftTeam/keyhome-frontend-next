@@ -21,9 +21,15 @@ import { brand } from '@/theme/tokens';
 interface ReviewFormProps {
   adId: string;
   hasUserReviewed: boolean;
+  /** Called after successful submission — use to invalidate the ad query in the parent. */
+  onSuccess?: () => void;
 }
 
-export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
+export default function ReviewForm({
+  adId,
+  hasUserReviewed,
+  onSuccess,
+}: ReviewFormProps) {
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
@@ -50,6 +56,7 @@ export default function ReviewForm({ adId, hasUserReviewed }: ReviewFormProps) {
     onSuccess: () => {
       setSubmitted(true);
       queryClient.invalidateQueries({ queryKey: ['ad', adId] });
+      onSuccess?.();
     },
   });
 

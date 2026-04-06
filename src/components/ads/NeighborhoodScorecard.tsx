@@ -423,7 +423,7 @@ export default function NeighborhoodScorecard({ adId }: Props) {
           {/* Global score row */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
             <ScoreRing score={scorecard.global_score} />
-            <Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography variant="subtitle1" fontWeight={700}>
                 {globalLabel}
               </Typography>
@@ -440,8 +440,13 @@ export default function NeighborhoodScorecard({ adId }: Props) {
                     mt: 0.5,
                     fontSize: 10,
                     height: 20,
+                    maxWidth: '100%',
                     bgcolor: 'warning.light',
                     color: 'warning.dark',
+                    '& .MuiChip-label': {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    },
                   }}
                 />
               )}
@@ -449,7 +454,7 @@ export default function NeighborhoodScorecard({ adId }: Props) {
                 <Box
                   sx={{
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     gap: 1,
                     mt: 0.5,
                     flexWrap: 'wrap',
@@ -457,13 +462,18 @@ export default function NeighborhoodScorecard({ adId }: Props) {
                 >
                   <Chip
                     icon={<WarningAmberRounded sx={{ fontSize: 13 }} />}
-                    label="Données OSM temporairement indisponibles"
+                    label="Données OSM indisponibles"
                     size="small"
                     sx={{
                       fontSize: 10,
                       height: 20,
+                      maxWidth: '100%',
                       bgcolor: 'error.light',
                       color: 'error.dark',
+                      '& .MuiChip-label': {
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      },
                     }}
                   />
                   <Button

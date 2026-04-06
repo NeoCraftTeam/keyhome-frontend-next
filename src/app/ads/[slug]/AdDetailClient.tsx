@@ -1098,7 +1098,7 @@ function AdDetailContent() {
                   color: checkFav(ad.id) ? 'primary.main' : 'text.primary',
                 }}
               >
-                {checkFav(ad.id) ? 'Sauvegardé' : 'Sauvegarder'}
+                Favoris
               </Button>
               <Button
                 variant="outlined"
@@ -1212,7 +1212,7 @@ function AdDetailContent() {
                     color: checkFav(ad.id) ? 'primary.main' : 'text.primary',
                   }}
                 >
-                  {checkFav(ad.id) ? 'Sauvegardé' : 'Sauvegarder'}
+                  Favoris
                 </Button>
                 <Button
                   variant="outlined"
@@ -1933,6 +1933,11 @@ function AdDetailContent() {
                       currentUser &&
                       ad.reviews?.some((r) => r.user?.id === currentUser.id)
                     )
+                  }
+                  onSuccess={() =>
+                    queryClient.invalidateQueries({
+                      queryKey: ['ad', adSlug, isAuthenticated],
+                    })
                   }
                 />
 

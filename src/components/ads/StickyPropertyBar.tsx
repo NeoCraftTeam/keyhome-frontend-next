@@ -84,13 +84,13 @@ export default function StickyPropertyBar({
         sx={{
           display: hideOnDesktop ? { xs: 'flex', md: 'none' } : 'flex',
           width: '100%',
-          alignItems: 'center',
+          flexDirection: hasDirectButtons ? 'column' : 'row',
+          alignItems: hasDirectButtons ? 'stretch' : 'center',
           justifyContent: 'space-between',
-          gap: 2,
+          gap: hasDirectButtons ? 1 : 2,
           px: 2.5,
-          py: 2.5,
-          pt: 2,
-          pb: 'max(1.25rem, env(safe-area-inset-bottom))',
+          pt: 1.5,
+          pb: 'max(1rem, env(safe-area-inset-bottom))',
           bgcolor: 'background.paper',
           borderRadius: '20px 20px 0 0',
           boxShadow: '0 -8px 32px rgba(0,0,0,0.12)',
@@ -117,7 +117,7 @@ export default function StickyPropertyBar({
               variant="h6"
               fontWeight={800}
               sx={{
-                fontSize: '1.25rem',
+                fontSize: '1.15rem',
                 lineHeight: 1.2,
                 letterSpacing: '-0.02em',
                 color: 'text.primary',
@@ -135,14 +135,21 @@ export default function StickyPropertyBar({
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              fontSize: '0.8rem',
+              fontSize: '0.75rem',
             }}
           >
             {title}
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            flexShrink: 0,
+            width: hasDirectButtons ? '100%' : 'auto',
+          }}
+        >
           {hasDirectButtons ? (
             <>
               {whatsappUrl && (
