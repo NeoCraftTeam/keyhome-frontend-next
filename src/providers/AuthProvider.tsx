@@ -635,7 +635,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       queryClient.clear();
 
       if (typeof window !== 'undefined') {
+        // Preserve device-level keys that must survive session changes.
+        // Cookie consent must never be re-prompted after logout (GDPR UX rule).
+        // Onboarding flags are device-level — clearing them would force completed
+        // users through the tour/welcome modal again on next login.
+        const DEVICE_KEYS = [
+          'keyhome_cookie_consent_v1',
+          'kh_tour_completed_at',
+          'kh:welcome-dismissed',
+          'kh:push-prompt-done',
+          'APPTOUR_SHOWN_KEY',
+        ] as const;
+        const preserved: Record<string, string> = {};
+        for (const key of DEVICE_KEYS) {
+          const v = localStorage.getItem(key);
+          if (v !== null) preserved[key] = v;
+        }
         localStorage.clear();
+        for (const [key, val] of Object.entries(preserved)) {
+          localStorage.setItem(key, val);
+        }
         clearSessionStorage();
       }
       clearRoleCookie();
