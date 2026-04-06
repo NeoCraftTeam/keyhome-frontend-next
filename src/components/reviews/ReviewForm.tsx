@@ -14,7 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { brand } from '@/theme/tokens';
 
@@ -31,7 +31,6 @@ export default function ReviewForm({
   onSuccess,
 }: ReviewFormProps) {
   const { user, isAuthenticated } = useAuth();
-  const queryClient = useQueryClient();
 
   const [rating, setRating] = useState<number | null>(null);
   const [hoverRating, setHoverRating] = useState<number>(-1);
@@ -55,7 +54,6 @@ export default function ReviewForm({
       }),
     onSuccess: () => {
       setSubmitted(true);
-      queryClient.invalidateQueries({ queryKey: ['ad', adId] });
       onSuccess?.();
     },
   });
