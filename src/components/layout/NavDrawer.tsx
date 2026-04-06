@@ -31,7 +31,7 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import { SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
-import type { User } from '@/types';
+import { UserRole, type User } from '@/types';
 import { useThemeMode } from '@/providers/ThemeProvider';
 
 interface NavDrawerProps {
@@ -191,11 +191,11 @@ export default function NavDrawer({
       <List sx={{ px: 1 }}>
         <ListItem disablePadding>
           <ListItemButton
-            component="a"
-            href="/owner"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={onClose}
+            onClick={() => {
+              const isOwner =
+                user?.role === UserRole.AGENT || user?.role === UserRole.ADMIN;
+              go(isOwner ? '/owner/dashboard' : '/owner/login');
+            }}
             sx={{
               color: 'primary.main',
               ...ITEM_SX,

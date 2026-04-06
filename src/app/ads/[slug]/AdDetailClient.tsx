@@ -140,6 +140,7 @@ function AdDetailContent() {
   const [unlockState, setUnlockState] = useState<UnlockResponse | null>(null);
   const [confirmStep, setConfirmStep] = useState(false);
   const [snackbar, setSnackbar] = useState('');
+  const [snackbarSuccess, setSnackbarSuccess] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [reportError, setReportError] = useState('');
@@ -382,6 +383,7 @@ function AdDetailContent() {
         });
         queryClient.invalidateQueries({ queryKey: ['unlocked-ads'] });
         setPaymentDialogOpen(false);
+        setSnackbarSuccess(true);
         setSnackbar('Annonce déverrouillée avec succès !');
         track('contact_click', {
           ad_id: ad.id,
@@ -3917,20 +3919,49 @@ function AdDetailContent() {
         />
       )}
 
-      {/* Snackbar */}
-      <Snackbar
-        open={!!snackbar}
-        autoHideDuration={3500}
-        onClose={() => setSnackbar('')}
-        message={snackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        slotProps={{
-          content: { 'aria-live': 'polite', role: 'status' as const } as Record<
-            string,
-            unknown
-          >,
-        }}
-      />
+      {/* Snackbar — green Alert variant for unlock success, default dark for all others */}
+      {snackbarSuccess ? (
+        <Snackbar
+          open={!!snackbar}
+          autoHideDuration={4000}
+          onClose={() => {
+            setSnackbar('');
+            setSnackbarSuccess(false);
+          }}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert
+            onClose={() => {
+              setSnackbar('');
+              setSnackbarSuccess(false);
+            }}
+            severity="success"
+            variant="filled"
+            sx={{
+              minWidth: 280,
+              borderRadius: 2,
+              fontWeight: 600,
+              fontSize: '0.9rem',
+            }}
+          >
+            {snackbar}
+          </Alert>
+        </Snackbar>
+      ) : (
+        <Snackbar
+          open={!!snackbar}
+          autoHideDuration={3500}
+          onClose={() => setSnackbar('')}
+          message={snackbar}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          slotProps={{
+            content: {
+              'aria-live': 'polite',
+              role: 'status' as const,
+            } as Record<string, unknown>,
+          }}
+        />
+      )}
     </>
   );
 }
