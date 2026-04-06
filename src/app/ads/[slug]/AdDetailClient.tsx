@@ -664,7 +664,7 @@ function AdDetailContent() {
           maxWidth="xl"
           sx={{
             pt: { xs: 0, md: 3 },
-            pb: { xs: 14, md: 3 },
+            pb: { xs: 22, md: 3 },
             overflow: { xs: 'visible', md: 'hidden', xl: 'visible' },
             overflowX: 'hidden',
             px: { xs: 2.5, sm: 3, md: 4 },
