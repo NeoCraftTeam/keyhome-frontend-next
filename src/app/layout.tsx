@@ -88,6 +88,14 @@ export const metadata: Metadata = {
     description:
       "Des milliers d'annonces immobilières vérifiées. Maisons, appartements, terrains et villas partout dans le monde. " +
       'Inscription gratuite, paiement sécurisé, contact direct avec les propriétaires. Zéro intermédiaire.',
+    images: [
+      {
+        url: 'https://keyhome.app/images/og-cover.png',
+        width: 1200,
+        height: 630,
+        alt: 'KeyHome — Immobilier en Afrique',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
@@ -95,6 +103,7 @@ export const metadata: Metadata = {
     description:
       "Trouvez votre bien idéal parmi des milliers d'annonces vérifiées. Inscription gratuite, paiement sécurisé, contact direct propriétaire.",
     creator: '@keyhome_app',
+    images: ['https://keyhome.app/images/og-cover.png'],
   },
   icons: {
     icon: [
