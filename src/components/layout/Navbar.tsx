@@ -115,6 +115,7 @@ export default function Navbar() {
       <AppBar
         position="fixed"
         elevation={0}
+        color="inherit"
         sx={{
           color: 'text.primary',
           top: 0,
