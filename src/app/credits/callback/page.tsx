@@ -79,6 +79,7 @@ function CreditCallbackContent() {
     }
   }, []);
 
+  const extendedPollStartedRef = useRef(false);
   const extendedPoll = useCallback(async (attempt: number) => {
     try {
       const result = await creditsService.verifyPurchase();
@@ -135,9 +136,14 @@ function CreditCallbackContent() {
   }, [isApproved, status, attemptVerify]);
 
   useEffect(() => {
-    if (!extendedPolling || purchaseStatus === 'completed') {
+    if (
+      !extendedPolling ||
+      purchaseStatus === 'completed' ||
+      extendedPollStartedRef.current
+    ) {
       return;
     }
+    extendedPollStartedRef.current = true;
     extendedPoll(0);
     return () => {
       if (retryTimerRef.current) {

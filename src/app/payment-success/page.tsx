@@ -79,11 +79,12 @@ function PaymentSuccessContent() {
         setVerifying(false);
       }
     },
-    [adId]
+    [adId, txRef]
   );
 
   // Silent extended polling: when status=approved but webhook hasn't arrived yet,
   // keep checking every 5s for up to 3 minutes before giving up entirely.
+  const extendedPollStartedRef = useRef(false);
   const extendedPoll = useCallback(
     async (attempt: number) => {
       if (!adId || !txRef) {
@@ -112,7 +113,7 @@ function PaymentSuccessContent() {
       }
       // after EXTENDED_MAX_RETRIES we stop silently — user sees the fallback CTA
     },
-    [adId]
+    [adId, txRef]
   );
 
   useEffect(() => {
@@ -136,9 +137,15 @@ function PaymentSuccessContent() {
 
   // Start extended polling once initial retries are done and payment was approved
   useEffect(() => {
-    if (!finalFailed || !isApproved || isUnlocked) {
+    if (
+      !finalFailed ||
+      !isApproved ||
+      isUnlocked ||
+      extendedPollStartedRef.current
+    ) {
       return;
     }
+    extendedPollStartedRef.current = true;
     extendedPoll(0);
     return () => {
       if (retryTimerRef.current) {
