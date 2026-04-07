@@ -141,6 +141,12 @@ export interface User {
   onboarding_completed_at?: string | null;
   last_home_visit_at?: string | null;
   preferences?: { survey_postponed_ids?: string[] };
+  trust_score?: {
+    score: number;
+    tier: import('@/types/trust-score').TrustScoreTier;
+    tier_label: string;
+    tier_color: string;
+  } | null;
 }
 
 export interface City {

@@ -1,5 +1,6 @@
 import api from '@/lib/api';
 import { Ad, User, PaginatedResponse } from '@/types';
+import type { TrustScoreTier } from '@/types/trust-score';
 
 export interface PublicReview {
   id: string;
@@ -35,6 +36,12 @@ export interface PublicUserProfile {
   };
   response_time_label: string | null;
   recent_reviews: PublicReview[];
+  trust_score?: {
+    score: number;
+    tier: TrustScoreTier;
+    tier_label: string;
+    tier_color: string;
+  } | null;
 }
 
 export interface PublicProfileResponse {
