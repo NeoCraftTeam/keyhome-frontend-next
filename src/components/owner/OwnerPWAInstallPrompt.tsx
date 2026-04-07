@@ -1,9 +1,18 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Box, Button, IconButton, Slide, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  IconButton,
+  Slide,
+  Snackbar,
+  Typography,
+} from '@mui/material';
 import Close from '@mui/icons-material/Close';
 import PhoneAndroid from '@mui/icons-material/PhoneAndroid';
+import SystemUpdate from '@mui/icons-material/SystemUpdate';
 import { brandAgent } from '@/theme/tokens';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -24,6 +33,7 @@ export default function OwnerPWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
 
   useEffect(() => {
     const dismissed = localStorage.getItem(DISMISS_KEY);
@@ -42,6 +52,12 @@ export default function OwnerPWAInstallPrompt() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
+  useEffect(() => {
+    const handler = () => setUpdateAvailable(true);
+    window.addEventListener('sw-updated', handler);
+    return () => window.removeEventListener('sw-updated', handler);
+  }, []);
+
   const handleInstall = useCallback(async () => {
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();
@@ -58,8 +74,42 @@ export default function OwnerPWAInstallPrompt() {
     localStorage.setItem(DISMISS_KEY, '1');
   }, []);
 
+  const handleUpdate = useCallback(async () => {
+    setUpdateAvailable(false);
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg?.waiting) {
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+      window.location.reload();
+    }
+  }, []);
+
   return (
     <>
+      {/* Update available snackbar */}
+      <Snackbar
+        open={updateAvailable}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity="info"
+          icon={<SystemUpdate />}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={handleUpdate}
+              sx={{ fontWeight: 600 }}
+            >
+              Mettre à jour
+            </Button>
+          }
+          sx={{ borderRadius: 2, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+        >
+          Une nouvelle version est disponible
+        </Alert>
+      </Snackbar>
+
       {/* Install banner — owner-specific messaging */}
       <Slide direction="up" in={showBanner} mountOnEnter unmountOnExit>
         <Box

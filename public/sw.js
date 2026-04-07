@@ -1,4 +1,4 @@
-// KeyHome Service Worker v2
+// KeyHome Service Worker v3
 // Push + Background Sync + Caching strategy for full offline/PWA support.
 
 const VERSION      = "v3";
@@ -115,24 +115,28 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Pass through non-GET, non-HTTP, and cross-origin requests
+  // Only intercept HTTP/HTTPS GET requests
   if (request.method !== "GET") return;
   if (!url.protocol.startsWith("http")) return;
+
+  // 1. Cacheable read-only API calls → network-first (serve stale when offline).
+  // Checked BEFORE the same-origin guard so cross-origin backend deployments
+  // (e.g. api.keyhome.app serving keyhome.app) are also cached correctly.
+  if (isCacheableApi(url.pathname)) {
+    event.respondWith(networkFirst(request, API_CACHE));
+    return;
+  }
+
+  // Remaining strategies only apply to same-origin resources
   if (url.origin !== self.location.origin) return;
 
-  // 1. Immutable Next.js build output + static assets → cache-first
+  // 2. Immutable Next.js build output + static assets → cache-first
   if (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/icons/") ||
     url.pathname.startsWith("/images/")
   ) {
     event.respondWith(cacheFirst(request, STATIC_CACHE));
-    return;
-  }
-
-  // 2. Cacheable read-only API calls → network-first (serve stale when offline)
-  if (isCacheableApi(url.pathname)) {
-    event.respondWith(networkFirst(request, API_CACHE));
     return;
   }
 
