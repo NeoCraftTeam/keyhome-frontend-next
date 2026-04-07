@@ -47,6 +47,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AdFormWizard, { type TourScene } from '@/components/owner/AdFormWizard';
 import { adsService } from '@/services/ads.service';
+import { ownerService } from '@/services/owner.service';
 
 const PROFILE_STEP_ICONS = {
   name: <Person sx={{ fontSize: 20 }} />,
@@ -243,7 +244,7 @@ export default function OwnerNewAdPage() {
   // Server-side draft detection — show prompt if user has existing drafts
   const { data: existingDraftsPage } = useQuery({
     queryKey: ['my-drafts'],
-    queryFn: () => adsService.list({ status: 'draft', per_page: 5 }),
+    queryFn: () => ownerService.getMyAds({ status: 'draft', per_page: 5 }),
   });
   const [showDraftPrompt, setShowDraftPrompt] = useState(false);
   const draftPromptCheckedRef = useRef(false);
