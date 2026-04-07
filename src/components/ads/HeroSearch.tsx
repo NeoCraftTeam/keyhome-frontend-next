@@ -1,6 +1,10 @@
 'use client';
 
 import api from '@/lib/api';
+import ImageSearchButton, {
+  type ParsedSearchParams,
+} from '@/components/search/ImageSearchButton';
+import VoiceSearchButton from '@/components/search/VoiceSearchButton';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { City } from '@/types';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
@@ -20,7 +24,7 @@ import {
 } from '@mui/material';
 import { motion, useAnimation } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 
 const EXAMPLES = [
   'Appartement 3 pièces à Bastos moins de 150 000 FCFA',
@@ -84,6 +88,28 @@ export default function HeroSearch({
     }
   }, [aiQuery, aiBoxControls, isMultiline]);
 
+  const navigateFromParsed = useCallback(
+    (parsed: ParsedSearchParams) => {
+      const params = new URLSearchParams();
+      if (parsed.q) params.set('q', parsed.q);
+      if (parsed.city_name) params.set('city', parsed.city_name);
+      if (parsed.type_id) params.set('type_id', String(parsed.type_id));
+      else if (parsed.type_name) params.set('type', parsed.type_name);
+      if (parsed.bedrooms) params.set('bedrooms', String(parsed.bedrooms));
+      if (parsed.price_max) params.set('price_max', String(parsed.price_max));
+      if (parsed.price_min) params.set('price_min', String(parsed.price_min));
+      if (parsed.surface_min)
+        params.set('surface_min', String(parsed.surface_min));
+      if (parsed.quarter_name) params.set('quarter', parsed.quarter_name);
+      if (parsed.transaction_type)
+        params.set('transaction_type', parsed.transaction_type);
+      if (parsed.has_parking) params.set('parking', '1');
+      if (parsed.furnished) params.set('furnished', '1');
+      startTransition(() => router.push(`/search?${params.toString()}`));
+    },
+    [router, startTransition]
+  );
+
   const handleAiSearch = async (q?: string) => {
     const searchQuery = q ?? aiQuery;
     if (!searchQuery.trim()) {
@@ -92,48 +118,8 @@ export default function HeroSearch({
     setAiLoading(true);
     try {
       const res = await api.post('/search/parse', { q: searchQuery });
-      const parsed = res.data;
-      const params = new URLSearchParams();
-      if (parsed.q) {
-        params.set('q', parsed.q);
-      }
-      if (parsed.city_name) {
-        params.set('city', parsed.city_name);
-      }
-      if (parsed.type_id) {
-        params.set('type_id', String(parsed.type_id));
-      } else if (parsed.type_name) {
-        params.set('type', parsed.type_name);
-      }
-      if (parsed.bedrooms) {
-        params.set('bedrooms', String(parsed.bedrooms));
-      }
-      if (parsed.price_max) {
-        params.set('price_max', String(parsed.price_max));
-      }
-      if (parsed.price_min) {
-        params.set('price_min', String(parsed.price_min));
-      }
-      if (parsed.surface_min) {
-        params.set('surface_min', String(parsed.surface_min));
-      }
-      if (parsed.quarter_name) {
-        params.set('quarter', parsed.quarter_name);
-      }
-      if (parsed.transaction_type) {
-        params.set('transaction_type', parsed.transaction_type);
-      }
-      if (parsed.has_parking) {
-        params.set('parking', '1');
-      }
-      if (parsed.furnished) {
-        params.set('furnished', '1');
-      }
-      startTransition(() => {
-        router.push(`/search?${params.toString()}`);
-      });
+      navigateFromParsed(res.data as ParsedSearchParams);
     } catch {
-      // fallback: simple text search
       startTransition(() => {
         router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
       });
@@ -141,6 +127,15 @@ export default function HeroSearch({
       setAiLoading(false);
     }
   };
+
+  const handleVoice = useCallback(
+    (transcript: string) => {
+      setAiQuery(transcript);
+      void handleAiSearch(transcript);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   const isDark = theme.palette.mode === 'dark';
   const isDropdownOpen = cityInput.length >= 2 && cities.length > 0;
@@ -343,11 +338,12 @@ export default function HeroSearch({
                   endAdornment: (
                     <InputAdornment
                       position="end"
-                      sx={
+                      sx={[
+                        { display: 'flex', alignItems: 'center', gap: 0.25 },
                         isMultiline
                           ? { alignSelf: 'flex-start', mt: '8px' }
-                          : {}
-                      }
+                          : {},
+                      ]}
                     >
                       {aiLoading ? (
                         <Box
@@ -370,37 +366,49 @@ export default function HeroSearch({
                           </Typography>
                         </Box>
                       ) : (
-                        <Box
-                          role="button"
-                          tabIndex={0}
-                          aria-label="Lancer la recherche IA"
-                          onClick={() => handleAiSearch()}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              handleAiSearch();
-                            }
-                          }}
-                          sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: '50%',
-                            bgcolor: 'primary.main',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            mr: 0.5,
-                            '&:hover': { bgcolor: 'primary.dark' },
-                            '&:focus-visible': {
-                              outline: '2px solid',
-                              outlineColor: 'primary.main',
-                              outlineOffset: 2,
-                            },
-                          }}
-                        >
-                          <SearchIcon sx={{ color: 'white', fontSize: 18 }} />
-                        </Box>
+                        <>
+                          <VoiceSearchButton
+                            onTranscript={handleVoice}
+                            disabled={aiLoading}
+                            size={28}
+                          />
+                          <ImageSearchButton
+                            onResult={navigateFromParsed}
+                            disabled={aiLoading}
+                            size={28}
+                          />
+                          <Box
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Lancer la recherche IA"
+                            onClick={() => handleAiSearch()}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleAiSearch();
+                              }
+                            }}
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: '50%',
+                              bgcolor: 'primary.main',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              mr: 0.5,
+                              '&:hover': { bgcolor: 'primary.dark' },
+                              '&:focus-visible': {
+                                outline: '2px solid',
+                                outlineColor: 'primary.main',
+                                outlineOffset: 2,
+                              },
+                            }}
+                          >
+                            <SearchIcon sx={{ color: 'white', fontSize: 18 }} />
+                          </Box>
+                        </>
                       )}
                     </InputAdornment>
                   ),

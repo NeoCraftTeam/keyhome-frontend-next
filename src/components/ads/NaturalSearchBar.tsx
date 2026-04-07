@@ -1,6 +1,10 @@
 'use client';
 
 import api from '@/lib/api';
+import ImageSearchButton, {
+  type ParsedSearchParams,
+} from '@/components/search/ImageSearchButton';
+import VoiceSearchButton from '@/components/search/VoiceSearchButton';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import Search from '@mui/icons-material/Search';
 import {
@@ -14,7 +18,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 
 const EXAMPLES = [
@@ -60,6 +64,28 @@ export default function NaturalSearchBar() {
     }
   }, [query, boxControls, isMultiline]);
 
+  const navigateFromParsed = useCallback(
+    (parsed: ParsedSearchParams) => {
+      const params = new URLSearchParams();
+      if (parsed.q) params.set('q', parsed.q);
+      if (parsed.city_name) params.set('city', parsed.city_name);
+      if (parsed.type_id) params.set('type_id', String(parsed.type_id));
+      else if (parsed.type_name) params.set('type', parsed.type_name);
+      if (parsed.quarter_name) params.set('quarter', parsed.quarter_name);
+      if (parsed.transaction_type)
+        params.set('transaction_type', parsed.transaction_type);
+      if (parsed.bedrooms) params.set('bedrooms', String(parsed.bedrooms));
+      if (parsed.price_max) params.set('price_max', String(parsed.price_max));
+      if (parsed.price_min) params.set('price_min', String(parsed.price_min));
+      if (parsed.surface_min)
+        params.set('surface_min', String(parsed.surface_min));
+      if (parsed.has_parking) params.set('parking', '1');
+      if (parsed.furnished) params.set('furnished', '1');
+      startTransition(() => router.push(`/search?${params.toString()}`));
+    },
+    [router, startTransition]
+  );
+
   const handleSearch = async (q?: string) => {
     const searchQuery = q ?? query;
     if (!searchQuery.trim()) {
@@ -71,54 +97,22 @@ export default function NaturalSearchBar() {
 
     try {
       const res = await api.post('/search/parse', { q: searchQuery });
-      const parsed = res.data;
-
-      const params = new URLSearchParams();
-      if (parsed.q) {
-        params.set('q', parsed.q);
-      }
-      if (parsed.city_name) {
-        params.set('city', parsed.city_name);
-      }
-      if (parsed.type_id) {
-        params.set('type_id', String(parsed.type_id));
-      } else if (parsed.type_name) {
-        params.set('type', parsed.type_name);
-      }
-      if (parsed.quarter_name) {
-        params.set('quarter', parsed.quarter_name);
-      }
-      if (parsed.transaction_type) {
-        params.set('transaction_type', parsed.transaction_type);
-      }
-      if (parsed.bedrooms) {
-        params.set('bedrooms', String(parsed.bedrooms));
-      }
-      if (parsed.price_max) {
-        params.set('price_max', String(parsed.price_max));
-      }
-      if (parsed.price_min) {
-        params.set('price_min', String(parsed.price_min));
-      }
-      if (parsed.surface_min) {
-        params.set('surface_min', String(parsed.surface_min));
-      }
-      if (parsed.has_parking) {
-        params.set('parking', '1');
-      }
-      if (parsed.furnished) {
-        params.set('furnished', '1');
-      }
-
-      startTransition(() => {
-        router.push(`/search?${params.toString()}`);
-      });
+      navigateFromParsed(res.data as ParsedSearchParams);
     } catch {
       setError('Impossible de traiter votre recherche. Réessayez.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleVoice = useCallback(
+    (transcript: string) => {
+      setQuery(transcript);
+      void handleSearch(transcript);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   return (
     <Box>
@@ -170,10 +164,25 @@ export default function NaturalSearchBar() {
                 <InputAdornment
                   position="end"
                   sx={[
-                    { pr: 1 },
+                    { pr: 1, display: 'flex', alignItems: 'center', gap: 0.25 },
                     isMultiline && { alignSelf: 'flex-start', pt: '10px' },
                   ]}
                 >
+                  {!isLoading && (
+                    <>
+                      <VoiceSearchButton
+                        onTranscript={handleVoice}
+                        disabled={isLoading}
+                        size={30}
+                      />
+                      <ImageSearchButton
+                        onResult={navigateFromParsed}
+                        onError={setError}
+                        disabled={isLoading}
+                        size={30}
+                      />
+                    </>
+                  )}
                   {isLoading ? (
                     <CircularProgress size={20} />
                   ) : (
