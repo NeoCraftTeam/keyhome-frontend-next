@@ -61,6 +61,7 @@ export default function OwnerNavbar() {
           zIndex: (theme) => theme.zIndex.drawer + 10,
           width: { xs: '100%', md: `calc(100% - ${SIDEBAR_WIDTH}px)` },
           ml: { md: SIDEBAR_WIDTH },
+          display: { xs: 'flex', md: 'none' },
         }}
       >
         <Toolbar
@@ -289,9 +290,10 @@ export default function OwnerNavbar() {
 
       <Toolbar
         sx={{
+          display: { xs: 'flex', md: 'none' },
           minHeight: {
             xs: 'calc(56px + env(safe-area-inset-top, 0px))',
-            md: 'calc(64px + env(safe-area-inset-top, 0px))',
+            md: 0,
           },
         }}
       />

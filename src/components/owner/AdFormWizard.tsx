@@ -55,7 +55,7 @@ export type { AdFormValues, TourScene } from './ad-form/types';
 /*  Step definitions                                                    */
 /* ------------------------------------------------------------------ */
 
-const STEP_LABELS = [
+const BASE_STEP_LABELS = [
   'Type',
   'Infos',
   'Détails',
@@ -295,6 +295,15 @@ function AdFormWizard({
     ? getCategoryById(selectedCategory)
     : undefined;
   const hiddenFields = new Set(categoryConfig?.hiddenFields ?? []);
+
+  /* Dynamic step labels — adapt Step 3 label based on category */
+  const STEP_LABELS = useMemo(() => {
+    const labels = [...BASE_STEP_LABELS];
+    if (selectedCategory === AdTypeCategory.TERRAIN) {
+      labels[3] = 'Équipements';
+    }
+    return labels;
+  }, [selectedCategory]);
 
   /* ── Lightbox images ── */
   const lightboxImages = useMemo<AdImage[]>(
@@ -708,6 +717,14 @@ function AdFormWizard({
         {/* ══════════════════ Step 3: Equipment & Conditions ══════════════════ */}
         <Collapse in={activeStep === 3} unmountOnExit>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontStyle: 'italic' }}
+            >
+              Cette étape est optionnelle — vous pouvez passer directement à la
+              suite.
+            </Typography>
             {!hiddenFields.has('attributes') && (
               <AdFormEquipment
                 values={values}
@@ -735,6 +752,14 @@ function AdFormWizard({
         {/* ══════════════════ Step 4: Media & Location ══════════════════ */}
         <Collapse in={activeStep === 4} unmountOnExit>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontStyle: 'italic' }}
+            >
+              Cette étape est optionnelle — ajoutez des médias pour enrichir
+              votre annonce.
+            </Typography>
             <AdFormTour
               tourScenes={tourScenes}
               ad={ad}

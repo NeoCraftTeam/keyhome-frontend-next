@@ -152,9 +152,7 @@ export default function AdFormStepType({
                 borderColor: selected ? 'primary.main' : 'divider',
                 bgcolor: selected ? 'primary.main' : 'background.paper',
                 color: selected ? '#fff' : 'text.primary',
-                boxShadow: selected
-                  ? '0 4px 14px rgba(246,71,95,0.25)'
-                  : 'none',
+                boxShadow: 'none',
                 transition: 'border-color 0.2s, box-shadow 0.2s',
                 '&:hover': {
                   borderColor: selected ? 'primary.main' : 'action.hover',
@@ -244,9 +242,7 @@ export default function AdFormStepType({
                 border: '2px solid',
                 borderColor: selected ? cat.color : 'divider',
                 bgcolor: selected ? alpha(cat.color, 0.08) : 'background.paper',
-                boxShadow: selected
-                  ? `0 0 0 3px ${alpha(cat.color, 0.18)}`
-                  : 'none',
+                boxShadow: 'none',
                 opacity: unavailable ? 0.55 : 1,
                 transition:
                   'border-color 0.2s, background-color 0.2s, box-shadow 0.2s',

@@ -12,14 +12,24 @@ interface Props {
   size?: number;
 }
 
+interface SpeechResult {
+  readonly transcript: string;
+  readonly confidence: number;
+}
+
+interface SpeechResultEvent {
+  readonly results: {
+    readonly [index: number]: { readonly [index: number]: SpeechResult };
+  };
+}
+
 type SpeechRecognitionCtor = new () => {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
   maxAlternatives: number;
   onstart: (() => void) | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onresult: ((e: any) => void) | null;
+  onresult: ((e: SpeechResultEvent) => void) | null;
   onerror: (() => void) | null;
   onend: (() => void) | null;
   start(): void;
@@ -69,8 +79,7 @@ export default function VoiceSearchButton({
 
     rec.onstart = () => setState('listening');
 
-    rec.onresult = (e: any) => {
-      // eslint-disable-line @typescript-eslint/no-explicit-any
+    rec.onresult = (e: SpeechResultEvent) => {
       const transcript = e.results[0][0].transcript.trim();
       setState('processing');
       onTranscript(transcript);
