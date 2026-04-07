@@ -26,6 +26,7 @@ export default function PrivacyPolicyPage() {
             aria-label="Retour à l'accueil"
           >
             <svg
+              aria-hidden="true"
               width="20"
               height="20"
               viewBox="0 0 24 24"
@@ -56,6 +57,7 @@ export default function PrivacyPolicyPage() {
           <div className={styles.heroBadge}>
             <span className={styles.heroBadgeIcon}>
               <svg
+                aria-hidden="true"
                 width="14"
                 height="14"
                 viewBox="0 0 24 24"
@@ -71,7 +73,7 @@ export default function PrivacyPolicyPage() {
                 <line x1="3" y1="10" x2="21" y2="10" />
               </svg>
             </span>
-            Dernière mise à jour : 20 février 2026
+            Dernière mise à jour : 7 avril 2026
           </div>
           <p className={styles.heroDescription}>
             Votre confiance est notre priorité. Découvrez comment nous
@@ -111,6 +113,7 @@ export default function PrivacyPolicyPage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -167,6 +170,7 @@ export default function PrivacyPolicyPage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -213,6 +217,7 @@ export default function PrivacyPolicyPage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -260,6 +265,7 @@ export default function PrivacyPolicyPage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -295,6 +301,7 @@ export default function PrivacyPolicyPage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -354,6 +361,7 @@ export default function PrivacyPolicyPage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -403,6 +411,7 @@ export default function PrivacyPolicyPage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -462,6 +471,7 @@ export default function PrivacyPolicyPage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -506,6 +516,7 @@ export default function PrivacyPolicyPage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -535,6 +546,7 @@ export default function PrivacyPolicyPage() {
                     className={styles.contactEmail}
                   >
                     <svg
+                      aria-hidden="true"
                       width="16"
                       height="16"
                       viewBox="0 0 24 24"
@@ -569,6 +581,7 @@ export default function PrivacyPolicyPage() {
                 <Link
                   href="/confidentialite"
                   className={styles.footerLinkActive}
+                  aria-current="page"
                 >
                   Confidentialité
                 </Link>

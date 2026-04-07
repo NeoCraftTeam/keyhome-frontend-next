@@ -27,6 +27,7 @@ export default function TermsOfUsePage() {
             aria-label="Retour à l'accueil"
           >
             <svg
+              aria-hidden="true"
               width="20"
               height="20"
               viewBox="0 0 24 24"
@@ -59,6 +60,7 @@ export default function TermsOfUsePage() {
           <div className={styles.heroBadge}>
             <span className={styles.heroBadgeIcon}>
               <svg
+                aria-hidden="true"
                 width="14"
                 height="14"
                 viewBox="0 0 24 24"
@@ -74,7 +76,7 @@ export default function TermsOfUsePage() {
                 <line x1="3" y1="10" x2="21" y2="10" />
               </svg>
             </span>
-            Dernière mise à jour : 20 février 2026
+            Dernière mise à jour : 7 avril 2026
           </div>
           <p className={styles.heroDescription}>
             En utilisant KeyHome, vous acceptez les présentes conditions.
@@ -114,6 +116,7 @@ export default function TermsOfUsePage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -163,6 +166,7 @@ export default function TermsOfUsePage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -207,6 +211,7 @@ export default function TermsOfUsePage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -259,6 +264,7 @@ export default function TermsOfUsePage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -315,6 +321,7 @@ export default function TermsOfUsePage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -363,6 +370,7 @@ export default function TermsOfUsePage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -411,6 +419,7 @@ export default function TermsOfUsePage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -448,6 +457,7 @@ export default function TermsOfUsePage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -483,6 +493,7 @@ export default function TermsOfUsePage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -532,6 +543,7 @@ export default function TermsOfUsePage() {
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
                   <svg
+                    aria-hidden="true"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -572,6 +584,7 @@ export default function TermsOfUsePage() {
                     className={styles.contactEmail}
                   >
                     <svg
+                      aria-hidden="true"
                       width="16"
                       height="16"
                       viewBox="0 0 24 24"
@@ -607,7 +620,11 @@ export default function TermsOfUsePage() {
                   Confidentialité
                 </Link>
                 <span className={styles.footerSep}>•</span>
-                <Link href="/conditions" className={styles.footerLinkActive}>
+                <Link
+                  href="/conditions"
+                  className={styles.footerLinkActive}
+                  aria-current="page"
+                >
                   Conditions générales
                 </Link>
                 <span className={styles.footerSep}>•</span>

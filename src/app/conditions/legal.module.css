@@ -468,12 +468,6 @@
 .section:nth-child(10) {
   animation-delay: 0.4s;
 }
-.section:nth-child(11) {
-  animation-delay: 0.44s;
-}
-.section:nth-child(12) {
-  animation-delay: 0.48s;
-}
 
 .section:last-child {
   margin-bottom: 0;
@@ -615,7 +609,7 @@
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
-  mask-composite: exclude;
+  mask-composite: subtract;
   pointer-events: none;
 }
 
@@ -693,14 +687,19 @@
 }
 
 .footerLinkActive {
-  composes: footerLink;
   color: #f6475f;
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
   background: #fee8eb;
+  transition: all 0.2s ease;
 }
 
 .footerSep {
   color: #d1d5db;
-  font-size: 0.5rem;
+  font-size: 0.65rem;
   user-select: none;
   padding: 0 2px;
 }
