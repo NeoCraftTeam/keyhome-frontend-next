@@ -601,6 +601,9 @@ img[data-nimg] {
 .landing-nav-cta {
   display: flex;
 }
+.landing-mobile-cta {
+  display: none;
+}
 .landing-hamburger {
   display: none;
   cursor: pointer;
@@ -731,6 +734,9 @@ img[data-nimg] {
   .landing-nav-cta {
     display: none;
   }
+  .landing-mobile-cta {
+    display: inline-block;
+  }
   .landing-section-pad {
     padding: 64px 16px;
   }
@@ -768,6 +774,9 @@ img[data-nimg] {
   }
   .hero-stats {
     gap: 16px;
+  }
+  .landing-hamburger .landing-theme-toggle {
+    display: none;
   }
 }
 

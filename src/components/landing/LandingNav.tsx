@@ -284,13 +284,53 @@ export default function LandingNav() {
             </PageTransitionLink>
           </div>
 
-          {/* Mobile right side: toggle + hamburger */}
+          {/* Mobile right side: CTAs + toggle + hamburger */}
           <div
             className="landing-hamburger"
-            style={{ alignItems: 'center', gap: 10 }}
+            style={{ alignItems: 'center', gap: 8 }}
           >
-            {/* Theme toggle (always visible on mobile) */}
+            {/* Compact CTA buttons (visible on mobile) */}
+            <PageTransitionLink
+              href="/home"
+              className="landing-mobile-cta"
+              style={{
+                color: textNav,
+                textDecoration: 'none',
+                fontSize: 13,
+                fontWeight: 500,
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: `1px solid ${border}`,
+                display: 'inline-block',
+                whiteSpace: 'nowrap',
+                transition: 'color 0.35s, border-color 0.35s',
+              }}
+            >
+              Visiter
+            </PageTransitionLink>
+
+            <PageTransitionLink
+              href={getOwnerLoginHref()}
+              className="landing-mobile-cta"
+              style={{
+                color: '#fff',
+                textDecoration: 'none',
+                fontSize: 13,
+                fontWeight: 600,
+                padding: '6px 14px',
+                borderRadius: 8,
+                background: gradient.primary135,
+                boxShadow: '0 2px 12px rgba(246,71,95,0.3)',
+                display: 'inline-block',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Annoncer
+            </PageTransitionLink>
+
+            {/* Theme toggle (hidden on very small screens to save space) */}
             <motion.button
+              className="landing-theme-toggle"
               onClick={toggle}
               whileTap={{ scale: 0.9 }}
               title={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}
