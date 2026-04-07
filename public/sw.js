@@ -226,16 +226,20 @@ self.addEventListener("notificationclick", (event) => {
 // connectivity is restored the browser fires the 'sync' event here and we
 // replay those queued requests against the API.
 
-const SYNC_TAG_FAVORITES         = 'kh-sync-favorites';
-const SYNC_TAG_CONTACTS          = 'kh-sync-contacts';
 const SYNC_TAG_VIEWING_RESPONSE  = 'kh-sync-viewing-response';
+// NOTE: kh-sync-favorites and kh-sync-contacts are intentionally NOT declared here.
+// FavoritesProvider uses localStorage + fire-and-forget API calls (no offline queue).
+// If offline favorites sync is needed in the future, add enqueue logic in FavoritesProvider
+// and add the sync tag + handler here.
 
 /** Open (or create) the offline-queue store. */
-async function openSyncStore(storeName) {
+async function openSyncStore() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open('kh-sync-db', 2);
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
+      // Keep all 3 stores for schema compatibility with existing installs.
+      // Only 'viewing-responses' is actively used; others are forward-reserved.
       if (!db.objectStoreNames.contains('favorites')) {
         db.createObjectStore('favorites', { autoIncrement: true });
       }
@@ -280,40 +284,10 @@ async function drainStore(db, storeName, fn) {
 }
 
 self.addEventListener('sync', (event) => {
-  if (event.tag === SYNC_TAG_FAVORITES) {
-    event.waitUntil(
-      openSyncStore('favorites').then((db) =>
-        drainStore(db, 'favorites', async (record) => {
-          await fetch(record.url, {
-            method:  record.method || 'POST',
-            headers: { 'Content-Type': 'application/json', ...record.headers },
-            body:    record.body ? JSON.stringify(record.body) : undefined,
-            credentials: 'include',
-          });
-        }),
-      ),
-    );
-  }
-
-  if (event.tag === SYNC_TAG_CONTACTS) {
-    event.waitUntil(
-      openSyncStore('contacts').then((db) =>
-        drainStore(db, 'contacts', async (record) => {
-          await fetch(record.url, {
-            method:  record.method || 'POST',
-            headers: { 'Content-Type': 'application/json', ...record.headers },
-            body:    record.body ? JSON.stringify(record.body) : undefined,
-            credentials: 'include',
-          });
-        }),
-      ),
-    );
-  }
-
   // Owner: replay viewing confirm/decline actions queued while offline
   if (event.tag === SYNC_TAG_VIEWING_RESPONSE) {
     event.waitUntil(
-      openSyncStore('viewing-responses').then((db) =>
+      openSyncStore().then((db) =>
         drainStore(db, 'viewing-responses', async (record) => {
           await fetch(record.url, {
             method:  record.method || 'POST',
