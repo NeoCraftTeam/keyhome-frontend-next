@@ -144,44 +144,52 @@ function AdFormLivePreview({
       sx={{
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: 3,
+        borderRadius: 2.5,
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
+        bgcolor: '#fff',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
       }}
     >
       {/* ── Header ── */}
       <Box
         sx={{
+          px: 2,
+          pt: 1.5,
+          pb: 1,
           display: 'flex',
           alignItems: 'center',
-          gap: 1,
-          px: 2,
-          py: 1.25,
+          justifyContent: 'space-between',
           borderBottom: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
         }}
       >
-        <Typography variant="subtitle2" fontWeight={700} sx={{ flexGrow: 1 }}>
+        <Typography
+          variant="overline"
+          fontWeight={700}
+          letterSpacing={1.5}
+          color="text.secondary"
+        >
           Aperçu
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <Box
             sx={{
-              width: 8,
-              height: 8,
+              width: 7,
+              height: 7,
               borderRadius: '50%',
-              bgcolor: '#22c55e',
-              '@keyframes pulse': {
-                '0%, 100%': { opacity: 1 },
-                '50%': { opacity: 0.35 },
+              bgcolor: 'success.main',
+              '@keyframes pulse-dot': {
+                '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                '50%': { opacity: 0.5, transform: 'scale(1.4)' },
               },
-              animation: 'pulse 1.8s ease-in-out infinite',
+              animation: 'pulse-dot 1.5s ease-in-out infinite',
             }}
           />
-          <Typography variant="caption" color="success.main" fontWeight={600}>
+          <Typography variant="caption" fontWeight={600} color="success.main">
             En direct
           </Typography>
         </Box>
@@ -678,15 +686,26 @@ function AdFormLivePreview({
       {/* ── Footer watermark ── */}
       <Box
         sx={{
+          px: 2,
+          py: 1,
+          bgcolor: 'warning.50',
           borderTop: '1px solid',
-          borderColor: 'divider',
-          pb: 1.5,
-          pt: 1,
-          textAlign: 'center',
-          bgcolor: 'background.paper',
+          borderColor: 'warning.200',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 1,
         }}
       >
-        <Typography variant="caption" color="text.disabled">
+        <Box
+          sx={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            bgcolor: 'warning.500',
+          }}
+        />
+        <Typography variant="caption" fontWeight={600} color="warning.700">
           Aperçu · Non publié
         </Typography>
       </Box>

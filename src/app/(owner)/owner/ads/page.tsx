@@ -124,12 +124,13 @@ export default function OwnerAdsPage() {
     queryFn: () => adTypesService.list(),
   });
 
-  // Separate lightweight query for draft count (shown in header)
+  // Draft query — fetch up to 20 so we can render the pinned "Brouillons" section
   const { data: draftData } = useQuery({
-    queryKey: ['owner-ads', 'draft-count'],
+    queryKey: ['owner-ads', 'drafts'],
     queryFn: () =>
-      ownerService.getMyAds({ page: 1, per_page: 1, status: 'draft' }),
+      ownerService.getMyAds({ page: 1, per_page: 20, status: 'draft' }),
   });
+  const draftAds = (draftData?.data ?? []) as Ad[];
   const draftCount = draftData?.meta?.total ?? 0;
 
   const toggleMutation = useMutation({
@@ -233,6 +234,151 @@ export default function OwnerAdsPage() {
           />
         )}
       </Box>
+
+      {/* ── Pinned drafts section ── */}
+      {draftAds.length > 0 && statusFilter !== 'draft' && (
+        <Paper
+          elevation={0}
+          sx={{
+            border: '1px solid',
+            borderColor: 'warning.200',
+            borderRadius: 2,
+            mb: 3,
+            overflow: 'hidden',
+          }}
+        >
+          <Box
+            sx={{
+              px: 2.5,
+              py: 1.5,
+              bgcolor: 'warning.50',
+              borderBottom: '1px solid',
+              borderColor: 'warning.200',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+            }}
+          >
+            <EditIcon sx={{ color: 'warning.700', fontSize: 20 }} />
+            <Typography
+              variant="subtitle2"
+              fontWeight={700}
+              color="warning.800"
+            >
+              {draftCount} brouillon{draftCount > 1 ? 's' : ''} en cours
+            </Typography>
+            <Typography variant="caption" color="warning.600" sx={{ ml: 0.5 }}>
+              — Cliquez sur &quot;Continuer&quot; pour reprendre la rédaction
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {draftAds.map((draft, idx) => (
+              <Box
+                key={draft.id}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  px: 2.5,
+                  py: 1.5,
+                  borderBottom:
+                    idx < draftAds.length - 1 ? '1px solid' : 'none',
+                  borderColor: 'divider',
+                  '&:hover': { bgcolor: 'grey.50' },
+                  transition: 'background-color 0.15s',
+                }}
+              >
+                {/* Thumbnail */}
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 42,
+                    borderRadius: 1,
+                    overflow: 'hidden',
+                    bgcolor: 'grey.100',
+                    flexShrink: 0,
+                  }}
+                >
+                  {draft.images?.[0]?.thumb || draft.images?.[0]?.url ? (
+                    <Box
+                      component="img"
+                      src={draft.images[0].thumb || draft.images[0].url}
+                      alt={draft.title}
+                      sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'text.disabled',
+                      }}
+                    >
+                      <AddIcon sx={{ fontSize: 20, opacity: 0.4 }} />
+                    </Box>
+                  )}
+                </Box>
+                {/* Info */}
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    noWrap
+                    color={draft.title ? 'text.primary' : 'text.disabled'}
+                  >
+                    {draft.title || 'Sans titre'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Modifié le{' '}
+                    {new Date(draft.updated_at).toLocaleDateString('fr-FR', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </Typography>
+                </Box>
+                {/* Actions */}
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <Chip
+                    label="Brouillon"
+                    size="small"
+                    sx={{
+                      bgcolor: 'warning.100',
+                      color: 'warning.800',
+                      fontWeight: 600,
+                      fontSize: '0.7rem',
+                    }}
+                  />
+                  <Box
+                    component="button"
+                    onClick={() => router.push(`/owner/ads/${draft.id}`)}
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      borderRadius: 1.5,
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      px: 2,
+                      py: 0.75,
+                      border: 'none',
+                      cursor: 'pointer',
+                      bgcolor: 'warning.600',
+                      color: '#fff',
+                      '&:hover': { bgcolor: 'warning.700' },
+                      transition: 'background-color 0.15s',
+                    }}
+                  >
+                    Continuer →
+                  </Box>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Paper>
+      )}
 
       <Paper sx={{ overflow: 'hidden', mb: 4 }}>
         <Box

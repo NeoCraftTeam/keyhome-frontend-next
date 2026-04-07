@@ -1,14 +1,4 @@
-import BedIcon from '@mui/icons-material/Bed';
-import BusIcon from '@mui/icons-material/DirectionsBus';
-import HospitalIcon from '@mui/icons-material/LocalHospital';
-import ParkingIcon from '@mui/icons-material/LocalParking';
-import NearMeIcon from '@mui/icons-material/NearMe';
-import SchoolIcon from '@mui/icons-material/School';
-import ShowerIcon from '@mui/icons-material/Shower';
-import ShopIcon from '@mui/icons-material/ShoppingCart';
-import StraightenIcon from '@mui/icons-material/Straighten';
 import {
-  Box,
   FormControlLabel,
   Grid,
   InputAdornment,
@@ -33,22 +23,14 @@ export default function AdFormFeatures({
 }: AdFormFeaturesProps) {
   return (
     <Paper elevation={0} sx={sectionSx}>
-      <Typography
-        variant="subtitle1"
-        sx={{
-          ...sectionTitleSx,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-        }}
-      >
-        <StraightenIcon sx={{ color: 'primary.main', fontSize: 22 }} />
+      <Typography variant="subtitle1" sx={sectionTitleSx}>
         Caractéristiques
       </Typography>
-      <Grid container spacing={2}>
+      <Grid container spacing={2.5}>
         <Grid size={{ xs: 12 }}>
           <TextField
             fullWidth
+            size="medium"
             label="Adresse"
             placeholder="Ex: Rue de la Liberté, Bonanjo"
             value={values.adresse}
@@ -60,6 +42,7 @@ export default function AdFormFeatures({
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <TextField
             fullWidth
+            size="medium"
             label="Prix (FCFA)"
             type="number"
             inputProps={{ min: 0, inputMode: 'numeric' }}
@@ -77,6 +60,7 @@ export default function AdFormFeatures({
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <TextField
             fullWidth
+            size="medium"
             label="Surface"
             type="number"
             inputProps={{ min: 1, inputMode: 'numeric' }}
@@ -92,14 +76,8 @@ export default function AdFormFeatures({
         <Grid size={{ xs: 6, sm: 6, md: 2 }}>
           <TextField
             fullWidth
+            size="medium"
             label="Chambres"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <BedIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                </InputAdornment>
-              ),
-            }}
             type="number"
             inputProps={{ min: 0, inputMode: 'numeric' }}
             value={values.bedrooms}
@@ -110,14 +88,8 @@ export default function AdFormFeatures({
         <Grid size={{ xs: 6, sm: 6, md: 2 }}>
           <TextField
             fullWidth
+            size="medium"
             label="SDB"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <ShowerIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                </InputAdornment>
-              ),
-            }}
             type="number"
             inputProps={{ min: 0, inputMode: 'numeric' }}
             value={values.bathrooms}
@@ -134,15 +106,7 @@ export default function AdFormFeatures({
                 color="primary"
               />
             }
-            label={
-              <Box
-                component="span"
-                sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-              >
-                <ParkingIcon sx={{ fontSize: 18 }} />
-                Parking
-              </Box>
-            }
+            label="Parking"
             sx={{ pt: 1 }}
           />
         </Grid>
@@ -153,13 +117,9 @@ export default function AdFormFeatures({
         variant="subtitle1"
         sx={{
           ...sectionTitleSx,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
           mt: 3,
         }}
       >
-        <NearMeIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         Proximité & Accessibilité
       </Typography>
       <Typography
@@ -170,21 +130,17 @@ export default function AdFormFeatures({
         Distances approximatives depuis le bien (en mètres). Laisser vide si non
         applicable.
       </Typography>
-      <Grid container spacing={2}>
+      <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <TextField
             fullWidth
+            size="medium"
             label="Route principale"
             type="number"
             inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
             value={values.distance_main_road_m}
             onChange={(e) => update('distance_main_road_m', e.target.value)}
             InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <NearMeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                </InputAdornment>
-              ),
               endAdornment: <InputAdornment position="end">m</InputAdornment>,
             }}
           />
@@ -192,17 +148,13 @@ export default function AdFormFeatures({
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <TextField
             fullWidth
+            size="medium"
             label="Magasins / Marchés"
             type="number"
             inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
             value={values.distance_shops_m}
             onChange={(e) => update('distance_shops_m', e.target.value)}
             InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <ShopIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                </InputAdornment>
-              ),
               endAdornment: <InputAdornment position="end">m</InputAdornment>,
             }}
           />
@@ -210,17 +162,13 @@ export default function AdFormFeatures({
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <TextField
             fullWidth
+            size="medium"
             label="Transport en commun"
             type="number"
             inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
             value={values.distance_transport_m}
             onChange={(e) => update('distance_transport_m', e.target.value)}
             InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <BusIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                </InputAdornment>
-              ),
               endAdornment: <InputAdornment position="end">m</InputAdornment>,
             }}
           />
@@ -228,17 +176,13 @@ export default function AdFormFeatures({
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <TextField
             fullWidth
+            size="medium"
             label="École / Université"
             type="number"
             inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
             value={values.distance_school_m}
             onChange={(e) => update('distance_school_m', e.target.value)}
             InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SchoolIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                </InputAdornment>
-              ),
               endAdornment: <InputAdornment position="end">m</InputAdornment>,
             }}
           />
@@ -246,19 +190,13 @@ export default function AdFormFeatures({
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <TextField
             fullWidth
+            size="medium"
             label="Hôpital / Clinique"
             type="number"
             inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
             value={values.distance_hospital_m}
             onChange={(e) => update('distance_hospital_m', e.target.value)}
             InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <HospitalIcon
-                    sx={{ fontSize: 18, color: 'text.secondary' }}
-                  />
-                </InputAdornment>
-              ),
               endAdornment: <InputAdornment position="end">m</InputAdornment>,
             }}
           />

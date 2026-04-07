@@ -7,7 +7,6 @@ import {
   CircularProgress,
   Collapse,
   Snackbar,
-  Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -116,7 +115,6 @@ function AdFormWizard({
   onSaveDraft,
   onCancel,
   submitLabel = "Créer l'annonce",
-  draftLabel = 'Enregistrer le brouillon',
   isSubmitting = false,
   isSavingDraft = false,
   onEnhanceDescription,
@@ -549,6 +547,13 @@ function AdFormWizard({
         if (!values.title.trim()) e.title = 'Le titre est obligatoire.';
         if (!values.description.trim())
           e.description = 'La description est obligatoire.';
+        // Require at least 4 images
+        const existingCount =
+          ad?.images?.filter((img) => !imagesToDelete.includes(img.id))
+            .length ?? 0;
+        const totalImages = images.length + existingCount;
+        if (totalImages < 4)
+          e.images = 'Veuillez ajouter au moins 4 photos pour continuer.';
         break;
       }
       case 2: {
@@ -734,6 +739,13 @@ function AdFormWizard({
   /* ── Existing images count ── */
   const existingImageCount = (ad?.images?.length ?? 0) - imagesToDelete.length;
 
+  /* ── Image count for step 1 gating ── */
+  const existingVisibleCount =
+    ad?.images?.filter((img) => !imagesToDelete.includes(img.id)).length ?? 0;
+  const totalImageCount = images.length + existingVisibleCount;
+  const nextDisabled =
+    isSubmitting || (activeStep === 1 && totalImageCount < 4);
+
   /* ================================================================== */
   /*  RENDER                                                             */
   /* ================================================================== */
@@ -835,14 +847,6 @@ function AdFormWizard({
             {/* ══════════════════ Step 3: Equipment & Conditions ══════════════════ */}
             <Collapse in={activeStep === 3} unmountOnExit>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ fontStyle: 'italic' }}
-                >
-                  Cette étape est optionnelle — vous pouvez passer directement à
-                  la suite.
-                </Typography>
                 {!hiddenFields.has('attributes') && (
                   <AdFormEquipment
                     values={values}
@@ -870,14 +874,6 @@ function AdFormWizard({
             {/* ══════════════════ Step 4: Media & Location ══════════════════ */}
             <Collapse in={activeStep === 4} unmountOnExit>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ fontStyle: 'italic' }}
-                >
-                  Cette étape est optionnelle — ajoutez des médias pour enrichir
-                  votre annonce.
-                </Typography>
                 <AdFormTour
                   tourScenes={tourScenes}
                   ad={ad}
@@ -921,62 +917,44 @@ function AdFormWizard({
             >
               {/* Left side */}
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                {isAutoSaving && (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      mr: 1,
-                    }}
-                  >
-                    <CircularProgress size={12} thickness={5} />
-                    <Typography variant="caption" color="text.disabled">
-                      Sauvegarde...
-                    </Typography>
-                  </Box>
-                )}
-                {!isAutoSaving && savedAt && (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      mr: 1,
-                    }}
-                  >
-                    <CheckCircleOutlined
-                      sx={{ fontSize: 14, color: 'success.main' }}
-                    />
-                    <Typography variant="caption" color="text.disabled">
-                      Brouillon sauvegardé à{' '}
-                      {savedAt.toLocaleTimeString('fr-FR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </Typography>
-                  </Box>
-                )}
                 {onSaveDraft && (
                   <Button
                     variant="text"
                     size="small"
-                    onClick={handleSaveDraft}
+                    onClick={
+                      isAutoSaving || isSavingDraft
+                        ? undefined
+                        : handleSaveDraft
+                    }
                     disabled={isSubmitting || isSavingDraft}
                     startIcon={
-                      isSavingDraft ? (
-                        <CircularProgress size={16} />
+                      isAutoSaving || isSavingDraft ? (
+                        <CircularProgress size={14} />
+                      ) : savedAt ? (
+                        <CheckCircleOutlined
+                          sx={{ color: 'success.main', fontSize: 16 }}
+                        />
                       ) : (
-                        <SaveOutlined />
+                        <SaveOutlined sx={{ fontSize: 16 }} />
                       )
                     }
                     sx={{
                       borderRadius: 2,
                       fontWeight: 600,
                       textTransform: 'none',
+                      color: savedAt ? 'success.main' : 'text.secondary',
+                      '&:hover': {
+                        bgcolor: savedAt ? 'success.50' : undefined,
+                      },
                     }}
                   >
-                    {draftLabel}
+                    {isAutoSaving
+                      ? 'Sauvegarde...'
+                      : isSavingDraft
+                        ? 'Sauvegarde...'
+                        : savedAt
+                          ? `Brouillon · Enregistré le ${savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+                          : 'Enregistrer le brouillon'}
                   </Button>
                 )}
               </Box>
@@ -1008,7 +986,7 @@ function AdFormWizard({
                     variant="contained"
                     endIcon={<ArrowForwardIcon />}
                     onClick={handleNext}
-                    disabled={isSubmitting}
+                    disabled={nextDisabled}
                     sx={{
                       borderRadius: 2,
                       fontWeight: 700,

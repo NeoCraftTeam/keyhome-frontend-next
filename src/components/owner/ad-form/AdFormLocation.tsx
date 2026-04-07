@@ -1,9 +1,7 @@
-import LocationIcon from '@mui/icons-material/LocationOn';
 import {
   Autocomplete,
   FormControl,
   Grid,
-  InputAdornment,
   InputLabel,
   MenuItem,
   Paper,
@@ -67,7 +65,6 @@ export default function AdFormLocation({
   return (
     <Paper elevation={0} sx={sectionSx}>
       <Typography variant="subtitle1" sx={sectionTitleSx}>
-        <LocationIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         Localisation & Type
       </Typography>
       <Grid container spacing={2}>
@@ -90,18 +87,6 @@ export default function AdFormLocation({
                 label="Ville"
                 placeholder="Rechercher une ville..."
                 sx={cityInputSx}
-                slotProps={{
-                  input: {
-                    ...params.InputProps,
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LocationIcon
-                          sx={{ color: 'text.secondary', fontSize: 20 }}
-                        />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
               />
             )}
           />
