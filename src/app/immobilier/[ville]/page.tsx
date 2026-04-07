@@ -131,7 +131,7 @@ export default async function CityPage({
   try {
     const res = await fetch(
       `${API_URL}/ads?city=${encodeURIComponent(name)}&per_page=12&status=available`,
-      { next: { revalidate: 300 } }
+      { next: { revalidate: 300 }, signal: AbortSignal.timeout(5000) }
     );
     if (res.ok) {
       const json = await res.json();
