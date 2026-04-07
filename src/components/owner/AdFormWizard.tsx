@@ -115,6 +115,7 @@ function AdFormWizard({
   onSaveDraft,
   onCancel,
   submitLabel = "Créer l'annonce",
+  draftLabel = 'Enregistrer le brouillon',
   isSubmitting = false,
   isSavingDraft = false,
   onEnhanceDescription,
@@ -954,7 +955,7 @@ function AdFormWizard({
                         ? 'Sauvegarde...'
                         : savedAt
                           ? `Brouillon · Enregistré le ${savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
-                          : 'Enregistrer le brouillon'}
+                          : draftLabel}
                   </Button>
                 )}
               </Box>
