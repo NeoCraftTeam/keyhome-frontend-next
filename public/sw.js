@@ -1,7 +1,7 @@
 // KeyHome Service Worker v2
 // Push + Background Sync + Caching strategy for full offline/PWA support.
 
-const VERSION      = "v2";
+const VERSION      = "v3";
 const STATIC_CACHE = `kh-static-${VERSION}`;
 const API_CACHE    = `kh-api-${VERSION}`;
 const NAV_CACHE    = `kh-nav-${VERSION}`;
@@ -11,6 +11,7 @@ const KNOWN_CACHES = [STATIC_CACHE, API_CACHE, NAV_CACHE];
 const PRECACHE_URLS = [
   "/offline",
   "/manifest.json",
+  "/manifest-owner.json",
   "/images/logo-teal.png",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",

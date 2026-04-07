@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import RetryButton from './RetryButton';
 
+export const dynamic = 'force-static';
+
 export const metadata: Metadata = {
   title: 'Hors ligne',
 };

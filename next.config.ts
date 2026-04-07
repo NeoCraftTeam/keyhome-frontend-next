@@ -239,9 +239,19 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Web App Manifest — short cache so icon/name updates reach users quickly
+      // Web App Manifests — short cache so icon/name updates reach users quickly
       {
         source: '/manifest.json',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=3600' },
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json; charset=utf-8',
+          },
+        ],
+      },
+      {
+        source: '/manifest-owner.json',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=3600' },
           {

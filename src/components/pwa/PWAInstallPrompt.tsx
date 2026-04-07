@@ -48,7 +48,7 @@ export default function PWAInstallPrompt() {
   useEffect(() => {
     // Owner panel handles its own install prompt
     if (isOwnerPanel) return;
-    const dismissed = sessionStorage.getItem(DISMISS_KEY);
+    const dismissed = localStorage.getItem(DISMISS_KEY);
     if (dismissed) return;
 
     const handler = (e: Event) => {
@@ -105,7 +105,7 @@ export default function PWAInstallPrompt() {
 
   const handleDismiss = useCallback(() => {
     setShowBanner(false);
-    sessionStorage.setItem(DISMISS_KEY, '1');
+    localStorage.setItem(DISMISS_KEY, '1');
   }, []);
 
   const handleUpdate = useCallback(async () => {

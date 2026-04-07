@@ -101,17 +101,17 @@
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "Espace propriétaire",
-      "short_name": "Propriétaire",
-      "description": "Tableau de bord propriétaire",
-      "url": "/owner/dashboard",
+      "name": "Explorer la carte",
+      "short_name": "Carte",
+      "description": "Trouver des biens près de moi",
+      "url": "/nearby",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "Publier une annonce",
-      "short_name": "Publier",
-      "description": "Créer une nouvelle annonce immobilière",
-      "url": "/owner/ads/new",
+      "name": "Mes alertes",
+      "short_name": "Alertes",
+      "description": "Mes alertes de recherche immobilière",
+      "url": "/search-alerts",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ],
