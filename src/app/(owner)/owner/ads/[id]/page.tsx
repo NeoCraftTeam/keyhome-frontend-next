@@ -91,8 +91,8 @@ export default function OwnerAdEditPage() {
       tourScenes?: TourScene[];
       propertyConditionPdf?: File | null;
     }) => {
+      // NOTE: _method=PUT is appended by adsService.update — do NOT add it here.
       const formData = new FormData();
-      formData.append('_method', 'PUT');
       formData.append('title', values.title);
       formData.append('description', values.description);
       formData.append('adresse', values.adresse);
@@ -522,7 +522,7 @@ export default function OwnerAdEditPage() {
   /* ─── Loading ─── */
   if (isLoading) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
         <Skeleton variant="text" width={200} height={40} sx={{ mb: 2 }} />
         <Skeleton
           variant="rectangular"
@@ -537,7 +537,7 @@ export default function OwnerAdEditPage() {
   /* ─── Error ─── */
   if (error || !ad) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
         <Alert
           severity="error"
           sx={{ borderRadius: 2 }}
