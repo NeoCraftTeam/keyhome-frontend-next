@@ -315,7 +315,7 @@ export default function LoginPage() {
             >
               Pas encore de compte ?{' '}
               <Link
-                href="/register"
+                href="/register?lock=1"
                 underline="hover"
                 sx={{ fontWeight: 600, color: 'primary.main' }}
               >

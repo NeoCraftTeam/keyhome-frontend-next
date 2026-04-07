@@ -8,10 +8,14 @@ import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { registerTokenGetter } from '@/lib/auth-token';
 import {
   clearStoredRegisterAccountRole,
+  clearStoredRegisterLock,
   deriveRegisterRoleFromQuery,
   readStoredRegisterAccountRole,
+  readStoredRegisterLock,
+  registerUrlHasRoleLock,
   registerUrlHasRoleIntent,
   writeStoredRegisterAccountRole,
+  writeStoredRegisterLock,
 } from '@/lib/register-intent';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
@@ -111,23 +115,36 @@ export default function RegisterPage() {
   const [accountRole, setAccountRole] = useState<AccountRole>(
     () => readStoredRegisterAccountRole() ?? 'customer'
   );
+  const [isRoleLocked, setIsRoleLocked] = useState<boolean>(() =>
+    readStoredRegisterLock()
+  );
   const [agentType, setAgentType] = useState<AgentType>('individual');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   /**
-   * Apply ?role= / ?intent= once, persist in sessionStorage, then strip the query string
-   * so the account type is not visible or shareable via URL (API still authorizes the real role).
+   * Apply ?role= / ?intent= and/or ?lock= once, persist in sessionStorage, then strip the
+   * query string so the account type is not visible or shareable via URL.
+   * API still authorizes the real role — this is UX-only.
    */
   useLayoutEffect(() => {
-    if (!registerUrlHasRoleIntent(searchParams)) {
-      return;
+    const hasIntent = registerUrlHasRoleIntent(searchParams);
+    const hasLock = registerUrlHasRoleLock(searchParams);
+    if (!hasIntent && !hasLock) return;
+
+    if (hasIntent) {
+      const resolved = deriveRegisterRoleFromQuery(
+        searchParams.get('role'),
+        searchParams.get('intent')
+      );
+      setAccountRole(resolved);
+      writeStoredRegisterAccountRole(resolved);
     }
-    const resolved = deriveRegisterRoleFromQuery(
-      searchParams.get('role'),
-      searchParams.get('intent')
-    );
-    setAccountRole(resolved);
-    writeStoredRegisterAccountRole(resolved);
+
+    if (hasLock) {
+      writeStoredRegisterLock();
+      setIsRoleLocked(true);
+    }
+
     router.replace(pathname ?? '/register', { scroll: false });
   }, [pathname, router, searchParams, searchQueryKey]);
 
@@ -328,6 +345,7 @@ export default function RegisterPage() {
       sessionStorage.setItem('kh_register_role', accountRole);
 
       clearStoredRegisterAccountRole();
+      clearStoredRegisterLock();
       // Route immediately to OTP — WelcomeOverlay fires AFTER OTP verification,
       // not here. This matches the described flow: register → OTP → Welcome → Dashboard.
       router.push(
@@ -563,64 +581,113 @@ export default function RegisterPage() {
                       fontWeight={600}
                       sx={{ mb: 2 }}
                     >
-                      Quel type de compte souhaitez-vous créer ?
+                      {isRoleLocked
+                        ? 'Type de compte'
+                        : 'Quel type de compte souhaitez-vous créer ?'}
                     </Typography>
 
-                    <ToggleButtonGroup
-                      value={accountRole}
-                      exclusive
-                      onChange={handleAccountRoleChange}
-                      fullWidth
-                      sx={{ mb: 3 }}
-                    >
-                      <ToggleButton
-                        value="customer"
+                    {/* Locked: show a read-only role badge instead of the toggle */}
+                    {isRoleLocked ? (
+                      <Box
                         sx={{
-                          py: 2.5,
-                          borderRadius: '12px !important',
-                          textTransform: 'none',
-                          flexDirection: 'column',
-                          gap: 0.5,
-                          '&.Mui-selected': {
-                            bgcolor: 'primary.main',
-                            color: '#fff',
-                            '&:hover': { bgcolor: 'primary.dark' },
-                          },
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 2,
+                          p: 2.5,
+                          mb: 3,
+                          borderRadius: '12px',
+                          border: '1.5px solid',
+                          borderColor: 'primary.main',
+                          bgcolor: tokens.selectedBgAlpha,
                         }}
                       >
-                        <PersonOutline sx={{ fontSize: 28 }} />
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          Particulier
-                        </Typography>
-                        <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                          Recherche de biens
-                        </Typography>
-                      </ToggleButton>
-                      <ToggleButton
-                        value="agent"
-                        sx={{
-                          py: 2.5,
-                          borderRadius: '12px !important',
-                          textTransform: 'none',
-                          flexDirection: 'column',
-                          gap: 0.5,
-                          ml: '12px !important',
-                          '&.Mui-selected': {
-                            bgcolor: 'primary.main',
-                            color: '#fff',
-                            '&:hover': { bgcolor: 'primary.dark' },
-                          },
-                        }}
+                        {accountRole === 'agent' ? (
+                          <BusinessIcon
+                            sx={{
+                              fontSize: 28,
+                              color: 'primary.main',
+                              flexShrink: 0,
+                            }}
+                          />
+                        ) : (
+                          <PersonOutline
+                            sx={{
+                              fontSize: 28,
+                              color: 'primary.main',
+                              flexShrink: 0,
+                            }}
+                          />
+                        )}
+                        <Box>
+                          <Typography variant="subtitle2" fontWeight={700}>
+                            {accountRole === 'agent'
+                              ? 'Propriétaire / Bailleur'
+                              : 'Particulier'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {accountRole === 'agent'
+                              ? 'Publication et gestion d’annonces immobilières'
+                              : 'Recherche de biens immobiliers'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ) : (
+                      <ToggleButtonGroup
+                        value={accountRole}
+                        exclusive
+                        onChange={handleAccountRoleChange}
+                        fullWidth
+                        sx={{ mb: 3 }}
                       >
-                        <BusinessIcon sx={{ fontSize: 28 }} />
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          Agent / Agence
-                        </Typography>
-                        <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                          Publication d&apos;annonces
-                        </Typography>
-                      </ToggleButton>
-                    </ToggleButtonGroup>
+                        <ToggleButton
+                          value="customer"
+                          sx={{
+                            py: 2.5,
+                            borderRadius: '12px !important',
+                            textTransform: 'none',
+                            flexDirection: 'column',
+                            gap: 0.5,
+                            '&.Mui-selected': {
+                              bgcolor: 'primary.main',
+                              color: '#fff',
+                              '&:hover': { bgcolor: 'primary.dark' },
+                            },
+                          }}
+                        >
+                          <PersonOutline sx={{ fontSize: 28 }} />
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Particulier
+                          </Typography>
+                          <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                            Recherche de biens
+                          </Typography>
+                        </ToggleButton>
+                        <ToggleButton
+                          value="agent"
+                          sx={{
+                            py: 2.5,
+                            borderRadius: '12px !important',
+                            textTransform: 'none',
+                            flexDirection: 'column',
+                            gap: 0.5,
+                            ml: '12px !important',
+                            '&.Mui-selected': {
+                              bgcolor: 'primary.main',
+                              color: '#fff',
+                              '&:hover': { bgcolor: 'primary.dark' },
+                            },
+                          }}
+                        >
+                          <BusinessIcon sx={{ fontSize: 28 }} />
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Agent / Agence
+                          </Typography>
+                          <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                            Publication d&apos;annonces
+                          </Typography>
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    )}
 
                     {accountRole === 'agent' && (
                       <FadeIn direction="up" duration={0.3}>

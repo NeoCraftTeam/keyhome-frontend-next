@@ -1,6 +1,5 @@
 'use client';
 
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CloseIcon from '@mui/icons-material/Close';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
@@ -31,7 +30,7 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import { SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
-import { UserRole, type User } from '@/types';
+import { type User } from '@/types';
 import { useThemeMode } from '@/providers/ThemeProvider';
 
 interface NavDrawerProps {
@@ -189,27 +188,6 @@ export default function NavDrawer({
 
       {/* Account links */}
       <List sx={{ px: 1 }}>
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={() => {
-              const isOwner =
-                user?.role === UserRole.AGENT || user?.role === UserRole.ADMIN;
-              go(isOwner ? '/owner/dashboard' : '/owner/login');
-            }}
-            sx={{
-              color: 'primary.main',
-              ...ITEM_SX,
-              '&:hover': { bgcolor: 'rgba(246,71,95,0.06)' },
-            }}
-          >
-            <ListItemIcon>
-              <AddCircleOutlineIcon color="primary" />
-            </ListItemIcon>
-            <ListItemText primary="Devenir hôte" />
-          </ListItemButton>
-        </ListItem>
-        <Divider sx={{ my: 1.5, mx: 2 }} />
-
         <Typography
           variant="overline"
           color="text.secondary"

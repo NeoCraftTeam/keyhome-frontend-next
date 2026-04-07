@@ -1,6 +1,9 @@
 'use client';
 
-import { writeStoredRegisterAccountRole } from '@/lib/register-intent';
+import {
+  writeStoredRegisterAccountRole,
+  writeStoredRegisterLock,
+} from '@/lib/register-intent';
 import { brandAgent } from '@/theme/tokens';
 import { Box, CircularProgress } from '@mui/material';
 import { useRouter } from 'next/navigation';
@@ -15,6 +18,7 @@ export default function OwnerRegisterRedirectPage() {
 
   useLayoutEffect(() => {
     writeStoredRegisterAccountRole('agent');
+    writeStoredRegisterLock();
     router.replace('/register');
   }, [router]);
 
