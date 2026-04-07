@@ -2,13 +2,30 @@ import Image from 'next/image';
 import Link from 'next/link';
 import styles from './legal.module.css';
 
+const sections = [
+  { id: 'description', title: 'Description du service' },
+  { id: 'compte', title: 'Compte utilisateur' },
+  { id: 'publication', title: 'Règles de publication' },
+  { id: 'score-confiance', title: 'Score de Confiance' },
+  { id: 'credits', title: 'Système de crédits' },
+  { id: 'responsabilites', title: 'Responsabilités' },
+  { id: 'propriete', title: 'Propriété intellectuelle' },
+  { id: 'resiliation', title: 'Résiliation' },
+  { id: 'limitation', title: 'Limitation de responsabilité' },
+  { id: 'modifications', title: 'Modifications et contact' },
+];
+
 export default function TermsOfUsePage() {
   return (
     <div className={styles.page}>
-      {/* Sticky header */}
+      {/* ── Header ── */}
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <Link href="/" className={styles.backLink} aria-label="Retour">
+          <Link
+            href="/"
+            className={styles.backLink}
+            aria-label="Retour à l'accueil"
+          >
             <svg
               width="20"
               height="20"
@@ -16,204 +33,594 @@ export default function TermsOfUsePage() {
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
           </Link>
           <Image src="/images/logo.png" alt="KeyHome" width={32} height={32} />
           <span className={styles.brand}>KeyHome</span>
+          <div className={styles.headerSpacer} />
+          <span className={styles.headerDocType}>Document légal</span>
         </div>
       </header>
 
-      {/* Hero */}
-      <div className={styles.hero}>
-        <div className={styles.container}>
+      {/* ── Hero ── */}
+      <section className={styles.hero}>
+        <div className={styles.heroContent}>
+          <p className={styles.heroEyebrow}>
+            <span className={styles.heroEyebrowDot} />
+            KeyHome · Conditions générales
+          </p>
           <h1 className={styles.heroTitle}>
             Conditions Générales d&apos;Utilisation
           </h1>
-          <p className={styles.heroSub}>
+          <div className={styles.heroBadge}>
+            <span className={styles.heroBadgeIcon}>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+            </span>
             Dernière mise à jour : 20 février 2026
-          </p>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className={styles.container}>
-        <div className={styles.card}>
-          <p className={styles.intro}>
+          </div>
+          <p className={styles.heroDescription}>
             En utilisant KeyHome, vous acceptez les présentes conditions.
-            Veuillez les lire attentivement avant d&apos;utiliser notre service.
+            Veuillez les lire attentivement avant d&apos;utiliser notre
+            plateforme.
           </p>
-
-          <hr className={styles.divider} />
-
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.iconBox}>1</span>
-              <h2 className={styles.sectionTitle}>Description du service</h2>
-            </div>
-            <p>
-              KeyHome est une plateforme de mise en relation entre propriétaires
-              immobiliers, agents et personnes à la recherche de biens en
-              Afrique. Notre service permet de :
-            </p>
-            <ul className={styles.list}>
-              <li>Publier et consulter des annonces immobilières</li>
-              <li>Rechercher des biens selon différents critères</li>
-              <li>Contacter les propriétaires ou agents</li>
-              <li>Gérer ses annonces et favoris</li>
-              <li>Recevoir des recommandations personnalisées</li>
-            </ul>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.iconBox}>2</span>
-              <h2 className={styles.sectionTitle}>Compte utilisateur</h2>
-            </div>
-            <p>
-              Pour utiliser certaines fonctionnalités, vous devez créer un
-              compte et vous engagez à :
-            </p>
-            <ul className={styles.list}>
-              <li>Fournir des informations exactes et à jour</li>
-              <li>Maintenir la confidentialité de vos identifiants</li>
-              <li>Ne pas partager votre compte avec des tiers</li>
-              <li>Nous informer de toute utilisation non autorisée</li>
-            </ul>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.iconBox}>3</span>
-              <h2 className={styles.sectionTitle}>Règles de publication</h2>
-            </div>
-            <p>Les utilisateurs publiant des annonces s&apos;engagent à :</p>
-            <ul className={`${styles.list} ${styles.listWarning}`}>
-              <li>
-                Publier uniquement des biens dont ils sont propriétaires ou
-                mandataires
-              </li>
-              <li>Fournir des informations exactes et complètes</li>
-              <li>Utiliser des photos réelles et récentes du bien</li>
-              <li>Mettre à jour ou supprimer les annonces obsolètes</li>
-              <li>Ne pas publier de contenu frauduleux ou illégal</li>
-            </ul>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.iconBox}>4</span>
-              <h2 className={styles.sectionTitle}>Comportements interdits</h2>
-            </div>
-            <p>Il est strictement interdit de :</p>
-            <ul className={`${styles.list} ${styles.listDanger}`}>
-              <li>Utiliser le service à des fins illégales ou frauduleuses</li>
-              <li>Harceler, menacer ou nuire aux autres utilisateurs</li>
-              <li>Publier du contenu haineux, discriminatoire ou offensant</li>
-              <li>Collecter des données personnelles sans consentement</li>
-              <li>Interférer avec le fonctionnement de la plateforme</li>
-            </ul>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.iconBox}>5</span>
-              <h2 className={styles.sectionTitle}>Services payants</h2>
-            </div>
-            <p>Certaines fonctionnalités sont payantes :</p>
-            <ul className={`${styles.list} ${styles.listSuccess}`}>
-              <li>
-                Déblocage d&apos;annonces : accès aux coordonnées complètes
-              </li>
-              <li>Boost d&apos;annonces : mise en avant dans les résultats</li>
-              <li>Abonnements : forfaits pour les professionnels</li>
-            </ul>
-            <p className={styles.note}>
-              Les paiements sont traités de manière sécurisé. Les achats ne sont
-              généralement pas remboursables une fois activés.
-            </p>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.iconBox}>6</span>
-              <h2 className={styles.sectionTitle}>Propriété intellectuelle</h2>
-            </div>
-            <p>
-              Le contenu de l&apos;application (logos, design, code) est protégé
-              par les droits de propriété intellectuelle. Les utilisateurs
-              conservent leurs droits sur le contenu publié mais accordent à
-              KeyHome une licence pour l&apos;afficher sur la plateforme.
-            </p>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.iconBox}>7</span>
-              <h2 className={styles.sectionTitle}>
-                Limitation de responsabilité
-              </h2>
-            </div>
-            <p>
-              KeyHome agit en tant qu&apos;intermédiaire et ne peut être tenu
-              responsable :
-            </p>
-            <ul className={`${styles.list} ${styles.listMuted}`}>
-              <li>
-                De l&apos;exactitude des informations publiées par les
-                utilisateurs
-              </li>
-              <li>Des transactions effectuées entre utilisateurs</li>
-              <li>Des litiges entre propriétaires et locataires</li>
-              <li>Des interruptions de service dues à des causes externes</li>
-            </ul>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.iconBox}>8</span>
-              <h2 className={styles.sectionTitle}>
-                Résiliation et droit applicable
-              </h2>
-            </div>
-            <p>
-              Vous pouvez supprimer votre compte à tout moment. KeyHome se
-              réserve le droit de suspendre tout compte violant ces conditions.
-            </p>
-            <p>
-              Les présentes conditions sont régies par le droit applicable dans
-              le pays d&apos;utilisation du service. Tout litige sera soumis aux
-              tribunaux compétents du lieu d&apos;établissement de
-              l&apos;utilisateur.
-            </p>
-          </section>
-
-          <hr className={styles.divider} />
-
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.iconBox}>9</span>
-              <h2 className={styles.sectionTitle}>Contact</h2>
-            </div>
-            <p>Pour toute question concernant ces conditions :</p>
-            <div className={styles.contactBox}>
-              <strong>KeyHome</strong>
-              <br />
-              support@keyhome.app
-            </div>
-          </section>
         </div>
+      </section>
 
-        {/* Footer links */}
-        <div className={styles.footerLinks}>
-          <Link href="/confidentialite" className={styles.footerPrimary}>
-            Politique de confidentialité
-          </Link>
-          <Link href="/" className={styles.footerSecondary}>
-            Retour à l&apos;accueil
-          </Link>
-        </div>
+      {/* ── Layout: ToC + Content ── */}
+      <div className={styles.layout}>
+        {/* Table of Contents */}
+        <nav className={styles.toc} aria-label="Sommaire">
+          <span className={styles.tocLabel}>Sommaire</span>
+          {sections.map((s, i) => (
+            <a key={s.id} href={`#${s.id}`} className={styles.tocItem}>
+              <span className={styles.tocNumber}>{i + 1}</span>
+              {s.title}
+            </a>
+          ))}
+        </nav>
+
+        {/* Main Content */}
+        <main className={styles.mainContent}>
+          <div className={styles.card}>
+            <p className={styles.intro}>
+              Les présentes conditions régissent l&apos;utilisation de la
+              plateforme <span className={styles.introHighlight}>KeyHome</span>.
+              En accédant à nos services, vous vous engagez à respecter
+              l&apos;ensemble de ces conditions.
+            </p>
+
+            <hr className={styles.divider} />
+
+            {/* §1 — Description du service */}
+            <section id="description" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M2 12h20" />
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>
+                  1. Description du service
+                </h2>
+              </div>
+              <p>
+                KeyHome est une plateforme de mise en relation entre
+                propriétaires immobiliers, agents et personnes à la recherche de
+                biens en{' '}
+                <span className={styles.strong}>Afrique francophone</span>.
+                Notre service permet de :
+              </p>
+              <ul className={styles.list}>
+                <li>
+                  Publier et consulter des annonces immobilières détaillées
+                </li>
+                <li>
+                  Rechercher des biens selon des critères géographiques,
+                  budgétaires et de confort
+                </li>
+                <li>Contacter les propriétaires ou agents immobiliers</li>
+                <li>
+                  Gérer vos annonces, favoris et baux depuis un espace dédié
+                </li>
+                <li>
+                  Recevoir des recommandations personnalisées basées sur vos
+                  préférences
+                </li>
+              </ul>
+            </section>
+
+            {/* §2 — Compte utilisateur */}
+            <section id="compte" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>2. Compte utilisateur</h2>
+              </div>
+              <p>
+                Pour accéder à certaines fonctionnalités, vous devez créer un
+                compte. En vous inscrivant, vous vous engagez à :
+              </p>
+              <ul className={styles.list}>
+                <li>Fournir des informations exactes, complètes et à jour</li>
+                <li>
+                  Maintenir la confidentialité stricte de vos identifiants de
+                  connexion
+                </li>
+                <li>Ne pas partager votre compte avec des tiers</li>
+                <li>
+                  Nous informer immédiatement de toute utilisation non autorisée
+                  de votre compte
+                </li>
+              </ul>
+              <div className={styles.note}>
+                Vous êtes responsable de toutes les actions effectuées sous
+                votre compte. KeyHome ne pourra être tenu responsable d&apos;un
+                accès non autorisé résultant d&apos;une négligence de votre
+                part.
+              </div>
+            </section>
+
+            {/* §3 — Règles de publication */}
+            <section id="publication" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>
+                  3. Règles de publication
+                </h2>
+              </div>
+              <p>
+                Les utilisateurs publiant des annonces s&apos;engagent
+                formellement à respecter les règles suivantes :
+              </p>
+              <ul className={`${styles.list} ${styles.listWarning}`}>
+                <li>
+                  Publier uniquement des biens dont ils sont propriétaires ou
+                  mandataires légitimes
+                </li>
+                <li>
+                  Fournir des informations exactes, complètes et vérifiables
+                </li>
+                <li>Utiliser des photos réelles et récentes du bien proposé</li>
+                <li>
+                  Mettre à jour ou supprimer les annonces devenues obsolètes
+                </li>
+                <li>
+                  Ne pas publier de contenu frauduleux, trompeur ou illégal
+                </li>
+              </ul>
+              <div className={`${styles.note} ${styles.noteHighlight}`}>
+                Toute annonce ne respectant pas ces règles pourra être retirée
+                sans préavis. Les récidives peuvent entraîner la suspension du
+                compte.
+              </div>
+            </section>
+
+            {/* §4 — Score de Confiance */}
+            <section id="score-confiance" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <polygon
+                      points="12,8 13.1,11.3 16.5,11.3 13.7,13.5 14.8,16.7 12,14.5 9.2,16.7 10.3,13.5 7.5,11.3 10.9,11.3"
+                      fill="currentColor"
+                      stroke="none"
+                    />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>
+                  4. Score de Confiance (TrustScore)
+                </h2>
+              </div>
+              <p>
+                KeyHome propose un système de{' '}
+                <span className={styles.strong}>Score de Confiance</span>{' '}
+                optionnel visant à renforcer la transparence des interactions
+                entre utilisateurs :
+              </p>
+              <ul className={styles.list}>
+                <li>
+                  <span className={styles.strong}>Opt-in :</span> le score
+                  n&apos;est calculé et affiché qu&apos;avec le consentement
+                  explicite de l&apos;utilisateur
+                </li>
+                <li>
+                  <span className={styles.strong}>Non-discrimination :</span> le
+                  score ne peut en aucun cas servir de base à un traitement
+                  discriminatoire
+                </li>
+                <li>
+                  <span className={styles.strong}>Contestation :</span> tout
+                  utilisateur peut contester son score et demander un réexamen
+                  via le support
+                </li>
+                <li>
+                  <span className={styles.strong}>Transparence :</span> les
+                  critères généraux de calcul sont documentés et accessibles
+                  dans notre politique de confidentialité
+                </li>
+              </ul>
+            </section>
+
+            {/* §5 — Système de crédits */}
+            <section id="credits" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="2" y="5" width="20" height="14" rx="2" />
+                    <line x1="2" y1="10" x2="22" y2="10" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>5. Système de crédits</h2>
+              </div>
+              <p>
+                KeyHome fonctionne avec un système de crédits permettant
+                d&apos;accéder aux coordonnées des annonceurs :
+              </p>
+              <ul className={styles.list}>
+                <li>
+                  <span className={styles.strong}>Achat :</span> les crédits
+                  peuvent être achetés via les moyens de paiement disponibles
+                  (Mobile Money, carte bancaire)
+                </li>
+                <li>
+                  <span className={styles.strong}>Non-remboursables :</span> les
+                  crédits achetés ne sont pas remboursables une fois la
+                  transaction confirmée
+                </li>
+                <li>
+                  <span className={styles.strong}>Sans expiration :</span> vos
+                  crédits n&apos;expirent pas et restent disponibles tant que
+                  votre compte est actif
+                </li>
+                <li>
+                  <span className={styles.strong}>Utilisation :</span> les
+                  crédits servent principalement à débloquer les coordonnées
+                  complètes des annonceurs
+                </li>
+              </ul>
+            </section>
+
+            {/* §6 — Responsabilités */}
+            <section id="responsabilites" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                    <path d="M5 12l7 7 7-7" />
+                    <path d="M1 21h22" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>6. Responsabilités</h2>
+              </div>
+              <p>
+                KeyHome agit en qualité d&apos;
+                <span className={styles.strong}>
+                  intermédiaire technologique
+                </span>{' '}
+                entre les parties. À ce titre :
+              </p>
+              <ul className={`${styles.list} ${styles.listMuted}`}>
+                <li>
+                  Nous ne garantissons pas l&apos;exactitude des informations
+                  publiées par les utilisateurs
+                </li>
+                <li>
+                  Nous ne sommes pas partie aux transactions immobilières
+                  effectuées via la plateforme
+                </li>
+                <li>
+                  Il est de votre responsabilité de vérifier indépendamment les
+                  biens et leurs propriétaires
+                </li>
+                <li>
+                  Nous recommandons fortement de visiter tout bien avant tout
+                  engagement financier
+                </li>
+              </ul>
+            </section>
+
+            {/* §7 — Propriété intellectuelle */}
+            <section id="propriete" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>
+                  7. Propriété intellectuelle
+                </h2>
+              </div>
+              <p>
+                <span className={styles.strong}>KeyHome</span> est propriétaire
+                de l&apos;ensemble des éléments de la plateforme : logos,
+                design, code source, algorithmes et documentation.
+              </p>
+              <p>
+                Les utilisateurs conservent l&apos;entière propriété de leur
+                contenu publié (textes, photos, descriptions) mais accordent à
+                KeyHome une licence non-exclusive, gratuite et mondiale pour
+                afficher ce contenu sur la plateforme et dans les communications
+                promotionnelles liées au service.
+              </p>
+            </section>
+
+            {/* §8 — Résiliation */}
+            <section id="resiliation" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>8. Résiliation</h2>
+              </div>
+              <p>
+                <span className={styles.strong}>Par l&apos;utilisateur :</span>{' '}
+                vous pouvez supprimer votre compte à tout moment depuis les
+                paramètres de votre profil. La suppression entraîne la perte de
+                vos crédits restants et de vos données.
+              </p>
+              <p>
+                <span className={styles.strong}>Par KeyHome :</span> nous nous
+                réservons le droit de suspendre ou supprimer tout compte en cas
+                de violation des présentes conditions, de fraude avérée ou de
+                comportement nuisible envers d&apos;autres utilisateurs.
+              </p>
+            </section>
+
+            {/* §9 — Limitation de responsabilité */}
+            <section id="limitation" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>
+                  9. Limitation de responsabilité
+                </h2>
+              </div>
+              <p>
+                Dans les limites autorisées par la loi, KeyHome décline toute
+                responsabilité pour :
+              </p>
+              <ul className={`${styles.list} ${styles.listMuted}`}>
+                <li>
+                  Les transactions financières effectuées entre utilisateurs en
+                  dehors de la plateforme
+                </li>
+                <li>
+                  Les cas de force majeure (catastrophes naturelles, pannes
+                  réseau, conflits)
+                </li>
+                <li>
+                  Les interruptions temporaires de service liées à la
+                  maintenance ou à des problèmes techniques
+                </li>
+                <li>
+                  Les pertes ou dommages indirects résultant de
+                  l&apos;utilisation du service
+                </li>
+              </ul>
+            </section>
+
+            <hr className={styles.divider} />
+
+            {/* §10 — Modifications et contact */}
+            <section id="modifications" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>
+                  10. Modifications et contact
+                </h2>
+              </div>
+              <p>
+                KeyHome se réserve le droit de modifier les présentes conditions
+                à tout moment. En cas de modification substantielle, nous vous
+                en informerons au moins{' '}
+                <span className={styles.strong}>30 jours avant</span> leur
+                entrée en vigueur, par e-mail ou notification dans
+                l&apos;application.
+              </p>
+              <p>
+                La poursuite de l&apos;utilisation du service après la date
+                d&apos;entrée en vigueur vaut acceptation des nouvelles
+                conditions.
+              </p>
+              <div className={styles.contactBox}>
+                <div className={styles.contactInner}>
+                  <span className={styles.contactName}>
+                    KeyHome — Support juridique
+                  </span>
+                  <a
+                    href="mailto:contact@keyhome.app"
+                    className={styles.contactEmail}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                    contact@keyhome.app
+                  </a>
+                  <span className={styles.contactNote}>
+                    Pour toute question concernant ces conditions, notre équipe
+                    juridique est à votre disposition.
+                  </span>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* Footer */}
+          <footer className={styles.footer}>
+            <div className={styles.footerInner}>
+              <div className={styles.footerLinks}>
+                <Link href="/" className={styles.footerLink}>
+                  Accueil
+                </Link>
+                <span className={styles.footerSep}>•</span>
+                <Link href="/confidentialite" className={styles.footerLink}>
+                  Confidentialité
+                </Link>
+                <span className={styles.footerSep}>•</span>
+                <Link href="/conditions" className={styles.footerLinkActive}>
+                  Conditions générales
+                </Link>
+                <span className={styles.footerSep}>•</span>
+                <Link href="/aide" className={styles.footerLink}>
+                  Aide
+                </Link>
+              </div>
+              <p className={styles.footerCopyright}>
+                © {new Date().getFullYear()} KeyHome — Tous droits réservés
+              </p>
+            </div>
+          </footer>
+        </main>
       </div>
     </div>
   );

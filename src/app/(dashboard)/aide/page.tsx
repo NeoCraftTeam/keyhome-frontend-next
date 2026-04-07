@@ -30,6 +30,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const BRAND = brand.primary;
 const BRAND_DARK = '#C73048';
@@ -110,6 +111,12 @@ const FAQ_ITEMS = [
     a: 'Sur la page de d\u00e9tail d\u2019une annonce d\u00e9verrouill\u00e9e, cliquez sur \u00abPlanifier une visite\u00bb. S\u00e9lectionnez une date et un cr\u00e9neau parmi les disponibilit\u00e9s du propri\u00e9taire, puis confirmez. Le propri\u00e9taire sera notifi\u00e9 et vous recevrez une confirmation.',
   },
   {
+    cat: 'acheteur',
+    catLabel: 'Acheteur',
+    q: 'Qu\u2019est-ce que le Score de Confiance\u00a0?',
+    a: 'Le Score de Confiance (TrustScore) est un indicateur de fiabilit\u00e9 calcul\u00e9 automatiquement \u00e0 partir de votre historique sur KeyHome : visites honor\u00e9es, profil complet, avis re\u00e7us, anciennet\u00e9 du compte. Il aide les propri\u00e9taires \u00e0 identifier les locataires s\u00e9rieux. Vous pouvez l\u2019activer ou le d\u00e9sactiver \u00e0 tout moment dans vos param\u00e8tres.',
+  },
+  {
     cat: 'vendeur',
     catLabel: 'Vendeur',
     q: 'Comment publier une annonce sur KeyHome\u00a0?',
@@ -134,6 +141,12 @@ const FAQ_ITEMS = [
     a: 'Depuis le panneau propri\u00e9taire, acc\u00e9dez \u00e0 \u00abMes disponibilit\u00e9s\u00bb. Vous pouvez cr\u00e9er des plages horaires ponctuelles ou r\u00e9currentes (hebdomadaires, bimensuelles, mensuelles), d\u00e9finir la dur\u00e9e des cr\u00e9neaux et ajouter un temps tampon entre chaque visite.',
   },
   {
+    cat: 'vendeur',
+    catLabel: 'Vendeur',
+    q: 'Comment fonctionne le Score de Confiance pour les propri\u00e9taires\u00a0?',
+    a: 'Les propri\u00e9taires ont aussi un Score de Confiance, calcul\u00e9 sur la qualit\u00e9 des annonces, le taux de r\u00e9ponse, les avis des locataires et l\u2019historique des baux. Un score \u00e9lev\u00e9 rassure les locataires et augmente les demandes de visite.',
+  },
+  {
     cat: 'agent',
     catLabel: 'Agent',
     q: 'Comment cr\u00e9er un compte professionnel\u00a0?',
@@ -144,6 +157,31 @@ const FAQ_ITEMS = [
     catLabel: 'Agent',
     q: 'Comment obtenir le badge \u00abAgent v\u00e9rifi\u00e9\u00bb\u00a0?',
     a: 'Transmettez votre carte professionnelle ou votre agr\u00e9ment \u00e0 support@keyhome.app. Notre \u00e9quipe traite chaque demande sous 48 heures ouvrables et vous notifiera d\u00e8s la validation.',
+  },
+];
+
+const COMPANY_STATS = [
+  { value: '10K+', label: 'Annonces publi\u00e9es' },
+  { value: '50K+', label: 'Utilisateurs actifs' },
+  { value: '15+', label: 'Villes couvertes' },
+  { value: '4.8/5', label: 'Note moyenne' },
+];
+
+const COMPANY_VALUES = [
+  {
+    Icon: HomeWorkIcon,
+    title: 'Transparence',
+    desc: 'Des informations v\u00e9rifi\u00e9es, des prix r\u00e9els, z\u00e9ro frais cach\u00e9s.',
+  },
+  {
+    Icon: KeyIcon,
+    title: 'S\u00e9curit\u00e9',
+    desc: 'Score de confiance bidirectionnel, paiements s\u00e9curis\u00e9s, donn\u00e9es chiffr\u00e9es.',
+  },
+  {
+    Icon: PersonIcon,
+    title: 'Accessibilit\u00e9',
+    desc: 'Une plateforme pour tous, du studio \u00e9tudiant \u00e0 la villa familiale.',
   },
 ];
 
@@ -1013,6 +1051,217 @@ export default function AidePage() {
               WhatsApp
             </Button>
           </Box>
+        </Container>
+      </Box>
+
+      {/* COMPANY INFO */}
+      <Box
+        sx={{ bgcolor: isDark ? '#0A0E1A' : '#F8F9FC', py: { xs: 7, md: 10 } }}
+      >
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: 'center', mb: { xs: 5, md: 7 } }}>
+            <Typography
+              sx={{
+                color: BRAND,
+                fontWeight: 700,
+                letterSpacing: 2,
+                fontSize: '0.7rem',
+                textTransform: 'uppercase',
+                mb: 1,
+              }}
+            >
+              À propos
+            </Typography>
+            <Typography
+              variant={isMobile ? 'h5' : 'h4'}
+              fontWeight={800}
+              sx={{ letterSpacing: -0.5, mb: 2 }}
+            >
+              Qui est KeyHome&nbsp;?
+            </Typography>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ maxWidth: 600, mx: 'auto', lineHeight: 1.8 }}
+            >
+              KeyHome est la plateforme immobilière de référence en Afrique
+              francophone. Nous connectons propriétaires, locataires et agents
+              dans un écosystème de confiance, transparent et sécurisé.
+            </Typography>
+          </Box>
+
+          {/* Stats */}
+          <Grid container spacing={3} sx={{ mb: { xs: 5, md: 7 } }}>
+            {COMPANY_STATS.map((stat) => (
+              <Grid key={stat.label} size={{ xs: 6, md: 3 }}>
+                <Box
+                  sx={{
+                    textAlign: 'center',
+                    py: { xs: 3, md: 4 },
+                    borderRadius: '16px',
+                    bgcolor: isDark ? '#1A1E2E' : '#fff',
+                    border: '1px solid',
+                    borderColor: isDark
+                      ? 'rgba(255,255,255,0.07)'
+                      : 'rgba(0,0,0,0.06)',
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: { xs: '1.8rem', md: '2.4rem' },
+                      fontWeight: 900,
+                      color: BRAND,
+                      letterSpacing: -1,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {stat.value}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 1, fontWeight: 500 }}
+                  >
+                    {stat.label}
+                  </Typography>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+
+          {/* Values */}
+          <Grid container spacing={3}>
+            {COMPANY_VALUES.map((val) => (
+              <Grid key={val.title} size={{ xs: 12, md: 4 }}>
+                <Box
+                  sx={{
+                    p: { xs: 3.5, md: 4 },
+                    borderRadius: '20px',
+                    bgcolor: isDark ? '#1A1E2E' : '#fff',
+                    border: '1px solid',
+                    borderColor: isDark
+                      ? 'rgba(255,255,255,0.07)'
+                      : 'rgba(0,0,0,0.06)',
+                    height: '100%',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '14px',
+                      mb: 2.5,
+                      bgcolor: `${BRAND}12`,
+                    }}
+                  >
+                    <val.Icon sx={{ fontSize: 28, color: BRAND }} />
+                  </Box>
+                  <Typography variant="h6" fontWeight={700} sx={{ mb: 0.75 }}>
+                    {val.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.65 }}
+                  >
+                    {val.desc}
+                  </Typography>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+
+          <Box sx={{ textAlign: 'center', mt: { xs: 4, md: 5 } }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ lineHeight: 1.8 }}
+            >
+              <strong>NéoCraft SARL</strong> — Douala, Cameroun
+              <br />
+              RCCM: RC/DLA/2024/A/XXXX · N° Contribuable: M0XXX00XXXXX
+            </Typography>
+          </Box>
+        </Container>
+      </Box>
+
+      {/* LEGAL FOOTER */}
+      <Box
+        sx={{
+          py: { xs: 4, md: 5 },
+          bgcolor: isDark ? 'background.default' : '#fff',
+          borderTop: '1px solid',
+          borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)',
+        }}
+      >
+        <Container maxWidth="md">
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: { xs: 1.5, md: 3 },
+            }}
+          >
+            <Link
+              href="/confidentialite"
+              style={{
+                color: BRAND,
+                textDecoration: 'none',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+              }}
+            >
+              Confidentialité
+            </Link>
+            <Typography
+              variant="body2"
+              color="text.disabled"
+              sx={{ display: { xs: 'none', md: 'block' } }}
+            >
+              ·
+            </Typography>
+            <Link
+              href="/conditions"
+              style={{
+                color: BRAND,
+                textDecoration: 'none',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+              }}
+            >
+              Conditions générales
+            </Link>
+            <Typography
+              variant="body2"
+              color="text.disabled"
+              sx={{ display: { xs: 'none', md: 'block' } }}
+            >
+              ·
+            </Typography>
+            <Link
+              href="/"
+              style={{
+                color: '#6B7280',
+                textDecoration: 'none',
+                fontSize: '0.9rem',
+              }}
+            >
+              Accueil
+            </Link>
+          </Box>
+          <Typography
+            variant="body2"
+            color="text.disabled"
+            sx={{ textAlign: 'center', mt: 2, fontSize: '0.8rem' }}
+          >
+            © {new Date().getFullYear()} KeyHome — NéoCraft SARL. Tous droits
+            réservés.
+          </Typography>
         </Container>
       </Box>
     </Box>
