@@ -87,6 +87,11 @@ export default function AdFormLocation({
                 label="Ville"
                 placeholder="Rechercher une ville..."
                 sx={cityInputSx}
+                slotProps={{
+                  input: {
+                    ...params.InputProps,
+                  },
+                }}
               />
             )}
           />
