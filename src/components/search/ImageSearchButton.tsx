@@ -66,7 +66,6 @@ export default function ImageSearchButton({
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/jpg,image/png,image/webp"
-        capture="environment"
         style={{ display: 'none' }}
         onChange={(e) => {
           const file = e.target.files?.[0];

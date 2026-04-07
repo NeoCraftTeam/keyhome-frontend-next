@@ -54,6 +54,7 @@ export default function HeroSearch({
   const [aiQuery, setAiQuery] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiFocused, setAiFocused] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const router = useRouter();
   const [, startTransition] = useTransition();
 
@@ -116,6 +117,7 @@ export default function HeroSearch({
       return;
     }
     setAiLoading(true);
+    setAiError(null);
     try {
       const res = await api.post('/search/parse', { q: searchQuery });
       navigateFromParsed(res.data as ParsedSearchParams);
@@ -374,6 +376,7 @@ export default function HeroSearch({
                           />
                           <ImageSearchButton
                             onResult={navigateFromParsed}
+                            onError={setAiError}
                             disabled={aiLoading}
                             size={28}
                           />
@@ -416,6 +419,18 @@ export default function HeroSearch({
               />
             </Box>
           </motion.div>
+          {aiError && (
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'rgba(255,255,255,0.9)',
+                mt: 0.75,
+                display: 'block',
+              }}
+            >
+              {aiError}
+            </Typography>
+          )}
           {/* Example chips */}
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1.5 }}>
             {EXAMPLES.map((ex) => (

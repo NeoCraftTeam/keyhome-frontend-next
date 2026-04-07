@@ -12,13 +12,13 @@ interface Props {
   size?: number;
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 type SpeechRecognitionCtor = new () => {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
   maxAlternatives: number;
   onstart: (() => void) | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onresult: ((e: any) => void) | null;
   onerror: (() => void) | null;
   onend: (() => void) | null;
@@ -59,8 +59,8 @@ export default function VoiceSearchButton({
     }
 
     const SR: SpeechRecognitionCtor =
-      (window as any).SpeechRecognition ??
-      (window as any).webkitSpeechRecognition;
+      (window as any).SpeechRecognition ?? // eslint-disable-line @typescript-eslint/no-explicit-any
+      (window as any).webkitSpeechRecognition; // eslint-disable-line @typescript-eslint/no-explicit-any
     const rec = new SR();
     rec.lang = 'fr-FR';
     rec.continuous = false;
@@ -70,6 +70,7 @@ export default function VoiceSearchButton({
     rec.onstart = () => setState('listening');
 
     rec.onresult = (e: any) => {
+      // eslint-disable-line @typescript-eslint/no-explicit-any
       const transcript = e.results[0][0].transcript.trim();
       setState('processing');
       onTranscript(transcript);
