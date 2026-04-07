@@ -40,6 +40,7 @@ export const adsService = {
     order_by?: string;
     direction?: 'asc' | 'desc';
     type?: string;
+    status?: string;
     exclude_ids?: string[];
   }): Promise<PaginatedResponse<Ad>> {
     const { data } = await api.get('/ads', { params });
@@ -111,6 +112,14 @@ export const adsService = {
     });
     const body = data.data ?? data;
     return body.ad ?? body;
+  },
+
+  /** Lightweight JSON-only autosave for text fields of a draft ad. */
+  async autosaveDraft(
+    id: string,
+    fields: Partial<Record<string, string | number | boolean | null>>
+  ): Promise<void> {
+    await api.patch(`/ads/${id}/autosave`, fields);
   },
 
   /** Publish a draft ad (DRAFT → PENDING for admin review). */

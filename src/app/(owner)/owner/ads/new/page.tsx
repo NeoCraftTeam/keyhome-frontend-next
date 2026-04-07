@@ -1,7 +1,6 @@
 'use client';
 
 import { useAuth } from '@/providers/AuthProvider';
-import { useAutoSave } from '@/hooks/useAutoSave';
 import type { AdFormValues } from '@/components/owner/AdFormWizard';
 import MarkdownBioEditor from '@/components/owner/MarkdownBioEditor';
 import PhoneField from '@/components/ui/PhoneField';
@@ -241,28 +240,21 @@ export default function OwnerNewAdPage() {
     }
   };
 
-  // QW11: draft restore — check for a saved auto-save on first render
-  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
-  const [restoredDraft, setRestoredDraft] =
-    useState<Partial<AdFormValues> | null>(null);
-  // formKey forces AdForm to remount with the restored draft as initialData
-  const [formKey, setFormKey] = useState(0);
-  const { hasDraft, restoreDraft, clearDraft } = useAutoSave<
-    Partial<AdFormValues>
-  >({
-    key: 'ad-new',
-    data: {} as Partial<AdFormValues>,
-    enabled: false,
+  // Server-side draft detection — show prompt if user has existing drafts
+  const { data: existingDraftsPage } = useQuery({
+    queryKey: ['my-drafts'],
+    queryFn: () => adsService.list({ status: 'draft', per_page: 5 }),
   });
-  const draftCheckedRef = useRef(false);
+  const [showDraftPrompt, setShowDraftPrompt] = useState(false);
+  const draftPromptCheckedRef = useRef(false);
 
   useEffect(() => {
-    if (draftCheckedRef.current) return;
-    draftCheckedRef.current = true;
-    if (hasDraft) {
-      setShowRestorePrompt(true);
+    if (draftPromptCheckedRef.current) return;
+    if (existingDraftsPage?.data?.length) {
+      draftPromptCheckedRef.current = true;
+      setShowDraftPrompt(true);
     }
-  }, [hasDraft]);
+  }, [existingDraftsPage]);
 
   // ── Draft mutation — save partial data to server ──
   const [draftSnackbar, setDraftSnackbar] = useState<{
@@ -395,16 +387,8 @@ export default function OwnerNewAdPage() {
    * The draft key matches what AdForm’s useAutoSave uses so it will be restored on return.
    */
   const handleBeforeSubmit = useCallback(
-    async (values: AdFormValues): Promise<boolean> => {
+    async (_values: AdFormValues): Promise<boolean> => {
       if (!isComplete) {
-        try {
-          localStorage.setItem(
-            'kh_autosave_ad-new',
-            JSON.stringify({ data: values, ts: Date.now() })
-          );
-        } catch {
-          // localStorage unavailable — best effort
-        }
         setActivePanel('profile');
         return false;
       }
@@ -424,8 +408,6 @@ export default function OwnerNewAdPage() {
           Suivez les étapes pour publier votre annonce rapidement.
         </Typography>
         <AdFormWizard
-          key={formKey}
-          initialData={restoredDraft}
           onSubmit={handleSubmit}
           onBeforeSubmit={handleBeforeSubmit}
           onSaveDraft={handleSaveDraft}
@@ -435,6 +417,9 @@ export default function OwnerNewAdPage() {
           isSubmitting={createMutation.isPending}
           isSavingDraft={draftMutation.isPending}
           onEnhanceDescription={handleEnhance}
+          onDraftCreated={(draftId) => {
+            router.push(`/owner/ads/${draftId}`);
+          }}
         />
       </Container>
 
@@ -674,12 +659,12 @@ export default function OwnerNewAdPage() {
         </Box>
       </Drawer>
 
-      {/* QW11: draft restore prompt */}
+      {/* Server-side draft detection prompt */}
       <Snackbar
-        open={showRestorePrompt}
+        open={showDraftPrompt}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         sx={{ mb: 2 }}
-        message="📝 Un brouillon sauvegardé a été trouvé"
+        message={`📝 Vous avez ${existingDraftsPage?.data?.length ?? 0} brouillon(s) en cours. Reprendre ?`}
         action={
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
@@ -687,24 +672,18 @@ export default function OwnerNewAdPage() {
               color="inherit"
               sx={{ fontWeight: 700 }}
               onClick={() => {
-                const draft = restoreDraft();
-                if (draft) {
-                  setRestoredDraft(draft);
-                  setFormKey((k) => k + 1);
-                }
-                setShowRestorePrompt(false);
+                const first = existingDraftsPage?.data?.[0];
+                if (first) router.push(`/owner/ads/${first.id}`);
+                setShowDraftPrompt(false);
               }}
             >
-              Restaurer
+              Reprendre
             </Button>
             <Button
               size="small"
               color="inherit"
               sx={{ opacity: 0.7 }}
-              onClick={() => {
-                clearDraft();
-                setShowRestorePrompt(false);
-              }}
+              onClick={() => setShowDraftPrompt(false)}
             >
               Ignorer
             </Button>

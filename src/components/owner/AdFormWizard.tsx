@@ -9,15 +9,16 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import PublishIcon from '@mui/icons-material/Publish';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import { compressAdPhotos } from '@/lib/image-compression';
-import { useAutoSave } from '@/hooks/useAutoSave';
+import { useServerAutoSave } from '@/hooks/useServerAutoSave';
 import type { Ad, AdImage, AdType, City, Quarter } from '@/types';
 import { useQuery } from '@tanstack/react-query';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   adTypesService,
   citiesService,
@@ -96,6 +97,8 @@ interface AdFormWizardProps {
   isSubmitting?: boolean;
   isSavingDraft?: boolean;
   onEnhanceDescription?: (description: string) => Promise<string>;
+  /** Called once when server-side auto-save creates a new draft (new-ad flow only). */
+  onDraftCreated?: (id: string) => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -114,6 +117,7 @@ function AdFormWizard({
   isSubmitting = false,
   isSavingDraft = false,
   onEnhanceDescription,
+  onDraftCreated,
 }: AdFormWizardProps) {
   /* ── Step state ── */
   const [activeStep, setActiveStep] = useState(0);
@@ -147,13 +151,82 @@ function AdFormWizard({
       return null;
     });
 
-  /* ── Auto-save ── */
-  const autoSaveKey = ad?.id ? `ad-edit-${ad.id}` : 'ad-new';
-  const { savedAt, clearDraft } = useAutoSave({
-    key: autoSaveKey,
-    data: values,
+  /* ── Server-side auto-save ── */
+  // Builds a plain JSON object from form values (no images — too heavy for autosave)
+  const autoSaveData = useMemo(
+    () => ({
+      title: values.title,
+      description: values.description,
+      adresse: values.adresse,
+      price: values.price,
+      surface_area: values.surface_area,
+      bedrooms: values.bedrooms,
+      bathrooms: values.bathrooms,
+      has_parking: values.has_parking,
+      deposit_amount: values.deposit_amount,
+      minimum_lease_duration: values.minimum_lease_duration,
+      charges_forfaitaires: values.charges_forfaitaires,
+      quarter_id: values.quarter_id,
+      type_id: values.type_id,
+      transaction_type: values.transaction_type,
+      latitude: values.latitude,
+      longitude: values.longitude,
+    }),
+    [values]
+  );
+
+  const onCreateDraftCb = useCallback(
+    async (data: typeof autoSaveData): Promise<string> => {
+      const formData = new FormData();
+      (Object.entries(data) as [string, unknown][]).forEach(([k, v]) => {
+        if (v !== null && v !== undefined && v !== '') {
+          formData.append(k, String(v));
+        }
+      });
+      const created = await adsService.saveDraft(formData);
+      return created.id;
+    },
+    []
+  );
+
+  const onUpdateDraftCb = useCallback(
+    async (id: string, data: typeof autoSaveData): Promise<void> => {
+      await adsService.autosaveDraft(
+        id,
+        data as Partial<Record<string, string | number | boolean | null>>
+      );
+    },
+    []
+  );
+
+  const {
+    savedAt,
+    isSaving: isAutoSaving,
+    draftId: autoSaveDraftId,
+    clearSavedAt,
+  } = useServerAutoSave({
+    data: autoSaveData,
+    draftId: ad?.id ?? null,
+    onCreateDraft: onCreateDraftCb,
+    onUpdateDraft: onUpdateDraftCb,
     enabled: !isSubmitting,
+    debounceMs: 5000,
   });
+
+  // Keep clearDraft as a no-op alias so existing call sites don't need changes
+  const clearDraft = clearSavedAt;
+
+  // Notify parent once when auto-save first creates a new draft
+  const initialDraftIdRef = useRef<string | null>(ad?.id ?? null);
+  useEffect(() => {
+    if (
+      autoSaveDraftId &&
+      initialDraftIdRef.current === null &&
+      onDraftCreated
+    ) {
+      onDraftCreated(autoSaveDraftId);
+    }
+  }, [autoSaveDraftId, onDraftCreated]);
 
   /* ── 3D Tour state ── */
   const [tourScenes, setTourScenes] = useState<TourScene[]>(() => {
@@ -803,18 +876,31 @@ function AdFormWizard({
         >
           {/* Left side */}
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            {savedAt && (
-              <Typography
-                variant="caption"
-                color="text.disabled"
-                sx={{ mr: 1 }}
+            {isAutoSaving && (
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1 }}
               >
-                Brouillon à{' '}
-                {savedAt.toLocaleTimeString('fr-FR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </Typography>
+                <CircularProgress size={12} thickness={5} />
+                <Typography variant="caption" color="text.disabled">
+                  Sauvegarde...
+                </Typography>
+              </Box>
+            )}
+            {!isAutoSaving && savedAt && (
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1 }}
+              >
+                <CheckCircleOutlined
+                  sx={{ fontSize: 14, color: 'success.main' }}
+                />
+                <Typography variant="caption" color="text.disabled">
+                  Brouillon sauvegardé à{' '}
+                  {savedAt.toLocaleTimeString('fr-FR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </Typography>
+              </Box>
             )}
             {onSaveDraft && (
               <Button
