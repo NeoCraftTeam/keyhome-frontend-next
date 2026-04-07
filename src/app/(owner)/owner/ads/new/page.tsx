@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { useAutoSave } from '@/hooks/useAutoSave';
-import type { AdFormValues } from '@/components/owner/AdForm';
+import type { AdFormValues } from '@/components/owner/AdFormWizard';
 import MarkdownBioEditor from '@/components/owner/MarkdownBioEditor';
 import PhoneField from '@/components/ui/PhoneField';
 import { usersService } from '@/services/users.service';
@@ -46,7 +46,7 @@ import Phone from '@mui/icons-material/Phone';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import AdForm, { type TourScene } from '@/components/owner/AdForm';
+import AdFormWizard, { type TourScene } from '@/components/owner/AdFormWizard';
 import { adsService } from '@/services/ads.service';
 
 const PROFILE_STEP_ICONS = {
@@ -119,6 +119,8 @@ function buildAdFormData(
   if (values.longitude) formData.append('longitude', String(values.longitude));
   if (values.quarter_id) formData.append('quarter_id', values.quarter_id);
   if (values.type_id) formData.append('type_id', values.type_id);
+  if (values.transaction_type)
+    formData.append('transaction_type', values.transaction_type);
   values.attributes.forEach((a) => formData.append('attributes[]', a));
   images.forEach((f, i) => formData.append(`images[${i}]`, f));
   if (values.deposit_amount)
@@ -421,7 +423,7 @@ export default function OwnerNewAdPage() {
         <Typography color="text.secondary" sx={{ mb: 4 }}>
           Suivez les étapes pour publier votre annonce rapidement.
         </Typography>
-        <AdForm
+        <AdFormWizard
           key={formKey}
           initialData={restoredDraft}
           onSubmit={handleSubmit}
@@ -433,7 +435,6 @@ export default function OwnerNewAdPage() {
           isSubmitting={createMutation.isPending}
           isSavingDraft={draftMutation.isPending}
           onEnhanceDescription={handleEnhance}
-          stepperMode
         />
       </Container>
 

@@ -19,6 +19,7 @@ export interface AdFormValues {
   longitude: number;
   quarter_id: string;
   type_id: string;
+  transaction_type: string;
   attributes: string[];
   deposit_amount: string;
   minimum_lease_duration: string;
@@ -85,6 +86,7 @@ export const initialValues: AdFormValues = {
   longitude: 9.7679,
   quarter_id: '',
   type_id: '',
+  transaction_type: 'location',
   attributes: [],
   deposit_amount: '',
   minimum_lease_duration: '',

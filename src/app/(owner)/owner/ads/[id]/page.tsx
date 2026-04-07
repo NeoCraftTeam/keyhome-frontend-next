@@ -33,10 +33,10 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
-import AdForm, {
+import AdFormWizard, {
   type AdFormValues,
   type TourScene,
-} from '@/components/owner/AdForm';
+} from '@/components/owner/AdFormWizard';
 import { adsService } from '@/services/ads.service';
 import { ownerService } from '@/services/owner.service';
 import { AdStatus } from '@/types';
@@ -105,6 +105,8 @@ export default function OwnerAdEditPage() {
       formData.append('longitude', String(values.longitude));
       formData.append('quarter_id', values.quarter_id);
       formData.append('type_id', values.type_id);
+      if (values.transaction_type)
+        formData.append('transaction_type', values.transaction_type);
       values.attributes.forEach((a) => formData.append('attributes[]', a));
       images.forEach((f, i) => formData.append(`images[${i}]`, f));
       if (imagesToDelete?.length) {
@@ -306,6 +308,8 @@ export default function OwnerAdEditPage() {
         formData.append('longitude', String(values.longitude));
       if (values.quarter_id) formData.append('quarter_id', values.quarter_id);
       if (values.type_id) formData.append('type_id', values.type_id);
+      if (values.transaction_type)
+        formData.append('transaction_type', values.transaction_type);
       values.attributes.forEach((a) => formData.append('attributes[]', a));
       images.forEach((f, i) => formData.append(`images[${i}]`, f));
       if (imagesToDelete?.length) {
@@ -426,6 +430,7 @@ export default function OwnerAdEditPage() {
       longitude: ad.location?.longitude ?? 9.7679,
       quarter_id: ad.quarter?.id ?? '',
       type_id: ad.type?.id ?? '',
+      transaction_type: ad.transaction_type ?? 'location',
       attributes: ad.attributes ?? [],
       deposit_amount: ad.deposit_amount ?? '',
       minimum_lease_duration: ad.minimum_lease_duration ?? '',
@@ -759,7 +764,7 @@ export default function OwnerAdEditPage() {
       )}
 
       {/* ═══ Form ═══ */}
-      <AdForm
+      <AdFormWizard
         initialData={initialData}
         ad={ad}
         onSubmit={handleSubmit}

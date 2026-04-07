@@ -159,6 +159,7 @@ export interface Ad {
   published_by: string;
   quarter: Quarter | null;
   type: AdType | null;
+  transaction_type?: 'location' | 'vente' | null;
   images: AdImage[];
   reviews?: Review[];
   distance?: number;

@@ -38,6 +38,8 @@ interface AdFormLocationProps {
     option: City
   ) => React.ReactNode;
   cityInputSx: object;
+  /** Hide the ad-type selector (used by wizard which has its own Step 1). */
+  hideTypeSelector?: boolean;
 }
 
 export default function AdFormLocation({
@@ -60,6 +62,7 @@ export default function AdFormLocation({
   citySlotProps,
   renderCityOption,
   cityInputSx,
+  hideTypeSelector = false,
 }: AdFormLocationProps) {
   return (
     <Paper elevation={0} sx={sectionSx}>
@@ -135,23 +138,25 @@ export default function AdFormLocation({
             )}
           />
         </Grid>
-        <Grid size={{ xs: 12 }}>
-          <FormControl fullWidth error={!!errors.type_id}>
-            <InputLabel>Type d&apos;annonce</InputLabel>
-            <Select
-              value={values.type_id}
-              label="Type d'annonce"
-              onChange={(e) => update('type_id', e.target.value)}
-            >
-              <MenuItem value="">Sélectionner</MenuItem>
-              {adTypes.map((t) => (
-                <MenuItem key={t.id} value={t.id}>
-                  {t.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
+        {!hideTypeSelector && (
+          <Grid size={{ xs: 12 }}>
+            <FormControl fullWidth error={!!errors.type_id}>
+              <InputLabel>Type d&apos;annonce</InputLabel>
+              <Select
+                value={values.type_id}
+                label="Type d'annonce"
+                onChange={(e) => update('type_id', e.target.value)}
+              >
+                <MenuItem value="">Sélectionner</MenuItem>
+                {adTypes.map((t) => (
+                  <MenuItem key={t.id} value={t.id}>
+                    {t.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+        )}
       </Grid>
     </Paper>
   );
