@@ -345,6 +345,12 @@ export default function OwnerNewAdPage() {
     onSuccess: () => {
       setScheduleDialogOpen(true);
     },
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Erreur lors de la création de l'annonce.";
+      setDraftSnackbar({ message: msg, severity: 'error' });
+    },
   });
 
   const handleSaveDraft = useCallback(
