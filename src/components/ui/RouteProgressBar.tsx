@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { brand, brandAgent } from '@/theme/tokens';
@@ -15,38 +15,48 @@ export default function RouteProgressBar() {
   const searchParams = useSearchParams();
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const rafRef = useRef<number | null>(null);
   const shouldReduceMotion = useReducedMotion();
+
+  const safeTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timersRef.current.delete(id);
+      fn();
+    }, ms);
+    timersRef.current.add(id);
+    return id;
+  }, []);
+
+  const clearAllTimers = useCallback(() => {
+    timersRef.current.forEach((id) => clearTimeout(id));
+    timersRef.current.clear();
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (shouldReduceMotion) return;
 
-    // Clear any in-flight timers
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    clearAllTimers();
 
-    // Kick off a new progress sequence
     setProgress(0);
     setVisible(true);
 
-    // Fast jump to 20%, then slowly crawl to 85% to simulate loading
     rafRef.current = requestAnimationFrame(() => {
       setProgress(20);
-      timerRef.current = setTimeout(() => setProgress(55), 120);
-      timerRef.current = setTimeout(() => setProgress(85), 600);
+      safeTimeout(() => setProgress(55), 120);
+      safeTimeout(() => setProgress(85), 600);
     });
 
-    // Complete and hide
-    timerRef.current = setTimeout(() => {
+    safeTimeout(() => {
       setProgress(100);
-      timerRef.current = setTimeout(() => setVisible(false), 300);
+      safeTimeout(() => setVisible(false), 300);
     }, 350);
 
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
+    return clearAllTimers;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, searchParams]);
 
