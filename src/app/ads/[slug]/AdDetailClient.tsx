@@ -27,6 +27,7 @@ import KeyScoreBadge from '@/components/ads/KeyScoreBadge';
 import KeyScoreSection from '@/components/ads/KeyScoreSection';
 import NeighborhoodScorecard from '@/components/ads/NeighborhoodScorecard';
 import DirectionsPanel from '@/components/ads/DirectionsPanel';
+import TrustScoreBadge from '@/components/trust/TrustScoreBadge';
 import {
   COMPARATOR_MAX_ITEMS,
   useComparator,
@@ -1587,6 +1588,12 @@ function AdDetailContent() {
                         <Verified
                           sx={{ fontSize: 16, color: 'success.main' }}
                           titleAccess="Annonce vérifiée"
+                        />
+                      )}
+                      {ad.user?.trust_score && (
+                        <TrustScoreBadge
+                          trustScore={ad.user.trust_score}
+                          size="small"
                         />
                       )}
                     </Box>

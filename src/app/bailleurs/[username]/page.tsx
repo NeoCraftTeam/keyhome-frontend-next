@@ -45,6 +45,8 @@ import ReactMarkdown from 'react-markdown';
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import api from '@/lib/api';
+import TrustScoreBadge from '@/components/trust/TrustScoreBadge';
+import TrustScoreSection from '@/components/trust/TrustScoreSection';
 
 function useFollowBailleur(username: string) {
   const { user: currentUser } = useAuth();
@@ -298,6 +300,16 @@ export default function BailleurPublicProfilePage() {
               </Typography>
             )}
 
+            {/* TrustScore badge */}
+            {profile.trust_score && (
+              <Box sx={{ mb: 1 }}>
+                <TrustScoreBadge
+                  trustScore={profile.trust_score}
+                  size="medium"
+                />
+              </Box>
+            )}
+
             {/* Type badge */}
             {isAgency ? (
               <Chip
@@ -518,9 +530,12 @@ export default function BailleurPublicProfilePage() {
           )}
         </Grid>
 
-        {/* Right: reviews */}
+        {/* Right: trust score + reviews */}
         <Grid size={{ xs: 12, lg: 4 }}>
-          <Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>
+          {/* TrustScore breakdown */}
+          <TrustScoreSection userId={profile.id} />
+
+          <Typography variant="h5" fontWeight={700} sx={{ mb: 2, mt: 3 }}>
             Avis locataires
           </Typography>
 
