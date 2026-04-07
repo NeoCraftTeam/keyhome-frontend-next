@@ -398,6 +398,13 @@ export default function OwnerNewAdPage() {
     [isComplete]
   );
 
+  const handleDraftCreated = useCallback(
+    (draftId: string) => {
+      router.push(`/owner/ads/${draftId}`);
+    },
+    [router]
+  );
+
   return (
     <>
       {/* Ad creation form — always mounted, never unmounts */}
@@ -418,9 +425,7 @@ export default function OwnerNewAdPage() {
           isSubmitting={createMutation.isPending}
           isSavingDraft={draftMutation.isPending}
           onEnhanceDescription={handleEnhance}
-          onDraftCreated={(draftId) => {
-            router.push(`/owner/ads/${draftId}`);
-          }}
+          onDraftCreated={handleDraftCreated}
         />
       </Container>
 

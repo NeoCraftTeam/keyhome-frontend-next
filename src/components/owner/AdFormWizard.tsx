@@ -180,7 +180,10 @@ function AdFormWizard({
       const formData = new FormData();
       (Object.entries(data) as [string, unknown][]).forEach(([k, v]) => {
         if (v !== null && v !== undefined && v !== '') {
-          formData.append(k, String(v));
+          formData.append(
+            k,
+            typeof v === 'boolean' ? (v ? '1' : '0') : String(v)
+          );
         }
       });
       const created = await adsService.saveDraft(formData);
@@ -209,7 +212,7 @@ function AdFormWizard({
     draftId: ad?.id ?? null,
     onCreateDraft: onCreateDraftCb,
     onUpdateDraft: onUpdateDraftCb,
-    enabled: !isSubmitting,
+    enabled: !isSubmitting && !isSavingDraft,
     debounceMs: 5000,
   });
 

@@ -290,8 +290,8 @@ export default function OwnerAdEditPage() {
       images: File[];
       imagesToDelete?: number[];
     }) => {
+      // NOTE: _method=PUT is appended by adsService.update — do NOT add it here.
       const formData = new FormData();
-      formData.append('_method', 'PUT');
       formData.append('is_draft', '1');
       if (values.title) formData.append('title', values.title);
       if (values.description)
@@ -317,6 +317,49 @@ export default function OwnerAdEditPage() {
           formData.append('images_to_delete[]', String(mid))
         );
       }
+      // Lease conditions & charges (Step 3 data — was silently dropped before this fix)
+      if (values.deposit_amount)
+        formData.append('deposit_amount', values.deposit_amount);
+      if (values.minimum_lease_duration)
+        formData.append(
+          'minimum_lease_duration',
+          values.minimum_lease_duration
+        );
+      formData.append(
+        'charges_forfaitaires',
+        values.charges_forfaitaires ? '1' : '0'
+      );
+      if (values.charges_forfaitaires && values.charges_montant_forfait)
+        formData.append(
+          'charges_montant_forfait',
+          values.charges_montant_forfait
+        );
+      if (!values.charges_forfaitaires) {
+        if (values.charges_eau)
+          formData.append('charges_eau', values.charges_eau);
+        if (values.charges_electricite)
+          formData.append('charges_electricite', values.charges_electricite);
+      }
+      const chargesAutresStr = (values.charges_autres_items ?? [])
+        .filter((item) => item.label.trim() && item.amount.trim())
+        .map(
+          (item) =>
+            `${item.label}: ${item.amount} FCFA/${item.period === 'monthly' ? 'mois' : 'an'}`
+        )
+        .join('\n');
+      if (chargesAutresStr) formData.append('charges_autres', chargesAutresStr);
+      // Proximity distances
+      if (values.distance_main_road_m)
+        formData.append('distance_main_road_m', values.distance_main_road_m);
+      if (values.distance_shops_m)
+        formData.append('distance_shops_m', values.distance_shops_m);
+      if (values.distance_transport_m)
+        formData.append('distance_transport_m', values.distance_transport_m);
+      if (values.distance_school_m)
+        formData.append('distance_school_m', values.distance_school_m);
+      if (values.distance_hospital_m)
+        formData.append('distance_hospital_m', values.distance_hospital_m);
+      if (values.is_boost_requested) formData.append('is_boost_requested', '1');
       return adsService.update(id, formData);
     },
     onSuccess: () => {
