@@ -20,6 +20,7 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
+import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useMemo, useState } from 'react';
 
 import { formatPrice } from '@/lib/constants';
@@ -214,89 +215,125 @@ function AdFormLivePreview({
           </Box>
         ) : (
           <>
-            {/* ── Image gallery ── */}
-            <Box sx={{ position: 'relative', bgcolor: 'grey.100' }}>
+            {/* ── Image gallery — CSS Grid matching AdDetailClient ── */}
+            <Box
+              sx={{
+                position: 'relative',
+                display: 'grid',
+                gridTemplateColumns:
+                  allImages.length >= 5
+                    ? '2fr 1fr 1fr'
+                    : allImages.length >= 3
+                      ? '2fr 1fr'
+                      : allImages.length === 2
+                        ? '1fr 1fr'
+                        : '1fr',
+                gridTemplateRows:
+                  allImages.length <= 1 ? '280px' : '140px 140px',
+                gap: '3px',
+                bgcolor: 'grey.100',
+                overflow: 'hidden',
+              }}
+            >
               {allImages.length > 0 ? (
                 <>
-                  {/* Hero */}
+                  {/* Hero image with crossfade */}
                   <Box
-                    component="img"
-                    src={allImages[safeIdx].url}
-                    alt="preview"
+                    onClick={() => setActiveIdx(0)}
                     sx={{
-                      width: '100%',
-                      height: 260,
-                      objectFit: 'cover',
-                      display: 'block',
-                      transition: 'opacity 0.2s ease',
-                    }}
-                  />
-
-                  {/* Photo count badge */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      bottom: allImages.length > 1 ? 52 : 8,
-                      right: 8,
-                      bgcolor: 'rgba(0,0,0,0.55)',
-                      color: '#fff',
-                      px: 1,
-                      py: 0.25,
-                      borderRadius: 1,
+                      gridRow: allImages.length >= 2 ? '1 / 3' : 'auto',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
                     }}
                   >
-                    <Typography variant="caption">
-                      {allImages.length} photo{allImages.length > 1 ? 's' : ''}
-                    </Typography>
+                    <AnimatePresence mode="sync">
+                      <Box
+                        component={motion.div}
+                        key={allImages[safeIdx]?.id ?? safeIdx}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
+                        sx={{ position: 'absolute', inset: 0 }}
+                      >
+                        <Box
+                          component="img"
+                          src={allImages[safeIdx]?.url}
+                          alt="preview"
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
+                      </Box>
+                    </AnimatePresence>
                   </Box>
 
-                  {/* Thumbnail strip */}
+                  {/* Secondary images */}
+                  {allImages.slice(1, 5).map((img, idx) => (
+                    <Box
+                      key={img.id}
+                      onClick={() => setActiveIdx(idx + 1)}
+                      sx={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        outline: safeIdx === idx + 1 ? '2px solid' : 'none',
+                        outlineColor: 'primary.main',
+                        outlineOffset: -2,
+                        '&:hover img': { transform: 'scale(1.05)' },
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={img.thumb || img.url}
+                        alt={`photo-${idx + 2}`}
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          display: 'block',
+                          transition: 'transform 0.3s ease',
+                        }}
+                      />
+                    </Box>
+                  ))}
+
+                  {/* Photo count badge */}
                   {allImages.length > 1 && (
                     <Box
                       sx={{
-                        display: 'flex',
-                        gap: '4px',
-                        overflowX: 'auto',
-                        bgcolor: 'rgba(0,0,0,0.65)',
-                        p: '6px',
-                        '&::-webkit-scrollbar': { display: 'none' },
+                        position: 'absolute',
+                        bottom: 8,
+                        right: 8,
+                        bgcolor: 'rgba(0,0,0,0.6)',
+                        color: '#fff',
+                        px: 1,
+                        py: 0.25,
+                        borderRadius: 1,
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        pointerEvents: 'none',
                       }}
                     >
-                      {allImages.map((img, i) => (
-                        <Box
-                          key={img.id}
-                          component="img"
-                          src={img.thumb}
-                          alt={`thumb-${i}`}
-                          onClick={() => setActiveIdx(i)}
-                          sx={{
-                            width: 52,
-                            height: 40,
-                            objectFit: 'cover',
-                            borderRadius: 0.5,
-                            flexShrink: 0,
-                            cursor: 'pointer',
-                            border:
-                              i === safeIdx
-                                ? '2px solid #fff'
-                                : '2px solid transparent',
-                            transition: 'border-color 0.15s',
-                          }}
-                        />
-                      ))}
+                      {allImages.length} photos
                     </Box>
                   )}
                 </>
               ) : (
                 <Box
                   sx={{
-                    height: 200,
+                    height: 280,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 1,
                     color: 'text.disabled',
+                    gridColumn: '1 / -1',
                   }}
                 >
                   <CameraAlt sx={{ fontSize: 40, opacity: 0.4 }} />

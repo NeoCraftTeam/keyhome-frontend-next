@@ -1,6 +1,7 @@
 import {
   CloudUpload as CloudUploadIcon,
   Delete as DeleteIcon,
+  DragIndicator as DragIndicatorIcon,
   PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
 import {
@@ -28,6 +29,8 @@ interface AdFormPhotosProps {
   onRemoveImage: (index: number) => void;
   onDeleteExistingImage: (imageId: number) => void;
   onOpenLightbox: (index: number) => void;
+  /** Called when user drags a new-image thumbnail from `from` index to `to` index. */
+  onReorderImages?: (from: number, to: number) => void;
 }
 
 export default function AdFormPhotos({
@@ -42,9 +45,13 @@ export default function AdFormPhotos({
   onRemoveImage,
   onDeleteExistingImage,
   onOpenLightbox,
+  onReorderImages,
 }: AdFormPhotosProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragSrcIdx = useRef<number | null>(null);
   const visibleExisting = existingImages?.filter(
     (img) => !imagesToDelete.includes(img.id)
   );
@@ -132,6 +139,33 @@ export default function AdFormPhotos({
         {imagePreviewUrls.map((url, i) => (
           <Box
             key={i}
+            draggable={!!onReorderImages}
+            onDragStart={() => {
+              dragSrcIdx.current = i;
+              setDraggingIdx(i);
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOverIdx(i);
+            }}
+            onDragLeave={() => setDragOverIdx(null)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOverIdx(null);
+              if (
+                onReorderImages &&
+                dragSrcIdx.current !== null &&
+                dragSrcIdx.current !== i
+              ) {
+                onReorderImages(dragSrcIdx.current, i);
+              }
+              dragSrcIdx.current = null;
+            }}
+            onDragEnd={() => {
+              dragSrcIdx.current = null;
+              setDraggingIdx(null);
+              setDragOverIdx(null);
+            }}
             onClick={() => onOpenLightbox(i)}
             role="button"
             tabIndex={0}
@@ -143,12 +177,50 @@ export default function AdFormPhotos({
               borderRadius: 2,
               overflow: 'hidden',
               border: '2px solid',
-              borderColor: 'divider',
-              transition: 'border-color 0.2s',
-              cursor: 'pointer',
+              borderColor: dragOverIdx === i ? 'primary.main' : 'divider',
+              transition: 'border-color 0.2s, opacity 0.2s',
+              cursor: onReorderImages ? 'grab' : 'pointer',
+              opacity: draggingIdx === i ? 0.5 : 1,
               '&:hover': { borderColor: 'primary.main' },
             }}
           >
+            {/* drag handle badge */}
+            {onReorderImages && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 2,
+                  left: 2,
+                  bgcolor: 'rgba(0,0,0,0.45)',
+                  borderRadius: 0.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  p: 0.25,
+                  pointerEvents: 'none',
+                }}
+              >
+                <DragIndicatorIcon sx={{ fontSize: 12, color: '#fff' }} />
+              </Box>
+            )}
+            {/* index badge */}
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 2,
+                left: 4,
+                bgcolor: 'rgba(0,0,0,0.5)',
+                color: '#fff',
+                fontSize: '0.6rem',
+                fontWeight: 700,
+                px: 0.5,
+                borderRadius: 0.5,
+                lineHeight: 1.6,
+                pointerEvents: 'none',
+              }}
+            >
+              {i === 0 ? 'Couverture' : i + 1}
+            </Box>
             <img
               src={url}
               alt={`Preview ${i + 1}`}

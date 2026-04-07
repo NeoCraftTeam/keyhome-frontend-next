@@ -1,10 +1,12 @@
 'use client';
 
 import {
+  Alert,
   Box,
   Button,
   CircularProgress,
   Collapse,
+  Snackbar,
   Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -132,6 +134,7 @@ function AdFormWizard({
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
   const [enhancing, setEnhancing] = useState(false);
+  const [enhanceError, setEnhanceError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [propertyConditionPdf, setPropertyConditionPdf] = useState<File | null>(
     null
@@ -436,6 +439,21 @@ function AdFormWizard({
     });
   };
 
+  const reorderImages = useCallback((from: number, to: number) => {
+    setImages((prev) => {
+      const arr = [...prev];
+      const [item] = arr.splice(from, 1);
+      arr.splice(to, 0, item);
+      return arr;
+    });
+    setImagePreviewUrls((prev) => {
+      const arr = [...prev];
+      const [item] = arr.splice(from, 1);
+      arr.splice(to, 0, item);
+      return arr;
+    });
+  }, []);
+
   const openPhotoLightbox = (index: number) => {
     setPhotoLightboxIndex(index);
     setPhotoLightboxOpen(true);
@@ -448,6 +466,10 @@ function AdFormWizard({
     try {
       const enhanced = await onEnhanceDescription(values.description);
       update('description', enhanced);
+    } catch {
+      setEnhanceError(
+        "Impossible d'améliorer la description. Vérifiez votre connexion et réessayez."
+      );
     } finally {
       setEnhancing(false);
     }
@@ -694,12 +716,16 @@ function AdFormWizard({
       if (!shouldProceed) return;
     }
 
-    await onSubmit(values, images, {
-      imagesToDelete: imagesToDelete.length > 0 ? imagesToDelete : undefined,
-      tourScenes: tourScenes.length > 0 ? tourScenes : undefined,
-      propertyConditionPdf,
-    });
-    clearDraft();
+    try {
+      await onSubmit(values, images, {
+        imagesToDelete: imagesToDelete.length > 0 ? imagesToDelete : undefined,
+        tourScenes: tourScenes.length > 0 ? tourScenes : undefined,
+        propertyConditionPdf,
+      });
+      clearDraft();
+    } catch {
+      // Error feedback is handled by the caller's mutation onError handler.
+    }
   };
 
   /* ── Determine if a step is the last real step ── */
@@ -716,12 +742,13 @@ function AdFormWizard({
     <Box
       sx={{
         display: { xs: 'block', md: 'flex' },
-        gap: { md: 4 },
+        gap: { md: 3 },
         alignItems: 'flex-start',
+        ml: { md: -2 },
       }}
     >
       {/* ── Left column: Form ── */}
-      <Box sx={{ width: { xs: '100%', md: 580 }, flexShrink: 0, minWidth: 0 }}>
+      <Box sx={{ width: { xs: '100%', md: 560 }, flexShrink: 0, minWidth: 0 }}>
         <form onSubmit={handleSubmit} noValidate>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* ── Stepper ── */}
@@ -765,6 +792,7 @@ function AdFormWizard({
                     setImagesToDelete((prev) => [...prev, id])
                   }
                   onOpenLightbox={openPhotoLightbox}
+                  onReorderImages={reorderImages}
                 />
               </Box>
             </Collapse>
@@ -1052,6 +1080,18 @@ function AdFormWizard({
           attributeOptions={autocompleteOptions}
         />
       </Box>
+
+      {/* AI enhance error snackbar */}
+      <Snackbar
+        open={!!enhanceError}
+        autoHideDuration={5000}
+        onClose={() => setEnhanceError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="error" onClose={() => setEnhanceError(null)}>
+          {enhanceError}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
