@@ -601,9 +601,6 @@ img[data-nimg] {
 .landing-nav-cta {
   display: flex;
 }
-.landing-mobile-cta {
-  display: none;
-}
 .landing-hamburger {
   display: none;
   cursor: pointer;
@@ -643,6 +640,9 @@ img[data-nimg] {
   justify-content: center;
   gap: 32px;
   flex-wrap: wrap;
+}
+.hero-mobile-cta {
+  display: none !important;
 }
 .hero-chips {
   display: flex;
@@ -734,8 +734,8 @@ img[data-nimg] {
   .landing-nav-cta {
     display: none;
   }
-  .landing-mobile-cta {
-    display: inline-block;
+  .hero-mobile-cta {
+    display: flex !important;
   }
   .landing-section-pad {
     padding: 64px 16px;
@@ -774,9 +774,6 @@ img[data-nimg] {
   }
   .hero-stats {
     gap: 16px;
-  }
-  .landing-hamburger .landing-theme-toggle {
-    display: none;
   }
 }
 

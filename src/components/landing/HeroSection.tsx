@@ -718,6 +718,55 @@ export default function HeroSection() {
               </div>
             ))}
           </motion.div>
+
+          {/* Mobile CTA buttons — visible only on small screens */}
+          <motion.div
+            variants={itemVariants}
+            className="hero-mobile-cta"
+            style={{
+              marginTop: 32,
+              display: 'flex',
+              justifyContent: 'center',
+              gap: 12,
+            }}
+          >
+            <Link
+              href="/home"
+              style={{
+                color: '#fff',
+                textDecoration: 'none',
+                fontSize: 15,
+                fontWeight: 500,
+                padding: '10px 24px',
+                borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.3)',
+                display: 'inline-block',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.3s ease',
+                backdropFilter: 'blur(8px)',
+                background: 'rgba(255,255,255,0.08)',
+              }}
+            >
+              Visiter
+            </Link>
+            <Link
+              href="/owner/login"
+              style={{
+                color: '#fff',
+                textDecoration: 'none',
+                fontSize: 15,
+                fontWeight: 600,
+                padding: '10px 24px',
+                borderRadius: 10,
+                background: `linear-gradient(135deg, ${brand.primary}, #d93a50)`,
+                boxShadow: '0 4px 20px rgba(246,71,95,0.4)',
+                display: 'inline-block',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Annoncer
+            </Link>
+          </motion.div>
         </motion.div>
       </div>
 
