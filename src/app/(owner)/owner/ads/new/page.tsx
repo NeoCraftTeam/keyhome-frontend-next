@@ -408,7 +408,7 @@ export default function OwnerNewAdPage() {
   return (
     <>
       {/* Ad creation form — always mounted, never unmounts */}
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
         <Typography variant="h4" fontWeight={700} gutterBottom>
           Nouvelle annonce
         </Typography>

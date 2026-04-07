@@ -49,6 +49,7 @@ import {
   getCategoryForAdType,
   getCategoryById,
 } from './ad-form/ad-type-categories';
+import AdFormLivePreview from './AdFormLivePreview';
 
 export type { AdFormValues, TourScene } from './ad-form/types';
 
@@ -712,288 +713,346 @@ function AdFormWizard({
   /* ================================================================== */
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {/* ── Stepper ── */}
-        <AuthFlowStepper labels={STEP_LABELS} activeStep={activeStep} />
-
-        {/* ══════════════════ Step 0: Type ══════════════════ */}
-        <Collapse in={activeStep === 0} unmountOnExit>
-          <AdFormStepType
-            selectedCategory={selectedCategory}
-            selectedTransactionType={values.transaction_type}
-            selectedTypeId={values.type_id}
-            adTypes={adTypes}
-            onCategoryChange={setSelectedCategory}
-            onTransactionTypeChange={(t) => update('transaction_type', t)}
-            onTypeIdChange={(id) => update('type_id', id)}
-            errors={errors}
-          />
-        </Collapse>
-
-        {/* ══════════════════ Step 1: Basic Info + Photos ══════════════════ */}
-        <Collapse in={activeStep === 1} unmountOnExit>
+    <Box
+      sx={{
+        display: { xs: 'block', md: 'flex' },
+        gap: { md: 4 },
+        alignItems: 'flex-start',
+      }}
+    >
+      {/* ── Left column: Form ── */}
+      <Box sx={{ width: { xs: '100%', md: 580 }, flexShrink: 0, minWidth: 0 }}>
+        <form onSubmit={handleSubmit} noValidate>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <AdFormBasicInfo
-              values={values}
-              update={update}
-              errors={errors}
-              enhancing={enhancing}
-              onEnhance={onEnhanceDescription ? handleEnhance : null}
-            />
-            <AdFormPhotos
-              imagePreviewUrls={imagePreviewUrls}
-              existingImages={ad?.images}
-              imagesToDelete={imagesToDelete}
-              imageCount={images.length}
-              adTitle={ad?.title}
-              errors={errors}
-              isCompressing={compressingPhotos}
-              onImageChange={handleImageChange}
-              onRemoveImage={removeImage}
-              onDeleteExistingImage={(id) =>
-                setImagesToDelete((prev) => [...prev, id])
-              }
-              onOpenLightbox={openPhotoLightbox}
-            />
-          </Box>
-        </Collapse>
+            {/* ── Stepper ── */}
+            <AuthFlowStepper labels={STEP_LABELS} activeStep={activeStep} />
 
-        {/* ══════════════════ Step 2: Details ══════════════════ */}
-        <Collapse in={activeStep === 2} unmountOnExit>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <AdFormLocation
-              values={values}
-              update={update}
-              errors={errors}
-              cities={cities}
-              quarters={quarters}
-              adTypes={adTypes}
-              selectedCity={selectedCity}
-              selectedQuarter={selectedQuarter}
-              cityInput={cityInput}
-              quarterInput={quarterInput}
-              isCitiesLoading={isCitiesLoading}
-              isQuartersLoading={isQuartersLoading}
-              onCityInputChange={setCityInput}
-              onCityChange={handleCityChange}
-              onQuarterInputChange={setQuarterInput}
-              onQuarterChange={setSelectedQuarter}
-              citySlotProps={citySlotProps}
-              renderCityOption={renderCityOption}
-              cityInputSx={cityInputSx}
-              hideTypeSelector
-            />
-            {!hiddenFields.has('bedrooms') && (
-              <AdFormFeatures values={values} update={update} errors={errors} />
-            )}
-          </Box>
-        </Collapse>
-
-        {/* ══════════════════ Step 3: Equipment & Conditions ══════════════════ */}
-        <Collapse in={activeStep === 3} unmountOnExit>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontStyle: 'italic' }}
-            >
-              Cette étape est optionnelle — vous pouvez passer directement à la
-              suite.
-            </Typography>
-            {!hiddenFields.has('attributes') && (
-              <AdFormEquipment
-                values={values}
-                update={update}
-                autocompleteOptions={autocompleteOptions}
+            {/* ══════════════════ Step 0: Type ══════════════════ */}
+            <Collapse in={activeStep === 0} unmountOnExit>
+              <AdFormStepType
+                selectedCategory={selectedCategory}
+                selectedTransactionType={values.transaction_type}
+                selectedTypeId={values.type_id}
+                adTypes={adTypes}
+                onCategoryChange={setSelectedCategory}
+                onTransactionTypeChange={(t) => update('transaction_type', t)}
+                onTypeIdChange={(id) => update('type_id', id)}
+                errors={errors}
               />
-            )}
-            {!hiddenFields.has('deposit_amount') && (
-              <AdFormPremiumInfo
-                values={values}
-                update={update}
-                defaultExpanded={
-                  !!(
-                    initialData?.deposit_amount ||
-                    initialData?.minimum_lease_duration
-                  )
-                }
-                propertyConditionPdf={propertyConditionPdf}
-                onPdfChange={setPropertyConditionPdf}
-              />
-            )}
-          </Box>
-        </Collapse>
+            </Collapse>
 
-        {/* ══════════════════ Step 4: Media & Location ══════════════════ */}
-        <Collapse in={activeStep === 4} unmountOnExit>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontStyle: 'italic' }}
-            >
-              Cette étape est optionnelle — ajoutez des médias pour enrichir
-              votre annonce.
-            </Typography>
-            <AdFormTour
-              tourScenes={tourScenes}
-              ad={ad}
-              errors={errors}
-              onAddScene={addTourScene}
-              onUpdateScene={updateTourScene}
-              onRemoveScene={removeTourScene}
-            />
-            <AdFormPriceAdvisor values={values} cityId={selectedCity?.id} />
-            <AdFormBoost values={values} update={update} />
-            <AdFormMapLocation values={values} update={update} />
-          </Box>
-        </Collapse>
-
-        {/* ══════════════════ Step 5: Review ══════════════════ */}
-        <Collapse in={activeStep === 5} unmountOnExit>
-          <AdFormStepReview
-            values={values}
-            imageCount={images.length}
-            existingImageCount={existingImageCount}
-            imagesToDeleteCount={imagesToDelete.length}
-            tourScenesCount={tourScenes.length}
-            hasPdf={!!propertyConditionPdf}
-            selectedCategory={selectedCategory}
-            adTypes={adTypes}
-            onGoToStep={goToStep}
-          />
-        </Collapse>
-
-        {/* ══════════════════ Navigation ══════════════════ */}
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 2,
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            pt: 1,
-            borderTop: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          {/* Left side */}
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            {isAutoSaving && (
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1 }}
-              >
-                <CircularProgress size={12} thickness={5} />
-                <Typography variant="caption" color="text.disabled">
-                  Sauvegarde...
-                </Typography>
-              </Box>
-            )}
-            {!isAutoSaving && savedAt && (
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1 }}
-              >
-                <CheckCircleOutlined
-                  sx={{ fontSize: 14, color: 'success.main' }}
+            {/* ══════════════════ Step 1: Basic Info + Photos ══════════════════ */}
+            <Collapse in={activeStep === 1} unmountOnExit>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <AdFormBasicInfo
+                  values={values}
+                  update={update}
+                  errors={errors}
+                  enhancing={enhancing}
+                  onEnhance={onEnhanceDescription ? handleEnhance : null}
                 />
-                <Typography variant="caption" color="text.disabled">
-                  Brouillon sauvegardé à{' '}
-                  {savedAt.toLocaleTimeString('fr-FR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </Typography>
+                <AdFormPhotos
+                  imagePreviewUrls={imagePreviewUrls}
+                  existingImages={ad?.images}
+                  imagesToDelete={imagesToDelete}
+                  imageCount={images.length}
+                  adTitle={ad?.title}
+                  errors={errors}
+                  isCompressing={compressingPhotos}
+                  onImageChange={handleImageChange}
+                  onRemoveImage={removeImage}
+                  onDeleteExistingImage={(id) =>
+                    setImagesToDelete((prev) => [...prev, id])
+                  }
+                  onOpenLightbox={openPhotoLightbox}
+                />
               </Box>
-            )}
-            {onSaveDraft && (
-              <Button
-                variant="text"
-                size="small"
-                onClick={handleSaveDraft}
-                disabled={isSubmitting || isSavingDraft}
-                startIcon={
-                  isSavingDraft ? (
-                    <CircularProgress size={16} />
-                  ) : (
-                    <SaveOutlined />
-                  )
-                }
-                sx={{ borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
-              >
-                {draftLabel}
-              </Button>
-            )}
+            </Collapse>
+
+            {/* ══════════════════ Step 2: Details ══════════════════ */}
+            <Collapse in={activeStep === 2} unmountOnExit>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <AdFormLocation
+                  values={values}
+                  update={update}
+                  errors={errors}
+                  cities={cities}
+                  quarters={quarters}
+                  adTypes={adTypes}
+                  selectedCity={selectedCity}
+                  selectedQuarter={selectedQuarter}
+                  cityInput={cityInput}
+                  quarterInput={quarterInput}
+                  isCitiesLoading={isCitiesLoading}
+                  isQuartersLoading={isQuartersLoading}
+                  onCityInputChange={setCityInput}
+                  onCityChange={handleCityChange}
+                  onQuarterInputChange={setQuarterInput}
+                  onQuarterChange={setSelectedQuarter}
+                  citySlotProps={citySlotProps}
+                  renderCityOption={renderCityOption}
+                  cityInputSx={cityInputSx}
+                  hideTypeSelector
+                />
+                {!hiddenFields.has('bedrooms') && (
+                  <AdFormFeatures
+                    values={values}
+                    update={update}
+                    errors={errors}
+                  />
+                )}
+              </Box>
+            </Collapse>
+
+            {/* ══════════════════ Step 3: Equipment & Conditions ══════════════════ */}
+            <Collapse in={activeStep === 3} unmountOnExit>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontStyle: 'italic' }}
+                >
+                  Cette étape est optionnelle — vous pouvez passer directement à
+                  la suite.
+                </Typography>
+                {!hiddenFields.has('attributes') && (
+                  <AdFormEquipment
+                    values={values}
+                    update={update}
+                    autocompleteOptions={autocompleteOptions}
+                  />
+                )}
+                {!hiddenFields.has('deposit_amount') && (
+                  <AdFormPremiumInfo
+                    values={values}
+                    update={update}
+                    defaultExpanded={
+                      !!(
+                        initialData?.deposit_amount ||
+                        initialData?.minimum_lease_duration
+                      )
+                    }
+                    propertyConditionPdf={propertyConditionPdf}
+                    onPdfChange={setPropertyConditionPdf}
+                  />
+                )}
+              </Box>
+            </Collapse>
+
+            {/* ══════════════════ Step 4: Media & Location ══════════════════ */}
+            <Collapse in={activeStep === 4} unmountOnExit>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontStyle: 'italic' }}
+                >
+                  Cette étape est optionnelle — ajoutez des médias pour enrichir
+                  votre annonce.
+                </Typography>
+                <AdFormTour
+                  tourScenes={tourScenes}
+                  ad={ad}
+                  errors={errors}
+                  onAddScene={addTourScene}
+                  onUpdateScene={updateTourScene}
+                  onRemoveScene={removeTourScene}
+                />
+                <AdFormPriceAdvisor values={values} cityId={selectedCity?.id} />
+                <AdFormBoost values={values} update={update} />
+                <AdFormMapLocation values={values} update={update} />
+              </Box>
+            </Collapse>
+
+            {/* ══════════════════ Step 5: Review ══════════════════ */}
+            <Collapse in={activeStep === 5} unmountOnExit>
+              <AdFormStepReview
+                values={values}
+                imageCount={images.length}
+                existingImageCount={existingImageCount}
+                imagesToDeleteCount={imagesToDelete.length}
+                tourScenesCount={tourScenes.length}
+                hasPdf={!!propertyConditionPdf}
+                selectedCategory={selectedCategory}
+                adTypes={adTypes}
+                onGoToStep={goToStep}
+              />
+            </Collapse>
+
+            {/* ══════════════════ Navigation ══════════════════ */}
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 2,
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                pt: 1,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              {/* Left side */}
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                {isAutoSaving && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      mr: 1,
+                    }}
+                  >
+                    <CircularProgress size={12} thickness={5} />
+                    <Typography variant="caption" color="text.disabled">
+                      Sauvegarde...
+                    </Typography>
+                  </Box>
+                )}
+                {!isAutoSaving && savedAt && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      mr: 1,
+                    }}
+                  >
+                    <CheckCircleOutlined
+                      sx={{ fontSize: 14, color: 'success.main' }}
+                    />
+                    <Typography variant="caption" color="text.disabled">
+                      Brouillon sauvegardé à{' '}
+                      {savedAt.toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Typography>
+                  </Box>
+                )}
+                {onSaveDraft && (
+                  <Button
+                    variant="text"
+                    size="small"
+                    onClick={handleSaveDraft}
+                    disabled={isSubmitting || isSavingDraft}
+                    startIcon={
+                      isSavingDraft ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <SaveOutlined />
+                      )
+                    }
+                    sx={{
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      textTransform: 'none',
+                    }}
+                  >
+                    {draftLabel}
+                  </Button>
+                )}
+              </Box>
+
+              {/* Right side */}
+              <Box sx={{ display: 'flex', gap: 1.5, ml: 'auto' }}>
+                {onCancel && activeStep === 0 && (
+                  <Button
+                    onClick={onCancel}
+                    disabled={isSubmitting || isSavingDraft}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Annuler
+                  </Button>
+                )}
+                {activeStep > 0 && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<ArrowBackIcon />}
+                    onClick={handleBack}
+                    disabled={isSubmitting}
+                    sx={{ borderRadius: 2, fontWeight: 600 }}
+                  >
+                    Précédent
+                  </Button>
+                )}
+                {!isReviewStep ? (
+                  <Button
+                    variant="contained"
+                    endIcon={<ArrowForwardIcon />}
+                    onClick={handleNext}
+                    disabled={isSubmitting}
+                    sx={{
+                      borderRadius: 2,
+                      fontWeight: 700,
+                      px: 3,
+                    }}
+                  >
+                    Suivant
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={isSubmitting || isSavingDraft}
+                    startIcon={
+                      isSubmitting ? (
+                        <CircularProgress size={18} />
+                      ) : (
+                        <PublishIcon />
+                      )
+                    }
+                    sx={{
+                      borderRadius: 2,
+                      fontWeight: 700,
+                      px: 4,
+                      py: 1.25,
+                    }}
+                  >
+                    {submitLabel}
+                  </Button>
+                )}
+              </Box>
+            </Box>
           </Box>
 
-          {/* Right side */}
-          <Box sx={{ display: 'flex', gap: 1.5, ml: 'auto' }}>
-            {onCancel && activeStep === 0 && (
-              <Button
-                onClick={onCancel}
-                disabled={isSubmitting || isSavingDraft}
-                sx={{ borderRadius: 2 }}
-              >
-                Annuler
-              </Button>
-            )}
-            {activeStep > 0 && (
-              <Button
-                variant="outlined"
-                startIcon={<ArrowBackIcon />}
-                onClick={handleBack}
-                disabled={isSubmitting}
-                sx={{ borderRadius: 2, fontWeight: 600 }}
-              >
-                Précédent
-              </Button>
-            )}
-            {!isReviewStep ? (
-              <Button
-                variant="contained"
-                endIcon={<ArrowForwardIcon />}
-                onClick={handleNext}
-                disabled={isSubmitting}
-                sx={{
-                  borderRadius: 2,
-                  fontWeight: 700,
-                  px: 3,
-                }}
-              >
-                Suivant
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={isSubmitting || isSavingDraft}
-                startIcon={
-                  isSubmitting ? (
-                    <CircularProgress size={18} />
-                  ) : (
-                    <PublishIcon />
-                  )
-                }
-                sx={{
-                  borderRadius: 2,
-                  fontWeight: 700,
-                  px: 4,
-                  py: 1.25,
-                }}
-              >
-                {submitLabel}
-              </Button>
-            )}
-          </Box>
-        </Box>
+          <ImageLightbox
+            images={lightboxImages}
+            open={photoLightboxOpen}
+            initialIndex={photoLightboxIndex}
+            onClose={() => setPhotoLightboxOpen(false)}
+          />
+        </form>
       </Box>
 
-      <ImageLightbox
-        images={lightboxImages}
-        open={photoLightboxOpen}
-        initialIndex={photoLightboxIndex}
-        onClose={() => setPhotoLightboxOpen(false)}
-      />
-    </form>
+      {/* ── Right column: Live Preview (desktop only) ── */}
+      <Box
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          flex: '1 1 0',
+          minWidth: 0,
+          position: 'sticky',
+          top: 80,
+          maxHeight: 'calc(100vh - 96px)',
+          overflowY: 'auto',
+          '&::-webkit-scrollbar': { width: 4 },
+          '&::-webkit-scrollbar-thumb': {
+            bgcolor: 'grey.300',
+            borderRadius: 2,
+          },
+        }}
+      >
+        <AdFormLivePreview
+          values={values}
+          imagePreviewUrls={imagePreviewUrls}
+          existingImages={ad?.images ?? []}
+          imagesToDelete={imagesToDelete}
+          selectedQuarter={selectedQuarter}
+          selectedCity={selectedCity}
+          adType={adTypes.find((t) => t.id === values.type_id) ?? null}
+          attributeOptions={autocompleteOptions}
+        />
+      </Box>
+    </Box>
   );
 }
 

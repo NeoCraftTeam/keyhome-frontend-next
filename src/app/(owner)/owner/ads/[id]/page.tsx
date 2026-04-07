@@ -571,7 +571,7 @@ export default function OwnerAdEditPage() {
             : 'default';
 
   return (
-    <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+    <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 } }}>
       {/* ═══ Header ═══ */}
       <Box sx={{ mb: 3 }}>
         <Button
