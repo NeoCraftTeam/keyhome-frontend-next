@@ -640,11 +640,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Onboarding flags are device-level — clearing them would force completed
         // users through the tour/welcome modal again on next login.
         const DEVICE_KEYS = [
-          'keyhome_cookie_consent_v1',
-          'kh_tour_completed_at',
-          'kh:welcome-dismissed',
-          'kh:push-prompt-done',
-          'APPTOUR_SHOWN_KEY',
+          'keyhome_cookie_consent_v1', // GDPR consent — must never re-prompt
+          'kh_tour_completed_at', // Onboarding tour completion timestamp
+          'kh:welcome-dismissed', // Welcome modal dismissed flag
+          'APPTOUR_SHOWN_KEY', // App tour shown flag
+          'kh_push_dismissed', // Push notification prompt dismissed — device decision
+          'kh_pwa_dismissed', // Customer PWA install prompt dismissed — device decision
+          'kh_owner_pwa_dismissed', // Owner PWA install prompt dismissed — device decision
         ] as const;
         const preserved: Record<string, string> = {};
         for (const key of DEVICE_KEYS) {
