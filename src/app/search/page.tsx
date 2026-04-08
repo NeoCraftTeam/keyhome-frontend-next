@@ -144,6 +144,9 @@ function SearchContent() {
     return () => clearTimeout(timer);
   }, [cityInput]);
   const [selectedType, setSelectedType] = useState<AdType | null>(null);
+  const [selectedQuarter, setSelectedQuarter] = useState(
+    searchParams.get('quarter') || ''
+  );
   const [bedrooms, setBedrooms] = useState<number | undefined>();
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]);
   const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 1000]);
@@ -216,6 +219,9 @@ function SearchContent() {
         urlPriceMax ? Number(urlPriceMax) : 5000000,
       ]);
     }
+
+    const urlQuarter = searchParams.get('quarter') || '';
+    if (urlQuarter !== selectedQuarter) setSelectedQuarter(urlQuarter);
 
     if (searchParams.get('parking') === '1') {
       setHasParking(true);
@@ -294,7 +300,8 @@ function SearchContent() {
 
   const buildParams = (): SearchParams => ({
     q: query || undefined,
-    city: selectedCity?.name || undefined,
+    city: selectedCity?.name || cityInput.trim() || undefined,
+    quarter: selectedQuarter || undefined,
     type_id: selectedType?.id || undefined,
     type: selectedType?.id ? undefined : selectedType?.name || undefined,
     bedrooms: bedrooms || undefined,
@@ -323,7 +330,9 @@ function SearchContent() {
       'search',
       query,
       selectedCity?.id,
+      selectedCity?.name || cityInput,
       selectedType?.id,
+      selectedQuarter,
       bedrooms,
       bathrooms,
       priceRange,
@@ -705,6 +714,7 @@ function SearchContent() {
     setSelectedCity(null);
     setCityInput('');
     setSelectedType(null);
+    setSelectedQuarter('');
     setBedrooms(undefined);
     setPriceRange([0, 5000000]);
     setSurfaceRange([0, 1000]);
@@ -724,6 +734,7 @@ function SearchContent() {
       [
         selectedCity,
         selectedType,
+        selectedQuarter,
         bedrooms,
         bathrooms,
         priceRange[0] > 0,
@@ -739,6 +750,7 @@ function SearchContent() {
     [
       selectedCity,
       selectedType,
+      selectedQuarter,
       bedrooms,
       bathrooms,
       priceRange,
@@ -1771,6 +1783,14 @@ function SearchContent() {
               <Chip
                 label={`Type: ${selectedType.name}`}
                 onDelete={() => setSelectedType(null)}
+                size="small"
+                variant="outlined"
+              />
+            )}
+            {selectedQuarter && (
+              <Chip
+                label={`Quartier: ${selectedQuarter}`}
+                onDelete={() => setSelectedQuarter('')}
                 size="small"
                 variant="outlined"
               />
