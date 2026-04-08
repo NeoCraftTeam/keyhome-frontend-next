@@ -213,6 +213,7 @@ export default function BailleurPublicProfilePage() {
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
       <PageBreadcrumbs
+        showBack
         items={[
           { label: 'Accueil', href: '/' },
           { label: 'Bailleurs' },
