@@ -270,8 +270,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setIsExchanging(true);
 
-    getToken()
-      .then(async (clerkToken) => {
+    void (async () => {
+      let clerkToken: string | null = null;
+      try {
+        clerkToken = await getToken();
+      } catch {
+        setIsExchanging(false);
+        setHasResolvedInitialAuth(true);
+        return;
+      }
+
+      try {
         if (runId !== authRunRef.current) {
           return;
         }
@@ -416,14 +425,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             failPath.startsWith('/owner') || intentRaw === 'agent';
           router.replace(failIsOwner ? '/owner/login' : '/login');
         }
-      })
-      .finally(() => {
+      } finally {
         if (runId !== authRunRef.current) {
           return;
         }
         setIsExchanging(false);
         setHasResolvedInitialAuth(true);
-      });
+      }
+    })();
   }, [
     isLoaded,
     isSignedIn,

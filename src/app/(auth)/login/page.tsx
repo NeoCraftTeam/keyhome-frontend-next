@@ -23,12 +23,15 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { AxiosError } from 'axios';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const { authStats } = useLandingStats();
+  const router = useRouter();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,6 +48,33 @@ export default function LoginPage() {
     try {
       await login(email, password);
     } catch (err) {
+      // If the backend says email is not verified, redirect to the OTP page.
+      // The backend will have already re-sent a fresh OTP code.
+      if (err instanceof AxiosError && err.response?.status === 403) {
+        const data = err.response.data as {
+          email_verification_required?: boolean;
+          email?: string;
+          role?: string;
+        };
+        if (data?.email_verification_required) {
+          const verifiedEmail = data.email ?? email;
+          const role = data.role ?? 'customer';
+          const isOwner = role === 'agent' || role === 'admin';
+
+          // Store session keys the OTP page expects.
+          const emailKey = isOwner
+            ? 'kh_verify_email_owner'
+            : 'kh_verify_email_client';
+          sessionStorage.setItem(emailKey, verifiedEmail);
+          sessionStorage.setItem(
+            'kh_register_role',
+            isOwner ? 'agent' : 'customer'
+          );
+
+          router.push(isOwner ? '/owner/auth/verify-otp' : '/verify-email');
+          return;
+        }
+      }
       setError(
         getSafeErrorMessage(err, 'Identifiants incorrects. Veuillez réessayer.')
       );

@@ -7,6 +7,7 @@ import { getSafeErrorMessage } from '@/lib/error-messages';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { OWNER_LOGIN_HERO_SRC, OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { useAuth } from '@/providers/AuthProvider';
+import { AxiosError } from 'axios';
 import EmailIcon from '@mui/icons-material/Email';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -61,6 +62,20 @@ export default function OwnerLoginPage() {
     try {
       await loginOwner(email, password);
     } catch (err) {
+      // Unverified email → redirect to OTP page (backend already re-sent a fresh code).
+      if (err instanceof AxiosError && err.response?.status === 403) {
+        const data = err.response.data as {
+          email_verification_required?: boolean;
+          email?: string;
+        };
+        if (data?.email_verification_required) {
+          const verifiedEmail = data.email ?? email;
+          sessionStorage.setItem('kh_verify_email_owner', verifiedEmail);
+          sessionStorage.setItem('kh_register_role', 'agent');
+          router.push('/owner/auth/verify-otp');
+          return;
+        }
+      }
       setError(
         getSafeErrorMessage(
           err,

@@ -13,6 +13,8 @@ const AUTH_ROUTES = [
   '/auth/register',
   '/auth/clerk/',
   '/auth/me',
+  '/auth/verify-email-otp',
+  '/auth/resend-verification',
   '/auth/logout', // 401 here means session already expired; logout handles its own cleanup
 ];
 
@@ -57,8 +59,10 @@ export async function ensureCsrfCookie(): Promise<void> {
     .then(() => {
       csrfReady = true;
     })
-    .catch(() => {
-      // Silently fail — Bearer token auth may still work
+    .catch((e: unknown) => {
+      console.warn('[KeyHome] CSRF cookie fetch failed:', e);
+      // Don't re-throw — let the request proceed; the server will return 419
+      // and the user will see a proper error via getSafeErrorMessage.
     })
     .finally(() => {
       csrfPromise = null;
