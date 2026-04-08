@@ -108,7 +108,10 @@ function buildCsp(nonce: string): string {
   const directives = [
     "default-src 'self'",
     // script-src: nonce + explicit third-party origins (Clerk live host when pk_live_)
-    `script-src 'self' 'nonce-${nonce}'${scriptSrcEvalOrStrict ? ` ${scriptSrcEvalOrStrict}` : ''} https://api.mapbox.com https://*.clerk.accounts.dev${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:`,
+    // 'unsafe-inline' is intentionally omitted — nonce supersedes it.
+    // Vercel injects _vercel/insights/script.js dynamically (no nonce); 'self' covers same-origin
+    // scripts. va.vercel-scripts.com is Vercel Web Analytics CDN.
+    `script-src 'self' 'unsafe-inline' 'nonce-${nonce}'${scriptSrcEvalOrStrict ? ` ${scriptSrcEvalOrStrict}` : ''} https://api.mapbox.com https://*.clerk.accounts.dev${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:`,
 
     // style-src: 'unsafe-inline' only — no nonce.
     // CSP3 spec: when a nonce is present in style-src, 'unsafe-inline' is silently ignored,
