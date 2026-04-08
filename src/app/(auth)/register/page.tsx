@@ -335,8 +335,11 @@ export default function RegisterPage() {
         if (response.user?.id) {
           sessionStorage.setItem('user_id', response.user.id);
         }
-        if (response.user?.email) {
-          sessionStorage.setItem(emailKey, response.user.email);
+        // UserResource hides email when unauthenticated (privacy guard).
+        // Fall back to form.email which is always available.
+        const emailToStore = response.user?.email ?? form.email;
+        if (emailToStore) {
+          sessionStorage.setItem(emailKey, emailToStore);
         }
       }
 

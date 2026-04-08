@@ -507,7 +507,7 @@ export default function VerifyEmailPage() {
           <FadeIn delay={0.4} direction="up">
             <Box sx={{ textAlign: 'center', mt: 3 }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Vous n&apos;avez pas re\u00e7u le code ?
+                Vous n&apos;avez pas reçu le code ?
               </Typography>
               <Button
                 onClick={handleResendOtp}
