@@ -129,7 +129,13 @@ export default function OwnerVerifyOtpPage() {
   };
 
   const handleSubmit = async () => {
-    if (!isComplete || !email) return;
+    if (!isComplete) return;
+    if (!email) {
+      setError(
+        'Adresse email introuvable. Veuillez recommencer l\u2019inscription.'
+      );
+      return;
+    }
     setError('');
     setIsSubmitting(true);
     try {
@@ -163,7 +169,13 @@ export default function OwnerVerifyOtpPage() {
   };
 
   const handleResendOtp = useCallback(async () => {
-    if (resendCooldown > 0 || !email) return;
+    if (resendCooldown > 0) return;
+    if (!email) {
+      setError(
+        'Adresse email introuvable. Veuillez recommencer l\u2019inscription.'
+      );
+      return;
+    }
     setError('');
     setResendMessage('');
     try {
