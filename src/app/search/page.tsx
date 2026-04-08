@@ -861,11 +861,21 @@ function SearchContent() {
       <Autocomplete
         size="small"
         options={adTypes || []}
-        getOptionLabel={(opt) => {
+        getOptionLabel={(opt) => opt.name}
+        renderOption={(props, opt) => {
           const fc = facets?.types?.find(
             (t) => t.name.toLowerCase() === opt.name.toLowerCase()
           );
-          return fc ? `${opt.name} (${fc.count})` : opt.name;
+          return (
+            <li {...props} key={opt.id}>
+              <span style={{ flex: 1 }}>{opt.name}</span>
+              {fc && (
+                <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>
+                  {fc.count}
+                </span>
+              )}
+            </li>
+          );
         }}
         value={selectedType}
         onChange={(_, val) => {
