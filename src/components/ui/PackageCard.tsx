@@ -260,7 +260,7 @@ export default function PackageCard({
               letterSpacing: 0.5,
             }}
           >
-            credits
+            {pkg.points_awarded > 1 ? 'crédits' : 'crédit'}
           </Typography>
         </Box>
 

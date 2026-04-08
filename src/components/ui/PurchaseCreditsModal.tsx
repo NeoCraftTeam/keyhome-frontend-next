@@ -101,9 +101,9 @@ export default function PurchaseCreditsModal({
       <Box
         sx={{
           position: 'relative',
-          px: 3,
-          pt: 4,
-          pb: 3.5,
+          px: { xs: 2, sm: 3 },
+          pt: { xs: 2.5, sm: 4 },
+          pb: { xs: 2, sm: 3.5 },
           background: (theme) =>
             theme.palette.gradient?.primary135 ??
             `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
@@ -154,7 +154,13 @@ export default function PurchaseCreditsModal({
         </IconButton>
 
         {/* Balance widget — white pill visible on gradient background */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            mb: { xs: 1.5, sm: 3 },
+          }}
+        >
           <Box
             sx={{
               display: 'inline-flex',
@@ -196,7 +202,8 @@ export default function PurchaseCreditsModal({
                   fontSize: '0.9rem',
                 }}
               >
-                {(balance ?? 0).toLocaleString('fr-FR')} crédits
+                {(balance ?? 0).toLocaleString('fr-FR')}{' '}
+                {(balance ?? 0) <= 1 ? 'crédit' : 'crédits'}
               </Typography>
             )}
           </Box>
@@ -205,7 +212,13 @@ export default function PurchaseCreditsModal({
         <Typography
           variant="h6"
           fontWeight={800}
-          sx={{ color: '#fff', letterSpacing: -0.5, lineHeight: 1.2, mb: 1 }}
+          sx={{
+            color: '#fff',
+            letterSpacing: -0.5,
+            lineHeight: 1.2,
+            mb: 0.5,
+            fontSize: { xs: '1.1rem', sm: '1.25rem' },
+          }}
         >
           {balanceLoading ? (
             <ShimmerBox
@@ -221,7 +234,11 @@ export default function PurchaseCreditsModal({
         <Typography
           variant="body1"
           fontWeight={600}
-          sx={{ color: 'rgba(255,255,255,0.9)', letterSpacing: 0.2, mb: 2 }}
+          sx={{
+            color: 'rgba(255,255,255,0.9)',
+            letterSpacing: 0.2,
+            mb: { xs: 1, sm: 2 },
+          }}
         >
           {balanceLoading ? 'crédits disponibles' : creditsLabel}
         </Typography>
@@ -232,7 +249,7 @@ export default function PurchaseCreditsModal({
             display: 'inline-flex',
             alignItems: 'center',
             gap: 0.75,
-            mt: 2,
+            mt: { xs: 1, sm: 2 },
             bgcolor: 'rgba(255,255,255,0.15)',
             borderRadius: '40px',
             px: 2,
@@ -257,8 +274,8 @@ export default function PurchaseCreditsModal({
       {/* ── PACKAGES ─────────────────────────────────────── */}
       <Box
         sx={{
-          px: 3,
-          pt: 3,
+          px: { xs: 2, sm: 3 },
+          pt: { xs: 2, sm: 3 },
           pb: 2.5,
           bgcolor: 'background.paper',
           overflowY: 'auto',

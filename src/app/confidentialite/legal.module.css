@@ -131,7 +131,7 @@
     #c62e44 100%
   );
   color: white;
-  padding: 48px 0 56px;
+  padding: 28px 0 36px;
   overflow: hidden;
 }
 
@@ -154,7 +154,7 @@
   bottom: -1px;
   left: 0;
   right: 0;
-  height: 64px;
+  height: 36px;
   background: linear-gradient(to top, #fafbfc 0%, transparent 100%);
   pointer-events: none;
 }
@@ -188,7 +188,7 @@
 }
 
 .heroTitle {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 800;
   margin: 0;
   line-height: 1.1;
@@ -231,7 +231,10 @@
 
 @media (min-width: 768px) {
   .hero {
-    padding: 64px 0 72px;
+    padding: 48px 0 56px;
+  }
+  .hero::after {
+    height: 64px;
   }
   .heroTitle {
     font-size: 2.75rem;
@@ -430,7 +433,13 @@
   border: none;
   height: 1px;
   background: linear-gradient(to right, transparent, #e5e7eb, transparent);
-  margin: 44px 0;
+  margin: 24px 0;
+}
+
+@media (min-width: 768px) {
+  .divider {
+    margin: 44px 0;
+  }
 }
 
 /* ─── Sections with staggered animation ─── */
@@ -608,6 +617,9 @@
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: subtract;
   pointer-events: none;
@@ -653,9 +665,16 @@
 
 .footer {
   max-width: 1200px;
-  margin: 48px auto 0;
-  padding: 0 24px 48px;
+  margin: 24px auto 0;
+  padding: 0 24px 32px;
   text-align: center;
+}
+
+@media (min-width: 768px) {
+  .footer {
+    margin: 48px auto 0;
+    padding: 0 24px 48px;
+  }
 }
 
 .footerInner {
