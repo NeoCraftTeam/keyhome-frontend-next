@@ -6,10 +6,15 @@ import {
   Bed,
   CalendarMonth,
   CameraAlt,
+  DirectionsBus,
   ElectricBolt,
+  LocalHospital,
   LocationOn,
   LocalParking,
+  NearMe,
+  School,
   SquareFoot,
+  Storefront,
 } from '@mui/icons-material';
 import {
   Avatar,
@@ -21,6 +26,7 @@ import {
   Typography,
 } from '@mui/material';
 import { AnimatePresence, motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import { memo, useMemo, useState } from 'react';
 
 import { formatPrice } from '@/lib/constants';
@@ -28,6 +34,26 @@ import { useAuth } from '@/providers/AuthProvider';
 import type { AdImage, AdType, City, Quarter } from '@/types';
 import { UserRole } from '@/types';
 import type { AdFormValues, AttributeOption } from './ad-form/types';
+
+const AdLocationMap = dynamic(() => import('@/components/ads/AdLocationMap'), {
+  ssr: false,
+  loading: () => (
+    <Box
+      sx={{
+        height: 200,
+        bgcolor: 'action.hover',
+        borderRadius: 2,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Typography variant="caption" color="text.secondary">
+        Chargement de la carte…
+      </Typography>
+    </Box>
+  ),
+});
 
 interface AdFormLivePreviewProps {
   values: AdFormValues;
@@ -629,6 +655,183 @@ function AdFormLivePreview({
                 </Box>
               </>
             )}
+
+            {/* ── Map preview ── */}
+            {values.latitude &&
+              values.longitude &&
+              (() => {
+                const lat = values.latitude;
+                const lng = values.longitude;
+                return (
+                  <>
+                    <Divider sx={{ mx: 2, my: 0 }} />
+                    <Box sx={{ px: 2, py: 1.5 }}>
+                      <Typography variant="subtitle2" fontWeight={700} mb={1.5}>
+                        Localisation
+                      </Typography>
+                      <AdLocationMap
+                        latitude={lat}
+                        longitude={lng}
+                        quartierName={selectedQuarter?.name}
+                        cityName={selectedCity?.name}
+                        isLocked={false}
+                      />
+                    </Box>
+                  </>
+                );
+              })()}
+
+            {/* ── Proximité & Accessibilité ── */}
+            {(() => {
+              const fmtDist = (v: string | undefined) => {
+                const m = parseFloat(v ?? '');
+                if (!v || isNaN(m) || m <= 0) return null;
+                return m >= 1000
+                  ? `${(m / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`
+                  : `${m} m`;
+              };
+              const proximityItems = [
+                {
+                  key: 'main_road',
+                  icon: <NearMe sx={{ fontSize: 17, color: '#64748B' }} />,
+                  iconBg: 'rgba(100,116,139,0.10)',
+                  label: 'Route principale',
+                  distance: fmtDist(values.distance_main_road_m),
+                },
+                {
+                  key: 'shops',
+                  icon: <Storefront sx={{ fontSize: 17, color: '#059669' }} />,
+                  iconBg: 'rgba(5,150,105,0.10)',
+                  label: 'Commerces',
+                  distance: fmtDist(values.distance_shops_m),
+                },
+                {
+                  key: 'transport',
+                  icon: (
+                    <DirectionsBus sx={{ fontSize: 17, color: '#3B82F6' }} />
+                  ),
+                  iconBg: 'rgba(59,130,246,0.10)',
+                  label: 'Transport',
+                  distance: fmtDist(values.distance_transport_m),
+                },
+                {
+                  key: 'school',
+                  icon: <School sx={{ fontSize: 17, color: '#8B5CF6' }} />,
+                  iconBg: 'rgba(139,92,246,0.10)',
+                  label: 'École / Université',
+                  distance: fmtDist(values.distance_school_m),
+                },
+                {
+                  key: 'hospital',
+                  icon: (
+                    <LocalHospital sx={{ fontSize: 17, color: '#EF4444' }} />
+                  ),
+                  iconBg: 'rgba(239,68,68,0.10)',
+                  label: 'Hôpital / Clinique',
+                  distance: fmtDist(values.distance_hospital_m),
+                },
+              ].filter((item) => item.distance !== null);
+
+              if (proximityItems.length === 0) return null;
+              return (
+                <>
+                  <Divider sx={{ mx: 2, my: 0 }} />
+                  <Box sx={{ px: 2, py: 1.5 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        mb: 1.5,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 28,
+                          height: 28,
+                          borderRadius: 1.5,
+                          bgcolor: 'action.hover',
+                        }}
+                      >
+                        <NearMe
+                          sx={{ fontSize: 16, color: 'text.secondary' }}
+                        />
+                      </Box>
+                      <Typography variant="subtitle2" fontWeight={700}>
+                        Proximité &amp; Accessibilité
+                      </Typography>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, 1fr)',
+                        gap: 1,
+                      }}
+                    >
+                      {proximityItems.map((item) => (
+                        <Box
+                          key={item.key}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            p: 1.25,
+                            borderRadius: 2,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            bgcolor: 'background.paper',
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: 28,
+                              height: 28,
+                              borderRadius: 1.5,
+                              bgcolor: (
+                                item as typeof item & { iconBg: string }
+                              ).iconBg,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {item.icon}
+                          </Box>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{
+                                fontWeight: 500,
+                                display: 'block',
+                                lineHeight: 1.3,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {item.label}
+                            </Typography>
+                            <Typography
+                              variant="subtitle2"
+                              fontWeight={700}
+                              color="text.primary"
+                              sx={{ lineHeight: 1.2, fontSize: '0.78rem' }}
+                            >
+                              {item.distance}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                </>
+              );
+            })()}
 
             {/* ── Owner card ── */}
             <Divider sx={{ mx: 2, my: 0 }} />
