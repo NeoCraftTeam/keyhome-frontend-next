@@ -764,8 +764,21 @@ function AdFormWizard({
       <Box sx={{ width: { xs: '100%', md: 560 }, flexShrink: 0, minWidth: 0 }}>
         <form onSubmit={handleSubmit} noValidate>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {/* ── Stepper ── */}
-            <AuthFlowStepper labels={STEP_LABELS} activeStep={activeStep} />
+            {/* ── Stepper — sticky so it stays visible as the user scrolls ── */}
+            <Box
+              sx={{
+                position: 'sticky',
+                top: { xs: 56, md: 72 },
+                zIndex: 10,
+                bgcolor: 'background.default',
+                pt: 1,
+                pb: 0.5,
+                mx: -2,
+                px: 2,
+              }}
+            >
+              <AuthFlowStepper labels={STEP_LABELS} activeStep={activeStep} />
+            </Box>
 
             {/* ══════════════════ Step 0: Type ══════════════════ */}
             <Collapse in={activeStep === 0} unmountOnExit>
@@ -1035,7 +1048,8 @@ function AdFormWizard({
       <Box
         sx={{
           display: { xs: 'none', md: 'block' },
-          flex: '1 1 0',
+          width: { md: 300, lg: 340 },
+          flexShrink: 0,
           minWidth: 0,
           position: 'sticky',
           top: 80,
