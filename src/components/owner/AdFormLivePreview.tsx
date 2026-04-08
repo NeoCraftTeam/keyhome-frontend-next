@@ -164,6 +164,62 @@ function AdFormLivePreview({
     featureChips.length > 0 ||
     !!values.description;
 
+  // Proximity items derived before render
+  const proximityItems = [
+    {
+      key: 'main_road',
+      icon: <NearMe sx={{ fontSize: 17, color: '#64748B' }} />,
+      iconBg: 'rgba(100,116,139,0.10)',
+      label: 'Route principale',
+      raw: values.distance_main_road_m,
+    },
+    {
+      key: 'shops',
+      icon: <Storefront sx={{ fontSize: 17, color: '#059669' }} />,
+      iconBg: 'rgba(5,150,105,0.10)',
+      label: 'Commerces',
+      raw: values.distance_shops_m,
+    },
+    {
+      key: 'transport',
+      icon: <DirectionsBus sx={{ fontSize: 17, color: '#3B82F6' }} />,
+      iconBg: 'rgba(59,130,246,0.10)',
+      label: 'Transport',
+      raw: values.distance_transport_m,
+    },
+    {
+      key: 'school',
+      icon: <School sx={{ fontSize: 17, color: '#8B5CF6' }} />,
+      iconBg: 'rgba(139,92,246,0.10)',
+      label: 'École / Université',
+      raw: values.distance_school_m,
+    },
+    {
+      key: 'hospital',
+      icon: <LocalHospital sx={{ fontSize: 17, color: '#EF4444' }} />,
+      iconBg: 'rgba(239,68,68,0.10)',
+      label: 'Hôpital / Clinique',
+      raw: values.distance_hospital_m,
+    },
+  ]
+    .map((item) => {
+      const m = parseFloat(item.raw);
+      if (!item.raw || isNaN(m) || m <= 0) return null;
+      const distance =
+        m >= 1000
+          ? `${(m / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`
+          : `${m} m`;
+      return { ...item, distance };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
+  const hasProximityData = proximityItems.length > 0;
+  const mapLat =
+    values.latitude && !isNaN(values.latitude) ? values.latitude : null;
+  const mapLng =
+    values.longitude && !isNaN(values.longitude) ? values.longitude : null;
+  const hasMap = mapLat !== null && mapLng !== null;
+
   return (
     <Paper
       elevation={0}
@@ -657,181 +713,119 @@ function AdFormLivePreview({
             )}
 
             {/* ── Map preview ── */}
-            {values.latitude &&
-              values.longitude &&
-              (() => {
-                const lat = values.latitude;
-                const lng = values.longitude;
-                return (
-                  <>
-                    <Divider sx={{ mx: 2, my: 0 }} />
-                    <Box sx={{ px: 2, py: 1.5 }}>
-                      <Typography variant="subtitle2" fontWeight={700} mb={1.5}>
-                        Localisation
-                      </Typography>
-                      <AdLocationMap
-                        latitude={lat}
-                        longitude={lng}
-                        quartierName={selectedQuarter?.name}
-                        cityName={selectedCity?.name}
-                        isLocked={false}
-                      />
-                    </Box>
-                  </>
-                );
-              })()}
+            {hasMap && (
+              <>
+                <Divider sx={{ mx: 2, my: 0 }} />
+                <Box sx={{ px: 2, py: 1.5 }}>
+                  <Typography variant="subtitle2" fontWeight={700} mb={1.5}>
+                    Localisation
+                  </Typography>
+                  <AdLocationMap
+                    latitude={mapLat!}
+                    longitude={mapLng!}
+                    quartierName={selectedQuarter?.name}
+                    cityName={selectedCity?.name}
+                    isLocked={false}
+                  />
+                </Box>
+              </>
+            )}
 
             {/* ── Proximité & Accessibilité ── */}
-            {(() => {
-              const fmtDist = (v: string | undefined) => {
-                const m = parseFloat(v ?? '');
-                if (!v || isNaN(m) || m <= 0) return null;
-                return m >= 1000
-                  ? `${(m / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`
-                  : `${m} m`;
-              };
-              const proximityItems = [
-                {
-                  key: 'main_road',
-                  icon: <NearMe sx={{ fontSize: 17, color: '#64748B' }} />,
-                  iconBg: 'rgba(100,116,139,0.10)',
-                  label: 'Route principale',
-                  distance: fmtDist(values.distance_main_road_m),
-                },
-                {
-                  key: 'shops',
-                  icon: <Storefront sx={{ fontSize: 17, color: '#059669' }} />,
-                  iconBg: 'rgba(5,150,105,0.10)',
-                  label: 'Commerces',
-                  distance: fmtDist(values.distance_shops_m),
-                },
-                {
-                  key: 'transport',
-                  icon: (
-                    <DirectionsBus sx={{ fontSize: 17, color: '#3B82F6' }} />
-                  ),
-                  iconBg: 'rgba(59,130,246,0.10)',
-                  label: 'Transport',
-                  distance: fmtDist(values.distance_transport_m),
-                },
-                {
-                  key: 'school',
-                  icon: <School sx={{ fontSize: 17, color: '#8B5CF6' }} />,
-                  iconBg: 'rgba(139,92,246,0.10)',
-                  label: 'École / Université',
-                  distance: fmtDist(values.distance_school_m),
-                },
-                {
-                  key: 'hospital',
-                  icon: (
-                    <LocalHospital sx={{ fontSize: 17, color: '#EF4444' }} />
-                  ),
-                  iconBg: 'rgba(239,68,68,0.10)',
-                  label: 'Hôpital / Clinique',
-                  distance: fmtDist(values.distance_hospital_m),
-                },
-              ].filter((item) => item.distance !== null);
-
-              if (proximityItems.length === 0) return null;
-              return (
-                <>
-                  <Divider sx={{ mx: 2, my: 0 }} />
-                  <Box sx={{ px: 2, py: 1.5 }}>
+            {hasProximityData && (
+              <>
+                <Divider sx={{ mx: 2, my: 0 }} />
+                <Box sx={{ px: 2, py: 1.5 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 1.5,
+                    }}
+                  >
                     <Box
                       sx={{
-                        display: 'flex',
+                        display: 'inline-flex',
                         alignItems: 'center',
-                        gap: 1,
-                        mb: 1.5,
+                        justifyContent: 'center',
+                        width: 28,
+                        height: 28,
+                        borderRadius: 1.5,
+                        bgcolor: 'action.hover',
                       }}
                     >
+                      <NearMe sx={{ fontSize: 16, color: 'text.secondary' }} />
+                    </Box>
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      Proximité &amp; Accessibilité
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gap: 1,
+                    }}
+                  >
+                    {proximityItems.map((item) => (
                       <Box
+                        key={item.key}
                         sx={{
-                          display: 'inline-flex',
+                          display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          width: 28,
-                          height: 28,
-                          borderRadius: 1.5,
-                          bgcolor: 'action.hover',
+                          gap: 1,
+                          p: 1.25,
+                          borderRadius: 2,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: 'background.paper',
                         }}
                       >
-                        <NearMe
-                          sx={{ fontSize: 16, color: 'text.secondary' }}
-                        />
-                      </Box>
-                      <Typography variant="subtitle2" fontWeight={700}>
-                        Proximité &amp; Accessibilité
-                      </Typography>
-                    </Box>
-                    <Box
-                      sx={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, 1fr)',
-                        gap: 1,
-                      }}
-                    >
-                      {proximityItems.map((item) => (
                         <Box
-                          key={item.key}
                           sx={{
-                            display: 'flex',
+                            display: 'inline-flex',
                             alignItems: 'center',
-                            gap: 1,
-                            p: 1.25,
-                            borderRadius: 2,
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            bgcolor: 'background.paper',
+                            justifyContent: 'center',
+                            width: 28,
+                            height: 28,
+                            borderRadius: 1.5,
+                            bgcolor: item.iconBg,
+                            flexShrink: 0,
                           }}
                         >
-                          <Box
+                          {item.icon}
+                        </Box>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
                             sx={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              width: 28,
-                              height: 28,
-                              borderRadius: 1.5,
-                              bgcolor: (
-                                item as typeof item & { iconBg: string }
-                              ).iconBg,
-                              flexShrink: 0,
+                              fontWeight: 500,
+                              display: 'block',
+                              lineHeight: 1.3,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
                             }}
                           >
-                            {item.icon}
-                          </Box>
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{
-                                fontWeight: 500,
-                                display: 'block',
-                                lineHeight: 1.3,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {item.label}
-                            </Typography>
-                            <Typography
-                              variant="subtitle2"
-                              fontWeight={700}
-                              color="text.primary"
-                              sx={{ lineHeight: 1.2, fontSize: '0.78rem' }}
-                            >
-                              {item.distance}
-                            </Typography>
-                          </Box>
+                            {item.label}
+                          </Typography>
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight={700}
+                            color="text.primary"
+                            sx={{ lineHeight: 1.2, fontSize: '0.78rem' }}
+                          >
+                            {item.distance}
+                          </Typography>
                         </Box>
-                      ))}
-                    </Box>
+                      </Box>
+                    ))}
                   </Box>
-                </>
-              );
-            })()}
+                </Box>
+              </>
+            )}
 
             {/* ── Owner card ── */}
             <Divider sx={{ mx: 2, my: 0 }} />
