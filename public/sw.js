@@ -1,7 +1,7 @@
 // KeyHome Service Worker v3
 // Push + Background Sync + Caching strategy for full offline/PWA support.
 
-const VERSION      = "v3";
+const VERSION      = "v4";
 const STATIC_CACHE = `kh-static-${VERSION}`;
 const API_CACHE    = `kh-api-${VERSION}`;
 const NAV_CACHE    = `kh-nav-${VERSION}`;

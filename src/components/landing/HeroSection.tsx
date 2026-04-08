@@ -113,7 +113,8 @@ export default function HeroSection() {
   const [, startTransition] = useTransition();
 
   // Skip heavy Three.js canvas on mobile for better LCP / performance
-  const [isMobile, setIsMobile] = useState(false);
+  // null = unmounted (SSR) → treat as desktop to avoid hydration mismatch
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
   useEffect(() => {
     setIsMobile(window.innerWidth < 768);
   }, []);
@@ -228,10 +229,10 @@ export default function HeroSection() {
       }}
     >
       {/* Property video/image showcase background — skipped on mobile */}
-      {!isMobile && <HeroVideoBackground isDark={isDark} />}
+      {isMobile !== true && <HeroVideoBackground isDark={isDark} />}
 
       {/* Canvas2D animated particle overlay — skipped on mobile for better LCP */}
-      {!isMobile && <ThreeCanvas />}
+      {isMobile !== true && <ThreeCanvas />}
 
       {/* Radial gradient overlay */}
       <div

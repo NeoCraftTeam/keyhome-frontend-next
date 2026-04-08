@@ -159,8 +159,11 @@ export default async function RootLayout({
     >
       <html lang="fr" suppressHydrationWarning>
         <head>
-          {/* suppressHydrationWarning: browser redacts nonce after parsing, causing mismatch */}
+          {/* Theme detection script — runs before paint to prevent FOUC.
+              id prop: React 19 uses id to de-dup inline scripts (prevents "Encountered script tag" warning).
+              suppressHydrationWarning: browser redacts nonce after parsing, causing mismatch. */}
           <script
+            id="kh-theme-init"
             suppressHydrationWarning
             nonce={nonce}
             dangerouslySetInnerHTML={{
