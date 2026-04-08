@@ -228,7 +228,7 @@ export default function OwnerSubscriptionsPage() {
                           color="primary.main"
                           sx={{ mb: 0.5 }}
                         >
-                          {plan.price.toLocaleString('fr-FR')} XAF
+                          {(plan.price ?? 0).toLocaleString('fr-FR')} XAF
                         </Typography>
                         <Typography
                           variant="caption"
