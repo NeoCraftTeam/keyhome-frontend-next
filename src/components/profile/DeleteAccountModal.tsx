@@ -120,6 +120,12 @@ export default function DeleteAccountModal({ open, onClose }: Props) {
           placeholder={`Tapez ${CONFIRMATION_PHRASE} pour confirmer`}
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onPaste={(e) => {
+            e.preventDefault();
+            const pasted = e.clipboardData.getData('text');
+            setInput((prev) => prev + pasted.toLowerCase());
+          }}
+          onDrop={(e) => e.preventDefault()}
           disabled={isDeleting}
           autoComplete="off"
           sx={{
