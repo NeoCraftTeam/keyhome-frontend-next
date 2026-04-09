@@ -93,6 +93,13 @@ export const usersService = {
     );
     return data;
   },
+
+  async deleteAccount(confirmation: string): Promise<{ message: string }> {
+    const { data } = await api.delete('/my/account', {
+      data: { confirmation },
+    });
+    return data;
+  },
 };
 
 export const recommendationsService = {

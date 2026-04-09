@@ -16,6 +16,7 @@ import { citiesService } from '@/services/cities.service';
 import { surveysService } from '@/services/surveys.service';
 import { usersService } from '@/services/users.service';
 import { City } from '@/types';
+import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar';
 import {
   Assignment as AssignmentIcon,
@@ -106,6 +107,7 @@ export default function OwnerProfilePage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
     queryKey: ['owner-profile-cities', cityInput],
@@ -750,6 +752,42 @@ export default function OwnerProfilePage() {
             )}
           </Button>
         </Box>
+
+        {/* Danger zone — Delete account */}
+        <Box
+          sx={{
+            mt: 6,
+            pt: 3,
+            borderTop: '1px solid',
+            borderColor: 'error.200',
+          }}
+        >
+          <Typography
+            variant="subtitle2"
+            color="error"
+            fontWeight={700}
+            sx={{ mb: 0.5 }}
+          >
+            Zone de danger
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            La suppression de votre compte est définitive. Toutes vos annonces,
+            favoris et données seront supprimés.
+          </Typography>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => setShowDeleteModal(true)}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            Supprimer mon compte
+          </Button>
+        </Box>
+
+        <DeleteAccountModal
+          open={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+        />
       </TabPanel>
 
       <TabPanel value={tab} index={3}>
