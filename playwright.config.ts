@@ -27,8 +27,12 @@ export default defineConfig({
     },
     {
       // Uses Chromium under the hood — no separate browser install needed
-      name: 'mobile',
+      name: 'mobile-android',
       use: { ...devices['Pixel 5'] },
+    },
+    {
+      name: 'mobile-ios',
+      use: { ...devices['iPhone 13'] },
     },
   ],
 
