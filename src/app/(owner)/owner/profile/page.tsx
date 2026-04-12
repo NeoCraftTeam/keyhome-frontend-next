@@ -17,6 +17,7 @@ import { surveysService } from '@/services/surveys.service';
 import { usersService } from '@/services/users.service';
 import { City } from '@/types';
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
+import PasskeyManager from '@/components/security/PasskeyManager';
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar';
 import {
   Assignment as AssignmentIcon,
@@ -637,6 +638,8 @@ export default function OwnerProfilePage() {
       </TabPanel>
 
       <TabPanel value={tab} index={2}>
+        <PasskeyManager variant="owner" />
+
         <Typography variant="h6" fontWeight={600} gutterBottom>
           Changer le mot de passe
         </Typography>

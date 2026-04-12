@@ -2,6 +2,7 @@
 
 import api from '@/lib/api';
 import { buildNlpParams } from '@/lib/nlp-search';
+import VoiceSearchButton from '@/components/search/VoiceSearchButton';
 import { useCountUp } from '@/hooks/useCountUp';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import Search from '@mui/icons-material/Search';
@@ -186,6 +187,14 @@ export default function HeroSection() {
     },
     [query, router, startTransition]
   );
+
+  const handleAISearchRef = useRef(handleAISearch);
+  handleAISearchRef.current = handleAISearch;
+
+  const handleVoice = useCallback((transcript: string) => {
+    setQuery(transcript);
+    void handleAISearchRef.current(transcript);
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -465,39 +474,46 @@ export default function HeroSection() {
                     />
                   </div>
                 ) : (
-                  <button
-                    onClick={() => handleAISearch()}
-                    aria-label="Rechercher"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 48,
-                      height: 48,
-                      background: 'transparent',
-                      border: 'none',
-                      borderRadius: 14,
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      transition: 'transform 0.2s, color 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.transform =
-                        'scale(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.transform =
-                        'scale(1)';
-                    }}
-                  >
-                    <Search
-                      style={{
-                        color: textMuted,
-                        fontSize: 24,
-                        transition: 'color 0.2s',
-                      }}
+                  <>
+                    <VoiceSearchButton
+                      onTranscript={handleVoice}
+                      disabled={isSearching}
+                      size={32}
                     />
-                  </button>
+                    <button
+                      onClick={() => handleAISearch()}
+                      aria-label="Rechercher"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 48,
+                        height: 48,
+                        background: brand.primary,
+                        border: 'none',
+                        borderRadius: 14,
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        transition: 'transform 0.2s, color 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.transform =
+                          'scale(1.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.transform =
+                          'scale(1)';
+                      }}
+                    >
+                      <Search
+                        style={{
+                          color: 'white',
+                          fontSize: 24,
+                          transition: 'color 0.2s',
+                        }}
+                      />
+                    </button>
+                  </>
                 )}
               </div>
 
@@ -555,12 +571,14 @@ export default function HeroSection() {
                         setQuery(suggestion);
                         handleAISearch(suggestion);
                       }}
+                      className="hero-suggestion-btn"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 10,
                         width: '100%',
-                        padding: '10px 16px',
+                        padding: '12px 16px',
+                        minHeight: 44,
                         background: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
@@ -644,11 +662,13 @@ export default function HeroSection() {
                   style={{ textDecoration: 'none' }}
                 >
                   <span
+                    className="hero-city-chip"
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 3,
-                      padding: '3px 10px',
+                      padding: '8px 14px',
+                      minHeight: 36,
                       borderRadius: 100,
                       background: 'transparent',
                       border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,

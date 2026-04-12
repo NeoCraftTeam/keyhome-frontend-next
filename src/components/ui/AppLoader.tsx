@@ -125,7 +125,7 @@ export default function AppLoader({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 4,
+        p: 2,
       }}
     >
       {spinner}

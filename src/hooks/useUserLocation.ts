@@ -19,7 +19,8 @@ export interface UseUserLocationReturn {
 
 const ACCURACY_THRESHOLD_METERS = 5_000;
 const STORAGE_KEY = 'user-location';
-const CACHE_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
+const DENIED_KEY = 'user-location-denied';
+const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 interface CachedLocation {
   location: UserLocation;
@@ -45,6 +46,23 @@ function writeCache(location: UserLocation): void {
   try {
     const payload: CachedLocation = { location, timestamp: Date.now() };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    localStorage.removeItem(DENIED_KEY);
+  } catch {
+    // storage unavailable
+  }
+}
+
+function wasDenied(): boolean {
+  try {
+    return localStorage.getItem(DENIED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeDenied(): void {
+  try {
+    localStorage.setItem(DENIED_KEY, '1');
   } catch {
     // storage unavailable
   }
@@ -54,11 +72,18 @@ export function useUserLocation(): UseUserLocationReturn {
   const [location, setLocation] = useState<UserLocation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const watchIdRef = useRef<number | null>(null);
+  const requestedRef = useRef(false);
 
   const requestPosition = useCallback((forceRefresh = false) => {
     if (typeof window === 'undefined' || !navigator.geolocation) {
       setError('Géolocalisation non supportée par votre navigateur.');
+      setLoading(false);
+      return;
+    }
+
+    // Don't re-ask if user previously denied (unless explicit refresh)
+    if (!forceRefresh && wasDenied()) {
+      setError('Vous avez refusé l\u2019accès à votre position.');
       setLoading(false);
       return;
     }
@@ -72,9 +97,6 @@ export function useUserLocation(): UseUserLocationReturn {
     }
 
     setError(null);
-    if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-    }
 
     const handleSuccess = (pos: GeolocationPosition) => {
       const isApproximate = pos.coords.accuracy > ACCURACY_THRESHOLD_METERS;
@@ -95,6 +117,7 @@ export function useUserLocation(): UseUserLocationReturn {
       switch (err.code) {
         case err.PERMISSION_DENIED:
           setError('Vous avez refusé l\u2019accès à votre position.');
+          writeDenied();
           break;
         case err.POSITION_UNAVAILABLE:
           setError('Position indisponible.');
@@ -107,21 +130,17 @@ export function useUserLocation(): UseUserLocationReturn {
       }
     };
 
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      handleSuccess,
-      handleError,
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 }
-    );
+    navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
+      enableHighAccuracy: true,
+      timeout: 15_000,
+      maximumAge: 60_000,
+    });
   }, []);
 
   useEffect(() => {
+    if (requestedRef.current) return;
+    requestedRef.current = true;
     requestPosition();
-
-    return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-    };
   }, [requestPosition]);
 
   return {

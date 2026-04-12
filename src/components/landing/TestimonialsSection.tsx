@@ -7,7 +7,7 @@ import StarBorder from '@mui/icons-material/StarBorder';
 import Verified from '@mui/icons-material/Verified';
 import { useLandingTheme } from './LandingThemeContext';
 import { brand, semantic } from '@/theme/tokens';
-import { useLandingTestimonials } from '@/hooks/useLandingTestimonials';
+// import { useLandingTestimonials } from '@/hooks/useLandingTestimonials';
 
 /** Avatar colour palette — cycles through semantic colours */
 const AVATAR_COLORS = [
@@ -159,21 +159,12 @@ function SkeletonCard({
 export default function TestimonialsSection() {
   const { bg, surface, border, text, textSub, quote, textMuted } =
     useLandingTheme();
-  const {
-    testimonials: apiTestimonials,
-    averageRating,
-    totalCount,
-    isLoading,
-  } = useLandingTestimonials();
-
-  const testimonials =
-    apiTestimonials.length >= 4
-      ? apiTestimonials.slice(0, 8)
-      : FALLBACK_TESTIMONIALS;
-
-  const displayRating = averageRating?.toFixed(1) ?? '4.6';
-  const displayCount =
-    totalCount && totalCount >= 10 ? `${totalCount}+` : '120+';
+  // Curated platform testimonials — the API /stats/testimonials returns
+  // ad/landlord reviews (Review model), NOT app-level testimonials.
+  // Use static data until a dedicated PlatformTestimonial model exists.
+  const testimonials = FALLBACK_TESTIMONIALS;
+  const displayRating = '4.6';
+  const displayCount = '120+';
 
   return (
     <section
@@ -261,120 +252,109 @@ export default function TestimonialsSection() {
 
         {/* Cards */}
         <div className="testimonials-grid">
-          {isLoading
-            ? FALLBACK_TESTIMONIALS.map((_, i) => (
-                <SkeletonCard key={i} surface={surface} border={border} />
-              ))
-            : testimonials.map((t, i) => {
-                const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length];
-                return (
-                  <motion.div
-                    key={t.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-40px' }}
-                    transition={{
-                      duration: 0.6,
-                      delay: i * 0.1,
-                      ease: [0.22, 1, 0.36, 1] as [
-                        number,
-                        number,
-                        number,
-                        number,
-                      ],
-                    }}
-                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+          {testimonials.map((t, i) => {
+            const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length];
+            return (
+              <motion.div
+                key={t.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{
+                  duration: 0.6,
+                  delay: i * 0.1,
+                  ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+                }}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                style={{
+                  padding: '28px',
+                  borderRadius: 20,
+                  background: surface,
+                  border: `1px solid ${border}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 20,
+                  cursor: 'default',
+                }}
+              >
+                {/* Stars */}
+                <div style={{ display: 'flex', gap: 3 }}>
+                  <RatingStars rating={t.rating} />
+                </div>
+
+                {/* Quote */}
+                <p
+                  style={{
+                    fontSize: 15,
+                    color: quote,
+                    lineHeight: 1.7,
+                    margin: 0,
+                    flex: 1,
+                    fontStyle: 'italic',
+                  }}
+                >
+                  &ldquo;{t.comment}&rdquo;
+                </p>
+
+                {/* Author */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
                     style={{
-                      padding: '28px',
-                      borderRadius: 20,
-                      background: surface,
-                      border: `1px solid ${border}`,
+                      width: 42,
+                      height: 42,
+                      borderRadius: '50%',
+                      background: `linear-gradient(135deg, ${avatarColor}50, ${avatarColor}20)`,
+                      border: `1px solid ${avatarColor}40`,
                       display: 'flex',
-                      flexDirection: 'column',
-                      gap: 20,
-                      cursor: 'default',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: avatarColor,
+                      flexShrink: 0,
                     }}
                   >
-                    {/* Stars */}
-                    <div style={{ display: 'flex', gap: 3 }}>
-                      <RatingStars rating={t.rating} />
-                    </div>
-
-                    {/* Quote */}
-                    <p
+                    {t.initials}
+                  </div>
+                  <div>
+                    <div
                       style={{
-                        fontSize: 15,
-                        color: quote,
-                        lineHeight: 1.7,
-                        margin: 0,
-                        flex: 1,
-                        fontStyle: 'italic',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
                       }}
                     >
-                      &ldquo;{t.comment}&rdquo;
-                    </p>
-
-                    {/* Author */}
-                    <div
-                      style={{ display: 'flex', alignItems: 'center', gap: 12 }}
-                    >
-                      <div
+                      <span
                         style={{
-                          width: 42,
-                          height: 42,
-                          borderRadius: '50%',
-                          background: `linear-gradient(135deg, ${avatarColor}50, ${avatarColor}20)`,
-                          border: `1px solid ${avatarColor}40`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: 700,
-                          color: avatarColor,
-                          flexShrink: 0,
+                          color: text,
                         }}
                       >
-                        {t.initials}
-                      </div>
-                      <div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: 14,
-                              fontWeight: 700,
-                              color: text,
-                            }}
-                          >
-                            {t.display_name}
-                          </span>
-                          <Verified
-                            titleAccess="Profil vérifié"
-                            style={{ fontSize: 14, color: semantic.info }}
-                          />
-                        </div>
-                        <div style={{ fontSize: 12, color: textMuted }}>
-                          {t.role}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: textMuted,
-                            marginTop: 2,
-                          }}
-                        >
-                          {t.created_at}
-                        </div>
-                      </div>
+                        {t.display_name}
+                      </span>
+                      <Verified
+                        titleAccess="Profil vérifié"
+                        style={{ fontSize: 14, color: semantic.info }}
+                      />
                     </div>
-                  </motion.div>
-                );
-              })}
+                    <div style={{ fontSize: 12, color: textMuted }}>
+                      {t.role}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: textMuted,
+                        marginTop: 2,
+                      }}
+                    >
+                      {t.created_at}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>

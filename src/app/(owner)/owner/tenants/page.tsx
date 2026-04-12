@@ -37,6 +37,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import FadeIn from '@/components/ui/FadeIn';
 
 const EMPTY_FORM: TenantPayload = {
   name: '',
@@ -161,37 +162,41 @@ export default function OwnerTenantsPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
-      <PageBreadcrumbs
-        items={[
-          { label: 'Tableau de bord', href: '/owner/dashboard' },
-          { label: 'Mes locataires' },
-        ]}
-      />
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ mb: 1 }}
-      >
-        <Typography variant="h4" fontWeight={700}>
-          Locataires
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={openCreate}
-          sx={{
-            borderRadius: 2,
-            textTransform: 'none',
-            display: { xs: 'none', sm: 'flex' },
-          }}
+      <FadeIn>
+        <PageBreadcrumbs
+          items={[
+            { label: 'Tableau de bord', href: '/owner/dashboard' },
+            { label: 'Mes locataires' },
+          ]}
+        />
+      </FadeIn>
+      <FadeIn delay={0.05}>
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ mb: 1 }}
         >
-          Ajouter
-        </Button>
-      </Stack>
-      <Typography color="text.secondary" sx={{ mb: 4 }}>
-        Gérez vos locataires et consultez leurs contrats associés.
-      </Typography>
+          <Typography variant="h4" fontWeight={700}>
+            Locataires
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={openCreate}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              display: { xs: 'none', sm: 'flex' },
+            }}
+          >
+            Ajouter
+          </Button>
+        </Stack>
+        <Typography color="text.secondary" sx={{ mb: 4 }}>
+          Gérez vos locataires et consultez leurs contrats associés.
+        </Typography>
+      </FadeIn>
 
       {isLoading ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -292,6 +297,7 @@ export default function OwnerTenantsPage() {
                       <Tooltip title="Modifier">
                         <IconButton
                           size="small"
+                          aria-label="Modifier le locataire"
                           onClick={() => openEdit(tenant)}
                           sx={{ borderRadius: 1.5 }}
                         >
@@ -301,6 +307,7 @@ export default function OwnerTenantsPage() {
                       <Tooltip title="Supprimer">
                         <IconButton
                           size="small"
+                          aria-label="Supprimer le locataire"
                           color="error"
                           onClick={() => setDeleteTarget(tenant)}
                           sx={{ borderRadius: 1.5 }}

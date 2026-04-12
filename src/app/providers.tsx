@@ -9,6 +9,7 @@ import { FavoritesProvider } from '@/providers/FavoritesProvider';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import ComparatorBar from '@/components/ads/ComparatorBar';
+import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
 
 export function Providers({
   children,
@@ -30,6 +31,7 @@ export function Providers({
                   <ComparatorBar />
                 </ComparatorProvider>
               </FavoritesProvider>
+              <SessionTimeoutGuard />
             </AuthProvider>
           </ErrorBoundary>
         </UtmCaptureProvider>

@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import FadeIn from '@/components/ui/FadeIn';
 
 export default function PrixMarcheClient() {
   const [tab, setTab] = useState(0);
@@ -23,23 +24,25 @@ export default function PrixMarcheClient() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
-      <Box sx={{ mb: 2 }}>
-        <IconButton
-          onClick={() => router.back()}
-          size="small"
-          aria-label="Retour"
-          sx={{ border: '1px solid', borderColor: 'divider' }}
-        >
-          <ChevronLeftIcon />
-        </IconButton>
-      </Box>
-      <Typography variant="h4" fontWeight={800} gutterBottom>
-        Prix du marché
-      </Typography>
-      <Typography color="text.secondary" mb={4}>
-        Analysez les tendances de prix par quartier et estimez le loyer de votre
-        bien.
-      </Typography>
+      <FadeIn>
+        <Box sx={{ mb: 2 }}>
+          <IconButton
+            onClick={() => router.back()}
+            size="small"
+            aria-label="Retour"
+            sx={{ border: '1px solid', borderColor: 'divider' }}
+          >
+            <ChevronLeftIcon />
+          </IconButton>
+        </Box>
+        <Typography variant="h4" fontWeight={800} gutterBottom>
+          Prix du marché
+        </Typography>
+        <Typography color="text.secondary" mb={4}>
+          Analysez les tendances de prix par quartier et estimez le loyer de
+          votre bien.
+        </Typography>
+      </FadeIn>
 
       <Tabs
         value={tab}

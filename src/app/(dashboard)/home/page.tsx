@@ -4,6 +4,7 @@ import AdCard from '@/components/ads/AdCard';
 import ClientProfileBanner from '@/components/dashboard/ClientProfileBanner';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import HeroSearch from '@/components/ads/HeroSearch';
+import { EmptyState } from '@/components/ui/EmptyState';
 import FadeIn from '@/components/ui/FadeIn';
 import QueryError from '@/components/ui/QueryError';
 import dynamic from 'next/dynamic';
@@ -103,6 +104,7 @@ export default function HomePage() {
     return () => clearTimeout(timer);
   }, [cityInput]);
   const [intentOpen, setIntentOpen] = useState(false);
+  const [geolocating, setGeolocating] = useState(false);
 
   const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
     queryKey: ['hero-cities', debouncedCityInput],
@@ -117,15 +119,39 @@ export default function HomePage() {
     (_: React.SyntheticEvent, city: City | null) => {
       if (!city) return;
       setPendingCity(city);
-      setIntentOpen(true);
+      // Skip intent dialog if user previously chose an intent
+      const savedIntent =
+        typeof window !== 'undefined'
+          ? (localStorage.getItem('kh:last-intent') as
+              | 'louer'
+              | 'acheter'
+              | null)
+          : null;
+      if (savedIntent) {
+        const params = new URLSearchParams({
+          city: city.name,
+          intent: savedIntent,
+        });
+        router.push(`/search?${params.toString()}`);
+        setCityInput('');
+        setPendingCity(null);
+      } else {
+        setIntentOpen(true);
+      }
     },
-    []
+    [router]
   );
 
   const handleIntentChoice = useCallback(
     (intent: 'louer' | 'acheter' | null) => {
       setIntentOpen(false);
       if (!pendingCity) return;
+      // Remember intent for next time
+      if (intent) {
+        try {
+          localStorage.setItem('kh:last-intent', intent);
+        } catch {}
+      }
       const params = new URLSearchParams({ city: pendingCity.name });
       if (intent) params.set('intent', intent);
       router.push(`/search?${params.toString()}`);
@@ -134,6 +160,29 @@ export default function HomePage() {
     },
     [pendingCity, router]
   );
+
+  const handleGeolocate = useCallback(() => {
+    if (!navigator.geolocation) return;
+    setGeolocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeolocating(false);
+        const params = new URLSearchParams({
+          lat: pos.coords.latitude.toFixed(6),
+          lng: pos.coords.longitude.toFixed(6),
+          radius: '5',
+        });
+        const savedIntent =
+          typeof window !== 'undefined'
+            ? localStorage.getItem('kh:last-intent')
+            : null;
+        if (savedIntent) params.set('intent', savedIntent);
+        router.push(`/search?${params.toString()}`);
+      },
+      () => setGeolocating(false),
+      { enableHighAccuracy: true, timeout: 10_000 }
+    );
+  }, [router]);
 
   // Recommendations
   const { data: recommendationsData } = useQuery({
@@ -300,6 +349,8 @@ export default function HomePage() {
               setCityInput={setCityInput}
               isCitiesLoading={isCitiesLoading}
               onCitySelect={handleCitySelect}
+              onGeolocate={handleGeolocate}
+              geolocating={geolocating}
             />
           </motion.div>
         </Box>
@@ -530,17 +581,12 @@ export default function HomePage() {
               )}
 
               {!showShimmer && !isError && ads.length === 0 && (
-                <Box sx={{ textAlign: 'center', py: 8 }}>
-                  <MapsHomeWork
-                    sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }}
-                  />
-                  <Typography variant="h6" color="text.secondary">
-                    Aucune annonce trouvée
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Essayez de modifier vos filtres ou revenez plus tard
-                  </Typography>
-                </Box>
+                <EmptyState
+                  variant="customer"
+                  icon={<MapsHomeWork sx={{ fontSize: 30 }} />}
+                  title="Aucune annonce trouvée"
+                  description="Essayez de modifier vos filtres ou revenez plus tard."
+                />
               )}
 
               {totalPages > 1 && (
@@ -807,17 +853,12 @@ export default function HomePage() {
               )}
 
               {!showShimmer && !isError && ads.length === 0 && (
-                <Box sx={{ textAlign: 'center', py: 8 }}>
-                  <MapsHomeWork
-                    sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }}
-                  />
-                  <Typography variant="h6" color="text.secondary">
-                    Aucune annonce trouvée
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Essayez de modifier vos filtres ou revenez plus tard
-                  </Typography>
-                </Box>
+                <EmptyState
+                  variant="customer"
+                  icon={<MapsHomeWork sx={{ fontSize: 30 }} />}
+                  title="Aucune annonce trouvée"
+                  description="Essayez de modifier vos filtres ou revenez plus tard."
+                />
               )}
 
               {totalPages > 1 && (

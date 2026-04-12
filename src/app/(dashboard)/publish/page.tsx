@@ -47,6 +47,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MAPBOX_TOKEN, DEFAULT_CENTER } from '@/lib/constants';
+import FadeIn from '@/components/ui/FadeIn';
 
 const STEPS = [
   'Informations',
@@ -390,12 +391,14 @@ export default function PublishPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 3, md: 6 } }}>
-      <Typography variant="h4" fontWeight={800} gutterBottom>
-        Publier une annonce
-      </Typography>
-      <Typography color="text.secondary" mb={4}>
-        Remplissez les informations pour mettre votre bien en ligne.
-      </Typography>
+      <FadeIn>
+        <Typography variant="h4" fontWeight={800} gutterBottom>
+          Publier une annonce
+        </Typography>
+        <Typography color="text.secondary" mb={4}>
+          Remplissez les informations pour mettre votre bien en ligne.
+        </Typography>
+      </FadeIn>
 
       <Stepper activeStep={step} alternativeLabel sx={{ mb: 5 }}>
         {STEPS.map((label) => (
@@ -709,7 +712,11 @@ export default function PublishPage() {
                 sx={{ flex: 1 }}
               />
               <Tooltip title="Utiliser ma position">
-                <IconButton onClick={handleGeolocate} color="primary">
+                <IconButton
+                  onClick={handleGeolocate}
+                  color="primary"
+                  aria-label="Utiliser ma position"
+                >
                   <MyLocation />
                 </IconButton>
               </Tooltip>
@@ -800,6 +807,7 @@ export default function PublishPage() {
                     )}
                     <IconButton
                       size="small"
+                      aria-label="Supprimer la photo"
                       onClick={() => removeImage(idx)}
                       sx={{
                         position: 'absolute',

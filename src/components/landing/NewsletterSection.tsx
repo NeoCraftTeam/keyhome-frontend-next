@@ -181,7 +181,7 @@ export default function NewsletterSection() {
                   disabled={isLoading || !email}
                   style={{
                     padding: '14px 24px',
-                    background: isLoading ? '#888' : gradient.primary,
+                    background: isLoading ? textSub : gradient.primary,
                     color: '#fff',
                     border: 'none',
                     fontWeight: 600,

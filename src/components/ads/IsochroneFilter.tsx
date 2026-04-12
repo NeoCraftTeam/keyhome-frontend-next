@@ -195,6 +195,7 @@ export default function IsochroneFilter({ mapRef }: Props) {
             </Typography>
             <IconButton
               size="small"
+              aria-label="Fermer le filtre"
               onClick={() => setOpen(false)}
               sx={{ ml: 1 }}
             >

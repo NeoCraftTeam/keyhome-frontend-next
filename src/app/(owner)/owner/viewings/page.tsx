@@ -46,6 +46,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
+import FadeIn from '@/components/ui/FadeIn';
 
 function formatDateTime(dateStr: string, timeStr: string) {
   try {
@@ -218,47 +219,51 @@ export default function OwnerViewingsPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
-      <PageBreadcrumbs
-        items={[
-          { label: 'Tableau de bord', href: '/owner/dashboard' },
-          { label: 'Visites' },
-        ]}
-      />
+      <FadeIn>
+        <PageBreadcrumbs
+          items={[
+            { label: 'Tableau de bord', href: '/owner/dashboard' },
+            { label: 'Visites' },
+          ]}
+        />
+      </FadeIn>
       {/* Header */}
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={2}
-        justifyContent="space-between"
-        alignItems={{ xs: 'stretch', sm: 'flex-start' }}
-        sx={{ mb: 3 }}
-      >
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            variant="h4"
-            fontWeight={800}
-            gutterBottom
-            sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
-          >
-            Demandes de visite
-          </Typography>
-          <Typography color="text.secondary" sx={{ maxWidth: 640 }}>
-            Gérez les demandes de visite sur vos annonces. Confirmez, annulez et
-            ajoutez des notes.
-          </Typography>
-        </Box>
-        <Button
-          variant="outlined"
-          startIcon={<FilterIcon />}
-          onClick={() => setShowFilters(!showFilters)}
-          sx={{
-            borderRadius: 2,
-            textTransform: 'none',
-            alignSelf: { xs: 'stretch', sm: 'flex-start' },
-          }}
+      <FadeIn delay={0.05}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          justifyContent="space-between"
+          alignItems={{ xs: 'stretch', sm: 'flex-start' }}
+          sx={{ mb: 3 }}
         >
-          Filtrer
-        </Button>
-      </Stack>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="h4"
+              fontWeight={800}
+              gutterBottom
+              sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+            >
+              Demandes de visite
+            </Typography>
+            <Typography color="text.secondary" sx={{ maxWidth: 640 }}>
+              Gérez les demandes de visite sur vos annonces. Confirmez, annulez
+              et ajoutez des notes.
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<FilterIcon />}
+            onClick={() => setShowFilters(!showFilters)}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              alignSelf: { xs: 'stretch', sm: 'flex-start' },
+            }}
+          >
+            Filtrer
+          </Button>
+        </Stack>
+      </FadeIn>
 
       {/* Filters */}
       <Collapse in={showFilters}>
@@ -439,6 +444,7 @@ export default function OwnerViewingsPage() {
                             <Tooltip title={r.client.phone_number} arrow>
                               <IconButton
                                 size="small"
+                                aria-label="Appeler le client"
                                 href={`tel:${r.client.phone_number}`}
                                 sx={{ p: 0.25 }}
                               >
@@ -452,6 +458,7 @@ export default function OwnerViewingsPage() {
                             <Tooltip title={r.client.email} arrow>
                               <IconButton
                                 size="small"
+                                aria-label="Envoyer un email"
                                 href={`mailto:${r.client.email}`}
                                 sx={{ p: 0.25 }}
                               >

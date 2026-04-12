@@ -11,7 +11,7 @@ const links = {
     { label: 'Rechercher un logement', href: '/search' },
     {
       label: 'Publier une annonce',
-      href: process.env.NEXT_PUBLIC_AGENCY_URL || '/agency',
+      href: '/owner/ads/new',
     },
     { label: 'Comment ça marche', href: '#how-it-works' },
     { label: 'Témoignages clients', href: '#testimonials' },

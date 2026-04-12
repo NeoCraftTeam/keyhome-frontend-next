@@ -377,6 +377,7 @@ export default function AdTourHotspotEditor({
                 </Box>
                 <IconButton
                   size="small"
+                  aria-label="Supprimer le point d'intérêt"
                   onClick={() => removeHotspot(idx)}
                   sx={{ color: 'text.secondary', mt: 0.5 }}
                 >

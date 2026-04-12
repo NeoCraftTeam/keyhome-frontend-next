@@ -146,7 +146,7 @@ export default function SSOCallbackPage() {
         size={48}
         color={isAgentIntent ? brandAgent.primary : undefined}
       />
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" color="text.secondary" textAlign="center">
         Connexion en cours…
       </Typography>
     </Box>

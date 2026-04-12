@@ -21,6 +21,7 @@ import { surveysService } from '@/services/surveys.service';
 import { unlockedAdsService, usersService } from '@/services/users.service';
 import { City } from '@/types';
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
+import PasskeyManager from '@/components/security/PasskeyManager';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
@@ -688,6 +689,8 @@ export default function ProfilePage() {
 
       {/* Tab 4: Security (password) */}
       <TabPanel value={tab} index={4}>
+        {user && <PasskeyManager />}
+
         <Typography variant="h6" fontWeight={600} gutterBottom>
           Changer le mot de passe
         </Typography>

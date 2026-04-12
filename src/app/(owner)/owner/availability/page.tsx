@@ -46,6 +46,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, isValid, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useState } from 'react';
+import FadeIn from '@/components/ui/FadeIn';
 import { Ad } from '@/types';
 
 function dateFromYyyyMmDd(value: string): Date {
@@ -266,19 +267,21 @@ export default function OwnerAvailabilityPage() {
       }
     >
       <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
-        <PageBreadcrumbs
-          items={[
-            { label: 'Tableau de bord', href: '/owner/dashboard' },
-            { label: 'Disponibilités' },
-          ]}
-        />
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Disponibilités de visite
-        </Typography>
-        <Typography color="text.secondary" sx={{ mb: 3 }}>
-          Définissez vos créneaux horaires pour les visites de vos biens. Les
-          visiteurs pourront réserver un créneau disponible.
-        </Typography>
+        <FadeIn>
+          <PageBreadcrumbs
+            items={[
+              { label: 'Tableau de bord', href: '/owner/dashboard' },
+              { label: 'Disponibilités' },
+            ]}
+          />
+          <Typography variant="h4" fontWeight={700} gutterBottom>
+            Disponibilités de visite
+          </Typography>
+          <Typography color="text.secondary" sx={{ mb: 3 }}>
+            Définissez vos créneaux horaires pour les visites de vos biens. Les
+            visiteurs pourront réserver un créneau disponible.
+          </Typography>
+        </FadeIn>
 
         {/* ═══ Ad Selector ═══ */}
         <FormControl fullWidth size="small" sx={{ mb: 3 }}>
@@ -482,6 +485,7 @@ export default function OwnerAvailabilityPage() {
                         <Box sx={{ display: 'flex', gap: 0.5 }}>
                           <IconButton
                             size="small"
+                            aria-label="Modifier le créneau"
                             onClick={() => openEdit(s)}
                             color="primary"
                           >
@@ -489,6 +493,7 @@ export default function OwnerAvailabilityPage() {
                           </IconButton>
                           <IconButton
                             size="small"
+                            aria-label="Supprimer le créneau"
                             onClick={() => setDeleteConfirm(s.id)}
                             color="error"
                           >
@@ -691,6 +696,7 @@ export default function OwnerAvailabilityPage() {
                     {form.periods.length > 1 && (
                       <IconButton
                         size="small"
+                        aria-label="Supprimer la période"
                         onClick={() => removePeriod(idx)}
                         color="error"
                       >

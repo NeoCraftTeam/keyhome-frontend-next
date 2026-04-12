@@ -201,7 +201,7 @@ function AdCard({ ad, showDistance }: AdCardProps) {
               overflow: 'hidden',
               bgcolor: 'grey.100',
               transition:
-                'transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.25s ease',
+                'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease',
               '&:hover': {
                 transform: 'translateY(-3px)',
                 boxShadow: shadow.cardHover,
@@ -291,19 +291,21 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                   aria-label={
                     isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'
                   }
-                  size="small"
                   sx={{
                     bgcolor: 'rgba(255,255,255,0.2)',
                     backdropFilter: 'blur(4px)',
                     color: isFavorite ? 'primary.main' : neutral.white,
-                    width: 32,
-                    height: 32,
+                    width: 44,
+                    height: 44,
                     transition: 'background-color 0.2s ease',
                     '&:hover': {
                       bgcolor: 'rgba(255,255,255,0.35)',
                       transform: 'none',
                     },
-                    '&:active': { transform: 'none' },
+                    '&:active': {
+                      bgcolor: 'rgba(255,255,255,0.4)',
+                      transform: 'none',
+                    },
                   }}
                 >
                   <AnimatePresence mode="wait">
@@ -375,14 +377,13 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                 <IconButton
                   className="image-nav"
                   onClick={prevImage}
-                  size="small"
                   aria-label="Photo précédente"
                   sx={{
                     position: 'absolute',
-                    left: 8,
+                    left: 4,
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    opacity: 0,
+                    opacity: { xs: 0.7, md: 0 },
                     bgcolor: 'rgba(255,255,255,0.88)',
                     color: 'rgba(0,0,0,0.75)',
                     transition: 'opacity 0.2s',
@@ -391,27 +392,29 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                       color: 'rgba(0,0,0,0.87)',
                       transform: 'translateY(-50%)',
                     },
-                    '&:active': { transform: 'translateY(-50%)' },
+                    '&:active': {
+                      bgcolor: neutral.white,
+                      transform: 'translateY(-50%) scale(0.9)',
+                    },
                     zIndex: 2,
-                    width: 28,
-                    height: 28,
+                    width: 36,
+                    height: 36,
                     boxShadow: shadow.cardSm,
                   }}
                 >
-                  <ChevronLeft sx={{ fontSize: 18 }} />
+                  <ChevronLeft sx={{ fontSize: 20 }} />
                 </IconButton>
 
                 <IconButton
                   className="image-nav"
                   onClick={nextImage}
-                  size="small"
                   aria-label="Photo suivante"
                   sx={{
                     position: 'absolute',
-                    right: 8,
+                    right: 4,
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    opacity: 0,
+                    opacity: { xs: 0.7, md: 0 },
                     bgcolor: 'rgba(255,255,255,0.88)',
                     color: 'rgba(0,0,0,0.75)',
                     transition: 'opacity 0.2s',
@@ -420,14 +423,17 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                       color: 'rgba(0,0,0,0.87)',
                       transform: 'translateY(-50%)',
                     },
-                    '&:active': { transform: 'translateY(-50%)' },
+                    '&:active': {
+                      bgcolor: neutral.white,
+                      transform: 'translateY(-50%) scale(0.9)',
+                    },
                     zIndex: 2,
-                    width: 28,
-                    height: 28,
+                    width: 36,
+                    height: 36,
                     boxShadow: shadow.cardSm,
                   }}
                 >
-                  <ChevronRight sx={{ fontSize: 18 }} />
+                  <ChevronRight sx={{ fontSize: 20 }} />
                 </IconButton>
               </>
             )}

@@ -119,6 +119,9 @@ export default function OwnerAdCard({
         >
           <IconButton
             size="small"
+            aria-label={
+              ad.is_visible ? "Masquer l'annonce" : "Afficher l'annonce"
+            }
             onClick={(e) => {
               e.stopPropagation();
               onToggleVisibility?.(ad);
@@ -140,6 +143,7 @@ export default function OwnerAdCard({
           </IconButton>
           <IconButton
             size="small"
+            aria-label="Modifier l'annonce"
             onClick={(e) => {
               e.stopPropagation();
               router.push(`/owner/ads/${ad.id}`);

@@ -40,6 +40,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import FadeIn from '@/components/ui/FadeIn';
 import {
   Cell,
   Pie,
@@ -168,18 +169,20 @@ export default function OwnerFinancialsPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
-      <PageBreadcrumbs
-        items={[
-          { label: 'Tableau de bord', href: '/owner/dashboard' },
-          { label: 'Finances' },
-        ]}
-      />
-      <Typography variant="h4" fontWeight={700} gutterBottom>
-        Finances
-      </Typography>
-      <Typography color="text.secondary" sx={{ mb: 4 }}>
-        Suivez vos revenus, dépenses et bénéfice net par bien.
-      </Typography>
+      <FadeIn>
+        <PageBreadcrumbs
+          items={[
+            { label: 'Tableau de bord', href: '/owner/dashboard' },
+            { label: 'Finances' },
+          ]}
+        />
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Finances
+        </Typography>
+        <Typography color="text.secondary" sx={{ mb: 4 }}>
+          Suivez vos revenus, dépenses et bénéfice net par bien.
+        </Typography>
+      </FadeIn>
 
       {/* Ad selector */}
       <Card
@@ -477,6 +480,7 @@ export default function OwnerFinancialsPage() {
                         </Box>
                         <Tooltip title="Supprimer">
                           <IconButton
+                            aria-label="Exporter"
                             size="small"
                             color="error"
                             onClick={() => setDeleteTarget(expense)}

@@ -5,31 +5,32 @@ import Shield from '@mui/icons-material/Shield';
 import SupportAgent from '@mui/icons-material/SupportAgent';
 import VerifiedUser from '@mui/icons-material/VerifiedUser';
 import { Box, Container, Divider, Typography, useTheme } from '@mui/material';
+import { brand, semantic } from '@/theme/tokens';
 
 const STATS = [
   {
     Icon: Apartment,
     value: '12 000+',
     label: 'Annonces vérifiées',
-    color: '#F6475F',
+    color: brand.primary,
   },
   {
     Icon: VerifiedUser,
     value: '98%',
     label: 'Propriétaires certifiés',
-    color: '#6c5ce7',
+    color: semantic.purple,
   },
   {
     Icon: SupportAgent,
     value: '4.8/5',
     label: 'Satisfaction client',
-    color: '#00b894',
+    color: semantic.successBright,
   },
   {
     Icon: Shield,
     value: '100%',
     label: 'Coordonnées garanties',
-    color: '#0984e3',
+    color: semantic.info,
   },
 ] as const;
 

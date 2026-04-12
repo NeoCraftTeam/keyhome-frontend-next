@@ -12,6 +12,7 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
+import Toll from '@mui/icons-material/Toll';
 import XIcon from '@mui/icons-material/X';
 import {
   Avatar,
@@ -32,6 +33,9 @@ import Image from 'next/image';
 import { SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
 import { type User } from '@/types';
 import { useThemeMode } from '@/providers/ThemeProvider';
+import { useQuery } from '@tanstack/react-query';
+import { creditsService } from '@/services/credits.service';
+import { brand } from '@/theme/tokens';
 
 interface NavDrawerProps {
   open: boolean;
@@ -63,7 +67,67 @@ const SOCIAL_LINKS = [
   },
 ];
 
-const ITEM_SX = { borderRadius: 2, mx: 1 };
+const ITEM_SX = {
+  borderRadius: 2,
+  mx: 1,
+  minHeight: 48,
+  '&:active': { bgcolor: 'rgba(246,71,95,0.08)' },
+};
+
+/** Compact credit balance row for the mobile side drawer. */
+function CreditsRow() {
+  const { data: balance, isLoading } = useQuery({
+    queryKey: ['credits-balance'],
+    queryFn: () => creditsService.getBalance(),
+    staleTime: 15_000,
+    retry: false,
+  });
+
+  return (
+    <Box
+      sx={{
+        px: 2,
+        py: 1.5,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 1,
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.6,
+          background:
+            'linear-gradient(135deg, rgba(246,71,95,0.12) 0%, rgba(246,71,95,0.06) 100%)',
+          border: '1px solid',
+          borderColor: 'rgba(246,71,95,0.25)',
+          borderRadius: '40px',
+          px: 1.5,
+          py: 0.55,
+        }}
+      >
+        <Toll sx={{ fontSize: 15, color: 'primary.main' }} />
+        <Typography
+          variant="body2"
+          fontWeight={800}
+          sx={{
+            color: 'primary.main',
+            lineHeight: 1,
+            letterSpacing: -0.3,
+            fontSize: '0.82rem',
+          }}
+        >
+          {isLoading ? '…' : (balance ?? 0).toLocaleString('fr-FR')}
+        </Typography>
+      </Box>
+      <Typography variant="caption" color="text.secondary">
+        {(balance ?? 0) > 1 ? 'crédits' : 'crédit'}
+      </Typography>
+    </Box>
+  );
+}
 
 export default function NavDrawer({
   open,
@@ -163,6 +227,9 @@ export default function NavDrawer({
           <Divider />
         </>
       )}
+
+      {/* Credits balance */}
+      {isAuthenticated && <CreditsRow />}
 
       {/* Sidebar nav (mobile browser without BottomNav) */}
       {!isStandalone && (
@@ -311,7 +378,7 @@ export default function NavDrawer({
                 background: (theme) =>
                   (theme.palette as { gradient?: { primary135?: string } })
                     .gradient?.primary135 ??
-                  'linear-gradient(135deg, #F6475F, #ff8c42)',
+                  `linear-gradient(135deg, ${brand.primary}, #ff8c42)`,
               }}
             >
               Se connecter

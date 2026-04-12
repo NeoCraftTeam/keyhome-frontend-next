@@ -2,9 +2,7 @@
 
 import api from '@/lib/api';
 import { buildNlpParams } from '@/lib/nlp-search';
-import ImageSearchButton, {
-  type ParsedSearchParams,
-} from '@/components/search/ImageSearchButton';
+import { type ParsedSearchParams } from '@/components/search/ImageSearchButton';
 import VoiceSearchButton from '@/components/search/VoiceSearchButton';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import Search from '@mui/icons-material/Search';
@@ -93,14 +91,13 @@ export default function NaturalSearchBar() {
     }
   };
 
-  const handleVoice = useCallback(
-    (transcript: string) => {
-      setQuery(transcript);
-      void handleSearch(transcript);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+  const handleSearchRef = useRef(handleSearch);
+  handleSearchRef.current = handleSearch;
+
+  const handleVoice = useCallback((transcript: string) => {
+    setQuery(transcript);
+    void handleSearchRef.current(transcript);
+  }, []);
 
   return (
     <Box>
@@ -157,36 +154,45 @@ export default function NaturalSearchBar() {
                   ]}
                 >
                   {!isLoading && (
-                    <>
-                      <VoiceSearchButton
-                        onTranscript={handleVoice}
-                        disabled={isLoading}
-                        size={30}
-                      />
-                      <ImageSearchButton
-                        onResult={navigateFromParsed}
-                        onError={setError}
-                        disabled={isLoading}
-                        size={30}
-                      />
-                    </>
+                    <VoiceSearchButton
+                      onTranscript={handleVoice}
+                      disabled={isLoading}
+                      size={30}
+                    />
                   )}
                   {isLoading ? (
                     <CircularProgress size={20} />
                   ) : (
                     <Tooltip title="Rechercher">
                       <Box
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Rechercher"
                         onClick={() => handleSearch()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleSearch();
+                          }
+                        }}
                         sx={{
-                          width: 40,
-                          height: 40,
+                          width: 44,
+                          height: 44,
                           borderRadius: 2,
                           bgcolor: 'primary.main',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           cursor: 'pointer',
+                          flexShrink: 0,
                           '&:hover': { bgcolor: 'primary.dark' },
+                          '&:active': { transform: 'scale(0.93)' },
+                          '&:focus-visible': {
+                            outline: '2px solid',
+                            outlineColor: 'primary.main',
+                            outlineOffset: 2,
+                          },
+                          transition: 'background-color 0.2s, transform 0.15s',
                         }}
                       >
                         <Search sx={{ color: 'white', fontSize: 20 }} />
@@ -226,7 +232,12 @@ export default function NaturalSearchBar() {
               setQuery(ex);
               handleSearch(ex);
             }}
-            sx={{ cursor: 'pointer', fontSize: 11 }}
+            sx={{
+              cursor: 'pointer',
+              fontSize: 11,
+              minHeight: 36,
+              '&:active': { transform: 'scale(0.97)' },
+            }}
           />
         ))}
       </Box>

@@ -215,7 +215,7 @@ export default function BailleurPublicProfilePage() {
       <PageBreadcrumbs
         showBack
         items={[
-          { label: 'Accueil', href: '/' },
+          { label: 'Accueil', href: '/home' },
           { label: 'Bailleurs' },
           { label: profile.display_name },
         ]}

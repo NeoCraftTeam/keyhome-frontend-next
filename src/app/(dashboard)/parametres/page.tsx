@@ -37,6 +37,7 @@ import { useClerk } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import FadeIn from '@/components/ui/FadeIn';
 import { brand } from '@/theme/tokens';
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -278,29 +279,31 @@ export default function ParametresPage() {
       sx={{ py: { xs: 2, md: 4 }, px: { xs: 2, sm: 3, md: 4 } }}
     >
       {/* Breadcrumb navigation */}
-      <PageBreadcrumbs
-        items={[{ label: 'Accueil', href: '/home' }, { label: 'Paramètres' }]}
-      />
+      <FadeIn>
+        <PageBreadcrumbs
+          items={[{ label: 'Accueil', href: '/home' }, { label: 'Paramètres' }]}
+        />
 
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-        <IconButton
-          onClick={() => router.back()}
-          aria-label="Retour"
-          size="small"
-          sx={{ mr: 0.5, color: 'text.secondary' }}
-        >
-          <ArrowBackIcon />
-        </IconButton>
-        <Box>
-          <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
-            Paramètres
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Personnalisez votre experience
-          </Typography>
+        {/* Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+          <IconButton
+            onClick={() => router.back()}
+            aria-label="Retour"
+            size="small"
+            sx={{ mr: 0.5, color: 'text.secondary' }}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          <Box>
+            <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
+              Paramètres
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Personnalisez votre experience
+            </Typography>
+          </Box>
         </Box>
-      </Box>
+      </FadeIn>
 
       {/* User card — full width */}
       {isAuthenticated && user && (
@@ -493,7 +496,7 @@ export default function ParametresPage() {
         </Grid>
         {/* end left col */}
 
-        {/* ── RIGHT col: Comptes liés + Votre avis + A propos ── */}
+        {/* ── RIGHT col: Passkeys + Comptes liés + Votre avis + A propos ── */}
         <Grid size={{ xs: 12, lg: 7 }}>
           <Stack spacing={3}>
             {/* Linked accounts */}

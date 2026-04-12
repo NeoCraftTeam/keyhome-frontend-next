@@ -75,8 +75,7 @@ export default function SplashTransition({
       {/* Logo — spring scale in */}
       <Box
         sx={{
-          animation:
-            'kh-splash-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+          animation: 'kh-splash-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both',
           '@keyframes kh-splash-in': {
             '0%': { opacity: 0, transform: 'scale(0.55)' },
             '100%': { opacity: 1, transform: 'scale(1)' },

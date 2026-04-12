@@ -11,13 +11,27 @@ const publicApi = axios.create({
   timeout: 15000,
 });
 
+function generateUUID(): string {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof (crypto as Crypto & { randomUUID?: () => string }).randomUUID ===
+      'function'
+  ) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 /** Retrieve or generate a stable anonymous client token stored in localStorage. */
 export function getClientToken(): string {
   if (typeof window === 'undefined') return '';
   const key = 'kh_survey_token';
   let token = localStorage.getItem(key);
   if (!token) {
-    token = crypto.randomUUID();
+    token = generateUUID();
     localStorage.setItem(key, token);
   }
   return token;

@@ -18,6 +18,7 @@ import {
   Typography,
   Chip,
 } from '@mui/material';
+import FadeIn from '@/components/ui/FadeIn';
 import { useRouter } from 'next/navigation';
 import { brand } from '@/theme/tokens';
 
@@ -77,25 +78,27 @@ export default function ProServicesPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <PageBreadcrumbs
-        items={[
-          { label: 'Tableau de bord', href: '/owner/dashboard' },
-          { label: 'Services Pro' },
-        ]}
-      />
-      <Box sx={{ mb: 6, textAlign: 'center' }}>
-        <Typography variant="h3" fontWeight={800} gutterBottom>
-          Services Pro KeyHome
-        </Typography>
-        <Typography
-          variant="h6"
-          color="text.secondary"
-          sx={{ maxWidth: 700, mx: 'auto' }}
-        >
-          Boostez vos performances et louez vos biens plus rapidement avec nos
-          outils professionnels.
-        </Typography>
-      </Box>
+      <FadeIn>
+        <PageBreadcrumbs
+          items={[
+            { label: 'Tableau de bord', href: '/owner/dashboard' },
+            { label: 'Services Pro' },
+          ]}
+        />
+        <Box sx={{ mb: 6, textAlign: 'center' }}>
+          <Typography variant="h3" fontWeight={800} gutterBottom>
+            Services Pro KeyHome
+          </Typography>
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            sx={{ maxWidth: 700, mx: 'auto' }}
+          >
+            Boostez vos performances et louez vos biens plus rapidement avec nos
+            outils professionnels.
+          </Typography>
+        </Box>
+      </FadeIn>
 
       <Grid container spacing={3}>
         {SERVICES.map((service) => (

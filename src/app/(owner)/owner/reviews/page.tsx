@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import FadeIn from '@/components/ui/FadeIn';
 
 function formatDate(s: string) {
   try {
@@ -57,18 +58,20 @@ export default function OwnerReviewsPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
-      <PageBreadcrumbs
-        items={[
-          { label: 'Tableau de bord', href: '/owner/dashboard' },
-          { label: 'Avis' },
-        ]}
-      />
-      <Typography variant="h4" fontWeight={700} gutterBottom>
-        Avis clients
-      </Typography>
-      <Typography color="text.secondary" sx={{ mb: 4 }}>
-        Les avis laissés par les locataires sur vos annonces.
-      </Typography>
+      <FadeIn>
+        <PageBreadcrumbs
+          items={[
+            { label: 'Tableau de bord', href: '/owner/dashboard' },
+            { label: 'Avis' },
+          ]}
+        />
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Avis clients
+        </Typography>
+        <Typography color="text.secondary" sx={{ mb: 4 }}>
+          Les avis laissés par les locataires sur vos annonces.
+        </Typography>
+      </FadeIn>
 
       {isLoading ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

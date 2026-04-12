@@ -102,7 +102,7 @@ export const baseTheme = {
           textTransform: 'none' as const,
           // Spring-like tap feedback
           transition:
-            'transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background-color 0.2s ease',
+            'transform 0.15s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, background-color 0.2s ease',
           '&:active': { transform: 'scale(0.96)' },
           '&:focus-visible': {
             outline: '2px solid',
@@ -125,7 +125,7 @@ export const baseTheme = {
           boxShadow: 'none',
           border: '1px solid',
           transition:
-            'transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.25s ease',
+            'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease',
           '&:hover': {
             boxShadow: shadow.cardHover,
             transform: 'translateY(-3px)',
@@ -148,7 +148,29 @@ export const baseTheme = {
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 10,
-            transition: 'box-shadow 0.2s ease',
+            transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
+            '&.Mui-focused': {
+              boxShadow: `0 0 0 3px ${brand.primary}18`,
+            },
+          },
+        },
+      },
+    },
+    MuiFab: {
+      styleOverrides: {
+        root: {
+          transition:
+            'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease',
+          '&:hover': { transform: 'scale(1.08)' },
+          '&:active': { transform: 'scale(0.94)' },
+        },
+      },
+    },
+    MuiSwitch: {
+      styleOverrides: {
+        root: {
+          '& .MuiSwitch-thumb': {
+            transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
           },
         },
       },
@@ -194,20 +216,37 @@ export const baseTheme = {
     MuiIconButton: {
       styleOverrides: {
         root: {
-          transition: 'transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          transition: 'transform 0.15s cubic-bezier(0.22, 1, 0.36, 1)',
           '&:hover': { transform: 'scale(1.1)' },
           '&:active': { transform: 'scale(0.92)' },
         },
       },
     },
+    MuiTabs: {
+      styleOverrides: {
+        indicator: {
+          transition:
+            'left 0.3s cubic-bezier(0.22, 1, 0.36, 1), width 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+        },
+      },
+    },
     MuiTab: {
       styleOverrides: {
-        root: { transition: 'color 0.2s ease' },
+        root: { transition: 'color 0.2s ease, opacity 0.2s ease' },
       },
     },
     MuiPaginationItem: {
       styleOverrides: {
         root: { transition: 'all 0.2s ease' },
+      },
+    },
+    MuiAccordion: {
+      styleOverrides: {
+        root: {
+          transition:
+            'margin 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease',
+          '&.Mui-expanded': { margin: '8px 0' },
+        },
       },
     },
     MuiLink: {
@@ -314,7 +353,7 @@ export const darkTheme = createTheme({
     background: {
       // Deep midnight — not pure black, premium OLED feel
       default: dark.bg,
-      paper: dark.paper,
+      paper: dark.surface, // Was dark.paper (#1D1D24) — increased to dark.surface (#24242D) for better card contrast
     },
     text: {
       primary: dark.text,

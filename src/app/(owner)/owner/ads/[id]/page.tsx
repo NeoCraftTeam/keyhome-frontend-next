@@ -1,5 +1,6 @@
 'use client';
 
+import FadeIn from '@/components/ui/FadeIn';
 import BackIcon from '@mui/icons-material/ArrowBack';
 import AiIcon from '@mui/icons-material/AutoAwesome';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -573,196 +574,202 @@ export default function OwnerAdEditPage() {
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 } }}>
       {/* ═══ Header ═══ */}
-      <Box sx={{ mb: 3 }}>
-        <Button
-          startIcon={<BackIcon />}
-          onClick={() => router.push('/owner/ads')}
-          sx={{
-            mb: 1.5,
-            textTransform: 'none',
-            fontWeight: 600,
-            color: 'text.secondary',
-          }}
-        >
-          Retour aux annonces
-        </Button>
+      <FadeIn>
+        <Box sx={{ mb: 3 }}>
+          <Button
+            startIcon={<BackIcon />}
+            onClick={() => router.push('/owner/ads')}
+            sx={{
+              mb: 1.5,
+              textTransform: 'none',
+              fontWeight: 600,
+              color: 'text.secondary',
+            }}
+          >
+            Retour aux annonces
+          </Button>
 
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Typography
-              variant="h4"
-              fontWeight={800}
-              gutterBottom
-              sx={{ lineHeight: 1.2 }}
-            >
-              Modifier l&apos;annonce
-            </Typography>
-            <Box
-              sx={{
-                display: 'flex',
-                gap: 0.75,
-                alignItems: 'center',
-                flexWrap: 'wrap',
-              }}
-            >
-              <Chip
-                label={ad.status_label || ad.status}
-                size="small"
-                color={
-                  statusColor as
-                    | 'default'
-                    | 'primary'
-                    | 'secondary'
-                    | 'error'
-                    | 'info'
-                    | 'success'
-                    | 'warning'
-                }
-                sx={{ fontWeight: 700 }}
-              />
-              {ad.is_visible === false && (
-                <Chip
-                  label="Masqué"
-                  size="small"
-                  color="secondary"
-                  variant="outlined"
-                />
-              )}
-              {ad.has_3d_tour && (
-                <Chip
-                  icon={<TourIcon sx={{ fontSize: 16 }} />}
-                  label={`Tour 3D · ${ad.tour_scenes_count ?? '?'} scènes`}
-                  size="small"
-                  color="info"
-                  variant="outlined"
-                />
-              )}
-              {ad.view_count != null && ad.view_count > 0 && (
-                <Chip
-                  label={`${ad.view_count} vues`}
-                  size="small"
-                  variant="outlined"
-                  sx={{ fontSize: '0.7rem' }}
-                />
-              )}
-            </Box>
-          </Box>
-
-          {/* Actions */}
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <ButtonGroup
-              variant="outlined"
-              size="small"
-              sx={{
-                '& .MuiButton-root': {
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                },
-              }}
-            >
-              <Button
-                startIcon={
-                  ad.is_visible !== false ? <HiddenIcon /> : <VisibleIcon />
-                }
-                onClick={() => toggleMutation.mutate()}
-                disabled={toggleMutation.isPending}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Typography
+                variant="h4"
+                fontWeight={800}
+                gutterBottom
+                sx={{ lineHeight: 1.2 }}
               >
-                {ad.is_visible !== false ? 'Masquer' : 'Afficher'}
-              </Button>
-              {ad.status !== AdStatus.PENDING &&
-                ad.status !== AdStatus.DECLINED && (
-                  <>
-                    {ad.status !== AdStatus.RESERVED && (
-                      <Button
-                        onClick={() =>
-                          setStatusMutation.mutate(AdStatus.RESERVED)
-                        }
-                        disabled={setStatusMutation.isPending}
-                      >
-                        Réservé
-                      </Button>
-                    )}
-                    {ad.status !== AdStatus.AVAILABLE && (
-                      <Button
-                        onClick={() =>
-                          setStatusMutation.mutate(AdStatus.AVAILABLE)
-                        }
-                        disabled={setStatusMutation.isPending}
-                      >
-                        Disponible
-                      </Button>
-                    )}
-                  </>
-                )}
-            </ButtonGroup>
-            {isDraft && (
-              <Button
-                variant="contained"
-                color="primary"
-                size="small"
-                onClick={() => publishDraftMutation.mutate()}
-                disabled={publishDraftMutation.isPending}
-                startIcon={
-                  publishDraftMutation.isPending ? (
-                    <CircularProgress size={16} />
-                  ) : null
-                }
+                Modifier l&apos;annonce
+              </Typography>
+              <Box
                 sx={{
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 700,
+                  display: 'flex',
+                  gap: 0.75,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
                 }}
               >
-                Publier l&apos;annonce
-              </Button>
-            )}
-            {(ad.status === AdStatus.AVAILABLE ||
-              ad.status === AdStatus.RESERVED) && (
+                <Chip
+                  label={ad.status_label || ad.status}
+                  size="small"
+                  color={
+                    statusColor as
+                      | 'default'
+                      | 'primary'
+                      | 'secondary'
+                      | 'error'
+                      | 'info'
+                      | 'success'
+                      | 'warning'
+                  }
+                  sx={{ fontWeight: 700 }}
+                />
+                {ad.is_visible === false && (
+                  <Chip
+                    label="Masqué"
+                    size="small"
+                    color="secondary"
+                    variant="outlined"
+                  />
+                )}
+                {ad.has_3d_tour && (
+                  <Chip
+                    icon={<TourIcon sx={{ fontSize: 16 }} />}
+                    label={`Tour 3D · ${ad.tour_scenes_count ?? '?'} scènes`}
+                    size="small"
+                    color="info"
+                    variant="outlined"
+                  />
+                )}
+                {ad.view_count != null && ad.view_count > 0 && (
+                  <Chip
+                    label={`${ad.view_count} vues`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontSize: '0.7rem' }}
+                  />
+                )}
+              </Box>
+            </Box>
+
+            {/* Actions */}
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <ButtonGroup
+                variant="outlined"
+                size="small"
+                sx={{
+                  '& .MuiButton-root': {
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                  },
+                }}
+              >
+                <Button
+                  startIcon={
+                    ad.is_visible !== false ? <HiddenIcon /> : <VisibleIcon />
+                  }
+                  onClick={() => toggleMutation.mutate()}
+                  disabled={toggleMutation.isPending}
+                >
+                  {ad.is_visible !== false ? 'Masquer' : 'Afficher'}
+                </Button>
+                {ad.status !== AdStatus.PENDING &&
+                  ad.status !== AdStatus.DECLINED && (
+                    <>
+                      {ad.status !== AdStatus.RESERVED && (
+                        <Button
+                          onClick={() =>
+                            setStatusMutation.mutate(AdStatus.RESERVED)
+                          }
+                          disabled={setStatusMutation.isPending}
+                        >
+                          Réservé
+                        </Button>
+                      )}
+                      {ad.status !== AdStatus.AVAILABLE && (
+                        <Button
+                          onClick={() =>
+                            setStatusMutation.mutate(AdStatus.AVAILABLE)
+                          }
+                          disabled={setStatusMutation.isPending}
+                        >
+                          Disponible
+                        </Button>
+                      )}
+                    </>
+                  )}
+              </ButtonGroup>
+              {isDraft && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  onClick={() => publishDraftMutation.mutate()}
+                  disabled={publishDraftMutation.isPending}
+                  startIcon={
+                    publishDraftMutation.isPending ? (
+                      <CircularProgress size={16} />
+                    ) : null
+                  }
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 700,
+                  }}
+                >
+                  Publier l&apos;annonce
+                </Button>
+              )}
+              {(ad.status === AdStatus.AVAILABLE ||
+                ad.status === AdStatus.RESERVED) && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                  startIcon={<ContractIcon />}
+                  onClick={() => {
+                    setContractForm((prev) => ({
+                      ...prev,
+                      monthly_rent: ad.price != null ? String(ad.price) : '',
+                      deposit_amount: ad.deposit_amount
+                        ? String(ad.deposit_amount)
+                        : ad.price != null
+                          ? String(ad.price)
+                          : '',
+                    }));
+                    setContractOpen(true);
+                  }}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                  }}
+                >
+                  Générer un contrat
+                </Button>
+              )}
               <Button
                 variant="outlined"
-                color="primary"
+                color="error"
                 size="small"
-                startIcon={<ContractIcon />}
-                onClick={() => {
-                  setContractForm((prev) => ({
-                    ...prev,
-                    monthly_rent: ad.price != null ? String(ad.price) : '',
-                    deposit_amount: ad.deposit_amount
-                      ? String(ad.deposit_amount)
-                      : ad.price != null
-                        ? String(ad.price)
-                        : '',
-                  }));
-                  setContractOpen(true);
-                }}
+                startIcon={<DeleteIcon />}
+                onClick={() => setDeleteOpen(true)}
+                disabled={deleteMutation.isPending}
                 sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
               >
-                Générer un contrat
+                Supprimer
               </Button>
-            )}
-            <Button
-              variant="outlined"
-              color="error"
-              size="small"
-              startIcon={<DeleteIcon />}
-              onClick={() => setDeleteOpen(true)}
-              disabled={deleteMutation.isPending}
-              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-            >
-              Supprimer
-            </Button>
+            </Box>
           </Box>
         </Box>
-      </Box>
+      </FadeIn>
 
       {/* ═══ Success/Error feedback ═══ */}
       {updateMutation.isSuccess && (

@@ -12,6 +12,7 @@ import {
   IconButton,
   Typography,
 } from '@mui/material';
+import FadeIn from '@/components/ui/FadeIn';
 
 /**
  * Dual-purpose route:
@@ -51,29 +52,33 @@ function PaymentsContent() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
-      <PageBreadcrumbs
-        items={[
-          { label: 'Accueil', href: '/home' },
-          { label: 'Mes Paiements' },
-        ]}
-      />
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-        <IconButton
-          onClick={() => router.back()}
-          aria-label="Retour"
-          size="small"
-          sx={{ color: 'text.secondary' }}
-        >
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h4" fontWeight={700}>
-          Mes Paiements
+      <FadeIn>
+        <PageBreadcrumbs
+          items={[
+            { label: 'Accueil', href: '/home' },
+            { label: 'Mes Paiements' },
+          ]}
+        />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+          <IconButton
+            onClick={() => router.back()}
+            aria-label="Retour"
+            size="small"
+            sx={{ color: 'text.secondary' }}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h4" fontWeight={700}>
+            Mes Paiements
+          </Typography>
+        </Box>
+        <Typography color="text.secondary" sx={{ mb: 4 }}>
+          Historique de vos transactions.
         </Typography>
-      </Box>
-      <Typography color="text.secondary" sx={{ mb: 4 }}>
-        Historique de vos transactions.
-      </Typography>
-      <PaymentHistoryTableModern perPage={15} />
+      </FadeIn>
+      <FadeIn delay={0.1}>
+        <PaymentHistoryTableModern perPage={15} />
+      </FadeIn>
     </Container>
   );
 }

@@ -3,6 +3,7 @@
 import { Inbox as InboxIcon } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import NextLink from 'next/link';
+import { brand, gradient, shadow as shadowTokens } from '@/theme/tokens';
 
 export interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -37,16 +38,16 @@ const VARIANT_STYLES = {
     shadow: 'none',
   },
   owner: {
-    background: 'linear-gradient(135deg, #0d9488 0%, #0ea5e9 100%)',
+    background: gradient.agent,
     color: '#fff',
     float: true,
-    shadow: '0 8px 24px rgba(13,148,136,0.25)',
+    shadow: shadowTokens.agentGlow,
   },
   customer: {
-    background: 'linear-gradient(135deg, #F6475F 0%, #FF8C94 100%)',
+    background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryLight} 100%)`,
     color: '#fff',
     float: true,
-    shadow: '0 8px 24px rgba(246,71,95,0.25)',
+    shadow: shadowTokens.primaryGlow,
   },
 } as const;
 

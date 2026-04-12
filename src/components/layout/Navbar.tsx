@@ -155,6 +155,7 @@ export default function Navbar() {
                 <Button
                   key={link.href}
                   onClick={() => router.push(link.href)}
+                  aria-current={isActive(link.href) ? 'page' : undefined}
                   sx={{
                     textTransform: 'none',
                     fontWeight: isActive(link.href) ? 700 : 500,
@@ -300,14 +301,13 @@ export default function Navbar() {
                       Publier
                     </Button>
                   )}
-                <CreditsWidget />
+                {!isMobile && <CreditsWidget />}
 
                 {isMobile ? (
                   <IconButton
                     aria-label="Menu compte"
                     onClick={openDrawer}
-                    size="small"
-                    sx={{ ml: 0.5 }}
+                    sx={{ ml: 0.5, width: 44, height: 44 }}
                   >
                     <Avatar
                       src={user?.avatar || undefined}
@@ -330,7 +330,10 @@ export default function Navbar() {
                         px: 1.5,
                         py: 0.5,
                         cursor: 'pointer',
+                        minHeight: 44,
                         '&:hover': { boxShadow: '0 2px 4px rgba(0,0,0,0.08)' },
+                        '&:active': { transform: 'scale(0.96)' },
+                        transition: 'box-shadow 0.2s, transform 0.15s',
                       }}
                     >
                       <MenuIcon
@@ -374,13 +377,12 @@ export default function Navbar() {
                       ? 'Passer en mode clair'
                       : 'Passer en mode sombre'
                   }
-                  size="small"
                   sx={{
                     border: '1px solid',
                     borderColor: 'divider',
                     borderRadius: '50%',
-                    width: 36,
-                    height: 36,
+                    width: 44,
+                    height: 44,
                   }}
                 >
                   {mode === 'dark' ? (
@@ -391,15 +393,14 @@ export default function Navbar() {
                 </IconButton>
                 {isMobile ? (
                   <IconButton
-                    size="small"
                     onClick={() => router.push('/login')}
                     aria-label="Se connecter"
                     sx={{
                       border: '1px solid',
                       borderColor: 'divider',
                       borderRadius: '50%',
-                      width: 34,
-                      height: 34,
+                      width: 44,
+                      height: 44,
                     }}
                   >
                     <PersonIcon sx={{ fontSize: 18 }} />

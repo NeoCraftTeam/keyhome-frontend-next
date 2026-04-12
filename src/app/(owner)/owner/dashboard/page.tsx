@@ -44,6 +44,8 @@ import {
   Chip,
   Container,
   Grid,
+  Tab,
+  Tabs,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
@@ -128,6 +130,7 @@ export default function OwnerDashboardPage() {
   const router = useRouter();
   const greeting = useGreeting();
   const [period, setPeriod] = useState<AnalyticsPeriod>('30d');
+  const [tab, setTab] = useState(0);
 
   const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
     queryKey: ['owner-analytics', period],
@@ -419,67 +422,477 @@ export default function OwnerDashboardPage() {
           />
         </StaggerList>
 
-        {/* ═══ Area chart ═══ */}
-        <Card
-          elevation={0}
+        {/* ═══ Tab navigation ═══ */}
+        <Tabs
+          value={tab}
+          onChange={(_, v) => setTab(v)}
           sx={{
             mb: 3,
-            borderRadius: 3,
-            border: '1px solid',
-            borderColor: 'divider',
-            overflow: 'hidden',
+            '& .MuiTab-root': {
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              minHeight: 44,
+            },
           }}
         >
-          <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 2,
-              }}
-            >
-              <Typography variant="h6" fontWeight={800}>
-                Vues sur mes annonces
-              </Typography>
-              <Button
-                size="small"
-                startIcon={<DownloadIcon />}
-                onClick={handleExportCSV}
-                disabled={!analytics?.top_ads?.length}
-                sx={{ textTransform: 'none', fontSize: '0.75rem' }}
-              >
-                CSV
-              </Button>
-            </Box>
-            {analyticsLoading ? (
-              <ShimmerBox
-                width="100%"
-                height={0}
-                sx={{
-                  borderRadius: '16px',
-                  paddingTop: { xs: '55%', sm: '48%', md: '42%' },
-                  height: 'auto',
-                }}
-              />
-            ) : (
-              <OwnerViewsFavoritesAreaChart data={chartSeries} />
-            )}
-          </CardContent>
-        </Card>
+          <Tab label="Vue d'ensemble" />
+          <Tab label="Analytique" />
+          <Tab label="Activité" />
+        </Tabs>
 
-        {/* ═══ Profile completion widget ═══ */}
-        <ProfileCompletionCard />
+        {/* ═══ Tab 0: Vue d'ensemble ═══ */}
+        {tab === 0 && (
+          <>
+            {/* Profile completion widget */}
+            <ProfileCompletionCard />
 
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 6 }}>
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Card
+                  elevation={0}
+                  sx={{
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    height: '100%',
+                  }}
+                >
+                  <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      >
+                        <CalendarIcon
+                          sx={{ color: 'primary.main', fontSize: 20 }}
+                        />
+                        <Typography variant="subtitle2" fontWeight={700}>
+                          Visites en attente
+                        </Typography>
+                        {pendingViewings.length > 0 && (
+                          <Chip
+                            label={pendingViewings.length}
+                            size="small"
+                            color="warning"
+                            sx={{
+                              height: 20,
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                            }}
+                          />
+                        )}
+                      </Box>
+                      <Button
+                        size="small"
+                        endIcon={<ArrowIcon />}
+                        onClick={() => router.push('/owner/viewings')}
+                        sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                      >
+                        Tout voir
+                      </Button>
+                    </Box>
+
+                    {viewingsLoading ? (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1.5,
+                        }}
+                      >
+                        {[1, 2, 3].map((i) => (
+                          <Box
+                            key={i}
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1.5,
+                              p: 1.5,
+                            }}
+                          >
+                            <ShimmerBox
+                              width={36}
+                              height={36}
+                              borderRadius={18}
+                            />
+                            <Box sx={{ flex: 1 }}>
+                              <ShimmerBox
+                                height={13}
+                                width="55%"
+                                sx={{ mb: 0.5 }}
+                              />
+                              <ShimmerBox height={11} width="75%" />
+                            </Box>
+                            <ShimmerBox
+                              width={52}
+                              height={20}
+                              borderRadius={10}
+                            />
+                          </Box>
+                        ))}
+                      </Box>
+                    ) : pendingViewings.length === 0 ? (
+                      <EmptyState
+                        variant="owner"
+                        size="sm"
+                        icon={<ClockIcon sx={{ fontSize: 22 }} />}
+                        title="Aucune visite en attente"
+                        description="Les demandes de visite s’afficheront ici."
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1.5,
+                        }}
+                      >
+                        {pendingViewings.slice(0, 4).map((v, vIdx) => (
+                          <Box
+                            key={
+                              v.id != null
+                                ? String(v.id)
+                                : `pending-viewing-${vIdx}`
+                            }
+                            onClick={() => router.push('/owner/viewings')}
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1.5,
+                              p: 1.5,
+                              borderRadius: 2,
+                              bgcolor: 'action.hover',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                              '&:hover': { bgcolor: 'action.selected' },
+                            }}
+                          >
+                            <Avatar
+                              sx={{
+                                width: 36,
+                                height: 36,
+                                bgcolor: 'warning.main',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {v.client?.firstname?.[0] || '?'}
+                            </Avatar>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography
+                                variant="body2"
+                                fontWeight={600}
+                                noWrap
+                              >
+                                {v.client?.firstname} {v.client?.lastname}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                noWrap
+                              >
+                                {v.ad?.title} &middot; {formatDate(v.slot_date)}{' '}
+                                {formatTime(v.slot_starts_at)}
+                              </Typography>
+                            </Box>
+                            <Chip
+                              label={v.status_label || v.status}
+                              size="small"
+                              color={getStatusColor(v.status)}
+                              sx={{ fontSize: '0.65rem', height: 22 }}
+                            />
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Card
+                  elevation={0}
+                  sx={{
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    height: '100%',
+                  }}
+                >
+                  <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      >
+                        <HomeIcon
+                          sx={{ color: 'primary.main', fontSize: 20 }}
+                        />
+                        <Typography variant="subtitle2" fontWeight={700}>
+                          Annonces récentes
+                        </Typography>
+                      </Box>
+                      <Button
+                        size="small"
+                        endIcon={<ArrowIcon />}
+                        onClick={() => router.push('/owner/ads')}
+                        sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                      >
+                        Tout voir
+                      </Button>
+                    </Box>
+
+                    {adsLoading ? (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1.5,
+                        }}
+                      >
+                        {[1, 2, 3].map((i) => (
+                          <Box
+                            key={i}
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1.5,
+                              p: 1.5,
+                            }}
+                          >
+                            <ShimmerBox
+                              width={48}
+                              height={36}
+                              borderRadius={6}
+                            />
+                            <Box sx={{ flex: 1 }}>
+                              <ShimmerBox
+                                height={13}
+                                width="60%"
+                                sx={{ mb: 0.5 }}
+                              />
+                              <ShimmerBox height={11} width="45%" />
+                            </Box>
+                            <ShimmerBox
+                              width={52}
+                              height={20}
+                              borderRadius={10}
+                            />
+                          </Box>
+                        ))}
+                      </Box>
+                    ) : recentAds.length === 0 ? (
+                      <EmptyState
+                        variant="owner"
+                        size="sm"
+                        icon={<HomeIcon sx={{ fontSize: 22 }} />}
+                        title="Aucune annonce"
+                        description="Publiez votre première annonce pour commencer."
+                        action={{
+                          label: 'Créer une annonce',
+                          onClick: () => router.push('/owner/ads/new'),
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1.5,
+                        }}
+                      >
+                        {recentAds.slice(0, 4).map((ad, adIdx) => {
+                          const img = ad.images?.[0];
+                          const imgUrl = img?.thumb || img?.url;
+                          return (
+                            <Box
+                              key={
+                                ad.id != null
+                                  ? String(ad.id)
+                                  : `recent-ad-${adIdx}`
+                              }
+                              onClick={() => router.push(`/owner/ads/${ad.id}`)}
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1.5,
+                                p: 1.5,
+                                borderRadius: 2,
+                                bgcolor: 'action.hover',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s',
+                                '&:hover': { bgcolor: 'action.selected' },
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  width: 48,
+                                  height: 36,
+                                  borderRadius: 1,
+                                  overflow: 'hidden',
+                                  bgcolor: 'grey.200',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {imgUrl ? (
+                                  <Box
+                                    component="img"
+                                    src={imgUrl}
+                                    alt={ad.title}
+                                    sx={{
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'cover',
+                                    }}
+                                  />
+                                ) : (
+                                  <Box
+                                    sx={{
+                                      width: '100%',
+                                      height: '100%',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                    }}
+                                  >
+                                    <HomeIcon
+                                      sx={{
+                                        fontSize: 18,
+                                        color: 'text.disabled',
+                                      }}
+                                    />
+                                  </Box>
+                                )}
+                              </Box>
+                              <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  noWrap
+                                >
+                                  {ad.title}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  noWrap
+                                >
+                                  {ad.adresse || ad.quarter?.name || ''}
+                                </Typography>
+                              </Box>
+                              <Chip
+                                label={ad.status_label || ad.status}
+                                size="small"
+                                color={
+                                  ad.status === 'available'
+                                    ? 'success'
+                                    : ad.status === 'pending' ||
+                                        ad.status === 'reserved'
+                                      ? 'warning'
+                                      : 'default'
+                                }
+                                sx={{ fontSize: '0.65rem', height: 22 }}
+                              />
+                            </Box>
+                          );
+                        })}
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </>
+        )}
+
+        {/* ═══ Tab 1: Analytique ═══ */}
+        {tab === 1 && (
+          <>
+            {/* Area chart */}
             <Card
               elevation={0}
               sx={{
+                mb: 3,
                 borderRadius: 3,
                 border: '1px solid',
                 borderColor: 'divider',
-                height: '100%',
+                overflow: 'hidden',
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="h6" fontWeight={800}>
+                    Vues sur mes annonces
+                  </Typography>
+                  <Button
+                    size="small"
+                    startIcon={<DownloadIcon />}
+                    onClick={handleExportCSV}
+                    disabled={!analytics?.top_ads?.length}
+                    sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                  >
+                    CSV
+                  </Button>
+                </Box>
+                {analyticsLoading ? (
+                  <ShimmerBox
+                    width="100%"
+                    height={0}
+                    sx={{
+                      borderRadius: '16px',
+                      paddingTop: { xs: '55%', sm: '48%', md: '42%' },
+                      height: 'auto',
+                    }}
+                  />
+                ) : (
+                  <OwnerViewsFavoritesAreaChart data={chartSeries} />
+                )}
+              </CardContent>
+            </Card>
+
+            {analytics?.top_ads && analytics.top_ads.length > 0 && (
+              <Box sx={{ mt: 3 }}>
+                <OwnerTopAdsTable
+                  rows={analytics.top_ads}
+                  periodLabel={periodLabelFr(period)}
+                  onRowClick={(adId) => router.push(`/owner/ads/${adId}`)}
+                />
+              </Box>
+            )}
+          </>
+        )}
+
+        {/* ═══ Tab 2: Activité ═══ */}
+        {tab === 2 && (
+          <>
+            {/* Pending viewings — full width */}
+            <Card
+              elevation={0}
+              sx={{
+                mb: 3,
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'divider',
               }}
             >
               <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
@@ -516,7 +929,6 @@ export default function OwnerDashboardPage() {
                     Tout voir
                   </Button>
                 </Box>
-
                 {viewingsLoading ? (
                   <Box
                     sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
@@ -550,13 +962,13 @@ export default function OwnerDashboardPage() {
                     size="sm"
                     icon={<ClockIcon sx={{ fontSize: 22 }} />}
                     title="Aucune visite en attente"
-                    description="Les demandes de visite s’afficheront ici."
+                    description="Les demandes de visite s'afficheront ici."
                   />
                 ) : (
                   <Box
                     sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
                   >
-                    {pendingViewings.slice(0, 4).map((v, vIdx) => (
+                    {pendingViewings.map((v, vIdx) => (
                       <Box
                         key={
                           v.id != null
@@ -612,280 +1024,101 @@ export default function OwnerDashboardPage() {
                 )}
               </CardContent>
             </Card>
-          </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Card
-              elevation={0}
-              sx={{
-                borderRadius: 3,
-                border: '1px solid',
-                borderColor: 'divider',
-                height: '100%',
-              }}
-            >
-              <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
-                <Box
+            {/* Boost CTA */}
+            {analytics?.totals?.conversion_rate != null &&
+              analytics.totals.conversion_rate < 5 && (
+                <Card
+                  elevation={0}
                   sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 2,
+                    mt: 3,
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                    border: '1px solid',
+                    borderColor: 'divider',
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <HomeIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-                    <Typography variant="subtitle2" fontWeight={700}>
-                      Annonces récentes
-                    </Typography>
-                  </Box>
-                  <Button
-                    size="small"
-                    endIcon={<ArrowIcon />}
-                    onClick={() => router.push('/owner/ads')}
-                    sx={{ textTransform: 'none', fontSize: '0.75rem' }}
-                  >
-                    Tout voir
-                  </Button>
-                </Box>
-
-                {adsLoading ? (
-                  <Box
-                    sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
-                  >
-                    {[1, 2, 3].map((i) => (
-                      <Box
-                        key={i}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1.5,
-                          p: 1.5,
-                        }}
-                      >
-                        <ShimmerBox width={48} height={36} borderRadius={6} />
-                        <Box sx={{ flex: 1 }}>
-                          <ShimmerBox
-                            height={13}
-                            width="60%"
-                            sx={{ mb: 0.5 }}
-                          />
-                          <ShimmerBox height={11} width="45%" />
-                        </Box>
-                        <ShimmerBox width={52} height={20} borderRadius={10} />
-                      </Box>
-                    ))}
-                  </Box>
-                ) : recentAds.length === 0 ? (
-                  <EmptyState
-                    variant="owner"
-                    size="sm"
-                    icon={<HomeIcon sx={{ fontSize: 22 }} />}
-                    title="Aucune annonce"
-                    description="Publiez votre première annonce pour commencer."
-                    action={{
-                      label: 'Créer une annonce',
-                      onClick: () => router.push('/owner/ads/new'),
-                    }}
-                  />
-                ) : (
-                  <Box
-                    sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
-                  >
-                    {recentAds.slice(0, 4).map((ad, adIdx) => {
-                      const img = ad.images?.[0];
-                      const imgUrl = img?.thumb || img?.url;
-                      return (
+                  <CardContent sx={{ p: 3 }}>
+                    <Grid container spacing={3} alignItems="center">
+                      <Grid size={{ xs: 12, md: 8 }}>
                         <Box
-                          key={
-                            ad.id != null ? String(ad.id) : `recent-ad-${adIdx}`
-                          }
-                          onClick={() => router.push(`/owner/ads/${ad.id}`)}
                           sx={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: 1.5,
-                            p: 1.5,
-                            borderRadius: 2,
-                            bgcolor: 'action.hover',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                            '&:hover': { bgcolor: 'action.selected' },
+                            mb: 1,
                           }}
                         >
-                          <Box
-                            sx={{
-                              width: 48,
-                              height: 36,
-                              borderRadius: 1,
-                              overflow: 'hidden',
-                              bgcolor: 'grey.200',
-                              flexShrink: 0,
-                            }}
+                          <BoostIcon sx={{ color: 'primary.main' }} />
+                          <Typography
+                            variant="h6"
+                            fontWeight={800}
+                            color="primary.main"
                           >
-                            {imgUrl ? (
-                              <Box
-                                component="img"
-                                src={imgUrl}
-                                alt={ad.title}
-                                sx={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                }}
-                              />
-                            ) : (
-                              <Box
-                                sx={{
-                                  width: '100%',
-                                  height: '100%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                }}
-                              >
-                                <HomeIcon
-                                  sx={{ fontSize: 18, color: 'text.disabled' }}
-                                />
-                              </Box>
-                            )}
-                          </Box>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="body2" fontWeight={600} noWrap>
-                              {ad.title}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              noWrap
-                            >
-                              {ad.adresse || ad.quarter?.name || ''}
-                            </Typography>
-                          </Box>
-                          <Chip
-                            label={ad.status_label || ad.status}
-                            size="small"
-                            color={
-                              ad.status === 'available'
-                                ? 'success'
-                                : ad.status === 'pending' ||
-                                    ad.status === 'reserved'
-                                  ? 'warning'
-                                  : 'default'
-                            }
-                            sx={{ fontSize: '0.65rem', height: 22 }}
-                          />
-                        </Box>
-                      );
-                    })}
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {analytics?.top_ads && analytics.top_ads.length > 0 && (
-          <Box sx={{ mt: 3 }}>
-            <OwnerTopAdsTable
-              rows={analytics.top_ads}
-              periodLabel={periodLabelFr(period)}
-              onRowClick={(adId) => router.push(`/owner/ads/${adId}`)}
-            />
-          </Box>
-        )}
-
-        {analytics?.totals?.conversion_rate != null &&
-          analytics.totals.conversion_rate < 5 && (
-            <Card
-              elevation={0}
-              sx={{
-                mt: 3,
-                borderRadius: 4,
-                overflow: 'hidden',
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <CardContent sx={{ p: 3 }}>
-                <Grid container spacing={3} alignItems="center">
-                  <Grid size={{ xs: 12, md: 8 }}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1.5,
-                        mb: 1,
-                      }}
-                    >
-                      <BoostIcon sx={{ color: 'primary.main' }} />
-                      <Typography
-                        variant="h6"
-                        fontWeight={800}
-                        color="primary.main"
-                      >
-                        Boostez vos performances
-                      </Typography>
-                    </Box>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 2 }}
-                    >
-                      Votre taux de conversion est de{' '}
-                      <strong>
-                        {analytics.totals.conversion_rate.toFixed(1)}%
-                      </strong>
-                      . Les annonces boostées obtiennent en moyenne{' '}
-                      <strong>3x plus de contacts</strong> qualifiés.
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      {[
-                        'Position prioritaire',
-                        'Badge "Top Annonce"',
-                        'Remontée quotidienne',
-                      ].map((b) => (
-                        <Box
-                          key={b}
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 0.5,
-                          }}
-                        >
-                          <CheckIcon
-                            sx={{ fontSize: 16, color: 'success.main' }}
-                          />
-                          <Typography variant="caption" fontWeight={600}>
-                            {b}
+                            Boostez vos performances
                           </Typography>
                         </Box>
-                      ))}
-                    </Box>
-                  </Grid>
-                  <Grid
-                    size={{ xs: 12, md: 4 }}
-                    sx={{ textAlign: { xs: 'left', md: 'right' } }}
-                  >
-                    <Button
-                      variant="contained"
-                      onClick={() => router.push('/owner/pro-services')}
-                      sx={{
-                        fontWeight: 700,
-                        borderRadius: 3,
-                        px: 4,
-                        py: 1.5,
-                        textTransform: 'none',
-                        boxShadow: 'none',
-                      }}
-                    >
-                      Découvrir les Boosts
-                    </Button>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-          )}
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mb: 2 }}
+                        >
+                          Votre taux de conversion est de{' '}
+                          <strong>
+                            {analytics.totals.conversion_rate.toFixed(1)}%
+                          </strong>
+                          . Les annonces boostées obtiennent en moyenne{' '}
+                          <strong>3x plus de contacts</strong> qualifiés.
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                          {[
+                            'Position prioritaire',
+                            'Badge "Top Annonce"',
+                            'Remontée quotidienne',
+                          ].map((b) => (
+                            <Box
+                              key={b}
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                              }}
+                            >
+                              <CheckIcon
+                                sx={{ fontSize: 16, color: 'success.main' }}
+                              />
+                              <Typography variant="caption" fontWeight={600}>
+                                {b}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      </Grid>
+                      <Grid
+                        size={{ xs: 12, md: 4 }}
+                        sx={{ textAlign: { xs: 'left', md: 'right' } }}
+                      >
+                        <Button
+                          variant="contained"
+                          onClick={() => router.push('/owner/pro-services')}
+                          sx={{
+                            fontWeight: 700,
+                            borderRadius: 3,
+                            px: 4,
+                            py: 1.5,
+                            textTransform: 'none',
+                            boxShadow: 'none',
+                          }}
+                        >
+                          Découvrir les Boosts
+                        </Button>
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </Card>
+              )}
+          </>
+        )}
       </Container>
     </>
   );

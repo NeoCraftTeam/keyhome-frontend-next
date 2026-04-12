@@ -186,6 +186,7 @@ export default function MarkdownBioEditor({
                 <IconButton
                   size="small"
                   onClick={() => insertSyntax(c.syntax)}
+                  aria-label={c.label}
                   sx={{ color: 'text.secondary' }}
                 >
                   {c.icon ?? (
@@ -204,6 +205,7 @@ export default function MarkdownBioEditor({
             <IconButton
               size="small"
               onClick={() => setShowCheatsheet((s) => !s)}
+              aria-label="Aide Markdown"
               sx={{ color: showCheatsheet ? 'primary.main' : 'text.secondary' }}
             >
               <HelpOutlineIcon sx={{ fontSize: 18 }} />

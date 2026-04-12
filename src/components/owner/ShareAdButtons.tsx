@@ -57,6 +57,7 @@ export default function ShareAdButtons({
           <IconButton
             size={size}
             onClick={handleWhatsApp}
+            aria-label="Partager sur WhatsApp"
             sx={{ color: '#25D366' }}
           >
             <WhatsAppIcon fontSize={size} />
@@ -66,19 +67,28 @@ export default function ShareAdButtons({
           <IconButton
             size={size}
             onClick={handleFacebook}
+            aria-label="Partager sur Facebook"
             sx={{ color: '#1877F2' }}
           >
             <FacebookIcon fontSize={size} />
           </IconButton>
         </Tooltip>
         <Tooltip title="Copier le lien">
-          <IconButton size={size} onClick={handleCopyLink}>
+          <IconButton
+            size={size}
+            onClick={handleCopyLink}
+            aria-label="Copier le lien"
+          >
             <CopyIcon fontSize={size} />
           </IconButton>
         </Tooltip>
         {typeof navigator !== 'undefined' && 'share' in navigator && (
           <Tooltip title="Partager">
-            <IconButton size={size} onClick={handleNativeShare}>
+            <IconButton
+              size={size}
+              onClick={handleNativeShare}
+              aria-label="Partager"
+            >
               <ShareIcon fontSize={size} />
             </IconButton>
           </Tooltip>

@@ -369,7 +369,7 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
           VirtualTourPlugin.withConfig({
             dataMode: 'client',
             positionMode: 'manual',
-            // 2d = marqueurs cliquables (comme l’éditeur bailleur). Le mode 3d peut ne rien
+            // 2d = marqueurs cliquables (comme l'éditeur bailleur). Le mode 3d peut ne rien
             // afficher si plusieurs instances Three.js sont chargées (ex. Mapbox + PSV).
             renderMode: '2d',
             nodes,
@@ -407,6 +407,48 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
         });
       });
 
+      const markersPlugin = viewer.getPlugin(MarkersPlugin) as InstanceType<
+        typeof MarkersPlugin
+      > | null;
+
+      /** Add always-visible label markers for the current scene's links */
+      const addLabelMarkers = (nodeId: string) => {
+        if (!markersPlugin) return;
+        // Remove previous label markers
+        markersPlugin.getMarkers().forEach((m) => {
+          if (typeof m.id === 'string' && m.id.startsWith('label-')) {
+            markersPlugin.removeMarker(m.id);
+          }
+        });
+        // Find the node's links and add HTML label markers
+        const node = nodes.find((n) => n.id === nodeId);
+        if (!node) return;
+        node.links.forEach((link, idx) => {
+          const label = link.data?.label || '';
+          if (!label) return;
+          markersPlugin.addMarker({
+            id: `label-${nodeId}-${idx}`,
+            position: link.position,
+            html: `<div style="
+              background: rgba(0,0,0,0.75);
+              color: #fff;
+              padding: 4px 10px;
+              border-radius: 12px;
+              font-size: 12px;
+              font-weight: 600;
+              white-space: nowrap;
+              pointer-events: none;
+              transform: translateY(32px);
+              backdrop-filter: blur(4px);
+              border: 1px solid rgba(255,255,255,0.15);
+            ">${label}</div>`,
+            anchor: 'center center',
+            zIndex: 50,
+            tooltip: undefined,
+          });
+        });
+      };
+
       virtualTourRef.current?.addEventListener(
         'node-changed',
         ({ node }: { node: VirtualTourNode }) => {
@@ -417,7 +459,18 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
             (typeof node?.name === 'string' && node.name) ||
             '';
           viewerRef.current?.setOption('caption', cap);
+          // Show persistent label markers for the new scene
+          addLabelMarkers(node.id);
         }
+      );
+
+      // Also add labels for the initial scene once ready
+      viewer.addEventListener(
+        'ready',
+        () => {
+          addLabelMarkers(startNodeId);
+        },
+        { once: true }
       );
     } catch {
       if (!isMountedRef.current) return;
@@ -611,71 +664,84 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
         </Box>
       )}
 
-      {/* Scene navigation pills */}
-      {!isLoading && !error && tourConfig.scenes.length > 1 && (
+      {/* Scene navigation pills + hint */}
+      {!isLoading && !error && (
         <Box
           sx={{
             position: 'absolute',
-            bottom: 24,
-            left: '50%',
-            transform: 'translateX(-50%)',
+            bottom: 0,
+            left: 0,
+            right: 0,
             zIndex: 10,
             display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
             gap: 1,
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            px: 2,
-            maxWidth: '90vw',
+            pb: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+            pt: 1.5,
+            background:
+              'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%)',
+            pointerEvents: 'none',
           }}
         >
-          {tourConfig.scenes.map((scene) => (
-            <Chip
-              key={scene.id}
-              label={scene.title}
-              onClick={() => handleSceneJump(scene.id)}
-              size="small"
-              aria-label={`Aller à la scène ${scene.title}`}
+          {tourConfig.scenes.length > 1 && (
+            <Box
               sx={{
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                bgcolor:
-                  currentScene === scene.id
-                    ? 'rgba(246,71,95,0.9)'
-                    : 'rgba(0,0,0,0.65)',
-                color: '#fff',
-                border: '1px solid',
-                borderColor:
-                  currentScene === scene.id
-                    ? 'rgba(246,71,95,0.5)'
-                    : 'rgba(255,255,255,0.2)',
-                backdropFilter: 'blur(8px)',
-                '&:hover': {
-                  bgcolor:
-                    currentScene === scene.id
-                      ? 'rgba(246,71,95,1)'
-                      : 'rgba(0,0,0,0.85)',
-                },
+                display: 'flex',
+                gap: 1,
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                px: 2,
+                maxWidth: '90vw',
+                pointerEvents: 'auto',
               }}
-            />
-          ))}
+            >
+              {tourConfig.scenes.map((scene) => (
+                <Chip
+                  key={scene.id}
+                  label={scene.title}
+                  onClick={() => handleSceneJump(scene.id)}
+                  size="small"
+                  aria-label={`Aller à la scène ${scene.title}`}
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    height: 32,
+                    bgcolor:
+                      currentScene === scene.id
+                        ? 'rgba(246,71,95,0.9)'
+                        : 'rgba(0,0,0,0.65)',
+                    color: '#fff',
+                    border: '1px solid',
+                    borderColor:
+                      currentScene === scene.id
+                        ? 'rgba(246,71,95,0.5)'
+                        : 'rgba(255,255,255,0.2)',
+                    backdropFilter: 'blur(8px)',
+                    '&:hover': {
+                      bgcolor:
+                        currentScene === scene.id
+                          ? 'rgba(246,71,95,1)'
+                          : 'rgba(0,0,0,0.85)',
+                    },
+                  }}
+                />
+              ))}
+            </Box>
+          )}
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'rgba(255,255,255,0.5)',
+              fontSize: '0.65rem',
+              textAlign: 'center',
+              px: 2,
+            }}
+          >
+            Cliquez sur les flèches pour changer de pièce • Glissez pour
+            naviguer • Molette pour zoomer • Échap pour quitter
+          </Typography>
         </Box>
-      )}
-
-      {/* Hint */}
-      {!isLoading && !error && (
-        <Typography
-          variant="caption"
-          sx={{
-            position: 'absolute',
-            bottom: 8,
-            right: 12,
-            color: 'rgba(255,255,255,0.55)',
-            fontSize: '0.75rem',
-          }}
-        >
-          Cliquez sur les flèches pour changer de pièce • Glissez pour naviguer
-          • Molette pour zoomer • Échap pour quitter
-        </Typography>
       )}
     </Box>
   );

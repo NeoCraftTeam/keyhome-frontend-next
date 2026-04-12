@@ -19,13 +19,29 @@ export type UtmKey = (typeof UTM_KEYS)[number];
 
 export type AttributionPayload = Partial<Record<UtmKey | 'session_id', string>>;
 
+function generateUUID(): string {
+  // crypto.randomUUID() requires a secure context (HTTPS or localhost).
+  // Fall back to a Math.random-based RFC-4122 v4 UUID for plain HTTP dev hosts.
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof (crypto as Crypto & { randomUUID?: () => string }).randomUUID ===
+      'function'
+  ) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 export function getOrCreateSessionId(): string {
   if (typeof window === 'undefined') {
     return '';
   }
   let id = sessionStorage.getItem(SESSION_ID_KEY);
   if (!id) {
-    id = crypto.randomUUID();
+    id = generateUUID();
     sessionStorage.setItem(SESSION_ID_KEY, id);
   }
   return id;

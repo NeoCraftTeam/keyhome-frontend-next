@@ -82,7 +82,7 @@ export default function AgencyProfilePage() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
       <PageBreadcrumbs
         items={[
-          { label: 'Accueil', href: '/' },
+          { label: 'Accueil', href: '/home' },
           { label: 'Agences', href: '/agences' },
           { label: agency.name },
         ]}

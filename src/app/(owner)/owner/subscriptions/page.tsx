@@ -24,6 +24,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import FadeIn from '@/components/ui/FadeIn';
 
 function PeriodChip({ period }: { period: SubscriptionPlan['period'] }) {
   return (
@@ -49,21 +50,22 @@ export default function OwnerSubscriptionsPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
-      <PageBreadcrumbs
-        items={[
-          { label: 'Tableau de bord', href: '/owner/dashboard' },
-          { label: 'Abonnements' },
-        ]}
-      />
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Abonnements
-        </Typography>
-        <Typography color="text.secondary">
-          Gérez votre abonnement et découvrez nos offres disponibles.
-        </Typography>
-      </Box>
+      <FadeIn>
+        <PageBreadcrumbs
+          items={[
+            { label: 'Tableau de bord', href: '/owner/dashboard' },
+            { label: 'Abonnements' },
+          ]}
+        />
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" fontWeight={700} gutterBottom>
+            Abonnements
+          </Typography>
+          <Typography color="text.secondary">
+            Gérez votre abonnement et découvrez nos offres disponibles.
+          </Typography>
+        </Box>
+      </FadeIn>
 
       {/* Current subscription */}
       <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>

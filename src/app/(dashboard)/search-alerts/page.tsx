@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/ui/EmptyState';
 import FadeIn from '@/components/ui/FadeIn';
 import { useAuth } from '@/providers/AuthProvider';
 import {
@@ -239,31 +240,16 @@ export default function SearchAlertsPage() {
               <CircularProgress size={36} />
             </Box>
           ) : alerts.length === 0 ? (
-            /* Empty state */
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <SearchIcon
-                sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }}
-              />
-              <Typography variant="h6" color="text.secondary" fontWeight={600}>
-                Aucune alerte configurée
-              </Typography>
-              <Typography
-                variant="body2"
-                color="text.disabled"
-                sx={{ mt: 0.5, mb: 3, maxWidth: 400, mx: 'auto' }}
-              >
-                Créez votre première alerte pour être notifié automatiquement
-                lorsqu&apos;une annonce correspond à vos critères de recherche.
-              </Typography>
-              <Button
-                variant="outlined"
-                startIcon={<AddIcon />}
-                onClick={handleOpenCreate}
-                sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2 }}
-              >
-                Créer une alerte
-              </Button>
-            </Box>
+            <EmptyState
+              variant="customer"
+              icon={<SearchIcon sx={{ fontSize: 30 }} />}
+              title="Aucune alerte configurée"
+              description="Créez votre première alerte pour être notifié automatiquement lorsqu'une annonce correspond à vos critères de recherche."
+              action={{
+                label: 'Créer une alerte',
+                onClick: handleOpenCreate,
+              }}
+            />
           ) : (
             /* Alerts list */
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

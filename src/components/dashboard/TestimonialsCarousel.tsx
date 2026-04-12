@@ -11,6 +11,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { brand, semantic } from '@/theme/tokens';
 
 interface Testimonial {
   name: string;
@@ -30,7 +31,7 @@ const TESTIMONIALS: Testimonial[] = [
     text: "J'ai trouvé mon appartement à Bastos en moins d'une semaine. Les coordonnées vérifiées m'ont évité les arnaques. Je recommande à 100% !",
     rating: 5,
     initials: 'MC',
-    color: '#F6475F',
+    color: brand.primary,
   },
   {
     name: 'Thierry K.',
@@ -39,7 +40,7 @@ const TESTIMONIALS: Testimonial[] = [
     text: 'En tant que bailleur, je reçois des demandes sérieuses uniquement. Le tableau de bord me donne une visibilité parfaite sur mes annonces.',
     rating: 5,
     initials: 'TK',
-    color: '#6c5ce7',
+    color: semantic.purple,
   },
   {
     name: 'Amina B.',
@@ -48,7 +49,7 @@ const TESTIMONIALS: Testimonial[] = [
     text: "La recherche par IA est bluffante — j'ai tapé « studio calme avec parking » et elle m'a trouvé exactement ça. Gain de temps énorme.",
     rating: 5,
     initials: 'AB',
-    color: '#00b894',
+    color: semantic.successBright,
   },
   {
     name: 'Patrick E.',
@@ -57,7 +58,7 @@ const TESTIMONIALS: Testimonial[] = [
     text: "La plateforme attire des clients qualifiés. Depuis que je publie sur KeyHome, mes biens se louent 2× plus vite qu'avant.",
     rating: 5,
     initials: 'PE',
-    color: '#0984e3',
+    color: semantic.info,
   },
 ];
 

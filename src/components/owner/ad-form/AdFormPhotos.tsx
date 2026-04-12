@@ -228,6 +228,7 @@ export default function AdFormPhotos({
             />
             <IconButton
               size="small"
+              aria-label="Supprimer la photo"
               onClick={(e) => {
                 e.stopPropagation();
                 onRemoveImage(i);
@@ -275,6 +276,7 @@ export default function AdFormPhotos({
             />
             <IconButton
               size="small"
+              aria-label="Supprimer la photo"
               onClick={(e) => {
                 e.stopPropagation();
                 onDeleteExistingImage(img.id);

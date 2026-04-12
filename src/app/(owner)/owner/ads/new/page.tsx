@@ -32,6 +32,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import FadeIn from '@/components/ui/FadeIn';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import ArrowForward from '@mui/icons-material/ArrowForward';
 import BookmarkAdded from '@mui/icons-material/BookmarkAdded';
@@ -415,12 +416,14 @@ export default function OwnerNewAdPage() {
     <>
       {/* Ad creation form — always mounted, never unmounts */}
       <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Nouvelle annonce
-        </Typography>
-        <Typography color="text.secondary" sx={{ mb: 4 }}>
-          Suivez les étapes pour publier votre annonce rapidement.
-        </Typography>
+        <FadeIn>
+          <Typography variant="h4" fontWeight={700} gutterBottom>
+            Nouvelle annonce
+          </Typography>
+          <Typography color="text.secondary" sx={{ mb: 4 }}>
+            Suivez les étapes pour publier votre annonce rapidement.
+          </Typography>
+        </FadeIn>
         <AdFormWizard
           onSubmit={handleSubmit}
           onBeforeSubmit={handleBeforeSubmit}
@@ -480,6 +483,7 @@ export default function OwnerNewAdPage() {
             </Typography>
           </Box>
           <IconButton
+            aria-label="Retour"
             onClick={() => setActivePanel('form')}
             size="small"
             sx={{

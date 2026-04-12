@@ -31,6 +31,7 @@ import {
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import FadeIn from '@/components/ui/FadeIn';
 
 const BRAND = brand.primary;
 const BRAND_DARK = '#C73048';
@@ -279,115 +280,117 @@ export default function AidePage() {
           maxWidth="md"
           sx={{ position: 'relative', textAlign: 'center' }}
         >
-          <Chip
-            label="Centre d'aide"
-            size="small"
-            sx={{
-              mb: 4,
-              bgcolor: `${BRAND}22`,
-              color: BRAND,
-              fontWeight: 700,
-              fontSize: '0.72rem',
-              letterSpacing: 1,
-              border: `1px solid ${BRAND}44`,
-            }}
-          />
-
-          <Typography
-            component="h1"
-            sx={{
-              fontSize: { xs: '2.4rem', sm: '3.2rem', md: '4rem' },
-              fontWeight: 900,
-              color: '#fff',
-              letterSpacing: -2,
-              lineHeight: 1.05,
-              mb: 2.5,
-            }}
-          >
-            Comment pouvons-nous
-            <br />
-            vous{' '}
-            <Box component="span" sx={{ color: BRAND }}>
-              aider
-            </Box>
-            &nbsp;?
-          </Typography>
-
-          <Typography
-            sx={{
-              color: 'rgba(255,255,255,0.55)',
-              fontSize: { xs: '1rem', md: '1.1rem' },
-              mb: 6,
-              maxWidth: 460,
-              mx: 'auto',
-              lineHeight: 1.75,
-            }}
-          >
-            Questions fr&eacute;quentes, guides pratiques et support disponible
-            pour vous accompagner.
-          </Typography>
-
-          <Box sx={{ maxWidth: 560, mx: 'auto' }}>
-            <TextField
-              fullWidth
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher une question..."
-              variant="outlined"
+          <FadeIn>
+            <Chip
+              label="Centre d'aide"
+              size="small"
               sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '16px',
-                  bgcolor: 'rgba(255,255,255,0.07)',
-                  backdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  color: '#fff',
-                  fontSize: '1rem',
-                  py: 0.5,
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.22)',
-                  },
-                  '&.Mui-focused': {
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    border: `1px solid ${BRAND}88`,
-                    boxShadow: `0 0 0 3px ${BRAND}22`,
-                  },
-                  '& fieldset': { display: 'none' },
-                  '& input::placeholder': {
-                    color: 'rgba(255,255,255,0.35)',
-                    opacity: 1,
-                  },
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon
-                      sx={{ color: 'rgba(255,255,255,0.4)', fontSize: 22 }}
-                    />
-                  </InputAdornment>
-                ),
-                endAdornment:
-                  search.length > 0 ? (
-                    <InputAdornment position="end">
-                      <Chip
-                        label={String(filtered.length)}
-                        size="small"
-                        sx={{
-                          bgcolor: `${BRAND}33`,
-                          color: BRAND,
-                          fontWeight: 700,
-                          fontSize: '0.72rem',
-                          border: `1px solid ${BRAND}44`,
-                          height: 22,
-                        }}
-                      />
-                    </InputAdornment>
-                  ) : null,
+                mb: 4,
+                bgcolor: `${BRAND}22`,
+                color: BRAND,
+                fontWeight: 700,
+                fontSize: '0.72rem',
+                letterSpacing: 1,
+                border: `1px solid ${BRAND}44`,
               }}
             />
-          </Box>
+
+            <Typography
+              component="h1"
+              sx={{
+                fontSize: { xs: '2.4rem', sm: '3.2rem', md: '4rem' },
+                fontWeight: 900,
+                color: '#fff',
+                letterSpacing: -2,
+                lineHeight: 1.05,
+                mb: 2.5,
+              }}
+            >
+              Comment pouvons-nous
+              <br />
+              vous{' '}
+              <Box component="span" sx={{ color: BRAND }}>
+                aider
+              </Box>
+              &nbsp;?
+            </Typography>
+
+            <Typography
+              sx={{
+                color: 'rgba(255,255,255,0.55)',
+                fontSize: { xs: '1rem', md: '1.1rem' },
+                mb: 6,
+                maxWidth: 460,
+                mx: 'auto',
+                lineHeight: 1.75,
+              }}
+            >
+              Questions fr&eacute;quentes, guides pratiques et support
+              disponible pour vous accompagner.
+            </Typography>
+
+            <Box sx={{ maxWidth: 560, mx: 'auto' }}>
+              <TextField
+                fullWidth
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher une question..."
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '16px',
+                    bgcolor: 'rgba(255,255,255,0.07)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: '#fff',
+                    fontSize: '1rem',
+                    py: 0.5,
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      bgcolor: 'rgba(255,255,255,0.1)',
+                      border: '1px solid rgba(255,255,255,0.22)',
+                    },
+                    '&.Mui-focused': {
+                      bgcolor: 'rgba(255,255,255,0.1)',
+                      border: `1px solid ${BRAND}88`,
+                      boxShadow: `0 0 0 3px ${BRAND}22`,
+                    },
+                    '& fieldset': { display: 'none' },
+                    '& input::placeholder': {
+                      color: 'rgba(255,255,255,0.35)',
+                      opacity: 1,
+                    },
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon
+                        sx={{ color: 'rgba(255,255,255,0.4)', fontSize: 22 }}
+                      />
+                    </InputAdornment>
+                  ),
+                  endAdornment:
+                    search.length > 0 ? (
+                      <InputAdornment position="end">
+                        <Chip
+                          label={String(filtered.length)}
+                          size="small"
+                          sx={{
+                            bgcolor: `${BRAND}33`,
+                            color: BRAND,
+                            fontWeight: 700,
+                            fontSize: '0.72rem',
+                            border: `1px solid ${BRAND}44`,
+                            height: 22,
+                          }}
+                        />
+                      </InputAdornment>
+                    ) : null,
+                }}
+              />
+            </Box>
+          </FadeIn>
         </Container>
       </Box>
 

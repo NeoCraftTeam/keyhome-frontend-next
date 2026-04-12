@@ -348,6 +348,7 @@ export default function AdFormPremiumInfo({
                   </Box>
                   <IconButton
                     size="small"
+                    aria-label="Supprimer la charge"
                     onClick={() => {
                       update(
                         'charges_autres_items',
@@ -480,7 +481,11 @@ export default function AdFormPremiumInfo({
             />
           </Button>
           {propertyConditionPdf && (
-            <IconButton size="small" onClick={() => onPdfChange(null)}>
+            <IconButton
+              size="small"
+              aria-label="Supprimer le PDF"
+              onClick={() => onPdfChange(null)}
+            >
               <DeleteIcon sx={{ fontSize: 18 }} />
             </IconButton>
           )}

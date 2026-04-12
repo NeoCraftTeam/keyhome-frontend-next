@@ -17,7 +17,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 const CONFIRMATION_PHRASE = 'SUPPRIMER MON COMPTE';
@@ -29,7 +28,6 @@ interface Props {
 
 export default function DeleteAccountModal({ open, onClose }: Props) {
   const { logout } = useAuth();
-  const router = useRouter();
   const [input, setInput] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,9 +42,8 @@ export default function DeleteAccountModal({ open, onClose }: Props) {
     try {
       await usersService.deleteAccount(CONFIRMATION_PHRASE);
 
-      // Wipe session fully then redirect to home
-      await logout('/');
-      router.replace('/');
+      // Wipe session fully then redirect to public home
+      await logout('/home');
     } catch (err) {
       setError(
         getSafeErrorMessage(

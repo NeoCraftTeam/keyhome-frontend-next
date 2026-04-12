@@ -80,6 +80,12 @@ export const notificationKeys = {
   recent: (scope: string) => ['notifications', scope, 'recent'] as const,
 } as const;
 
+// ── Passkeys (WebAuthn) ─────────────────────────────────────────────────────
+
+export const passkeyKeys = {
+  all: ['passkeys'] as const,
+} as const;
+
 // ── Login History ───────────────────────────────────────────────────────────
 
 export const loginHistoryKeys = {

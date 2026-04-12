@@ -314,6 +314,7 @@ export default function AdFormTour({
               <IconButton
                 onClick={() => onRemoveScene(i)}
                 size="small"
+                aria-label="Supprimer la scène"
                 sx={{
                   color: 'text.secondary',
                   alignSelf: { xs: 'flex-end', sm: 'center' },

@@ -448,7 +448,7 @@ function PaymentSuccessContent() {
                     sx={{
                       height: 4,
                       borderRadius: 2,
-                      bgcolor: 'rgba(246,71,95,0.12)',
+                      bgcolor: brand.primaryAlpha12,
                       '& .MuiLinearProgress-bar': {
                         bgcolor: brand.primary,
                         borderRadius: 2,

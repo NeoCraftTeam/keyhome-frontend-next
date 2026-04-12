@@ -98,12 +98,13 @@ export default function BottomNav() {
           },
         }}
       >
-        {BOTTOM_NAV_ITEMS.map((item) => (
+        {BOTTOM_NAV_ITEMS.map((item, idx) => (
           <BottomNavigationAction
             key={item.href}
             label={item.label}
             icon={item.icon}
             aria-label={item.label}
+            aria-current={idx === activeIndex ? 'page' : undefined}
           />
         ))}
       </BottomNavigation>

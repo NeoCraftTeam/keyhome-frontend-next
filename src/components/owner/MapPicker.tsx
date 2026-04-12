@@ -229,6 +229,7 @@ export default function MapPicker({
                     size="small"
                     onClick={handleSearch}
                     disabled={searching}
+                    aria-label="Rechercher l'adresse"
                   >
                     {searching ? (
                       <CircularProgress size={18} />
@@ -245,6 +246,7 @@ export default function MapPicker({
           <IconButton
             onClick={handleGeolocate}
             disabled={geolocating}
+            aria-label="Ma position"
             sx={{
               border: '1px solid',
               borderColor: 'divider',

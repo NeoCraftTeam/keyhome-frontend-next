@@ -12,10 +12,15 @@ export const brand = {
   primaryDark: '#D93A50',
   primaryHover: '#E03E54',
   primaryActive: '#C53248',
-  /** rgba alias for overlays / alpha backgrounds */
-  primaryAlpha10: 'rgba(246,71,95,0.1)',
+  /** rgba aliases for overlays / alpha backgrounds */
   primaryAlpha5: 'rgba(246,71,95,0.05)',
+  primaryAlpha10: 'rgba(246,71,95,0.1)',
+  primaryAlpha12: 'rgba(246,71,95,0.12)',
+  primaryAlpha15: 'rgba(246,71,95,0.15)',
+  primaryAlpha25: 'rgba(246,71,95,0.25)',
   primaryAlpha30: 'rgba(246,71,95,0.3)',
+  primaryAlpha40: 'rgba(246,71,95,0.4)',
+  primaryAlpha88: 'rgba(246,71,95,0.88)',
 } as const;
 
 export const brandAgent = {

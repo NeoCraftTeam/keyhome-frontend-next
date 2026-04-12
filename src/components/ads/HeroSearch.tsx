@@ -2,14 +2,13 @@
 
 import api from '@/lib/api';
 import { buildNlpParams } from '@/lib/nlp-search';
-import ImageSearchButton, {
-  type ParsedSearchParams,
-} from '@/components/search/ImageSearchButton';
+import { type ParsedSearchParams } from '@/components/search/ImageSearchButton';
 import VoiceSearchButton from '@/components/search/VoiceSearchButton';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { City } from '@/types';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import LocationOn from '@mui/icons-material/LocationOn';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import SearchIcon from '@mui/icons-material/Search';
 import {
   alpha,
@@ -39,6 +38,8 @@ interface Props {
   setCityInput: (v: string) => void;
   isCitiesLoading: boolean;
   onCitySelect: (event: React.SyntheticEvent, city: City | null) => void;
+  onGeolocate?: () => void;
+  geolocating?: boolean;
 }
 
 export default function HeroSearch({
@@ -47,6 +48,8 @@ export default function HeroSearch({
   setCityInput,
   isCitiesLoading,
   onCitySelect,
+  onGeolocate,
+  geolocating,
 }: Props) {
   const theme = useTheme();
   const { slotProps: citySlotProps, renderOption: renderCityOption } =
@@ -118,14 +121,13 @@ export default function HeroSearch({
     }
   };
 
-  const handleVoice = useCallback(
-    (transcript: string) => {
-      setAiQuery(transcript);
-      void handleAiSearch(transcript);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+  const handleAiSearchRef = useRef(handleAiSearch);
+  handleAiSearchRef.current = handleAiSearch;
+
+  const handleVoice = useCallback((transcript: string) => {
+    setAiQuery(transcript);
+    void handleAiSearchRef.current(transcript);
+  }, []);
 
   const isDark = theme.palette.mode === 'dark';
   const isDropdownOpen = cityInput.length >= 2 && cities.length > 0;
@@ -220,6 +222,39 @@ export default function HeroSearch({
             transition: 'border-color 0.2s',
           }}
         >
+          {onGeolocate && (
+            <Box
+              role="button"
+              tabIndex={0}
+              aria-label="Rechercher autour de moi"
+              onClick={onGeolocate}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onGeolocate();
+                }
+              }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 48,
+                flexShrink: 0,
+                cursor: geolocating ? 'wait' : 'pointer',
+                borderRight: '1px solid',
+                borderColor: 'divider',
+                color: 'primary.main',
+                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                transition: 'background-color 0.2s',
+              }}
+            >
+              {geolocating ? (
+                <CircularProgress size={18} color="primary" />
+              ) : (
+                <MyLocationIcon sx={{ fontSize: 20 }} />
+              )}
+            </Box>
+          )}
           <Autocomplete<City>
             options={cities}
             forcePopupIcon={false}
@@ -277,7 +312,7 @@ export default function HeroSearch({
                 boxShadow: isAiActive
                   ? '0 8px 32px rgba(0,0,0,0.22)'
                   : '0 4px 24px rgba(0,0,0,0.18)',
-                transition: 'box-shadow 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+                transition: 'box-shadow 0.3s cubic-bezier(0.22,1,0.36,1)',
               }}
             >
               <TextField
@@ -302,7 +337,7 @@ export default function HeroSearch({
                     ...(inputSx['& .MuiOutlinedInput-root'] as object),
                     minHeight: { xs: 54, md: 52 },
                     alignItems: isMultiline ? 'flex-start' : 'center',
-                    transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                    transition: 'all 0.35s cubic-bezier(0.22,1,0.36,1)',
                   },
                   '& .MuiInputBase-inputMultiline': {
                     pt: isMultiline ? '14px' : 0,
@@ -362,12 +397,6 @@ export default function HeroSearch({
                             disabled={aiLoading}
                             size={28}
                           />
-                          <ImageSearchButton
-                            onResult={navigateFromParsed}
-                            onError={setAiError}
-                            disabled={aiLoading}
-                            size={28}
-                          />
                           <Box
                             role="button"
                             tabIndex={0}
@@ -380,21 +409,24 @@ export default function HeroSearch({
                               }
                             }}
                             sx={{
-                              width: 36,
-                              height: 36,
+                              width: 44,
+                              height: 44,
                               borderRadius: '50%',
                               bgcolor: 'primary.main',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               cursor: 'pointer',
-                              mr: 0.5,
+                              flexShrink: 0,
                               '&:hover': { bgcolor: 'primary.dark' },
+                              '&:active': { transform: 'scale(0.93)' },
                               '&:focus-visible': {
                                 outline: '2px solid',
                                 outlineColor: 'primary.main',
                                 outlineOffset: 2,
                               },
+                              transition:
+                                'background-color 0.2s, transform 0.15s',
                             }}
                           >
                             <SearchIcon sx={{ color: 'white', fontSize: 18 }} />
@@ -440,20 +472,24 @@ export default function HeroSearch({
                 }}
                 sx={{
                   px: 1.5,
-                  py: 0.5,
+                  py: 1,
+                  minHeight: 36,
                   borderRadius: 99,
                   bgcolor: 'rgba(255,255,255,0.15)',
                   backdropFilter: 'blur(8px)',
                   border: '1px solid rgba(255,255,255,0.3)',
                   color: 'white',
-                  fontSize: { xs: 10, sm: 11 },
+                  fontSize: { xs: 11, sm: 12 },
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   '&:hover': {
                     bgcolor: 'rgba(255,255,255,0.25)',
                     transform: 'scale(1.02)',
                   },
-                  '&:active': { transform: 'scale(0.98)' },
+                  '&:active': {
+                    bgcolor: 'rgba(255,255,255,0.3)',
+                    transform: 'scale(0.97)',
+                  },
                   '&:focus-visible': {
                     outline: '2px solid white',
                     outlineOffset: 2,

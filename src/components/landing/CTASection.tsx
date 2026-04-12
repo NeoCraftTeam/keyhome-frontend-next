@@ -158,8 +158,8 @@ export default function CTASection() {
               </motion.button>
             </PageTransitionLink>
 
-            <a
-              href={process.env.NEXT_PUBLIC_AGENCY_URL || '/agency'}
+            <PageTransitionLink
+              href="/owner/ads/new"
               style={{ textDecoration: 'none' }}
             >
               <motion.button
@@ -182,7 +182,7 @@ export default function CTASection() {
               >
                 Publier une annonce
               </motion.button>
-            </a>
+            </PageTransitionLink>
           </div>
 
           {/* Trust badges */}

@@ -603,11 +603,11 @@ function AdDetailContent() {
                     width: 52,
                     height: 52,
                     borderRadius: '50%',
-                    bgcolor: 'rgba(246,71,95,0.88)',
+                    bgcolor: brand.primaryAlpha88,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 4px 16px rgba(246,71,95,0.4)',
+                    boxShadow: `0 4px 16px ${brand.primaryAlpha40}`,
                   }}
                 >
                   <Lock sx={{ fontSize: 26, color: '#fff' }} />
@@ -772,11 +772,11 @@ function AdDetailContent() {
                           width: 52,
                           height: 52,
                           borderRadius: '50%',
-                          bgcolor: 'rgba(246,71,95,0.88)',
+                          bgcolor: brand.primaryAlpha88,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          boxShadow: '0 4px 16px rgba(246,71,95,0.4)',
+                          boxShadow: `0 4px 16px ${brand.primaryAlpha40}`,
                         }}
                       >
                         <Lock sx={{ fontSize: 26, color: '#fff' }} />
@@ -3499,8 +3499,7 @@ function AdDetailContent() {
               justifyContent: 'center',
               mx: 'auto',
               mb: 2,
-              boxShadow:
-                '0 0 0 8px rgba(246,71,95,0.1), 0 8px 24px rgba(246,71,95,0.25)',
+              boxShadow: `0 0 0 8px ${brand.primaryAlpha10}, 0 8px 24px ${brand.primaryAlpha25}`,
             }}
           >
             <Lock sx={{ color: '#fff', fontSize: 30 }} />
@@ -3539,7 +3538,7 @@ function AdDetailContent() {
                   background: (t) =>
                     t.palette.gradient?.primary135 ??
                     `linear-gradient(135deg, ${t.palette.primary.main}, ${t.palette.primary.dark})`,
-                  boxShadow: '0 4px 14px rgba(246,71,95,0.25)',
+                  boxShadow: `0 4px 14px ${brand.primaryAlpha25}`,
                 }}
               >
                 <AccountBalanceWallet sx={{ fontSize: 20, color: '#fff' }} />

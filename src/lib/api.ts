@@ -16,6 +16,7 @@ const AUTH_ROUTES = [
   '/auth/verify-email-otp',
   '/auth/resend-verification',
   '/auth/logout', // 401 here means session already expired; logout handles its own cleanup
+  '/auth/webauthn/login', // Passkey login is unauthenticated
 ];
 
 const api = axios.create({

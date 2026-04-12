@@ -40,6 +40,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import FadeIn from '@/components/ui/FadeIn';
 
 function formatDate(s: string) {
   try {
@@ -182,19 +183,21 @@ export default function OwnerLeaseContractsPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
-      <PageBreadcrumbs
-        items={[
-          { label: 'Tableau de bord', href: '/owner/dashboard' },
-          { label: 'Contrats de bail' },
-        ]}
-      />
-      <Typography variant="h4" fontWeight={700} gutterBottom>
-        Contrats de bail
-      </Typography>
-      <Typography color="text.secondary" sx={{ mb: 4 }}>
-        Liste de vos contrats générés. Les contrats sont créés depuis une
-        annonce.
-      </Typography>
+      <FadeIn>
+        <PageBreadcrumbs
+          items={[
+            { label: 'Tableau de bord', href: '/owner/dashboard' },
+            { label: 'Contrats de bail' },
+          ]}
+        />
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Contrats de bail
+        </Typography>
+        <Typography color="text.secondary" sx={{ mb: 4 }}>
+          Liste de vos contrats générés. Les contrats sont créés depuis une
+          annonce.
+        </Typography>
+      </FadeIn>
 
       {isLoading ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -368,6 +371,7 @@ export default function OwnerLeaseContractsPage() {
                       >
                         <IconButton
                           size="small"
+                          aria-label="Statut signature"
                           onClick={() => toggleSignatureExpand(c.id)}
                           sx={{
                             transform: expandedSignatureIds.has(c.id)
@@ -439,7 +443,11 @@ export default function OwnerLeaseContractsPage() {
           <Typography variant="h6" fontWeight={700}>
             {viewContract?.contract_number}
           </Typography>
-          <IconButton onClick={() => setViewContract(null)} size="small">
+          <IconButton
+            onClick={() => setViewContract(null)}
+            size="small"
+            aria-label="Fermer"
+          >
             <CloseIcon />
           </IconButton>
         </DialogTitle>

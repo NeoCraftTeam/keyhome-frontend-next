@@ -41,6 +41,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import FadeIn from '@/components/ui/FadeIn';
 
 const NOTIFICATION_TOGGLES: {
   key: keyof NotificationPreferences;
@@ -130,18 +131,20 @@ export default function OwnerParametresPage() {
       maxWidth={false}
       sx={{ px: { xs: 2, sm: 3, md: 4 }, py: { xs: 2, md: 4 } }}
     >
-      <PageBreadcrumbs
-        items={[
-          { label: 'Tableau de bord', href: '/owner/dashboard' },
-          { label: 'Paramètres' },
-        ]}
-      />
-      <Typography variant="h4" fontWeight={700} gutterBottom>
-        Paramètres
-      </Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>
-        Personnalisez votre espace propriétaire.
-      </Typography>
+      <FadeIn>
+        <PageBreadcrumbs
+          items={[
+            { label: 'Tableau de bord', href: '/owner/dashboard' },
+            { label: 'Paramètres' },
+          ]}
+        />
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Paramètres
+        </Typography>
+        <Typography color="text.secondary" sx={{ mb: 3 }}>
+          Personnalisez votre espace propriétaire.
+        </Typography>
+      </FadeIn>
 
       <Grid container spacing={3} alignItems="flex-start">
         {/* ── LEFT col: Apparence + Push + Logout ── */}
