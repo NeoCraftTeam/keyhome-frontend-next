@@ -1,5 +1,6 @@
 'use client';
 
+import PasskeyLoginButton from '@/components/auth/PasskeyLoginButton';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
 import { useLandingStats } from '@/hooks/useLandingStats';
@@ -317,7 +318,7 @@ export default function LoginPage() {
                       gradient.primaryHover,
                   },
                   transition:
-                    'transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s',
+                    'transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s',
                   '&:active': { transform: 'scale(0.97)' },
                 }}
               >
@@ -335,6 +336,10 @@ export default function LoginPage() {
               onError={(err) => setError(err)}
               disabled={isSubmitting}
             />
+          </FadeIn>
+
+          <FadeIn delay={0.35} direction="up">
+            <PasskeyLoginButton loginContext="client" />
           </FadeIn>
 
           <FadeIn delay={0.4} direction="up">

@@ -167,6 +167,11 @@ export async function migrateLegacyTokens(): Promise<void> {
     return;
   }
 
+  // Snapshot in-memory tokens before migration so a fresh passkey/password token
+  // is never destroyed if the legacy token turns out to be expired.
+  const savedOwner = ownerInMemoryToken;
+  const savedClient = clientInMemoryToken;
+
   // Validate the legacy token before trusting it
   registerTokenGetter(() => Promise.resolve(legacy));
   try {
@@ -178,8 +183,11 @@ export async function migrateLegacyTokens(): Promise<void> {
       clientInMemoryToken = legacy;
     }
   } catch {
-    ownerInMemoryToken = null;
-    clientInMemoryToken = null;
+    // Legacy token is invalid/expired — restore whatever was in memory before
+    // migration ran (e.g. a token freshly set by a passkey login).
+    ownerInMemoryToken = savedOwner;
+    clientInMemoryToken = savedClient;
+    registerTokenGetter(async () => getActiveToken());
   }
 }
 
@@ -235,4 +243,38 @@ export function clearSessionStorage(context?: 'client' | 'owner'): void {
       sessionStorage.removeItem(key);
     }
   }
+}
+
+/** Device / UX preferences kept across logout (not account-scoped). */
+const DEVICE_LOCALSTORAGE_KEYS = [
+  'keyhome_cookie_consent_v1',
+  'kh_tour_completed_at',
+  'kh:welcome-dismissed',
+  'APPTOUR_SHOWN_KEY',
+  'kh_push_dismissed',
+  'kh_pwa_dismissed',
+  'kh_owner_pwa_dismissed',
+] as const;
+
+/**
+ * Full tab session wipe for logout: clears sessionStorage entirely and localStorage
+ * except for {@link DEVICE_LOCALSTORAGE_KEYS}.
+ */
+export function wipeBrowserStoragesForLogout(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const preserved: Record<string, string> = {};
+  for (const key of DEVICE_LOCALSTORAGE_KEYS) {
+    const v = localStorage.getItem(key);
+    if (v !== null) {
+      preserved[key] = v;
+    }
+  }
+  localStorage.clear();
+  for (const [key, val] of Object.entries(preserved)) {
+    localStorage.setItem(key, val);
+  }
+  sessionStorage.clear();
 }

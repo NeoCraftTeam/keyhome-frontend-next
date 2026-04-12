@@ -1,5 +1,6 @@
 'use client';
 
+import PasskeyLoginButton from '@/components/auth/PasskeyLoginButton';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import FadeIn from '@/components/ui/FadeIn';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
@@ -91,27 +92,21 @@ export default function OwnerLoginPage() {
     <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>
       <Box
         sx={{
-          display: { xs: 'none', md: 'block' },
+          display: { xs: 'none', md: 'flex' },
           flex: 1,
           position: 'relative',
           overflow: 'hidden',
+          backgroundImage: `url(${OWNER_LOGIN_HERO_SRC})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
-        <Image
-          src={OWNER_LOGIN_HERO_SRC}
-          alt="Bienvenue sur KeyHome — espace bailleur"
-          fill
-          priority
-          sizes="50vw"
-          style={{ objectFit: 'cover' }}
-        />
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
             background:
               'linear-gradient(to bottom, rgba(13,148,136,0.2) 0%, rgba(13,148,136,0.55) 100%)',
-            zIndex: 1,
           }}
         />
         <Box
@@ -309,6 +304,10 @@ export default function OwnerLoginPage() {
               showDivider
               providers={['google', 'facebook', 'apple']}
             />
+          </FadeIn>
+
+          <FadeIn delay={0.45} direction="up">
+            <PasskeyLoginButton loginContext="owner" />
           </FadeIn>
 
           <FadeIn delay={0.5} direction="up">

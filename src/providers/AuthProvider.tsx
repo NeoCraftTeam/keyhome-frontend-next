@@ -1,13 +1,13 @@
 'use client';
 
 import { registerTokenGetter } from '@/lib/auth-token';
-import api, { resetCsrfState } from '@/lib/api';
+import { useAuthActions } from '@/hooks/useAuthActions';
 import {
   clearAllInMemoryTokens,
   clearRoleCookie,
-  clearSessionStorage,
-  getInMemoryToken,
   clearSanctumInMemoryOnly,
+  getInMemoryToken,
+  hasAnySanctumInMemory,
   migrateLegacyTokens,
   persistOwnerToken,
   persistClientToken,
@@ -19,13 +19,7 @@ import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { useQueryClient } from '@tanstack/react-query';
 import { User, UserRole } from '@/types';
-import {
-  useClerk,
-  useAuth as useClerkAuth,
-  useSignIn,
-  useUser,
-} from '@clerk/nextjs';
-import { flushSync } from 'react-dom';
+import { useClerk, useAuth as useClerkAuth, useUser } from '@clerk/nextjs';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   createContext,
@@ -40,9 +34,6 @@ import {
 
 // Re-export for tests
 export { __resetModuleStateForTests } from '@/lib/auth-session';
-
-const LOGOUT_OVERLAY_DURATION_MS = 3500;
-const CLERK_SIGN_OUT_FALLBACK_MS = 4000;
 
 /** Set by register flow; Bearer for verification APIs only (not full session). */
 const KH_VERIFY_TOKEN_CLIENT = 'kh_verify_token_client';
@@ -86,7 +77,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn, getToken } = useClerkAuth();
   const { user: clerkUser } = useUser();
-  const { signIn } = useSignIn();
   const { signOut } = useClerk();
   const pathname = usePathname();
   const [user, setUserState] = useState<User | null>(null);
@@ -121,6 +111,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoaded) {
+      return;
+    }
+
+    // During logout overlay, do not resolve /auth/me or Clerk exchange — otherwise
+    // a still-valid Laravel cookie or Clerk session can re-authenticate before redirect.
+    if (isLoggingOut) {
       return;
     }
 
@@ -263,6 +259,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // re-runs this effect. If the exchange is already done (OTP pending or user
     // authenticated), bail immediately — never flash the loading state.
     if (clerkExchangeDoneRef.current) {
+      setIsExchanging(false);
+      setHasResolvedInitialAuth(true);
+      return;
+    }
+
+    // If the user already has a valid Sanctum session (passkey / email-password login),
+    // skip the Clerk exchange entirely. A stale Clerk session must never override a
+    // freshly established passkey or password session — doing so would redirect the
+    // owner to /home when they log in via passkey while a client Clerk session is active.
+    if (hasAnySanctumInMemory()) {
+      clerkExchangeDoneRef.current = true;
       setIsExchanging(false);
       setHasResolvedInitialAuth(true);
       return;
@@ -443,6 +450,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router,
     signOut,
     getToken,
+    isLoggingOut,
   ]);
 
   const isAuthenticated = !!user;
@@ -469,269 +477,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener('kh:auth-expired', handleAuthExpired);
   }, [user, queryClient]);
 
-  /* ── Auth actions ─────────────────────────────────────────────── */
+  /* ── Auth actions (extracted to useAuthActions) ──────────────── */
 
-  const setUser = useCallback((u: User) => {
-    setUserState(u);
-  }, []);
-
-  const finalizeAuth = useCallback(
-    (sanctumToken: string, laravelUser: User, panelSsoUrl: string | null) => {
-      const panelUrl = laravelUser.role === UserRole.AGENT ? null : panelSsoUrl;
-
-      if (panelUrl) {
-        if (!redirectToTrustedUrl(panelUrl)) {
-          clearSession();
-          setUserState(null);
-          router.replace('/login');
-        }
-
-        return;
-      }
-
-      const returnTo = sessionStorage.getItem('kh_redirect_after_login');
-      const clearContext =
-        laravelUser.role === UserRole.AGENT ||
-        laravelUser.role === UserRole.ADMIN
-          ? ('owner' as const)
-          : ('client' as const);
-      clearSessionStorage(clearContext);
-
-      flushSync(() => {
-        // Persist token to the correct role-specific slot
-        if (
-          laravelUser.role === UserRole.AGENT ||
-          laravelUser.role === UserRole.ADMIN
-        ) {
-          persistOwnerToken(sanctumToken);
-        } else {
-          persistClientToken(sanctumToken);
-        }
-        setToken(sanctumToken);
-        setUserState(laravelUser);
-        setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
-      });
-
-      if (returnTo) {
-        router.replace(returnTo);
-      } else if (
-        laravelUser.role === UserRole.AGENT ||
-        laravelUser.role === UserRole.ADMIN
-      ) {
-        router.replace('/owner/dashboard');
-      } else {
-        router.replace('/home');
-      }
-    },
-    [clearSession, router]
-  );
-
-  const login = useCallback(
-    async (email: string, password: string) => {
-      const { token: sanctumToken, user: laravelUser } =
-        await authService.login(email, password, 'client');
-
-      if (laravelUser.role !== UserRole.CUSTOMER) {
-        throw new Error(
-          'Accès réservé aux clients. Utilisez le panneau propriétaire.'
-        );
-      }
-
-      persistClientToken(sanctumToken);
-      setUserState(laravelUser);
-      setRoleCookie(UserRole.CUSTOMER);
-
-      const returnTo = sessionStorage.getItem('kh_redirect_after_login');
-      if (returnTo) {
-        sessionStorage.removeItem('kh_redirect_after_login');
-        router.replace(returnTo);
-      } else {
-        router.replace('/home');
-      }
-    },
-    [router]
-  );
-
-  const loginOwner = useCallback(
-    async (email: string, password: string) => {
-      const { token: sanctumToken, user: laravelUser } =
-        await authService.login(email, password, 'owner');
-
-      if (
-        laravelUser.role !== UserRole.AGENT &&
-        laravelUser.role !== UserRole.ADMIN
-      ) {
-        throw new Error(
-          'Accès réservé aux propriétaires et agences. Créez un compte bailleur.'
-        );
-      }
-
-      persistOwnerToken(sanctumToken);
-      setUserState(laravelUser);
-      setRoleCookie(laravelUser.role ?? UserRole.AGENT);
-
-      const returnTo = sessionStorage.getItem('kh_owner_redirect');
-      if (returnTo) {
-        sessionStorage.removeItem('kh_owner_redirect');
-        router.replace(returnTo);
-      } else {
-        router.replace('/owner/dashboard');
-      }
-    },
-    [router]
-  );
-
-  const loginWithOAuth = useCallback(
-    async (
-      provider: OAuthProvider,
-      options?: { registrationIntent?: 'customer' | 'agent' }
-    ) => {
-      if (!signIn) {
-        return;
-      }
-
-      const strategyMap = {
-        google: 'oauth_google',
-        facebook: 'oauth_facebook',
-        apple: 'oauth_apple',
-      } as const;
-
-      if (typeof window !== 'undefined') {
-        if (options?.registrationIntent != null) {
-          sessionStorage.setItem(
-            'kh_registration_intent',
-            options.registrationIntent
-          );
-        } else {
-          sessionStorage.removeItem('kh_registration_intent');
-        }
-      }
-
-      if (isSignedIn) {
-        await signOut();
-      }
-
-      // Always land back on /sso-callback after OAuth — never on a content
-      // page like /owner/login. Using /owner/login as redirectUrlComplete was the
-      // root cause of the "login page flashes before OTP page" race: Clerk would
-      // hard-navigate there before our clerkExchange even started, the user saw
-      // the form, then AuthProvider detected isSignedIn and routed to /verify-otp.
-      // /sso-callback is already a pure loading screen so there is nothing to flash.
-      await signIn.authenticateWithRedirect({
-        strategy: strategyMap[provider],
-        redirectUrl: `${window.location.origin}/sso-callback`,
-        redirectUrlComplete: `${window.location.origin}/sso-callback`,
-      });
-    },
-    [signIn, isSignedIn, signOut]
-  );
-
-  const logout = useCallback(
-    async (redirectTo = '/login') => {
-      ++authRunRef.current;
-      // NOTE: do NOT reset clerkExchangeDoneRef here. Resetting it while
-      // isSignedIn is still true allows the auth effect to re-run the Clerk
-      // JWT exchange BEFORE signOut() completes, logging the user back in.
-      // The flag is reset naturally in the !isSignedIn branch once Clerk
-      // session invalidation propagates (line ~130).
-      setIsLoggingOut(true);
-      resetCsrfState();
-
-      // Snapshot the Sanctum Bearer BEFORE wiping in-memory slots.
-      const bearerSnapshot = getInMemoryToken();
-
-      // Wipe all cached API responses so no stale data leaks to the next session.
-      queryClient.clear();
-
-      if (typeof window !== 'undefined') {
-        // Preserve device-level keys that must survive session changes.
-        // Cookie consent must never be re-prompted after logout (GDPR UX rule).
-        // Onboarding flags are device-level — clearing them would force completed
-        // users through the tour/welcome modal again on next login.
-        const DEVICE_KEYS = [
-          'keyhome_cookie_consent_v1', // GDPR consent — must never re-prompt
-          'kh_tour_completed_at', // Onboarding tour completion timestamp
-          'kh:welcome-dismissed', // Welcome modal dismissed flag
-          'APPTOUR_SHOWN_KEY', // App tour shown flag
-          'kh_push_dismissed', // Push notification prompt dismissed — device decision
-          'kh_pwa_dismissed', // Customer PWA install prompt dismissed — device decision
-          'kh_owner_pwa_dismissed', // Owner PWA install prompt dismissed — device decision
-        ] as const;
-        const preserved: Record<string, string> = {};
-        for (const key of DEVICE_KEYS) {
-          const v = localStorage.getItem(key);
-          if (v !== null) preserved[key] = v;
-        }
-        localStorage.clear();
-        for (const [key, val] of Object.entries(preserved)) {
-          localStorage.setItem(key, val);
-        }
-        clearSessionStorage();
-      }
-      clearRoleCookie();
-      clearAllInMemoryTokens();
-      setToken(null);
-      setUserState(null);
-
-      // Fire the backend logout concurrently with the overlay wait.
-      // The 3.5 s overlay is more than enough time for a <100 ms API call.
-      void api
-        .post(
-          '/auth/logout',
-          undefined,
-          bearerSnapshot
-            ? { headers: { Authorization: `Bearer ${bearerSnapshot}` } }
-            : undefined
-        )
-        .catch(() => {});
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, LOGOUT_OVERLAY_DURATION_MS)
-      );
-
-      const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/login';
-
-      if (isSignedIn) {
-        try {
-          // Call signOut WITHOUT redirectUrl — we navigate ourselves below.
-          // Passing redirectUrl causes Clerk to navigate concurrently, creating
-          // a race where window.location.replace fires before the session is
-          // fully invalidated on Clerk's servers (especially on mobile).
-          await Promise.race([
-            signOut(),
-            new Promise((resolve) =>
-              setTimeout(resolve, CLERK_SIGN_OUT_FALLBACK_MS)
-            ),
-          ]);
-        } catch {
-          // Fall through to hard redirect.
-        }
-      }
-
-      // Always use a hard navigation so the React tree — including the auth
-      // resolution effect — is fully torn down and rebuilt from a clean state.
-      // A soft router.replace() can re-trigger the Clerk exchange before the
-      // new page loads, bouncing the user back to a logged-in state.
-      window.location.replace(safeRedirect);
-    },
-    [isSignedIn, signOut, queryClient]
-  );
-
-  const refreshUser = useCallback(async () => {
-    try {
-      const freshUser = await authService.me();
-      setUserState(freshUser);
-    } catch {
-      queryClient.clear();
-      clearAllInMemoryTokens();
-      setToken(null);
-      setUserState(null);
-      if (isSignedIn) {
-        await signOut();
-      }
-      router.push('/home');
-    }
-  }, [isSignedIn, signOut, router, queryClient]);
+  const {
+    login,
+    loginOwner,
+    loginWithOAuth,
+    logout,
+    refreshUser,
+    setUser,
+    finalizeAuth,
+    getClerkToken,
+  } = useAuthActions({
+    setUserState,
+    setToken,
+    setIsLoggingOut,
+    clearSession,
+    authRunRef,
+  });
 
   /* ── Context value ────────────────────────────────────────────── */
 
@@ -749,7 +512,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser,
       refreshUser,
       finalizeAuth,
-      getClerkToken: getToken,
+      getClerkToken,
     }),
     [
       user,
@@ -764,7 +527,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser,
       refreshUser,
       finalizeAuth,
-      getToken,
+      getClerkToken,
     ]
   );
 

@@ -211,6 +211,18 @@ export const authService = {
     };
   },
 
+  async refreshToken(): Promise<{
+    access_token: string;
+    expires_at: string;
+  }> {
+    const { data } = await api.post<{
+      access_token: string;
+      token_type: string;
+      expires_at: string;
+    }>('/auth/refresh');
+    return { access_token: data.access_token, expires_at: data.expires_at };
+  },
+
   async logout(): Promise<void> {
     await api.post('/auth/logout');
   },
