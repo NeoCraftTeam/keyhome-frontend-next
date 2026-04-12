@@ -43,8 +43,7 @@ export default function OwnerNavbar() {
 
   const handleLogout = async () => {
     setAnchorEl(null);
-    await logout();
-    router.replace('/owner/login');
+    await logout('/owner/login');
   };
 
   return (

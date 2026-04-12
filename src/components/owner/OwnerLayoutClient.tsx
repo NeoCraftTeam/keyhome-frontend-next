@@ -15,6 +15,7 @@ import {
   setSurveyPostponed as persistSurveyPostponed,
 } from '@/components/surveys/SurveyBanner';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
 import PushPrompt from '@/components/ui/PushPrompt';
 import OwnerWelcomeModal from '@/components/owner/OwnerWelcomeModal';
@@ -48,7 +49,8 @@ export default function OwnerLayoutClient({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isAuthenticated, isLoading, refreshUser } = useAuth();
+  const { user, isAuthenticated, isLoading, isLoggingOut, refreshUser } =
+    useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
@@ -144,6 +146,10 @@ export default function OwnerLayoutClient({
     if (!pathname) return;
     if (publicRoute) return;
 
+    if (isLoggingOut) {
+      return;
+    }
+
     if (!isAuthenticated || !user) {
       sessionStorage.setItem(
         'kh_owner_redirect',
@@ -155,16 +161,25 @@ export default function OwnerLayoutClient({
 
     // Only agents and admins may access the owner panel
     const OWNER_ALLOWED_ROLES = [UserRole.AGENT, UserRole.ADMIN];
-    if (user.role && !OWNER_ALLOWED_ROLES.includes(user.role)) {
+    if (!user.role || !OWNER_ALLOWED_ROLES.includes(user.role)) {
       router.replace('/home');
     }
-  }, [isAuthenticated, isLoading, user, pathname, publicRoute, router]);
+  }, [
+    isAuthenticated,
+    isLoading,
+    isLoggingOut,
+    user,
+    pathname,
+    publicRoute,
+    router,
+  ]);
 
   if (publicRoute) {
     return (
       <Box
         sx={{
           minHeight: '100vh',
+          width: '100%',
           display: 'flex',
           bgcolor: 'background.default',
         }}
@@ -193,6 +208,18 @@ export default function OwnerLayoutClient({
   }
 
   if (!isAuthenticated || !user) {
+    if (isLoggingOut) {
+      return (
+        <Box
+          sx={{
+            minHeight: '100vh',
+            bgcolor: 'background.default',
+          }}
+        >
+          <LogoutOverlay />
+        </Box>
+      );
+    }
     return null;
   }
 

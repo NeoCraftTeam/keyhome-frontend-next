@@ -42,6 +42,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import FadeIn from '@/components/ui/FadeIn';
 
 function DeviceIcon({ deviceType }: { deviceType: string | null }) {
   if (deviceType === 'phone' || deviceType === 'mobile') {
@@ -136,19 +137,20 @@ export default function OwnerSecurityPage() {
       maxWidth={false}
       sx={{ px: { xs: 2, sm: 3, md: 4 }, py: { xs: 2, md: 4 } }}
     >
-      <PageBreadcrumbs
-        items={[
-          { label: 'Tableau de bord', href: '/owner/dashboard' },
-          { label: 'Sécurité' },
-        ]}
-      />
-
-      <Typography variant="h4" fontWeight={700} gutterBottom>
-        Sécurité
-      </Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>
-        Gérez la sécurité de votre compte et vos connexions.
-      </Typography>
+      <FadeIn>
+        <PageBreadcrumbs
+          items={[
+            { label: 'Tableau de bord', href: '/owner/dashboard' },
+            { label: 'Sécurité' },
+          ]}
+        />
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Sécurité
+        </Typography>
+        <Typography color="text.secondary" sx={{ mb: 3 }}>
+          Gérez la sécurité de votre compte et vos connexions.
+        </Typography>
+      </FadeIn>
 
       <Grid container spacing={3} alignItems="flex-start">
         {/* ── LEFT col: Login History ── */}
@@ -316,7 +318,7 @@ export default function OwnerSecurityPage() {
             {/* ─── Section 2: Active Sessions ─── */}
             <Card
               sx={{
-                borderRadius: 3,
+                borderRadius: 4,
                 border: '1px solid',
                 borderColor: 'divider',
               }}
