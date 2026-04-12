@@ -101,7 +101,7 @@ export default function VerifyEmailPage() {
   );
   const logoSrc = isOwner ? OWNER_LOGO_SRC : '/images/logo.png';
   const heroSrc = isOwner
-    ? '/images/owner/Real%20Estate%20Teal.webp'
+    ? '/images/owner/real-estate-teal.webp'
     : '/images/02OTP.webp';
   const heroOverlay = isOwner
     ? 'linear-gradient(to bottom, rgba(15,118,110,0.28) 0%, rgba(15,23,42,0.78) 100%)'
@@ -256,26 +256,20 @@ export default function VerifyEmailPage() {
       {/* Left side — image */}
       <Box
         sx={{
-          display: { xs: 'none', md: 'block' },
+          display: { xs: 'none', md: 'flex' },
           flex: 1,
           position: 'relative',
           overflow: 'hidden',
+          backgroundImage: `url(${heroSrc})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
-        <Image
-          src={heroSrc}
-          alt="V\u00e9rification KeyHome"
-          fill
-          priority
-          sizes="50vw"
-          style={{ objectFit: 'cover' }}
-        />
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
             background: heroOverlay,
-            zIndex: 1,
           }}
         />
         <Box

@@ -21,8 +21,8 @@ export type RegisterThemeTokens = {
   logoSrc: string;
 };
 
-/** Hero teal (fichier avec espaces — encodé pour Next/Image). */
-const OWNER_HERO_ENCODED = '/images/owner/Real%20Estate%20Teal.webp';
+/** Hero teal bailleur. */
+const OWNER_HERO_ENCODED = '/images/owner/real-estate-teal.webp';
 
 export const REGISTER_THEME: Record<
   RegisterAccountVisual,

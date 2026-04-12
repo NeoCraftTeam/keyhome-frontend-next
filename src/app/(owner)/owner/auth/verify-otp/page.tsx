@@ -92,7 +92,7 @@ export default function OwnerVerifyOtpPage() {
   const buttonGradientHover = `linear-gradient(to right, ${brandAgent.primary}, ${brandAgent.primaryDark})`;
 
   const logoSrc = OWNER_LOGO_SRC;
-  const heroSrc = '/images/owner/Real%20Estate%20Teal.webp';
+  const heroSrc = '/images/owner/real-estate-teal.webp';
   const heroOverlay =
     'linear-gradient(to bottom, rgba(15,118,110,0.28) 0%, rgba(15,23,42,0.78) 100%)';
   const tagline = 'Plus qu’un pas pour gérer vos biens professionnellement';
@@ -220,26 +220,20 @@ export default function OwnerVerifyOtpPage() {
       {/* Left side — image */}
       <Box
         sx={{
-          display: { xs: 'none', md: 'block' },
+          display: { xs: 'none', md: 'flex' },
           flex: 1,
           position: 'relative',
           overflow: 'hidden',
+          backgroundImage: `url(${heroSrc})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
-        <Image
-          src={heroSrc}
-          alt="Vérification Bailleur KeyHome"
-          fill
-          priority
-          sizes="50vw"
-          style={{ objectFit: 'cover' }}
-        />
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
             background: heroOverlay,
-            zIndex: 1,
           }}
         />
         <Box
@@ -295,6 +289,7 @@ export default function OwnerVerifyOtpPage() {
       >
         <Box sx={{ position: 'absolute', top: 24, left: 24 }}>
           <IconButton
+            aria-label="Retour"
             onClick={() => router.back()}
             size="medium"
             sx={{ bgcolor: 'rgba(0,0,0,0.05)', borderRadius: 2 }}
