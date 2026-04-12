@@ -28,7 +28,10 @@ test.describe('Owner Auth Pages', () => {
     // BUG CATCH: The email field must be visible. If it's missing, the login
     // form is broken and owners are locked out.
     test('has an email input field', async ({ page }) => {
-      const emailField = page.getByLabel(/email/i).or(page.locator('input[type="email"]')).first();
+      const emailField = page
+        .getByLabel(/email/i)
+        .or(page.locator('input[type="email"]'))
+        .first();
       await expect(emailField).toBeVisible({ timeout: 10000 });
     });
 
@@ -40,7 +43,9 @@ test.describe('Owner Auth Pages', () => {
 
     // BUG CATCH: Submit button must exist and be enabled on load.
     test('has an enabled submit button', async ({ page }) => {
-      const submitBtn = page.getByRole('button', { name: /connexion|se connecter|login/i });
+      // Use type="submit" to avoid matching the PasskeyLoginButton which also
+      // contains the text "Se connecter" and would cause a multi-match error.
+      const submitBtn = page.locator('button[type="submit"]');
       await expect(submitBtn).toBeVisible({ timeout: 10000 });
       await expect(submitBtn).toBeEnabled();
     });
@@ -59,7 +64,9 @@ test.describe('Owner Auth Pages', () => {
     // We test /register directly — that's where new owners actually land and
     // where the registration flow must work. Testing the redirect itself is fragile
     // because Next.js router.replace aborts the initial page load event.
-    test('shared registration page renders without server error', async ({ page }) => {
+    test('shared registration page renders without server error', async ({
+      page,
+    }) => {
       const response = await page.goto('/register');
       expect(response?.status()).toBeLessThan(500);
     });
@@ -76,36 +83,53 @@ test.describe('Owner Auth Pages', () => {
 test.describe('Owner Protected Route Guards', () => {
   // BUG CATCH: If the middleware lets unauthenticated users reach the owner
   // dashboard, sensitive analytics data is exposed without auth.
-  test('/owner/dashboard redirects unauthenticated visitors', async ({ page }) => {
+  test('/owner/dashboard redirects unauthenticated visitors', async ({
+    page,
+  }) => {
     await page.goto('/owner/dashboard');
-    await page.waitForURL((url) => !url.pathname.startsWith('/owner/dashboard'), {
-      timeout: 8000,
-    });
+    await page.waitForURL(
+      (url) => !url.pathname.startsWith('/owner/dashboard'),
+      {
+        timeout: 8000,
+      }
+    );
     expect(page.url()).toMatch(/\/owner\/login/);
   });
 
   // BUG CATCH: Owner ads management must be gated.
   test('/owner/ads redirects unauthenticated visitors', async ({ page }) => {
     await page.goto('/owner/ads');
-    await page.waitForURL((url) => !url.pathname.startsWith('/owner/ads'), { timeout: 8000 });
+    await page.waitForURL((url) => !url.pathname.startsWith('/owner/ads'), {
+      timeout: 8000,
+    });
     expect(page.url()).toMatch(/\/owner\/login/);
   });
 
   // BUG CATCH: Lease contracts are sensitive — must redirect unauthenticated.
-  test('/owner/lease-contracts redirects unauthenticated visitors', async ({ page }) => {
+  test('/owner/lease-contracts redirects unauthenticated visitors', async ({
+    page,
+  }) => {
     await page.goto('/owner/lease-contracts');
-    await page.waitForURL((url) => !url.pathname.startsWith('/owner/lease-contracts'), {
-      timeout: 8000,
-    });
+    await page.waitForURL(
+      (url) => !url.pathname.startsWith('/owner/lease-contracts'),
+      {
+        timeout: 8000,
+      }
+    );
     expect(page.url()).toMatch(/\/owner\/login/);
   });
 
   // BUG CATCH: Financial data is the most sensitive — must be protected.
-  test('/owner/financials redirects unauthenticated visitors', async ({ page }) => {
+  test('/owner/financials redirects unauthenticated visitors', async ({
+    page,
+  }) => {
     await page.goto('/owner/financials');
-    await page.waitForURL((url) => !url.pathname.startsWith('/owner/financials'), {
-      timeout: 8000,
-    });
+    await page.waitForURL(
+      (url) => !url.pathname.startsWith('/owner/financials'),
+      {
+        timeout: 8000,
+      }
+    );
     expect(page.url()).toMatch(/\/owner\/login/);
   });
 });
@@ -114,7 +138,9 @@ test.describe('Owner Route Separation (Customer Isolation)', () => {
   // BUG CATCH: Customer users must not be able to access owner routes.
   // The middleware checks kh_role cookie — but here we verify no plain
   // GET returns data without auth (role cookie absent = treated as no auth).
-  test('/owner/profile is not accessible without the owner role cookie', async ({ page }) => {
+  test('/owner/profile is not accessible without the owner role cookie', async ({
+    page,
+  }) => {
     await page.goto('/owner/profile');
     await page.waitForURL((url) => !url.pathname.startsWith('/owner/profile'), {
       timeout: 8000,
@@ -131,8 +157,10 @@ test.describe('Owner Login Form Validation', () => {
 
   // BUG CATCH: Submitting with empty fields must not cause a 500 — the UI
   // should handle validation before sending the request.
-  test('shows validation feedback when submitting empty form', async ({ page }) => {
-    const submitBtn = page.getByRole('button', { name: /connexion|se connecter/i });
+  test('shows validation feedback when submitting empty form', async ({
+    page,
+  }) => {
+    const submitBtn = page.locator('button[type="submit"]');
     if (await submitBtn.isVisible()) {
       await submitBtn.click();
       // Either the button stays on login (no redirect to dashboard)
@@ -144,15 +172,17 @@ test.describe('Owner Login Form Validation', () => {
 
   // BUG CATCH: Invalid credentials must show an error message and NOT
   // redirect to the dashboard.
-  test('shows error for invalid credentials without crashing', async ({ page }) => {
+  test('shows error for invalid credentials without crashing', async ({
+    page,
+  }) => {
     const emailField = page.locator('input[type="email"]').first();
     const passwordField = page.locator('input[type="password"]').first();
 
-    if (await emailField.isVisible() && await passwordField.isVisible()) {
+    if ((await emailField.isVisible()) && (await passwordField.isVisible())) {
       await emailField.fill('notauser@keyhome.test');
       await passwordField.fill('wrongpassword123');
 
-      const submitBtn = page.getByRole('button', { name: /connexion|se connecter/i });
+      const submitBtn = page.locator('button[type="submit"]');
       await submitBtn.click();
 
       // Wait for response — should NOT redirect to dashboard

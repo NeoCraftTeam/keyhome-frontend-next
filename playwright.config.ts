@@ -31,8 +31,10 @@ export default defineConfig({
       use: { ...devices['Pixel 5'] },
     },
     {
+      // Emulates iPhone 13 layout (390×844, touch, 3× DPR, iOS user-agent)
+      // but runs on Chromium so no separate WebKit install is required.
       name: 'mobile-ios',
-      use: { ...devices['iPhone 13'] },
+      use: { ...devices['iPhone 13'], browserName: 'chromium' },
     },
   ],
 
