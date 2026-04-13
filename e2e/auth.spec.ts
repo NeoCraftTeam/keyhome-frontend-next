@@ -16,7 +16,9 @@ test.describe('Login Page', () => {
   });
 
   // BUG CATCH: Login page not rendering means users can't sign in at all.
-  test('renders the login form with email and password fields', async ({ page }) => {
+  test('renders the login form with email and password fields', async ({
+    page,
+  }) => {
     // French labels: "Adresse email" and "Mot de passe"
     // MUI renders both the <input> and the show-password <button> with an aria-label matching
     // "Mot de passe" — use .first() to target only the input field.
@@ -25,8 +27,12 @@ test.describe('Login Page', () => {
   });
 
   // BUG CATCH: If the submit button is missing, nobody can log in.
+  // Use exact: true to avoid matching the PasskeyLoginButton ('Se connecter avec une Passkey').
   test('has a "Se connecter" submit button', async ({ page }) => {
-    const submitButton = page.getByRole('button', { name: /se connecter/i });
+    const submitButton = page.getByRole('button', {
+      name: 'Se connecter',
+      exact: true,
+    });
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
   });
@@ -56,12 +62,17 @@ test.describe('Login Page', () => {
 
     // The visibility toggle is an IconButton inside the password field's InputAdornment
     // It's the button with the Visibility icon
-    const toggleButton = page.locator('[aria-label]').filter({ hasText: '' }).locator('..').locator('button').last();
+    const toggleButton = page
+      .locator('[aria-label]')
+      .filter({ hasText: '' })
+      .locator('..')
+      .locator('button')
+      .last();
     // Simpler: just find the button inside the password field area
     const passwordContainer = passwordField.locator('..');
     const eyeButton = passwordContainer.locator('button');
-    
-    if (await eyeButton.count() > 0) {
+
+    if ((await eyeButton.count()) > 0) {
       await eyeButton.click();
       await expect(passwordField).toHaveAttribute('type', 'text');
     }
@@ -76,9 +87,13 @@ test.describe('Register Page', () => {
 
   // BUG CATCH: Registration is a multi-step wizard.
   // Step 1 asks "Quel type de compte souhaitez-vous créer ?"
-  test('renders the registration wizard with step 1 (account type)', async ({ page }) => {
+  test('renders the registration wizard with step 1 (account type)', async ({
+    page,
+  }) => {
     // Wait for the page to be interactive
-    await expect(page.getByText(/créer un compte/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/créer un compte/i)).toBeVisible({
+      timeout: 10000,
+    });
     // Step 1: Account type selection with Particulier and Agent/Agence options
     await expect(page.getByText(/particulier/i)).toBeVisible();
     await expect(page.getByText(/agent/i)).toBeVisible();
@@ -110,7 +125,9 @@ test.describe('Forgot Password Page', () => {
 
   // BUG CATCH: Must have a submit button to request password reset.
   test('has a submit button', async ({ page }) => {
-    const submitButton = page.getByRole('button', { name: /envoyer|réinitialiser|reset|submit/i });
+    const submitButton = page.getByRole('button', {
+      name: /envoyer|réinitialiser|reset|submit/i,
+    });
     await expect(submitButton).toBeVisible();
   });
 });
