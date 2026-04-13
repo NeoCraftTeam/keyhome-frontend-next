@@ -141,6 +141,9 @@ importers:
       '@testing-library/user-event':
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
+      '@types/google-one-tap':
+        specifier: ^1.2.7
+        version: 1.2.7
       '@types/mapbox-gl':
         specifier: ^3.4.1
         version: 3.4.1
@@ -2454,6 +2457,9 @@ packages:
 
   '@types/geojson@7946.0.16':
     resolution: {integrity: sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg==}
+
+  '@types/google-one-tap@1.2.7':
+    resolution: {integrity: sha512-u+1J+ldj/ZvvBBP7a5zC+sWy5LaHVfcTcOW/aaTKYoWUlsWi6OCBYYN4dsPlYRmA08y9jag8MtcT5rVgYdPf1g==}
 
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
@@ -7988,6 +7994,8 @@ snapshots:
       '@types/geojson': 7946.0.16
 
   '@types/geojson@7946.0.16': {}
+
+  '@types/google-one-tap@1.2.7': {}
 
   '@types/hast@3.0.4':
     dependencies:
