@@ -155,6 +155,16 @@ export function GoogleOneTap() {
     firePrompt();
   }, [handleCredential, isAuthenticated, firePrompt]);
 
+  /** On mount: if the GSI script is already loaded (happens when the auth
+   *  layout unmounts/remounts GoogleOneTap after the splash transition —
+   *  Next.js caches the Script so onLoad never fires again on remount),
+   *  call initGsi() directly so initialization is not skipped. */
+  useEffect(() => {
+    if (window.google?.accounts?.id && !initializedRef.current) {
+      initGsi();
+    }
+  }, [initGsi]);
+
   /** IntersectionObserver — fires firePrompt() as soon as the sentinel enters
    *  the viewport. Elements with a visibility:hidden ancestor have intersection
    *  ratio = 0 (per spec), so this correctly defers the prompt until the
@@ -168,6 +178,8 @@ export function GoogleOneTap() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
+          /* Ensure initialized in case initGsi() hasn't run yet */
+          initGsi();
           firePrompt();
           observer.disconnect();
         }
@@ -177,7 +189,7 @@ export function GoogleOneTap() {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [isAuthenticated, firePrompt]);
+  }, [isAuthenticated, firePrompt, initGsi]);
 
   /* Cancel + reset if the user becomes authenticated while on the page */
   useEffect(() => {
