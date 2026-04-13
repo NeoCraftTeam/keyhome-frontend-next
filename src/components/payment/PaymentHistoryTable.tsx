@@ -6,9 +6,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
 import { paymentsService } from '@/services/payments.service';
 import { PaymentHistoryItem } from '@/types';
+import DownloadIcon from '@mui/icons-material/PictureAsPdf';
 import Toll from '@mui/icons-material/Toll';
 import {
   Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Divider,
   Pagination,
   Paper,
   Table,
@@ -17,6 +22,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -42,6 +48,19 @@ export default function PaymentHistoryTable({
   const isDark = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [page, setPage] = useState(1);
+  const [exportPeriod, setExportPeriod] = useState<30 | 90 | 365 | undefined>(
+    undefined
+  );
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportPdf = async () => {
+    setIsExporting(true);
+    try {
+      await paymentsService.exportPdf(exportPeriod);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['payment-history', page],
@@ -61,9 +80,78 @@ export default function PaymentHistoryTable({
       minute: '2-digit',
     }).format(new Date(iso));
 
+  const ExportBar = (
+    <Paper
+      elevation={0}
+      sx={{
+        p: 2,
+        mb: 2.5,
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'divider',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        flexWrap: 'wrap',
+      }}
+    >
+      <Typography variant="body2" fontWeight={600} sx={{ mr: 0.5 }}>
+        Exporter :
+      </Typography>
+      {([undefined, 30, 90, 365] as const).map((p) => (
+        <Chip
+          key={String(p)}
+          label={
+            p === undefined
+              ? 'Tout'
+              : p === 30
+                ? '30j'
+                : p === 90
+                  ? '90j'
+                  : '1an'
+          }
+          size="small"
+          variant={exportPeriod === p ? 'filled' : 'outlined'}
+          color={exportPeriod === p ? 'primary' : 'default'}
+          onClick={() => setExportPeriod(p)}
+          sx={{ borderRadius: 2 }}
+        />
+      ))}
+      <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+      <Tooltip title="Télécharger l'historique en PDF">
+        <span>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={
+              isExporting ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : (
+                <DownloadIcon />
+              )
+            }
+            onClick={handleExportPdf}
+            disabled={isExporting || items.length === 0}
+            sx={{
+              borderRadius: 2,
+              bgcolor: '#F6475F',
+              '&:hover': { bgcolor: '#c73048' },
+              boxShadow: 'none',
+              textTransform: 'none',
+              fontWeight: 700,
+            }}
+          >
+            {isExporting ? 'Génération…' : 'Télécharger PDF'}
+          </Button>
+        </span>
+      </Tooltip>
+    </Paper>
+  );
+
   if (isMobile) {
     return (
       <Box>
+        {ExportBar}
         {isLoading ? (
           Array.from({ length: Math.min(perPage, 6) }, (_, i) => (
             <Paper
@@ -184,6 +272,7 @@ export default function PaymentHistoryTable({
 
   return (
     <Box>
+      {ExportBar}
       <TableContainer
         component={Paper}
         elevation={0}

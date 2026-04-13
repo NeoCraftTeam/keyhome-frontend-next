@@ -10,6 +10,7 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Divider,
   LinearProgress,
   Paper,
@@ -25,7 +26,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/CloudDownload';
+import DownloadIcon from '@mui/icons-material/PictureAsPdf';
 import DateIcon from '@mui/icons-material/DateRange';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import CreditsIcon from '@mui/icons-material/Toll';
@@ -60,6 +61,7 @@ export default function PaymentHistoryTableModern({
   const [selectedPeriod, setSelectedPeriod] = useState<
     'all' | '30' | '90' | '365'
   >('all');
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['payment-history', page, selectedPeriod],
@@ -91,44 +93,21 @@ export default function PaymentHistoryTableModern({
     }).format(new Date(iso));
 
   const handleDownloadAll = async () => {
+    setIsExporting(true);
     try {
-      // In a real app, this would generate and download a CSV/PDF
-      const csvContent = [
-        [
-          'Date',
-          'Type',
-          'Pack',
-          'Méthode',
-          'Montant',
-          'Crédits',
-          'Statut',
-          'Référence',
-        ],
-        ...items.map((item) => [
-          formatDate(item.created_at),
-          TYPE_LABELS[item.type] || item.type,
-          item.pack_name || '—',
-          METHOD_LABELS[item.payment_method as string] || item.payment_method,
-          `${item.amount} XOF`,
-          item.points_awarded?.toString() || '—',
-          item.status,
-          item.reference || '—',
-        ]),
-      ]
-        .map((row) => row.join(','))
-        .join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `keyhome-paiements-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const pdfPeriod =
+        selectedPeriod === '30'
+          ? 30
+          : selectedPeriod === '90'
+            ? 90
+            : selectedPeriod === '365'
+              ? 365
+              : undefined;
+      await paymentsService.exportPdf(pdfPeriod as 30 | 90 | 365 | undefined);
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error('Export PDF failed:', error);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -157,14 +136,27 @@ export default function PaymentHistoryTableModern({
                 Historique des paiements
               </Typography>
               <Button
-                variant="outlined"
+                variant="contained"
                 size="small"
-                startIcon={<DownloadIcon />}
+                startIcon={
+                  isExporting ? (
+                    <CircularProgress size={14} color="inherit" />
+                  ) : (
+                    <DownloadIcon />
+                  )
+                }
                 onClick={handleDownloadAll}
-                disabled={items.length === 0}
-                sx={{ borderRadius: 2 }}
+                disabled={isExporting || items.length === 0}
+                sx={{
+                  borderRadius: 2,
+                  bgcolor: '#F6475F',
+                  '&:hover': { bgcolor: '#c73048' },
+                  boxShadow: 'none',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                }}
               >
-                Télécharger tout
+                {isExporting ? 'Génération…' : 'PDF'}
               </Button>
             </Box>
 
@@ -395,14 +387,27 @@ export default function PaymentHistoryTableModern({
 
             {/* Download button */}
             <Button
-              variant="outlined"
-              startIcon={<DownloadIcon />}
+              variant="contained"
+              startIcon={
+                isExporting ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : (
+                  <DownloadIcon />
+                )
+              }
               onClick={handleDownloadAll}
-              disabled={items.length === 0}
+              disabled={isExporting || items.length === 0}
               size="small"
-              sx={{ borderRadius: 2 }}
+              sx={{
+                borderRadius: 2,
+                bgcolor: '#F6475F',
+                '&:hover': { bgcolor: '#c73048' },
+                boxShadow: 'none',
+                textTransform: 'none',
+                fontWeight: 700,
+              }}
             >
-              Télécharger CSV
+              {isExporting ? 'Génération…' : 'Télécharger PDF'}
             </Button>
           </Box>
         </Box>

@@ -62,6 +62,34 @@ export const paymentsService = {
   },
 
   /**
+   * Download the authenticated user's full payment history as a branded PDF.
+   * Opens a browser download dialog with the generated file.
+   *
+   * @param period - Number of days to include (30 | 90 | 365 | undefined = all)
+   */
+  async exportPdf(period?: 30 | 90 | 365): Promise<void> {
+    const params: Record<string, string> = {};
+    if (period) params['period'] = String(period);
+
+    const response = await api.get('/payments/export', {
+      params,
+      responseType: 'blob',
+    });
+
+    const blob = new Blob([response.data as BlobPart], {
+      type: 'application/pdf',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `keyhome-paiements-${new Date().toISOString().split('T')[0]}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+
+  /**
    * Get the authenticated user's payment history (all gateways).
    */
   async getHistory(page = 1): Promise<{
