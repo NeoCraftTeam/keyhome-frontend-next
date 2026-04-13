@@ -131,21 +131,35 @@ export const webAuthnService = {
   ): Promise<{ token: string; user: User }> {
     // Step 1: Get assertion options
     const optResponse = await api.post('/auth/webauthn/login/options');
-    const options = optResponse.data;
-    const challengeToken = optResponse.headers['x-webauthn-token'] as string;
+    const rawOptions = optResponse.data as Record<string, unknown>;
+
+    // Read token from header first, fall back to body `_wt` field.
+    // Some CDN/proxy edges (Cloudflare Workers, Vercel) strip custom response
+    // headers, so the backend also embeds the token in the body as a failsafe.
+    const challengeToken =
+      (optResponse.headers['x-webauthn-token'] as string | undefined) ||
+      (rawOptions._wt as string | undefined) ||
+      '';
+
+    // Strip private `_wt` field before passing to the browser WebAuthn API.
+    const { _wt: _ignored, ...options } = rawOptions;
 
     // Step 2: Build publicKey options
     const publicKey: PublicKeyCredentialRequestOptions = {
-      ...options,
-      challenge: b64uToBuffer(options.challenge),
+      ...(options as Omit<PublicKeyCredentialRequestOptions, 'challenge'>),
+      challenge: b64uToBuffer(options.challenge as string),
     };
     if (options.allowCredentials) {
-      publicKey.allowCredentials = options.allowCredentials.map(
-        (c: { id: string; type: string; transports?: string[] }) => ({
-          ...c,
-          id: b64uToBuffer(c.id),
-        })
-      );
+      publicKey.allowCredentials = (
+        options.allowCredentials as {
+          id: string;
+          type: 'public-key';
+          transports?: AuthenticatorTransport[];
+        }[]
+      ).map((c) => ({
+        ...c,
+        id: b64uToBuffer(c.id),
+      }));
     }
 
     // Step 3: Get credential via browser API
