@@ -2,6 +2,7 @@
 
 import PasskeyLoginButton from '@/components/auth/PasskeyLoginButton';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
+import { GoogleOneTap } from '@/components/auth/GoogleOneTap';
 import FadeIn from '@/components/ui/FadeIn';
 import { useLandingStats } from '@/hooks/useLandingStats';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
@@ -358,6 +359,8 @@ export default function LoginPage() {
               </Link>
             </Typography>
           </FadeIn>
+
+          <GoogleOneTap />
 
           <FadeIn delay={0.5} direction="up">
             <Divider sx={{ my: 2.5 }}>
