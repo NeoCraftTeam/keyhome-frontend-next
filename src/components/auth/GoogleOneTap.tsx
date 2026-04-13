@@ -10,7 +10,6 @@ import type {
 } from 'google-one-tap';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-const PROMPT_PARENT_ID = 'google-one-tap-prompt';
 
 /**
  * Renders the Google One Tap prompt on the client-facing login page.
@@ -27,9 +26,6 @@ const PROMPT_PARENT_ID = 'google-one-tap-prompt';
  *   because it is client-side and Sanctum exchange may not have finished.
  * - auto_select: true — auto-signs in when there is exactly one Google
  *   account in the browser with an active session (no extra click needed).
- * - prompt_parent_id anchors the floating popup to a div rendered inside
- *   the form column, keeping it aligned with the page rather than in the
- *   browser-level top-right corner.
  * - NOT included on /owner/login — new users via One Tap are always
  *   created as CUSTOMER; agents must register via the owner flow.
  * - GSI script loaded with strategy="afterInteractive" to avoid
@@ -89,7 +85,6 @@ export function GoogleOneTap() {
       auto_select: true,
       cancel_on_tap_outside: true,
       itp_support: true,
-      prompt_parent_id: PROMPT_PARENT_ID,
     });
 
     window.google.accounts.id.prompt(
@@ -137,19 +132,11 @@ export function GoogleOneTap() {
   if (!GOOGLE_CLIENT_ID) return null;
 
   return (
-    <>
-      {/* Anchor div — Google renders the One Tap floating prompt relative
-          to this element instead of the browser-level top-right corner. */}
-      <div
-        id={PROMPT_PARENT_ID}
-        style={{ position: 'relative', height: 0, overflow: 'visible' }}
-      />
-      <Script
-        src="https://accounts.google.com/gsi/client"
-        strategy="afterInteractive"
-        onLoad={initAndPrompt}
-        data-testid="google-one-tap-script"
-      />
-    </>
+    <Script
+      src="https://accounts.google.com/gsi/client"
+      strategy="afterInteractive"
+      onLoad={initAndPrompt}
+      data-testid="google-one-tap-script"
+    />
   );
 }
