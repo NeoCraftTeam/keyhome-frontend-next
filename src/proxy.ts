@@ -1,5 +1,5 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { getClerkFrontendOrigins } from '@/lib/clerk-frontend-origins';
 
 const OWNER_PUBLIC_PATHS = [
@@ -160,10 +160,11 @@ function shouldApplyCsp(pathname: string): boolean {
   return true;
 }
 
-function isNextPrefetch(req: NextRequest): boolean {
+function isNextPrefetch(
+  headers: Pick<NextRequest, 'headers'>['headers']
+): boolean {
   return (
-    req.headers.has('next-router-prefetch') ||
-    req.headers.get('purpose') === 'prefetch'
+    headers.has('next-router-prefetch') || headers.get('purpose') === 'prefetch'
   );
 }
 
@@ -177,7 +178,7 @@ function isNextPrefetch(req: NextRequest): boolean {
  * (dashboard)/layout.tsx via useAuth(), which supports both
  * email/password users (Laravel Sanctum) and OAuth users (Clerk).
  */
-export default clerkMiddleware(async (auth, req: NextRequest) => {
+export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
   const { pathname } = req.nextUrl;
 
@@ -206,7 +207,7 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   }
 
   // Match old middleware: do not attach CSP / nonce for prefetch navigations
-  if (isNextPrefetch(req) && shouldApplyCsp(pathname)) {
+  if (isNextPrefetch(req.headers) && shouldApplyCsp(pathname)) {
     return NextResponse.next();
   }
 
