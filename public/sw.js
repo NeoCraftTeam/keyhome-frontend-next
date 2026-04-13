@@ -1,7 +1,7 @@
 // KeyHome Service Worker v3
 // Push + Background Sync + Caching strategy for full offline/PWA support.
 
-const VERSION      = "v4";
+const VERSION      = "v5";
 const STATIC_CACHE = `kh-static-${VERSION}`;
 const API_CACHE    = `kh-api-${VERSION}`;
 const NAV_CACHE    = `kh-nav-${VERSION}`;
@@ -18,9 +18,11 @@ const PRECACHE_URLS = [
 ];
 
 // ─── Install ────────────────────────────────────────────────────────────────
-// Pre-cache shell assets. Do NOT auto-skipWaiting — the update toast in
-// PWAInstallPrompt sends SKIP_WAITING when the user explicitly consents.
+// Pre-cache shell assets. skipWaiting() is called immediately so stale-cache
+// situations resolve on the next page load without manual user intervention.
+// PWAInstallPrompt also sends SKIP_WAITING for backward compatibility.
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS))
   );

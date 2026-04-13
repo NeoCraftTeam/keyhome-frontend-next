@@ -15,6 +15,7 @@ import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import NetworkStatus from '@/components/pwa/NetworkStatus';
 import CookieBanner from '@/components/ui/CookieBanner';
 import RouteProgressBar from '@/components/ui/RouteProgressBar';
+import { ThemeInitScript } from '@/components/ThemeInitScript';
 import { Suspense } from 'react';
 import { getClerkPreconnectOrigin } from '@/lib/clerk-frontend-origins';
 
@@ -159,17 +160,9 @@ export default async function RootLayout({
     >
       <html lang="fr" suppressHydrationWarning>
         <head>
-          {/* Theme detection script — runs before paint to prevent FOUC.
-              id prop: React 19 uses id to de-dup inline scripts (prevents "Encountered script tag" warning).
-              suppressHydrationWarning: browser redacts nonce after parsing, causing mismatch. */}
-          <script
-            id="kh-theme-init"
-            suppressHydrationWarning
-            nonce={nonce}
-            dangerouslySetInnerHTML={{
-              __html: `(function(){try{var t=localStorage.getItem("theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.style.colorScheme=d?"dark":"light";if(d){document.documentElement.setAttribute("data-kh-theme","dark");document.documentElement.style.backgroundColor="#141419";document.documentElement.style.color="#F0EEF8";}else{document.documentElement.setAttribute("data-kh-theme","light");}}catch(e){}})();`,
-            }}
-          />
+          {/* ThemeInitScript uses useServerInsertedHTML — injected server-side only,
+              never reconciled on the client, so React 19 never warns. */}
+          <ThemeInitScript nonce={nonce} />
           <link rel="preconnect" href="https://api.mapbox.com" />
           {clerkOrigin ? (
             <>
