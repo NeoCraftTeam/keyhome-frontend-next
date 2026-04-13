@@ -44,6 +44,22 @@ export function GoogleOneTap() {
         const res = await clerk.authenticateWithGoogleOneTap({
           token: credential,
         });
+
+        /* For Google One Tap both sign-in and sign-up always return
+           status='complete' with a createdSessionId — Google provides
+           all required fields. We bypass handleGoogleOneTapCallback
+           (which may not call customNavigate reliably) and instead call
+           setActive directly, then trigger a full page reload so that
+           AuthProvider re-initialises and runs the Clerk→Sanctum token
+           exchange before the protected page renders. */
+        if (res.status === 'complete' && res.createdSessionId) {
+          await clerk.setActive({ session: res.createdSessionId });
+          window.location.href = '/home';
+          return;
+        }
+
+        /* Non-complete status (edge case: Clerk needs more steps).
+           Fall back to the standard callback handler. */
         await clerk.handleGoogleOneTapCallback(
           res,
           {
@@ -51,10 +67,6 @@ export function GoogleOneTap() {
             signUpFallbackRedirectUrl: '/home',
           },
           async (to: string) => {
-            /* Full page reload — required so AuthProvider re-initialises
-               and completes the Clerk→Sanctum token exchange before the
-               protected page renders. Client-side router.push() is not
-               sufficient because it skips the AuthProvider boot sequence. */
             window.location.href = to || '/home';
           }
         );
