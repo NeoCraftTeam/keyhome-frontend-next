@@ -3,7 +3,6 @@
 import { useAuth } from '@/providers/AuthProvider';
 import { useClerk } from '@clerk/nextjs';
 import Script from 'next/script';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef } from 'react';
 import type {
   CredentialResponse,
@@ -11,6 +10,7 @@ import type {
 } from 'google-one-tap';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+const PROMPT_PARENT_ID = 'google-one-tap-prompt';
 
 /**
  * Renders the Google One Tap prompt on the client-facing login page.
@@ -21,8 +21,15 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
  * - Authenticates through Clerk (authenticateWithGoogleOneTap +
  *   handleGoogleOneTapCallback) to remain consistent with the existing
  *   Clerk → Sanctum exchange flow handled by AuthProvider.
- * - Uses Next.js client-side navigation via customNavigate (no full
- *   page reload on sign-in).
+ * - Uses window.location.href (full page reload) after sign-in so that
+ *   AuthProvider re-initializes and completes the Clerk→Sanctum exchange
+ *   before rendering protected pages. router.push is insufficient here
+ *   because it is client-side and Sanctum exchange may not have finished.
+ * - auto_select: true — auto-signs in when there is exactly one Google
+ *   account in the browser with an active session (no extra click needed).
+ * - prompt_parent_id anchors the floating popup to a div rendered inside
+ *   the form column, keeping it aligned with the page rather than in the
+ *   browser-level top-right corner.
  * - NOT included on /owner/login — new users via One Tap are always
  *   created as CUSTOMER; agents must register via the owner flow.
  * - GSI script loaded with strategy="afterInteractive" to avoid
@@ -32,7 +39,6 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
  */
 export function GoogleOneTap() {
   const clerk = useClerk();
-  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const initializedRef = useRef(false);
 
@@ -49,14 +55,21 @@ export function GoogleOneTap() {
             signUpFallbackRedirectUrl: '/home',
           },
           async (to: string) => {
-            router.push(to);
+            /* Full page reload — required so AuthProvider re-initialises
+               and completes the Clerk→Sanctum token exchange before the
+               protected page renders. Client-side router.push() is not
+               sufficient because it skips the AuthProvider boot sequence. */
+            window.location.href = to || '/home';
           }
         );
-      } catch {
+      } catch (err) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[GoogleOneTap] auth failed:', err);
+        }
         window.google?.accounts.id.cancel();
       }
     },
-    [clerk, router]
+    [clerk]
   );
 
   const initAndPrompt = useCallback(() => {
@@ -73,15 +86,33 @@ export function GoogleOneTap() {
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: handleCredential,
-      auto_select: false,
+      auto_select: true,
       cancel_on_tap_outside: true,
       itp_support: true,
+      prompt_parent_id: PROMPT_PARENT_ID,
     });
 
     window.google.accounts.id.prompt(
       (notification: PromptMomentNotification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          /* Silent — One Tap unavailable in this browser/context */
+        if (process.env.NODE_ENV === 'development') {
+          if (notification.isNotDisplayed()) {
+            console.warn(
+              '[GoogleOneTap] Not displayed:',
+              notification.getNotDisplayedReason()
+            );
+          } else if (notification.isSkippedMoment()) {
+            console.warn(
+              '[GoogleOneTap] Skipped:',
+              notification.getSkippedReason()
+            );
+          } else if (notification.isDismissedMoment()) {
+            console.info(
+              '[GoogleOneTap] Dismissed:',
+              notification.getDismissedReason()
+            );
+          } else {
+            console.info('[GoogleOneTap] Displayed ✓');
+          }
         }
       }
     );
@@ -106,11 +137,19 @@ export function GoogleOneTap() {
   if (!GOOGLE_CLIENT_ID) return null;
 
   return (
-    <Script
-      src="https://accounts.google.com/gsi/client"
-      strategy="afterInteractive"
-      onLoad={initAndPrompt}
-      data-testid="google-one-tap-script"
-    />
+    <>
+      {/* Anchor div — Google renders the One Tap floating prompt relative
+          to this element instead of the browser-level top-right corner. */}
+      <div
+        id={PROMPT_PARENT_ID}
+        style={{ position: 'relative', height: 0, overflow: 'visible' }}
+      />
+      <Script
+        src="https://accounts.google.com/gsi/client"
+        strategy="afterInteractive"
+        onLoad={initAndPrompt}
+        data-testid="google-one-tap-script"
+      />
+    </>
   );
 }
