@@ -83,6 +83,8 @@ function buildCsp(nonce: string): string {
     'https://*.googletagmanager.com',
     // Payments
     'https://api.flutterwave.com',
+    // Google One Tap — token exchange XHR
+    'https://accounts.google.com',
     // Storage
     'https://*.r2.dev',
     // App domains
@@ -111,20 +113,20 @@ function buildCsp(nonce: string): string {
     // 'unsafe-inline' is intentionally omitted — nonce supersedes it.
     // Vercel injects _vercel/insights/script.js dynamically (no nonce); 'self' covers same-origin
     // scripts. va.vercel-scripts.com is Vercel Web Analytics CDN.
-    `script-src 'self' 'unsafe-inline' 'nonce-${nonce}'${scriptSrcEvalOrStrict ? ` ${scriptSrcEvalOrStrict}` : ''} https://api.mapbox.com https://*.clerk.accounts.dev${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:`,
+    `script-src 'self' 'unsafe-inline' 'nonce-${nonce}'${scriptSrcEvalOrStrict ? ` ${scriptSrcEvalOrStrict}` : ''} https://api.mapbox.com https://*.clerk.accounts.dev${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://accounts.google.com https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:`,
 
     // style-src: 'unsafe-inline' only — no nonce.
     // CSP3 spec: when a nonce is present in style-src, 'unsafe-inline' is silently ignored,
     // which blocks all Emotion/MUI <style> tags that don't carry the nonce.
     // Since MUI injects many unnonce'd styles, we keep 'unsafe-inline' here without a nonce.
     // The nonce is only applied to script-src where it is effective and needed.
-    `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
+    `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://accounts.google.com https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
     `font-src 'self' https://fonts.gstatic.com https://ray.st https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
     "worker-src 'self' blob:",
-    `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev ${apiOrigin} ${backendOrigin}`,
+    `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev https://lh3.googleusercontent.com ${apiOrigin} ${backendOrigin}`,
 
     `connect-src ${connectSources}`,
-    `frame-src https://*.clerk.accounts.dev https://*.clerk.com${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://challenges.cloudflare.com https://checkout.flutterwave.com https://vercel.live https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
+    `frame-src https://*.clerk.accounts.dev https://*.clerk.com${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://challenges.cloudflare.com https://checkout.flutterwave.com https://vercel.live https://accounts.google.com https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
     "frame-ancestors 'none'",
   ];
 
