@@ -9,6 +9,10 @@ import type {
   PromptMomentNotification,
 } from 'google-one-tap';
 
+/** Sentinel ID — IntersectionObserver watches this to detect when the
+ *  component is truly visible (not hidden behind splash / overlay). */
+const SENTINEL_ID = 'google-one-tap-sentinel';
+
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 /**
@@ -37,29 +41,32 @@ export function GoogleOneTap() {
   const clerk = useClerk();
   const { isAuthenticated } = useAuth();
   const initializedRef = useRef(false);
+  const promptFiredRef = useRef(false);
 
   const handleCredential = useCallback(
     async ({ credential }: CredentialResponse) => {
+      console.log('[GoogleOneTap] 1 — credential received');
       try {
         const res = await clerk.authenticateWithGoogleOneTap({
           token: credential,
         });
 
-        /* For Google One Tap both sign-in and sign-up always return
-           status='complete' with a createdSessionId — Google provides
-           all required fields. We bypass handleGoogleOneTapCallback
-           (which may not call customNavigate reliably) and instead call
-           setActive directly, then trigger a full page reload so that
-           AuthProvider re-initialises and runs the Clerk→Sanctum token
-           exchange before the protected page renders. */
+        console.log('[GoogleOneTap] 2 — authenticateWithGoogleOneTap result:', {
+          status: res.status,
+          createdSessionId: res.createdSessionId,
+        });
+
         if (res.status === 'complete' && res.createdSessionId) {
+          console.log('[GoogleOneTap] 3 — calling setActive…');
           await clerk.setActive({ session: res.createdSessionId });
+          console.log('[GoogleOneTap] 4 — setActive OK, navigating to /home');
           window.location.href = '/home';
           return;
         }
 
-        /* Non-complete status (edge case: Clerk needs more steps).
-           Fall back to the standard callback handler. */
+        console.warn(
+          '[GoogleOneTap] 3 — non-complete status, falling back to handleGoogleOneTapCallback'
+        );
         await clerk.handleGoogleOneTapCallback(
           res,
           {
@@ -67,37 +74,32 @@ export function GoogleOneTap() {
             signUpFallbackRedirectUrl: '/home',
           },
           async (to: string) => {
+            console.log('[GoogleOneTap] fallback navigate to:', to);
             window.location.href = to || '/home';
           }
         );
       } catch (err) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[GoogleOneTap] auth failed:', err);
-        }
+        console.error('[GoogleOneTap] ERROR:', err);
         window.google?.accounts.id.cancel();
       }
     },
     [clerk]
   );
 
-  const initAndPrompt = useCallback(() => {
+  /** firePrompt — calls prompt() only when component is truly visible.
+   *  Called by IntersectionObserver once the sentinel enters the viewport
+   *  (intersection ratio > 0 only when no ancestor has visibility:hidden). */
+  const firePrompt = useCallback(() => {
     if (
       !GOOGLE_CLIENT_ID ||
       isAuthenticated ||
-      initializedRef.current ||
+      !initializedRef.current ||
+      promptFiredRef.current ||
       !window.google?.accounts?.id
     )
       return;
 
-    initializedRef.current = true;
-
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleCredential,
-      auto_select: true,
-      cancel_on_tap_outside: true,
-      itp_support: true,
-    });
+    promptFiredRef.current = true;
 
     window.google.accounts.id.prompt(
       (notification: PromptMomentNotification) => {
@@ -123,7 +125,59 @@ export function GoogleOneTap() {
         }
       }
     );
-  }, [handleCredential, isAuthenticated]);
+  }, [isAuthenticated]);
+
+  /** initGsi — called from Script onLoad. Initializes the GSI client only;
+   *  does NOT call prompt() directly. The IntersectionObserver effect below
+   *  calls firePrompt() once the sentinel is actually visible, preventing the
+   *  popup from appearing while the auth layout splash overlay is active. */
+  const initGsi = useCallback(() => {
+    if (
+      !GOOGLE_CLIENT_ID ||
+      isAuthenticated ||
+      initializedRef.current ||
+      !window.google?.accounts?.id
+    )
+      return;
+
+    initializedRef.current = true;
+
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleCredential,
+      auto_select: true,
+      cancel_on_tap_outside: true,
+      itp_support: true,
+    });
+
+    /* Attempt to prompt immediately — will be a no-op if the sentinel is not
+       yet visible; the IntersectionObserver below fires the real prompt. */
+    firePrompt();
+  }, [handleCredential, isAuthenticated, firePrompt]);
+
+  /** IntersectionObserver — fires firePrompt() as soon as the sentinel enters
+   *  the viewport. Elements with a visibility:hidden ancestor have intersection
+   *  ratio = 0 (per spec), so this correctly defers the prompt until the
+   *  splash overlay is dismissed and the login page is fully visible. */
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || isAuthenticated) return;
+
+    const sentinel = document.getElementById(SENTINEL_ID);
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          firePrompt();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0 }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [isAuthenticated, firePrompt]);
 
   /* Cancel + reset if the user becomes authenticated while on the page */
   useEffect(() => {
@@ -144,11 +198,23 @@ export function GoogleOneTap() {
   if (!GOOGLE_CLIENT_ID) return null;
 
   return (
-    <Script
-      src="https://accounts.google.com/gsi/client"
-      strategy="afterInteractive"
-      onLoad={initAndPrompt}
-      data-testid="google-one-tap-script"
-    />
+    <>
+      {/* Sentinel — IntersectionObserver watches this 1px element.
+          When the auth-layout splash overlay sets visibility:hidden on the
+          ancestor, the intersection ratio is 0 and prompt() is deferred.
+          Once the splash completes and the login page is visible, the
+          observer fires firePrompt(). */}
+      <span
+        id={SENTINEL_ID}
+        aria-hidden
+        style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}
+      />
+      <Script
+        src="https://accounts.google.com/gsi/client"
+        strategy="afterInteractive"
+        onLoad={initGsi}
+        data-testid="google-one-tap-script"
+      />
+    </>
   );
 }
