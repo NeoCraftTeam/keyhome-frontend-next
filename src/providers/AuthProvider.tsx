@@ -14,6 +14,7 @@ import {
   persistInMemoryToken,
   registerInMemoryGetter,
   setRoleCookie,
+  hasSessionHint,
 } from '@/lib/auth-session';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
@@ -176,9 +177,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        const hasBearer = Boolean(getInMemoryToken());
+
+        // Skip the cookie-auth /me when there is no Bearer and no session hint.
+        // For cross-origin PWA deployments a Sanctum session cookie is never
+        // present for visitors who have not previously logged in — without this
+        // guard every unauthenticated page-load fires a guaranteed-401 GET /me.
+        if (!hasBearer && !hasSessionHint()) {
+          registerTokenGetter(() => Promise.resolve(null));
+          setToken(null);
+          setUserState(null);
+          clearRoleCookie();
+          setIsExchanging(false);
+          setHasResolvedInitialAuth(true);
+          return;
+        }
+
         // --- Session-first (cookie) when no Bearer; else Bearer (SPA ↔ API cross-origin) ---
         try {
-          const hasBearer = Boolean(getInMemoryToken());
           if (hasBearer) {
             registerInMemoryGetter();
           } else {

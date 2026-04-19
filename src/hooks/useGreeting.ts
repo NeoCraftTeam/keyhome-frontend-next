@@ -2,9 +2,12 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 const RETURN_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 heures
+
+/** sessionStorage key — cleared on logout (wipeBrowserStoragesForLogout calls sessionStorage.clear()). */
+const HOME_TRACKED_KEY = 'kh_home_tracked';
 
 function getTimeBasedGreeting(): string {
   const hour = new Date().getHours();
@@ -19,9 +22,15 @@ function getTimeBasedGreeting(): string {
  * - "Bon retour parmi nous" when user hasn't visited home in 24h+ (from backend)
  */
 export function useGreeting(): string {
-  const { user, isAuthenticated, refreshUser } = useAuth();
+  const { user, isAuthenticated, setUser } = useAuth();
   const [greeting, setGreeting] = useState(getTimeBasedGreeting);
-  const trackedRef = useRef(false);
+  const userRef = useRef(user);
+
+  // Keep ref in sync via useLayoutEffect so the async .then() callback always
+  // has the latest user without adding `user` to the effect dependency array.
+  useLayoutEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
@@ -37,16 +46,25 @@ export function useGreeting(): string {
 
     setGreeting(isReturning ? 'Bon retour parmi nous' : getTimeBasedGreeting());
 
-    if (!trackedRef.current) {
-      trackedRef.current = true;
+    // Use sessionStorage instead of useRef so the flag survives React Strict
+    // Mode's double-mount and component remounts within the same browser tab.
+    if (
+      typeof window !== 'undefined' &&
+      !sessionStorage.getItem(HOME_TRACKED_KEY)
+    ) {
+      sessionStorage.setItem(HOME_TRACKED_KEY, '1');
       authService
         .trackHomeVisit()
-        .then(() => refreshUser())
+        .then(({ last_home_visit_at }) => {
+          // Update the user locally — avoids a redundant GET /me round-trip.
+          const current = userRef.current;
+          if (current) setUser({ ...current, last_home_visit_at });
+        })
         .catch(() => {
           /* ignore */
         });
     }
-  }, [isAuthenticated, user?.last_home_visit_at, refreshUser]);
+  }, [isAuthenticated, user, setUser]);
 
   return greeting;
 }

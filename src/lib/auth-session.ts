@@ -49,17 +49,42 @@ export function clearSanctumInMemoryOnly(): void {
   clientInMemoryToken = null;
 }
 
+/* ── Session hint ───────────────────────────────────────────── */
+
+/**
+ * A lightweight localStorage flag that signals a Sanctum session was previously
+ * established in this browser. Used by AuthProvider to skip a guaranteed-401
+ * cookie-auth GET /me for visitors who have never logged in.
+ *
+ * Automatically cleared by {@link wipeBrowserStoragesForLogout} (calls localStorage.clear()).
+ */
+const KH_SESSION_HINT_KEY = 'kh_has_session';
+
+function persistSessionHint(): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(KH_SESSION_HINT_KEY, '1');
+  }
+}
+
+/** True if this browser has had an active Sanctum session before (survives page reload). */
+export function hasSessionHint(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(KH_SESSION_HINT_KEY) !== null;
+}
+
 /* ── Session persistence ─────────────────────────────────────────── */
 
 /** Store a Sanctum token in the owner slot (never localStorage). */
 export function persistOwnerToken(sanctumToken: string): void {
   ownerInMemoryToken = sanctumToken;
+  persistSessionHint();
   registerTokenGetter(async () => getActiveToken());
 }
 
 /** Store a Sanctum token in the client slot (never localStorage). */
 export function persistClientToken(sanctumToken: string): void {
   clientInMemoryToken = sanctumToken;
+  persistSessionHint();
   registerTokenGetter(async () => getActiveToken());
 }
 
