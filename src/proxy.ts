@@ -61,10 +61,25 @@ function buildCsp(nonce: string): string {
 
   const isDev = process.env.NODE_ENV === 'development';
 
+  // Build Reverb WebSocket URL from env vars for CSP connect-src
+  const reverbHost = process.env.NEXT_PUBLIC_REVERB_HOST || 'localhost';
+  const reverbPort = process.env.NEXT_PUBLIC_REVERB_PORT || '8080';
+  // Include both ws:// and wss:// — Echo may use either depending on page protocol or forceTLS
+  const reverbWsOrigin = `ws://${reverbHost}:${reverbPort}`;
+  const reverbWssOrigin = `wss://${reverbHost}:${reverbPort}`;
+
   const connectSources = [
     "'self'",
     'blob:',
     'data:',
+    // Laravel Reverb WebSocket (local dev + production)
+    // In dev: bare ws:/wss: schemes allow all WS origins (env vars may not inline in Edge Runtime)
+    ...(isDev ? ['ws:', 'wss:'] : []),
+    reverbWsOrigin,
+    reverbWssOrigin,
+    'wss://*.keyhome.app',
+    'wss://*.keyhome.neocraft.dev',
+    'wss://*.neocraft.dev',
     // Mapbox
     'https://api.mapbox.com',
     'https://events.mapbox.com',
@@ -85,8 +100,9 @@ function buildCsp(nonce: string): string {
     'https://api.flutterwave.com',
     // Google One Tap — token exchange XHR
     'https://accounts.google.com',
-    // Storage
+    // Storage (R2 public bucket + signed URLs)
     'https://*.r2.dev',
+    'https://*.r2.cloudflarestorage.com',
     // App domains
     // *.keyhome.app  covers api.keyhome.app, www.keyhome.app, etc. (one level)
     // *.keyhome.neocraft.dev covers api.keyhome.neocraft.dev, preview.keyhome.neocraft.dev, etc.
@@ -123,7 +139,7 @@ function buildCsp(nonce: string): string {
     `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://accounts.google.com https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
     `font-src 'self' https://fonts.gstatic.com https://ray.st https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
     "worker-src 'self' blob:",
-    `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev https://lh3.googleusercontent.com ${apiOrigin} ${backendOrigin}`,
+    `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev https://*.r2.cloudflarestorage.com https://lh3.googleusercontent.com ${apiOrigin} ${backendOrigin}`,
 
     `connect-src ${connectSources}`,
     `frame-src https://*.clerk.accounts.dev https://*.clerk.com${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://challenges.cloudflare.com https://checkout.flutterwave.com https://vercel.live https://accounts.google.com https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,

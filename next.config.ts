@@ -88,8 +88,9 @@ const connectSources = [
   'https://*.googletagmanager.com',
   // Flutterwave
   'https://api.flutterwave.com',
-  // Cloudflare R2 public CDN — panorama viewer fetches images via XHR (needs connect-src)
+  // Cloudflare R2 public CDN + signed URLs (panorama viewer fetches images via XHR)
   'https://*.r2.dev',
+  'https://*.r2.cloudflarestorage.com',
   apiOrigin,
   // Laravel backend origin — tour image proxy URLs are generated from APP_URL (may differ from apiOrigin)
   backendOrigin,
@@ -170,6 +171,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: '**.r2.dev',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.r2.cloudflarestorage.com',
       },
     ],
   },
