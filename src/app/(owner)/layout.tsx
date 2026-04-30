@@ -9,6 +9,7 @@ import CookieBanner from '@/components/ui/CookieBanner';
 import SkipLink from '@/components/ui/SkipLink';
 import { OwnerThemeProvider } from '@/providers/OwnerThemeProvider';
 import ToastProvider from '@/providers/ToastProvider';
+import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
 
 export default function OwnerLayout({
   children,
@@ -25,6 +26,8 @@ export default function OwnerLayout({
             <OwnerLayoutClient>{children}</OwnerLayoutClient>
             <OwnerPWAInstallPrompt />
             <CookieBanner variant="owner" />
+            {/* Mounted inside OwnerThemeProvider so the modal inherits teal primary. */}
+            <SessionTimeoutGuard />
           </ErrorBoundary>
         </ConfirmDialogProvider>
       </ToastProvider>

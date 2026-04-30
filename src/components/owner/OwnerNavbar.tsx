@@ -234,22 +234,21 @@ export default function OwnerNavbar() {
                 </Typography>
               </Box>
               <Divider />
-              {isMobile && (
-                <>
-                  <MenuItem
-                    onClick={() => {
-                      setAnchorEl(null);
-                      router.push('/owner/ads/new');
-                    }}
-                  >
-                    <AddCircleOutlineIcon
-                      sx={{ mr: 1.5, fontSize: 22, color: 'primary.main' }}
-                    />
-                    Nouvelle annonce
-                  </MenuItem>
-                  <Divider />
-                </>
-              )}
+              {isMobile && [
+                <MenuItem
+                  key="new-ad"
+                  onClick={() => {
+                    setAnchorEl(null);
+                    router.push('/owner/ads/new');
+                  }}
+                >
+                  <AddCircleOutlineIcon
+                    sx={{ mr: 1.5, fontSize: 22, color: 'primary.main' }}
+                  />
+                  Nouvelle annonce
+                </MenuItem>,
+                <Divider key="new-ad-div" />,
+              ]}
               {moreNavItems.map((item) => {
                 const isActive =
                   pathname === item.href ||

@@ -1,7 +1,7 @@
 // KeyHome Service Worker v3
 // Push + Background Sync + Caching strategy for full offline/PWA support.
 
-const VERSION      = "v5";
+const VERSION      = "v8";
 const STATIC_CACHE = `kh-static-${VERSION}`;
 const API_CACHE    = `kh-api-${VERSION}`;
 const NAV_CACHE    = `kh-nav-${VERSION}`;
@@ -121,23 +121,27 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   if (!url.protocol.startsWith("http")) return;
 
+  // Skip cross-origin requests entirely — let the browser handle CORS natively.
+  // In dev the API is on a different origin (e.g. keyhome.test vs localhost:3000);
+  // intercepting it causes "ServiceWorker passed an Error Response" CORS failures.
+  if (url.origin !== self.location.origin) return;
+
   // 1. Cacheable read-only API calls → network-first (serve stale when offline).
-  // Checked BEFORE the same-origin guard so cross-origin backend deployments
-  // (e.g. api.keyhome.app serving keyhome.app) are also cached correctly.
   if (isCacheableApi(url.pathname)) {
     event.respondWith(networkFirst(request, API_CACHE));
     return;
   }
 
-  // Remaining strategies only apply to same-origin resources
-  if (url.origin !== self.location.origin) return;
-
   // 2. Immutable Next.js build output + static assets → cache-first
+  //    Skip _next/static/ on localhost — Turbopack serves fresh compilations
+  //    and cache-first would serve stale bundles after code changes.
+  const isDevServer = url.hostname === "localhost" || url.hostname === "127.0.0.1";
   if (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/icons/") ||
     url.pathname.startsWith("/images/")
   ) {
+    if (isDevServer && url.pathname.startsWith("/_next/static/")) return;
     event.respondWith(cacheFirst(request, STATIC_CACHE));
     return;
   }
@@ -150,6 +154,13 @@ self.addEventListener("fetch", (event) => {
 });
 
 // ─── Push Notifications ─────────────────────────────────────────────────────
+// Single push handler covers both:
+//   - Web-Push (raw VAPID) — payload as posted by the backend
+//   - FCM — payload wrapped under `notification` / `data` keys
+//
+// Chat messages from the backend send `data.type = 'chat_message'` with
+// `data.conversation_uuid` and `data.role` so we can build a panel-aware
+// deep-link without server-side branching.
 self.addEventListener("push", (event) => {
   let data = {
     title: "KeyHome",
@@ -164,6 +175,25 @@ self.addEventListener("push", (event) => {
     try {
       const payload = event.data.json();
       data = { ...data, ...payload };
+      // FCM wraps title/body inside a 'notification' sub-object.
+      if (payload.notification?.title) data.title = payload.notification.title;
+      if (payload.notification?.body)  data.body  = payload.notification.body;
+
+      // Merge FCM data payload into our `data.data` (deep-link URL, type, etc.).
+      const fcmData = payload.data || {};
+      data.data = { ...(data.data || {}), ...fcmData };
+
+      // Chat-message push: build deep-link if not already set.
+      if (fcmData.type === 'chat_message' && fcmData.conversation_uuid) {
+        const isOwner = fcmData.role === 'agent' || fcmData.role === 'admin';
+        const base = isOwner ? '/owner/messages' : '/messages';
+        if (!data.data.url) {
+          data.data.url = `${base}/${fcmData.conversation_uuid}`;
+        }
+        // Stack pushes per-conversation so multiple messages collapse.
+        data.tag = `chat-${fcmData.conversation_uuid}`;
+        data.renotify = true;
+      }
     } catch {
       data.body = event.data.text();
     }
@@ -175,6 +205,7 @@ self.addEventListener("push", (event) => {
       icon: data.icon,
       badge: data.badge,
       tag: data.tag,
+      renotify: data.renotify || false,
       vibrate: [200, 100, 200],
       requireInteraction: false,
       actions: data.actions || [],

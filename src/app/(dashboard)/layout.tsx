@@ -17,8 +17,14 @@ import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
 import PushPrompt from '@/components/ui/PushPrompt';
 import WelcomeModal from '@/components/ui/WelcomeModal';
+import ToastProvider from '@/providers/ToastProvider';
+import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
+import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
+import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
+import { useFcmToken } from '@/hooks/useFcmToken';
 import { useAuth } from '@/providers/AuthProvider';
 import { surveysService } from '@/services/surveys.service';
+import { UserRole } from '@/types';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
@@ -28,6 +34,12 @@ import { useCallback, useEffect, useState } from 'react';
 /** Silently warms up the geolocation cache on first visit so ad-detail maps are instant */
 function LocationPrimer() {
   useUserLocation();
+  return null;
+}
+
+/** Registers Firebase FCM token for push notifications (no-op if permission denied) */
+function FcmRegistrar() {
+  useFcmToken();
   return null;
 }
 
@@ -178,6 +190,19 @@ export default function DashboardLayout({
       }
       router.replace('/login');
     }
+
+    // Cross-panel guard: owners/agents must not use client-private paths.
+    // Redirect them to the owner dashboard instead.
+    const OWNER_ROLES = [UserRole.AGENT, UserRole.ADMIN];
+    if (
+      isPrivatePage &&
+      !isLoading &&
+      isAuthenticated &&
+      user?.role &&
+      OWNER_ROLES.includes(user.role)
+    ) {
+      router.replace('/owner/dashboard');
+    }
   }, [
     isAuthenticated,
     isLoading,
@@ -185,6 +210,7 @@ export default function DashboardLayout({
     router,
     pathname,
     isPrivatePage,
+    user?.role,
   ]);
 
   // On first page load, wait until auth has fully resolved before rendering.
@@ -213,60 +239,106 @@ export default function DashboardLayout({
     return null;
   }
 
+  // Chat page detection — immersive full-screen on mobile conversation detail
+  const isConversationPage = /^\/messages\/[^/]+/.test(pathname ?? '');
+  const isMessagesPage = pathname?.startsWith('/messages') ?? false;
+  const hideNavForChat = isMobile && isConversationPage;
+
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        bgcolor: 'background.default',
-      }}
-    >
-      <SkipLink />
-      <LocationPrimer />
-      <Navbar />
+    <ToastProvider>
       <Box
-        component="main"
-        id="main-content"
-        tabIndex={-1}
         sx={{
-          flex: 1,
-          pb: isMobile && isStandalone ? `${BOTTOM_NAV_HEIGHT}px` : 0,
+          display: 'flex',
+          flexDirection: 'column',
+          // Messages pages need fixed height so flex children can fill correctly;
+          // other pages use minHeight to allow natural scrolling.
+          ...(isMessagesPage
+            ? { height: '100dvh', overflow: 'hidden' }
+            : { minHeight: '100vh' }),
+          bgcolor: 'background.default',
         }}
       >
-        <ErrorBoundary>
-          <PageTransition>{children}</PageTransition>
-        </ErrorBoundary>
+        <SkipLink />
+        <LocationPrimer />
+        {isAuthenticated && <FcmRegistrar />}
+        {isAuthenticated && <GlobalPresenceChannel />}
+        {isAuthenticated && <ChatNotificationListener accentColor="#F6475F" />}
+        {!hideNavForChat && <Navbar />}
+        <Box
+          component="main"
+          id="main-content"
+          tabIndex={-1}
+          sx={{
+            flex: 1,
+            minHeight: 0, // flex child trick: allow shrinking below content size
+            ...(isMessagesPage
+              ? {
+                  // Messages pages: absolute-positioned inner wrapper guarantees
+                  // a definite height context for the chat flex chain.
+                  position: 'relative',
+                  overflow: 'hidden',
+                }
+              : {
+                  display: 'flex',
+                  flexDirection: 'column',
+                }),
+            pb:
+              !hideNavForChat && isMobile && isStandalone
+                ? `${BOTTOM_NAV_HEIGHT}px`
+                : 0,
+          }}
+        >
+          {isMessagesPage ? (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              <ErrorBoundary>
+                <PageTransition>{children}</PageTransition>
+              </ErrorBoundary>
+            </Box>
+          ) : (
+            <ErrorBoundary>
+              <PageTransition>{children}</PageTransition>
+            </ErrorBoundary>
+          )}
+        </Box>
+        {!isMobile && !isMessagesPage && <Footer />}
+        {!hideNavForChat && <BottomNav />}
+        {surveyMounted &&
+          isAuthenticated &&
+          !isSurveyPage &&
+          !activeSurveyError &&
+          activeSurvey &&
+          surveyAnsweredData?.has_answered === false &&
+          pushPromptReady &&
+          tourDismissed && (
+            <SurveyPromptOrBanner
+              surveyId={activeSurvey.id}
+              surveySlug={activeSurvey.slug}
+              title="Votre avis compte !"
+              description={
+                activeSurvey.description ??
+                'Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience.'
+              }
+              onPostponed={handleSurveyPostponed}
+              isPostponed={
+                surveyPostponed[activeSurvey.id] ??
+                getSurveyPostponed(activeSurvey.id, user)
+              }
+              bottomOffset={BOTTOM_NAV_HEIGHT}
+            />
+          )}
+        <PushPrompt />
+        <WelcomeModal />
+        <LogoutOverlay />
+        {isAuthenticated && <SessionTimeoutGuard />}
       </Box>
-      {!isMobile && <Footer />}
-      <BottomNav />
-      {surveyMounted &&
-        isAuthenticated &&
-        !isSurveyPage &&
-        !activeSurveyError &&
-        activeSurvey &&
-        surveyAnsweredData?.has_answered === false &&
-        pushPromptReady &&
-        tourDismissed && (
-          <SurveyPromptOrBanner
-            surveyId={activeSurvey.id}
-            surveySlug={activeSurvey.slug}
-            title="Votre avis compte !"
-            description={
-              activeSurvey.description ??
-              'Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience.'
-            }
-            onPostponed={handleSurveyPostponed}
-            isPostponed={
-              surveyPostponed[activeSurvey.id] ??
-              getSurveyPostponed(activeSurvey.id, user)
-            }
-            bottomOffset={BOTTOM_NAV_HEIGHT}
-          />
-        )}
-      <PushPrompt />
-      <WelcomeModal />
-      <LogoutOverlay />
-    </Box>
+    </ToastProvider>
   );
 }

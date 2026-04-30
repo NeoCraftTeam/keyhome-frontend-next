@@ -9,6 +9,7 @@ import { useNavbarState } from '@/hooks/useNavbarState';
 import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { ChatBadgeIcon } from '@/components/chat/ChatBadgeIcon';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
@@ -302,6 +303,16 @@ export default function Navbar() {
                     </Button>
                   )}
                 {!isMobile && <CreditsWidget />}
+
+                {isAuthenticated && (
+                  <IconButton
+                    aria-label="Messagerie"
+                    onClick={() => router.push('/messages')}
+                    sx={{ width: 40, height: 40 }}
+                  >
+                    <ChatBadgeIcon />
+                  </IconButton>
+                )}
 
                 {isMobile ? (
                   <IconButton
