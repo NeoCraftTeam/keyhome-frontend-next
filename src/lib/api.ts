@@ -1,4 +1,5 @@
 import { getAuthToken } from '@/lib/auth-token';
+import { getEchoSocketId } from '@/lib/echo';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const API_URL =
@@ -16,6 +17,7 @@ const AUTH_ROUTES = [
   '/auth/verify-email-otp',
   '/auth/resend-verification',
   '/auth/logout', // 401 here means session already expired; logout handles its own cleanup
+  '/auth/refresh', // Session-timeout guard handles its own failure (shows error state → logout)
   '/auth/webauthn/login', // Passkey login verify is unauthenticated
   '/auth/webauthn/login/options', // Passkey login options is unauthenticated
 ];
@@ -79,6 +81,22 @@ export function resetCsrfState(): void {
 }
 
 /* ---------- Request interceptors ---------- */
+
+// Attach the Pusher socket ID when the Echo singleton is already connected.
+// This enables Laravel's ->toOthers() to exclude the sender's own socket from
+// broadcasts, preventing the sender from receiving their own WS events.
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    if (typeof window !== 'undefined') {
+      const socketId = getEchoSocketId();
+      if (socketId && config.headers) {
+        config.headers['X-Socket-Id'] = socketId;
+      }
+    }
+    return config;
+  },
+  (error: AxiosError) => Promise.reject(error)
+);
 
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {

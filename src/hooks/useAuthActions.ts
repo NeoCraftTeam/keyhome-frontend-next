@@ -19,6 +19,7 @@ import {
   wipeBrowserStoragesForLogout,
 } from '@/lib/auth-session';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
+import { disconnectEcho } from '@/lib/echo';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
 
@@ -252,6 +253,7 @@ export function useAuthActions({
       }
 
       // 3) Client: React Query + in-memory Sanctum, role cookie, full storage wipe.
+      disconnectEcho();
       clearSession();
       setUserState(null);
       clearRoleCookie();
