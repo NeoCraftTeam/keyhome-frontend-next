@@ -100,6 +100,13 @@ function buildCsp(nonce: string): string {
     'https://api.flutterwave.com',
     // Google One Tap — token exchange XHR
     'https://accounts.google.com',
+    // Firebase Cloud Messaging (web push token registration)
+    // - firebaseinstallations.googleapis.com  → installation ID issuance
+    // - fcmregistrations.googleapis.com       → installation ID → push token
+    // - fcm.googleapis.com                    → fallback / legacy v1 register
+    'https://firebaseinstallations.googleapis.com',
+    'https://fcmregistrations.googleapis.com',
+    'https://fcm.googleapis.com',
     // Storage (R2 public bucket + signed URLs)
     'https://*.r2.dev',
     'https://*.r2.cloudflarestorage.com',
