@@ -10,8 +10,11 @@ import {
   Box,
   CircularProgress,
   LinearProgress,
+  Alert,
+  Collapse,
 } from '@mui/material';
 import TimerOffIcon from '@mui/icons-material/TimerOff';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useState } from 'react';
 
 interface SessionTimeoutModalProps {
@@ -20,6 +23,8 @@ interface SessionTimeoutModalProps {
   countdownTotal: number;
   onExtend: () => void | Promise<void>;
   onLogout: () => void;
+  /** When true, the refresh failed — shows an error banner before redirect. */
+  refreshError?: boolean;
 }
 
 export default function SessionTimeoutModal({
@@ -28,12 +33,15 @@ export default function SessionTimeoutModal({
   countdownTotal,
   onExtend,
   onLogout,
+  refreshError = false,
 }: SessionTimeoutModalProps) {
   const [extending, setExtending] = useState(false);
 
   const progress = (secondsLeft / countdownTotal) * 100;
+  const isBlocked = extending || refreshError;
 
   const handleExtend = async () => {
+    if (isBlocked) return;
     setExtending(true);
     try {
       await onExtend();
@@ -47,9 +55,10 @@ export default function SessionTimeoutModal({
       open={open}
       maxWidth="xs"
       fullWidth
+      disableEscapeKeyDown
       slotProps={{
         backdrop: {
-          sx: { backdropFilter: 'blur(6px)', bgcolor: 'rgba(0,0,0,0.5)' },
+          sx: { backdropFilter: 'blur(6px)', bgcolor: 'rgba(0,0,0,0.55)' },
         },
       }}
       PaperProps={{
@@ -77,21 +86,13 @@ export default function SessionTimeoutModal({
             gap: 1,
           }}
         >
-          <Box
-            sx={{
-              position: 'relative',
-              display: 'inline-flex',
-              mb: 1,
-            }}
-          >
+          <Box sx={{ position: 'relative', display: 'inline-flex', mb: 1 }}>
             <CircularProgress
               variant="determinate"
               value={progress}
               size={72}
               thickness={3}
-              sx={{
-                color: progress > 30 ? 'warning.main' : 'error.main',
-              }}
+              sx={{ color: progress > 30 ? 'warning.main' : 'error.main' }}
             />
             <Box
               sx={{
@@ -117,39 +118,53 @@ export default function SessionTimeoutModal({
       </DialogTitle>
 
       <DialogContent sx={{ textAlign: 'center', pt: 1.5 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Votre session sera automatiquement fermée dans
-        </Typography>
-        <Typography
-          variant="h3"
-          fontWeight={800}
-          sx={{
-            color: progress > 30 ? 'warning.main' : 'error.main',
-            fontVariantNumeric: 'tabular-nums',
-            mb: 1,
-          }}
-        >
-          {secondsLeft}s
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          en raison d&apos;inactivité. Souhaitez-vous prolonger votre session ?
-        </Typography>
+        <Collapse in={refreshError} unmountOnExit>
+          <Alert
+            severity="error"
+            icon={<ErrorOutlineIcon fontSize="small" />}
+            sx={{ mb: 2, borderRadius: 2, textAlign: 'left' }}
+          >
+            <Typography variant="body2" fontWeight={600}>
+              Session expirée
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Votre session a expiré. Redirection vers la page de connexion…
+            </Typography>
+          </Alert>
+        </Collapse>
+
+        <Collapse in={!refreshError} unmountOnExit>
+          <>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Votre session sera automatiquement fermée dans
+            </Typography>
+            <Typography
+              variant="h3"
+              fontWeight={800}
+              sx={{
+                color: progress > 30 ? 'warning.main' : 'error.main',
+                fontVariantNumeric: 'tabular-nums',
+                mb: 1,
+              }}
+            >
+              {secondsLeft}s
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              en raison d&apos;inactivité. Souhaitez-vous prolonger votre
+              session ?
+            </Typography>
+          </>
+        </Collapse>
       </DialogContent>
 
       <DialogActions
-        sx={{
-          px: 3,
-          pb: 3,
-          pt: 1,
-          flexDirection: 'column',
-          gap: 1,
-        }}
+        sx={{ px: 3, pb: 3, pt: 1, flexDirection: 'column', gap: 1 }}
       >
         <Button
           fullWidth
           variant="contained"
           onClick={handleExtend}
-          disabled={extending}
+          disabled={isBlocked}
           sx={{
             textTransform: 'none',
             fontWeight: 700,
@@ -159,13 +174,21 @@ export default function SessionTimeoutModal({
               `linear-gradient(135deg, ${t.palette.primary.main}, ${t.palette.primary.dark})`,
           }}
         >
-          {extending ? 'Prolongation…' : 'Prolonger la session'}
+          {extending ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CircularProgress size={16} color="inherit" thickness={4} />
+              Prolongation…
+            </Box>
+          ) : (
+            'Prolonger la session'
+          )}
         </Button>
         <Button
           fullWidth
           variant="outlined"
           color="inherit"
           onClick={onLogout}
+          disabled={extending}
           sx={{
             textTransform: 'none',
             fontWeight: 600,

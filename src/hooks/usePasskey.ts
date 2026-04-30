@@ -8,7 +8,7 @@ import {
   webAuthnService,
 } from '@/services/webauthn.service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 /**
  * Hook for managing passkeys (list, register, rename, delete).
@@ -16,7 +16,10 @@ import { useCallback, useMemo, useState } from 'react';
  */
 export function usePasskeyManager() {
   const queryClient = useQueryClient();
-  const supported = useMemo(() => isWebAuthnSupported(), []);
+  const [supported, setSupported] = useState(false);
+  useEffect(() => {
+    setSupported(isWebAuthnSupported());
+  }, []);
 
   const {
     data: passkeys = [],
@@ -69,7 +72,10 @@ export function usePasskeyManager() {
  * Hook for passkey login — used on login pages.
  */
 export function usePasskeyLogin(loginContext: 'owner' | 'client' = 'client') {
-  const supported = useMemo(() => isWebAuthnSupported(), []);
+  const [supported, setSupported] = useState(false);
+  useEffect(() => {
+    setSupported(isWebAuthnSupported());
+  }, []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

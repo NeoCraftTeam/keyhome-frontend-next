@@ -69,8 +69,11 @@ const LandingThemeContext = createContext<LandingThemeTokens>({
 });
 
 export function LandingThemeProvider({ children }: { children: ReactNode }) {
-  const { mode, toggleTheme } = useThemeMode();
-  const isDark = mode === 'dark';
+  const { choice, toggleTheme } = useThemeMode();
+  // Landing page defaults to dark for marketing impact. Authenticated panels
+  // (client / owner) follow the resolved system mode; only the landing page
+  // overrides to dark unless the user has explicitly picked 'light'.
+  const isDark = choice !== 'light';
   const tokens = isDark ? DARK : LIGHT;
 
   return (

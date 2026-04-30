@@ -175,26 +175,45 @@ export const webAuthnService = {
       credential.response as AuthenticatorAssertionResponse;
 
     // Step 4: Send to backend with challenge token
-    const { data } = await api.post<LoginResponse>(
-      '/auth/webauthn/login',
-      {
-        id: credential.id,
-        rawId: bufferToB64u(credential.rawId),
-        type: credential.type,
-        response: {
-          clientDataJSON: bufferToB64u(assertionResponse.clientDataJSON),
-          authenticatorData: bufferToB64u(assertionResponse.authenticatorData),
-          signature: bufferToB64u(assertionResponse.signature),
-          userHandle: assertionResponse.userHandle
-            ? bufferToB64u(assertionResponse.userHandle)
-            : null,
+    let data: LoginResponse;
+    try {
+      const resp = await api.post<LoginResponse>(
+        '/auth/webauthn/login',
+        {
+          id: credential.id,
+          rawId: bufferToB64u(credential.rawId),
+          type: credential.type,
+          response: {
+            clientDataJSON: bufferToB64u(assertionResponse.clientDataJSON),
+            authenticatorData: bufferToB64u(
+              assertionResponse.authenticatorData
+            ),
+            signature: bufferToB64u(assertionResponse.signature),
+            userHandle: assertionResponse.userHandle
+              ? bufferToB64u(assertionResponse.userHandle)
+              : null,
+          },
+          login_context: loginContext,
         },
-        login_context: loginContext,
-      },
-      {
-        headers: { 'X-WebAuthn-Token': challengeToken },
+        {
+          headers: { 'X-WebAuthn-Token': challengeToken },
+        }
+      );
+      data = resp.data;
+    } catch (err: unknown) {
+      const axErr = err as {
+        response?: { status?: number; data?: { code?: string } };
+      };
+      if (
+        axErr.response?.status === 403 &&
+        axErr.response?.data?.code === 'ROLE_CONTEXT_MISMATCH'
+      ) {
+        throw new Error(
+          'Ce passkey est associé à un type de compte différent. Veuillez utiliser le bon portail de connexion.'
+        );
       }
-    );
+      throw err;
+    }
 
     // UserResource may wrap in a `data` key
     const rawUser = data.user as User & { data?: User };
