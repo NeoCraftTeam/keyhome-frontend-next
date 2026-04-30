@@ -18,6 +18,7 @@ import SubscriptionsIcon from '@mui/icons-material/Subscriptions';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import type { ReactNode } from 'react';
+import { ChatBadgeIcon } from '@/components/chat/ChatBadgeIcon';
 
 export interface NavItem {
   label: string;
@@ -28,9 +29,9 @@ export interface NavItem {
 /** Items shown in BottomNav (PWA) — customer */
 export const BOTTOM_NAV_ITEMS: NavItem[] = [
   { label: 'Rechercher', href: '/search', icon: <SearchIcon /> },
-  { label: 'Comparer', href: '/comparaisons', icon: <CompareArrowsIcon /> },
+  { label: 'Messages', href: '/messages', icon: <ChatBadgeIcon /> },
   { label: 'Carte', href: '/nearby', icon: <ExploreIcon /> },
-  { label: 'Prix', href: '/prix-marche', icon: <BarChartIcon /> },
+  { label: 'Comparer', href: '/comparaisons', icon: <CompareArrowsIcon /> },
   { label: 'Profil', href: '/profile', icon: <PersonIcon /> },
 ];
 
@@ -82,11 +83,7 @@ export const OWNER_NAV_ITEMS: NavItem[] = [
 export const OWNER_BOTTOM_NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/owner/dashboard', icon: <DashboardIcon /> },
   { label: 'Annonces', href: '/owner/ads', icon: <HomeIcon /> },
-  {
-    label: 'Disponibilités',
-    href: '/owner/availability',
-    icon: <CalendarMonthIcon />,
-  },
+  { label: 'Messages', href: '/owner/messages', icon: <ChatBadgeIcon /> },
   { label: 'Visites', href: '/owner/viewings', icon: <VisibilityIcon /> },
   { label: 'Profil', href: '/owner/profile', icon: <PersonIcon /> },
 ];
@@ -95,6 +92,7 @@ export const OWNER_BOTTOM_NAV_ITEMS: NavItem[] = [
 export const OWNER_SIDEBAR_NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/owner/dashboard', icon: <DashboardIcon /> },
   { label: 'Mes Annonces', href: '/owner/ads', icon: <HomeIcon /> },
+  { label: 'Messages', href: '/owner/messages', icon: <ChatBadgeIcon /> },
   { label: 'Locataires', href: '/owner/tenants', icon: <PeopleAltIcon /> },
   {
     label: 'Finances',

@@ -17,11 +17,15 @@ export default function MiniMetricSparkline({
   const chartData = data.map((value, i) => ({ i: String(i), value }));
   const max = Math.max(...data, 1);
 
+  if (data.length === 0) {
+    return <Box sx={{ width: '100%', height: CHART_H }} />;
+  }
+
   return (
     <Box
       sx={{ width: '100%', minWidth: 0, height: CHART_H, overflow: 'hidden' }}
     >
-      <ResponsiveContainer width="100%" height="100%" debounce={50}>
+      <ResponsiveContainer width="100%" height={CHART_H} debounce={50}>
         <AreaChart
           data={chartData}
           margin={{ top: 2, right: 0, left: 0, bottom: 0 }}

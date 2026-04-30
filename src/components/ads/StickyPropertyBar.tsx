@@ -9,6 +9,7 @@ import {
 } from 'framer-motion';
 import { useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import PhoneIcon from '@mui/icons-material/Phone';
 import WhatsApp from '@mui/icons-material/WhatsApp';
 
@@ -23,6 +24,8 @@ interface StickyPropertyBarProps {
   whatsappUrl?: string;
   /** When unlocked: direct tel: link. When set with whatsappUrl, shows both buttons. */
   phoneUrl?: string;
+  /** When provided, shows a Message button that calls this handler. */
+  onMessage?: () => void;
 }
 
 /**
@@ -39,8 +42,9 @@ export default function StickyPropertyBar({
   hideOnDesktop = true,
   whatsappUrl,
   phoneUrl,
+  onMessage,
 }: StickyPropertyBarProps) {
-  const hasDirectButtons = !!(whatsappUrl || phoneUrl);
+  const hasDirectButtons = !!(whatsappUrl || phoneUrl || onMessage);
   const [isVisible, setIsVisible] = useState(false);
   const { scrollY } = useScroll();
   const shouldReduce = useReducedMotion();
@@ -152,6 +156,33 @@ export default function StickyPropertyBar({
         >
           {hasDirectButtons ? (
             <>
+              {onMessage && (
+                <Button
+                  variant="contained"
+                  size="large"
+                  component={motion.button}
+                  whileTap={shouldReduce ? undefined : { scale: 0.96 }}
+                  whileHover={shouldReduce ? undefined : { scale: 1.03 }}
+                  onClick={onMessage}
+                  startIcon={<ChatBubbleOutlineIcon sx={{ fontSize: 18 }} />}
+                  sx={{
+                    flex: 1,
+                    borderRadius: '12px',
+                    py: 1.5,
+                    minHeight: 46,
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    boxShadow: '0 2px 8px rgba(246,71,95,0.25)',
+                    bgcolor: '#F6475F',
+                    '&:hover': {
+                      bgcolor: '#e03050',
+                      boxShadow: '0 4px 12px rgba(246,71,95,0.35)',
+                    },
+                  }}
+                >
+                  Message
+                </Button>
+              )}
               {whatsappUrl && (
                 <Button
                   variant="contained"
@@ -162,16 +193,20 @@ export default function StickyPropertyBar({
                   component={motion.a}
                   whileTap={shouldReduce ? undefined : { scale: 0.96 }}
                   whileHover={shouldReduce ? undefined : { scale: 1.03 }}
-                  startIcon={<WhatsApp sx={{ fontSize: 20 }} />}
+                  startIcon={<WhatsApp sx={{ fontSize: 18 }} />}
                   sx={{
+                    flex: 1,
                     borderRadius: '12px',
-                    px: 2,
                     py: 1.5,
-                    minHeight: 48,
+                    minHeight: 46,
                     fontWeight: 700,
-                    fontSize: '0.85rem',
-                    bgcolor: '#0D9488',
-                    '&:hover': { bgcolor: '#128C7E' },
+                    fontSize: '0.82rem',
+                    bgcolor: '#128C7E',
+                    boxShadow: '0 2px 8px rgba(18,140,126,0.25)',
+                    '&:hover': {
+                      bgcolor: '#0e7268',
+                      boxShadow: '0 4px 12px rgba(18,140,126,0.35)',
+                    },
                   }}
                 >
                   WhatsApp
@@ -179,24 +214,26 @@ export default function StickyPropertyBar({
               )}
               {phoneUrl && (
                 <Button
-                  variant="contained"
+                  variant="outlined"
                   color="primary"
                   size="large"
                   href={phoneUrl}
                   component={motion.a}
                   whileTap={shouldReduce ? undefined : { scale: 0.96 }}
                   whileHover={shouldReduce ? undefined : { scale: 1.03 }}
-                  startIcon={<PhoneIcon sx={{ fontSize: 20 }} />}
+                  startIcon={<PhoneIcon sx={{ fontSize: 18 }} />}
                   sx={{
+                    flex: 1,
                     borderRadius: '12px',
-                    px: 2,
                     py: 1.5,
-                    minHeight: 48,
+                    minHeight: 46,
                     fontWeight: 700,
-                    fontSize: '0.85rem',
-                    boxShadow: 'none',
+                    fontSize: '0.82rem',
+                    borderColor: '#F6475F',
+                    color: '#F6475F',
                     '&:hover': {
-                      boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)',
+                      borderColor: '#e03050',
+                      bgcolor: 'rgba(246,71,95,0.06)',
                     },
                   }}
                 >

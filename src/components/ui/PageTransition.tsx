@@ -23,7 +23,13 @@ export default function PageTransition({ children }: PageTransitionProps) {
           ? { duration: 0 }
           : { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
       }
-      style={{ width: '100%', minHeight: '100%' }}
+      style={{
+        width: '100%',
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column' as const,
+      }}
     >
       {children}
     </motion.div>

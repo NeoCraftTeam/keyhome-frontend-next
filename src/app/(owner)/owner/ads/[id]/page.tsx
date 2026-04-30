@@ -781,11 +781,15 @@ export default function OwnerAdEditPage() {
             onClick={() => {
               const slug =
                 ad.slug || ad.title.toLowerCase().replace(/\s+/g, '-');
-              window.open(`/ads/${ad.id}/${slug}`, '_blank');
+              window.open(
+                `/ads/${ad.id}/${slug}`,
+                '_blank',
+                'noopener,noreferrer'
+              );
             }}
             sx={{ ml: 1, textTransform: 'none' }}
           >
-            Voir l&apos;annonce
+            Aperçu public (nouvel onglet)
           </Button>
         </Alert>
       )}

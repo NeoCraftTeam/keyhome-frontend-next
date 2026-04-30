@@ -779,127 +779,132 @@ export default function OwnerAdsPage() {
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        {selectedAd && (
-          <>
+        {selectedAd && [
+          <MenuItem
+            key="edit"
+            onClick={() => {
+              router.push(`/owner/ads/${selectedAd.id}`);
+              handleMenuClose();
+            }}
+          >
+            <EditIcon fontSize="small" sx={{ mr: 1 }} />
+            {selectedAd.status === AdStatus.DRAFT
+              ? "Continuer l'édition"
+              : 'Modifier'}
+          </MenuItem>,
+          selectedAd.status === AdStatus.DRAFT && (
             <MenuItem
+              key="publish"
               onClick={() => {
-                router.push(`/owner/ads/${selectedAd.id}`);
-                handleMenuClose();
+                publishDraftMutation.mutate(selectedAd.id);
               }}
+              disabled={publishDraftMutation.isPending}
+              sx={{ color: 'primary.main', fontWeight: 600 }}
             >
-              <EditIcon fontSize="small" sx={{ mr: 1 }} />
-              {selectedAd.status === AdStatus.DRAFT
-                ? "Continuer l'édition"
-                : 'Modifier'}
+              <VisibleIcon fontSize="small" sx={{ mr: 1 }} />
+              Publier l&apos;annonce
             </MenuItem>
-            {selectedAd.status === AdStatus.DRAFT && (
-              <MenuItem
-                onClick={() => {
-                  publishDraftMutation.mutate(selectedAd.id);
-                }}
-                disabled={publishDraftMutation.isPending}
-                sx={{ color: 'primary.main', fontWeight: 600 }}
-              >
+          ),
+          <MenuItem
+            key="toggle"
+            onClick={() => {
+              toggleMutation.mutate(selectedAd.id);
+            }}
+            disabled={toggleMutation.isPending}
+          >
+            {selectedAd.is_visible !== false ? (
+              <>
+                <HiddenIcon fontSize="small" sx={{ mr: 1 }} />
+                Masquer
+              </>
+            ) : (
+              <>
                 <VisibleIcon fontSize="small" sx={{ mr: 1 }} />
-                Publier l&apos;annonce
-              </MenuItem>
+                Afficher
+              </>
             )}
-            <MenuItem
-              onClick={() => {
-                toggleMutation.mutate(selectedAd.id);
-              }}
-              disabled={toggleMutation.isPending}
-            >
-              {selectedAd.is_visible !== false ? (
-                <>
-                  <HiddenIcon fontSize="small" sx={{ mr: 1 }} />
-                  Masquer
-                </>
-              ) : (
-                <>
-                  <VisibleIcon fontSize="small" sx={{ mr: 1 }} />
-                  Afficher
-                </>
-              )}
-            </MenuItem>
-            {selectedAd.status !== AdStatus.PENDING &&
-              selectedAd.status !== AdStatus.DECLINED && (
-                <>
-                  {selectedAd.status !== AdStatus.RESERVED && (
-                    <MenuItem
-                      onClick={() => {
-                        setStatusMutation.mutate({
-                          adId: selectedAd.id,
-                          status: AdStatus.RESERVED,
-                        });
-                      }}
-                      disabled={setStatusMutation.isPending}
-                    >
-                      Marquer réservé
-                    </MenuItem>
-                  )}
-                  {selectedAd.status !== AdStatus.AVAILABLE && (
-                    <MenuItem
-                      onClick={() => {
-                        setStatusMutation.mutate({
-                          adId: selectedAd.id,
-                          status: AdStatus.AVAILABLE,
-                        });
-                      }}
-                      disabled={setStatusMutation.isPending}
-                    >
-                      Marquer disponible
-                    </MenuItem>
-                  )}
-                </>
-              )}
-            {(selectedAd.status === AdStatus.AVAILABLE ||
-              selectedAd.status === AdStatus.RESERVED) && (
+          </MenuItem>,
+          selectedAd.status !== AdStatus.PENDING &&
+            selectedAd.status !== AdStatus.DECLINED &&
+            selectedAd.status !== AdStatus.RESERVED && (
               <MenuItem
+                key="reserved"
                 onClick={() => {
-                  handleMenuClose();
-                  router.push(`/owner/ads/${selectedAd.id}`);
+                  setStatusMutation.mutate({
+                    adId: selectedAd.id,
+                    status: AdStatus.RESERVED,
+                  });
                 }}
+                disabled={setStatusMutation.isPending}
               >
-                <ContractIcon fontSize="small" sx={{ mr: 1 }} />
-                Générer un contrat
+                Marquer réservé
               </MenuItem>
-            )}
+            ),
+          selectedAd.status !== AdStatus.PENDING &&
+            selectedAd.status !== AdStatus.DECLINED &&
+            selectedAd.status !== AdStatus.AVAILABLE && (
+              <MenuItem
+                key="available"
+                onClick={() => {
+                  setStatusMutation.mutate({
+                    adId: selectedAd.id,
+                    status: AdStatus.AVAILABLE,
+                  });
+                }}
+                disabled={setStatusMutation.isPending}
+              >
+                Marquer disponible
+              </MenuItem>
+            ),
+          (selectedAd.status === AdStatus.AVAILABLE ||
+            selectedAd.status === AdStatus.RESERVED) && (
             <MenuItem
-              onClick={async () => {
+              key="contract"
+              onClick={() => {
                 handleMenuClose();
-                const ok = await confirm({
-                  title: 'Supprimer cette annonce ?',
-                  message:
-                    'Cette action est irréversible. L’annonce et toutes ses photos seront définitivement supprimées.',
-                  confirmLabel: 'Supprimer',
-                  variant: 'danger',
-                });
-                if (ok) {
-                  deleteMutation.mutate(selectedAd.id);
-                }
+                router.push(`/owner/ads/${selectedAd.id}`);
               }}
-              disabled={deleteMutation.isPending}
-              sx={{ color: 'error.main' }}
             >
-              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-              Supprimer
+              <ContractIcon fontSize="small" sx={{ mr: 1 }} />
+              Générer un contrat
             </MenuItem>
-            <Box
-              sx={{
-                px: 2,
-                py: 1,
-                borderTop: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <ShareAdButtons
-                adTitle={selectedAd.title}
-                adUrl={`/annonces/${selectedAd.slug || selectedAd.id}`}
-              />
-            </Box>
-          </>
-        )}
+          ),
+          <MenuItem
+            key="delete"
+            onClick={async () => {
+              handleMenuClose();
+              const ok = await confirm({
+                title: 'Supprimer cette annonce ?',
+                message:
+                  'Cette action est irréversible. L\u2019annonce et toutes ses photos seront définitivement supprimées.',
+                confirmLabel: 'Supprimer',
+                variant: 'danger',
+              });
+              if (ok) {
+                deleteMutation.mutate(selectedAd.id);
+              }
+            }}
+            disabled={deleteMutation.isPending}
+            sx={{ color: 'error.main' }}
+          >
+            <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+            Supprimer
+          </MenuItem>,
+          <Box
+            key="share"
+            sx={{
+              px: 2,
+              py: 1,
+              borderTop: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <ShareAdButtons
+              adTitle={selectedAd.title}
+              adUrl={`/annonces/${selectedAd.slug || selectedAd.id}`}
+            />
+          </Box>,
+        ]}
       </Menu>
       {/* Responsive FAB — fixed bottom-right, replaces the 3 inline create buttons */}
       <Fab
