@@ -64,7 +64,9 @@ test.describe('Payment Security — No Secret Key Exposure', () => {
     }
   });
 
-  test('no secret keys leaked in outgoing network requests', async ({ page }) => {
+  test('no secret keys leaked in outgoing network requests', async ({
+    page,
+  }) => {
     const requestBodies: string[] = [];
 
     page.on('request', (request) => {
@@ -119,20 +121,40 @@ test.describe('Payment Security — No Secret Key Exposure', () => {
 test.describe('Payment Security — Access Control', () => {
   test('protected page redirects unauthenticated users', async ({ page }) => {
     await page.goto('/profile');
-    await page.waitForLoadState('networkidle');
+    // The PWA service worker + Reverb websocket keepalive prevent
+    // 'networkidle' from ever firing on this stack, so wait for 'load' first
+    // and then for the client-side redirect from (dashboard)/layout.tsx
+    // (router.replace('/login') for unauthenticated visitors).
+    await page.waitForLoadState('load');
+    await page
+      .waitForURL(/\/(login|sign-in|auth)/i, { timeout: 8000 })
+      .catch(() => {
+        /* no-op — we still verify below in case Clerk shows an auth modal */
+      });
 
     // Clerk should redirect unauthenticated users to /login
     const url = page.url();
-    const isRedirected = url.includes('/login') || url.includes('/sign-in') || url.includes('/auth');
-    const hasClerkAuth = await page.locator('[class*="cl-"]').first().isVisible().catch(() => false);
+    const isRedirected =
+      url.includes('/login') ||
+      url.includes('/sign-in') ||
+      url.includes('/auth');
+    const hasClerkAuth = await page
+      .locator('[class*="cl-"]')
+      .first()
+      .isVisible()
+      .catch(() => false);
 
     // Either redirected to login/auth page, or Clerk auth UI is shown, or not on profile anymore
-    expect(isRedirected || hasClerkAuth || !url.includes('/profile')).toBeTruthy();
+    expect(
+      isRedirected || hasClerkAuth || !url.includes('/profile')
+    ).toBeTruthy();
   });
 });
 
 test.describe('Payment Security — No FedaPay References', () => {
-  test('no FedaPay references in any client-side JS bundle', async ({ page }) => {
+  test('no FedaPay references in any client-side JS bundle', async ({
+    page,
+  }) => {
     const jsContents: string[] = [];
 
     page.on('response', async (response) => {

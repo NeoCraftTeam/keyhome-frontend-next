@@ -23,6 +23,25 @@ interface InterceptorManager {
   }>;
 }
 
+/**
+ * Run every registered request-interceptor `fulfilled` handler in order,
+ * threading the config through each. Mirrors what Axios does internally
+ * and makes the tests resilient to interceptor ordering / additions
+ * (e.g. the X-Socket-Id interceptor added for Reverb).
+ */
+async function runRequestInterceptors(
+  config: InternalAxiosRequestConfig
+): Promise<InternalAxiosRequestConfig> {
+  const interceptor = api.interceptors.request as unknown as InterceptorManager;
+  let next: unknown = config;
+  for (const handler of interceptor.handlers) {
+    if (handler?.fulfilled) {
+      next = await handler.fulfilled(next);
+    }
+  }
+  return next as InternalAxiosRequestConfig;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -66,25 +85,14 @@ describe('api (Axios instance)', () => {
     it('attaches Authorization header when token is available', async () => {
       mockedGetAuthToken.mockResolvedValue('test-jwt-token');
 
-      // Use interceptors directly by running the request interceptor
+      // Run the full request-interceptor chain (resilient to ordering).
       const config = {
-        headers: api.defaults.headers,
-      };
+        headers: { ...api.defaults.headers },
+        method: 'get',
+      } as unknown as InternalAxiosRequestConfig;
 
-      // Execute request interceptors
-      const interceptor = api.interceptors
-        .request as unknown as InterceptorManager;
-      const handlers = interceptor.handlers;
-      expect(handlers.length).toBeGreaterThan(0);
-
-      // Find the fulfilled handler (first interceptor)
-      const fulfilledHandler = handlers[0]?.fulfilled;
-      if (fulfilledHandler) {
-        const result = (await fulfilledHandler(
-          config
-        )) as InternalAxiosRequestConfig;
-        expect(result.headers?.Authorization).toBe('Bearer test-jwt-token');
-      }
+      const result = await runRequestInterceptors(config);
+      expect(result.headers?.Authorization).toBe('Bearer test-jwt-token');
     });
 
     // BUG CATCH: If no user is logged in, sending "Bearer null" or
@@ -99,18 +107,13 @@ describe('api (Axios instance)', () => {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       };
-      const config = { headers };
+      const config = {
+        headers,
+        method: 'get',
+      } as unknown as InternalAxiosRequestConfig;
 
-      const interceptor = api.interceptors
-        .request as unknown as InterceptorManager;
-      const handlers = interceptor.handlers;
-      const fulfilledHandler = handlers[0]?.fulfilled;
-      if (fulfilledHandler) {
-        const result = (await fulfilledHandler(
-          config
-        )) as InternalAxiosRequestConfig;
-        expect(result.headers?.Authorization).toBeUndefined();
-      }
+      const result = await runRequestInterceptors(config);
+      expect(result.headers?.Authorization).toBeUndefined();
     });
   });
 

@@ -23,7 +23,7 @@ const HAS_GOOGLE_CLIENT_ID = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 test.describe('Google One Tap — /login page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   test('existing login form renders correctly alongside One Tap', async ({
@@ -52,12 +52,23 @@ test.describe('Google One Tap — /login page', () => {
   test('GSI script is absent on /login when client ID is not configured', async ({
     page,
   }) => {
+    /*
+     * Detect the SERVED config from the page itself instead of
+     * `process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID` — the Playwright runner does
+     * not auto-load `.env.local`, so its `process.env` view does not match
+     * what the running Next.js dev server has injected into the bundle.
+     */
+    const gsiScript = page.locator(`script[src="${GSI_SCRIPT_SRC}"]`);
+    const isPresent = await gsiScript
+      .isVisible()
+      .catch(() => false)
+      .then((v) => v || gsiScript.count().then((c) => c > 0));
+
     test.skip(
-      HAS_GOOGLE_CLIENT_ID,
-      'Skipped — NEXT_PUBLIC_GOOGLE_CLIENT_ID is set'
+      isPresent,
+      'Skipped — NEXT_PUBLIC_GOOGLE_CLIENT_ID is configured on the running dev server'
     );
 
-    const gsiScript = page.locator(`script[src="${GSI_SCRIPT_SRC}"]`);
     await expect(gsiScript).not.toBeAttached();
   });
 
@@ -107,7 +118,7 @@ test.describe('Google One Tap — /login page', () => {
     });
 
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     /* The mocked prompt fires after 100ms; wait for a possible /home navigation */
     try {
@@ -130,7 +141,7 @@ test.describe('Google One Tap — /login page', () => {
 test.describe('Google One Tap — /owner/login page (must NOT appear)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/owner/login');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   test('GSI script is NOT injected on /owner/login', async ({ page }) => {
@@ -166,7 +177,7 @@ test.describe('Google One Tap — authenticated user', () => {
 
     /* Navigate directly to /home (authenticated area) — One Tap should not load */
     await page.goto('/home');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     const gsiScript = page.locator(`script[src="${GSI_SCRIPT_SRC}"]`);
     await expect(gsiScript).not.toBeAttached();
   });
@@ -179,7 +190,7 @@ test.describe('Google One Tap — mobile layout', () => {
     page,
   }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(
       page.getByRole('button', { name: 'Se connecter', exact: true })

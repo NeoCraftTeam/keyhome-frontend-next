@@ -12,7 +12,10 @@ import { expect, test } from '@playwright/test';
 test.describe('Login Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
+    // 'networkidle' is unreliable on pages with the PWA service worker +
+    // Reverb websocket keepalive (long-lived connection prevents the network
+    // from ever going idle). 'load' captures the meaningful page-ready state.
+    await page.waitForLoadState('load');
   });
 
   // BUG CATCH: Login page not rendering means users can't sign in at all.

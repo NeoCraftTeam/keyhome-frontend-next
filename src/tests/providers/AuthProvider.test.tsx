@@ -145,10 +145,23 @@ function renderWithProvider() {
   return { ...result, getContext: () => authContext! };
 }
 
+/**
+ * Seed the localStorage session hint used by AuthProvider's perf guard.
+ * Without this, the provider short-circuits before calling authService.me()
+ * on the assumption that this is a first-time visitor (avoids guaranteed
+ * 401s on cold loads).
+ */
+function seedSessionHint() {
+  localStorage.setItem('kh_has_session', '1');
+}
+
 /** Render and wait for the initial auth flow to complete via DOM polling. */
 async function renderAndWaitForAuth(
   expectedState: 'authenticated' | 'unauthenticated' = 'unauthenticated'
 ) {
+  if (expectedState === 'authenticated') {
+    seedSessionHint();
+  }
   const result = renderWithProvider();
   await waitFor(() => {
     expect(screen.getByTestId('loading').textContent).toBe('false');
@@ -245,6 +258,7 @@ describe('AuthProvider', () => {
       // Actually: first call is with null token (session attempt), if it succeeds, user is set
       mockAuthService.me.mockReset();
       mockAuthService.me.mockResolvedValue(mockUser);
+      seedSessionHint();
 
       renderWithProvider();
 
@@ -463,6 +477,7 @@ describe('AuthProvider', () => {
     it('resolves normally on verify-otp path when kh_verify_token_owner is absent', async () => {
       mockPathnameRef.current = '/owner/auth/verify-otp';
       mockAuthService.me.mockRejectedValue(new Error('Unauthenticated'));
+      seedSessionHint();
 
       renderWithProvider();
 
