@@ -60,6 +60,7 @@ function buildCsp(nonce: string): string {
   const clerkExplicitOriginsCsp = clerkExplicitOrigins.join(' ');
 
   const isDev = process.env.NODE_ENV === 'development';
+  const reverbHost = process.env.NEXT_PUBLIC_REVERB_HOST || '';
 
   const connectSources = [
     "'self'",
@@ -95,6 +96,11 @@ function buildCsp(nonce: string): string {
     'https://*.keyhome.neocraft.dev',
     'https://*.neocraft.dev',
     'https://api.preview.neocraft.dev',
+    // WebSocket (Reverb) — wss:// is a distinct scheme in CSP; some browsers
+    // do not match wss:// against https:// patterns, so we add explicit entries.
+    'wss://*.keyhome.app',
+    'wss://*.keyhome.neocraft.dev',
+    ...(reverbHost ? [`wss://${reverbHost}`] : []),
     apiOrigin,
     backendOrigin,
   ]
