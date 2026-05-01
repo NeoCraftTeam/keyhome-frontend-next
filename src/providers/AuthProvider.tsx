@@ -66,6 +66,7 @@ interface AuthContextType {
   logout: (redirectTo?: string) => Promise<void>;
   setUser: (user: User) => void;
   refreshUser: () => Promise<void>;
+  refreshSession: () => Promise<boolean>;
   /** Called by /verify-email and /complete-profile after successful auth */
   finalizeAuth: (token: string, user: User, panelSsoUrl: string | null) => void;
   /** Returns a fresh Clerk session JWT, or null if unavailable */
@@ -496,6 +497,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     authRunRef,
   });
 
+  const refreshSession = useCallback(async (): Promise<boolean> => {
+    try {
+      const { access_token } = await authService.refreshToken();
+
+      const isOwnerRole =
+        user?.role === UserRole.AGENT || user?.role === UserRole.ADMIN;
+      if (isOwnerRole) {
+        persistOwnerToken(access_token);
+      } else {
+        persistClientToken(access_token);
+      }
+
+      setToken(access_token);
+
+      return true;
+    } catch {
+      return false;
+    }
+  }, [user?.role]);
+
   /* ── Context value ────────────────────────────────────────────── */
 
   const value = useMemo(
@@ -511,6 +532,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       setUser,
       refreshUser,
+      refreshSession,
       finalizeAuth,
       getClerkToken,
     }),
@@ -526,6 +548,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       setUser,
       refreshUser,
+      refreshSession,
       finalizeAuth,
       getClerkToken,
     ]
