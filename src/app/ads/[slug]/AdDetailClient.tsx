@@ -18,6 +18,7 @@ import ReviewsSection from '@/components/reviews/ReviewsSection';
 import PackageCard from '@/components/ui/PackageCard';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import ViewingBookingPanel from '@/components/viewing/ViewingBookingPanel';
+import ContactChatButton from '@/components/chat/ContactChatButton';
 import QueryError from '@/components/ui/QueryError';
 import FadeIn from '@/components/ui/FadeIn';
 import AdReportModal from '@/components/ads/AdReportModal';
@@ -437,6 +438,7 @@ function AdDetailContent() {
     { icon: <LocalParking />, label: 'Parking', show: ad.has_parking },
   ].filter((f) => f.show);
 
+  const isOwnAd = !!(currentUser && ad.user?.id === currentUser.id);
   const publisherName = ad.published_by || 'Annonceur';
   const publisherPhone = ad.user?.phone_number;
   const publisherEmail = ad.user?.email;
@@ -2078,9 +2080,26 @@ function AdDetailContent() {
                           </Box>
                         </Box>
                       )}
+                      {/* Chat button — mobile contact section */}
+                      <ContactChatButton
+                        adId={ad.id}
+                        isLocked={isLocked}
+                        isOwnAd={isOwnAd}
+                        isAuthenticated={isAuthenticated}
+                        onUnlockClick={() => setPaymentDialogOpen(true)}
+                        size="small"
+                        adTitle={ad.title}
+                        transactionType={ad.transaction_type}
+                        adSlug={ad.slug}
+                      />
                       {publisherEmail && (
                         <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            mt: 1.5,
+                          }}
                         >
                           <Email sx={{ fontSize: 18, color: 'primary.main' }} />
                           <Typography
@@ -3327,9 +3346,26 @@ function AdDetailContent() {
                           </Box>
                         </Box>
                       )}
+                      {/* Chat button — desktop sidebar */}
+                      <ContactChatButton
+                        adId={ad.id}
+                        isLocked={isLocked}
+                        isOwnAd={isOwnAd}
+                        isAuthenticated={isAuthenticated}
+                        onUnlockClick={() => setPaymentDialogOpen(true)}
+                        size="small"
+                        adTitle={ad.title}
+                        transactionType={ad.transaction_type}
+                        adSlug={ad.slug}
+                      />
                       {publisherEmail && (
                         <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            mt: 1.5,
+                          }}
                         >
                           <Email sx={{ fontSize: 18, color: 'primary.main' }} />
                           <Typography
