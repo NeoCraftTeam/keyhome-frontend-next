@@ -1,9 +1,5 @@
 'use client';
 
-import ContactChatButton, {
-  buildDraftMessage,
-} from '@/components/chat/ContactChatButton';
-import { findOrCreateConversation } from '@/lib/chat-api';
 import AdLocationMap from '@/components/ads/AdLocationMap';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
@@ -295,33 +291,6 @@ function AdDetailContent() {
   const primaryImage = allImages.find((img) => img.is_primary) || allImages[0];
   // SECURITY: isLocked must depend ONLY on server response, never on URL params
   const isLocked = ad.is_unlocked === false;
-  const isOwnAd =
-    !!currentUser && !!ad.user?.id && currentUser.id === ad.user.id;
-
-  const handleStickyMessage = async () => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-    if (isLocked) {
-      setPaymentDialogOpen(true);
-      return;
-    }
-    try {
-      const { conversation } = await findOrCreateConversation(ad.id);
-      const draft = buildDraftMessage(
-        ad.title,
-        ad.transaction_type,
-        `${window.location.origin}/ads/${adSlug}`
-      );
-      router.push(
-        `/messages/${conversation.uuid}?draft=${encodeURIComponent(draft)}`
-      );
-    } catch {
-      /* ignore */
-    }
-  };
-
   // When locked, only show the primary image
   const images = isLocked ? (primaryImage ? [primaryImage] : []) : allImages;
 
@@ -2137,20 +2106,6 @@ function AdDetailContent() {
                           </IconButton>
                         </Box>
                       )}
-                      {/* Chat button — mobile */}
-                      {!isOwnAd && (
-                        <Box sx={{ mt: 2 }}>
-                          <ContactChatButton
-                            adId={ad.id}
-                            isLocked={isLocked}
-                            isOwnAd={isOwnAd}
-                            isAuthenticated={isAuthenticated}
-                            onUnlockClick={() => setPaymentDialogOpen(true)}
-                            adTitle={ad.title}
-                            transactionType={ad.transaction_type}
-                          />
-                        </Box>
-                      )}
                     </Paper>
                   )}
 
@@ -3397,21 +3352,6 @@ function AdDetailContent() {
                         </Box>
                       )}
 
-                      {/* Chat with owner — hidden for own ad */}
-                      {!isOwnAd && (
-                        <Box sx={{ mt: 2 }}>
-                          <ContactChatButton
-                            adId={ad.id}
-                            isLocked={isLocked}
-                            isOwnAd={isOwnAd}
-                            isAuthenticated={isAuthenticated}
-                            onUnlockClick={() => setPaymentDialogOpen(true)}
-                            adTitle={ad.title}
-                            transactionType={ad.transaction_type}
-                          />
-                        </Box>
-                      )}
-
                       {/* Viewing appointment booking — only when unlocked */}
                       <Divider sx={{ mt: 2.5, mb: 0 }} />
                       <ViewingBookingPanel
@@ -3955,7 +3895,6 @@ function AdDetailContent() {
                 ?.scrollIntoView({ behavior: 'smooth' });
             }
           }}
-          onMessage={!isOwnAd ? () => void handleStickyMessage() : undefined}
           whatsappUrl={
             !isLocked && publisherHasWhatsApp && whatsappNumber
               ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Bonjour,\n\nJe vous contacte suite à votre annonce *${ad.title}* que j'ai vue sur KeyHome.\n\nJe suis intéressé(e) par ce bien et souhaiterais avoir plus d'informations.\n\nCordialement${currentUser?.firstname ? `, ${currentUser.firstname}` : ''}`)}`

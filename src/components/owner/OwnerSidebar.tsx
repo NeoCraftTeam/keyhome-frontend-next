@@ -1,12 +1,10 @@
 'use client';
 
-import { fetchUnreadCount } from '@/lib/chat-api';
 import { ownerService } from '@/services/owner.service';
 import {
   AccountBalance as AccountBalanceIcon,
   AddCircleOutline as AddCircleOutlineIcon,
   CalendarMonth as CalendarMonthIcon,
-  ChatBubbleOutline as ChatBubbleOutlineIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Dashboard as DashboardIcon,
@@ -45,7 +43,7 @@ interface SidebarNavItem {
   label: string;
   href: string;
   icon: React.ReactNode;
-  badgeKey?: 'viewings' | 'messages';
+  badgeKey?: 'viewings';
 }
 
 interface SidebarSection {
@@ -71,12 +69,6 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         label: 'Mes Annonces',
         href: '/owner/ads',
         icon: <HomeIcon fontSize="small" />,
-      },
-      {
-        label: 'Messages',
-        href: '/owner/messages',
-        icon: <ChatBubbleOutlineIcon fontSize="small" />,
-        badgeKey: 'messages',
       },
       {
         label: 'Visites',
@@ -173,18 +165,8 @@ export default function OwnerSidebar({
     staleTime: 60_000,
   });
 
-  const { data: unreadMessages } = useQuery({
-    queryKey: ['chat-unread'],
-    queryFn: fetchUnreadCount,
-    // WhatsApp-style: count of conversations with unread, not total messages.
-    select: (res) => res.conversations.length,
-    staleTime: 30_000,
-    refetchInterval: 5 * 60_000,
-  });
-
   const getBadgeCount = (badgeKey?: string): number => {
     if (badgeKey === 'viewings') return pendingViewings ?? 0;
-    if (badgeKey === 'messages') return unreadMessages ?? 0;
     return 0;
   };
 

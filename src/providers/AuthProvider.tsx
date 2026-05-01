@@ -14,7 +14,6 @@ import {
   persistInMemoryToken,
   registerInMemoryGetter,
   setRoleCookie,
-  hasSessionHint,
 } from '@/lib/auth-session';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
@@ -71,13 +70,6 @@ interface AuthContextType {
   finalizeAuth: (token: string, user: User, panelSsoUrl: string | null) => void;
   /** Returns a fresh Clerk session JWT, or null if unavailable */
   getClerkToken: () => Promise<string | null>;
-  /**
-   * Silently rotates the active Sanctum token via POST /auth/refresh.
-   * Updates both the in-memory token slot and the React `token` state.
-   * Returns `true` on success, `false` if the token is expired or the server
-   * is unreachable — the caller must decide whether to force-logout.
-   */
-  refreshSession: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -184,24 +176,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        const hasBearer = Boolean(getInMemoryToken());
-
-        // Skip the cookie-auth /me when there is no Bearer and no session hint.
-        // For cross-origin PWA deployments a Sanctum session cookie is never
-        // present for visitors who have not previously logged in — without this
-        // guard every unauthenticated page-load fires a guaranteed-401 GET /me.
-        if (!hasBearer && !hasSessionHint()) {
-          registerTokenGetter(() => Promise.resolve(null));
-          setToken(null);
-          setUserState(null);
-          clearRoleCookie();
-          setIsExchanging(false);
-          setHasResolvedInitialAuth(true);
-          return;
-        }
-
         // --- Session-first (cookie) when no Bearer; else Bearer (SPA ↔ API cross-origin) ---
         try {
+          const hasBearer = Boolean(getInMemoryToken());
           if (hasBearer) {
             registerInMemoryGetter();
           } else {
@@ -479,28 +456,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!user;
   const isLoading = !isLoaded || !hasResolvedInitialAuth || isExchanging;
 
-  /* ── Session refresh (idle timeout guard) ─────────────────────── */
-
-  const refreshSession = useCallback(async (): Promise<boolean> => {
-    if (!user) return false;
-    try {
-      const { access_token } = await authService.refreshToken();
-      const path =
-        typeof window !== 'undefined' ? window.location.pathname : '';
-      const isOwnerRole =
-        user.role === UserRole.AGENT || user.role === UserRole.ADMIN;
-      if (isOwnerRole || path.startsWith('/owner')) {
-        persistOwnerToken(access_token);
-      } else {
-        persistClientToken(access_token);
-      }
-      setToken(access_token);
-      return true;
-    } catch {
-      return false;
-    }
-  }, [user]);
-
   /* ── 401 listener ─────────────────────────────────────────────── */
 
   useEffect(() => {
@@ -558,7 +513,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshUser,
       finalizeAuth,
       getClerkToken,
-      refreshSession,
     }),
     [
       user,
@@ -574,7 +528,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshUser,
       finalizeAuth,
       getClerkToken,
-      refreshSession,
     ]
   );
 

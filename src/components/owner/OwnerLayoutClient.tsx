@@ -19,9 +19,6 @@ import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
 import PushPrompt from '@/components/ui/PushPrompt';
 import OwnerWelcomeModal from '@/components/owner/OwnerWelcomeModal';
-import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
-import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
-import { useFcmToken } from '@/hooks/useFcmToken';
 import { shouldShowOwnerQuickCreateFab } from '@/lib/owner-shell-fab';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
@@ -39,11 +36,6 @@ const OWNER_PUBLIC_PATHS = [
   '/owner/forgot-password',
   '/owner/auth',
 ];
-
-function FcmRegistrar() {
-  useFcmToken();
-  return null;
-}
 
 function isPublicPath(pathname: string | null): boolean {
   if (!pathname) return false;
@@ -236,20 +228,11 @@ export default function OwnerLayoutClient({
     return null;
   }
 
-  // Chat page detection — used to hide nav elements for immersive messaging UX
-  const isMessagesPage = pathname?.startsWith('/owner/messages') ?? false;
-  const isConversationPage = /^\/owner\/messages\/[^/]+/.test(pathname ?? '');
-  // On mobile, hide bottom nav on all message pages; hide top navbar on conversation detail
-  const hideBottomNav = isMobile && isMessagesPage;
-  const hideNavbar = isMobile && isConversationPage;
-
   return (
     <Box
       sx={{
         display: 'flex',
-        ...(isMessagesPage
-          ? { height: '100dvh', overflow: 'hidden' }
-          : { minHeight: '100vh' }),
+        minHeight: '100vh',
         bgcolor: 'background.default',
       }}
     >
@@ -292,60 +275,23 @@ export default function OwnerLayoutClient({
           flexDirection: 'column',
           minWidth: 0,
           width: '100%',
-          ...(isMessagesPage
-            ? { height: '100dvh', overflow: 'hidden' }
-            : { minHeight: '100vh' }),
+          minHeight: '100vh',
         }}
       >
-        <FcmRegistrar />
-        <GlobalPresenceChannel />
-        <ChatNotificationListener
-          basePath="/owner/messages"
-          accentColor="#0D9488"
-        />
-        {!hideNavbar && <OwnerNavbar />}
+        <OwnerNavbar />
         <Box
           sx={{
             flex: 1,
-            minHeight: 0,
-            ...(isMessagesPage
-              ? {
-                  // Messages pages: absolute-positioned inner wrapper guarantees
-                  // a definite height context for the chat flex chain.
-                  position: 'relative',
-                  overflow: 'hidden',
-                  pb: 0,
-                  px: 0,
-                }
-              : {
-                  display: 'flex',
-                  flexDirection: 'column',
-                  pb: isMobile ? `${OWNER_BOTTOM_NAV_HEIGHT}px` : 3,
-                  px: { xs: 2, md: 3 },
-                }),
+            display: 'block',
+            pb: isMobile ? `${OWNER_BOTTOM_NAV_HEIGHT}px` : 3,
+            px: { xs: 2, md: 3 },
           }}
         >
-          {isMessagesPage ? (
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-              }}
-            >
-              <ErrorBoundary>
-                <PageTransition>{children}</PageTransition>
-              </ErrorBoundary>
-            </Box>
-          ) : (
-            <ErrorBoundary>
-              <PageTransition>{children}</PageTransition>
-            </ErrorBoundary>
-          )}
+          <ErrorBoundary>
+            <PageTransition>{children}</PageTransition>
+          </ErrorBoundary>
         </Box>
-        {!hideBottomNav && <OwnerBottomNav />}
+        <OwnerBottomNav />
       </Box>
 
       {/* FAB : nouvelle annonce — liste annonces uniquement (pas sur le tableau de bord) */}
