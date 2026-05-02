@@ -33,6 +33,11 @@ test.describe('Security Headers', () => {
     expect(csp).toContain('clerk');
   });
 
+  test('CSP allows Firebase / Google APIs (connect-src)', () => {
+    const csp = headers['content-security-policy'] ?? '';
+    expect(csp).toContain('googleapis.com');
+  });
+
   test('CSP uses nonce-based script-src', () => {
     const csp = headers['content-security-policy'] ?? '';
     expect(csp).toMatch(/'nonce-[A-Za-z0-9+/=]+'/);
@@ -77,6 +82,6 @@ test.describe('Security Headers', () => {
   test('Permissions-Policy restricts sensitive APIs', () => {
     expect(headers['permissions-policy']).toBeDefined();
     expect(headers['permissions-policy']).toContain('camera=()');
-    expect(headers['permissions-policy']).toContain('microphone=()');
+    expect(headers['permissions-policy']).toContain('microphone=(self)');
   });
 });

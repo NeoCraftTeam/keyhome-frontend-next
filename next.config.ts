@@ -13,97 +13,7 @@ if (process.env.NODE_ENV === 'development') {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 }
 
-// Build CSP connect-src from environment — no hardcoded dev origins
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-let apiOrigin = '';
-try {
-  apiOrigin = apiUrl ? new URL(apiUrl).origin : '';
-} catch {
-  apiOrigin = '';
-}
-
-// The Laravel backend may be served from a different subdomain (e.g. owner.keyhome.test).
-// Tour image proxy URLs are generated from APP_URL, so we need that origin in the CSP too.
-// NEXT_PUBLIC_OWNER_URL may be a path only (e.g. `/owner`) for same-origin Next bailleur — not valid for `new URL()`.
-function originFromEnvUrl(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed || trimmed.startsWith('/')) {
-    return '';
-  }
-  if (!/^https?:\/\//i.test(trimmed)) {
-    return '';
-  }
-  try {
-    return new URL(trimmed).origin;
-  } catch {
-    return '';
-  }
-}
-
-const ownerUrl = process.env.NEXT_PUBLIC_OWNER_URL || '';
-const backendOrigin = originFromEnvUrl(ownerUrl) || apiOrigin;
-const clerkFrontendApiUrl =
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_live_')
-    ? 'https://clerk.neocraft.dev'
-    : 'https://*.clerk.accounts.dev';
-
-// In dev, allow both http and https for API/backend origins (e.g. keyhome.test may use either)
-function originsWithAlternateProtocol(origin: string): string[] {
-  if (!origin) return [];
-  try {
-    const url = new URL(origin);
-    const alt =
-      url.protocol === 'https:' ? `http://${url.host}` : `https://${url.host}`;
-    return [origin, alt];
-  } catch {
-    return [origin];
-  }
-}
-
-const devOrigins =
-  process.env.NODE_ENV === 'development'
-    ? [
-        ...originsWithAlternateProtocol(apiOrigin),
-        ...originsWithAlternateProtocol(backendOrigin),
-      ]
-    : [];
-
-const connectSources = [
-  "'self'",
-  // blob: / data: — Photo Sphere Viewer loads panorama images; new uploads use blob: URLs
-  'blob:',
-  'data:',
-  'https://api.mapbox.com',
-  'https://events.mapbox.com',
-  'https://*.tiles.mapbox.com',
-  'https://*.clerk.accounts.dev',
-  'https://clerk.neocraft.dev',
-  'https://*.clerk.com',
-  'https://clerk.shared.global',
-  'https://clerk-telemetry.com',
-  'https://challenges.cloudflare.com',
-  // Google Analytics 4
-  'https://www.google-analytics.com',
-  'https://analytics.google.com',
-  'https://*.googletagmanager.com',
-  // Flutterwave
-  'https://api.flutterwave.com',
-  // Cloudflare R2 public CDN + signed URLs (panorama viewer fetches images via XHR)
-  'https://*.r2.dev',
-  'https://*.r2.cloudflarestorage.com',
-  apiOrigin,
-  // Laravel backend origin — tour image proxy URLs are generated from APP_URL (may differ from apiOrigin)
-  backendOrigin,
-  ...devOrigins,
-]
-  .filter(Boolean)
-  .filter((v, i, a) => a.indexOf(v) === i)
-  .join(' ');
-
-const isDev = process.env.NODE_ENV === 'development';
-
-// CSP is now built dynamically in src/proxy.ts with per-request nonces.
-// The environment origin variables above are still used by the proxy at runtime.
+// Dynamic Content-Security-Policy (nonce + allowlists): `src/proxy.ts` + `src/lib/csp-allowlist.ts`.
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -121,6 +31,12 @@ const nextConfig: NextConfig = {
         source: '/ads/:id/:slug',
         destination: '/ads/:slug',
         permanent: true,
+      },
+      // Legacy / mistaken asset path (returns a real image)
+      {
+        source: '/placeholder-house.jpg',
+        destination: '/images/maison-blanche.webp',
+        permanent: false,
       },
     ];
   },
@@ -209,7 +125,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self)',
+            value: 'camera=(), microphone=(self), geolocation=(self)',
           },
           // CSP is now set dynamically via src/proxy.ts with per-request nonces
         ],
