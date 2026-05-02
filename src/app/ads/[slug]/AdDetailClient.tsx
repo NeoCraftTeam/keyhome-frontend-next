@@ -3931,6 +3931,51 @@ function AdDetailContent() {
                 ?.scrollIntoView({ behavior: 'smooth' });
             }
           }}
+          // In-app messaging gets priority — single tap opens the conversation
+          // with a pre-filled message. Falls back to opening unlock dialog when
+          // the ad is still locked or the user isn't logged in.
+          onMessage={
+            !isOwnAd
+              ? async () => {
+                  if (!isAuthenticated) {
+                    sessionStorage.setItem(
+                      'kh_redirect_after_login',
+                      window.location.pathname + window.location.search
+                    );
+                    router.push('/login');
+                    return;
+                  }
+                  if (isLocked) {
+                    setPaymentDialogOpen(true);
+                    return;
+                  }
+                  try {
+                    const { findOrCreateConversation } =
+                      await import('@/lib/chat-api');
+                    const { buildDraftMessage } =
+                      await import('@/components/chat/ContactChatButton');
+                    const { conversation } = await findOrCreateConversation(
+                      ad.id
+                    );
+                    const adUrl = `${window.location.origin}/ads/${ad.slug ?? ad.id}`;
+                    const draft = buildDraftMessage(
+                      ad.title,
+                      ad.transaction_type ?? null,
+                      adUrl
+                    );
+                    router.push(
+                      `/messages/${conversation.uuid}?draft=${encodeURIComponent(draft)}`
+                    );
+                  } catch {
+                    // Fall back to scrolling to the contact section so the
+                    // user can use WhatsApp / phone / form instead.
+                    document
+                      .getElementById('contact-section')
+                      ?.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }
+              : undefined
+          }
           whatsappUrl={
             !isLocked && publisherHasWhatsApp && whatsappNumber
               ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Bonjour,\n\nJe vous contacte suite à votre annonce *${ad.title}* que j'ai vue sur KeyHome.\n\nJe suis intéressé(e) par ce bien et souhaiterais avoir plus d'informations.\n\nCordialement${currentUser?.firstname ? `, ${currentUser.firstname}` : ''}`)}`

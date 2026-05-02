@@ -52,13 +52,22 @@ export function ConversationItem({
     : '';
 
   const isOwnLastMsg = !!lastMsg?.sender_id && lastMsg.sender_id === user?.id;
-  const rawPreview = lastMsg?.body
-    ? lastMsg.body.slice(0, 52)
-    : lastMsg?.type === 'image'
-      ? '📷 Photo'
-      : lastMsg?.type === 'file'
-        ? '📎 Document'
-        : null;
+  // Build preview in priority order: sealed → text body → attachment hint.
+  // Without this, sealed messages render an empty preview because `body` is null.
+  let rawPreview: string | null = null;
+  if (lastMsg) {
+    if (lastMsg.is_client_sealed) {
+      rawPreview = '🔐 Message sécurisé';
+    } else if (lastMsg.body) {
+      rawPreview = lastMsg.body.slice(0, 52);
+    } else if (lastMsg.type === 'image') {
+      rawPreview = '📷 Photo';
+    } else if (lastMsg.type === 'audio') {
+      rawPreview = '🎙 Message vocal';
+    } else if (lastMsg.type === 'file') {
+      rawPreview = '📎 Document';
+    }
+  }
   const preview = rawPreview ?? 'Démarrez la conversation';
 
   const initial = participant?.name?.charAt(0).toUpperCase() ?? '?';

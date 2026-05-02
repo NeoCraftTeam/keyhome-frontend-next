@@ -2,11 +2,8 @@
 
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CloseIcon from '@mui/icons-material/Close';
-import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
-import LightModeIcon from '@mui/icons-material/LightMode';
 import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
@@ -30,9 +27,8 @@ import {
   Typography,
 } from '@mui/material';
 import Image from 'next/image';
-import { SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
+import { AUTH_DRAWER_QUICK_NAV, SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
 import { type User } from '@/types';
-import { useThemeMode } from '@/providers/ThemeProvider';
 import { useQuery } from '@tanstack/react-query';
 import { creditsService } from '@/services/credits.service';
 import { brand } from '@/theme/tokens';
@@ -140,8 +136,6 @@ export default function NavDrawer({
   pathname,
   isStandalone,
 }: NavDrawerProps) {
-  const { mode, toggleTheme } = useThemeMode();
-
   const go = (href: string) => {
     onClose();
     onNavigate(href);
@@ -228,11 +222,66 @@ export default function NavDrawer({
         </>
       )}
 
-      {/* Credits balance */}
-      {isAuthenticated && <CreditsRow />}
+      {/* Crédits : dans la barre du haut en PWA standalone connecté */}
+      {isAuthenticated && !isStandalone && <CreditsRow />}
 
-      {/* Sidebar nav (mobile browser without BottomNav) */}
-      {!isStandalone && (
+      {/* Navigation principale — ordre type app native (connecté) */}
+      {isAuthenticated && (
+        <List sx={{ px: 1, py: 0.5 }}>
+          {AUTH_DRAWER_QUICK_NAV.map((entry) => {
+            if ('brandHome' in entry && entry.brandHome) {
+              const href = '/home';
+              return (
+                <ListItem key={href} disablePadding>
+                  <ListItemButton onClick={() => go(href)} sx={activeSx(href)}>
+                    <ListItemIcon
+                      sx={{
+                        ...activeIconSx(href),
+                        minWidth: 52,
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Image
+                        src="/images/logo.png"
+                        alt=""
+                        width={38}
+                        height={38}
+                        style={{ objectFit: 'contain' }}
+                      />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Accueil"
+                      primaryTypographyProps={{
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            }
+
+            const href = entry.href;
+            const label =
+              href === '/comparaisons' && comparatorCount > 0
+                ? `Comparer (${comparatorCount})`
+                : entry.label;
+
+            return (
+              <ListItem key={href} disablePadding>
+                <ListItemButton onClick={() => go(href)} sx={activeSx(href)}>
+                  <ListItemIcon sx={activeIconSx(href)}>
+                    {entry.icon}
+                  </ListItemIcon>
+                  <ListItemText primary={label} />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+        </List>
+      )}
+
+      {!isAuthenticated && (
         <>
           <List sx={{ px: 1, pt: 0 }}>
             {SIDEBAR_NAV_ITEMS.map((item) => (
@@ -253,6 +302,8 @@ export default function NavDrawer({
         </>
       )}
 
+      {isAuthenticated && <Divider sx={{ my: 0.5 }} />}
+
       {/* Account links */}
       <List sx={{ px: 1 }}>
         <Typography
@@ -271,20 +322,6 @@ export default function NavDrawer({
 
         {isAuthenticated && (
           <>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => go('/comparaisons')} sx={ITEM_SX}>
-                <ListItemIcon>
-                  <CompareArrowsIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary={
-                    comparatorCount > 0
-                      ? `Comparaisons (${comparatorCount})`
-                      : 'Comparaisons'
-                  }
-                />
-              </ListItemButton>
-            </ListItem>
             <ListItem disablePadding>
               <ListItemButton
                 onClick={() => go('/my/reservations')}
@@ -329,25 +366,6 @@ export default function NavDrawer({
               </ListItemButton>
             </ListItem>
             <Divider sx={{ my: 1, mx: 2 }} />
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => {
-                  toggleTheme();
-                }}
-                sx={ITEM_SX}
-              >
-                <ListItemIcon>
-                  {mode === 'dark' ? (
-                    <LightModeIcon sx={{ color: 'text.secondary' }} />
-                  ) : (
-                    <DarkModeIcon sx={{ color: 'text.secondary' }} />
-                  )}
-                </ListItemIcon>
-                <ListItemText
-                  primary={mode === 'dark' ? 'Mode clair' : 'Mode sombre'}
-                />
-              </ListItemButton>
-            </ListItem>
             <ListItem disablePadding>
               <ListItemButton
                 onClick={() => {

@@ -54,12 +54,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import { Ad } from '@/types';
-import { brandAgent } from '@/theme/tokens';
+import { brandAgent, semantic } from '@/theme/tokens';
 
 /** Vibrant accent colors for dashboard cards */
 const TEAL = brandAgent.primary; // #0D9488 — primary teal
 const SKY = brandAgent.secondary; // #0EA5E9 — sky blue (complements gradient)
-const ROSE = '#ec4899';
+const ROSE = semantic.pink; // #EC4899 — pink accent (token-driven)
 type AnalyticsPeriod = '7d' | '30d' | '90d';
 const PREV_PERIOD: Record<AnalyticsPeriod, AnalyticsPeriod> = {
   '7d': '30d',

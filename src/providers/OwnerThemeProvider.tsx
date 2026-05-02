@@ -5,11 +5,8 @@ import { ThemeProvider as MuiThemeProvider } from '@mui/material';
 import { ownerLightTheme, ownerDarkTheme } from '@/theme/ownerTheme';
 import { useThemeMode } from '@/providers/ThemeProvider';
 
-// Owner panel follows the resolved theme mode from the global ThemeProvider:
-// - 'system' selection → mirrors OS prefers-color-scheme (default behaviour)
-// - explicit 'light'/'dark' → respected as-is
-// Only the public landing page forces dark by default; every authenticated
-// surface (client AND owner) honours the system theme.
+// Owner panel resolves light/dark MUI palettes from global ThemeProvider mode,
+// which tracks `prefers-color-scheme` only. Landing (/) uses separate tokens.
 type ResolvedMode = 'light' | 'dark';
 
 const OwnerThemeContext = createContext<{ mode: ResolvedMode } | undefined>(

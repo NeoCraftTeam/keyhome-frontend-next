@@ -1,7 +1,6 @@
 'use client';
 
 import { useAuth } from '@/providers/AuthProvider';
-import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
 import { surveysService } from '@/services/surveys.service';
 import { Survey } from '@/types';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
@@ -9,15 +8,13 @@ import Apple from '@mui/icons-material/Apple';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowIcon from '@mui/icons-material/ArrowForwardIos';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
 import Facebook from '@mui/icons-material/Facebook';
 import Google from '@mui/icons-material/Google';
 import HelpIcon from '@mui/icons-material/HelpOutline';
-import LightModeIcon from '@mui/icons-material/LightMode';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SoundIcon from '@mui/icons-material/MusicNote';
 import NotificationsIcon from '@mui/icons-material/NotificationsNone';
-import SystemIcon from '@mui/icons-material/SettingsBrightness';
+import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import {
   Alert,
   Avatar,
@@ -148,7 +145,6 @@ function SettingsRow({
 }
 
 export default function ParametresPage() {
-  const { choice, setThemeChoice } = useThemeMode();
   const { user, logout, isAuthenticated } = useAuth();
   const router = useRouter();
   const { user: clerkUser } = useClerk();
@@ -250,29 +246,6 @@ export default function ParametresPage() {
     }
   };
 
-  const themeOptions: {
-    value: ThemeChoice;
-    label: string;
-    icon: React.ReactNode;
-  }[] = [
-    {
-      value: 'light',
-      label: 'Clair',
-      icon: <LightModeIcon sx={{ fontSize: 20 }} />,
-    },
-    {
-      value: 'dark',
-      label: 'Sombre',
-      icon: <DarkModeIcon sx={{ fontSize: 20 }} />,
-    },
-    {
-      value: 'system',
-      label: 'Auto',
-      icon: <SystemIcon sx={{ fontSize: 20 }} />,
-    },
-  ];
-  const currentTheme: ThemeChoice = choice;
-
   return (
     <Container
       maxWidth={false}
@@ -350,69 +323,31 @@ export default function ParametresPage() {
         {/* ── LEFT col: Apparence + Notifications + Logout ── */}
         <Grid size={{ xs: 12, lg: 5 }}>
           <Stack spacing={3}>
-            {/* Theme */}
+            {/* Theme — follows OS; marketing landing uses a dedicated dark palette */}
             <Box>
               <SectionTitle>Apparence</SectionTitle>
               <SettingsCard>
-                <Box sx={{ p: 2 }}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      gap: { xs: 1.5, sm: 1 },
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    {themeOptions.map((opt) => {
-                      const isActive = opt.value === currentTheme;
-                      return (
-                        <Box
-                          key={opt.value}
-                          onClick={() => {
-                            if (opt.value !== currentTheme)
-                              setThemeChoice(opt.value);
-                          }}
-                          sx={{
-                            flex: 1,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: 0.75,
-                            py: { xs: 2.5, sm: 2 },
-                            borderRadius: 2.5,
-                            border: '2px solid',
-                            borderColor: isActive
-                              ? 'primary.main'
-                              : 'transparent',
-                            bgcolor: isActive
-                              ? brand.primaryAlpha5
-                              : (theme) =>
-                                  theme.palette.mode === 'dark'
-                                    ? 'rgba(255,255,255,0.04)'
-                                    : 'rgba(0,0,0,0.03)',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              color: isActive
-                                ? 'primary.main'
-                                : 'text.secondary',
-                              lineHeight: 1,
-                            }}
-                          >
-                            {opt.icon}
-                          </Box>
-                          <Typography
-                            variant="caption"
-                            fontWeight={isActive ? 700 : 500}
-                            color={isActive ? 'primary.main' : 'text.secondary'}
-                          >
-                            {opt.label}
-                          </Typography>
-                        </Box>
-                      );
-                    })}
+                <Box
+                  sx={{
+                    p: 2,
+                    display: 'flex',
+                    gap: 1.5,
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  <Box sx={{ color: 'text.secondary', pt: 0.25 }}>
+                    <SettingsBrightnessIcon sx={{ fontSize: 22 }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>
+                      Thème de l&apos;appareil
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      KeyHome applique automatiquement le mode clair ou sombre
+                      selon les réglages de votre téléphone ou ordinateur. La
+                      page d&apos;accueil marketing reste présentée en mode
+                      sombre.
+                    </Typography>
                   </Box>
                 </Box>
               </SettingsCard>

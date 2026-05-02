@@ -50,6 +50,7 @@ export function formatLastSeenShort(lastSeenAt: string): string {
   if (hours < 24) return `il y a ${hours} h`;
 
   const days = differenceInDays(now, seenAt);
+  if (days === 1) return 'il y a 1 jour';
   if (days < 7) return `il y a ${days} jours`;
 
   return `le ${format(seenAt, 'd MMM', { locale: fr })}`;
@@ -82,18 +83,33 @@ export function OnlineStatus({
     );
   }
 
+  const offlineColor = theme.textMuted;
+  const dotColor = theme.isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.18)';
+
   if (status === 'offline' && lastSeenAt) {
     return (
-      <span className="flex items-center gap-1.5 text-[11.5px] text-gray-400">
-        <span className="h-[6px] w-[6px] rounded-full bg-gray-300 inline-block shrink-0" />
+      <span
+        className="flex items-center gap-1.5 text-[11.5px]"
+        style={{ color: offlineColor }}
+      >
+        <span
+          className="h-[6px] w-[6px] rounded-full inline-block shrink-0"
+          style={{ backgroundColor: dotColor }}
+        />
         Vu {formatLastSeenShort(lastSeenAt)}
       </span>
     );
   }
 
   return (
-    <span className="flex items-center gap-1.5 text-[11.5px] text-gray-400">
-      <span className="h-[6px] w-[6px] rounded-full bg-gray-300 inline-block shrink-0" />
+    <span
+      className="flex items-center gap-1.5 text-[11.5px]"
+      style={{ color: offlineColor }}
+    >
+      <span
+        className="h-[6px] w-[6px] rounded-full inline-block shrink-0"
+        style={{ backgroundColor: dotColor }}
+      />
       Hors ligne
     </span>
   );

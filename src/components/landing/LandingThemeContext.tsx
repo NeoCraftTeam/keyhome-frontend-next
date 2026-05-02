@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, useContext, type ReactNode } from 'react';
-import { useThemeMode } from '@/providers/ThemeProvider';
 
 export type LandingThemeTokens = {
   bg: string;
@@ -21,10 +20,9 @@ export type LandingThemeTokens = {
   footerBorder: string;
   quote: string;
   isDark: boolean;
-  toggle: () => void;
 };
 
-const DARK: Omit<LandingThemeTokens, 'isDark' | 'toggle'> = {
+const DARK: Omit<LandingThemeTokens, 'isDark'> = {
   bg: '#0A0A0F',
   bgAlt: '#0D0D14',
   surface: 'rgba(255,255,255,0.03)',
@@ -43,43 +41,18 @@ const DARK: Omit<LandingThemeTokens, 'isDark' | 'toggle'> = {
   quote: 'rgba(255,255,255,0.65)',
 };
 
-const LIGHT: Omit<LandingThemeTokens, 'isDark' | 'toggle'> = {
-  bg: '#F5F5FA',
-  bgAlt: '#ECEEF6',
-  surface: 'rgba(0,0,0,0.03)',
-  surfaceHover: 'rgba(0,0,0,0.05)',
-  border: 'rgba(0,0,0,0.08)',
-  borderHover: 'rgba(0,0,0,0.15)',
-  text: '#0F0F16',
-  textSub: 'rgba(15,15,22,0.7)',
-  textMuted: 'rgba(15,15,22,0.6)',
-  textNav: 'rgba(15,15,22,0.75)',
-  navBg: 'rgba(245,245,250,0.92)',
-  navBorder: 'rgba(0,0,0,0.08)',
-  gridLine: 'rgba(0,0,0,0.03)',
-  footerBg: '#E5E5EF',
-  footerBorder: 'rgba(0,0,0,0.09)',
-  quote: 'rgba(15,15,22,0.65)',
-};
-
 const LandingThemeContext = createContext<LandingThemeTokens>({
-  ...LIGHT,
-  isDark: false,
-  toggle: () => {},
+  ...DARK,
+  isDark: true,
 });
 
+/**
+ * Landing (/) uses a dedicated dark marketing palette regardless of OS theme.
+ * The rest of the app follows `prefers-color-scheme` via `ThemeProvider`.
+ */
 export function LandingThemeProvider({ children }: { children: ReactNode }) {
-  const { choice, toggleTheme } = useThemeMode();
-  // Landing page defaults to dark for marketing impact. Authenticated panels
-  // (client / owner) follow the resolved system mode; only the landing page
-  // overrides to dark unless the user has explicitly picked 'light'.
-  const isDark = choice !== 'light';
-  const tokens = isDark ? DARK : LIGHT;
-
   return (
-    <LandingThemeContext.Provider
-      value={{ ...tokens, isDark, toggle: toggleTheme }}
-    >
+    <LandingThemeContext.Provider value={{ ...DARK, isDark: true }}>
       {children}
     </LandingThemeContext.Provider>
   );

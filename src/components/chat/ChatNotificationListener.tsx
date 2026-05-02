@@ -1,6 +1,11 @@
 'use client';
 
 import { getEcho } from '@/lib/echo';
+import {
+  applyMessageSentToConversationsCache,
+  applyMessagesReadToConversationsCache,
+} from '@/lib/conversation-list-cache';
+import type { ConversationsListQueryData } from '@/lib/conversation-list-cache';
 import { selectConversationsForBackgroundWs } from '@/lib/chat-subscriptions';
 import { chatKeys } from '@/lib/query-keys';
 import { chatMessagesKey } from '@/hooks/useChat';
@@ -14,16 +19,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 /**
- * Global listener mounted in every layout. Three responsibilities:
- *
- * 1. **Toast notifications** — shows a branded snackbar for new messages when
- *    the user is NOT viewing that conversation. The toast colour is panel-aware
- *    via the `accentColor` prop (pink for client, teal for owner).
- * 2. **Global message cache sync** — pushes incoming messages into the per-
- *    conversation TanStack messages cache so data is already there when the
- *    user opens the conversation.
- * 3. **Reconnect invalidation** — when the WebSocket reconnects after a drop,
- *    invalidates all chat-related queries so stale caches are refreshed.
+ * Global listener mounted in every layout when authenticated. Keeps unread
+ * state, inbox previews, and message caches coherent with WebSocket delivery.
  *
  * No duplicate channels — Echo reuses the same Pusher subscription.
  * At most MAX_BACKGROUND_WS_CONVERSATIONS private channels are subscribed
@@ -60,7 +57,7 @@ export function ChatNotificationListener({
     queryKey: listKey,
     queryFn: () => fetchConversations(),
     enabled: isAuthenticated && !!user,
-    staleTime: Infinity,
+    staleTime: 30_000,
     gcTime: 30 * 60 * 1000,
   });
 
@@ -120,8 +117,7 @@ export function ChatNotificationListener({
   // Race-safe binding: echo.private(name).subscription may be momentarily
   // undefined (StrictMode, fast nav, freshly-recreated singleton). Retry
   // every 50ms (max 1s) per UUID until the underlying Pusher channel is
-  // ready, then bind once. Mirrors the pattern in useChat.ts and
-  // useConversations.ts. Without this, the first render after navigation
+  // ready, then bind once. Mirrors the pattern in useChat.ts. Without this, the first render after navigation
   // can silently miss message.sent events.
   useEffect(() => {
     if (!user || !convUuids) return;
@@ -129,10 +125,26 @@ export function ChatNotificationListener({
     const echo = getEcho();
     const uuids = convUuids.split(',').filter(Boolean);
     const convMap = new Map(subscribedConversations.map((c) => [c.uuid, c]));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    /**
+     * Minimal Pusher channel surface we actually use here. The full Pusher
+     * channel type isn't exported from `laravel-echo`, so we keep a structural
+     * type rather than `any`. We bind two events per channel:
+     *  - `message.sent`   → list preview / unread bump
+     *  - `messages.read`  → flip own-message ticks to "read" in real time
+     */
+    type AnyHandler = (data: unknown) => void;
+    type PusherSubscription = {
+      bind: (event: string, handler: AnyHandler) => void;
+      unbind: (event: string, handler?: AnyHandler) => void;
+    };
+    interface MessagesReadPayload {
+      reader_id: string;
+      read_at: string;
+    }
     const bindings: Array<{
-      pusherCh: any;
-      handler: (event: Message) => void;
+      pusherCh: PusherSubscription;
+      event: string;
+      handler: AnyHandler;
     }> = [];
     const retryTimers: Array<ReturnType<typeof setTimeout>> = [];
     let cancelled = false;
@@ -141,8 +153,9 @@ export function ChatNotificationListener({
       if (cancelled) return;
       const channelName = `conversation.${uuid}`;
       const echoChannel = echo.private(channelName);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pusherCh = (echoChannel as any).subscription;
+      const pusherCh = (
+        echoChannel as unknown as { subscription?: PusherSubscription }
+      ).subscription;
       if (!pusherCh) {
         if (attempts < 20) {
           retryTimers.push(
@@ -152,8 +165,8 @@ export function ChatNotificationListener({
         return;
       }
 
-      const handler = (event: Message) => {
-        // Global message cache sync — push into per-conversation cache
+      const messageSentHandler = (raw: unknown) => {
+        const event = raw as Message;
         const msgKey = chatMessagesKey(user.id, event.conversation_uuid);
         queryClient.setQueryData<MessagesCache>(msgKey, (old) => {
           if (!old) return old;
@@ -161,7 +174,13 @@ export function ChatNotificationListener({
           return { ...old, messages: [...old.messages, event] };
         });
 
-        // Skip everything else for own messages or while actively viewing the conversation
+        queryClient.setQueryData(
+          listKey,
+          (old: ConversationsListQueryData | undefined) =>
+            applyMessageSentToConversationsCache(old, event, user.id)
+        );
+
+        // Skip toast + aggregate unread for own messages or while viewing this thread
         if (event.sender_id === user.id) return;
         if (pathnameRef.current === `${basePath}/${uuid}`) return;
 
@@ -205,8 +224,30 @@ export function ChatNotificationListener({
         });
       };
 
-      pusherCh.bind('message.sent', handler);
-      bindings.push({ pusherCh, handler });
+      // `messages.read` flips own-message ticks to read in the inbox even
+      // when the user is not currently viewing the thread. The thread page
+      // (`useChat`) handles the same event for the open conversation.
+      const messagesReadHandler = (raw: unknown) => {
+        const event = raw as MessagesReadPayload;
+        queryClient.setQueryData(
+          listKey,
+          (old: ConversationsListQueryData | undefined) =>
+            applyMessagesReadToConversationsCache(
+              old,
+              uuid,
+              event.reader_id,
+              event.read_at,
+              user.id
+            )
+        );
+      };
+
+      pusherCh.bind('message.sent', messageSentHandler);
+      pusherCh.bind('messages.read', messagesReadHandler);
+      bindings.push(
+        { pusherCh, event: 'message.sent', handler: messageSentHandler },
+        { pusherCh, event: 'messages.read', handler: messagesReadHandler }
+      );
     };
 
     uuids.forEach((uuid) => tryBindOne(uuid));
@@ -214,13 +255,14 @@ export function ChatNotificationListener({
     return () => {
       cancelled = true;
       retryTimers.forEach(clearTimeout);
-      bindings.forEach(({ pusherCh, handler }) => {
-        pusherCh.unbind('message.sent', handler);
+      bindings.forEach(({ pusherCh, event, handler }) => {
+        pusherCh.unbind(event, handler);
       });
     };
   }, [
     user,
     convUuids,
+    listKey,
     queryClient,
     enqueueSnackbar,
     router,

@@ -146,6 +146,18 @@ export function MessageInput({
     const bodyToSend = trimmed;
     const attachmentsToSend =
       readyAttachments.length > 0 ? readyAttachments : undefined;
+    // Snapshot the pending list so we can restore on failure (re-creating the
+    // PendingItem entries with their already-uploaded server descriptors so
+    // the user does not have to re-attach the files).
+    const pendingSnapshot: PendingItem[] = pending
+      .filter((p) => p.attachment !== null)
+      .map((p) => ({
+        id: p.id,
+        file: p.file,
+        previewUrl: p.previewUrl,
+        attachment: p.attachment,
+        uploadProgress: null,
+      }));
 
     // Clear instantly for responsive UX
     setBody('');
@@ -156,8 +168,15 @@ export function MessageInput({
     try {
       await onSend(bodyToSend, attachmentsToSend, replyTo?.uuid);
     } catch {
-      // Restore text on failure so the user can retry.
+      // Restore text + attachments on failure so the user can retry without
+      // losing their work. The cancelled-id guard set in clearAllPending is
+      // forgotten by re-creating the items with the same ids and we mark them
+      // as ready (uploadProgress: null, attachment: existing descriptor).
       setBody(bodyToSend);
+      if (pendingSnapshot.length > 0) {
+        pendingSnapshot.forEach((p) => cancelledIdsRef.current.delete(p.id));
+        setPending(pendingSnapshot);
+      }
     } finally {
       setIsSending(false);
     }

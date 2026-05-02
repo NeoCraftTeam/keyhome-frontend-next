@@ -2,7 +2,7 @@
 
 import { useServerInsertedHTML } from 'next/navigation';
 
-const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.style.colorScheme=d?"dark":"light";if(d){document.documentElement.setAttribute("data-kh-theme","dark");document.documentElement.style.backgroundColor="#141419";document.documentElement.style.color="#F0EEF8";}else{document.documentElement.setAttribute("data-kh-theme","light");}}catch(e){}})();`;
+const THEME_SCRIPT = `(function(){try{var d=window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.style.colorScheme=d?"dark":"light";if(d){document.documentElement.setAttribute("data-kh-theme","dark");document.documentElement.style.backgroundColor="#141419";document.documentElement.style.color="#F0EEF8";}else{document.documentElement.setAttribute("data-kh-theme","light");document.documentElement.style.backgroundColor="";document.documentElement.style.color="";}}catch(e){}})();`;
 
 /**
  * Injects the anti-FOUC theme detection script via useServerInsertedHTML so

@@ -71,6 +71,8 @@ export const semantic = {
   info: '#3B82F6',
   whatsapp: '#25D366',
   purple: '#8B5CF6',
+  /** Pink accent — used by owner dashboard analytics charts and badges. */
+  pink: '#EC4899',
 } as const;
 
 /* ── Light theme palette ─────────────────────────────────────── */

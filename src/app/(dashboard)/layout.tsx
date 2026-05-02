@@ -1,7 +1,6 @@
 'use client';
 
 import BottomNav, { BOTTOM_NAV_HEIGHT } from '@/components/layout/BottomNav';
-import { useIsStandalone } from '@/hooks/useIsStandalone';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
@@ -22,6 +21,7 @@ import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
 import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
 import { useFcmToken } from '@/hooks/useFcmToken';
+import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { useAuth } from '@/providers/AuthProvider';
 import { surveysService } from '@/services/surveys.service';
 import { UserRole } from '@/types';
@@ -331,7 +331,11 @@ export default function DashboardLayout({
                 surveyPostponed[activeSurvey.id] ??
                 getSurveyPostponed(activeSurvey.id, user)
               }
-              bottomOffset={BOTTOM_NAV_HEIGHT}
+              bottomOffset={
+                !hideNavForChat && isMobile && isStandalone
+                  ? BOTTOM_NAV_HEIGHT
+                  : undefined
+              }
             />
           )}
         <PushPrompt />

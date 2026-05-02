@@ -7,12 +7,9 @@ import {
   type NotificationPreferences,
 } from '@/services/owner.service';
 import { useAuth } from '@/providers/AuthProvider';
-import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
 import {
-  DarkMode as DarkModeIcon,
-  LightMode as LightModeIcon,
   Logout as LogoutIcon,
-  SettingsBrightness as SystemIcon,
+  SettingsBrightness as SettingsBrightnessIcon,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -31,9 +28,6 @@ import {
   FormControlLabel,
   Grid,
   List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
   Snackbar,
   Stack,
   Switch,
@@ -65,7 +59,6 @@ const CHANNEL_TOGGLES: { key: keyof NotificationPreferences; label: string }[] =
 
 export default function OwnerParametresPage() {
   const { logout } = useAuth();
-  const { choice, setThemeChoice } = useThemeMode();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const queryClient = useQueryClient();
   const [prefSnackbar, setPrefSnackbar] = useState<{
@@ -116,16 +109,6 @@ export default function OwnerParametresPage() {
     updatePrefsMutation.mutate({ [key]: value });
   };
 
-  const themeOptions: {
-    value: ThemeChoice;
-    label: string;
-    icon: React.ReactNode;
-  }[] = [
-    { value: 'light', label: 'Clair', icon: <LightModeIcon /> },
-    { value: 'dark', label: 'Sombre', icon: <DarkModeIcon /> },
-    { value: 'system', label: 'Système', icon: <SystemIcon /> },
-  ];
-
   return (
     <Container
       maxWidth={false}
@@ -157,36 +140,31 @@ export default function OwnerParametresPage() {
                 borderColor: 'divider',
               }}
             >
-              <CardContent sx={{ p: 0 }}>
+              <CardContent sx={{ p: 2 }}>
                 <Typography
                   variant="overline"
                   color="text.secondary"
-                  sx={{ px: 2, pt: 2, display: 'block', fontWeight: 700 }}
+                  sx={{ display: 'block', fontWeight: 700, mb: 1 }}
                 >
                   Apparence
                 </Typography>
-                <List disablePadding>
-                  {themeOptions.map((opt) => (
-                    <ListItemButton
-                      key={opt.value}
-                      selected={choice === opt.value}
-                      onClick={() => setThemeChoice(opt.value)}
-                      sx={{ borderRadius: 1, mx: 1, mb: 0.5 }}
-                    >
-                      <ListItemIcon
-                        sx={{
-                          color:
-                            choice === opt.value
-                              ? 'primary.main'
-                              : 'text.secondary',
-                        }}
-                      >
-                        {opt.icon}
-                      </ListItemIcon>
-                      <ListItemText primary={opt.label} />
-                    </ListItemButton>
-                  ))}
-                </List>
+                <Box
+                  sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}
+                >
+                  <Box sx={{ color: 'text.secondary', pt: 0.25 }}>
+                    <SettingsBrightnessIcon sx={{ fontSize: 22 }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" fontWeight={600} gutterBottom>
+                      Thème de l&apos;appareil
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      La zone connectée suit le mode clair ou sombre défini dans
+                      les réglages de votre appareil. La page marketing
+                      d&apos;accueil utilise un thème sombre dédié.
+                    </Typography>
+                  </Box>
+                </Box>
               </CardContent>
             </Card>
 

@@ -16,6 +16,7 @@ import {
 } from '@/components/surveys/SurveyBanner';
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
 import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
+import { useIsStandalone } from '@/hooks/useIsStandalone';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
@@ -57,6 +58,7 @@ export default function OwnerLayoutClient({
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isStandalone = useIsStandalone();
   const [surveyPostponed, setSurveyPostponed] = useState<
     Record<string, boolean>
   >({});
@@ -255,7 +257,10 @@ export default function OwnerLayoutClient({
           presence (online/last seen) and chat toast notifications.
           ChatNotificationListener uses the teal owner accent. */}
       <GlobalPresenceChannel />
-      <ChatNotificationListener accentColor="#0D9488" />
+      <ChatNotificationListener
+        basePath="/owner/messages"
+        accentColor="#0D9488"
+      />
 
       {/* Sidebar — MUI Drawer permanent (desktop) / temporary (mobile via Navbar) */}
       <Drawer
@@ -315,7 +320,10 @@ export default function OwnerLayoutClient({
                 }
               : {
                   display: 'block',
-                  pb: isMobile ? `${OWNER_BOTTOM_NAV_HEIGHT}px` : 3,
+                  pb:
+                    isMobile && isStandalone
+                      ? `${OWNER_BOTTOM_NAV_HEIGHT}px`
+                      : 3,
                   px: { xs: 2, md: 3 },
                 }),
           }}
@@ -352,7 +360,7 @@ export default function OwnerLayoutClient({
           onClick={() => router.push('/owner/ads/new')}
           sx={{
             position: 'fixed',
-            bottom: OWNER_BOTTOM_NAV_HEIGHT + 16,
+            bottom: isStandalone ? OWNER_BOTTOM_NAV_HEIGHT + 16 : 24,
             right: 16,
             zIndex: (t) => t.zIndex.appBar,
             boxShadow: 4,
@@ -400,6 +408,9 @@ export default function OwnerLayoutClient({
             isPostponed={
               surveyPostponed[activeSurvey.id] ??
               getSurveyPostponed(activeSurvey.id, user)
+            }
+            bottomOffset={
+              isMobile && isStandalone ? OWNER_BOTTOM_NAV_HEIGHT : undefined
             }
           />
         )}

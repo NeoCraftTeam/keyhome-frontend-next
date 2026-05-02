@@ -1,28 +1,64 @@
 'use client';
 
-import { BOTTOM_NAV_ITEMS } from '@/lib/nav-config';
+import { bottomNavigationPwaShellSx } from '@/components/layout/bottomNavigationPwaShellSx';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
-import { useAuth } from '@/providers/AuthProvider';
+import { BOTTOM_NAV_ITEMS } from '@/lib/nav-config';
+import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
+import { brandAgent } from '@/theme/tokens';
 import {
   BottomNavigation,
   BottomNavigationAction,
+  Box,
   Paper,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
 
-export const BOTTOM_NAV_HEIGHT = 64;
+/** @deprecated Prefer {@link PWA_BOTTOM_NAV_INNER_HEIGHT_PX} — kept for layout imports */
+export const BOTTOM_NAV_HEIGHT = PWA_BOTTOM_NAV_INNER_HEIGHT_PX;
 
+function ClientBottomNavHomeIcon({ selected }: { selected: boolean }) {
+  return (
+    <Box
+      sx={{
+        width: 40,
+        height: 40,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Box
+        component="img"
+        src="/images/logo-teal.png"
+        alt=""
+        draggable={false}
+        sx={{
+          width: 28,
+          height: 28,
+          objectFit: 'contain',
+          display: 'block',
+          transition: 'opacity 0.2s ease, filter 0.2s ease',
+          filter: selected ? 'none' : 'grayscale(1)',
+          opacity: selected ? 1 : 0.42,
+        }}
+      />
+    </Box>
+  );
+}
+
+/** Bottom tab shell — visible only when the app runs as an installed / standalone surface. */
 export default function BottomNav() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isStandalone = useIsStandalone();
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
 
-  if (!isMobile || !isStandalone) return null;
+  if (!isMobile || !isStandalone) {
+    return null;
+  }
 
   const activeIndex = BOTTOM_NAV_ITEMS.findIndex(
     (item) => pathname === item.href || pathname?.startsWith(item.href + '/')
@@ -30,10 +66,6 @@ export default function BottomNav() {
 
   const handleNav = (index: number) => {
     const item = BOTTOM_NAV_ITEMS[index];
-    if (item.href === '/profile' && !isAuthenticated) {
-      router.push('/login');
-      return;
-    }
     router.push(item.href);
   };
 
@@ -45,66 +77,49 @@ export default function BottomNav() {
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: (theme) => theme.zIndex.appBar + 1,
+        zIndex: (t) => t.zIndex.appBar + 1,
         borderTop: '1px solid',
         borderColor: 'divider',
-        // Safe area for iOS notch devices
-        pb: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
       <BottomNavigation
+        className="kh-bottom-tab-bar"
         value={activeIndex >= 0 ? activeIndex : false}
         onChange={(_, newValue) => handleNav(newValue)}
         showLabels
         component="nav"
         aria-label="Navigation principale"
         sx={{
-          height: BOTTOM_NAV_HEIGHT,
-          bgcolor: 'background.paper',
-          '& .MuiBottomNavigationAction-root': {
-            minWidth: 0,
-            py: 1,
-            gap: 0.25,
-            color: 'text.secondary',
-            transition: 'all 0.2s ease',
-            position: 'relative',
-            '&:active': { transform: 'scale(0.92)' },
-            '&.Mui-selected': {
-              color: 'primary.main',
-            },
-          },
-          '& .MuiBottomNavigationAction-label': {
-            fontSize: '0.65rem',
-            fontWeight: 500,
-            mt: 0.25,
-            transition: 'font-weight 0.2s ease',
-            '&.Mui-selected': {
-              fontSize: '0.65rem',
-              fontWeight: 700,
-            },
-          },
-          '& .Mui-selected': {
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              bottom: 0,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 24,
-              height: 3,
-              borderRadius: '3px 3px 0 0',
-              bgcolor: 'primary.main',
-            },
-          },
+          ...bottomNavigationPwaShellSx(),
+          boxShadow: 'none',
+          borderRadius: 0,
         }}
       >
         {BOTTOM_NAV_ITEMS.map((item, idx) => (
           <BottomNavigationAction
             key={item.href}
             label={item.label}
-            icon={item.icon}
+            icon={
+              item.href === '/home' ? (
+                <ClientBottomNavHomeIcon selected={idx === activeIndex} />
+              ) : (
+                item.icon
+              )
+            }
             aria-label={item.label}
             aria-current={idx === activeIndex ? 'page' : undefined}
+            sx={
+              item.href === '/home'
+                ? {
+                    '&.Mui-selected': {
+                      color: `${brandAgent.primary} !important`,
+                      '&::after': {
+                        bgcolor: `${brandAgent.primary} !important`,
+                      },
+                    },
+                  }
+                : undefined
+            }
           />
         ))}
       </BottomNavigation>

@@ -1,8 +1,6 @@
 'use client';
 
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LightModeIcon from '@mui/icons-material/LightMode';
 import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
@@ -20,7 +18,6 @@ import {
   Typography,
 } from '@mui/material';
 import type { User } from '@/types';
-import { useThemeMode } from '@/providers/ThemeProvider';
 
 interface NavDesktopMenuProps {
   anchorEl: HTMLElement | null;
@@ -41,8 +38,6 @@ export default function NavDesktopMenu({
     onClose();
     onNavigate(href);
   };
-
-  const { mode, toggleTheme } = useThemeMode();
 
   return (
     <Menu
@@ -110,20 +105,6 @@ export default function NavDesktopMenu({
           <NotificationsActiveIcon />
         </ListItemIcon>
         <ListItemText>Alertes de recherche</ListItemText>
-      </MenuItem>
-      <Divider />
-      <MenuItem
-        onClick={() => {
-          onClose();
-          toggleTheme();
-        }}
-      >
-        <ListItemIcon>
-          {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-        </ListItemIcon>
-        <ListItemText>
-          {mode === 'dark' ? 'Mode clair' : 'Mode sombre'}
-        </ListItemText>
       </MenuItem>
       <Divider />
       <MenuItem onClick={() => navigate('/profile')}>

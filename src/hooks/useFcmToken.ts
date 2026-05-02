@@ -2,9 +2,11 @@
 
 import { registerFcmToken, removeFcmToken } from '@/lib/chat-api';
 import { useAuth } from '@/providers/AuthProvider';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const FCM_TOKEN_KEY = 'kh_fcm_token';
+const WELCOME_DISMISSED_KEY = 'kh:welcome-dismissed';
+const WELCOME_EVENT = 'kh:welcome-dismissed';
 
 /** One warning per full page load (avoids duplicate logs under React Strict Mode). */
 let fcmGetTokenDevFailureLogged = false;
@@ -30,8 +32,30 @@ let fcmGetTokenDevFailureLogged = false;
 export function useFcmToken(): void {
   const { user, isAuthenticated } = useAuth();
   const registeredRef = useRef(false);
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+
+  // Defer FCM permission prompt until the user has dismissed the welcome /
+  // onboarding flow. Asking for system push permission too early (before the
+  // user understands what KeyHome is) tanks the grant rate.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (localStorage.getItem(WELCOME_DISMISSED_KEY)) {
+      setWelcomeDismissed(true);
+
+      return;
+    }
+
+    const onDismissed = () => setWelcomeDismissed(true);
+    window.addEventListener(WELCOME_EVENT, onDismissed);
+
+    return () => {
+      window.removeEventListener(WELCOME_EVENT, onDismissed);
+    };
+  }, []);
 
   useEffect(() => {
+    if (!welcomeDismissed) return;
     if (!isAuthenticated || !user || registeredRef.current) return;
     if (typeof window === 'undefined') return;
 
@@ -128,7 +152,7 @@ export function useFcmToken(): void {
     register().catch(() => {
       /* push is optional */
     });
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, welcomeDismissed]);
 }
 
 /**

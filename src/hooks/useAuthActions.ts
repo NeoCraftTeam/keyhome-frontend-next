@@ -104,9 +104,9 @@ export function useAuthActions({
   );
 
   const login = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, turnstileToken?: string | null) => {
       const { token: sanctumToken, user: laravelUser } =
-        await authService.login(email, password, 'client');
+        await authService.login(email, password, 'client', turnstileToken);
 
       if (laravelUser.role !== UserRole.CUSTOMER) {
         throw new Error(
@@ -130,9 +130,9 @@ export function useAuthActions({
   );
 
   const loginOwner = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, turnstileToken?: string | null) => {
       const { token: sanctumToken, user: laravelUser } =
-        await authService.login(email, password, 'owner');
+        await authService.login(email, password, 'owner', turnstileToken);
 
       if (
         laravelUser.role !== UserRole.AGENT &&

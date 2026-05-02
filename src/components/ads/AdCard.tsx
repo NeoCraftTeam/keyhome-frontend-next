@@ -119,11 +119,28 @@ function AdCard({ ad, showDistance }: AdCardProps) {
     [images.length]
   );
 
+  // Warm Next.js router cache for the ad detail page on intent (hover/touch).
+  // Combined with the new `loading.tsx` skeleton this makes the navigation
+  // feel instant — the user sees the skeleton on tap, and the real page
+  // streams in over an already-warm chunk.
+  const prefetchedRef = useRef(false);
+  const handlePrefetch = useCallback(() => {
+    if (prefetchedRef.current) return;
+    prefetchedRef.current = true;
+    try {
+      router.prefetch(`/ads/${ad.slug}`);
+    } catch {
+      /* prefetch is best-effort — ignore failures (e.g. dev mode) */
+    }
+  }, [router, ad.slug]);
+
   return (
     <MotionConfig reducedMotion="user">
       <motion.a
         href={`/ads/${ad.slug}`}
         onClick={handleCardClick}
+        onMouseEnter={handlePrefetch}
+        onTouchStart={handlePrefetch}
         whileTap={{ scale: 0.97 }}
         transition={{ type: 'spring', stiffness: 400, damping: 20 }}
         style={{

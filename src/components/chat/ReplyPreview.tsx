@@ -13,6 +13,10 @@ interface ReplyPreviewProps {
 
 /**
  * Inline reply bar displayed above the message input when replying to a message.
+ *
+ * E2EE messages: prefer the locally-decrypted body when available; fall back to
+ * a labeled placeholder when the message is sealed but cannot be decrypted on
+ * this device.
  */
 export function ReplyPreview({
   message,
@@ -20,9 +24,25 @@ export function ReplyPreview({
   theme = CLIENT_THEME,
 }: ReplyPreviewProps) {
   const senderName = message.sender?.name ?? 'Utilisateur';
-  const preview = message.body
-    ? message.body.slice(0, 80)
-    : (message.attachments?.[0]?.original_name ?? '📎 Pièce jointe');
+
+  let preview: string;
+  if (message.is_client_sealed) {
+    preview = message.decrypted_body
+      ? message.decrypted_body.slice(0, 80)
+      : '🔐 Message sécurisé';
+  } else if (message.body) {
+    preview = message.body.slice(0, 80);
+  } else if (message.attachments?.[0]) {
+    const a = message.attachments[0];
+    preview =
+      a.type === 'image'
+        ? '📷 Photo'
+        : a.type === 'audio'
+          ? '🎙 Message vocal'
+          : (a.original_name ?? '📎 Pièce jointe');
+  } else {
+    preview = '📎 Pièce jointe';
+  }
 
   return (
     <div
@@ -39,7 +59,10 @@ export function ReplyPreview({
         >
           {senderName}
         </p>
-        <p className="text-[12px] text-gray-500 truncate leading-snug">
+        <p
+          className="text-[12px] truncate leading-snug"
+          style={{ color: theme.textSecondary }}
+        >
           {preview}
         </p>
       </div>

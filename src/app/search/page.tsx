@@ -48,19 +48,63 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import type * as MapboxGL from 'mapbox-gl';
 import { motion, MotionConfig } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { gradient } from '@/theme/tokens';
 
-mapboxgl.accessToken = MAPBOX_TOKEN;
-if (process.env.NODE_ENV === 'development') {
-  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', {
-    value: '',
-    writable: false,
-  });
+/**
+ * Mapbox GL is lazy-loaded the first time the user actually needs the map.
+ * On mobile, when the user opens the page in list-only mode, mapbox-gl is
+ * never imported — saves ~200 kB gzipped from the initial bundle.
+ *
+ * The runtime module is cached at module scope so subsequent map
+ * instantiations don't re-await the import.
+ *
+ * Note: mapbox-gl 3.x has a thin static interface (no `Map`, `Popup`, etc.
+ * on the namespace shape). The ambient `typeof import('mapbox-gl')` doesn't
+ * include them either. We type the runtime as `MapboxLib` (a structural
+ * subset) and use `MapboxGL.X` for compile-time class types.
+ */
+type MapboxLib = {
+  accessToken: string;
+  config: { EVENTS_URL?: string };
+  Map: new (opts: MapboxGL.MapOptions) => MapboxGL.Map;
+  NavigationControl: new () => MapboxGL.NavigationControl;
+  FullscreenControl: new () => MapboxGL.FullscreenControl;
+  AttributionControl: new (
+    opts?: MapboxGL.AttributionControlOptions
+  ) => MapboxGL.AttributionControl;
+  Popup: new (opts?: MapboxGL.PopupOptions) => MapboxGL.Popup;
+  LngLatBounds: new () => MapboxGL.LngLatBounds;
+};
+
+let mapboxgl: MapboxLib | null = null;
+let mapboxLoadPromise: Promise<MapboxLib> | null = null;
+
+async function loadMapbox(): Promise<MapboxLib> {
+  if (mapboxgl) return mapboxgl;
+  if (!mapboxLoadPromise) {
+    mapboxLoadPromise = import('mapbox-gl').then((mod) => {
+      const lib = (mod.default ?? mod) as unknown as MapboxLib;
+      lib.accessToken = MAPBOX_TOKEN;
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          Object.defineProperty(lib.config, 'EVENTS_URL', {
+            value: '',
+            writable: false,
+          });
+        } catch {
+          // ignore — already defined or non-configurable in some bundlers
+        }
+      }
+      mapboxgl = lib;
+      return lib;
+    });
+  }
+  return mapboxLoadPromise;
 }
 
 const IsochroneFilter = dynamic(
@@ -111,9 +155,9 @@ function SearchContent() {
   } = useSearchHistory();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
-  const popupRef = useRef<mapboxgl.Popup | null>(null);
+  const mapRef = useRef<MapboxGL.Map | null>(null);
+  const markersRef = useRef<MapboxGL.Marker[]>([]);
+  const popupRef = useRef<MapboxGL.Popup | null>(null);
 
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
@@ -194,29 +238,42 @@ function SearchContent() {
     const showMap = !isMobile || mobileViewMode === 'map';
     if (!showMap || !mapContainerRef.current || !MAPBOX_TOKEN) return;
 
+    let cancelled = false;
+    let createdMap: MapboxGL.Map | null = null;
+
     if (mapRef.current) {
       mapRef.current.remove();
       mapRef.current = null;
     }
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: mapStyleUrl,
-      center: [DEFAULT_CENTER[1], DEFAULT_CENTER[0]],
-      zoom: 11,
-      attributionControl: false,
+    void loadMapbox().then((lib) => {
+      if (cancelled || !mapContainerRef.current) return;
+
+      const map = new lib.Map({
+        container: mapContainerRef.current,
+        style: mapStyleUrl,
+        center: [DEFAULT_CENTER[1], DEFAULT_CENTER[0]],
+        zoom: 11,
+        attributionControl: false,
+      });
+      map.addControl(new lib.NavigationControl(), 'top-right');
+      map.addControl(new lib.FullscreenControl(), 'top-right');
+      map.addControl(
+        new lib.AttributionControl({ compact: true }),
+        'bottom-right'
+      );
+      mapRef.current = map;
+      createdMap = map;
     });
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-    map.addControl(
-      new mapboxgl.AttributionControl({ compact: true }),
-      'bottom-right'
-    );
-    mapRef.current = map;
 
     return () => {
-      map.remove();
-      mapRef.current = null;
+      cancelled = true;
+      if (createdMap) {
+        createdMap.remove();
+      }
+      if (mapRef.current && mapRef.current === createdMap) {
+        mapRef.current = null;
+      }
     };
   }, [isMobile, mobileViewMode, mapStyleUrl]);
 
@@ -388,7 +445,7 @@ function SearchContent() {
         if (!feat.length) return;
         const clusterId = feat[0].properties?.cluster_id;
         (
-          map.getSource('search-ads') as mapboxgl.GeoJSONSource
+          map.getSource('search-ads') as MapboxGL.GeoJSONSource
         ).getClusterExpansionZoom(clusterId, (err, zoom) => {
           if (err || zoom == null) return;
           map.easeTo({
@@ -424,6 +481,7 @@ function SearchContent() {
           : '';
 
         if (popupRef.current) popupRef.current.remove();
+        if (!mapboxgl) return;
         popupRef.current = new mapboxgl.Popup({
           offset: 14,
           closeButton: false,
@@ -470,7 +528,7 @@ function SearchContent() {
     }
 
     // Fit bounds
-    if (features.length > 0) {
+    if (features.length > 0 && mapboxgl) {
       const bounds = new mapboxgl.LngLatBounds();
       features.forEach((f) => {
         const coords = (f.geometry as GeoJSON.Point).coordinates;
@@ -1337,9 +1395,15 @@ function SearchContent() {
                         e.stopPropagation();
                         removeSearch(option.name);
                       }}
-                      sx={{ p: 0.25 }}
+                      sx={{
+                        // 44 × 44 px hit target (WCAG 2.5.5) — visual icon
+                        // stays small via fontSize, padding gives the touch area.
+                        minWidth: 44,
+                        minHeight: 44,
+                        p: 1,
+                      }}
                     >
-                      <CloseIcon sx={{ fontSize: 12 }} />
+                      <CloseIcon sx={{ fontSize: 16 }} />
                     </IconButton>
                   </Box>
                 );
@@ -1383,9 +1447,13 @@ function SearchContent() {
                               setQuery('');
                               setPage(1);
                             }}
-                            sx={{ p: 0.25 }}
+                            sx={{
+                              minWidth: 44,
+                              minHeight: 44,
+                              p: 1,
+                            }}
                           >
-                            <CloseIcon sx={{ fontSize: 14 }} />
+                            <CloseIcon sx={{ fontSize: 16 }} />
                           </IconButton>
                         )}
                       </>

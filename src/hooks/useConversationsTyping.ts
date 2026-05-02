@@ -1,15 +1,13 @@
 'use client';
 
 import { getEcho } from '@/lib/echo';
+import { selectConversationsForBackgroundWs } from '@/lib/chat-subscriptions';
 import { useAuth } from '@/providers/AuthProvider';
 import type { Conversation, TypingEvent } from '@/types/chat';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 /** Safety timeout: clear the indicator if we don't receive a stop event within 2 s. */
 const TYPING_EXPIRE_MS = 2000;
-
-/** Max simultaneous channel subscriptions for typing — prevents WS overload. */
-const MAX_TYPING_SUBS = 20;
 
 /**
  * Subscribes to typing whispers on ALL conversation channels simultaneously.
@@ -29,10 +27,12 @@ export function useConversationsTyping(
   const [typingMap, setTypingMap] = useState<Record<string, boolean>>({});
   const timeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
+  // Reuse the same selection (unread first, capped at MAX_BACKGROUND_WS_CONVERSATIONS)
+  // as message subscriptions so a conversation that delivers messages also
+  // delivers typing indicators — no half-coverage gap.
   const uuidsKey = useMemo(
     () =>
-      conversations
-        .slice(0, MAX_TYPING_SUBS)
+      selectConversationsForBackgroundWs(conversations)
         .map((c) => c.uuid)
         .join(','),
     [conversations]

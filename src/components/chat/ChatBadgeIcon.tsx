@@ -31,6 +31,9 @@ export function ChatBadgeIcon() {
       color="error"
       max={99}
       sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         '& .MuiBadge-badge': { fontSize: '0.6rem', minWidth: 16, height: 16 },
       }}
     >

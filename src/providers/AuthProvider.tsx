@@ -59,8 +59,16 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isLoggingOut: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginOwner: (email: string, password: string) => Promise<void>;
+  login: (
+    email: string,
+    password: string,
+    turnstileToken?: string | null
+  ) => Promise<void>;
+  loginOwner: (
+    email: string,
+    password: string,
+    turnstileToken?: string | null
+  ) => Promise<void>;
   loginWithOAuth: (
     provider: OAuthProvider,
     options?: { registrationIntent?: 'customer' | 'agent' }

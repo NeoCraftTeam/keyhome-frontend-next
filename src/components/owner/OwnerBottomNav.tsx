@@ -1,25 +1,61 @@
 'use client';
 
+import { bottomNavigationPwaShellSx } from '@/components/layout/bottomNavigationPwaShellSx';
+import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { OWNER_BOTTOM_NAV_ITEMS } from '@/lib/nav-config';
+import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
 import {
   BottomNavigation,
   BottomNavigationAction,
+  Box,
   Paper,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
 
-export const OWNER_BOTTOM_NAV_HEIGHT = 64;
+/** @deprecated Prefer {@link PWA_BOTTOM_NAV_INNER_HEIGHT_PX} — kept for owner layout FAB offset */
+export const OWNER_BOTTOM_NAV_HEIGHT = PWA_BOTTOM_NAV_INNER_HEIGHT_PX;
 
+function OwnerBottomNavDashboardIcon({ selected }: { selected: boolean }) {
+  return (
+    <Box
+      sx={{
+        width: 40,
+        height: 40,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Box
+        component="img"
+        src="/images/logo-teal.png"
+        alt=""
+        draggable={false}
+        sx={{
+          width: 28,
+          height: 28,
+          objectFit: 'contain',
+          display: 'block',
+          transition: 'opacity 0.2s ease, filter 0.2s ease',
+          filter: selected ? 'none' : 'grayscale(1)',
+          opacity: selected ? 1 : 0.42,
+        }}
+      />
+    </Box>
+  );
+}
+
+/** Bailleur tabs — standalone PWA only (not mobile Safari/Chrome tabs). */
 export default function OwnerBottomNav() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isStandalone = useIsStandalone();
   const pathname = usePathname();
   const router = useRouter();
 
-  /** Tous les mobiles (navigateur ou PWA standalone) : barre toujours visible pour l’espace bailleur. */
-  if (!isMobile) {
+  if (!isMobile || !isStandalone) {
     return null;
   }
 
@@ -40,64 +76,49 @@ export default function OwnerBottomNav() {
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: (theme) => theme.zIndex.appBar + 1,
+        zIndex: (t) => t.zIndex.appBar + 1,
         borderTop: '1px solid',
         borderColor: 'divider',
-        pb: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
       <BottomNavigation
+        className="kh-bottom-tab-bar"
         value={activeIndex >= 0 ? activeIndex : false}
         onChange={(_, newValue) => handleNav(newValue)}
         showLabels
         component="nav"
         aria-label="Navigation propriétaire"
         sx={{
-          height: OWNER_BOTTOM_NAV_HEIGHT,
-          bgcolor: 'background.paper',
-          '& .MuiBottomNavigationAction-root': {
-            minWidth: 0,
-            py: 1,
-            gap: 0.25,
-            color: 'text.secondary',
-            transition: 'all 0.2s ease',
-            position: 'relative',
-            '&:active': { transform: 'scale(0.92)' },
-            '&.Mui-selected': {
-              color: 'primary.main',
-            },
-          },
-          '& .MuiBottomNavigationAction-label': {
-            fontSize: '0.65rem',
-            fontWeight: 500,
-            mt: 0.25,
-            transition: 'font-weight 0.2s ease',
-            '&.Mui-selected': {
-              fontSize: '0.65rem',
-              fontWeight: 700,
-            },
-          },
-          '& .Mui-selected': {
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              bottom: 0,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 24,
-              height: 3,
-              borderRadius: '3px 3px 0 0',
-              bgcolor: 'primary.main',
-            },
-          },
+          ...bottomNavigationPwaShellSx(),
+          boxShadow: 'none',
+          borderRadius: 0,
         }}
       >
-        {OWNER_BOTTOM_NAV_ITEMS.map((item) => (
+        {OWNER_BOTTOM_NAV_ITEMS.map((item, idx) => (
           <BottomNavigationAction
             key={item.href}
             label={item.label}
-            icon={item.icon}
+            icon={
+              item.href === '/owner/dashboard' ? (
+                <OwnerBottomNavDashboardIcon selected={idx === activeIndex} />
+              ) : (
+                item.icon
+              )
+            }
             aria-label={item.label}
+            aria-current={idx === activeIndex ? 'page' : undefined}
+            sx={
+              item.href === '/owner/ads'
+                ? {
+                    '& .MuiSvgIcon-root': {
+                      fontSize: '1.75rem',
+                    },
+                    '&.Mui-selected .MuiSvgIcon-root': {
+                      color: 'primary.main',
+                    },
+                  }
+                : undefined
+            }
           />
         ))}
       </BottomNavigation>

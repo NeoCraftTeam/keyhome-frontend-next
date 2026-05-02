@@ -2,6 +2,7 @@
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
+import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
@@ -120,6 +121,10 @@ export default function RegisterPage() {
   );
   const [agentType, setAgentType] = useState<AgentType>('individual');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  // Turnstile is configured iff the public site key is present at build time.
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   /**
    * Apply ?role= / ?intent= and/or ?lock= once, persist in sessionStorage, then strip the
@@ -288,7 +293,8 @@ export default function RegisterPage() {
     form.password.length >= 8 &&
     form.password === form.confirm_password &&
     passwordStrength.score >= 50 &&
-    acceptedTerms;
+    acceptedTerms &&
+    (!turnstileEnabled || !!turnstileToken);
 
   const handleSubmit = async () => {
     setError('');
@@ -305,6 +311,7 @@ export default function RegisterPage() {
           password: form.password,
           confirm_password: form.confirm_password,
           city_id: selectedCity?.id || undefined,
+          turnstile_token: turnstileToken ?? undefined,
         });
       } else {
         response = await authService.registerAgent({
@@ -315,6 +322,7 @@ export default function RegisterPage() {
           password: form.password,
           confirm_password: form.confirm_password,
           type: agentType,
+          turnstile_token: turnstileToken ?? undefined,
           city_id: selectedCity?.id || undefined,
         });
       }
@@ -1238,6 +1246,20 @@ export default function RegisterPage() {
                       }
                       sx={{ mb: 2, alignItems: 'flex-start' }}
                     />
+
+                    {turnstileEnabled && (
+                      <Box sx={{ mb: 2 }}>
+                        <TurnstileWidget
+                          action={
+                            accountRole === 'agent'
+                              ? 'register-agent'
+                              : 'register-customer'
+                          }
+                          onToken={setTurnstileToken}
+                          onExpire={() => setTurnstileToken(null)}
+                        />
+                      </Box>
+                    )}
 
                     <Box sx={{ display: 'flex', gap: 2 }}>
                       <Button

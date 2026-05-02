@@ -53,6 +53,13 @@ export interface Message {
   e2ee?: MessageE2eePayload | null;
   /** Populated client-side after AES-GCM decrypt — never returned by the API JSON. */
   decrypted_body?: string | null;
+  /**
+   * Set client-side when a sealed message cannot be decrypted on this device
+   * (no local private key, key mismatch after device reset, or per-message
+   * corruption). Lets the bubble render a definitive "key unavailable" message
+   * instead of an indefinite "Déchiffrement…" spinner.
+   */
+  decryption_failed?: boolean;
   attachments: MessageAttachment[] | null;
   reply_to: MessageReplyTo | null;
   /** Per-emoji aggregation. Empty array when no reactions. */

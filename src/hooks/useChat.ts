@@ -313,6 +313,12 @@ export function useChat(
     [queryClient, userId, conversationUuid]
   );
 
+  // Decryption pass — runs whenever the message list or the conversation's
+  // wrapped session key changes. Tries to decrypt every sealed message that
+  // is missing `decrypted_body`. If we can't unwrap (no local private key) or
+  // can't decrypt a specific message, mark it as `decryption_failed` so the
+  // bubble can render a clear "key unavailable" fallback instead of staying
+  // stuck on "Déchiffrement…" forever.
   useEffect(() => {
     const conv = conversationRef.current;
     const e2ee = conv?.e2ee;
@@ -336,10 +342,36 @@ export function useChat(
       let aesKey = convAesKeyRef.current.get(conversationUuid) ?? null;
       if (!aesKey) {
         const priv = await getChatE2eePrivateKey();
-        if (!priv || cancelled) return;
+        if (cancelled) return;
+        if (!priv) {
+          // No local private key — sealed messages cannot be opened on this
+          // device. Mark every sealed-without-decrypted-body message as failed
+          // so the UI shows a definitive state instead of an indefinite spinner.
+          updateCache((old) => ({
+            ...old,
+            messages: old.messages.map((x) =>
+              x.is_client_sealed &&
+              (x.decrypted_body == null || x.decrypted_body === '')
+                ? { ...x, decryption_failed: true }
+                : x
+            ),
+          }));
+          return;
+        }
         try {
           aesKey = await rsaOaepUnwrap(priv, wrappedB64);
         } catch {
+          // Wrapped key was encrypted with a different public key (different
+          // device/identity). Same fallback as no-key case.
+          updateCache((old) => ({
+            ...old,
+            messages: old.messages.map((x) =>
+              x.is_client_sealed &&
+              (x.decrypted_body == null || x.decrypted_body === '')
+                ? { ...x, decryption_failed: true }
+                : x
+            ),
+          }));
           return;
         }
         convAesKeyRef.current.set(conversationUuid, aesKey);
@@ -364,11 +396,21 @@ export function useChat(
           updateCache((old) => ({
             ...old,
             messages: old.messages.map((x) =>
-              x.uuid === m.uuid ? { ...x, decrypted_body: plain } : x
+              x.uuid === m.uuid
+                ? { ...x, decrypted_body: plain, decryption_failed: false }
+                : x
             ),
           }));
         } catch {
-          /* corrupt ciphertext or wrong key */
+          // Per-message corruption — flag this one as failed but keep trying
+          // the others.
+          if (cancelled) return;
+          updateCache((old) => ({
+            ...old,
+            messages: old.messages.map((x) =>
+              x.uuid === m.uuid ? { ...x, decryption_failed: true } : x
+            ),
+          }));
         }
       }
     })();
@@ -466,18 +508,41 @@ export function useChat(
     };
   }, [markAsRead]);
 
-  // Upgrade own sent messages → delivered when recipient comes online
+  // Upgrade own sent messages → delivered when recipient comes online.
+  // Mirror the upgrade onto the conversation list cache so the inbox tick
+  // flips at the same moment as the bubble tick.
   useEffect(() => {
     if (onlineStatus !== 'online') return;
+    if (!user?.id) return;
     updateCache((old) => ({
       ...old,
       messages: old.messages.map((m) =>
-        m.sender_id === user?.id && m.status === 'sent'
+        m.sender_id === user.id && m.status === 'sent'
           ? { ...m, status: 'delivered' as const }
           : m
       ),
     }));
-  }, [onlineStatus, user?.id, updateCache]);
+    queryClient.setQueryData<{ data: Conversation[]; meta: unknown }>(
+      chatKeys.conversations(user.id),
+      (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.map((c) => {
+            if (c.uuid !== conversationUuid) return c;
+            const last = c.last_message;
+            if (!last || last.sender_id !== user.id || last.status !== 'sent') {
+              return c;
+            }
+            return {
+              ...c,
+              last_message: { ...last, status: 'delivered' as const },
+            };
+          }),
+        };
+      }
+    );
+  }, [onlineStatus, user?.id, updateCache, queryClient, conversationUuid]);
 
   // ─── WebSocket subscriptions ─────────────────────────────────────────────
   // Uses direct Pusher bind/unbind so cleanup doesn't call echo.leave(),
@@ -877,34 +942,59 @@ export function useChat(
       };
       updateConvList(optimistic);
 
+      // Helper for the sealed-then-fall-back-to-server-encrypted flow.
+      const sendSealed = async (): Promise<Message> => {
+        const payload = await buildSealedMessagePayload(
+          conv as Conversation,
+          conversationUuid,
+          body,
+          convAesKeyRef
+        );
+        const withReply: SendMessageInput =
+          replyToId !== undefined
+            ? { ...payload, reply_to_id: replyToId }
+            : payload;
+        return sendMessage(conversationUuid, withReply);
+      };
+
+      const sendPlaintext = (): Promise<Message> =>
+        sendMessage(conversationUuid, {
+          body,
+          type: optimistic.type as 'text' | 'image' | 'file' | 'audio',
+          reply_to_id: replyToId,
+          attachments,
+        });
+
       try {
         let confirmed: Message;
+        let confirmedAsSealed = wantsE2ee;
+
         if (wantsE2ee && conv) {
-          const payload = await buildSealedMessagePayload(
-            conv,
-            conversationUuid,
-            body,
-            convAesKeyRef
-          );
-          const withReply: SendMessageInput =
-            replyToId !== undefined
-              ? { ...payload, reply_to_id: replyToId }
-              : payload;
-          confirmed = await sendMessage(conversationUuid, withReply);
-          void queryClient.invalidateQueries({
-            queryKey: chatKeys.allConversations,
-          });
-          void queryClient.invalidateQueries({
-            queryKey: ['conversation-single', conversationUuid],
-          });
+          try {
+            confirmed = await sendSealed();
+            void queryClient.invalidateQueries({
+              queryKey: chatKeys.allConversations,
+            });
+            void queryClient.invalidateQueries({
+              queryKey: ['conversation-single', conversationUuid],
+            });
+          } catch (err) {
+            // E2EE wrap or peer key issues should not lose the message.
+            // Fall back to server-encrypted send so the user can keep chatting,
+            // even if the local key cache is stale or the peer hasn't bootstrapped.
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn(
+                '[useChat] sealed send failed, falling back to server-encrypted',
+                err
+              );
+            }
+            confirmedAsSealed = false;
+            confirmed = await sendPlaintext();
+          }
         } else {
-          confirmed = await sendMessage(conversationUuid, {
-            body,
-            type: optimistic.type as 'text' | 'image' | 'file' | 'audio',
-            reply_to_id: replyToId,
-            attachments,
-          });
+          confirmed = await sendPlaintext();
         }
+
         // Upgrade to 'delivered' immediately if recipient is currently online
         const confirmedStatus =
           onlineStatusRef.current === 'online'
@@ -913,7 +1003,7 @@ export function useChat(
         const confirmedMsg: Message = {
           ...confirmed,
           status: confirmedStatus,
-          ...(wantsE2ee ? { decrypted_body: body } : {}),
+          ...(confirmedAsSealed ? { decrypted_body: body } : {}),
         };
         updateCache((old) => ({
           ...old,
@@ -923,13 +1013,19 @@ export function useChat(
         }));
         // Replace optimistic entry with the server-confirmed message
         updateConvList(confirmedMsg);
-      } catch {
+      } catch (err) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('[useChat] send failed', err);
+        }
         updateCache((old) => ({
           ...old,
           messages: old.messages.filter((m) => m.uuid !== optimisticId),
         }));
         // Revert the optimistic conversation-list update on failure
         updateConvList(null);
+        // Re-throw so MessageInput can restore the textarea contents and
+        // the user knows the send didn't go through.
+        throw err;
       }
     },
     [conversationUuid, user, updateCache, queryClient]

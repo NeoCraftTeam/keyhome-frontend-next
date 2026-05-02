@@ -1,5 +1,6 @@
 'use client';
 
+import { ChatBadgeIcon } from '@/components/chat/ChatBadgeIcon';
 import { ownerService } from '@/services/owner.service';
 import {
   AccountBalance as AccountBalanceIcon,
@@ -10,7 +11,6 @@ import {
   Dashboard as DashboardIcon,
   Description as DescriptionIcon,
   Groups as GroupsIcon,
-  Home as HomeIcon,
   Payment as PaymentIcon,
   PeopleAlt as PeopleAltIcon,
   Person as PersonIcon,
@@ -18,6 +18,7 @@ import {
   Security as SecurityIcon,
   Settings as SettingsIcon,
   Subscriptions as SubscriptionsIcon,
+  ViewListRounded as ViewListRoundedIcon,
   Visibility as VisibilityIcon,
   WorkspacePremium as WorkspacePremiumIcon,
 } from '@mui/icons-material';
@@ -68,7 +69,7 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       {
         label: 'Mes Annonces',
         href: '/owner/ads',
-        icon: <HomeIcon fontSize="small" />,
+        icon: <ViewListRoundedIcon fontSize="small" />,
       },
       {
         label: 'Visites',
@@ -188,9 +189,11 @@ export default function OwnerSidebar({
           borderColor: 'divider',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          minHeight: 64,
-          gap: 1,
+          justifyContent: collapsed ? 'stretch' : 'space-between',
+          flexDirection: collapsed ? 'column' : 'row',
+          minHeight: collapsed ? undefined : 64,
+          py: collapsed ? 1 : undefined,
+          gap: collapsed ? 0.75 : 1,
         }}
       >
         {!collapsed && (
@@ -245,6 +248,26 @@ export default function OwnerSidebar({
             />
           </Box>
         )}
+        <Tooltip title="Messagerie" placement="right">
+          <IconButton
+            size="small"
+            onClick={() => router.push('/owner/messages')}
+            aria-label="Messagerie"
+            sx={{
+              flexShrink: 0,
+              color: 'primary.main',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 1.5,
+              width: collapsed ? 28 : undefined,
+              height: collapsed ? 28 : undefined,
+              '&:hover': { bgcolor: 'action.hover' },
+              '& .MuiSvgIcon-root': { fontSize: collapsed ? 18 : 20 },
+            }}
+          >
+            <ChatBadgeIcon />
+          </IconButton>
+        </Tooltip>
         <Tooltip
           title={collapsed ? 'Agrandir le menu' : 'Réduire le menu'}
           placement="right"

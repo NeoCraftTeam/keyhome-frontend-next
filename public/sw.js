@@ -1,4 +1,5 @@
-// KeyHome Service Worker v3
+// KeyHome Service Worker — version is sourced from `VERSION` below; this
+// header is left here for grep-ability and is not parsed by the SW runtime.
 // Push + Background Sync + Caching strategy for full offline/PWA support.
 
 const VERSION      = "v8";

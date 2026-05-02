@@ -2,6 +2,7 @@
 
 import PasskeyLoginButton from '@/components/auth/PasskeyLoginButton';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
+import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/FadeIn';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -53,7 +54,11 @@ export default function OwnerLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const emailLabelShrink = useOutlinedInputLabelShrink(email.length > 0);
+
+  // Turnstile is configured iff the public site key is present at build time.
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +66,7 @@ export default function OwnerLoginPage() {
     setIsSubmitting(true);
 
     try {
-      await loginOwner(email, password);
+      await loginOwner(email, password, turnstileToken);
     } catch (err) {
       // Unverified email → redirect to OTP page (backend already re-sent a fresh code).
       if (err instanceof AxiosError && err.response?.status === 403) {
@@ -275,12 +280,22 @@ export default function OwnerLoginPage() {
                 </Link>
               </Box>
 
+              {turnstileEnabled && (
+                <Box sx={{ mt: 1, mb: 1 }}>
+                  <TurnstileWidget
+                    action="login-owner"
+                    onToken={setTurnstileToken}
+                    onExpire={() => setTurnstileToken(null)}
+                  />
+                </Box>
+              )}
+
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={isSubmitting}
+                disabled={isSubmitting || (turnstileEnabled && !turnstileToken)}
                 sx={{
                   py: 1.5,
                   fontSize: '1rem',

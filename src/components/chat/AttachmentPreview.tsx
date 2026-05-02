@@ -48,7 +48,7 @@ export function AttachmentPreview({
         <button
           type="button"
           onClick={() => setLightboxOpen(true)}
-          className="group relative block overflow-hidden rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F6475F]"
+          className="group relative block overflow-hidden rounded-xl focus:outline-none"
           style={{
             // Cap inside the 75% bubble across all viewports.
             maxWidth: 'min(280px, 70vw)',
@@ -59,6 +59,10 @@ export function AttachmentPreview({
             padding: 0,
             cursor: 'pointer',
           }}
+          onFocus={(e) =>
+            (e.currentTarget.style.boxShadow = `0 0 0 2px ${theme.accent}`)
+          }
+          onBlur={(e) => (e.currentTarget.style.boxShadow = 'none')}
           aria-label="Agrandir l'image"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -285,6 +285,12 @@ export function MessageBubble({
     if (swipeAxisLockRef.current === null) {
       if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
         swipeAxisLockRef.current = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+        // Vertical scroll: cancel the pending long-press so the picker does
+        // not pop while the user is just scrolling the message list.
+        if (swipeAxisLockRef.current === 'y' && longPressRef.current) {
+          clearTimeout(longPressRef.current);
+          longPressRef.current = null;
+        }
       }
     }
     if (swipeAxisLockRef.current !== 'x') return;
@@ -549,14 +555,26 @@ export function MessageBubble({
                     isOwnerPanel={theme.isOwnerPanel}
                   />
                 ) : message.is_client_sealed ? (
-                  <span
-                    className="text-[13px] opacity-80 italic"
-                    style={{
-                      color: isOwn ? 'rgba(255,255,255,0.85)' : undefined,
-                    }}
-                  >
-                    🔐 Déchiffrement du message…
-                  </span>
+                  message.decryption_failed ? (
+                    <span
+                      className="text-[13px] opacity-90 italic"
+                      style={{
+                        color: isOwn ? 'rgba(255,255,255,0.9)' : undefined,
+                      }}
+                      title="Message chiffré envoyé depuis un autre appareil. Clé non disponible ici."
+                    >
+                      🔒 Message chiffré (clé indisponible sur cet appareil)
+                    </span>
+                  ) : (
+                    <span
+                      className="text-[13px] opacity-80 italic"
+                      style={{
+                        color: isOwn ? 'rgba(255,255,255,0.85)' : undefined,
+                      }}
+                    >
+                      🔐 Déchiffrement du message…
+                    </span>
+                  )
                 ) : null}
               </div>
             </>

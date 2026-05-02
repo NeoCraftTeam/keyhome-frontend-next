@@ -20,7 +20,7 @@ export default function DashboardTemplate({
       transition={
         shouldReduce
           ? { duration: 0 }
-          : { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }
+          : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
       }
     >
       {children}

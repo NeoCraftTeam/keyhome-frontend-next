@@ -60,12 +60,17 @@ function savePrefs(prefs: CookiePreferences): void {
 }
 
 interface CookieBannerProps {
-  variant?: 'default' | 'owner';
+  /**
+   * Optional explicit variant. When omitted (default), the banner detects the
+   * panel from the current pathname (`/owner/*` → owner, else default). This
+   * is the correct mode for a single global mount at the root layout — only
+   * one banner is rendered and it re-themes itself on navigation, so the user
+   * never sees the pink → teal flash that double-mounting caused.
+   */
+  variant?: 'default' | 'owner' | 'auto';
 }
 
-export default function CookieBanner({
-  variant = 'default',
-}: CookieBannerProps) {
+export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
@@ -73,7 +78,9 @@ export default function CookieBanner({
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
 
-  const isOwner = variant === 'owner';
+  const isOwner =
+    variant === 'owner' ||
+    (variant === 'auto' && (pathname ?? '').startsWith('/owner'));
   const accentColor = isOwner ? brandAgent.primary : brand.primary;
   const accentBar = isOwner
     ? `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`
@@ -83,13 +90,11 @@ export default function CookieBanner({
     : gradient.primary;
 
   useEffect(() => {
-    // Owner layout mounts its own teal CookieBanner — don't double-show
-    if (variant === 'default' && pathname?.startsWith('/owner')) return;
     if (loadPrefs() === null) {
       const t = setTimeout(() => setVisible(true), 1200);
       return () => clearTimeout(t);
     }
-  }, [variant, pathname]);
+  }, []);
 
   const acceptAll = () => {
     savePrefs({ necessary: true, analytics: true, marketing: true });

@@ -39,12 +39,14 @@ export const authService = {
   async login(
     email: string,
     password: string,
-    loginContext: 'owner' | 'client' = 'client'
+    loginContext: 'owner' | 'client' = 'client',
+    turnstileToken?: string | null
   ): Promise<AuthResponse> {
     const { data } = await api.post<LoginApiResponse>('/auth/login', {
       email,
       password,
       login_context: loginContext,
+      ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
     });
 
     const token = data.access_token;
@@ -67,6 +69,8 @@ export const authService = {
     password: string;
     confirm_password: string;
     city_id?: string;
+    /** Cloudflare Turnstile token; backend verifies only when configured. */
+    turnstile_token?: string;
   }): Promise<AuthResponse> {
     const { data } = await api.post<RegisterApiResponse>(
       '/auth/registerCustomer',
@@ -85,6 +89,8 @@ export const authService = {
     confirm_password: string;
     type: 'individual' | 'agency';
     city_id?: string;
+    /** Cloudflare Turnstile token; backend verifies only when configured. */
+    turnstile_token?: string;
   }): Promise<AuthResponse> {
     const { data } = await api.post<RegisterApiResponse>(
       '/auth/registerAgent',

@@ -80,7 +80,7 @@ const NAV_LINKS = [
 export default function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isDark, toggle, text, textNav, navBg, navBorder, border, surface } =
+  const { text, textNav, navBg, navBorder, border, surface } =
     useLandingTheme();
 
   useEffect(() => {
@@ -193,62 +193,11 @@ export default function LandingNav() {
             ))}
           </div>
 
-          {/* Desktop CTA + toggle */}
+          {/* Desktop CTAs */}
           <div
             className="landing-nav-cta"
             style={{ alignItems: 'center', gap: 12 }}
           >
-            {/* Dark/Light toggle */}
-            <motion.button
-              onClick={toggle}
-              whileTap={{ scale: 0.9 }}
-              title={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}
-              style={{
-                width: 46,
-                height: 26,
-                borderRadius: 13,
-                padding: 3,
-                border: `1px solid ${border}`,
-                background: isDark
-                  ? 'rgba(255,255,255,0.08)'
-                  : 'rgba(0,0,0,0.08)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                position: 'relative',
-                transition: 'border-color 0.3s, background 0.3s',
-                flexShrink: 0,
-              }}
-            >
-              <motion.div
-                animate={{ x: isDark ? 0 : 20 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: '50%',
-                  background: isDark
-                    ? 'linear-gradient(135deg, #8080b0, #5050a0)'
-                    : `linear-gradient(135deg, #FFc040, ${brand.primary})`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 10,
-                  flexShrink: 0,
-                }}
-              >
-                <motion.span
-                  key={isDark ? 'moon' : 'sun'}
-                  initial={{ scale: 0, rotate: -90, opacity: 0 }}
-                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ lineHeight: 1 }}
-                >
-                  {isDark ? '🌙' : '☀️'}
-                </motion.span>
-              </motion.div>
-            </motion.button>
-
             <PageTransitionLink
               href="/home"
               style={{
@@ -284,62 +233,11 @@ export default function LandingNav() {
             </PageTransitionLink>
           </div>
 
-          {/* Mobile right side: toggle + hamburger */}
+          {/* Mobile menu trigger */}
           <div
             className="landing-hamburger"
             style={{ alignItems: 'center', gap: 10 }}
           >
-            {/* Theme toggle */}
-            <motion.button
-              onClick={toggle}
-              whileTap={{ scale: 0.9 }}
-              title={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}
-              style={{
-                width: 40,
-                height: 22,
-                borderRadius: 11,
-                padding: 2,
-                border: `1px solid ${border}`,
-                background: isDark
-                  ? 'rgba(255,255,255,0.08)'
-                  : 'rgba(0,0,0,0.08)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                transition: 'border-color 0.3s, background 0.3s',
-                flexShrink: 0,
-              }}
-            >
-              <motion.div
-                animate={{ x: isDark ? 0 : 17 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                style={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: '50%',
-                  background: isDark
-                    ? 'linear-gradient(135deg, #8080b0, #5050a0)'
-                    : `linear-gradient(135deg, #FFc040, ${brand.primary})`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 9,
-                  flexShrink: 0,
-                }}
-              >
-                <motion.span
-                  key={isDark ? 'moon-m' : 'sun-m'}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ lineHeight: 1 }}
-                >
-                  {isDark ? '🌙' : '☀️'}
-                </motion.span>
-              </motion.div>
-            </motion.button>
-
-            {/* Hamburger icon */}
             <button
               onClick={() => setMenuOpen((o) => !o)}
               aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}

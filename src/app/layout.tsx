@@ -140,6 +140,14 @@ export const viewport: Viewport = {
     { media: '(prefers-color-scheme: dark)', color: '#141419' },
   ],
   viewportFit: 'cover',
+  // Make the on-screen keyboard SHRINK the layout viewport instead of
+  // overlaying content. Without this, iOS Safari/PWA leaves `100dvh` and
+  // `position: fixed` elements at their full layout size, then auto-scrolls
+  // the page upward to bring the focused input into view — pushing the chat
+  // header off-screen. With `resizes-content`, `dvh` and `100%` containers
+  // actually update when the keyboard shows, so the layout adapts naturally
+  // (matches Android Chrome behaviour).
+  interactiveWidget: 'resizes-content',
 };
 
 export default async function RootLayout({

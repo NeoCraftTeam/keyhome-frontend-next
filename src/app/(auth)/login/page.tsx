@@ -3,6 +3,7 @@
 import PasskeyLoginButton from '@/components/auth/PasskeyLoginButton';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import { GoogleOneTap } from '@/components/auth/GoogleOneTap';
+import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/FadeIn';
 import { useLandingStats } from '@/hooks/useLandingStats';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
@@ -40,7 +41,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const emailLabelShrink = useOutlinedInputLabelShrink(email.length > 0);
+
+  // Turnstile is configured iff the public site key is present at build time.
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +53,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await login(email, password);
+      await login(email, password, turnstileToken);
     } catch (err) {
       // If the backend says email is not verified, redirect to the OTP page.
       // The backend will have already re-sent a fresh OTP code.
@@ -301,12 +306,22 @@ export default function LoginPage() {
                 </Link>
               </Box>
 
+              {turnstileEnabled && (
+                <Box sx={{ mt: 1, mb: 1 }}>
+                  <TurnstileWidget
+                    action="login"
+                    onToken={setTurnstileToken}
+                    onExpire={() => setTurnstileToken(null)}
+                  />
+                </Box>
+              )}
+
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={isSubmitting}
+                disabled={isSubmitting || (turnstileEnabled && !turnstileToken)}
                 sx={{
                   py: 1.5,
                   fontSize: '1rem',

@@ -1,7 +1,8 @@
 'use client';
 
-import OwnerNotificationBell from '@/components/owner/OwnerNotificationBell';
+import { ChatBadgeIcon } from '@/components/chat/ChatBadgeIcon';
 import { SIDEBAR_WIDTH } from '@/components/owner/owner-constants';
+import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { OWNER_BOTTOM_NAV_ITEMS, OWNER_NAV_ITEMS } from '@/lib/nav-config';
 import { useAuth } from '@/providers/AuthProvider';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -13,6 +14,7 @@ import {
   Box,
   Button,
   Chip,
+  IconButton,
   Divider,
   Menu,
   MenuItem,
@@ -33,6 +35,7 @@ export default function OwnerNavbar() {
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isStandalone = useIsStandalone();
 
   const moreNavItems = useMemo(
     () => OWNER_NAV_ITEMS.filter((item) => !bottomHrefSet.has(item.href)),
@@ -112,7 +115,7 @@ export default function OwnerNavbar() {
                   KeyHome
                 </Typography>
                 <Chip
-                  label="Business"
+                  label="Propriétaire"
                   size="small"
                   sx={{
                     height: 20,
@@ -122,7 +125,7 @@ export default function OwnerNavbar() {
                     bgcolor: 'rgba(255,255,255,0.18)',
                     color: '#fff',
                     border: 'none',
-                    display: { xs: 'none', sm: 'flex' },
+                    display: 'flex',
                     '& .MuiChip-label': { px: 0.75 },
                   }}
                 />
@@ -155,7 +158,25 @@ export default function OwnerNavbar() {
                 Nouvelle annonce
               </Button>
             )}
-            <OwnerNotificationBell />
+            {!(isMobile && isStandalone) && (
+              <IconButton
+                aria-label="Messagerie"
+                onClick={() => router.push('/owner/messages')}
+                sx={{
+                  width: 44,
+                  height: 44,
+                  color: 'common.white',
+                  border: '1px solid rgba(255,255,255,0.38)',
+                  borderRadius: '50%',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                  },
+                  '& .MuiSvgIcon-root': { color: 'inherit' },
+                }}
+              >
+                <ChatBadgeIcon />
+              </IconButton>
+            )}
             <Box
               role="button"
               tabIndex={0}
@@ -234,22 +255,23 @@ export default function OwnerNavbar() {
                 </Typography>
               </Box>
               <Divider />
-              {isMobile && (
-                <>
-                  <MenuItem
-                    onClick={() => {
-                      setAnchorEl(null);
-                      router.push('/owner/ads/new');
-                    }}
-                  >
-                    <AddCircleOutlineIcon
-                      sx={{ mr: 1.5, fontSize: 22, color: 'primary.main' }}
-                    />
-                    Nouvelle annonce
-                  </MenuItem>
-                  <Divider />
-                </>
-              )}
+              {isMobile
+                ? [
+                    <MenuItem
+                      key="owner-nav-new-ad"
+                      onClick={() => {
+                        setAnchorEl(null);
+                        router.push('/owner/ads/new');
+                      }}
+                    >
+                      <AddCircleOutlineIcon
+                        sx={{ mr: 1.5, fontSize: 22, color: 'primary.main' }}
+                      />
+                      Nouvelle annonce
+                    </MenuItem>,
+                    <Divider key="owner-nav-divider-mobile" />,
+                  ]
+                : null}
               {moreNavItems.map((item) => {
                 const isActive =
                   pathname === item.href ||

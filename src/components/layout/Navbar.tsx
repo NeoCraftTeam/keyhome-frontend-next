@@ -7,16 +7,13 @@ import NavLogoutDialog from '@/components/layout/NavLogoutDialog';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { useNavbarState } from '@/hooks/useNavbarState';
 import { useAuth } from '@/providers/AuthProvider';
-import { useThemeMode } from '@/providers/ThemeProvider';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { ChatBadgeIcon } from '@/components/chat/ChatBadgeIcon';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
 import ExploreIcon from '@mui/icons-material/Explore';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import LightModeIcon from '@mui/icons-material/LightMode';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
@@ -41,6 +38,7 @@ const ROOT_PATHS = [
   '/comparaisons',
   '/prix-marche',
   '/aide',
+  '/messages',
 ];
 
 const NAV_LINKS = [
@@ -53,13 +51,14 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
-  const { mode, toggleTheme } = useThemeMode();
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isStandalone = useIsStandalone();
   const isRootPage = ROOT_PATHS.some((p) => pathname === p);
+  /** PWA installée : avatar à gauche (drawer), solde à droite, style app native */
+  const isClientPwaShell = isMobile && isStandalone && Boolean(isAuthenticated);
 
   const {
     anchorEl,
@@ -139,7 +138,7 @@ export default function Navbar() {
             alignItems: 'center',
           }}
         >
-          {/* LEFT — desktop nav links / mobile back button */}
+          {/* LEFT — desktop nav / mobile retour + (PWA) avatar drawer */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             {isMobile && !isRootPage && (
               <IconButton
@@ -149,6 +148,20 @@ export default function Navbar() {
                 sx={{ color: 'text.primary' }}
               >
                 <ArrowBackIcon sx={{ fontSize: 22 }} />
+              </IconButton>
+            )}
+            {isClientPwaShell && (
+              <IconButton
+                aria-label="Menu compte"
+                onClick={openDrawer}
+                sx={{ width: 44, height: 44, ml: !isRootPage ? 0 : -0.5 }}
+              >
+                <Avatar
+                  src={user?.avatar || undefined}
+                  sx={{ width: 32, height: 32, bgcolor: 'text.secondary' }}
+                >
+                  {user?.firstname?.[0] || 'U'}
+                </Avatar>
               </IconButton>
             )}
             {!isMobile &&
@@ -302,9 +315,10 @@ export default function Navbar() {
                       Publier
                     </Button>
                   )}
-                {!isMobile && <CreditsWidget />}
+                {(!isMobile || isClientPwaShell) && <CreditsWidget />}
 
-                {isAuthenticated && (
+                {/* Messages : masqué en PWA (onglet BottomNav). */}
+                {!(isMobile && isStandalone) && (
                   <IconButton
                     aria-label="Messagerie"
                     onClick={() => router.push('/messages')}
@@ -315,18 +329,24 @@ export default function Navbar() {
                 )}
 
                 {isMobile ? (
-                  <IconButton
-                    aria-label="Menu compte"
-                    onClick={openDrawer}
-                    sx={{ ml: 0.5, width: 44, height: 44 }}
-                  >
-                    <Avatar
-                      src={user?.avatar || undefined}
-                      sx={{ width: 30, height: 30, bgcolor: 'text.secondary' }}
+                  isClientPwaShell ? null : (
+                    <IconButton
+                      aria-label="Menu compte"
+                      onClick={openDrawer}
+                      sx={{ ml: 0.5, width: 44, height: 44 }}
                     >
-                      {user?.firstname?.[0] || 'U'}
-                    </Avatar>
-                  </IconButton>
+                      <Avatar
+                        src={user?.avatar || undefined}
+                        sx={{
+                          width: 30,
+                          height: 30,
+                          bgcolor: 'text.secondary',
+                        }}
+                      >
+                        {user?.firstname?.[0] || 'U'}
+                      </Avatar>
+                    </IconButton>
+                  )
                 ) : (
                   <>
                     <Box
@@ -381,27 +401,6 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <IconButton
-                  onClick={toggleTheme}
-                  aria-label={
-                    mode === 'dark'
-                      ? 'Passer en mode clair'
-                      : 'Passer en mode sombre'
-                  }
-                  sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: '50%',
-                    width: 44,
-                    height: 44,
-                  }}
-                >
-                  {mode === 'dark' ? (
-                    <LightModeIcon sx={{ fontSize: 18 }} />
-                  ) : (
-                    <DarkModeIcon sx={{ fontSize: 18 }} />
-                  )}
-                </IconButton>
                 {isMobile ? (
                   <IconButton
                     onClick={() => router.push('/login')}

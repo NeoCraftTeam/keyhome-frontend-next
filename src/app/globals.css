@@ -58,11 +58,13 @@ html[data-kh-theme='dark'] body {
   color: #f0eef8;
 }
 
-/* ===== CSS tokens for inline-style pages (no access to MUI theme callbacks) ===== */
+/* ===== CSS tokens for inline-style pages (no access to MUI theme callbacks) =====
+   Aligned with `src/theme/tokens.ts` (single source of truth — see `light.*`).
+   Update both files together. */
 :root {
   --kh-text-primary: #1a1a1a;
-  --kh-text-secondary: #555555;
-  --kh-text-muted: #888888;
+  --kh-text-secondary: #5a5a5a; /* WCAG ≥ 5.1:1 contrast ratio on white */
+  --kh-text-muted: #8a8a8a;
   --kh-text-strong: #111111;
   --kh-text-accent: #333333;
   --kh-bg-surface: #ffffff;
@@ -941,11 +943,6 @@ img[data-nimg] {
   .MuiCardMedia-root {
     max-width: 200px !important;
     min-height: 120px !important;
-  }
-
-  /* Bottom nav — slim in landscape */
-  .MuiBottomNavigation-root {
-    height: 48px !important;
   }
 
   /* Dialog — full width in landscape */

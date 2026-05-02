@@ -16,9 +16,8 @@ import LandingFooter from '@/components/landing/LandingFooter';
 import LandingNav from '@/components/landing/LandingNav';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import FAQSection from '@/components/landing/FAQSection';
-import { useThemeMode } from '@/providers/ThemeProvider';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 function BackToTop() {
   const { border, text } = useLandingTheme();
@@ -100,17 +99,6 @@ function LandingInner() {
 }
 
 export default function LandingPage() {
-  const { setThemeChoice, choice } = useThemeMode();
-  const prevChoice = useRef(choice);
-
-  useEffect(() => {
-    prevChoice.current = choice;
-    setThemeChoice('dark');
-    return () => {
-      setThemeChoice(prevChoice.current);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   return (
     <LandingThemeProvider>
       <MotionConfig reducedMotion="user">
