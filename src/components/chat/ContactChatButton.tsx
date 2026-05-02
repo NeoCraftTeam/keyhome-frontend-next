@@ -1,10 +1,14 @@
 'use client';
 
 import { findOrCreateConversation } from '@/lib/chat-api';
+import { ensureCsrfCookie, resetCsrfState } from '@/lib/api';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import { Button, CircularProgress } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import { Box, Button, CircularProgress } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { isAxiosError } from 'axios';
 
 interface ContactChatButtonProps {
   adId: string;
@@ -43,6 +47,21 @@ export function buildDraftMessage(
   return msg;
 }
 
+/** Detect transient axios failures that deserve an automatic retry. */
+function isRetryableAxiosError(e: unknown): boolean {
+  if (!isAxiosError(e)) return false;
+  // Network or timeout (no response received)
+  if (!e.response) {
+    const code = e.code ?? '';
+    return (
+      code === 'ECONNABORTED' || code === 'ERR_NETWORK' || code === 'ETIMEDOUT'
+    );
+  }
+  const status = e.response.status;
+  // CSRF token expired (419) or transient infra (502/503/504): one retry helps.
+  return status === 419 || status === 502 || status === 503 || status === 504;
+}
+
 /**
  * Chat CTA on ad detail pages.
  *
@@ -51,6 +70,14 @@ export function buildDraftMessage(
  *  - Not logged in   → redirects to /login
  *  - Locked ad       → triggers the unlock/payment dialog
  *  - Unlocked        → POST /conversations then navigates to /messages/[uuid]?draft=…
+ *
+ * Resilience:
+ *  - 403 from the backend (ad not yet unlocked according to server state) →
+ *    open the unlock dialog instead of showing a dead-end error.
+ *  - Transient errors (419 CSRF, 502/503/504, network/timeout) are retried
+ *    once automatically after refreshing the CSRF cookie.
+ *  - Any other error surfaces the actual backend message + a "Réessayer"
+ *    button so the user is never stuck with a generic dead-end.
  */
 export default function ContactChatButton({
   adId,
@@ -68,9 +95,18 @@ export default function ContactChatButton({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  if (isOwnAd) return null;
+  const performOpen = useCallback(async () => {
+    const { conversation } = await findOrCreateConversation(adId);
+    const adUrl = adSlug
+      ? `${window.location.origin}/ads/${adSlug}`
+      : undefined;
+    const draft = buildDraftMessage(adTitle, transactionType, adUrl);
+    router.push(
+      `/messages/${conversation.uuid}?draft=${encodeURIComponent(draft)}`
+    );
+  }, [adId, adSlug, adTitle, transactionType, router]);
 
-  const handleClick = async () => {
+  const handleClick = useCallback(async () => {
     if (!isAuthenticated) {
       sessionStorage.setItem(
         'kh_redirect_after_login',
@@ -87,20 +123,56 @@ export default function ContactChatButton({
 
     setLoading(true);
     setError('');
+
     try {
-      const { conversation } = await findOrCreateConversation(adId);
-      const adUrl = adSlug
-        ? `${window.location.origin}/ads/${adSlug}`
-        : undefined;
-      const draft = buildDraftMessage(adTitle, transactionType, adUrl);
-      router.push(
-        `/messages/${conversation.uuid}?draft=${encodeURIComponent(draft)}`
+      await performOpen();
+    } catch (firstErr) {
+      // Console log so users can paste it in DevTools if support asks.
+      console.error('[ContactChatButton] First attempt failed:', firstErr);
+
+      // Retry once for transient infra / CSRF
+      if (isRetryableAxiosError(firstErr)) {
+        try {
+          resetCsrfState();
+          await ensureCsrfCookie();
+          await performOpen();
+          return; // success after retry
+        } catch (retryErr) {
+          console.error('[ContactChatButton] Retry failed:', retryErr);
+
+          if (isAxiosError(retryErr) && retryErr.response?.status === 403) {
+            setLoading(false);
+            onUnlockClick();
+            return;
+          }
+          setError(
+            getSafeErrorMessage(
+              retryErr,
+              "Impossible d'ouvrir la conversation. Veuillez réessayer."
+            )
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Non-retryable failure paths
+      if (isAxiosError(firstErr) && firstErr.response?.status === 403) {
+        setLoading(false);
+        onUnlockClick();
+        return;
+      }
+      setError(
+        getSafeErrorMessage(
+          firstErr,
+          "Impossible d'ouvrir la conversation. Veuillez réessayer."
+        )
       );
-    } catch {
-      setError("Impossible d'ouvrir la conversation. Veuillez réessayer.");
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, isLocked, onUnlockClick, performOpen, router]);
+
+  if (isOwnAd) return null;
 
   return (
     <>
@@ -133,9 +205,41 @@ export default function ContactChatButton({
             : 'Envoyer un message'}
       </Button>
       {error && (
-        <p style={{ color: '#e03050', fontSize: '0.75rem', marginTop: 4 }}>
-          {error}
-        </p>
+        <Box
+          sx={{
+            mt: 0.75,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1,
+          }}
+        >
+          <Box
+            component="p"
+            sx={{ color: '#e03050', fontSize: '0.75rem', m: 0, flex: 1 }}
+          >
+            {error}
+          </Box>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<RefreshIcon fontSize="small" />}
+            onClick={() => void handleClick()}
+            sx={{
+              textTransform: 'none',
+              fontSize: '0.75rem',
+              minWidth: 0,
+              borderColor: '#e03050',
+              color: '#e03050',
+              '&:hover': {
+                borderColor: '#c01030',
+                bgcolor: 'rgba(224,48,80,0.06)',
+              },
+            }}
+          >
+            Réessayer
+          </Button>
+        </Box>
       )}
     </>
   );

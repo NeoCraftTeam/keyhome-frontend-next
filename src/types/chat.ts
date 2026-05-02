@@ -1,5 +1,5 @@
 export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read';
-export type MessageType = 'text' | 'image' | 'file' | 'system';
+export type MessageType = 'text' | 'image' | 'file' | 'audio' | 'system';
 export type ConversationStatus = 'active' | 'archived' | 'blocked';
 
 export interface MessageAttachment {
@@ -8,13 +8,31 @@ export interface MessageAttachment {
   original_name: string;
   mime_type: string;
   size: number;
-  type: 'image' | 'file';
+  type: 'image' | 'file' | 'audio';
+  /** Voice notes only — duration in milliseconds (100ms..120000ms). */
+  audio_duration_ms?: number | null;
+  /** Voice notes only — pre-computed normalised peaks (0..1) for waveform UI. */
+  audio_waveform_peaks?: number[] | null;
+}
+
+/** Aggregated per-emoji reaction count + the user IDs that reacted. */
+export interface MessageReactionGroup {
+  emoji: string;
+  count: number;
+  user_ids: string[];
+}
+
+/** Opaque AES-GCM payload; only clients with the session key can decrypt. */
+export interface MessageE2eePayload {
+  ciphertext_b64: string;
+  iv_b64: string;
 }
 
 export interface MessageReplyTo {
   uuid: string;
   body: string | null;
   sender_id: string;
+  is_client_sealed?: boolean;
 }
 
 export interface MessageSender {
@@ -30,8 +48,15 @@ export interface Message {
   sender: MessageSender | null;
   type: MessageType;
   body: string | null;
+  /** Client-sealed text: server stores ciphertext only; decrypt locally. */
+  is_client_sealed?: boolean;
+  e2ee?: MessageE2eePayload | null;
+  /** Populated client-side after AES-GCM decrypt — never returned by the API JSON. */
+  decrypted_body?: string | null;
   attachments: MessageAttachment[] | null;
   reply_to: MessageReplyTo | null;
+  /** Per-emoji aggregation. Empty array when no reactions. */
+  reactions?: MessageReactionGroup[];
   status: MessageStatus;
   read_at: string | null;
   created_at: string;
@@ -52,6 +77,17 @@ export interface ConversationParticipant {
   /** ISO-8601 timestamp of last authenticated activity. Used by `OnlineStatus`
    *  to render "Vu il y a X" when the user is offline. */
   last_seen_at: string | null;
+  /** Other party's RSA public key (PEM) for E2EE session setup. */
+  e2ee_public_key_pem?: string | null;
+}
+
+export interface ConversationE2eeMeta {
+  both_keys_registered: boolean;
+  session_ready: boolean;
+  tenant_public_key_pem: string | null;
+  landlord_public_key_pem: string | null;
+  /** RSA-OAEP-wrapped AES session key for the authenticated participant (opaque base64). */
+  wrapped_conversation_key_b64: string | null;
 }
 
 export interface Conversation {
@@ -62,11 +98,18 @@ export interface Conversation {
   unread_count: number;
   status: ConversationStatus;
   last_message_at: string | null;
+  e2ee?: ConversationE2eeMeta;
 }
 
 export interface TypingEvent {
   user_id: string;
   is_typing: boolean;
+}
+
+/** Client whisper on conversation channel — voice note capture in progress. */
+export interface VoiceRecordingEvent {
+  user_id: string;
+  is_recording: boolean;
 }
 
 export interface UnreadCountResponse {

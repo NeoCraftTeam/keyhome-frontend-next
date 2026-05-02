@@ -17,6 +17,8 @@ import {
 } from '@/lib/auth-session';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
+import { syncChatE2eePublicKeyWithServer } from '@/lib/chat-e2ee-identity';
+import { rtrimPem } from '@/lib/chat-e2ee-crypto';
 import { useQueryClient } from '@tanstack/react-query';
 import { User, UserRole } from '@/types';
 import { useClerk, useAuth as useClerkAuth, useUser } from '@clerk/nextjs';
@@ -94,6 +96,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useLayoutEffect(() => {
     pathnameRef.current = pathname ?? null;
   }, [pathname]);
+
+  useEffect(() => {
+    if (!user?.id || typeof window === 'undefined' || !crypto.subtle) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const pem = await syncChatE2eePublicKeyWithServer(
+          user.chat_e2ee_public_key_pem ?? null
+        );
+        if (cancelled || !pem) {
+          return;
+        }
+        if (rtrimPem(pem) !== rtrimPem(user.chat_e2ee_public_key_pem ?? '')) {
+          setUserState((prev) =>
+            prev && prev.id === user.id
+              ? { ...prev, chat_e2ee_public_key_pem: pem }
+              : prev
+          );
+        }
+      } catch {
+        /* E2EE bootstrap is optional — never block session */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, user?.chat_e2ee_public_key_pem]);
 
   /* ── Session helpers ──────────────────────────────────────────── */
 

@@ -1,38 +1,125 @@
 'use client';
 
 import {
+  addReaction,
   deleteMessage,
   fetchMessages,
   markConversationAsRead,
+  removeReaction,
   sendMessage,
   uploadAttachment,
+  type SendMessageInput,
 } from '@/lib/chat-api';
+import {
+  aesGcmDecrypt,
+  aesGcmEncrypt,
+  createConversationAesKey,
+  exportAesRawKey,
+  getChatE2eePrivateKey,
+  importRsaPublicKeyFromPem,
+  rsaOaepUnwrap,
+  rsaOaepWrap,
+} from '@/lib/chat-e2ee-crypto';
 import { getEcho, useEchoConnectionState } from '@/lib/echo';
 import type {
   Conversation,
   Message,
   MessageAttachment,
   TypingEvent,
+  VoiceRecordingEvent,
   UnreadCountResponse,
 } from '@/types/chat';
 import type { DeviceType } from './usePresence';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePresence } from './usePresence';
-import { useTypingIndicator } from './useTypingIndicator';
+import {
+  TYPING_RECEIVER_FALLBACK_MS,
+  useTypingIndicator,
+} from './useTypingIndicator';
 import { useAuth } from '@/providers/AuthProvider';
+import { chatKeys } from '@/lib/query-keys';
 import type { QueryClient } from '@tanstack/react-query';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+
+/** Safety clear if is_recording false whisper is lost — matches VoiceRecorder max + margin. */
+const VOICE_RECORDING_RECEIVER_FALLBACK_MS = 125_000;
 
 type QueuedMessage = {
   body: string;
   attachments?: MessageAttachment[];
   replyToId?: string;
+  /** When queued offline, send via server-side encryption (no E2EE wrap on replay). */
+  skipE2ee?: boolean;
 };
 
 const OPTIMISTIC_PREFIX = '__optimistic__';
 
-export const chatMessagesKey = (uuid: string) =>
-  ['chat-messages', uuid] as const;
+async function buildSealedMessagePayload(
+  conv: Conversation,
+  conversationUuid: string,
+  plaintext: string,
+  convAesKeyRef: { current: Map<string, CryptoKey> }
+): Promise<SendMessageInput> {
+  const e2ee = conv.e2ee;
+  if (!e2ee?.tenant_public_key_pem || !e2ee.landlord_public_key_pem) {
+    throw new Error('E2EE keys missing');
+  }
+
+  const cachedAes = convAesKeyRef.current.get(conversationUuid) ?? null;
+  if (cachedAes) {
+    const { ciphertextB64, ivB64 } = await aesGcmEncrypt(cachedAes, plaintext);
+    return {
+      is_client_sealed: true,
+      e2ee_ciphertext_b64: ciphertextB64,
+      e2ee_iv_b64: ivB64,
+    };
+  }
+
+  if (e2ee.session_ready && e2ee.wrapped_conversation_key_b64) {
+    const priv = await getChatE2eePrivateKey();
+    if (!priv) {
+      throw new Error('No local E2EE private key');
+    }
+    const aesKey = await rsaOaepUnwrap(priv, e2ee.wrapped_conversation_key_b64);
+    convAesKeyRef.current.set(conversationUuid, aesKey);
+    const { ciphertextB64, ivB64 } = await aesGcmEncrypt(aesKey, plaintext);
+    return {
+      is_client_sealed: true,
+      e2ee_ciphertext_b64: ciphertextB64,
+      e2ee_iv_b64: ivB64,
+    };
+  }
+
+  const aesKey = await createConversationAesKey();
+  convAesKeyRef.current.set(conversationUuid, aesKey);
+  const raw = await exportAesRawKey(aesKey);
+  const tenantPub = await importRsaPublicKeyFromPem(e2ee.tenant_public_key_pem);
+  const landlordPub = await importRsaPublicKeyFromPem(
+    e2ee.landlord_public_key_pem
+  );
+  const wrappedTenant = await rsaOaepWrap(tenantPub, raw);
+  const wrappedLandlord = await rsaOaepWrap(landlordPub, raw);
+  const enc = await aesGcmEncrypt(aesKey, plaintext);
+  return {
+    is_client_sealed: true,
+    e2ee_ciphertext_b64: enc.ciphertextB64,
+    e2ee_iv_b64: enc.ivB64,
+    e2ee_wrapped_keys: { tenant: wrappedTenant, landlord: wrappedLandlord },
+  };
+}
+
+/**
+ * TanStack stale window below server `chat.signed_url_ttl_hours` (default 24)
+ * so window-focus refetch renews attachment signed URLs before expiry.
+ */
+export const CHAT_MESSAGES_STALE_MS = 23 * 60 * 60 * 1000;
+
+/**
+ * Per-user + conversation — same pattern as {@link chatKeys.conversations}.
+ * Avoids TanStack cache bleed when switching accounts on one browser profile.
+ */
+export const chatMessagesKey = (userId: string, conversationUuid: string) =>
+  ['chat-messages', userId, conversationUuid] as const;
 
 /**
  * Prefetch messages for a conversation into the TanStack cache.
@@ -40,10 +127,14 @@ export const chatMessagesKey = (uuid: string) =>
  */
 export function prefetchChatMessages(
   queryClient: QueryClient,
+  userId: string,
   conversationUuid: string
 ) {
+  if (!userId) {
+    return;
+  }
   void queryClient.prefetchQuery({
-    queryKey: chatMessagesKey(conversationUuid),
+    queryKey: chatMessagesKey(userId, conversationUuid),
     queryFn: async () => {
       const resp = await fetchMessages(conversationUuid, null);
       return {
@@ -52,7 +143,7 @@ export function prefetchChatMessages(
         cursor: resp.next_cursor,
       } satisfies MessagesCache;
     },
-    staleTime: Infinity,
+    staleTime: CHAT_MESSAGES_STALE_MS,
   });
 }
 
@@ -77,11 +168,14 @@ export interface MessagesCache {
  */
 export function useChat(
   conversationUuid: string,
-  otherParticipantId: string
+  otherParticipantId: string,
+  conversation?: Conversation | null
 ): {
   messages: Message[];
   isLoading: boolean;
   isFetching: boolean;
+  isMessagesError: boolean;
+  refetchMessages: () => void;
   hasMore: boolean;
   loadMore: () => void;
   sendMessage: (
@@ -94,6 +188,7 @@ export function useChat(
     onProgress?: (pct: number) => void
   ) => Promise<MessageAttachment>;
   deleteMessage: (uuid: string) => Promise<void>;
+  toggleReaction: (messageUuid: string, emoji: string) => Promise<void>;
   setReplyTo: (message: Message | null) => void;
   replyTo: Message | null;
   otherIsTyping: boolean;
@@ -101,51 +196,107 @@ export function useChat(
   presenceDevice: DeviceType;
   notifyTyping: () => void;
   stopTyping: () => void;
+  setVoiceRecordingActive: (active: boolean) => void;
+  otherIsRecordingVoice: boolean;
   markAsRead: () => void;
   /** Number of messages queued while offline — flushes automatically on reconnect. */
   queuedCount: number;
 } {
   const { user } = useAuth();
+  const userId = user?.id ?? '';
   const queryClient = useQueryClient();
   const [otherIsTyping, setOtherIsTyping] = useState(false);
+  const [otherIsRecordingVoice, setOtherIsRecordingVoice] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [queuedCount, setQueuedCount] = useState(0);
   const offlineQueueRef = useRef<QueuedMessage[]>([]);
   const connectionState = useEchoConnectionState();
+  const convAesKeyRef = useRef<Map<string, CryptoKey>>(new Map());
+  const decryptedIdsRef = useRef<Set<string>>(new Set());
+  const prevConversationUuidRef = useRef<string | null>(null);
 
-  const { notifyTyping, stopTyping } = useTypingIndicator(conversationUuid);
+  useEffect(() => {
+    if (
+      prevConversationUuidRef.current !== null &&
+      prevConversationUuidRef.current !== conversationUuid
+    ) {
+      convAesKeyRef.current.delete(prevConversationUuidRef.current);
+      decryptedIdsRef.current.clear();
+    }
+    prevConversationUuidRef.current = conversationUuid;
+  }, [conversationUuid]);
+
+  const conversationRef = useRef(conversation ?? null);
+
+  useEffect(() => {
+    conversationRef.current = conversation ?? null;
+  }, [conversation]);
+
+  const { notifyTyping, stopTyping, setVoiceRecordingActive } =
+    useTypingIndicator(conversationUuid);
   const { status: onlineStatus, device: presenceDevice } =
     usePresence(otherParticipantId);
 
   const isLoadingMoreRef = useRef(false);
   const messagesRef = useRef<Message[]>([]);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Ref so handleSendMessage closure always reads the latest presence without stale capture
+  const voiceRecTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Refs so handleSendMessage closure always reads the latest values without
+  // stale capture, and without re-creating the callback on every state change
+  // (which would trigger MessageInput re-renders for nothing).
   const onlineStatusRef = useRef(onlineStatus);
+  const connectionStateRef = useRef(connectionState);
+  const stopTypingRef = useRef(stopTyping);
   useEffect(() => {
     onlineStatusRef.current = onlineStatus;
   }, [onlineStatus]);
+  useEffect(() => {
+    connectionStateRef.current = connectionState;
+  }, [connectionState]);
+  useEffect(() => {
+    stopTypingRef.current = stopTyping;
+  }, [stopTyping]);
 
   // ─── TanStack Query: message fetch + cache ────────────────────────────────
-  // staleTime Infinity → messages are immutable, WS events push new ones into
-  // cache in real-time (via useChat + ChatNotificationListener global sync).
-  // Reconnect handler invalidates on WS reconnect to catch missed events.
-  // gcTime 30min → cache survives long navigation away from messages.
+  // Real-time: WS merges new rows. staleTime just under signed URL TTL so
+  // refetchOnWindowFocus renews R2 links; refetch merges older loaded pages.
+  const { data, isLoading, isFetching, isError, refetch } =
+    useQuery<MessagesCache>({
+      queryKey: chatMessagesKey(userId, conversationUuid),
+      enabled: Boolean(userId && conversationUuid),
+      queryFn: async () => {
+        const prev = queryClient.getQueryData<MessagesCache>(
+          chatMessagesKey(userId, conversationUuid)
+        );
+        const resp = await fetchMessages(conversationUuid, null);
+        const freshPage = [...resp.data].reverse();
 
-  const { data, isLoading, isFetching } = useQuery<MessagesCache>({
-    queryKey: chatMessagesKey(conversationUuid),
-    queryFn: async () => {
-      const resp = await fetchMessages(conversationUuid, null);
-      return {
-        messages: [...resp.data].reverse(),
-        hasMore: resp.has_more,
-        cursor: resp.next_cursor,
-      };
-    },
-    staleTime: Infinity,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
+        if (!prev || prev.messages.length === 0) {
+          return {
+            messages: freshPage,
+            hasMore: resp.has_more,
+            cursor: resp.next_cursor,
+          };
+        }
+
+        const freshIds = new Set(freshPage.map((m) => m.uuid));
+        const optimisticPending = prev.messages.filter((m) =>
+          m.uuid.startsWith(OPTIMISTIC_PREFIX)
+        );
+        const olderTail = prev.messages.filter(
+          (m) => !freshIds.has(m.uuid) && !m.uuid.startsWith(OPTIMISTIC_PREFIX)
+        );
+
+        return {
+          messages: [...olderTail, ...freshPage, ...optimisticPending],
+          hasMore: resp.has_more,
+          cursor: resp.next_cursor,
+        };
+      },
+      staleTime: CHAT_MESSAGES_STALE_MS,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: true,
+    });
 
   const messages = data?.messages ?? [];
   const hasMore = data?.hasMore ?? false;
@@ -155,18 +306,89 @@ export function useChat(
   const updateCache = useCallback(
     (updater: (old: MessagesCache) => MessagesCache) => {
       queryClient.setQueryData<MessagesCache>(
-        chatMessagesKey(conversationUuid),
+        chatMessagesKey(userId, conversationUuid),
         (old) => updater(old ?? { messages: [], hasMore: false, cursor: null })
       );
     },
-    [queryClient, conversationUuid]
+    [queryClient, userId, conversationUuid]
   );
+
+  useEffect(() => {
+    const conv = conversationRef.current;
+    const e2ee = conv?.e2ee;
+    if (
+      !e2ee?.session_ready ||
+      !e2ee.wrapped_conversation_key_b64 ||
+      typeof crypto === 'undefined' ||
+      !crypto.subtle
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      const wrappedB64 = e2ee.wrapped_conversation_key_b64;
+      if (!wrappedB64) {
+        return;
+      }
+
+      let aesKey = convAesKeyRef.current.get(conversationUuid) ?? null;
+      if (!aesKey) {
+        const priv = await getChatE2eePrivateKey();
+        if (!priv || cancelled) return;
+        try {
+          aesKey = await rsaOaepUnwrap(priv, wrappedB64);
+        } catch {
+          return;
+        }
+        convAesKeyRef.current.set(conversationUuid, aesKey);
+      }
+
+      for (const m of messages) {
+        if (cancelled) return;
+        if (!m.is_client_sealed || !m.e2ee) continue;
+        if (decryptedIdsRef.current.has(m.uuid)) continue;
+        if (m.decrypted_body != null && m.decrypted_body !== '') {
+          decryptedIdsRef.current.add(m.uuid);
+          continue;
+        }
+        try {
+          const plain = await aesGcmDecrypt(
+            aesKey,
+            m.e2ee.ciphertext_b64,
+            m.e2ee.iv_b64
+          );
+          if (cancelled) return;
+          decryptedIdsRef.current.add(m.uuid);
+          updateCache((old) => ({
+            ...old,
+            messages: old.messages.map((x) =>
+              x.uuid === m.uuid ? { ...x, decrypted_body: plain } : x
+            ),
+          }));
+        } catch {
+          /* corrupt ciphertext or wrong key */
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    conversationUuid,
+    conversation?.e2ee?.session_ready,
+    conversation?.e2ee?.wrapped_conversation_key_b64,
+    messages,
+    updateCache,
+  ]);
 
   // ─── Load older messages ─────────────────────────────────────────────────
 
   const loadMore = useCallback(async () => {
     const cached = queryClient.getQueryData<MessagesCache>(
-      chatMessagesKey(conversationUuid)
+      chatMessagesKey(userId, conversationUuid)
     );
     if (!cached?.hasMore || !cached.cursor || isLoadingMoreRef.current) return;
 
@@ -181,16 +403,20 @@ export function useChat(
     } finally {
       isLoadingMoreRef.current = false;
     }
-  }, [conversationUuid, queryClient, updateCache]);
+  }, [conversationUuid, userId, queryClient, updateCache]);
 
   // ─── Mark as read ────────────────────────────────────────────────────────
 
   const markAsRead = useCallback(() => {
+    if (!user) {
+      return;
+    }
+    const userId = user.id;
     void markConversationAsRead(conversationUuid)
       .then(() => {
         // Reset this conversation's unread_count in the conversations list cache
         queryClient.setQueryData<{ data: Conversation[]; meta: unknown }>(
-          ['conversations'],
+          chatKeys.conversations(userId),
           (old) => {
             if (!old) return old;
             return {
@@ -203,7 +429,7 @@ export function useChat(
         );
         // Reset the global unread summary badge
         queryClient.setQueryData<UnreadCountResponse>(
-          ['chat-unread'],
+          chatKeys.unread(userId),
           (old) => {
             if (!old) return old;
             const conv = old.conversations.find(
@@ -221,13 +447,23 @@ export function useChat(
         );
       })
       .catch(() => {});
-  }, [conversationUuid, queryClient]);
+  }, [conversationUuid, queryClient, user]);
 
-  // Auto mark-as-read on focus
+  // Auto mark-as-read on focus AND on Page Visibility API "visible" change.
+  // The visibility API matters for PWAs returning from background and for
+  // tab switches that don't fire "focus" (e.g. user re-focuses an already-
+  // active window via OS app switcher).
   useEffect(() => {
     const onFocus = () => markAsRead();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') markAsRead();
+    };
     window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [markAsRead]);
 
   // Upgrade own sent messages → delivered when recipient comes online
@@ -253,6 +489,18 @@ export function useChat(
     const echoChannel = echo.private(`conversation.${conversationUuid}`);
 
     const onMessageSent = (event: Message) => {
+      if (event.sender_id === otherParticipantId) {
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = null;
+        }
+        setOtherIsTyping(false);
+        if (voiceRecTimeoutRef.current) {
+          clearTimeout(voiceRecTimeoutRef.current);
+          voiceRecTimeoutRef.current = null;
+        }
+        setOtherIsRecordingVoice(false);
+      }
       updateCache((old) => {
         if (old.messages.some((m) => m.uuid === event.uuid)) return old;
         return { ...old, messages: [...old.messages, event] };
@@ -284,6 +532,60 @@ export function useChat(
       }));
     };
 
+    const onReactionAdded = (event: {
+      message_uuid: string;
+      user_id: string;
+      emoji: string;
+    }) => {
+      updateCache((old) => ({
+        ...old,
+        messages: old.messages.map((m) => {
+          if (m.uuid !== event.message_uuid) return m;
+          const groups = [...(m.reactions ?? [])];
+          const idx = groups.findIndex((g) => g.emoji === event.emoji);
+          if (idx >= 0) {
+            const group = groups[idx];
+            if (group.user_ids.includes(event.user_id)) return m;
+            groups[idx] = {
+              ...group,
+              count: group.count + 1,
+              user_ids: [...group.user_ids, event.user_id],
+            };
+          } else {
+            groups.push({
+              emoji: event.emoji,
+              count: 1,
+              user_ids: [event.user_id],
+            });
+          }
+          return { ...m, reactions: groups };
+        }),
+      }));
+    };
+
+    const onReactionRemoved = (event: {
+      message_uuid: string;
+      user_id: string;
+      emoji: string;
+    }) => {
+      updateCache((old) => ({
+        ...old,
+        messages: old.messages.map((m) => {
+          if (m.uuid !== event.message_uuid) return m;
+          const groups = (m.reactions ?? [])
+            .map((g) => {
+              if (g.emoji !== event.emoji) return g;
+              const userIds = g.user_ids.filter((id) => id !== event.user_id);
+              return userIds.length === 0
+                ? null
+                : { ...g, count: userIds.length, user_ids: userIds };
+            })
+            .filter((g): g is NonNullable<typeof g> => g !== null);
+          return { ...m, reactions: groups };
+        }),
+      }));
+    };
+
     const onUserTyping = (event: TypingEvent) => {
       if (event.user_id === otherParticipantId) {
         setOtherIsTyping(event.is_typing);
@@ -292,8 +594,24 @@ export function useChat(
         if (event.is_typing) {
           typingTimeoutRef.current = setTimeout(
             () => setOtherIsTyping(false),
-            2000
+            TYPING_RECEIVER_FALLBACK_MS
           );
+        }
+      }
+    };
+
+    const onVoiceRecording = (event: VoiceRecordingEvent) => {
+      if (event.user_id === otherParticipantId) {
+        setOtherIsRecordingVoice(event.is_recording);
+        if (voiceRecTimeoutRef.current) {
+          clearTimeout(voiceRecTimeoutRef.current);
+          voiceRecTimeoutRef.current = null;
+        }
+        if (event.is_recording) {
+          voiceRecTimeoutRef.current = setTimeout(() => {
+            setOtherIsRecordingVoice(false);
+            voiceRecTimeoutRef.current = null;
+          }, VOICE_RECORDING_RECEIVER_FALLBACK_MS);
         }
       }
     };
@@ -302,7 +620,10 @@ export function useChat(
       ['message.sent', onMessageSent as (e: never) => void],
       ['messages.read', onMessagesRead as (e: never) => void],
       ['message.deleted', onMessageDeleted as (e: never) => void],
+      ['message.reaction.added', onReactionAdded as (e: never) => void],
+      ['message.reaction.removed', onReactionRemoved as (e: never) => void],
       ['client-typing', onUserTyping as (e: never) => void],
+      ['client-voice_recording', onVoiceRecording as (e: never) => void],
     ];
 
     // ─── Race-safe binding ─────────────────────────────────────────────────
@@ -378,6 +699,7 @@ export function useChat(
         handlers.forEach(([event, handler]) => pusherCh.unbind(event, handler));
       }
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (voiceRecTimeoutRef.current) clearTimeout(voiceRecTimeoutRef.current);
     };
   }, [conversationUuid, otherParticipantId, user?.id, markAsRead, updateCache]);
 
@@ -393,7 +715,12 @@ export function useChat(
     (async () => {
       for (const item of queue) {
         try {
-          await handleSendMessage(item.body, item.attachments, item.replyToId);
+          await handleSendMessage(
+            item.body,
+            item.attachments,
+            item.replyToId,
+            item.skipE2ee === true
+          );
         } catch {
           // Re-queue on failure
           offlineQueueRef.current.push(item);
@@ -410,55 +737,112 @@ export function useChat(
     async (
       body: string,
       attachments?: MessageAttachment[],
-      replyToId?: string
+      replyToId?: string,
+      skipE2ee?: boolean
     ) => {
-      stopTyping();
+      stopTypingRef.current();
 
-      // Offline: queue instead of sending
+      // Offline: queue instead of sending. Read the LATEST connection state
+      // via a ref so this callback doesn't have to be re-created when the
+      // connection drops/reconnects (which would re-render MessageInput).
+      const currentConnection = connectionStateRef.current;
       if (
-        connectionState === 'unavailable' ||
-        connectionState === 'disconnected' ||
+        currentConnection === 'unavailable' ||
+        currentConnection === 'disconnected' ||
         !navigator.onLine
       ) {
-        offlineQueueRef.current.push({ body, attachments, replyToId });
+        offlineQueueRef.current.push({
+          body,
+          attachments,
+          replyToId,
+          skipE2ee: true,
+        });
         setQueuedCount(offlineQueueRef.current.length);
+        return;
+      }
+      if (!user) {
         return;
       }
       const optimisticId = `${OPTIMISTIC_PREFIX}${Date.now()}`;
       const replyMsg = replyToId
         ? messagesRef.current.find((m) => m.uuid === replyToId)
         : undefined;
-      const optimistic: Message = {
-        uuid: optimisticId,
-        conversation_uuid: conversationUuid,
-        sender_id: user?.id ?? '',
-        sender: user
-          ? {
-              id: user.id,
-              name: `${user.firstname} ${user.lastname}`,
-              avatar: user.avatar ?? null,
-            }
-          : null,
-        type:
-          attachments?.[0]?.type === 'image'
-            ? 'image'
-            : attachments?.length
-              ? 'file'
-              : 'text',
-        body,
-        attachments: attachments ?? null,
-        reply_to: replyMsg
-          ? {
-              uuid: replyMsg.uuid,
-              body: replyMsg.body,
-              sender_id: replyMsg.sender_id,
-            }
-          : null,
-        status: 'sending',
-        read_at: null,
-        created_at: new Date().toISOString(),
-        deleted_at: null,
-      };
+
+      const conv = conversationRef.current;
+      const e2eeMeta = conv?.e2ee;
+      const wantsE2ee =
+        skipE2ee !== true &&
+        !attachments?.length &&
+        body.trim() !== '' &&
+        e2eeMeta?.both_keys_registered === true &&
+        Boolean(e2eeMeta.tenant_public_key_pem) &&
+        Boolean(e2eeMeta.landlord_public_key_pem) &&
+        typeof crypto !== 'undefined' &&
+        Boolean(crypto.subtle);
+
+      const replyToPayload = replyMsg
+        ? {
+            uuid: replyMsg.uuid,
+            body:
+              replyMsg.decrypted_body ??
+              replyMsg.body ??
+              (replyMsg.is_client_sealed ? '🔐 Message sécurisé' : null),
+            sender_id: replyMsg.sender_id,
+            is_client_sealed: replyMsg.is_client_sealed,
+          }
+        : null;
+
+      const optimistic: Message = wantsE2ee
+        ? {
+            uuid: optimisticId,
+            conversation_uuid: conversationUuid,
+            sender_id: user?.id ?? '',
+            sender: user
+              ? {
+                  id: user.id,
+                  name: `${user.firstname} ${user.lastname}`,
+                  avatar: user.avatar ?? null,
+                }
+              : null,
+            type: 'text',
+            body: null,
+            is_client_sealed: true,
+            decrypted_body: body,
+            e2ee: null,
+            attachments: null,
+            reply_to: replyToPayload,
+            status: 'sending',
+            read_at: null,
+            created_at: new Date().toISOString(),
+            deleted_at: null,
+          }
+        : {
+            uuid: optimisticId,
+            conversation_uuid: conversationUuid,
+            sender_id: user?.id ?? '',
+            sender: user
+              ? {
+                  id: user.id,
+                  name: `${user.firstname} ${user.lastname}`,
+                  avatar: user.avatar ?? null,
+                }
+              : null,
+            type:
+              attachments?.[0]?.type === 'image'
+                ? 'image'
+                : attachments?.[0]?.type === 'audio'
+                  ? 'audio'
+                  : attachments?.length
+                    ? 'file'
+                    : 'text',
+            body,
+            attachments: attachments ?? null,
+            reply_to: replyToPayload,
+            status: 'sending',
+            read_at: null,
+            created_at: new Date().toISOString(),
+            deleted_at: null,
+          };
 
       updateCache((old) => ({
         ...old,
@@ -470,7 +854,7 @@ export function useChat(
       // appears immediately as the last preview (Pusher never echoes back to sender).
       const updateConvList = (msg: Message | null) => {
         queryClient.setQueryData<{ data: Conversation[]; meta: unknown }>(
-          ['conversations'],
+          chatKeys.conversations(user.id),
           (old) => {
             if (!old) return old;
             const updated = old.data.map((c) =>
@@ -494,18 +878,43 @@ export function useChat(
       updateConvList(optimistic);
 
       try {
-        const confirmed = await sendMessage(conversationUuid, {
-          body,
-          type: optimistic.type as 'text' | 'image' | 'file',
-          reply_to_id: replyToId,
-          attachments,
-        });
+        let confirmed: Message;
+        if (wantsE2ee && conv) {
+          const payload = await buildSealedMessagePayload(
+            conv,
+            conversationUuid,
+            body,
+            convAesKeyRef
+          );
+          const withReply: SendMessageInput =
+            replyToId !== undefined
+              ? { ...payload, reply_to_id: replyToId }
+              : payload;
+          confirmed = await sendMessage(conversationUuid, withReply);
+          void queryClient.invalidateQueries({
+            queryKey: chatKeys.allConversations,
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ['conversation-single', conversationUuid],
+          });
+        } else {
+          confirmed = await sendMessage(conversationUuid, {
+            body,
+            type: optimistic.type as 'text' | 'image' | 'file' | 'audio',
+            reply_to_id: replyToId,
+            attachments,
+          });
+        }
         // Upgrade to 'delivered' immediately if recipient is currently online
         const confirmedStatus =
           onlineStatusRef.current === 'online'
             ? ('delivered' as const)
             : confirmed.status;
-        const confirmedMsg = { ...confirmed, status: confirmedStatus };
+        const confirmedMsg: Message = {
+          ...confirmed,
+          status: confirmedStatus,
+          ...(wantsE2ee ? { decrypted_body: body } : {}),
+        };
         updateCache((old) => ({
           ...old,
           messages: old.messages.map((m) =>
@@ -551,15 +960,103 @@ export function useChat(
     [updateCache]
   );
 
+  // ─── Toggle reaction ─────────────────────────────────────────────────────
+  // Optimistic: mutate the cache immediately, then either POST (add) or
+  // DELETE (remove) and rollback on failure. The backend is idempotent so a
+  // duplicate POST is harmless.
+  const handleToggleReaction = useCallback(
+    async (messageUuid: string, emoji: string) => {
+      if (!user) return;
+      const userId = user.id;
+      let wasSelected = false;
+
+      updateCache((old) => ({
+        ...old,
+        messages: old.messages.map((m) => {
+          if (m.uuid !== messageUuid) return m;
+          const groups = [...(m.reactions ?? [])];
+          const idx = groups.findIndex((g) => g.emoji === emoji);
+          if (idx >= 0 && groups[idx].user_ids.includes(userId)) {
+            wasSelected = true;
+            const group = groups[idx];
+            const userIds = group.user_ids.filter((id) => id !== userId);
+            if (userIds.length === 0) {
+              groups.splice(idx, 1);
+            } else {
+              groups[idx] = {
+                ...group,
+                count: userIds.length,
+                user_ids: userIds,
+              };
+            }
+          } else if (idx >= 0) {
+            groups[idx] = {
+              ...groups[idx],
+              count: groups[idx].count + 1,
+              user_ids: [...groups[idx].user_ids, userId],
+            };
+          } else {
+            groups.push({ emoji, count: 1, user_ids: [userId] });
+          }
+          return { ...m, reactions: groups };
+        }),
+      }));
+
+      try {
+        if (wasSelected) {
+          await removeReaction(messageUuid, emoji);
+        } else {
+          await addReaction(messageUuid, emoji);
+        }
+      } catch {
+        // Rollback: re-toggle the same emoji to undo our optimistic write.
+        updateCache((old) => ({
+          ...old,
+          messages: old.messages.map((m) => {
+            if (m.uuid !== messageUuid) return m;
+            const groups = [...(m.reactions ?? [])];
+            const idx = groups.findIndex((g) => g.emoji === emoji);
+            if (idx >= 0 && groups[idx].user_ids.includes(userId)) {
+              const group = groups[idx];
+              const userIds = group.user_ids.filter((id) => id !== userId);
+              if (userIds.length === 0) groups.splice(idx, 1);
+              else
+                groups[idx] = {
+                  ...group,
+                  count: userIds.length,
+                  user_ids: userIds,
+                };
+            } else if (idx >= 0) {
+              groups[idx] = {
+                ...groups[idx],
+                count: groups[idx].count + 1,
+                user_ids: [...groups[idx].user_ids, userId],
+              };
+            } else {
+              groups.push({ emoji, count: 1, user_ids: [userId] });
+            }
+            return { ...m, reactions: groups };
+          }),
+        }));
+      }
+    },
+    [user, updateCache]
+  );
+
   return {
     messages,
     isLoading,
     isFetching,
+    isMessagesError: isError,
+    refetchMessages: () => {
+      void refetch();
+    },
     hasMore,
     loadMore,
     sendMessage: handleSendMessage,
     uploadFile: handleUploadFile,
     deleteMessage: handleDeleteMessage,
+    toggleReaction: handleToggleReaction,
     setReplyTo,
     replyTo,
     otherIsTyping,
@@ -567,6 +1064,8 @@ export function useChat(
     presenceDevice,
     notifyTyping,
     stopTyping,
+    setVoiceRecordingActive,
+    otherIsRecordingVoice,
     markAsRead,
     queuedCount,
   };

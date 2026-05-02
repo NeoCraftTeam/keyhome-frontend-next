@@ -12,7 +12,14 @@ import { archiveConversation } from '@/lib/chat-api';
 import { useEchoConnectionState } from '@/lib/echo';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ChevronDown, MessageCircle, Search, WifiOff, X } from 'lucide-react';
+import {
+  ChevronDown,
+  MessageCircle,
+  Search,
+  WifiOff,
+  X,
+  AlertCircle,
+} from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
@@ -31,7 +38,7 @@ type FlatItem =
   | { kind: 'load-more' }
   | { kind: 'separator'; date: string }
   | { kind: 'message'; msg: Message; showAvatar: boolean }
-  | { kind: 'typing' };
+  | { kind: 'activity'; mode: 'typing' | 'recording' };
 
 function DateSeparator({ date, theme }: { date: string; theme: ChatTheme }) {
   const d = new Date(date);
@@ -144,20 +151,26 @@ export function ChatWindow({
     messages,
     isLoading,
     isFetching,
+    isMessagesError,
+    refetchMessages,
     hasMore,
     loadMore,
     sendMessage,
     uploadFile,
     deleteMessage,
+    toggleReaction,
     setReplyTo,
     replyTo,
     otherIsTyping,
+    otherIsRecordingVoice,
     onlineStatus,
     presenceDevice,
     notifyTyping,
+    stopTyping,
+    setVoiceRecordingActive,
     markAsRead,
     queuedCount,
-  } = useChat(conversation.uuid, otherParticipant?.id ?? '');
+  } = useChat(conversation.uuid, otherParticipant?.id ?? '', conversation);
 
   const listRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -166,17 +179,32 @@ export function ChatWindow({
   const [newMsgCount, setNewMsgCount] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [stickyDate, setStickyDate] = useState<string | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAtBottomRef = useRef(true);
   // Track which message UUIDs were present on initial load — only new ones animate
   const initialMsgIdsRef = useRef<Set<string> | null>(null);
   const initialLoadDoneRef = useRef(false);
 
-  // Seed initial message set once loading finishes
   useEffect(() => {
-    if (isLoading || initialLoadDoneRef.current) return;
+    initialLoadDoneRef.current = false;
+    initialMsgIdsRef.current = null;
+  }, [conversation.uuid, user?.id]);
+
+  // Seed initial message set once loading finishes (per conversation)
+  useEffect(() => {
+    if (
+      !user?.id ||
+      isLoading ||
+      isMessagesError ||
+      initialLoadDoneRef.current
+    ) {
+      return;
+    }
     initialLoadDoneRef.current = true;
     initialMsgIdsRef.current = new Set(messages.map((m) => m.uuid));
-  }, [isLoading, messages]);
+  }, [user?.id, conversation.uuid, isLoading, isMessagesError, messages]);
 
   // ── Group messages by date ──────────────────────────────────────────────────
   const groups = useMemo(() => {
@@ -209,9 +237,13 @@ export function ChatWindow({
         });
       }
     }
-    if (otherIsTyping && otherParticipant) items.push({ kind: 'typing' });
+    if (otherIsRecordingVoice && otherParticipant) {
+      items.push({ kind: 'activity', mode: 'recording' });
+    } else if (otherIsTyping && otherParticipant) {
+      items.push({ kind: 'activity', mode: 'typing' });
+    }
     return items;
-  }, [groups, hasMore, otherIsTyping, otherParticipant]);
+  }, [groups, hasMore, otherIsTyping, otherIsRecordingVoice, otherParticipant]);
 
   // ── Virtualizer ──────────────────────────────────────────────────────────
   const virtualizer = useVirtualizer({
@@ -225,13 +257,14 @@ export function ChatWindow({
           return 44;
         case 'separator':
           return 36;
-        case 'typing':
-          return 52;
+        case 'activity':
+          return 56;
         case 'message': {
-          const len = item.msg.body?.length ?? 0;
+          const textLen =
+            (item.msg.decrypted_body ?? item.msg.body)?.length ?? 0;
           if ((item.msg.attachments?.length ?? 0) > 0) return 200;
-          if (len < 60) return 72;
-          if (len < 160) return 100;
+          if (textLen < 60) return 72;
+          if (textLen < 160) return 100;
           return 140;
         }
       }
@@ -239,7 +272,12 @@ export function ChatWindow({
     overscan: 12,
   });
 
-  // Track scroll position
+  // Track scroll position + compute sticky date label from the first visible item.
+  // We walk the virtual items, find the first one whose offset is below the
+  // current scrollTop, then look back to the most recent separator. This gives
+  // us the date currently "in view" — perfect for a sticky pill that mirrors
+  // WhatsApp / iMessage behaviour without a real CSS sticky header (which the
+  // virtualizer's absolute positioning makes impossible).
   const handleScroll = useCallback(() => {
     const el = listRef.current;
     if (!el) return;
@@ -247,7 +285,38 @@ export function ChatWindow({
     isAtBottomRef.current = nearBottom;
     setShowScrollBtn(!nearBottom);
     if (nearBottom) setNewMsgCount(0);
-  }, []);
+
+    const virtualItems = virtualizer.getVirtualItems();
+    if (virtualItems.length === 0) {
+      setStickyDate(null);
+    } else {
+      const scrollTop = el.scrollTop;
+      const firstVisibleIdx =
+        virtualItems.find((vi) => vi.start + vi.size >= scrollTop)?.index ??
+        virtualItems[0].index;
+      let nextDate: string | null = null;
+      for (let i = firstVisibleIdx; i >= 0; i--) {
+        const item = flatItems[i];
+        if (item?.kind === 'separator') {
+          nextDate = item.date;
+          break;
+        }
+      }
+      setStickyDate(nextDate);
+    }
+
+    setIsScrolling(true);
+    if (scrollIdleTimerRef.current) clearTimeout(scrollIdleTimerRef.current);
+    scrollIdleTimerRef.current = setTimeout(() => setIsScrolling(false), 800);
+  }, [flatItems, virtualizer]);
+
+  // Cleanup the idle timer on unmount
+  useEffect(
+    () => () => {
+      if (scrollIdleTimerRef.current) clearTimeout(scrollIdleTimerRef.current);
+    },
+    []
+  );
 
   const scrollToBottom = useCallback(() => {
     setNewMsgCount(0);
@@ -293,13 +362,17 @@ export function ChatWindow({
 
   // Auto-scroll when typing indicator appears
   useEffect(() => {
-    if (otherIsTyping && isAtBottomRef.current && flatItems.length > 0) {
+    if (
+      (otherIsTyping || otherIsRecordingVoice) &&
+      isAtBottomRef.current &&
+      flatItems.length > 0
+    ) {
       virtualizer.scrollToIndex(flatItems.length - 1, {
         align: 'end',
         behavior: 'smooth',
       });
     }
-  }, [otherIsTyping]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [otherIsTyping, otherIsRecordingVoice]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initial scroll to bottom
   useEffect(() => {
@@ -464,6 +537,42 @@ export function ChatWindow({
           />
         </div>
 
+        {/* Sticky day pill (WhatsApp / iMessage style).
+            Fades in only while the user is actively scrolling, fades out 800 ms
+            after they stop. Sits above the message list but below header banners. */}
+        {stickyDate && (
+          <div
+            className="pointer-events-none absolute left-0 right-0 top-2 z-10 flex justify-center transition-opacity"
+            style={{
+              opacity: isScrolling ? 1 : 0,
+              transitionDuration: '180ms',
+              transitionTimingFunction: 'cubic-bezier(0.22,1,0.36,1)',
+            }}
+            aria-hidden
+          >
+            <span
+              className="text-[11px] font-medium px-3.5 py-1 rounded-full"
+              style={{
+                color: theme.textMuted,
+                backgroundColor: theme.isDark
+                  ? theme.surfaceBg
+                  : 'rgba(255,255,255,0.92)',
+                backdropFilter: 'blur(8px)',
+                boxShadow: theme.isDark
+                  ? `0 1px 4px rgba(0,0,0,0.30), 0 0 0 1px ${theme.glassBorder}`
+                  : '0 1px 4px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04)',
+              }}
+            >
+              {(() => {
+                const d = new Date(stickyDate);
+                if (isToday(d)) return "Aujourd'hui";
+                if (isYesterday(d)) return 'Hier';
+                return format(d, 'dd MMMM yyyy', { locale: fr });
+              })()}
+            </span>
+          </div>
+        )}
+
         {/* Scrollable messages */}
         <div
           ref={listRef}
@@ -480,6 +589,40 @@ export function ChatWindow({
                   theme={theme}
                 />
               ))}
+            </div>
+          ) : isMessagesError ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 pb-10 px-6 text-center max-w-sm mx-auto">
+              <AlertCircle
+                className="h-12 w-12 shrink-0"
+                style={{ color: theme.accent }}
+                aria-hidden
+              />
+              <div>
+                <p
+                  className="text-[15px] font-semibold"
+                  style={{ color: theme.textPrimary }}
+                >
+                  Impossible de charger les messages
+                </p>
+                <p
+                  className="text-[12.5px] mt-1.5"
+                  style={{ color: theme.textMuted }}
+                >
+                  Vérifiez votre connexion ou réessayez dans un instant.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => refetchMessages()}
+                className="rounded-full px-5 py-2.5 text-[13px] font-medium min-h-11 min-w-[140px] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                style={{
+                  backgroundColor: theme.accent,
+                  color: '#fff',
+                  outlineColor: theme.accent,
+                }}
+              >
+                Réessayer
+              </button>
             </div>
           ) : messages.length === 0 ? (
             /* ── Empty conversation state ───────────────────────────────── */
@@ -609,15 +752,18 @@ export function ChatWindow({
                               ? deleteMessage
                               : undefined
                           }
+                          onToggleReaction={toggleReaction}
+                          currentUserId={user?.id}
                           onScrollToReply={scrollToMessage}
                           theme={theme}
                           searchQuery={searchQuery || undefined}
                         />
                       )}
-                      {item.kind === 'typing' && (
+                      {item.kind === 'activity' && (
                         <TypingIndicator
                           name={otherParticipant!.name}
                           theme={theme}
+                          variant={item.mode}
                         />
                       )}
                     </div>
@@ -640,7 +786,7 @@ export function ChatWindow({
               style={{
                 background: `linear-gradient(135deg, ${theme.accent}, ${theme.bubbleGradientEnd})`,
                 boxShadow: `0 2px 12px ${theme.accent}50`,
-                animation: 'msgIn 0.2s cubic-bezier(0.34,1.36,0.64,1) both',
+                animation: 'msgIn 0.2s cubic-bezier(0.22,1,0.36,1) both',
               }}
             >
               ↓ {newMsgCount} nouveau{newMsgCount > 1 ? 'x' : ''}
@@ -667,6 +813,8 @@ export function ChatWindow({
         onSend={sendMessage}
         onUpload={uploadFile}
         onTyping={notifyTyping}
+        stopTyping={stopTyping}
+        setVoiceRecordingActive={setVoiceRecordingActive}
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}
         disabled={isLoading}

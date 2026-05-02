@@ -4,9 +4,17 @@ import { getEcho } from '@/lib/echo';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCallback, useEffect, useRef } from 'react';
 
-const DEBOUNCE_MS = 100;
-const STOP_AFTER_MS = 1000;
-const HEARTBEAT_MS = 3000;
+export const TYPING_DEBOUNCE_MS = 100;
+export const TYPING_STOP_AFTER_MS = 3000;
+export const TYPING_HEARTBEAT_MS = 3000;
+
+/** Receiver auto-hide must exceed heartbeat interval so we do not flicker between pulses. */
+export const TYPING_RECEIVER_FALLBACK_MS =
+  TYPING_HEARTBEAT_MS + TYPING_STOP_AFTER_MS + 500;
+
+const DEBOUNCE_MS = TYPING_DEBOUNCE_MS;
+const STOP_AFTER_MS = TYPING_STOP_AFTER_MS;
+const HEARTBEAT_MS = TYPING_HEARTBEAT_MS;
 
 /**
  * Typing indicator hook — sends typing events via Pusher client events (whisper).
@@ -21,7 +29,7 @@ const HEARTBEAT_MS = 3000;
  * - Debounces keystrokes 100 ms before sending.
  * - Heartbeat re-sends is_typing=true every 3 s while active so the receiver's
  *   safety timeout never fires during continuous long-form typing.
- * - Auto-sends is_typing=false after 5 s of inactivity.
+ * - Auto-sends is_typing=false after 3 s of inactivity (matches WhatsApp / iMessage).
  * - No server-side HTTP endpoint needed — best-effort, zero latency.
  *
  * Usage:
@@ -31,12 +39,14 @@ const HEARTBEAT_MS = 3000;
 export function useTypingIndicator(conversationUuid: string): {
   notifyTyping: () => void;
   stopTyping: () => void;
+  setVoiceRecordingActive: (active: boolean) => void;
 } {
   const { user } = useAuth();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isTypingRef = useRef(false);
+  const isVoiceRecordingRef = useRef(false);
 
   /* eslint-disable react-hooks/preserve-manual-memoization */
   const whisperTyping = useCallback(
@@ -51,9 +61,36 @@ export function useTypingIndicator(conversationUuid: string): {
     },
     [conversationUuid, user?.id]
   );
+  const whisperVoiceRecording = useCallback(
+    (active: boolean) => {
+      try {
+        const echo = getEcho();
+        const ch = echo.private(`conversation.${conversationUuid}`);
+        ch.whisper('voice_recording', {
+          user_id: user?.id,
+          is_recording: active,
+        });
+      } catch {
+        // best-effort
+      }
+    },
+    [conversationUuid, user?.id]
+  );
   /* eslint-enable react-hooks/preserve-manual-memoization */
 
+  const setVoiceRecordingActive = useCallback(
+    (active: boolean) => {
+      isVoiceRecordingRef.current = active;
+      whisperVoiceRecording(active);
+    },
+    [whisperVoiceRecording]
+  );
+
   const stopTyping = useCallback(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
     if (heartbeatRef.current) {
       clearInterval(heartbeatRef.current);
       heartbeatRef.current = null;
@@ -85,14 +122,18 @@ export function useTypingIndicator(conversationUuid: string): {
     }, DEBOUNCE_MS);
   }, [whisperTyping, stopTyping]);
 
-  // Send is_typing=false on unmount so the indicator clears immediately.
+  // Send is_typing=false and voice_recording=false on unmount.
   useEffect(
     () => () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       if (isTypingRef.current) stopTyping();
+      if (isVoiceRecordingRef.current) {
+        isVoiceRecordingRef.current = false;
+        whisperVoiceRecording(false);
+      }
     },
-    [stopTyping]
+    [stopTyping, whisperVoiceRecording]
   );
 
-  return { notifyTyping, stopTyping };
+  return { notifyTyping, stopTyping, setVoiceRecordingActive };
 }

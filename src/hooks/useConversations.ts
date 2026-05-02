@@ -1,39 +1,40 @@
 'use client';
 
 import { fetchConversations, fetchUnreadCount } from '@/lib/chat-api';
+import { selectConversationsForBackgroundWs } from '@/lib/chat-subscriptions';
+import { chatKeys } from '@/lib/query-keys';
 import { chatMessagesKey, prefetchChatMessages } from './useChat';
 import type { MessagesCache } from './useChat';
 import type { Conversation, Message, UnreadCountResponse } from '@/types/chat';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { getEcho } from '@/lib/echo';
 import { useAuth } from '@/providers/AuthProvider';
 
-const CONVERSATIONS_KEY = ['conversations'] as const;
-const UNREAD_KEY = ['chat-unread'] as const;
+/** Pusher channel object returned from laravel-echo (no stable exported type). */
+type PusherSubscription = {
+  bind(name: string, callback: (payload: Message) => void): void;
+  unbind(name: string, callback: (payload: Message) => void): void;
+};
 
-/**
- * Manages the conversation list with real-time updates and global cache sync.
- *
- * Enterprise caching strategy:
- * - staleTime Infinity — WS events keep conversation list live in real-time.
- *   Reconnect handler (in ChatNotificationListener) invalidates on WS reconnect.
- * - gcTime 30min — cache survives long navigation away from messages.
- * - Global message cache sync — message.sent events push into the per-conversation
- *   TanStack messages cache so data is ready before the user opens a conversation.
- * - Proactive prefetch — top 3 conversations' messages are prefetched on first load.
- */
+// Conversation list + WebSocket sync; TanStack keys are scoped per user via chatKeys.
 export function useConversations(): {
   conversations: Conversation[];
   isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
   unread: UnreadCountResponse | undefined;
   refetch: () => void;
 } {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: CONVERSATIONS_KEY,
+  const listKey = user
+    ? chatKeys.conversations(user.id)
+    : chatKeys.conversations('');
+
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: listKey,
     queryFn: () => fetchConversations(),
     enabled: !!user,
     staleTime: Infinity,
@@ -42,7 +43,7 @@ export function useConversations(): {
   });
 
   const { data: unread } = useQuery({
-    queryKey: UNREAD_KEY,
+    queryKey: user ? chatKeys.unread(user.id) : chatKeys.unread(''),
     queryFn: fetchUnreadCount,
     enabled: !!user,
     staleTime: 60_000,
@@ -52,23 +53,43 @@ export function useConversations(): {
 
   const conversations = data?.data ?? [];
 
-  // Build a stable string of conversation UUIDs to detect changes
-  const convUuids = conversations
-    .map((c) => c.uuid)
-    .sort()
-    .join(',');
+  const subscribedConversations = useMemo(
+    () => selectConversationsForBackgroundWs(conversations),
+    [conversations]
+  );
+
+  const convUuids = useMemo(
+    () =>
+      subscribedConversations
+        .map((c) => c.uuid)
+        .sort()
+        .join(','),
+    [subscribedConversations]
+  );
   const prevUuidsRef = useRef(convUuids);
 
   // ─── Proactive prefetch: warm cache for top conversations on first load ────
   const hasPrefetchedRef = useRef(false);
+  const lastUserIdRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (hasPrefetchedRef.current || conversations.length === 0) return;
+    if (lastUserIdRef.current !== user?.id) {
+      lastUserIdRef.current = user?.id;
+      hasPrefetchedRef.current = false;
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (hasPrefetchedRef.current || conversations.length === 0 || !user?.id) {
+      return;
+    }
     hasPrefetchedRef.current = true;
-    // Prefetch messages for the 3 most recent conversations
-    conversations.slice(0, 3).forEach((conv) => {
-      prefetchChatMessages(queryClient, conv.uuid);
-    });
-  }, [conversations, queryClient]);
+    // Prefetch messages for the 3 most relevant conversations (unread first)
+    selectConversationsForBackgroundWs(conversations)
+      .slice(0, 3)
+      .forEach((conv) => {
+        prefetchChatMessages(queryClient, user.id, conv.uuid);
+      });
+  }, [conversations, queryClient, user?.id]);
 
   // ─── WS subscriptions with global message cache sync ───────────────────────
   // Uses direct Pusher bind/unbind so cleanup doesn't call echo.leave(),
@@ -78,10 +99,9 @@ export function useConversations(): {
     prevUuidsRef.current = convUuids;
 
     const echo = getEcho();
-    const uuids = convUuids.split(',');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const uuids = convUuids.split(',').filter(Boolean);
     const bindings: Array<{
-      pusherCh: any;
+      pusherCh: PusherSubscription;
       handler: (event: Message) => void;
     }> = [];
 
@@ -96,7 +116,7 @@ export function useConversations(): {
 
       const handler = (event: Message) => {
         // 1. Move conversation to top with updated preview
-        queryClient.setQueryData(CONVERSATIONS_KEY, (old: typeof data) => {
+        queryClient.setQueryData(listKey, (old: typeof data) => {
           if (!old) return old;
           const updated = old.data.map((c) =>
             c.uuid === event.conversation_uuid
@@ -121,7 +141,7 @@ export function useConversations(): {
         //    per-conversation messages cache so it's already there when the
         //    user opens the conversation. Only update if cache exists (don't
         //    create empty caches for conversations not yet visited).
-        const msgKey = chatMessagesKey(event.conversation_uuid);
+        const msgKey = chatMessagesKey(user.id, event.conversation_uuid);
         queryClient.setQueryData<MessagesCache>(msgKey, (old) => {
           if (!old) return old;
           if (old.messages.some((m) => m.uuid === event.uuid)) return old;
@@ -137,8 +157,8 @@ export function useConversations(): {
       let attempts = 0;
       const tryBind = () => {
         if (cancelled) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pusherCh = (echoChannel as any).subscription;
+        const pusherCh = (echoChannel as { subscription?: PusherSubscription })
+          .subscription;
         if (!pusherCh) {
           if (attempts++ < 20) {
             const t = setTimeout(tryBind, 50);
@@ -160,7 +180,14 @@ export function useConversations(): {
         pusherCh.unbind('message.sent', handler);
       });
     };
-  }, [user, convUuids, queryClient]);
+  }, [user, convUuids, queryClient, listKey]);
 
-  return { conversations, isLoading, unread, refetch };
+  return {
+    conversations,
+    isLoading,
+    isError,
+    error: error ?? null,
+    unread,
+    refetch,
+  };
 }

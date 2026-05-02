@@ -9,7 +9,7 @@ import { fr } from 'date-fns/locale';
 import { Home } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -36,6 +36,10 @@ export function ConversationItem({
   const router = useRouter();
   const prefetchedRef = useRef(false);
   const participant = conversation.other_participant;
+
+  useEffect(() => {
+    prefetchedRef.current = false;
+  }, [user?.id]);
   const unread = conversation.unread_count > 0;
   const lastMsg = conversation.last_message;
   const ad = conversation.ad;
@@ -60,10 +64,10 @@ export function ConversationItem({
   const initial = participant?.name?.charAt(0).toUpperCase() ?? '?';
 
   const warmCache = useCallback(() => {
-    if (prefetchedRef.current) return;
+    if (prefetchedRef.current || !user?.id) return;
     prefetchedRef.current = true;
-    prefetchChatMessages(queryClient, conversation.uuid);
-  }, [queryClient, conversation.uuid]);
+    prefetchChatMessages(queryClient, user.id, conversation.uuid);
+  }, [queryClient, conversation.uuid, user]);
 
   const navigate = useCallback(() => {
     router.push(`${basePath}/${conversation.uuid}`);

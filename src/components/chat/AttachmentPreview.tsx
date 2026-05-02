@@ -1,12 +1,16 @@
 'use client';
 
 import type { MessageAttachment } from '@/types/chat';
+import type { ChatTheme } from './chat-theme';
+import { CLIENT_THEME } from './chat-theme';
+import { VoicePlayer } from './VoicePlayer';
 import { FileText, X, Download, ZoomIn } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface AttachmentPreviewProps {
   attachment: MessageAttachment;
   isOwn: boolean;
+  theme?: ChatTheme;
 }
 
 function formatBytes(bytes: number): string {
@@ -21,6 +25,7 @@ function formatBytes(bytes: number): string {
 export function AttachmentPreview({
   attachment,
   isOwn,
+  theme = CLIENT_THEME,
 }: AttachmentPreviewProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
@@ -32,6 +37,10 @@ export function AttachmentPreview({
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [lightboxOpen]);
+
+  if (attachment.type === 'audio') {
+    return <VoicePlayer attachment={attachment} isOwn={isOwn} theme={theme} />;
+  }
 
   if (attachment.type === 'image') {
     return (

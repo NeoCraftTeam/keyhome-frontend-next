@@ -80,6 +80,15 @@ export const notificationKeys = {
   recent: (scope: string) => ['notifications', scope, 'recent'] as const,
 } as const;
 
+/** Per-user keys so switching accounts never shows the previous user's cached list. */
+export const chatKeys = {
+  /** Prefix — invalidates every per-user conversations query */
+  allConversations: ['conversations'] as const,
+  conversations: (userId: string) => ['conversations', userId] as const,
+  allUnread: ['chat-unread'] as const,
+  unread: (userId: string) => ['chat-unread', userId] as const,
+} as const;
+
 // ── Passkeys (WebAuthn) ─────────────────────────────────────────────────────
 
 export const passkeyKeys = {

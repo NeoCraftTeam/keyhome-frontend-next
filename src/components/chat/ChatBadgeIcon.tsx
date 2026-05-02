@@ -1,6 +1,7 @@
 'use client';
 
 import { fetchUnreadCount } from '@/lib/chat-api';
+import { chatKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/AuthProvider';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { Badge } from '@mui/material';
@@ -11,12 +12,12 @@ import { useQuery } from '@tanstack/react-query';
  * Safe to use as a nav icon — internally fetches unread count every 60s.
  */
 export function ChatBadgeIcon() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const { data } = useQuery({
-    queryKey: ['chat-unread'],
+    queryKey: user ? chatKeys.unread(user.id) : chatKeys.unread(''),
     queryFn: fetchUnreadCount,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !!user,
     staleTime: 30_000,
     refetchInterval: 5 * 60_000,
   });

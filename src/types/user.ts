@@ -32,4 +32,6 @@ export interface User {
   onboarding_completed_at?: string | null;
   last_home_visit_at?: string | null;
   preferences?: { survey_postponed_ids?: string[] };
+  /** RSA public key (PEM) for chat E2EE — private key stays in browser storage. */
+  chat_e2ee_public_key_pem?: string | null;
 }

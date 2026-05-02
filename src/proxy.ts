@@ -1,6 +1,14 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getClerkFrontendOrigins } from '@/lib/clerk-frontend-origins';
+import {
+  CSP_FONT_HOSTS,
+  CSP_FRAME_HOSTS_STATIC,
+  CSP_IMG_HOSTS_STATIC,
+  CSP_SCRIPT_HOSTS,
+  CSP_STYLE_HOSTS,
+  buildConnectSrcParts,
+} from '@/lib/csp-allowlist';
 
 const OWNER_PUBLIC_PATHS = [
   '/owner/login',
@@ -34,10 +42,7 @@ function isCustomerPrivatePath(pathname: string): boolean {
 /**
  * Build the Content-Security-Policy header with a per-request nonce.
  *
- * The nonce allows Next.js hydration scripts and MUI emotion style tags
- * to run without needing 'unsafe-inline'. Third-party domains are
- * kept in sync with the static CSP in next.config.ts (which no longer
- * includes the CSP header itself).
+ * Third-party allowlists live in `src/lib/csp-allowlist.ts`.
  */
 function buildCsp(nonce: string): string {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -51,7 +56,10 @@ function buildCsp(nonce: string): string {
   const ownerUrl = process.env.NEXT_PUBLIC_OWNER_URL || '';
   let backendOrigin = '';
   try {
-    backendOrigin = ownerUrl ? new URL(ownerUrl).origin : apiOrigin;
+    backendOrigin =
+      ownerUrl && /^https?:\/\//i.test(ownerUrl.trim())
+        ? new URL(ownerUrl).origin
+        : apiOrigin;
   } catch {
     backendOrigin = apiOrigin;
   }
@@ -62,51 +70,13 @@ function buildCsp(nonce: string): string {
   const isDev = process.env.NODE_ENV === 'development';
   const reverbHost = process.env.NEXT_PUBLIC_REVERB_HOST || '';
 
-  const connectSources = [
-    "'self'",
-    'blob:',
-    'data:',
-    // Mapbox
-    'https://api.mapbox.com',
-    'https://events.mapbox.com',
-    'https://*.tiles.mapbox.com',
-    // Clerk
-    'https://*.clerk.accounts.dev',
-    ...clerkExplicitOrigins,
-    'https://*.clerk.com',
-    'https://clerk.shared.global',
-    'https://clerk-telemetry.com',
-    // Cloudflare
-    'https://challenges.cloudflare.com',
-    // Analytics
-    'https://www.google-analytics.com',
-    'https://analytics.google.com',
-    'https://*.googletagmanager.com',
-    // Payments
-    'https://api.flutterwave.com',
-    // Google One Tap — token exchange XHR
-    'https://accounts.google.com',
-    // Storage
-    'https://*.r2.dev',
-    // App domains
-    // *.keyhome.app  covers api.keyhome.app, www.keyhome.app, etc. (one level)
-    // *.keyhome.neocraft.dev covers api.keyhome.neocraft.dev, preview.keyhome.neocraft.dev, etc.
-    // *.neocraft.dev only covers one level so api.keyhome.neocraft.dev needs the line above
-    'https://*.keyhome.app',
-    'https://*.keyhome.neocraft.dev',
-    'https://*.neocraft.dev',
-    'https://api.preview.neocraft.dev',
-    // WebSocket (Reverb) — wss:// is a distinct scheme in CSP; some browsers
-    // do not match wss:// against https:// patterns, so we add explicit entries.
-    'wss://*.keyhome.app',
-    'wss://*.keyhome.neocraft.dev',
-    ...(reverbHost ? [`wss://${reverbHost}`] : []),
+  const connectSources = buildConnectSrcParts({
+    clerkOrigins: clerkExplicitOrigins,
     apiOrigin,
     backendOrigin,
-  ]
-    .filter(Boolean)
-    .filter((v, i, a) => a.indexOf(v) === i)
-    .join(' ');
+    isDev,
+    reverbHost,
+  }).join(' ');
 
   // Avoid 'strict-dynamic' in production: in CSP3 it disables host-based script-src
   // allowlists, which blocks Clerk's FAPI script (e.g. clerk.neocraft.dev) in Firefox
@@ -119,20 +89,20 @@ function buildCsp(nonce: string): string {
     // 'unsafe-inline' is intentionally omitted — nonce supersedes it.
     // Vercel injects _vercel/insights/script.js dynamically (no nonce); 'self' covers same-origin
     // scripts. va.vercel-scripts.com is Vercel Web Analytics CDN.
-    `script-src 'self' 'unsafe-inline' 'nonce-${nonce}'${scriptSrcEvalOrStrict ? ` ${scriptSrcEvalOrStrict}` : ''} https://api.mapbox.com https://*.clerk.accounts.dev${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://accounts.google.com https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:`,
+    `script-src 'self' 'unsafe-inline' 'nonce-${nonce}'${scriptSrcEvalOrStrict ? ` ${scriptSrcEvalOrStrict}` : ''} ${CSP_SCRIPT_HOSTS}${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''}`,
 
     // style-src: 'unsafe-inline' only — no nonce.
     // CSP3 spec: when a nonce is present in style-src, 'unsafe-inline' is silently ignored,
     // which blocks all Emotion/MUI <style> tags that don't carry the nonce.
     // Since MUI injects many unnonce'd styles, we keep 'unsafe-inline' here without a nonce.
     // The nonce is only applied to script-src where it is effective and needed.
-    `style-src 'self' 'unsafe-inline' https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://accounts.google.com https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
-    `font-src 'self' https://fonts.gstatic.com https://ray.st https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
+    `style-src 'self' 'unsafe-inline' ${CSP_STYLE_HOSTS}`,
+    `font-src 'self' ${CSP_FONT_HOSTS}`,
     "worker-src 'self' blob:",
-    `img-src 'self' blob: data: https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev https://lh3.googleusercontent.com ${apiOrigin} ${backendOrigin}`,
+    `img-src 'self' blob: data: ${CSP_IMG_HOSTS_STATIC} ${apiOrigin} ${backendOrigin}`,
 
     `connect-src ${connectSources}`,
-    `frame-src https://*.clerk.accounts.dev https://*.clerk.com${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''} https://challenges.cloudflare.com https://checkout.flutterwave.com https://vercel.live https://accounts.google.com https://*.keyhome.app https://*.keyhome.neocraft.dev https://*.neocraft.dev`,
+    `frame-src ${CSP_FRAME_HOSTS_STATIC}${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''}`,
     "frame-ancestors 'none'",
   ];
 

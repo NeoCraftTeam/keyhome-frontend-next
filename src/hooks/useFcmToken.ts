@@ -6,6 +6,9 @@ import { useEffect, useRef } from 'react';
 
 const FCM_TOKEN_KEY = 'kh_fcm_token';
 
+/** One warning per full page load (avoids duplicate logs under React Strict Mode). */
+let fcmGetTokenDevFailureLogged = false;
+
 /**
  * Registers a Firebase FCM token for the authenticated user.
  *
@@ -33,13 +36,27 @@ export function useFcmToken(): void {
     if (typeof window === 'undefined') return;
 
     const firebaseApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-    if (!firebaseApiKey) return; // Firebase not configured
+    const firebaseVapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+    const firebaseProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+    // Without VAPID, FCM POSTs to fcmregistrations.googleapis.com return 401 — do not prompt or spam the API.
+    if (!firebaseApiKey || !firebaseProjectId) return;
 
     const register = async (): Promise<void> => {
       try {
         // Guard: browser must support Notification + ServiceWorker APIs
         if (!('Notification' in window) || !('serviceWorker' in navigator))
           return;
+
+        if (!firebaseVapidKey?.trim()) {
+          if (process.env.NODE_ENV === 'development') {
+            console.info(
+              '[FCM] NEXT_PUBLIC_FIREBASE_VAPID_KEY is missing. Add the Web Push **public** key from Firebase Console → Project settings → Cloud Messaging → Web push certificates. Do not use NEXT_PUBLIC_VAPID_PUBLIC_KEY (Laravel web-push) here.'
+            );
+          }
+
+          return;
+        }
 
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') return;
@@ -75,7 +92,7 @@ export function useFcmToken(): void {
         const swReg = await navigator.serviceWorker.ready;
 
         const token = await getToken(messaging, {
-          vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+          vapidKey: firebaseVapidKey,
           serviceWorkerRegistration: swReg,
         });
 
@@ -87,8 +104,24 @@ export function useFcmToken(): void {
           }
           registeredRef.current = true;
         }
-      } catch {
-        // Silently fail — push notifications are optional
+      } catch (err) {
+        if (
+          process.env.NODE_ENV === 'development' &&
+          !fcmGetTokenDevFailureLogged
+        ) {
+          fcmGetTokenDevFailureLogged = true;
+          const msg = err instanceof Error ? err.message : String(err);
+          const credentialHint =
+            /token-subscribe-failed|missing required authentication credential/i.test(
+              msg
+            )
+              ? '\n→ Souvent : clé API Firebase (Google Cloud → Credentials) avec restrictions HTTP referrer / API qui bloquent `fcmregistrations.googleapis.com`. Ajoute `http://localhost:3000/*` et tes origines prod, ou « Aucune » restriction le temps de tester.'
+              : '';
+          console.warn(
+            `[FCM] getToken / échec (push optionnel). Vérifier : (1) VAPID Web dans Firebase → Messagerie Cloud ; (2) toutes les NEXT_PUBLIC_FIREBASE_* du même projet Web ; (3) ne pas utiliser NEXT_PUBLIC_VAPID_PUBLIC_KEY (Laravel) à la place de la clé VAPID Firebase.${credentialHint}`,
+            err
+          );
+        }
       }
     };
 

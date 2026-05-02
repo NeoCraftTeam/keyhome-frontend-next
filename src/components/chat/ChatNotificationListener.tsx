@@ -1,6 +1,8 @@
 'use client';
 
 import { getEcho } from '@/lib/echo';
+import { selectConversationsForBackgroundWs } from '@/lib/chat-subscriptions';
+import { chatKeys } from '@/lib/query-keys';
 import { chatMessagesKey } from '@/hooks/useChat';
 import type { MessagesCache } from '@/hooks/useChat';
 import type { Message, Conversation, UnreadCountResponse } from '@/types/chat';
@@ -24,6 +26,8 @@ import { usePathname, useRouter } from 'next/navigation';
  *    invalidates all chat-related queries so stale caches are refreshed.
  *
  * No duplicate channels — Echo reuses the same Pusher subscription.
+ * At most MAX_BACKGROUND_WS_CONVERSATIONS private channels are subscribed
+ * (unread conversations first) to limit client and Reverb load.
  */
 interface ChatNotificationListenerProps {
   basePath?: string;
@@ -45,27 +49,35 @@ export function ChatNotificationListener({
     pathnameRef.current = pathname;
   }, [pathname]);
 
+  const listKey = user
+    ? chatKeys.conversations(user.id)
+    : chatKeys.conversations('');
+
   const { data } = useQuery<{
     data: Conversation[];
     meta: { current_page: number; last_page: number; total: number };
   }>({
-    queryKey: ['conversations'],
+    queryKey: listKey,
     queryFn: () => fetchConversations(),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !!user,
     staleTime: Infinity,
     gcTime: 30 * 60 * 1000,
   });
 
   const conversations: Conversation[] = data?.data ?? [];
+  const subscribedConversations = useMemo(
+    () => selectConversationsForBackgroundWs(conversations),
+    [conversations]
+  );
 
-  // Stable dependency: sorted UUID string (rebinds when conversation set changes)
+  // Stable dependency: sorted UUID string (rebinds when subscribed set changes)
   const convUuids = useMemo(
     () =>
-      conversations
+      subscribedConversations
         .map((c) => c.uuid)
         .sort()
         .join(','),
-    [conversations]
+    [subscribedConversations]
   );
 
   // ─── WS reconnect handler ─────────────────────────────────────────────────
@@ -87,8 +99,10 @@ export function ChatNotificationListener({
         previous === 'disconnected' ||
         previous === 'connecting';
       if (wasOffline && current === 'connected') {
-        void queryClient.invalidateQueries({ queryKey: ['conversations'] });
-        void queryClient.invalidateQueries({ queryKey: ['chat-unread'] });
+        void queryClient.invalidateQueries({
+          queryKey: chatKeys.allConversations,
+        });
+        void queryClient.invalidateQueries({ queryKey: chatKeys.allUnread });
         // Invalidate all active message caches
         void queryClient.invalidateQueries({
           predicate: (q) => q.queryKey[0] === 'chat-messages',
@@ -103,28 +117,44 @@ export function ChatNotificationListener({
   }, [isAuthenticated, queryClient]);
 
   // ─── Per-conversation listeners ────────────────────────────────────────────
+  // Race-safe binding: echo.private(name).subscription may be momentarily
+  // undefined (StrictMode, fast nav, freshly-recreated singleton). Retry
+  // every 50ms (max 1s) per UUID until the underlying Pusher channel is
+  // ready, then bind once. Mirrors the pattern in useChat.ts and
+  // useConversations.ts. Without this, the first render after navigation
+  // can silently miss message.sent events.
   useEffect(() => {
     if (!user || !convUuids) return;
 
     const echo = getEcho();
-    const uuids = convUuids.split(',');
-    const convMap = new Map(conversations.map((c) => [c.uuid, c]));
+    const uuids = convUuids.split(',').filter(Boolean);
+    const convMap = new Map(subscribedConversations.map((c) => [c.uuid, c]));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const bindings: Array<{
       pusherCh: any;
       handler: (event: Message) => void;
     }> = [];
+    const retryTimers: Array<ReturnType<typeof setTimeout>> = [];
+    let cancelled = false;
 
-    uuids.forEach((uuid) => {
+    const tryBindOne = (uuid: string, attempts: number = 0) => {
+      if (cancelled) return;
       const channelName = `conversation.${uuid}`;
       const echoChannel = echo.private(channelName);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pusherCh = (echoChannel as any).subscription;
-      if (!pusherCh) return;
+      if (!pusherCh) {
+        if (attempts < 20) {
+          retryTimers.push(
+            setTimeout(() => tryBindOne(uuid, attempts + 1), 50)
+          );
+        }
+        return;
+      }
 
       const handler = (event: Message) => {
         // Global message cache sync — push into per-conversation cache
-        const msgKey = chatMessagesKey(event.conversation_uuid);
+        const msgKey = chatMessagesKey(user.id, event.conversation_uuid);
         queryClient.setQueryData<MessagesCache>(msgKey, (old) => {
           if (!old) return old;
           if (old.messages.some((m) => m.uuid === event.uuid)) return old;
@@ -136,10 +166,10 @@ export function ChatNotificationListener({
         if (pathnameRef.current === `${basePath}/${uuid}`) return;
 
         // ── Real-time unread badge ──────────────────────────────────────────
-        // Increment ['chat-unread'] directly — no re-fetch needed.
+        // Increment unread cache for this user — no re-fetch needed.
         // Both ChatBadgeIcon (client nav) and OwnerSidebar read this key.
         queryClient.setQueryData<UnreadCountResponse>(
-          ['chat-unread'],
+          chatKeys.unread(user.id),
           (old) => {
             if (!old) return old;
             const hasConv = old.conversations.some((c) => c.uuid === uuid);
@@ -156,11 +186,13 @@ export function ChatNotificationListener({
 
         const conv = convMap.get(uuid);
         const senderName = conv?.other_participant?.name ?? 'Nouveau message';
-        const preview = event.body
-          ? event.body.slice(0, 55)
-          : event.type === 'image'
-            ? '📷 Photo'
-            : '📎 Pièce jointe';
+        const preview = event.is_client_sealed
+          ? '🔐 Message sécurisé'
+          : event.body
+            ? event.body.slice(0, 55)
+            : event.type === 'image'
+              ? '📷 Photo'
+              : '📎 Pièce jointe';
 
         const convUuid = uuid;
 
@@ -175,9 +207,13 @@ export function ChatNotificationListener({
 
       pusherCh.bind('message.sent', handler);
       bindings.push({ pusherCh, handler });
-    });
+    };
+
+    uuids.forEach((uuid) => tryBindOne(uuid));
 
     return () => {
+      cancelled = true;
+      retryTimers.forEach(clearTimeout);
       bindings.forEach(({ pusherCh, handler }) => {
         pusherCh.unbind('message.sent', handler);
       });
@@ -190,7 +226,7 @@ export function ChatNotificationListener({
     router,
     basePath,
     accentColor,
-  ]); // eslint-disable-line react-hooks/exhaustive-deps
+  ]);
 
   return null;
 }

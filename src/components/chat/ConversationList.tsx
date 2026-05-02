@@ -34,7 +34,7 @@ export function ConversationList({
   theme = CLIENT_THEME,
   backHref,
 }: ConversationListProps) {
-  const { conversations, isLoading } = useConversations();
+  const { conversations, isLoading, isError, refetch } = useConversations();
   const typingMap = useConversationsTyping(conversations);
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
@@ -225,6 +225,30 @@ export function ConversationList({
               </div>
             ))}
             <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+            <p
+              className="text-sm font-semibold mb-2"
+              style={{ color: theme.textSecondary }}
+            >
+              Impossible de charger les conversations
+            </p>
+            <p
+              className="text-xs mb-4 max-w-[260px] leading-relaxed"
+              style={{ color: theme.textMuted }}
+            >
+              Problème réseau ou serveur. Vos messages ne sont pas supprimés —
+              réessayez ou vérifiez que l’API répond.
+            </p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="rounded-full px-5 py-2.5 text-sm font-medium text-white min-h-[44px] transition-opacity hover:opacity-90 active:scale-[0.98]"
+              style={{ backgroundColor: theme.accent }}
+            >
+              Réessayer
+            </button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">

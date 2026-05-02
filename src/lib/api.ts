@@ -1,4 +1,5 @@
 import { getAuthToken } from '@/lib/auth-token';
+import { getEchoSocketId } from '@/lib/echo';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const API_URL =
@@ -18,6 +19,8 @@ const AUTH_ROUTES = [
   '/auth/logout', // 401 here means session already expired; logout handles its own cleanup
   '/auth/webauthn/login', // Passkey login verify is unauthenticated
   '/auth/webauthn/login/options', // Passkey login options is unauthenticated
+  '/auth/refresh', // Session timeout guard handles its own retry/error path
+  '/broadcasting/auth', // WebSocket subscription auth — own retry path
 ];
 
 const api = axios.create({
@@ -82,6 +85,25 @@ export function resetCsrfState(): void {
 
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    // Attach the current Pusher socket id (synchronous read of the Echo singleton).
+    // Laravel uses this header to power Broadcast::toOthers() — without it the
+    // sender of a chat message also receives their own broadcast event, forcing
+    // the frontend to dedup by uuid. Header is harmless when Echo is not connected.
+    //
+    // Defensive: never let a Pusher / Echo failure prevent an HTTP request from
+    // going out. If reading the socket id throws for any reason (singleton not
+    // initialised, pusher-js error, SSR edge case…) we silently skip the header.
+    if (config.headers) {
+      try {
+        const socketId = getEchoSocketId();
+        if (socketId) {
+          config.headers['X-Socket-Id'] = socketId;
+        }
+      } catch {
+        /* swallow — request must always proceed */
+      }
+    }
+
     // Ensure CSRF cookie exists before any write request (SPA auth)
     if (
       typeof window !== 'undefined' &&

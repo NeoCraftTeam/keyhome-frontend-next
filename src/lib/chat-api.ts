@@ -8,6 +8,22 @@ import type {
 } from '@/types/chat';
 import type { AxiosResponse } from 'axios';
 
+export type SendMessageInput =
+  | {
+      body?: string;
+      type?: 'text' | 'image' | 'file' | 'audio';
+      reply_to_id?: string;
+      attachments?: MessageAttachment[];
+      is_client_sealed?: false;
+    }
+  | {
+      is_client_sealed: true;
+      e2ee_ciphertext_b64: string;
+      e2ee_iv_b64: string;
+      e2ee_wrapped_keys?: { tenant: string; landlord: string };
+      reply_to_id?: string;
+    };
+
 // ─── Conversations ────────────────────────────────────────────────────────────
 
 /**
@@ -67,7 +83,7 @@ export async function fetchUnreadCount(): Promise<UnreadCountResponse> {
 
 /**
  * Fetch cursor-paginated message history for a conversation.
- * Also triggers a server-side markAsRead.
+ * The server enqueues mark-as-read only when `cursor` is omitted (first page).
  */
 export async function fetchMessages(
   uuid: string,
@@ -80,22 +96,40 @@ export async function fetchMessages(
 }
 
 /**
- * Send a text message (with optional reply and attachments).
+ * Send a text message (with optional reply and attachments), or a client-sealed E2EE payload.
  */
 export async function sendMessage(
   uuid: string,
-  params: {
-    body?: string;
-    type?: 'text' | 'image' | 'file';
-    reply_to_id?: string;
-    attachments?: MessageAttachment[];
-  }
+  params: SendMessageInput
 ): Promise<Message> {
   const res: AxiosResponse = await api.post(
     `/conversations/${uuid}/messages`,
     params
   );
   return res.data.data as Message;
+}
+
+// ─── Reactions ────────────────────────────────────────────────────────────────
+
+/**
+ * Add (toggle on) an emoji reaction to a message. Idempotent server-side:
+ * a duplicate reaction from the same user/emoji is a no-op.
+ */
+export async function addReaction(
+  messageUuid: string,
+  emoji: string
+): Promise<void> {
+  await api.post(`/messages/${messageUuid}/reactions`, { emoji });
+}
+
+/**
+ * Remove (toggle off) an emoji reaction from a message.
+ */
+export async function removeReaction(
+  messageUuid: string,
+  emoji: string
+): Promise<void> {
+  await api.delete(`/messages/${messageUuid}/reactions`, { data: { emoji } });
 }
 
 /**
@@ -141,16 +175,12 @@ export async function markConversationAsRead(uuid: string): Promise<void> {
 }
 
 // ─── Typing ───────────────────────────────────────────────────────────────────
-
-/**
- * Emit a typing indicator event (throttled server-side at 30/min).
- */
-export async function setTyping(
-  uuid: string,
-  isTyping: boolean
-): Promise<void> {
-  await api.post(`/conversations/${uuid}/typing`, { is_typing: isTyping });
-}
+//
+// Typing events are now sent via Pusher whispers in `useTypingIndicator`,
+// which avoids the HTTP round-trip and is essentially zero-latency. The
+// REST endpoint POST /conversations/{uuid}/typing remains in place on the
+// backend for non-PWA clients (e.g. mobile RN) but is intentionally not
+// exposed here — keep it that way to avoid duplicate events.
 
 // ─── FCM ──────────────────────────────────────────────────────────────────────
 

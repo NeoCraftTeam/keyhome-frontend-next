@@ -14,6 +14,19 @@ declare global {
 
 let echo: Echo<'reverb'> | null = null;
 
+/** Exposed for tests — Clerk session tokens are JWT-shaped; Sanctum PATs use `id|plaintext`. */
+export function shouldUseBearerForBroadcastAuth(token: string | null): boolean {
+  if (!token) {
+    return false;
+  }
+
+  const looksLikeJwt = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(
+    token
+  );
+
+  return !looksLikeJwt;
+}
+
 /**
  * Derive the backend root URL from NEXT_PUBLIC_API_URL.
  * Strips the /api/v1 path suffix so we can reach /broadcasting/auth
@@ -36,14 +49,34 @@ function getBackendOrigin(): string {
 /**
  * Returns a singleton Laravel Echo instance connected to Laravel Reverb.
  *
- * Auth: uses the Sanctum Bearer token from getAuthToken() so private/presence
- * channels are authorized server-side via /broadcasting/auth.
+ * Auth: POST `/api/v1/broadcasting/auth` with `credentials: 'include'`.
+ * Sends `Authorization: Bearer` only when a Sanctum personal access token is
+ * available — never sends a Clerk JWT, which would make Sanctum reject the
+ * request before the session cookie is evaluated. Without a bearer token,
+ * first-party Sanctum **cookie** authentication still authorizes private channels.
  *
  * Call disconnectEcho() on logout to clean up the WebSocket connection.
  */
 export function getEcho(): Echo<'reverb'> {
   if (echo !== null) {
     return echo;
+  }
+
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    const missing: string[] = [];
+    if (!process.env.NEXT_PUBLIC_REVERB_APP_KEY) {
+      missing.push('NEXT_PUBLIC_REVERB_APP_KEY');
+    }
+    if (!process.env.NEXT_PUBLIC_REVERB_HOST) {
+      missing.push('NEXT_PUBLIC_REVERB_HOST');
+    }
+    if (missing.length > 0) {
+      console.warn(
+        `[Echo] Real-time (Reverb) mal configuré — variables manquantes : ${missing.join(', ')}. ` +
+          'Backend : BROADCAST_CONNECTION=reverb, php artisan reverb:start (ou composer run dev). ' +
+          'Frontend local typique : NEXT_PUBLIC_REVERB_HOST=localhost, PORT=8080, SCHEME=http, APP_KEY identique à REVERB_APP_KEY.'
+      );
+    }
   }
 
   if (typeof window !== 'undefined') {
@@ -69,23 +102,26 @@ export function getEcho(): Echo<'reverb'> {
         callback: (error: Error | null, data: unknown) => void
       ) => {
         try {
-          const token = await getAuthToken();
-          if (!token) {
-            callback(
-              new Error('No auth token available — skipping channel auth'),
-              null
-            );
-            return;
+          const rawToken = await getAuthToken();
+          /**
+           * Clerk session JWT (3 segments) is not a Sanctum PAT; sending it as
+           * Bearer breaks Broadcast::auth because Sanctum tries to resolve it
+           * as a token. Rely on session cookies for that case (or no auth yet).
+           * Sanctum PAT from password login uses "id|plaintext" with a pipe.
+           */
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          };
+          if (shouldUseBearerForBroadcastAuth(rawToken)) {
+            headers.Authorization = `Bearer ${rawToken!}`;
           }
+
           const res = await fetch(
             `${getBackendOrigin()}/api/v1/broadcasting/auth`,
             {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              },
+              headers,
               credentials: 'include',
               body: JSON.stringify({
                 socket_id: socketId,

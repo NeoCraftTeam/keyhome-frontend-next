@@ -14,6 +14,8 @@ import {
   getSurveyPostponed,
   setSurveyPostponed as persistSurveyPostponed,
 } from '@/components/surveys/SurveyBanner';
+import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
+import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
@@ -228,14 +230,33 @@ export default function OwnerLayoutClient({
     return null;
   }
 
+  // Chat page detection — immersive full-screen on mobile conversation detail.
+  // Mirror the dashboard layout so /owner/messages/[uuid] gets a definite height
+  // context (100dvh) and the ChatBox flex chain can scroll properly.
+  const isOwnerConversationPage = /^\/owner\/messages\/[^/]+/.test(
+    pathname ?? ''
+  );
+  const isOwnerMessagesPage = pathname?.startsWith('/owner/messages') ?? false;
+  const hideNavForChat = isMobile && isOwnerConversationPage;
+
   return (
     <Box
       sx={{
         display: 'flex',
-        minHeight: '100vh',
+        // Messages pages need fixed height so flex children can fill correctly;
+        // other pages use minHeight to allow natural scrolling.
+        ...(isOwnerMessagesPage
+          ? { height: '100dvh', overflow: 'hidden' }
+          : { minHeight: '100vh' }),
         bgcolor: 'background.default',
       }}
     >
+      {/* Always-mounted realtime listeners for the owner panel:
+          presence (online/last seen) and chat toast notifications.
+          ChatNotificationListener uses the teal owner accent. */}
+      <GlobalPresenceChannel />
+      <ChatNotificationListener accentColor="#0D9488" />
+
       {/* Sidebar — MUI Drawer permanent (desktop) / temporary (mobile via Navbar) */}
       <Drawer
         variant="permanent"
@@ -275,23 +296,51 @@ export default function OwnerLayoutClient({
           flexDirection: 'column',
           minWidth: 0,
           width: '100%',
-          minHeight: '100vh',
+          ...(isOwnerMessagesPage ? { minHeight: 0 } : { minHeight: '100vh' }),
         }}
       >
-        <OwnerNavbar />
+        {!hideNavForChat && <OwnerNavbar />}
         <Box
           sx={{
             flex: 1,
-            display: 'block',
-            pb: isMobile ? `${OWNER_BOTTOM_NAV_HEIGHT}px` : 3,
-            px: { xs: 2, md: 3 },
+            ...(isOwnerMessagesPage
+              ? {
+                  // Messages pages: absolute-positioned inner wrapper guarantees
+                  // a definite height context for the chat flex chain.
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'block',
+                  px: 0,
+                  pb: 0,
+                }
+              : {
+                  display: 'block',
+                  pb: isMobile ? `${OWNER_BOTTOM_NAV_HEIGHT}px` : 3,
+                  px: { xs: 2, md: 3 },
+                }),
           }}
         >
-          <ErrorBoundary>
-            <PageTransition>{children}</PageTransition>
-          </ErrorBoundary>
+          {isOwnerMessagesPage ? (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              <ErrorBoundary>
+                <PageTransition>{children}</PageTransition>
+              </ErrorBoundary>
+            </Box>
+          ) : (
+            <ErrorBoundary>
+              <PageTransition>{children}</PageTransition>
+            </ErrorBoundary>
+          )}
         </Box>
-        <OwnerBottomNav />
+        {!hideNavForChat && <OwnerBottomNav />}
       </Box>
 
       {/* FAB : nouvelle annonce — liste annonces uniquement (pas sur le tableau de bord) */}
