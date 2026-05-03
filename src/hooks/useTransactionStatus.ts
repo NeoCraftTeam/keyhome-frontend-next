@@ -63,6 +63,7 @@ export function useTransactionStatus(
         setTransaction(result);
 
         const isTerminal =
+          result.is_paid === true ||
           result.status === 'success' ||
           result.status === 'failed' ||
           result.status === 'cancelled';

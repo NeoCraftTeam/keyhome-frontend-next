@@ -28,6 +28,10 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import { AUTH_DRAWER_QUICK_NAV, SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
+import {
+  CLIENT_DRAWER_LIST_ICON_MIN_WIDTH_PX,
+  NAV_LIST_ICON_GLYPH_PX,
+} from '@/lib/navVisualMetrics';
 import { type User } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { creditsService } from '@/services/credits.service';
@@ -69,6 +73,34 @@ const ITEM_SX = {
   minHeight: 48,
   '&:active': { bgcolor: 'rgba(246,71,95,0.08)' },
 };
+
+const DRAWER_ICON_SLOT_SX = {
+  width: NAV_LIST_ICON_GLYPH_PX,
+  height: NAV_LIST_ICON_GLYPH_PX,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  '& .MuiSvgIcon-root': { fontSize: NAV_LIST_ICON_GLYPH_PX },
+} as const;
+
+const ACCOUNT_LIST_ITEM_ICON_SX = {
+  minWidth: CLIENT_DRAWER_LIST_ICON_MIN_WIDTH_PX,
+  width: CLIENT_DRAWER_LIST_ICON_MIN_WIDTH_PX,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: 'text.secondary',
+} as const;
+
+const ACCOUNT_LIST_ITEM_TEXT_SLOT_PROPS = {
+  primary: {
+    sx: {
+      fontWeight: 500,
+      lineHeight: 1.35,
+      fontSize: '0.875rem',
+    },
+  },
+} as const;
 
 /** Compact credit balance row for the mobile side drawer. */
 function CreditsRow() {
@@ -155,7 +187,11 @@ export default function NavDrawer({
 
   const activeIconSx = (href: string) => ({
     color: isActive(href) ? 'primary.main' : 'text.secondary',
-    minWidth: 40,
+    minWidth: CLIENT_DRAWER_LIST_ICON_MIN_WIDTH_PX,
+    width: CLIENT_DRAWER_LIST_ICON_MIN_WIDTH_PX,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   });
 
   return (
@@ -229,38 +265,6 @@ export default function NavDrawer({
       {isAuthenticated && (
         <List sx={{ px: 1, py: 0.5 }}>
           {AUTH_DRAWER_QUICK_NAV.map((entry) => {
-            if ('brandHome' in entry && entry.brandHome) {
-              const href = '/home';
-              return (
-                <ListItem key={href} disablePadding>
-                  <ListItemButton onClick={() => go(href)} sx={activeSx(href)}>
-                    <ListItemIcon
-                      sx={{
-                        ...activeIconSx(href),
-                        minWidth: 52,
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Image
-                        src="/images/logo.png"
-                        alt=""
-                        width={38}
-                        height={38}
-                        style={{ objectFit: 'contain' }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Accueil"
-                      primaryTypographyProps={{
-                        fontWeight: 700,
-                        fontSize: '1rem',
-                      }}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              );
-            }
-
             const href = entry.href;
             const label =
               href === '/comparaisons' && comparatorCount > 0
@@ -271,9 +275,20 @@ export default function NavDrawer({
               <ListItem key={href} disablePadding>
                 <ListItemButton onClick={() => go(href)} sx={activeSx(href)}>
                   <ListItemIcon sx={activeIconSx(href)}>
-                    {entry.icon}
+                    <Box sx={DRAWER_ICON_SLOT_SX}>{entry.icon}</Box>
                   </ListItemIcon>
-                  <ListItemText primary={label} />
+                  <ListItemText
+                    primary={label}
+                    slotProps={{
+                      primary: {
+                        sx: {
+                          fontWeight: isActive(href) ? 600 : 500,
+                          lineHeight: 1.35,
+                          fontSize: '0.875rem',
+                        },
+                      },
+                    }}
+                  />
                 </ListItemButton>
               </ListItem>
             );
@@ -291,9 +306,20 @@ export default function NavDrawer({
                   sx={activeSx(item.href)}
                 >
                   <ListItemIcon sx={activeIconSx(item.href)}>
-                    {item.icon}
+                    <Box sx={DRAWER_ICON_SLOT_SX}>{item.icon}</Box>
                   </ListItemIcon>
-                  <ListItemText primary={item.label} />
+                  <ListItemText
+                    primary={item.label}
+                    slotProps={{
+                      primary: {
+                        sx: {
+                          fontWeight: isActive(item.href) ? 600 : 500,
+                          lineHeight: 1.35,
+                          fontSize: '0.875rem',
+                        },
+                      },
+                    }}
+                  />
                 </ListItemButton>
               </ListItem>
             ))}
@@ -327,42 +353,67 @@ export default function NavDrawer({
                 onClick={() => go('/my/reservations')}
                 sx={ITEM_SX}
               >
-                <ListItemIcon>
-                  <CalendarMonthIcon />
+                <ListItemIcon sx={ACCOUNT_LIST_ITEM_ICON_SX}>
+                  <Box sx={DRAWER_ICON_SLOT_SX}>
+                    <CalendarMonthIcon />
+                  </Box>
                 </ListItemIcon>
-                <ListItemText primary="Mes réservations" />
+                <ListItemText
+                  primary="Mes réservations"
+                  slotProps={ACCOUNT_LIST_ITEM_TEXT_SLOT_PROPS}
+                />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => go('/notifications')} sx={ITEM_SX}>
-                <ListItemIcon>
-                  <NotificationsIcon />
+                <ListItemIcon sx={ACCOUNT_LIST_ITEM_ICON_SX}>
+                  <Box sx={DRAWER_ICON_SLOT_SX}>
+                    <NotificationsIcon />
+                  </Box>
                 </ListItemIcon>
-                <ListItemText primary="Notifications" />
+                <ListItemText
+                  primary="Notifications"
+                  slotProps={ACCOUNT_LIST_ITEM_TEXT_SLOT_PROPS}
+                />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => go('/search-alerts')} sx={ITEM_SX}>
-                <ListItemIcon>
-                  <NotificationsActiveIcon />
+                <ListItemIcon sx={ACCOUNT_LIST_ITEM_ICON_SX}>
+                  <Box sx={DRAWER_ICON_SLOT_SX}>
+                    <NotificationsActiveIcon />
+                  </Box>
                 </ListItemIcon>
-                <ListItemText primary="Alertes de recherche" />
+                <ListItemText
+                  primary="Alertes de recherche"
+                  slotProps={ACCOUNT_LIST_ITEM_TEXT_SLOT_PROPS}
+                />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => go('/profile')} sx={ITEM_SX}>
-                <ListItemIcon>
-                  <PersonIcon />
+                <ListItemIcon sx={ACCOUNT_LIST_ITEM_ICON_SX}>
+                  <Box sx={DRAWER_ICON_SLOT_SX}>
+                    <PersonIcon />
+                  </Box>
                 </ListItemIcon>
-                <ListItemText primary="Mon profil" />
+                <ListItemText
+                  primary="Mon profil"
+                  slotProps={ACCOUNT_LIST_ITEM_TEXT_SLOT_PROPS}
+                />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => go('/parametres')} sx={ITEM_SX}>
-                <ListItemIcon>
-                  <SettingsIcon />
+                <ListItemIcon sx={ACCOUNT_LIST_ITEM_ICON_SX}>
+                  <Box sx={DRAWER_ICON_SLOT_SX}>
+                    <SettingsIcon />
+                  </Box>
                 </ListItemIcon>
-                <ListItemText primary="Paramètres" />
+                <ListItemText
+                  primary="Paramètres"
+                  slotProps={ACCOUNT_LIST_ITEM_TEXT_SLOT_PROPS}
+                />
               </ListItemButton>
             </ListItem>
             <Divider sx={{ my: 1, mx: 2 }} />
@@ -374,10 +425,20 @@ export default function NavDrawer({
                 }}
                 sx={{ ...ITEM_SX, color: 'error.main' }}
               >
-                <ListItemIcon>
-                  <LogoutIcon color="error" />
+                <ListItemIcon
+                  sx={{
+                    ...ACCOUNT_LIST_ITEM_ICON_SX,
+                    color: 'error.main',
+                  }}
+                >
+                  <Box sx={DRAWER_ICON_SLOT_SX}>
+                    <LogoutIcon color="error" />
+                  </Box>
                 </ListItemIcon>
-                <ListItemText primary="Déconnexion" />
+                <ListItemText
+                  primary="Déconnexion"
+                  slotProps={ACCOUNT_LIST_ITEM_TEXT_SLOT_PROPS}
+                />
               </ListItemButton>
             </ListItem>
           </>

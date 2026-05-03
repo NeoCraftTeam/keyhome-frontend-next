@@ -9,6 +9,7 @@ import { FavoritesProvider } from '@/providers/FavoritesProvider';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import ComparatorBar from '@/components/ads/ComparatorBar';
+import { SafeAreaInsetBridge } from '@/components/pwa/SafeAreaInsetBridge';
 
 /**
  * Note: `SessionTimeoutGuard` is intentionally NOT mounted here. It must live
@@ -30,6 +31,7 @@ export function Providers({
           <SkipLink />
           <ErrorBoundary>
             <AuthProvider>
+              <SafeAreaInsetBridge />
               <FavoritesProvider>
                 <ComparatorProvider>
                   {children}

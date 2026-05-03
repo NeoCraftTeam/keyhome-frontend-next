@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -14,11 +15,56 @@ import MuiEmotionRegistry from '@/components/MuiEmotionRegistry';
 
 export type ResolvedMode = 'light' | 'dark';
 
+export type ThemeChoice = 'system' | 'light' | 'dark';
+
+const CHOICE_KEY = 'kh_theme_choice';
+const CHOICE_EVENT = 'kh-theme-choice-changed';
+
 interface ThemeContextType {
   mode: ResolvedMode;
+  choice: ThemeChoice;
+  setChoice: (choice: ThemeChoice) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+function readStoredChoice(): ThemeChoice {
+  if (typeof window === 'undefined') {
+    return 'system';
+  }
+  try {
+    const v = localStorage.getItem(CHOICE_KEY);
+    if (v === 'light' || v === 'dark' || v === 'system') {
+      return v;
+    }
+  } catch {
+    /* ignore */
+  }
+  return 'system';
+}
+
+function subscribeChoice(onStoreChange: () => void): () => void {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+  const handler = (): void => {
+    onStoreChange();
+  };
+  window.addEventListener('storage', handler);
+  window.addEventListener(CHOICE_EVENT, handler);
+  return () => {
+    window.removeEventListener('storage', handler);
+    window.removeEventListener(CHOICE_EVENT, handler);
+  };
+}
+
+function getChoiceSnapshot(): ThemeChoice {
+  return readStoredChoice();
+}
+
+function getChoiceServerSnapshot(): ThemeChoice {
+  return 'system';
+}
 
 function subscribeSystemDark(cb: () => void): () => void {
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -47,20 +93,32 @@ export function ThemeProvider({
     getSystemDarkServerSnapshot
   );
 
-  const resolvedMode: ResolvedMode = systemDark ? 'dark' : 'light';
+  const choice = useSyncExternalStore(
+    subscribeChoice,
+    getChoiceSnapshot,
+    getChoiceServerSnapshot
+  );
+
+  const setChoice = useCallback((next: ThemeChoice) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      localStorage.setItem(CHOICE_KEY, next);
+    } catch {
+      /* ignore */
+    }
+    window.dispatchEvent(new Event(CHOICE_EVENT));
+  }, []);
+
+  const resolvedMode: ResolvedMode =
+    choice === 'system' ? (systemDark ? 'dark' : 'light') : choice;
+
   const theme = resolvedMode === 'light' ? lightTheme : darkTheme;
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.removeItem('theme');
-    } catch {
-      /* ignore */
-    }
   }, []);
 
   useEffect(() => {
@@ -79,7 +137,10 @@ export function ThemeProvider({
     theme.palette.text.primary,
   ]);
 
-  const value = useMemo(() => ({ mode: resolvedMode }), [resolvedMode]);
+  const value = useMemo(
+    () => ({ mode: resolvedMode, choice, setChoice }),
+    [resolvedMode, choice, setChoice]
+  );
 
   return (
     <ThemeContext.Provider value={value}>

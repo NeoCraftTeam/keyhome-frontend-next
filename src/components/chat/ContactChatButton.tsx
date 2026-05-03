@@ -22,17 +22,24 @@ interface ContactChatButtonProps {
   adTitle?: string;
   /** Transaction type — drives the wording of the predefined message. */
   transactionType?: 'location' | 'vente' | null;
-  /** Slug of the ad — appended as a clickable link in the first message. */
+  /** Slug of the ad — appended as a link in the first message. */
   adSlug?: string;
+  /** Host first name — personalises the CTA and opening line of the draft. */
+  hostFirstName?: string;
 }
 
 export function buildDraftMessage(
   adTitle: string | undefined,
   transactionType: 'location' | 'vente' | null | undefined,
-  adUrl?: string
+  adUrl?: string,
+  hostFirstName?: string
 ): string {
+  const greet =
+    hostFirstName && hostFirstName.length > 0
+      ? `Bonjour ${hostFirstName},`
+      : 'Bonjour,';
   const title = adTitle ? `«\u202f${adTitle}\u202f»` : 'votre annonce';
-  const base = `Bonjour, je suis intéressé(e) par ${title}.`;
+  const base = `${greet} je suis intéressé(e) par ${title}.`;
 
   let msg: string;
   if (transactionType === 'location') {
@@ -90,6 +97,7 @@ export default function ContactChatButton({
   adTitle,
   transactionType,
   adSlug,
+  hostFirstName,
 }: ContactChatButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -100,11 +108,16 @@ export default function ContactChatButton({
     const adUrl = adSlug
       ? `${window.location.origin}/ads/${adSlug}`
       : undefined;
-    const draft = buildDraftMessage(adTitle, transactionType, adUrl);
+    const draft = buildDraftMessage(
+      adTitle,
+      transactionType,
+      adUrl,
+      hostFirstName
+    );
     router.push(
       `/messages/${conversation.uuid}?draft=${encodeURIComponent(draft)}`
     );
-  }, [adId, adSlug, adTitle, transactionType, router]);
+  }, [adId, adSlug, adTitle, transactionType, hostFirstName, router]);
 
   const handleClick = useCallback(async () => {
     if (!isAuthenticated) {
@@ -174,6 +187,10 @@ export default function ContactChatButton({
 
   if (isOwnAd) return null;
 
+  const chatLabel = hostFirstName
+    ? `Échanger avec ${hostFirstName}`
+    : "Échanger avec l'hôte";
+
   return (
     <>
       <Button
@@ -201,8 +218,8 @@ export default function ContactChatButton({
         {loading
           ? 'Ouverture…'
           : isLocked
-            ? 'Débloquez pour envoyer un message'
-            : 'Envoyer un message'}
+            ? 'Débloquez pour contacter'
+            : chatLabel}
       </Button>
       {error && (
         <Box

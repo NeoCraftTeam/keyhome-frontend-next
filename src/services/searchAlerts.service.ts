@@ -14,6 +14,10 @@ export interface SearchAlertPayload {
   has_parking?: boolean;
   query?: string;
   is_active?: boolean;
+  /** Receives {@link SearchAlertMatchMail} when a listing matches (also respects global e-mail prefs). */
+  notify_email?: boolean;
+  /** Web Push + FCM mobile when token registered. */
+  notify_push?: boolean;
 }
 
 export interface SearchAlert extends SearchAlertPayload {

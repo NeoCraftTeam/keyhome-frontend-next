@@ -8,6 +8,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import DescriptionIcon from '@mui/icons-material/Description';
 import ExploreIcon from '@mui/icons-material/Explore';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -20,6 +21,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import type { ReactNode } from 'react';
 import { ChatBadgeIcon } from '@/components/chat/ChatBadgeIcon';
+import { NAV_LIST_ICON_GLYPH_PX } from '@/lib/navVisualMetrics';
 
 export interface NavItem {
   label: string;
@@ -34,7 +36,7 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
   {
     label: 'Accueil',
     href: '/home',
-    icon: <HomeRoundedIcon sx={{ fontSize: 26 }} />,
+    icon: <HomeRoundedIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
   },
   { label: 'Rechercher', href: '/search', icon: <SearchIcon /> },
   { label: 'Comparer', href: '/comparaisons', icon: <CompareArrowsIcon /> },
@@ -42,25 +44,67 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
 
 /**
  * Authenticated drawer quick links (browser + PWA) — native-style order.
- * Accueil uses `brandHome` and is rendered with the KeyHome mark in {@link NavDrawer}.
+ * Accueil shares the same icon footprint as the other entries so the column
+ * of icons stays visually aligned. The brand mark is already shown in the
+ * drawer header.
  */
-export type DrawerQuickNavEntry =
-  | { label: string; href: string; icon: ReactNode; brandHome?: false }
-  | { label: string; href: '/home'; brandHome: true };
+export type DrawerQuickNavEntry = {
+  label: string;
+  href: string;
+  icon: ReactNode;
+};
 
 export const AUTH_DRAWER_QUICK_NAV: DrawerQuickNavEntry[] = [
-  { label: 'Carte', href: '/nearby', icon: <ExploreIcon /> },
+  {
+    label: 'Carte',
+    href: '/nearby',
+    icon: <ExploreIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
+  },
   { label: 'Messages', href: '/messages', icon: <ChatBadgeIcon /> },
-  { label: 'Accueil', href: '/home', brandHome: true },
-  { label: 'Rechercher', href: '/search', icon: <SearchIcon /> },
-  { label: 'Comparer', href: '/comparaisons', icon: <CompareArrowsIcon /> },
+  {
+    label: 'Accueil',
+    href: '/home',
+    icon: <HomeRoundedIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
+  },
+  {
+    label: 'Rechercher',
+    href: '/search',
+    icon: <SearchIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
+  },
+  {
+    label: 'Mes alertes',
+    href: '/search-alerts',
+    icon: <NotificationsActiveIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
+  },
+  {
+    label: 'Comparer',
+    href: '/comparaisons',
+    icon: <CompareArrowsIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
+  },
 ];
 
 /** Items shown in sidebar (mobile browser, labels plus explicites) — exclut Comparer et Profil */
 export const SIDEBAR_NAV_ITEMS: NavItem[] = [
-  { label: 'Rechercher', href: '/search', icon: <SearchIcon /> },
-  { label: 'Explorer la carte', href: '/nearby', icon: <ExploreIcon /> },
-  { label: 'Estimer le loyer', href: '/prix-marche', icon: <BarChartIcon /> },
+  {
+    label: 'Rechercher',
+    href: '/search',
+    icon: <SearchIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
+  },
+  {
+    label: 'Mes alertes',
+    href: '/search-alerts',
+    icon: <NotificationsActiveIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
+  },
+  {
+    label: 'Explorer la carte',
+    href: '/nearby',
+    icon: <ExploreIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
+  },
+  {
+    label: 'Estimer le loyer',
+    href: '/prix-marche',
+    icon: <BarChartIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
+  },
 ];
 
 /** Owner panel nav items — full list for sidebar and desktop nav */
@@ -69,7 +113,7 @@ export const OWNER_NAV_ITEMS: NavItem[] = [
   {
     label: 'Mes Annonces',
     href: '/owner/ads',
-    icon: <ViewListRoundedIcon fontSize="small" />,
+    icon: <ViewListRoundedIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
   },
   { label: 'Locataires', href: '/owner/tenants', icon: <PeopleAltIcon /> },
   {
@@ -131,7 +175,7 @@ export const OWNER_SIDEBAR_NAV_ITEMS: NavItem[] = [
   {
     label: 'Mes Annonces',
     href: '/owner/ads',
-    icon: <ViewListRoundedIcon fontSize="small" />,
+    icon: <ViewListRoundedIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
   },
   { label: 'Messages', href: '/owner/messages', icon: <ChatBadgeIcon /> },
   { label: 'Locataires', href: '/owner/tenants', icon: <PeopleAltIcon /> },

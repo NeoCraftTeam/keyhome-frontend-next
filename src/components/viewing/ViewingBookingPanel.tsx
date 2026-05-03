@@ -107,6 +107,8 @@ interface Props {
   adTitle: string;
   /** Use contained variant for higher visibility (e.g. sidebar CTA) */
   variant?: 'outlined' | 'contained';
+  /** Host given name — personalises the booking CTA. */
+  hostFirstName?: string;
 }
 
 // ─── component ────────────────────────────────────────────────────────────────
@@ -115,6 +117,7 @@ export default function ViewingBookingPanel({
   adId,
   adTitle,
   variant = DEFAULT_VARIANT,
+  hostFirstName,
 }: Props) {
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
@@ -1064,14 +1067,18 @@ export default function ViewingBookingPanel({
               }),
         }}
       >
-        Planifier une visite
+        {hostFirstName
+          ? `Proposer une visite avec ${hostFirstName}`
+          : 'Planifier une visite'}
       </Button>
       <Typography
         variant="caption"
         color="text.secondary"
         sx={{ display: 'block', mt: 0.5, textAlign: 'center' }}
       >
-        Réservez votre créneau en quelques clics
+        {hostFirstName
+          ? `${hostFirstName} recevra votre demande de créneau.`
+          : 'Réservez votre créneau en quelques clics'}
       </Typography>
     </Box>
   );

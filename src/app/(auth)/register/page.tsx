@@ -2,6 +2,7 @@
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
+import TurnstileConfigAlert from '@/components/auth/TurnstileConfigAlert';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
@@ -20,6 +21,7 @@ import {
 } from '@/lib/register-intent';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
+import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
 import {
   mergeOutlinedStartIconInputLabelProps,
   outlinedStartIconInputLabelProps,
@@ -122,9 +124,13 @@ export default function RegisterPage() {
   const [agentType, setAgentType] = useState<AgentType>('individual');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileIssueCode, setTurnstileIssueCode] = useState<string | null>(
+    null
+  );
 
-  // Turnstile is configured iff the public site key is present at build time.
-  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const { siteKey: turnstileSiteKey, isResolved: turnstileConfigResolved } =
+    useTurnstileSiteKey();
+  const turnstileEnabled = Boolean(turnstileSiteKey);
 
   /**
    * Apply ?role= / ?intent= and/or ?lock= once, persist in sessionStorage, then strip the
@@ -294,10 +300,12 @@ export default function RegisterPage() {
     form.password === form.confirm_password &&
     passwordStrength.score >= 50 &&
     acceptedTerms &&
+    turnstileConfigResolved &&
     (!turnstileEnabled || !!turnstileToken);
 
   const handleSubmit = async () => {
     setError('');
+    setTurnstileIssueCode(null);
     setIsSubmitting(true);
 
     try {
@@ -1247,16 +1255,25 @@ export default function RegisterPage() {
                       sx={{ mb: 2, alignItems: 'flex-start' }}
                     />
 
-                    {turnstileEnabled && (
+                    {turnstileEnabled && turnstileSiteKey && (
                       <Box sx={{ mb: 2 }}>
+                        <TurnstileConfigAlert code={turnstileIssueCode} />
                         <TurnstileWidget
+                          siteKey={turnstileSiteKey}
                           action={
                             accountRole === 'agent'
                               ? 'register-agent'
                               : 'register-customer'
                           }
-                          onToken={setTurnstileToken}
+                          onToken={(t) => {
+                            setTurnstileToken(t);
+                            setTurnstileIssueCode(null);
+                          }}
                           onExpire={() => setTurnstileToken(null)}
+                          onErrorCode={(code) => {
+                            setTurnstileToken(null);
+                            setTurnstileIssueCode(code);
+                          }}
                         />
                       </Box>
                     )}

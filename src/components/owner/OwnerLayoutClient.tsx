@@ -16,6 +16,7 @@ import {
 } from '@/components/surveys/SurveyBanner';
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
 import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
+import { useFcmToken } from '@/hooks/useFcmToken';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
@@ -31,7 +32,13 @@ import { Add as AddIcon } from '@mui/icons-material';
 import { Box, Drawer, Fab, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
+import { isLikelyIosWebKit } from '@/lib/ios-environment';
 import { useCallback, useEffect, useState } from 'react';
+
+function FcmRegistrar() {
+  useFcmToken();
+  return null;
+}
 
 const OWNER_PUBLIC_PATHS = [
   '/owner/login',
@@ -89,6 +96,62 @@ export default function OwnerLayoutClient({
   const publicRoute = isPublicPath(pathname);
   const isSurveyPage =
     pathname?.startsWith('/surveys') || pathname?.startsWith('/sondage');
+
+  const isOwnerConversationPage = /^\/owner\/messages\/[^/]+/.test(
+    pathname ?? ''
+  );
+  const isOwnerMessagesPage = pathname?.startsWith('/owner/messages') ?? false;
+  const hideNavForChat = isMobile && isOwnerConversationPage;
+
+  // Mobile chat (non‑iOS): lock document scroll. iOS: skip — see interactive-widget note above.
+  useEffect(() => {
+    if (!hideNavForChat) return;
+    if (isLikelyIosWebKit()) {
+      return;
+    }
+    const html = document.documentElement;
+    const body = document.body;
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      htmlPosition: html.style.position,
+      htmlHeight: html.style.height,
+      htmlWidth: html.style.width,
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+      bodyHeight: body.style.height,
+      bodyWidth: body.style.width,
+      bodyOverscroll: body.style.overscrollBehavior,
+    };
+    html.style.overflow = 'hidden';
+    html.style.position = 'fixed';
+    html.style.height = '100dvh';
+    html.style.width = '100%';
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = '0';
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.height = '100dvh';
+    body.style.width = '100%';
+    body.style.overscrollBehavior = 'none';
+    return () => {
+      html.style.overflow = prev.htmlOverflow;
+      html.style.position = prev.htmlPosition;
+      html.style.height = prev.htmlHeight;
+      html.style.width = prev.htmlWidth;
+      body.style.overflow = prev.bodyOverflow;
+      body.style.position = prev.bodyPosition;
+      body.style.top = prev.bodyTop;
+      body.style.left = prev.bodyLeft;
+      body.style.right = prev.bodyRight;
+      body.style.height = prev.bodyHeight;
+      body.style.width = prev.bodyWidth;
+      body.style.overscrollBehavior = prev.bodyOverscroll;
+    };
+  }, [hideNavForChat]);
 
   const { data: activeSurvey, isError: activeSurveyError } = useQuery({
     queryKey: ['active-survey-owner', isAuthenticated],
@@ -232,15 +295,6 @@ export default function OwnerLayoutClient({
     return null;
   }
 
-  // Chat page detection — immersive full-screen on mobile conversation detail.
-  // Mirror the dashboard layout so /owner/messages/[uuid] gets a definite height
-  // context (100dvh) and the ChatBox flex chain can scroll properly.
-  const isOwnerConversationPage = /^\/owner\/messages\/[^/]+/.test(
-    pathname ?? ''
-  );
-  const isOwnerMessagesPage = pathname?.startsWith('/owner/messages') ?? false;
-  const hideNavForChat = isMobile && isOwnerConversationPage;
-
   return (
     <Box
       sx={{
@@ -257,6 +311,7 @@ export default function OwnerLayoutClient({
           presence (online/last seen) and chat toast notifications.
           ChatNotificationListener uses the teal owner accent. */}
       <GlobalPresenceChannel />
+      <FcmRegistrar />
       <ChatNotificationListener
         basePath="/owner/messages"
         accentColor="#0D9488"
@@ -331,7 +386,10 @@ export default function OwnerLayoutClient({
           {isOwnerMessagesPage ? (
             <Box
               sx={{
-                position: 'absolute',
+                // `fixed` (not absolute) when the immersive chat is shown on
+                // mobile keeps the chat anchored to the visual viewport on iOS
+                // even while the keyboard is open.
+                position: hideNavForChat ? 'fixed' : 'absolute',
                 inset: 0,
                 display: 'flex',
                 flexDirection: 'column',

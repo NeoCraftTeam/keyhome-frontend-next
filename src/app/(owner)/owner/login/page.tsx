@@ -2,9 +2,11 @@
 
 import PasskeyLoginButton from '@/components/auth/PasskeyLoginButton';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
+import TurnstileConfigAlert from '@/components/auth/TurnstileConfigAlert';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/FadeIn';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
+import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { OWNER_LOGIN_HERO_SRC, OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
@@ -55,14 +57,19 @@ export default function OwnerLoginPage() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const emailLabelShrink = useOutlinedInputLabelShrink(email.length > 0);
+  const [turnstileIssueCode, setTurnstileIssueCode] = useState<string | null>(
+    null
+  );
+  const { siteKey: turnstileSiteKey, isResolved: turnstileConfigResolved } =
+    useTurnstileSiteKey();
+  const turnstileEnabled = Boolean(turnstileSiteKey);
 
-  // Turnstile is configured iff the public site key is present at build time.
-  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const emailLabelShrink = useOutlinedInputLabelShrink(email.length > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setTurnstileIssueCode(null);
     setIsSubmitting(true);
 
     try {
@@ -207,6 +214,8 @@ export default function OwnerLoginPage() {
             </FadeIn>
           )}
 
+          <TurnstileConfigAlert code={turnstileIssueCode} />
+
           <FadeIn delay={0.2} direction="up">
             <Box component="form" onSubmit={handleSubmit}>
               <TextField
@@ -266,7 +275,25 @@ export default function OwnerLoginPage() {
                 sx={{ mb: 1 }}
               />
 
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+              {turnstileEnabled && turnstileSiteKey && (
+                <Box sx={{ mb: 2, minHeight: 65 }}>
+                  <TurnstileWidget
+                    siteKey={turnstileSiteKey}
+                    action="login-owner"
+                    onToken={(t) => {
+                      setTurnstileToken(t);
+                      setTurnstileIssueCode(null);
+                    }}
+                    onExpire={() => setTurnstileToken(null)}
+                    onErrorCode={(code) => {
+                      setTurnstileToken(null);
+                      setTurnstileIssueCode(code);
+                    }}
+                  />
+                </Box>
+              )}
+
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                 <Link
                   href="/owner/forgot-password"
                   underline="hover"
@@ -280,22 +307,16 @@ export default function OwnerLoginPage() {
                 </Link>
               </Box>
 
-              {turnstileEnabled && (
-                <Box sx={{ mt: 1, mb: 1 }}>
-                  <TurnstileWidget
-                    action="login-owner"
-                    onToken={setTurnstileToken}
-                    onExpire={() => setTurnstileToken(null)}
-                  />
-                </Box>
-              )}
-
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={isSubmitting || (turnstileEnabled && !turnstileToken)}
+                disabled={
+                  isSubmitting ||
+                  !turnstileConfigResolved ||
+                  (turnstileEnabled && !turnstileToken)
+                }
                 sx={{
                   py: 1.5,
                   fontSize: '1rem',

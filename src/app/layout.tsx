@@ -16,6 +16,7 @@ import NetworkStatus from '@/components/pwa/NetworkStatus';
 import CookieBanner from '@/components/ui/CookieBanner';
 import RouteProgressBar from '@/components/ui/RouteProgressBar';
 import { ThemeInitScript } from '@/components/ThemeInitScript';
+import { KH_SAFE_AREA_INIT_SCRIPT } from '@/lib/safe-area-init-inline';
 import { Suspense } from 'react';
 import { getClerkPreconnectOrigin } from '@/lib/clerk-frontend-origins';
 
@@ -135,9 +136,13 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  // Brand-aware status bar: pink on the customer panel (this root viewport),
+  // teal on the owner panel (overridden at runtime by `OwnerManifestSwitch`).
+  // Dark mode keeps the deep neutral background so the OS status bar blends
+  // with the dark surface instead of glowing pink in low light.
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#141419' },
+    { media: '(prefers-color-scheme: light)', color: '#F6475F' },
+    { media: '(prefers-color-scheme: dark)', color: '#0A0A0F' },
   ],
   viewportFit: 'cover',
   // Make the on-screen keyboard SHRINK the layout viewport instead of
@@ -171,6 +176,12 @@ export default async function RootLayout({
           {/* ThemeInitScript uses useServerInsertedHTML — injected server-side only,
               never reconciled on the client, so React 19 never warns. */}
           <ThemeInitScript nonce={nonce} />
+          <script
+            id="kh-safe-area-init"
+            nonce={nonce}
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{ __html: KH_SAFE_AREA_INIT_SCRIPT }}
+          />
           <link rel="preconnect" href="https://api.mapbox.com" />
           {clerkOrigin ? (
             <>

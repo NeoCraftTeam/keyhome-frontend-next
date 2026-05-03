@@ -3,8 +3,9 @@
 import { bottomNavigationPwaShellSx } from '@/components/layout/bottomNavigationPwaShellSx';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { BOTTOM_NAV_ITEMS } from '@/lib/nav-config';
+import { NAV_LIST_ICON_GLYPH_PX } from '@/lib/navVisualMetrics';
 import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
-import { brandAgent } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import {
   BottomNavigation,
   BottomNavigationAction,
@@ -21,30 +22,20 @@ export const BOTTOM_NAV_HEIGHT = PWA_BOTTOM_NAV_INNER_HEIGHT_PX;
 function ClientBottomNavHomeIcon({ selected }: { selected: boolean }) {
   return (
     <Box
+      component="img"
+      src="/images/logo.png"
+      alt=""
+      draggable={false}
       sx={{
-        width: 40,
-        height: 40,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: NAV_LIST_ICON_GLYPH_PX,
+        height: NAV_LIST_ICON_GLYPH_PX,
+        objectFit: 'contain',
+        display: 'block',
+        transition: 'opacity 0.2s ease, filter 0.2s ease',
+        filter: selected ? 'none' : 'grayscale(1)',
+        opacity: selected ? 1 : 0.42,
       }}
-    >
-      <Box
-        component="img"
-        src="/images/logo-teal.png"
-        alt=""
-        draggable={false}
-        sx={{
-          width: 28,
-          height: 28,
-          objectFit: 'contain',
-          display: 'block',
-          transition: 'opacity 0.2s ease, filter 0.2s ease',
-          filter: selected ? 'none' : 'grayscale(1)',
-          opacity: selected ? 1 : 0.42,
-        }}
-      />
-    </Box>
+    />
   );
 }
 
@@ -112,9 +103,9 @@ export default function BottomNav() {
               item.href === '/home'
                 ? {
                     '&.Mui-selected': {
-                      color: `${brandAgent.primary} !important`,
+                      color: `${brand.primary} !important`,
                       '&::after': {
-                        bgcolor: `${brandAgent.primary} !important`,
+                        bgcolor: `${brand.primary} !important`,
                       },
                     },
                   }

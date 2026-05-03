@@ -1,5 +1,6 @@
 'use client';
 
+import { consumePaymentReturnPath } from '@/lib/payment-return';
 import { paymentsService } from '@/services/payments.service';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -25,12 +26,29 @@ const MAX_RETRY_MS = 5000;
 const EXTENDED_POLL_MS = 5000;
 const EXTENDED_MAX_RETRIES = 36; // 36 × 5s = 3 min
 
+function isFlutterwaveTerminalFailure(status: string | null): boolean {
+  if (!status) {
+    return false;
+  }
+  const s = status.toLowerCase();
+  return (
+    s === 'declined' || s === 'cancelled' || s === 'failed' || s === 'error'
+  );
+}
+
+function paymentVerifySucceeded(result: {
+  is_paid: boolean;
+  status: string;
+}): boolean {
+  return result.is_paid === true || result.status?.toLowerCase() === 'success';
+}
+
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [countdown, setCountdown] = useState(5);
   const [verifying, setVerifying] = useState(true);
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [finalFailed, setFinalFailed] = useState(false);
   // Extended slow-poll counter (after initial 12 retries)
@@ -40,9 +58,8 @@ function PaymentSuccessContent() {
 
   const adId = searchParams.get('ad_id');
   const txRef = searchParams.get('tx_ref');
-  const status = searchParams.get('status');
-  const isApproved = status === 'approved';
-  const isDeclinedOrCancelled = status === 'declined' || status === 'cancelled';
+  const gwStatus = searchParams.get('status');
+  const isRedirectFailure = isFlutterwaveTerminalFailure(gwStatus);
 
   const attemptVerify = useCallback(
     async (attempt: number) => {
@@ -51,9 +68,9 @@ function PaymentSuccessContent() {
       }
       try {
         const result = await paymentsService.flutterwaveVerify(txRef);
-        if (result.is_unlocked) {
+        if (paymentVerifySucceeded(result)) {
           sessionStorage.setItem('kh_just_unlocked', adId);
-          setIsUnlocked(true);
+          setIsPaymentConfirmed(true);
           setVerifying(false);
           return;
         }
@@ -92,9 +109,9 @@ function PaymentSuccessContent() {
       }
       try {
         const result = await paymentsService.flutterwaveVerify(txRef);
-        if (result.is_unlocked) {
+        if (paymentVerifySucceeded(result)) {
           sessionStorage.setItem('kh_just_unlocked', adId);
-          setIsUnlocked(true);
+          setIsPaymentConfirmed(true);
           setFinalFailed(false);
           return;
         }
@@ -117,12 +134,11 @@ function PaymentSuccessContent() {
   );
 
   useEffect(() => {
-    // Declined or cancelled — skip verification entirely, show terminal UI
-    if (isDeclinedOrCancelled) {
+    if (isRedirectFailure) {
       setVerifying(false);
       return;
     }
-    if (!adId || !isApproved || verifiedRef.current) {
+    if (!adId || !txRef || verifiedRef.current) {
       setVerifying(false);
       return;
     }
@@ -133,14 +149,14 @@ function PaymentSuccessContent() {
         clearTimeout(retryTimerRef.current);
       }
     };
-  }, [adId, txRef, isApproved, isDeclinedOrCancelled, attemptVerify]);
+  }, [adId, txRef, isRedirectFailure, attemptVerify]);
 
   // Start extended polling once initial retries are done and payment was approved
   useEffect(() => {
     if (
       !finalFailed ||
-      !isApproved ||
-      isUnlocked ||
+      isRedirectFailure ||
+      isPaymentConfirmed ||
       extendedPollStartedRef.current
     ) {
       return;
@@ -152,28 +168,28 @@ function PaymentSuccessContent() {
         clearTimeout(retryTimerRef.current);
       }
     };
-  }, [finalFailed, isApproved, isUnlocked, extendedPoll]);
+  }, [finalFailed, isRedirectFailure, isPaymentConfirmed, extendedPoll]);
 
   useEffect(() => {
-    if (verifying || !isUnlocked) {
+    if (verifying || !isPaymentConfirmed) {
       return;
     }
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
+          const fallback = adId ? `/ads/${adId}` : '/home';
           if (adId) {
-            router.push(`/ads/${adId}`);
-          } else {
-            router.push('/home');
+            sessionStorage.setItem('kh_just_unlocked', adId);
           }
+          router.push(consumePaymentReturnPath(fallback));
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [verifying, isUnlocked, adId, router]);
+  }, [verifying, isPaymentConfirmed, adId, router]);
 
   if (verifying) {
     const progress = (retryCount / MAX_RETRIES) * 100;
@@ -258,7 +274,7 @@ function PaymentSuccessContent() {
           />
         </Box>
 
-        {isApproved && isUnlocked ? (
+        {isPaymentConfirmed ? (
           <>
             <Box
               sx={{
@@ -296,9 +312,13 @@ function PaymentSuccessContent() {
               variant="contained"
               size="large"
               fullWidth
-              onClick={() =>
-                adId ? router.push(`/ads/${adId}`) : router.push('/home')
-              }
+              onClick={() => {
+                const fallback = adId ? `/ads/${adId}` : '/home';
+                if (adId) {
+                  sessionStorage.setItem('kh_just_unlocked', adId);
+                }
+                router.push(consumePaymentReturnPath(fallback));
+              }}
               sx={{
                 py: 1.5,
                 fontWeight: 600,
@@ -313,7 +333,7 @@ function PaymentSuccessContent() {
         ) : (
           <>
             {/* ── Declined or Cancelled (terminal failure) ── */}
-            {isDeclinedOrCancelled ? (
+            {isRedirectFailure ? (
               <>
                 <Box
                   sx={{
@@ -321,7 +341,7 @@ function PaymentSuccessContent() {
                     height: 80,
                     borderRadius: '50%',
                     bgcolor:
-                      status === 'cancelled'
+                      gwStatus === 'cancelled'
                         ? 'rgba(100,100,100,0.1)'
                         : 'rgba(193,53,21,0.1)',
                     display: 'flex',
@@ -335,14 +355,14 @@ function PaymentSuccessContent() {
                     sx={{
                       fontSize: 48,
                       color:
-                        status === 'cancelled'
+                        gwStatus === 'cancelled'
                           ? 'text.secondary'
                           : 'error.main',
                     }}
                   />
                 </Box>
                 <Typography variant="h5" fontWeight={700} gutterBottom>
-                  {status === 'cancelled'
+                  {gwStatus === 'cancelled'
                     ? 'Paiement annulé'
                     : 'Paiement refusé'}
                 </Typography>
@@ -351,7 +371,7 @@ function PaymentSuccessContent() {
                   color="text.secondary"
                   sx={{ mb: 3 }}
                 >
-                  {status === 'cancelled'
+                  {gwStatus === 'cancelled'
                     ? 'Vous avez annulé le paiement. Aucun montant n\u2019a été débité. Vous pouvez réessayer à tout moment.'
                     : 'Le paiement n\u2019a pas abouti. Aucun montant n\u2019a été débité.'}
                 </Typography>
@@ -363,7 +383,9 @@ function PaymentSuccessContent() {
                       variant="contained"
                       size="large"
                       fullWidth
-                      onClick={() => router.push(`/ads/${adId}`)}
+                      onClick={() =>
+                        router.push(consumePaymentReturnPath(`/ads/${adId}`))
+                      }
                       sx={{
                         py: 1.5,
                         fontWeight: 600,
@@ -380,7 +402,9 @@ function PaymentSuccessContent() {
                     size="large"
                     fullWidth
                     startIcon={!adId ? undefined : <HomeIcon />}
-                    onClick={() => router.push('/home')}
+                    onClick={() =>
+                      router.push(consumePaymentReturnPath('/home'))
+                    }
                     sx={
                       adId
                         ? { fontWeight: 600, color: 'text.secondary' }
@@ -465,7 +489,9 @@ function PaymentSuccessContent() {
                       variant="outlined"
                       size="large"
                       fullWidth
-                      onClick={() => router.push(`/ads/${adId}`)}
+                      onClick={() =>
+                        router.push(consumePaymentReturnPath(`/ads/${adId}`))
+                      }
                       sx={{
                         py: 1.5,
                         fontWeight: 600,
@@ -486,7 +512,9 @@ function PaymentSuccessContent() {
                     size="medium"
                     fullWidth
                     startIcon={<HomeIcon />}
-                    onClick={() => router.push('/home')}
+                    onClick={() =>
+                      router.push(consumePaymentReturnPath('/home'))
+                    }
                     sx={{ fontWeight: 600, color: 'text.secondary' }}
                   >
                     Accueil

@@ -2,7 +2,7 @@ import { getAuthToken } from '@/lib/auth-token';
 import { getEchoSocketId } from '@/lib/echo';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_URL =
+export const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 /** Base URL without /api/v1 — used for /sanctum/csrf-cookie */

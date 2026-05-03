@@ -14,6 +14,9 @@ export interface RentEstimateResult {
   price_per_sqm: { p25: number; p50: number; p75: number };
   sample_count: number;
   surface: number;
+  /** When false, not enough data for the selected type — city-wide rentals were used instead. */
+  type_scope_matched?: boolean;
+  bedrooms_scope_matched?: boolean;
   error?: string;
 }
 

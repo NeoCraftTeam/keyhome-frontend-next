@@ -490,9 +490,17 @@ export function MessageInput({
                 ? `0 0 0 1px ${theme.glassBorder}`
                 : '0 0 0 1px rgba(0,0,0,0.06), inset 0 1px 2px rgba(0,0,0,0.02)',
             }}
-            onFocus={(e) =>
-              (e.currentTarget.style.boxShadow = `0 0 0 2px ${theme.accent}40, 0 2px 8px rgba(0,0,0,0.04)`)
-            }
+            onFocus={(e) => {
+              if (
+                typeof window !== 'undefined' &&
+                /iPhone|iPad|iPod/i.test(navigator.userAgent)
+              ) {
+                window.scrollTo(0, 0);
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+              }
+              e.currentTarget.style.boxShadow = `0 0 0 2px ${theme.accent}40, 0 2px 8px rgba(0,0,0,0.04)`;
+            }}
             onBlur={(e) =>
               (e.currentTarget.style.boxShadow = theme.isDark
                 ? `0 0 0 1px ${theme.glassBorder}`

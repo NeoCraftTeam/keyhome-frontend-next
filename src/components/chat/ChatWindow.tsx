@@ -9,6 +9,8 @@ import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { TypingIndicator } from './TypingIndicator';
 import { archiveConversation } from '@/lib/chat-api';
+import { getSafeErrorMessage } from '@/lib/error-messages';
+import { chatKeys } from '@/lib/query-keys';
 import { useEchoConnectionState } from '@/lib/echo';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -21,8 +23,10 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
+import { useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 interface ChatWindowProps {
@@ -92,19 +96,22 @@ function MessageSkeleton({
   return (
     <div
       className={`flex items-end gap-2 ${isRight ? 'flex-row-reverse' : 'flex-row'} mt-2`}
+      data-kh-chat-skeleton
     >
       {!isRight && (
         <div
           className="h-[30px] w-[30px] rounded-full shrink-0"
+          data-kh-chat-skeleton
           style={{
             background: `linear-gradient(110deg, #ececec 30%, ${theme.shimmer} 50%, #ececec 70%)`,
             backgroundSize: '200% 100%',
-            animation: 'shimmer 1.5s ease-in-out infinite',
+            animation: 'shimmer 1.5s cubic-bezier(0.22, 1, 0.36, 1) infinite',
           }}
         />
       )}
       <div
         className={`rounded-[18px] ${isRight ? 'rounded-br-[6px]' : 'rounded-bl-[6px]'}`}
+        data-kh-chat-skeleton
         style={{
           width: SKELETON_WIDTHS[index % SKELETON_WIDTHS.length],
           height: 42,
@@ -112,7 +119,7 @@ function MessageSkeleton({
             ? `linear-gradient(110deg, ${theme.accent}15 30%, ${theme.accent}08 50%, ${theme.accent}15 70%)`
             : 'linear-gradient(110deg, #f0f0f0 30%, #fafafa 50%, #f0f0f0 70%)',
           backgroundSize: '200% 100%',
-          animation: 'shimmer 1.5s ease-in-out infinite',
+          animation: 'shimmer 1.5s cubic-bezier(0.22, 1, 0.36, 1) infinite',
           animationDelay: `${index * 0.1}s`,
         }}
       />
@@ -142,6 +149,8 @@ export function ChatWindow({
   initialDraft,
 }: ChatWindowProps) {
   const { user } = useAuth();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const otherParticipant = conversation.other_participant;
   const connectionState = useEchoConnectionState();
   const isReconnecting =
@@ -176,6 +185,8 @@ export function ChatWindow({
   const bottomRef = useRef<HTMLDivElement>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
   const [newMsgCount, setNewMsgCount] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -410,7 +421,10 @@ export function ChatWindow({
         presenceDevice={presenceDevice}
         backHref={backHref}
         theme={theme}
-        onArchive={() => setShowArchiveConfirm(true)}
+        onArchive={() => {
+          setArchiveError(null);
+          setShowArchiveConfirm(true);
+        }}
         onSearch={() => {
           setSearchOpen((o) => !o);
           setSearchQuery('');
@@ -474,37 +488,69 @@ export function ChatWindow({
       {/* Archive confirmation banner */}
       {showArchiveConfirm && (
         <div
-          className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px] shrink-0"
+          className="flex flex-col gap-2 px-4 py-2.5 text-[13px] shrink-0"
           style={{
             backgroundColor: 'rgba(255,255,255,0.9)',
             backdropFilter: 'blur(8px)',
             borderBottom: `1px solid ${theme.glassBorder}`,
           }}
         >
-          <span className="text-gray-700 font-medium">
-            Archiver cette conversation ?
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowArchiveConfirm(false)}
-              className="rounded-full px-3.5 py-1 text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-            >
-              Annuler
-            </button>
-            <button
-              onClick={async () => {
-                setShowArchiveConfirm(false);
-                await archiveConversation(conversation.uuid);
-              }}
-              className="rounded-full px-3.5 py-1 text-xs font-medium text-white transition-all active:scale-95"
-              style={{
-                backgroundColor: theme.accent,
-                boxShadow: `0 1px 4px ${theme.accent}30`,
-              }}
-            >
-              Archiver
-            </button>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-gray-700 font-medium">
+              Archiver cette conversation ?
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={isArchiving}
+                onClick={() => {
+                  setShowArchiveConfirm(false);
+                  setArchiveError(null);
+                }}
+                className="rounded-full px-3.5 py-1 text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={isArchiving}
+                onClick={() => {
+                  void (async () => {
+                    if (isArchiving) {
+                      return;
+                    }
+                    setIsArchiving(true);
+                    setArchiveError(null);
+                    try {
+                      await archiveConversation(conversation.uuid);
+                      setShowArchiveConfirm(false);
+                      await queryClient.invalidateQueries({
+                        queryKey: chatKeys.allConversations,
+                      });
+                      queryClient.removeQueries({
+                        queryKey: ['conversation-single', conversation.uuid],
+                      });
+                      router.push(backHref ?? '/messages');
+                    } catch (e) {
+                      setArchiveError(getSafeErrorMessage(e));
+                    } finally {
+                      setIsArchiving(false);
+                    }
+                  })();
+                }}
+                className="rounded-full px-3.5 py-1 text-xs font-medium text-white transition-all active:scale-95 disabled:opacity-60 disabled:active:scale-100"
+                style={{
+                  backgroundColor: theme.accent,
+                  boxShadow: `0 1px 4px ${theme.accent}30`,
+                }}
+              >
+                {isArchiving ? 'Archivage…' : 'Archiver'}
+              </button>
+            </div>
           </div>
+          {archiveError && (
+            <p className="text-xs font-medium text-red-600">{archiveError}</p>
+          )}
         </div>
       )}
 
@@ -514,6 +560,9 @@ export function ChatWindow({
         @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
         @keyframes fetchSlide{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
         @keyframes msgIn{from{opacity:0;transform:translateY(10px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+        @media (prefers-reduced-motion: reduce) {
+          [data-kh-chat-skeleton] { animation: none !important; }
+        }
       `}</style>
 
       {/* ── Messages area: fixed watermark + scrollable list ───────── */}
@@ -683,10 +732,11 @@ export function ChatWindow({
                   >
                     <div
                       className="h-full w-1/2 rounded-full"
+                      data-kh-chat-skeleton
                       style={{
                         backgroundColor: theme.accent,
                         animation:
-                          'fetchSlide 1s ease-in-out infinite alternate',
+                          'fetchSlide 1s cubic-bezier(0.22, 1, 0.36, 1) infinite alternate',
                       }}
                     />
                   </div>

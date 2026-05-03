@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { rememberPaymentOriginPath } from '@/lib/payment-return';
 import {
   CreditPurchaseResponse,
   CreditVerifyResponse,
@@ -41,6 +42,7 @@ export const creditsService = {
     packageId: string,
     callbackUrl?: string
   ): Promise<CreditPurchaseResponse> {
+    rememberPaymentOriginPath();
     const { data } = await api.post(`/credits/purchase/${packageId}`, {
       callback_url: callbackUrl,
     });

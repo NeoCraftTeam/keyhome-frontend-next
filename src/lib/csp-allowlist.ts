@@ -131,5 +131,8 @@ export const CSP_FONT_HOSTS =
 export const CSP_IMG_HOSTS_STATIC =
   'https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev https://*.r2.cloudflarestorage.com https://www.gstatic.com https://*.googleapis.com https://lh3.googleusercontent.com';
 
+/** media-src: audio/video (voice notes, attachments). Falls back to default-src if omitted. */
+export const CSP_MEDIA_HOSTS_STATIC = CSP_IMG_HOSTS_STATIC;
+
 export const CSP_FRAME_HOSTS_STATIC =
   'https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://checkout.flutterwave.com https://vercel.live https://accounts.google.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev';

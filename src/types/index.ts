@@ -92,11 +92,12 @@ export interface FlutterwaveInitiateResponse {
 export interface FlutterwaveVerifyResponse {
   status: string;
   is_paid: boolean;
-  is_unlocked: boolean;
   reference: string;
   ad_id: string | null;
   tx_ref: string;
   gateway: PaymentGateway;
+  payment_method?: string | null;
+  payment_method_label?: string | null;
 }
 
 export interface PaymentHistoryItem {

@@ -1,6 +1,7 @@
 'use client';
 
 import AppLoader from '@/components/ui/AppLoader';
+import { consumePaymentReturnPath } from '@/lib/payment-return';
 import { paymentsService } from '@/services/payments.service';
 import { FlutterwaveVerifyResponse } from '@/types';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -109,13 +110,11 @@ function CallbackContent(): React.ReactElement {
         if (prev <= 1) {
           clearInterval(countdownTimerRef.current!);
           const adId = result?.ad_id ?? null;
-          // Redirect to unlocked ad page or home
+          const fallback = adId ? `/ads/${adId}` : '/home';
           if (adId) {
             sessionStorage.setItem('kh_just_unlocked', adId);
-            router.push(`/ads/${adId}`);
-          } else {
-            router.push('/home');
           }
+          router.push(consumePaymentReturnPath(fallback));
           return 0;
         }
         return prev - 1;
@@ -286,14 +285,16 @@ function CallbackContent(): React.ReactElement {
               <Button
                 variant="outlined"
                 startIcon={pageState !== 'cancelled' ? <Refresh /> : undefined}
-                onClick={() => router.back()}
+                onClick={() =>
+                  router.push(consumePaymentReturnPath('/payments'))
+                }
                 sx={{ borderRadius: 3, px: 3, py: 1.2, fontWeight: 600 }}
               >
                 {pageState === 'cancelled' ? 'Retour' : 'Réessayer'}
               </Button>
               <Button
                 variant="text"
-                href="/home"
+                onClick={() => router.push(consumePaymentReturnPath('/home'))}
                 sx={{
                   borderRadius: 3,
                   px: 3,

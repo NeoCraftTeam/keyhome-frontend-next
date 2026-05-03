@@ -217,6 +217,13 @@ export default function RentEstimatorWidget() {
       {data && !data.error && (
         <>
           <Divider sx={{ my: 3 }} />
+          {data.type_scope_matched === false && (
+            <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
+              Peu d&apos;annonces pour ce type dans cette ville :
+              l&apos;estimation s&apos;appuie sur l&apos;ensemble des locations
+              publiées dans la ville.
+            </Alert>
+          )}
           <Typography variant="subtitle2" color="text.secondary" mb={2}>
             Fourchette estimée pour <strong>{surface} m²</strong> à{' '}
             <strong>{selectedCity?.name}</strong>

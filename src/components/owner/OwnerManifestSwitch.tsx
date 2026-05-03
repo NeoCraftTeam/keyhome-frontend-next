@@ -64,7 +64,7 @@ export default function OwnerManifestSwitch() {
       'meta[name="apple-mobile-web-app-status-bar-style"]'
     );
     const originalAppleStatus = appleStatusEl?.content ?? '';
-    if (appleStatusEl) appleStatusEl.content = 'default';
+    if (appleStatusEl) appleStatusEl.content = 'black-translucent';
 
     // ── apple-mobile-web-app-title (label under iOS home-screen icon) ────────
     const appleTitleEl = document.querySelector<HTMLMetaElement>(
@@ -94,8 +94,22 @@ export default function OwnerManifestSwitch() {
     const originalAppleIcon = appleTouchEl?.href ?? '';
     if (appleTouchEl) appleTouchEl.href = '/images/logo-teal.png';
 
+    // ── data-kh-panel='owner' on <html> ─────────────────────────────────────
+    // Drives the CSS rule in globals.css that re-tints the body's brand band
+    // (visible behind the iOS PWA translucent status bar) to teal so the
+    // status bar reads as teal instead of pink while the owner panel is
+    // mounted.
+    const html = document.documentElement;
+    const previousPanelAttr = html.getAttribute('data-kh-panel');
+    html.setAttribute('data-kh-panel', 'owner');
+
     // ── Restore on unmount ───────────────────────────────────────────────────
     return () => {
+      if (previousPanelAttr !== null) {
+        html.setAttribute('data-kh-panel', previousPanelAttr);
+      } else {
+        html.removeAttribute('data-kh-panel');
+      }
       if (manifestEl) {
         if (originalManifest) {
           manifestEl.href = originalManifest;

@@ -6,9 +6,7 @@ import type { Conversation } from '@/types/chat';
 import { prefetchChatMessages } from '@/hooks/useChat';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Home } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useQueryClient } from '@tanstack/react-query';
@@ -42,7 +40,6 @@ export function ConversationItem({
   }, [user?.id]);
   const unread = conversation.unread_count > 0;
   const lastMsg = conversation.last_message;
-  const ad = conversation.ad;
 
   const timeAgo = conversation.last_message_at
     ? formatDistanceToNow(new Date(conversation.last_message_at), {
@@ -104,7 +101,7 @@ export function ConversationItem({
         />
       )}
 
-      {/* Avatar + ad thumbnail badge */}
+      {/* Avatar */}
       <div className="relative shrink-0">
         {participant?.avatar ? (
           <Image
@@ -127,36 +124,6 @@ export function ConversationItem({
             }}
           >
             {initial}
-          </div>
-        )}
-
-        {/* Ad thumbnail badge — bottom-right corner of avatar */}
-        {ad && (
-          <div
-            className="absolute -bottom-1 -right-1 h-[22px] w-[22px] rounded-md overflow-hidden border-[2px] shadow-sm"
-            style={{ borderColor: theme.isDark ? theme.listBg : '#fff' }}
-            title={ad.title}
-          >
-            {ad.cover_image ? (
-              <Image
-                src={ad.cover_image}
-                alt={ad.title}
-                width={22}
-                height={22}
-                className="h-full w-full object-cover"
-                unoptimized
-              />
-            ) : (
-              <div
-                className="h-full w-full flex items-center justify-center"
-                style={{ backgroundColor: theme.accentLight }}
-              >
-                <Home
-                  className="h-[11px] w-[11px]"
-                  style={{ color: theme.accent }}
-                />
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -190,20 +157,21 @@ export function ConversationItem({
               style={{ color: theme.accent }}
             >
               est en train d&apos;écrire
-              <span className="flex items-center gap-[2px] translate-y-[1px]">
+              <span className="flex items-center gap-1">
                 {[0, 1, 2].map((i) => (
                   <span
                     key={i}
-                    className="inline-block h-[4px] w-[4px] rounded-full"
+                    className="kh-list-typing-dot inline-block h-1.5 w-1.5 rounded-full"
                     style={{
                       backgroundColor: theme.accent,
-                      animation: 'convTypingDot 1.2s ease-in-out infinite',
-                      animationDelay: `${i * 0.18}s`,
+                      animation:
+                        'khListTypingPulse 1.35s cubic-bezier(0.22, 1, 0.36, 1) infinite',
+                      animationDelay: `${i * 0.16}s`,
                     }}
                   />
                 ))}
               </span>
-              <style>{`@keyframes convTypingDot{0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}`}</style>
+              <style>{`@keyframes khListTypingPulse{0%,100%{opacity:.3}50%{opacity:1}}@media (prefers-reduced-motion:reduce){.kh-list-typing-dot{animation:none!important;opacity:.55}}`}</style>
             </span>
           ) : (
             <span className="flex items-center gap-1 min-w-0">
@@ -212,35 +180,6 @@ export function ConversationItem({
                 <span className="shrink-0 flex items-center translate-y-[0.5px]">
                   <StatusIcon status={lastMsg.status} theme={theme} />
                 </span>
-              )}
-
-              {/* Ad pill chip — inline, attached to the message preview */}
-              {ad?.slug && (
-                <Link
-                  href={
-                    theme.isOwnerPanel
-                      ? `/owner/ads/${ad.id}`
-                      : `/ads/${ad.slug}`
-                  }
-                  onClick={(e) => e.stopPropagation()}
-                  className="shrink-0 inline-flex items-center gap-[3px] px-1.5 py-[2px] rounded group/ad"
-                  style={{
-                    backgroundColor: `${theme.accent}18`,
-                    border: `1px solid ${theme.accent}30`,
-                  }}
-                  title={`Voir l'annonce : ${ad.title}`}
-                >
-                  <Home
-                    className="h-[9px] w-[9px]"
-                    style={{ color: theme.accent }}
-                  />
-                  <span
-                    className="text-[10px] font-medium max-w-[80px] truncate group-hover/ad:underline underline-offset-1"
-                    style={{ color: theme.accent }}
-                  >
-                    {ad.title}
-                  </span>
-                </Link>
               )}
 
               <p

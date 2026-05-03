@@ -34,6 +34,7 @@ import {
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { brand } from '@/theme/tokens';
+import { useAuth } from '@/providers/AuthProvider';
 
 type Props = {
   adId: string;
@@ -63,7 +64,7 @@ const reasonOptions: Option<AdReportReason>[] = [
   },
   {
     value: 'not_real_property',
-    label: "Ce n'est pas un veritable logement",
+    label: "Ce n'est pas un véritable logement",
     icon: <HomeWorkOutlinedIcon fontSize="small" />,
   },
   {
@@ -145,6 +146,7 @@ export default function AdReportModal({
 }: Props) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { user } = useAuth();
   const [step, setStep] = useState<WizardStep>('reason');
   const [reason, setReason] = useState<AdReportReason | null>(null);
   const [scamReason, setScamReason] = useState<AdReportScamReason | null>(null);
@@ -406,7 +408,7 @@ export default function AdReportModal({
                       color="text.secondary"
                       sx={{ mb: 1 }}
                     >
-                      Decrivez le probleme (minimum 10 caracteres)
+                      Décrivez le problème (minimum 10 caractères)
                     </Typography>
                     <TextField
                       value={otherDescription}
@@ -508,7 +510,7 @@ export default function AdReportModal({
                   fontWeight={700}
                   sx={{ fontSize: { xs: '1.8rem', md: '2.2rem' }, mb: 2 }}
                 >
-                  Comment vous a-t-il demande de payer ?
+                  Comment vous a-t-on demandé de payer ?
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.25 }}>
                   {paymentMethods.map((method) => (
@@ -550,19 +552,32 @@ export default function AdReportModal({
                   fontWeight={700}
                   sx={{ fontSize: { xs: '1.8rem', md: '2.2rem' }, mb: 2 }}
                 >
-                  Nous avons recu votre signalement
+                  Nous avons reçu votre signalement
                 </Typography>
                 <Typography variant="body1" sx={{ lineHeight: 1.7, mb: 2 }}>
-                  Merci d&apos;avoir pris le temps de nous expliquer ce qui se
-                  passe. Nos equipes vont analyser cette annonce rapidement.
+                  Merci d&apos;avoir pris le temps de nous expliquer la
+                  situation. Notre équipe examine les signalements sous 48h en
+                  moyenne.
                 </Typography>
-                <Typography
-                  variant="body1"
-                  color="text.secondary"
-                  sx={{ lineHeight: 1.7 }}
-                >
-                  Un email de confirmation vient de vous etre envoye.
-                </Typography>
+                {user?.email &&
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email) ? (
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.7 }}
+                  >
+                    Un e-mail de confirmation vous a été envoyé à {user.email}.
+                  </Typography>
+                ) : (
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.7 }}
+                  >
+                    Retrouvez l&apos;accusé de réception dans votre centre de
+                    notifications KeyHome.
+                  </Typography>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

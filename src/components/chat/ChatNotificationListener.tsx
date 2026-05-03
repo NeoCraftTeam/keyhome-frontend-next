@@ -15,7 +15,7 @@ import { fetchConversations } from '@/lib/chat-api';
 import { useAuth } from '@/providers/AuthProvider';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 /**
@@ -77,6 +77,16 @@ export function ChatNotificationListener({
     [subscribedConversations]
   );
 
+  const syncChatCaches = useCallback(() => {
+    void queryClient.invalidateQueries({
+      queryKey: chatKeys.allConversations,
+    });
+    void queryClient.invalidateQueries({ queryKey: chatKeys.allUnread });
+    void queryClient.invalidateQueries({
+      predicate: (q) => q.queryKey[0] === 'chat-messages',
+    });
+  }, [queryClient]);
+
   // ─── WS reconnect handler ─────────────────────────────────────────────────
   // When the WebSocket reconnects after a disconnect, we may have missed
   // events. Invalidate all chat queries so TanStack refetches the latest data.
@@ -96,14 +106,7 @@ export function ChatNotificationListener({
         previous === 'disconnected' ||
         previous === 'connecting';
       if (wasOffline && current === 'connected') {
-        void queryClient.invalidateQueries({
-          queryKey: chatKeys.allConversations,
-        });
-        void queryClient.invalidateQueries({ queryKey: chatKeys.allUnread });
-        // Invalidate all active message caches
-        void queryClient.invalidateQueries({
-          predicate: (q) => q.queryKey[0] === 'chat-messages',
-        });
+        syncChatCaches();
       }
     };
 
@@ -111,7 +114,47 @@ export function ChatNotificationListener({
     return () => {
       pusher.connection.unbind('state_change', handler);
     };
-  }, [isAuthenticated, queryClient]);
+  }, [isAuthenticated, queryClient, syncChatCaches]);
+
+  // ─── Document visibility / bfcache (especially mobile PWA) ──────────────
+  // iOS/Android can suspend tabs without a clean Pusher "disconnected" state.
+  // After ~15s in background, refetch inbox + messages so missed WS events
+  // do not stick until manual refresh. Short tab switches stay cheap (no refetch).
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const MIN_HIDDEN_MS = 15_000;
+    const hiddenAtRef = { current: null as number | null };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAtRef.current = Date.now();
+        return;
+      }
+      const start = hiddenAtRef.current;
+      hiddenAtRef.current = null;
+      if (start == null) {
+        return;
+      }
+      if (Date.now() - start < MIN_HIDDEN_MS) {
+        return;
+      }
+      syncChatCaches();
+    };
+
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        syncChatCaches();
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, [isAuthenticated, syncChatCaches]);
 
   // ─── Per-conversation listeners ────────────────────────────────────────────
   // Race-safe binding: echo.private(name).subscription may be momentarily

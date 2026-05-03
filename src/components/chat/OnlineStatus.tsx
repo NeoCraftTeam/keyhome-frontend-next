@@ -4,12 +4,10 @@ import type { DeviceType, PresenceStatus } from '@/hooks/usePresence';
 import type { ChatTheme } from './chat-theme';
 import { CLIENT_THEME } from './chat-theme';
 import {
-  differenceInDays,
-  differenceInHours,
+  differenceInCalendarDays,
   differenceInMinutes,
   format,
-  isToday,
-  isYesterday,
+  startOfDay,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -21,39 +19,48 @@ interface OnlineStatusProps {
 }
 
 /**
- * Format a "last seen" timestamp the WhatsApp way: short, dense, French.
+ * Format a "last seen" timestamp for the chat header (French).
  *
- * - < 1 min   → "à l'instant"
- * - < 60 min  → "il y a 12 min"
- * - same day  → "à 18:42"
+ * Shown as `Vu …` in the UI, so strings are written to read naturally after "Vu":
+ * - &lt; 1 min → "à l'instant"
+ * - &lt; 60 min → "il y a 12 min"
+ * - same calendar day → "auj. à 18:42"
  * - yesterday → "hier à 22:14"
- * - < 7 days  → "il y a 3 jours"
- * - older     → "le 12 mars"
+ * - 2–6 calendar days → "il y a 3 jours à 09:15"
+ * - older → "le 12/01/2006 à 14:30"
  */
 export function formatLastSeenShort(lastSeenAt: string): string {
   const now = new Date();
   const seenAt = new Date(lastSeenAt);
+  const timePart = format(seenAt, 'HH:mm', { locale: fr });
 
   const minutes = differenceInMinutes(now, seenAt);
-  if (minutes < 1) return "à l'instant";
-  if (minutes < 60) return `il y a ${minutes} min`;
-
-  if (isToday(seenAt)) {
-    return `à ${format(seenAt, 'HH:mm', { locale: fr })}`;
+  if (minutes < 1) {
+    return "à l'instant";
+  }
+  if (minutes < 60) {
+    return `il y a ${minutes} min`;
   }
 
-  if (isYesterday(seenAt)) {
-    return `hier à ${format(seenAt, 'HH:mm', { locale: fr })}`;
+  const calDays = differenceInCalendarDays(startOfDay(now), startOfDay(seenAt));
+
+  if (calDays < 0) {
+    return `le ${format(seenAt, 'dd/MM/yyyy', { locale: fr })} à ${timePart}`;
   }
 
-  const hours = differenceInHours(now, seenAt);
-  if (hours < 24) return `il y a ${hours} h`;
+  if (calDays === 0) {
+    return `auj. à ${timePart}`;
+  }
 
-  const days = differenceInDays(now, seenAt);
-  if (days === 1) return 'il y a 1 jour';
-  if (days < 7) return `il y a ${days} jours`;
+  if (calDays === 1) {
+    return `hier à ${timePart}`;
+  }
 
-  return `le ${format(seenAt, 'd MMM', { locale: fr })}`;
+  if (calDays < 7) {
+    return `il y a ${calDays} jours à ${timePart}`;
+  }
+
+  return `le ${format(seenAt, 'dd/MM/yyyy', { locale: fr })} à ${timePart}`;
 }
 
 /**

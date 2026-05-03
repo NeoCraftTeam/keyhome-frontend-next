@@ -3,6 +3,7 @@
 import { bottomNavigationPwaShellSx } from '@/components/layout/bottomNavigationPwaShellSx';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { OWNER_BOTTOM_NAV_ITEMS } from '@/lib/nav-config';
+import { NAV_LIST_ICON_GLYPH_PX } from '@/lib/navVisualMetrics';
 import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
 import {
   BottomNavigation,
@@ -12,6 +13,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { brandAgent } from '@/theme/tokens';
 import { usePathname, useRouter } from 'next/navigation';
 
 /** @deprecated Prefer {@link PWA_BOTTOM_NAV_INNER_HEIGHT_PX} — kept for owner layout FAB offset */
@@ -20,30 +22,20 @@ export const OWNER_BOTTOM_NAV_HEIGHT = PWA_BOTTOM_NAV_INNER_HEIGHT_PX;
 function OwnerBottomNavDashboardIcon({ selected }: { selected: boolean }) {
   return (
     <Box
+      component="img"
+      src="/images/logo-teal.png"
+      alt=""
+      draggable={false}
       sx={{
-        width: 40,
-        height: 40,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: NAV_LIST_ICON_GLYPH_PX,
+        height: NAV_LIST_ICON_GLYPH_PX,
+        objectFit: 'contain',
+        display: 'block',
+        transition: 'opacity 0.2s ease, filter 0.2s ease',
+        filter: selected ? 'none' : 'grayscale(1)',
+        opacity: selected ? 1 : 0.42,
       }}
-    >
-      <Box
-        component="img"
-        src="/images/logo-teal.png"
-        alt=""
-        draggable={false}
-        sx={{
-          width: 28,
-          height: 28,
-          objectFit: 'contain',
-          display: 'block',
-          transition: 'opacity 0.2s ease, filter 0.2s ease',
-          filter: selected ? 'none' : 'grayscale(1)',
-          opacity: selected ? 1 : 0.42,
-        }}
-      />
-    </Box>
+    />
   );
 }
 
@@ -108,13 +100,13 @@ export default function OwnerBottomNav() {
             aria-label={item.label}
             aria-current={idx === activeIndex ? 'page' : undefined}
             sx={
-              item.href === '/owner/ads'
+              item.href === '/owner/dashboard'
                 ? {
-                    '& .MuiSvgIcon-root': {
-                      fontSize: '1.75rem',
-                    },
-                    '&.Mui-selected .MuiSvgIcon-root': {
-                      color: 'primary.main',
+                    '&.Mui-selected': {
+                      color: `${brandAgent.primary} !important`,
+                      '&::after': {
+                        bgcolor: `${brandAgent.primary} !important`,
+                      },
                     },
                   }
                 : undefined

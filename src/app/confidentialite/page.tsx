@@ -1,12 +1,17 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { LEGAL_DOCUMENTS_LAST_UPDATED_LABEL } from '@/lib/legal-documents';
 import styles from './legal.module.css';
 
 const sections = [
   { id: 'collecte', title: 'Informations collectées' },
   { id: 'utilisation', title: 'Utilisation des données' },
   { id: 'partage', title: 'Partage des informations' },
-  { id: 'connexion-sociale', title: 'Connexion sociale' },
+  {
+    id: 'prestataires-messagerie',
+    title: 'Prestataires, messagerie et transferts',
+  },
+  { id: 'connexion-sociale', title: 'Connexion et authentification' },
   { id: 'score-confiance', title: 'Score de Confiance' },
   { id: 'securite', title: 'Sécurité et conservation' },
   { id: 'droits', title: 'Vos droits' },
@@ -39,8 +44,14 @@ export default function PrivacyPolicyPage() {
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
           </Link>
-          <Image src="/images/logo.png" alt="KeyHome" width={32} height={32} />
-          <span className={styles.brand}>KeyHome</span>
+          <Link
+            href="/home"
+            className={styles.brandLink}
+            aria-label="KeyHome — Accueil"
+          >
+            <Image src="/images/logo.png" alt="" width={32} height={32} />
+            <span className={styles.brand}>KeyHome</span>
+          </Link>
           <div className={styles.headerSpacer} />
           <span className={styles.headerDocType}>Document légal</span>
         </div>
@@ -73,11 +84,16 @@ export default function PrivacyPolicyPage() {
                 <line x1="3" y1="10" x2="21" y2="10" />
               </svg>
             </span>
-            Dernière mise à jour : 7 avril 2026
+            Dernière mise à jour : {LEGAL_DOCUMENTS_LAST_UPDATED_LABEL}
           </div>
           <p className={styles.heroDescription}>
             Votre confiance est notre priorité. Découvrez comment nous
-            protégeons et utilisons vos données personnelles.
+            protégeons et utilisons vos données personnelles. Ces engagements
+            complètent nos{' '}
+            <Link href="/conditions" className={styles.heroLink}>
+              conditions générales d&apos;utilisation
+            </Link>
+            .
           </p>
         </div>
       </section>
@@ -250,8 +266,9 @@ export default function PrivacyPolicyPage() {
                   débloquez les coordonnées d&apos;une annonce
                 </li>
                 <li>
-                  Avec nos prestataires techniques de confiance (hébergement,
-                  paiement, analytics) sous contrat de confidentialité strict
+                  Avec nos prestataires techniques de confiance (voir
+                  section&nbsp;4), exclusivement pour les besoins du service et
+                  sous garanties de confidentialité et de sécurité adaptées
                 </li>
                 <li>
                   Avec les autorités compétentes uniquement si requis par la loi
@@ -260,7 +277,80 @@ export default function PrivacyPolicyPage() {
               </ul>
             </section>
 
-            {/* §4 — Connexion sociale */}
+            {/* §4 — Prestataires, messagerie et transferts */}
+            <section id="prestataires-messagerie" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    aria-hidden="true"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <path d="M8 21h8M12 17v4" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>
+                  4. Prestataires, messagerie et transferts
+                </h2>
+              </div>
+              <p>
+                Pour exploiter KeyHome, nous faisons appel à des sous-traitants
+                situés, selon les services, dans l&apos;Union européenne, au
+                Royaume-Uni et/ou hors de l&apos;Espace économique européen.
+                Lorsque la loi l&apos;exige, nous mettons en place des garanties
+                appropriées (clauses contractuelles types, mesures
+                organisationnelles et techniques).
+              </p>
+              <p>
+                Cela peut notamment inclure :{' '}
+                <span className={styles.strong}>
+                  hébergement et diffusion du site
+                </span>
+                ,{' '}
+                <span className={styles.strong}>
+                  réseau de distribution (CDN)
+                </span>
+                , <span className={styles.strong}>authentification</span>{' '}
+                (compte et connexion sociale),{' '}
+                <span className={styles.strong}>paiement</span> (ex.&nbsp;
+                Flutterwave), <span className={styles.strong}>messagerie</span>{' '}
+                et notifications (y compris canal push),{' '}
+                <span className={styles.strong}>
+                  stockage de pièces jointes
+                </span>
+                , outils de <span className={styles.strong}>supervision</span>{' '}
+                ou d&apos;
+                <span className={styles.strong}>analyse technique</span> des
+                incidents.
+              </p>
+              <p>
+                La <span className={styles.strong}>messagerie</span> stocke le
+                contenu des échanges pour les livrer aux destinataires et
+                permettre l&apos;historique de conversation. Les messages sont
+                protégés par des mécanismes de chiffrement conformes aux
+                standards de l&apos;industrie. Une fonctionnalité de chiffrement
+                de bout en bout optionnelle peut, lorsqu&apos;elle est activée,
+                empêcher KeyHome d&apos;accéder au texte en clair du message ;
+                les métadonnées (horodatage, expéditeur, pièces jointes selon le
+                cas) peuvent en revanche rester traitées par le service.
+              </p>
+              <div className={styles.note}>
+                La liste des catégories de sous-traitants et les informations
+                utiles sur les transferts peut être affinée dans une annexe ou
+                une page « Transparence » : adressez-vous à{' '}
+                <span className={styles.strong}>privacy@keyhome.app</span> pour
+                toute précision.
+              </div>
+            </section>
+
+            {/* §5 — Connexion et authentification */}
             <section id="connexion-sociale" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -280,23 +370,34 @@ export default function PrivacyPolicyPage() {
                     <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                   </svg>
                 </div>
-                <h2 className={styles.sectionTitle}>4. Connexion sociale</h2>
+                <h2 className={styles.sectionTitle}>
+                  5. Connexion et authentification
+                </h2>
               </div>
               <p>
-                Si vous choisissez de vous connecter via{' '}
-                <span className={styles.strong}>Google, Facebook ou Apple</span>
-                , nous recevons uniquement votre nom, adresse e-mail et photo de
-                profil.
+                L&apos;accès au compte peut s&apos;effectuer par adresse e-mail
+                et mot de passe, par{' '}
+                <span className={styles.strong}>passkeys</span> (WebAuthn), ou
+                via des fournisseurs tiers proposés sur la plateforme (par
+                ex.&nbsp;connexion avec{' '}
+                <span className={styles.strong}>Google</span> ou{' '}
+                <span className={styles.strong}>Apple</span> selon les options
+                affichées).
               </p>
               <p>
-                Nous n&apos;accédons jamais à vos contacts, messages,
-                publications ou autres données privées de vos comptes sociaux.
-                Ces informations servent exclusivement à créer et sécuriser
-                votre compte KeyHome.
+                Dans ce dernier cas, notre prestataire d&apos;authentification
+                peut nous transmettre des éléments tels que votre nom, votre
+                adresse e-mail et, le cas échéant, votre photo de profil, afin
+                de créer ou de lier votre compte KeyHome.
+              </p>
+              <p>
+                Nous n&apos;accédons pas à vos contacts, fils d&apos;actualité
+                ou messages privés sur ces réseaux. Ces traitements servent à
+                l&apos;identification et à la sécurisation de votre compte.
               </p>
             </section>
 
-            {/* §5 — Score de Confiance */}
+            {/* §6 — Score de Confiance */}
             <section id="score-confiance" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -316,7 +417,7 @@ export default function PrivacyPolicyPage() {
                   </svg>
                 </div>
                 <h2 className={styles.sectionTitle}>
-                  5. Score de Confiance (TrustScore)
+                  6. Score de Confiance (TrustScore)
                 </h2>
               </div>
               <p>
@@ -356,7 +457,7 @@ export default function PrivacyPolicyPage() {
               </div>
             </section>
 
-            {/* §6 — Sécurité et conservation */}
+            {/* §7 — Sécurité et conservation */}
             <section id="securite" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -376,7 +477,7 @@ export default function PrivacyPolicyPage() {
                   </svg>
                 </div>
                 <h2 className={styles.sectionTitle}>
-                  6. Sécurité et conservation
+                  7. Sécurité et conservation
                 </h2>
               </div>
               <p>
@@ -406,7 +507,7 @@ export default function PrivacyPolicyPage() {
               </div>
             </section>
 
-            {/* §7 — Vos droits */}
+            {/* §8 — Vos droits */}
             <section id="droits" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -426,7 +527,7 @@ export default function PrivacyPolicyPage() {
                     <path d="M16 11l2 2 4-4" />
                   </svg>
                 </div>
-                <h2 className={styles.sectionTitle}>7. Vos droits</h2>
+                <h2 className={styles.sectionTitle}>8. Vos droits</h2>
               </div>
               <p>
                 Conformément aux réglementations en vigueur, vous disposez des
@@ -466,7 +567,7 @@ export default function PrivacyPolicyPage() {
               </div>
             </section>
 
-            {/* §8 — Cookies */}
+            {/* §9 — Cookies */}
             <section id="cookies" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -487,9 +588,15 @@ export default function PrivacyPolicyPage() {
                     <circle cx="16" cy="12" r="0.5" fill="currentColor" />
                   </svg>
                 </div>
-                <h2 className={styles.sectionTitle}>8. Cookies</h2>
+                <h2 className={styles.sectionTitle}>9. Cookies</h2>
               </div>
-              <p>Notre plateforme utilise deux types de cookies :</p>
+              <p>
+                Lors de votre première visite, une{' '}
+                <span className={styles.strong}>bannière de consentement</span>{' '}
+                vous informe et permet d&apos;enregistrer vos choix pour les
+                traceurs non strictement nécessaires.
+              </p>
+              <p>Notre plateforme utilise notamment :</p>
               <ul className={styles.list}>
                 <li>
                   <span className={styles.strong}>Cookies essentiels :</span>{' '}
@@ -503,15 +610,16 @@ export default function PrivacyPolicyPage() {
                 </li>
               </ul>
               <p>
-                Vous pouvez gérer vos préférences de cookies à tout moment dans
-                les paramètres de votre navigateur. La désactivation des cookies
-                essentiels peut affecter le fonctionnement du service.
+                Vous pouvez ajuster vos préférences à tout moment via la
+                bannière (lorsqu&apos;elle est disponible) ou dans les réglages
+                de votre navigateur. La désactivation des cookies essentiels
+                peut affecter le fonctionnement du service.
               </p>
             </section>
 
             <hr className={styles.divider} />
 
-            {/* §9 — Contact */}
+            {/* §10 — Contact */}
             <section id="contact" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -530,7 +638,7 @@ export default function PrivacyPolicyPage() {
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
                 </div>
-                <h2 className={styles.sectionTitle}>9. Contact</h2>
+                <h2 className={styles.sectionTitle}>10. Contact</h2>
               </div>
               <p>
                 Pour toute question relative à vos données personnelles ou à

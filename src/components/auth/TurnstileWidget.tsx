@@ -4,33 +4,46 @@ import Script from 'next/script';
 import { useCallback, useEffect, useId, useRef } from 'react';
 
 /**
- * Lightweight Cloudflare Turnstile widget — no external React wrapper, no
- * extra bundle. Renders the official Turnstile challenge inline and emits the
- * resulting token via `onToken`. The token must be sent to the backend (it
- * verifies it via `TurnstileService`).
+ * Cloudflare Turnstile — explicit rendering for Next.js client components.
+ * @see https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/
  *
- * Behaviour:
- *  - When `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is missing, the component renders
- *    nothing (development fallback — backend is also fail-open in that case).
- *  - The Cloudflare script is loaded once per page via `<Script>`.
- *  - The widget auto-resizes (`size="flexible"`) so it fits both narrow and
- *    wide login forms; uses managed mode for invisible / interactive choice.
+ * - Official script URL only (`api.js?render=explicit`) — never proxy or cache this file.
+ * - Do **not** call `turnstile.ready()` here: Next.js `<Script strategy="afterInteractive">`
+ *   injects `defer`, and Cloudflare throws if `ready()` is used with async/defer.
+ *   We call `turnstile.render()` only after `onLoad` or when `window.turnstile` already exists.
+ * - `link rel="preconnect"` to `challenges.cloudflare.com` once (performance).
  */
 
+const TURNSTILE_SCRIPT_SRC =
+  'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com';
+
+let preconnectInserted = false;
+
+function ensurePreconnectToChallenges(): void {
+  if (typeof document === 'undefined' || preconnectInserted) {
+    return;
+  }
+  preconnectInserted = true;
+  const link = document.createElement('link');
+  link.rel = 'preconnect';
+  link.href = TURNSTILE_ORIGIN;
+  document.head.appendChild(link);
+}
+
+type TurnstileRenderOptions = {
+  sitekey: string;
+  action?: string;
+  theme?: 'light' | 'dark' | 'auto';
+  size?: 'normal' | 'compact' | 'flexible' | 'invisible';
+  callback?: (token: string) => void;
+  'error-callback'?: (errorCode?: string) => void;
+  'expired-callback'?: () => void;
+  'timeout-callback'?: () => void;
+};
+
 type CloudflareTurnstile = {
-  render: (
-    container: HTMLElement,
-    options: {
-      sitekey: string;
-      callback?: (token: string) => void;
-      'error-callback'?: () => void;
-      'expired-callback'?: () => void;
-      'timeout-callback'?: () => void;
-      theme?: 'light' | 'dark' | 'auto';
-      size?: 'normal' | 'compact' | 'flexible' | 'invisible';
-      action?: string;
-    }
-  ) => string;
+  render: (container: HTMLElement, options: TurnstileRenderOptions) => string;
   remove: (widgetId: string) => void;
   reset: (widgetId?: string) => void;
 };
@@ -42,21 +55,25 @@ declare global {
 }
 
 interface TurnstileWidgetProps {
-  /** Called with the verification token whenever Cloudflare succeeds. */
+  /** Public site key (same value as `TURNSTILE_SITE_KEY` / Turnstile dashboard). */
+  siteKey: string;
   onToken: (token: string) => void;
-  /** Called when the token expires or fails. The form should disable submit. */
+  /** Called on error, expiry, or timeout (token no longer valid for submit). */
   onExpire?: () => void;
-  /** Required-action label sent to Cloudflare (login / register). */
+  /**
+   * Cloudflare client error code (e.g. 110200 = domain not authorized).
+   * @see https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/error-codes/
+   */
+  onErrorCode?: (code: string) => void;
   action?: string;
-  /** Visual theme — defaults to `auto` (matches OS / app theme). */
   theme?: 'light' | 'dark' | 'auto';
 }
 
-const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '';
-
 export default function TurnstileWidget({
+  siteKey,
   onToken,
   onExpire,
+  onErrorCode,
   action,
   theme = 'auto',
 }: TurnstileWidgetProps) {
@@ -64,62 +81,117 @@ export default function TurnstileWidget({
   const widgetIdRef = useRef<string | null>(null);
   const onTokenRef = useRef(onToken);
   const onExpireRef = useRef(onExpire);
+  const onErrorCodeRef = useRef(onErrorCode);
+  /** `Script.onLoad` runs outside the effect — always invoke the latest mount logic. */
+  const scheduleMountRef = useRef<() => void>(() => {});
   const id = useId();
 
-  // Keep callback refs fresh without re-rendering the widget.
   useEffect(() => {
     onTokenRef.current = onToken;
   }, [onToken]);
   useEffect(() => {
     onExpireRef.current = onExpire;
   }, [onExpire]);
-
-  const tryRender = useCallback(() => {
-    if (!SITE_KEY) return;
-    const lib = window.turnstile;
-    const container = containerRef.current;
-    if (!lib || !container || widgetIdRef.current) return;
-
-    widgetIdRef.current = lib.render(container, {
-      sitekey: SITE_KEY,
-      action,
-      theme,
-      size: 'flexible',
-      callback: (token: string) => onTokenRef.current(token),
-      'error-callback': () => onExpireRef.current?.(),
-      'expired-callback': () => onExpireRef.current?.(),
-      'timeout-callback': () => onExpireRef.current?.(),
-    });
-  }, [action, theme]);
+  useEffect(() => {
+    onErrorCodeRef.current = onErrorCode;
+  }, [onErrorCode]);
 
   useEffect(() => {
-    if (!SITE_KEY) return;
-    // Script may already be loaded (other widget on a sibling page).
-    if (window.turnstile) {
-      tryRender();
+    ensurePreconnectToChallenges();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const lib = window.turnstile;
+    const existingId = widgetIdRef.current;
+    if (lib && existingId) {
+      try {
+        lib.remove(existingId);
+      } catch {
+        /* ignore */
+      }
     }
+    widgetIdRef.current = null;
+
+    const container = containerRef.current;
+    if (container) {
+      container.replaceChildren();
+    }
+
+    const scheduleMount = (): void => {
+      if (cancelled) {
+        return;
+      }
+
+      const turnstile = window.turnstile;
+      const el = containerRef.current;
+      if (!turnstile || !el || widgetIdRef.current !== null) {
+        return;
+      }
+
+      const runRender = (): void => {
+        if (cancelled) {
+          return;
+        }
+        const l = window.turnstile;
+        const target = containerRef.current;
+        if (!l || !target || widgetIdRef.current !== null) {
+          return;
+        }
+
+        widgetIdRef.current = l.render(target, {
+          sitekey: siteKey,
+          action,
+          theme,
+          size: 'flexible',
+          callback: (token: string) => onTokenRef.current(token),
+          'error-callback': (code?: string) => {
+            onExpireRef.current?.();
+            onErrorCodeRef.current?.(
+              code !== undefined && code !== '' ? String(code) : 'unknown'
+            );
+            return true;
+          },
+          'expired-callback': () => onExpireRef.current?.(),
+          'timeout-callback': () => onExpireRef.current?.(),
+        });
+      };
+
+      runRender();
+    };
+
+    scheduleMountRef.current = scheduleMount;
+
+    if (window.turnstile) {
+      scheduleMount();
+    }
+
     return () => {
-      const lib = window.turnstile;
+      cancelled = true;
+      const libCleanup = window.turnstile;
       const widgetId = widgetIdRef.current;
-      if (lib && widgetId) {
+      if (libCleanup && widgetId) {
         try {
-          lib.remove(widgetId);
+          libCleanup.remove(widgetId);
         } catch {
           /* ignore — Cloudflare API throws if container is gone */
         }
       }
       widgetIdRef.current = null;
     };
-  }, [tryRender]);
+  }, [action, siteKey, theme]);
 
-  if (!SITE_KEY) return null;
+  const handleScriptLoad = useCallback(() => {
+    scheduleMountRef.current();
+  }, []);
 
   return (
     <>
       <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+        src={TURNSTILE_SCRIPT_SRC}
         strategy="afterInteractive"
-        onLoad={tryRender}
+        onLoad={handleScriptLoad}
       />
       <div
         id={`kh-turnstile-${id}`}

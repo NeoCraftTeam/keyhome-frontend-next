@@ -201,15 +201,15 @@ export default function LandingNav() {
             <PageTransitionLink
               href="/home"
               style={{
-                color: textNav,
+                color: '#fff',
                 textDecoration: 'none',
                 fontSize: 15,
-                fontWeight: 500,
-                padding: '8px 18px',
+                fontWeight: 600,
+                padding: '8px 20px',
                 borderRadius: 10,
-                border: `1px solid ${border}`,
+                background: brand.primary,
+                boxShadow: '0 4px 20px rgba(246,71,95,0.35)',
                 display: 'inline-block',
-                transition: 'color 0.35s, border-color 0.35s',
               }}
             >
               Visiter
@@ -357,16 +357,16 @@ export default function LandingNav() {
                 href="/home"
                 onClick={() => setMenuOpen(false)}
                 style={{
-                  color: textNav,
+                  color: '#fff',
                   textDecoration: 'none',
                   fontSize: 16,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   padding: '14px 20px',
                   borderRadius: 12,
-                  border: `1px solid ${border}`,
+                  background: brand.primary,
+                  boxShadow: '0 4px 24px rgba(246,71,95,0.4)',
                   display: 'block',
                   textAlign: 'center',
-                  transition: 'color 0.2s',
                 }}
               >
                 Visiter

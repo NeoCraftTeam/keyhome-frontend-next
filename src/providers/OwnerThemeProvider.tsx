@@ -5,8 +5,8 @@ import { ThemeProvider as MuiThemeProvider } from '@mui/material';
 import { ownerLightTheme, ownerDarkTheme } from '@/theme/ownerTheme';
 import { useThemeMode } from '@/providers/ThemeProvider';
 
-// Owner panel resolves light/dark MUI palettes from global ThemeProvider mode,
-// which tracks `prefers-color-scheme` only. Landing (/) uses separate tokens.
+// Owner panel resolves light/dark MUI palettes from global ThemeProvider mode
+// (system / light / dark). Landing (/) uses separate tokens.
 type ResolvedMode = 'light' | 'dark';
 
 const OwnerThemeContext = createContext<{ mode: ResolvedMode } | undefined>(

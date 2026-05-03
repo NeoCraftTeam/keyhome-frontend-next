@@ -1,13 +1,15 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import styles from './legal.module.css';
+import { LEGAL_DOCUMENTS_LAST_UPDATED_LABEL } from '@/lib/legal-documents';
+import styles from '../confidentialite/legal.module.css';
 
 const sections = [
   { id: 'description', title: 'Description du service' },
   { id: 'compte', title: 'Compte utilisateur' },
   { id: 'publication', title: 'Règles de publication' },
   { id: 'score-confiance', title: 'Score de Confiance' },
-  { id: 'credits', title: 'Système de crédits' },
+  { id: 'credits', title: 'Crédits et abonnements' },
+  { id: 'ia', title: "Outils assistés par l'IA" },
   { id: 'responsabilites', title: 'Responsabilités' },
   { id: 'propriete', title: 'Propriété intellectuelle' },
   { id: 'resiliation', title: 'Résiliation' },
@@ -40,8 +42,14 @@ export default function TermsOfUsePage() {
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
           </Link>
-          <Image src="/images/logo.png" alt="KeyHome" width={32} height={32} />
-          <span className={styles.brand}>KeyHome</span>
+          <Link
+            href="/home"
+            className={styles.brandLink}
+            aria-label="KeyHome — Accueil"
+          >
+            <Image src="/images/logo.png" alt="" width={32} height={32} />
+            <span className={styles.brand}>KeyHome</span>
+          </Link>
           <div className={styles.headerSpacer} />
           <span className={styles.headerDocType}>Document légal</span>
         </div>
@@ -76,11 +84,15 @@ export default function TermsOfUsePage() {
                 <line x1="3" y1="10" x2="21" y2="10" />
               </svg>
             </span>
-            Dernière mise à jour : 7 avril 2026
+            Dernière mise à jour : {LEGAL_DOCUMENTS_LAST_UPDATED_LABEL}
           </div>
           <p className={styles.heroDescription}>
-            En utilisant KeyHome, vous acceptez les présentes conditions.
-            Veuillez les lire attentivement avant d&apos;utiliser notre
+            En utilisant KeyHome, vous acceptez les présentes conditions
+            générales d&apos;utilisation (CGU), complétées par notre{' '}
+            <Link href="/confidentialite" className={styles.heroLink}>
+              politique de confidentialité
+            </Link>
+            . Veuillez les lire attentivement avant d&apos;utiliser la
             plateforme.
           </p>
         </div>
@@ -138,9 +150,9 @@ export default function TermsOfUsePage() {
               <p>
                 KeyHome est une plateforme de mise en relation entre
                 propriétaires immobiliers, agents et personnes à la recherche de
-                biens en{' '}
-                <span className={styles.strong}>Afrique francophone</span>.
-                Notre service permet de :
+                biens en <span className={styles.strong}>Afrique </span> et plus
+                tard elle sera disponible dans d&apos;autres pays. Notre service
+                permet de :
               </p>
               <ul className={styles.list}>
                 <li>
@@ -148,7 +160,12 @@ export default function TermsOfUsePage() {
                 </li>
                 <li>
                   Rechercher des biens selon des critères géographiques,
-                  budgétaires et de confort
+                  budgétaires et de confort (y compris avec des outils
+                  d&apos;aide à la formulation de recherche)
+                </li>
+                <li>
+                  Échanger via la messagerie intégrée avec les autres
+                  utilisateurs
                 </li>
                 <li>Contacter les propriétaires ou agents immobiliers</li>
                 <li>
@@ -198,6 +215,12 @@ export default function TermsOfUsePage() {
                   de votre compte
                 </li>
               </ul>
+              <p>
+                Selon les options proposées sur la plateforme, vous pouvez
+                également sécuriser votre compte avec des{' '}
+                <span className={styles.strong}>passkeys </span> (WebAuthn) en
+                complément ou à la place d&apos;un mot de passe.
+              </p>
               <div className={styles.note}>
                 Vous êtes responsable de toutes les actions effectuées sous
                 votre compte. KeyHome ne pourra être tenu responsable d&apos;un
@@ -257,6 +280,14 @@ export default function TermsOfUsePage() {
                 sans préavis. Les récidives peuvent entraîner la suspension du
                 compte.
               </div>
+              <p>
+                Un dispositif de{' '}
+                <span className={styles.strong}>signalement </span> permet de
+                notifier les contenus ou comportements préoccupants. KeyHome
+                examine les signalements de bonne foi et peut retirer un
+                contenu, suspendre un compte ou transmettre les informations aux
+                autorités lorsque la loi l&apos;exige.
+              </p>
             </section>
 
             {/* §4 — Score de Confiance */}
@@ -294,7 +325,7 @@ export default function TermsOfUsePage() {
               </p>
               <ul className={styles.list}>
                 <li>
-                  <span className={styles.strong}>Opt-in :</span> le score
+                  <span className={styles.strong}>Opt-in : </span> le score
                   n&apos;est calculé et affiché qu&apos;avec le consentement
                   explicite de l&apos;utilisateur
                 </li>
@@ -304,19 +335,19 @@ export default function TermsOfUsePage() {
                   discriminatoire
                 </li>
                 <li>
-                  <span className={styles.strong}>Contestation :</span> tout
+                  <span className={styles.strong}>Contestation : </span> tout
                   utilisateur peut contester son score et demander un réexamen
                   via le support
                 </li>
                 <li>
-                  <span className={styles.strong}>Transparence :</span> les
+                  <span className={styles.strong}>Transparence : </span> les
                   critères généraux de calcul sont documentés et accessibles
                   dans notre politique de confidentialité
                 </li>
               </ul>
             </section>
 
-            {/* §5 — Système de crédits */}
+            {/* §5 — Crédits et abonnements */}
             <section id="credits" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -335,37 +366,102 @@ export default function TermsOfUsePage() {
                     <line x1="2" y1="10" x2="22" y2="10" />
                   </svg>
                 </div>
-                <h2 className={styles.sectionTitle}>5. Système de crédits</h2>
+                <h2 className={styles.sectionTitle}>
+                  5. Crédits et abonnements
+                </h2>
               </div>
               <p>
-                KeyHome fonctionne avec un système de crédits permettant
-                d&apos;accéder aux coordonnées des annonceurs :
+                KeyHome propose un{' '}
+                <span className={styles.strong}>système de crédits </span> pour
+                débloquer certaines fonctionnalités (par exemple l&apos;accès
+                aux coordonnées d&apos;une annonce), ainsi que des{' '}
+                <span className={styles.strong}>abonnements</span> ou offres
+                réservés aux professionnels (agents, agences) lorsque ces
+                formules sont disponibles sur la plateforme.
               </p>
               <ul className={styles.list}>
                 <li>
-                  <span className={styles.strong}>Achat :</span> les crédits
-                  peuvent être achetés via les moyens de paiement disponibles
-                  (Mobile Money, carte bancaire)
+                  <span className={styles.strong}>Achat :</span> les crédits et
+                  abonnements sont réglés via les moyens de paiement affichés
+                  sur le service (par ex. Mobile Money, carte bancaire via notre
+                  prestataire de paiement).
                 </li>
                 <li>
-                  <span className={styles.strong}>Non-remboursables :</span> les
-                  crédits achetés ne sont pas remboursables une fois la
-                  transaction confirmée
+                  <span className={styles.strong}>Conditions tarifaires :</span>{' '}
+                  les prix, contenus inclus et durées sont indiqués au moment de
+                  la commande.
                 </li>
                 <li>
-                  <span className={styles.strong}>Sans expiration :</span> vos
-                  crédits n&apos;expirent pas et restent disponibles tant que
-                  votre compte est actif
+                  <span className={styles.strong}>Crédits :</span> sauf mention
+                  contraire affichée sur la plateforme, les crédits achetés ne
+                  sont en principe pas remboursables après confirmation du
+                  paiement et restent associés à votre compte tant que celui-ci
+                  est actif.
                 </li>
                 <li>
-                  <span className={styles.strong}>Utilisation :</span> les
-                  crédits servent principalement à débloquer les coordonnées
-                  complètes des annonceurs
+                  <span className={styles.strong}>Abonnements :</span> la
+                  résiliation, la reconduction et les éventuels remboursements
+                  suivent les conditions présentées sur l&apos;écran de
+                  souscription et dans les communications liées à votre formule.
                 </li>
               </ul>
             </section>
 
-            {/* §6 — Responsabilités */}
+            {/* §6 — Outils assistés par l'IA */}
+            <section id="ia" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    aria-hidden="true"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 3v18" />
+                    <path d="M5.5 8.5c0-1.4 1.8-2.5 6.5-2.5s6.5 1.1 6.5 2.5S20 11 12 11 5.5 9.9 5.5 8.5z" />
+                    <path d="M5.5 15.5c0 1.4 1.8 2.5 6.5 2.5s6.5-1.1 6.5-2.5" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>
+                  6. Outils assistés par l&apos;IA
+                </h2>
+              </div>
+              <p>
+                KeyHome peut proposer des fonctionnalités d&apos;aide (recherche
+                en langage naturel, suggestions de texte pour une annonce, etc.)
+                faisant appel à des modèles d&apos;intelligence artificielle
+                fournis par des prestataires techniques.
+              </p>
+              <ul className={styles.list}>
+                <li>
+                  Ces outils sont des{' '}
+                  <span className={styles.strong}>aides à la décision</span> :
+                  vous restez responsable du contenu que vous publiez et des
+                  choix que vous faites suite à une suggestion automatique.
+                </li>
+                <li>
+                  KeyHome ne garantit ni l&apos;exhaustivité ni
+                  l&apos;exactitude des propositions générées ; il vous
+                  appartient de vérifier les informations (prix, localisation,
+                  caractéristiques, mentions légales).
+                </li>
+                <li>
+                  Les données envoyées à ces services sont limitées au strict
+                  nécessaire ; le détail des traitements figure dans la{' '}
+                  <Link href="/confidentialite" className={styles.inlineLink}>
+                    politique de confidentialité
+                  </Link>
+                  .
+                </li>
+              </ul>
+            </section>
+
+            {/* §7 — Responsabilités */}
             <section id="responsabilites" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -385,7 +481,7 @@ export default function TermsOfUsePage() {
                     <path d="M1 21h22" />
                   </svg>
                 </div>
-                <h2 className={styles.sectionTitle}>6. Responsabilités</h2>
+                <h2 className={styles.sectionTitle}>7. Responsabilités</h2>
               </div>
               <p>
                 KeyHome agit en qualité d&apos;
@@ -414,7 +510,7 @@ export default function TermsOfUsePage() {
               </ul>
             </section>
 
-            {/* §7 — Propriété intellectuelle */}
+            {/* §8 — Propriété intellectuelle */}
             <section id="propriete" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -435,11 +531,11 @@ export default function TermsOfUsePage() {
                   </svg>
                 </div>
                 <h2 className={styles.sectionTitle}>
-                  7. Propriété intellectuelle
+                  8. Propriété intellectuelle
                 </h2>
               </div>
               <p>
-                <span className={styles.strong}>KeyHome</span> est propriétaire
+                <span className={styles.strong}>KeyHome </span> est propriétaire
                 de l&apos;ensemble des éléments de la plateforme : logos,
                 design, code source, algorithmes et documentation.
               </p>
@@ -452,7 +548,7 @@ export default function TermsOfUsePage() {
               </p>
             </section>
 
-            {/* §8 — Résiliation */}
+            {/* §9 — Résiliation */}
             <section id="resiliation" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -472,7 +568,7 @@ export default function TermsOfUsePage() {
                     <line x1="21" y1="12" x2="9" y2="12" />
                   </svg>
                 </div>
-                <h2 className={styles.sectionTitle}>8. Résiliation</h2>
+                <h2 className={styles.sectionTitle}>9. Résiliation</h2>
               </div>
               <p>
                 <span className={styles.strong}>Par l&apos;utilisateur :</span>{' '}
@@ -481,14 +577,14 @@ export default function TermsOfUsePage() {
                 vos crédits restants et de vos données.
               </p>
               <p>
-                <span className={styles.strong}>Par KeyHome :</span> nous nous
+                <span className={styles.strong}>Par KeyHome : </span> nous nous
                 réservons le droit de suspendre ou supprimer tout compte en cas
                 de violation des présentes conditions, de fraude avérée ou de
                 comportement nuisible envers d&apos;autres utilisateurs.
               </p>
             </section>
 
-            {/* §9 — Limitation de responsabilité */}
+            {/* §10 — Limitation de responsabilité */}
             <section id="limitation" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -509,7 +605,7 @@ export default function TermsOfUsePage() {
                   </svg>
                 </div>
                 <h2 className={styles.sectionTitle}>
-                  9. Limitation de responsabilité
+                  10. Limitation de responsabilité
                 </h2>
               </div>
               <p>
@@ -530,15 +626,16 @@ export default function TermsOfUsePage() {
                   maintenance ou à des problèmes techniques
                 </li>
                 <li>
-                  Les pertes ou dommages indirects résultant de
-                  l&apos;utilisation du service
+                  Les erreurs ou imprécisions issues d&apos;outils assistés par
+                  intelligence artificielle (recherche, rédaction), dans la
+                  mesure permise par la loi
                 </li>
               </ul>
             </section>
 
             <hr className={styles.divider} />
 
-            {/* §10 — Modifications et contact */}
+            {/* §11 — Modifications et contact */}
             <section id="modifications" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -558,14 +655,14 @@ export default function TermsOfUsePage() {
                   </svg>
                 </div>
                 <h2 className={styles.sectionTitle}>
-                  10. Modifications et contact
+                  11. Modifications et contact
                 </h2>
               </div>
               <p>
                 KeyHome se réserve le droit de modifier les présentes conditions
                 à tout moment. En cas de modification substantielle, nous vous
                 en informerons au moins{' '}
-                <span className={styles.strong}>30 jours avant</span> leur
+                <span className={styles.strong}>30 jours avant </span> leur
                 entrée en vigueur, par e-mail ou notification dans
                 l&apos;application.
               </p>

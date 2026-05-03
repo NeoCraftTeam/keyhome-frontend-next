@@ -2,7 +2,7 @@
 // header is left here for grep-ability and is not parsed by the SW runtime.
 // Push + Background Sync + Caching strategy for full offline/PWA support.
 
-const VERSION      = "v8";
+const VERSION      = "v9";
 const STATIC_CACHE = `kh-static-${VERSION}`;
 const API_CACHE    = `kh-api-${VERSION}`;
 const NAV_CACHE    = `kh-nav-${VERSION}`;
@@ -235,18 +235,21 @@ self.addEventListener("notificationclick", (event) => {
       }
       const targetUrl = new URL(rawPath, self.location.origin).href;
 
-      for (const client of allClients) {
-        if (!client.url.startsWith(self.location.origin)) continue;
-        await client.focus();
-        // navigate() est supporté sur Chromium ; Safari / Firefox : on ouvre l'URL.
-        if ("navigate" in client && typeof client.navigate === "function") {
+      const sameOriginClients = allClients.filter((c) =>
+        c.url.startsWith(self.location.origin),
+      );
+      const focused = sameOriginClients.find((c) => "focused" in c && c.focused);
+      const clientToUse = focused ?? sameOriginClients[0];
+
+      if (clientToUse) {
+        await clientToUse.focus();
+        if ("navigate" in clientToUse && typeof clientToUse.navigate === "function") {
           try {
-            return await client.navigate(targetUrl);
+            return await clientToUse.navigate(targetUrl);
           } catch {
             /* fall through */
           }
         }
-        return self.clients.openWindow(targetUrl);
       }
 
       return self.clients.openWindow(targetUrl);

@@ -7,6 +7,7 @@ import {
   type NotificationPreferences,
 } from '@/services/owner.service';
 import { useAuth } from '@/providers/AuthProvider';
+import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
 import {
   Logout as LogoutIcon,
   SettingsBrightness as SettingsBrightnessIcon,
@@ -31,6 +32,8 @@ import {
   Snackbar,
   Stack,
   Switch,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -59,6 +62,7 @@ const CHANNEL_TOGGLES: { key: keyof NotificationPreferences; label: string }[] =
 
 export default function OwnerParametresPage() {
   const { logout } = useAuth();
+  const { choice, setChoice } = useThemeMode();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const queryClient = useQueryClient();
   const [prefSnackbar, setPrefSnackbar] = useState<{
@@ -154,15 +158,37 @@ export default function OwnerParametresPage() {
                   <Box sx={{ color: 'text.secondary', pt: 0.25 }}>
                     <SettingsBrightnessIcon sx={{ fontSize: 22 }} />
                   </Box>
-                  <Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant="body2" fontWeight={600} gutterBottom>
-                      Thème de l&apos;appareil
+                      Thème
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      La zone connectée suit le mode clair ou sombre défini dans
-                      les réglages de votre appareil. La page marketing
-                      d&apos;accueil utilise un thème sombre dédié.
+                      Choisissez l&apos;affichage du tableau de bord. « Système
+                      » suit le mode clair ou sombre de votre appareil.
                     </Typography>
+                    <ToggleButtonGroup
+                      value={choice}
+                      exclusive
+                      onChange={(_e, v: ThemeChoice | null) => {
+                        if (v != null) {
+                          setChoice(v);
+                        }
+                      }}
+                      aria-label="Choix du thème clair, sombre ou système"
+                      fullWidth
+                      size="small"
+                      sx={{ mt: 1.5 }}
+                    >
+                      <ToggleButton value="light" sx={{ py: 1 }}>
+                        Clair
+                      </ToggleButton>
+                      <ToggleButton value="dark" sx={{ py: 1 }}>
+                        Sombre
+                      </ToggleButton>
+                      <ToggleButton value="system" sx={{ py: 1 }}>
+                        Système
+                      </ToggleButton>
+                    </ToggleButtonGroup>
                   </Box>
                 </Box>
               </CardContent>

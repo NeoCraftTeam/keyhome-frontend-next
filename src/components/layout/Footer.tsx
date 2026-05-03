@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 const LEGAL_LINKS = [
   { label: 'Confidentialité', href: '/confidentialite' },
   { label: 'Conditions générales', href: '/conditions' },
-  { label: 'Infos sur l’entreprise', href: '/aide' },
+  { label: 'Aide', href: '/aide' },
 ];
 
 const SOCIAL_LINKS = [

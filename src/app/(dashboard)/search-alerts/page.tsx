@@ -29,6 +29,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
+  FormGroup,
   IconButton,
   Switch,
   TextField,
@@ -130,7 +132,11 @@ export default function SearchAlertsPage() {
   }, []);
 
   const handleOpenCreate = () => {
-    resetForm();
+    setEditingAlert(null);
+    setForm({
+      notify_email: true,
+      notify_push: true,
+    });
     setEditOpen(true);
   };
 
@@ -145,6 +151,8 @@ export default function SearchAlertsPage() {
       bedrooms_min: alert.bedrooms_min,
       surface_min: alert.surface_min,
       query: alert.query,
+      notify_email: alert.notify_email ?? true,
+      notify_push: alert.notify_push ?? true,
     });
     setEditOpen(true);
   };
@@ -224,12 +232,13 @@ export default function SearchAlertsPage() {
           sx={{ mb: 3, borderRadius: 2 }}
         >
           <Typography variant="body2">
-            Recevez une notification dès qu&apos;une annonce correspond à vos
-            critères.{' '}
+            Recevez une alerte dès qu&apos;une annonce correspond à vos critères
+            (notification dans l&apos;app, push si activé, et e-mail si vous le
+            choisissez). Au plus{' '}
             <strong>
               {alerts.length}/{MAX_ALERTS}
             </strong>{' '}
-            alertes utilisées.
+            alertes actives.
           </Typography>
         </Alert>
 
@@ -256,6 +265,8 @@ export default function SearchAlertsPage() {
               {alerts.map((alert) => {
                 const filters = buildFilterSummary(alert);
                 const isActive = alert.is_active !== false;
+                const emailOn = alert.notify_email ?? true;
+                const pushOn = alert.notify_push ?? true;
 
                 return (
                   <Card
@@ -356,6 +367,45 @@ export default function SearchAlertsPage() {
                           Aucun filtre configuré — toutes les annonces
                         </Typography>
                       )}
+
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 0.5,
+                          mt: 1.5,
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary">
+                          Canaux :
+                        </Typography>
+                        <Chip
+                          size="small"
+                          label="E-mail"
+                          color={emailOn ? 'primary' : 'default'}
+                          variant={emailOn ? 'filled' : 'outlined'}
+                          sx={{
+                            fontSize: '0.7rem',
+                            opacity: emailOn ? 1 : 0.65,
+                          }}
+                        />
+                        <Chip
+                          size="small"
+                          label="Push"
+                          color={pushOn ? 'primary' : 'default'}
+                          variant={pushOn ? 'filled' : 'outlined'}
+                          sx={{
+                            fontSize: '0.7rem',
+                            opacity: pushOn ? 1 : 0.65,
+                          }}
+                        />
+                        {!emailOn && !pushOn && (
+                          <Typography variant="caption" color="text.disabled">
+                            (notification dans l&apos;app uniquement)
+                          </Typography>
+                        )}
+                      </Box>
                     </CardContent>
 
                     <CardActions sx={{ px: 2, pb: 1.5, pt: 0 }}>
@@ -517,6 +567,50 @@ export default function SearchAlertsPage() {
               size="small"
               fullWidth
             />
+            <FormGroup sx={{ gap: 0.25 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.notify_email ?? true}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        notify_email: e.target.checked,
+                      }))
+                    }
+                    size="small"
+                  />
+                }
+                label={
+                  <Typography variant="body2">
+                    E-mail quand une annonce correspond
+                  </Typography>
+                }
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.notify_push ?? true}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        notify_push: e.target.checked,
+                      }))
+                    }
+                    size="small"
+                  />
+                }
+                label={
+                  <Typography variant="body2">
+                    Notification push (navigateur ou appli)
+                  </Typography>
+                }
+              />
+            </FormGroup>
+            <Typography variant="caption" color="text.secondary">
+              Les e-mails sont aussi soumis à vos préférences de messagerie dans
+              Paramètres.
+            </Typography>
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>

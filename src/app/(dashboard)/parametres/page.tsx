@@ -27,6 +27,8 @@ import {
   Skeleton,
   Stack,
   Switch,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import { useSoundFeedback, SOUND_ENABLED_KEY } from '@/hooks/useSoundFeedback';
@@ -35,6 +37,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import FadeIn from '@/components/ui/FadeIn';
+import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
 import { brand } from '@/theme/tokens';
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -148,6 +151,7 @@ export default function ParametresPage() {
   const { user, logout, isAuthenticated } = useAuth();
   const router = useRouter();
   const { user: clerkUser } = useClerk();
+  const { choice, setChoice } = useThemeMode();
 
   const [linkedLoading, setLinkedLoading] = useState<string | null>(null);
   const [linkedError, setLinkedError] = useState('');
@@ -323,7 +327,6 @@ export default function ParametresPage() {
         {/* ── LEFT col: Apparence + Notifications + Logout ── */}
         <Grid size={{ xs: 12, lg: 5 }}>
           <Stack spacing={3}>
-            {/* Theme — follows OS; marketing landing uses a dedicated dark palette */}
             <Box>
               <SectionTitle>Apparence</SectionTitle>
               <SettingsCard>
@@ -338,16 +341,39 @@ export default function ParametresPage() {
                   <Box sx={{ color: 'text.secondary', pt: 0.25 }}>
                     <SettingsBrightnessIcon sx={{ fontSize: 22 }} />
                   </Box>
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>
-                      Thème de l&apos;appareil
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" fontWeight={600} gutterBottom>
+                      Thème
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      KeyHome applique automatiquement le mode clair ou sombre
-                      selon les réglages de votre téléphone ou ordinateur. La
-                      page d&apos;accueil marketing reste présentée en mode
-                      sombre.
+                      Choisissez l&apos;affichage de l&apos;application. «
+                      Système » suit le mode clair ou sombre de votre appareil.
+                      La page d&apos;accueil marketing reste en thème sombre
+                      dédié.
                     </Typography>
+                    <ToggleButtonGroup
+                      value={choice}
+                      exclusive
+                      onChange={(_e, v: ThemeChoice | null) => {
+                        if (v != null) {
+                          setChoice(v);
+                        }
+                      }}
+                      aria-label="Choix du thème clair, sombre ou système"
+                      fullWidth
+                      size="small"
+                      sx={{ mt: 1.5 }}
+                    >
+                      <ToggleButton value="light" sx={{ py: 1 }}>
+                        Clair
+                      </ToggleButton>
+                      <ToggleButton value="dark" sx={{ py: 1 }}>
+                        Sombre
+                      </ToggleButton>
+                      <ToggleButton value="system" sx={{ py: 1 }}>
+                        Système
+                      </ToggleButton>
+                    </ToggleButtonGroup>
                   </Box>
                 </Box>
               </SettingsCard>

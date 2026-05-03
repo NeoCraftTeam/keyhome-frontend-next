@@ -2,6 +2,7 @@
 
 import type { ChatTheme } from './chat-theme';
 import { CLIENT_THEME } from './chat-theme';
+import { semantic } from '@/theme/tokens';
 import { Mic } from 'lucide-react';
 
 interface TypingIndicatorProps {
@@ -18,7 +19,8 @@ function firstNameOnly(fullName: string): string {
 }
 
 /**
- * Minimal peer-activity row — typing or voice recording (whispers on the conv channel).
+ * Peer-activity row — typing or voice recording (whispers on the conv channel).
+ * Dots use a soft opacity pulse only (no vertical scale/bounce).
  */
 export function TypingIndicator({
   name,
@@ -33,7 +35,8 @@ export function TypingIndicator({
   const label = isVoice
     ? `${displayName} enregistre un message vocal`
     : `${displayName} est en train d'écrire`;
-  const barColor = isVoice ? '#ef4444' : theme.accent;
+  const recordingColor = semantic.errorBright;
+  const barColor = isVoice ? recordingColor : theme.accent;
 
   return (
     <div
@@ -55,49 +58,37 @@ export function TypingIndicator({
       >
         {isVoice ? (
           <span
-            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full kh-voice-idle"
             aria-hidden
             style={{
               backgroundColor: theme.isDark
-                ? 'rgba(239,68,68,0.2)'
-                : 'rgba(239,68,68,0.12)',
+                ? `color-mix(in srgb, ${recordingColor} 22%, transparent)`
+                : `color-mix(in srgb, ${recordingColor} 14%, transparent)`,
             }}
           >
-            <span
-              className="kh-rec-ring absolute inset-0 rounded-full border-2 border-red-500/40"
-              style={{
-                animation:
-                  'khRecRing 1.5s cubic-bezier(0.22,1,0.36,1) infinite',
-              }}
-            />
             <Mic
-              className="h-4 w-4 relative z-1"
-              style={{ color: '#ef4444' }}
+              className="relative h-4 w-4 z-[1]"
+              style={{ color: recordingColor }}
             />
           </span>
         ) : (
-          <div
-            className="flex items-end justify-center gap-0.5 h-4"
-            aria-hidden
-          >
-            {[0, 1, 2, 3].map((i) => (
+          <div className="flex items-center gap-1.5 h-4 px-0.5" aria-hidden>
+            {[0, 1, 2].map((i) => (
               <span
                 key={i}
-                className="kh-typing-bar w-[3px] rounded-full origin-bottom"
+                className="kh-typing-dot h-1.5 w-1.5 rounded-full"
                 style={{
-                  height: 14,
                   backgroundColor: barColor,
-                  opacity: 0.85,
                   animation:
-                    'khTypingBar 0.85s cubic-bezier(0.22, 1, 0.36, 1) infinite',
-                  animationDelay: `${i * 0.1}s`,
+                    'khTypingDotPulse 1.35s cubic-bezier(0.22, 1, 0.36, 1) infinite',
+                  animationDelay: `${i * 0.16}s`,
                 }}
               />
             ))}
           </div>
         )}
         <span
-          className="text-[11px] font-medium leading-none tracking-wide"
+          className="text-xs font-medium leading-snug tracking-wide"
           style={{
             color: theme.textSecondary,
             letterSpacing: '0.02em',
@@ -107,18 +98,20 @@ export function TypingIndicator({
         </span>
       </div>
       <style>{`
-        @keyframes khTypingBar {
-          0%, 100% { transform: scaleY(0.28); opacity: 0.35; }
-          40% { transform: scaleY(1); opacity: 1; }
-          70% { transform: scaleY(0.52); opacity: 0.65; }
+        @keyframes khTypingDotPulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; }
         }
-        @keyframes khRecRing {
-          0%, 100% { transform: scale(1); opacity: 0.55; }
-          50% { transform: scale(1.12); opacity: 0.15; }
+        @keyframes khVoiceIdle {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.72; }
+        }
+        .kh-voice-idle {
+          animation: khVoiceIdle 2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
         }
         @media (prefers-reduced-motion: reduce) {
-          .kh-typing-bar { animation: none !important; transform: scaleY(0.45); opacity: 0.5; }
-          .kh-rec-ring { animation: none !important; opacity: 0.35; transform: none; }
+          .kh-typing-dot { animation: none !important; opacity: 0.55; }
+          .kh-voice-idle { animation: none !important; opacity: 1; }
         }
       `}</style>
     </div>

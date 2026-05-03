@@ -4,6 +4,11 @@ import CreditsWidget from '@/components/layout/CreditsWidget';
 import NavDesktopMenu from '@/components/layout/NavDesktopMenu';
 import NavDrawer from '@/components/layout/NavDrawer';
 import NavLogoutDialog from '@/components/layout/NavLogoutDialog';
+import {
+  khNavbarSpacerMinHeightMd,
+  khNavbarSpacerMinHeightXs,
+  khSafeAreaTopSx,
+} from '@/lib/safe-area-insets';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { useNavbarState } from '@/hooks/useNavbarState';
 import { useAuth } from '@/providers/AuthProvider';
@@ -13,7 +18,6 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import ExploreIcon from '@mui/icons-material/Explore';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
@@ -37,7 +41,6 @@ const ROOT_PATHS = [
   '/nearby',
   '/comparaisons',
   '/prix-marche',
-  '/aide',
   '/messages',
 ];
 
@@ -46,7 +49,6 @@ const NAV_LINKS = [
   { label: 'Explorer la carte', href: '/nearby', icon: <ExploreIcon /> },
   { label: 'Comparaisons', href: '/comparaisons', icon: <CompareArrowsIcon /> },
   { label: 'Estimer le loyer', href: '/prix-marche', icon: <BarChartIcon /> },
-  { label: 'Aide', href: '/aide', icon: <HelpOutlineIcon /> },
 ];
 
 export default function Navbar() {
@@ -121,7 +123,7 @@ export default function Navbar() {
           top: 0,
           left: 0,
           right: 0,
-          pt: 'env(safe-area-inset-top, 0px)',
+          pt: khSafeAreaTopSx,
           zIndex: (t) => t.zIndex.drawer + 10,
         }}
       >
@@ -406,31 +408,29 @@ export default function Navbar() {
                     onClick={() => router.push('/login')}
                     aria-label="Se connecter"
                     sx={{
-                      border: '1px solid',
-                      borderColor: 'divider',
+                      bgcolor: 'primary.main',
+                      color: 'primary.contrastText',
                       borderRadius: '50%',
                       width: 44,
                       height: 44,
+                      '&:hover': {
+                        bgcolor: 'primary.dark',
+                      },
                     }}
                   >
                     <PersonIcon sx={{ fontSize: 18 }} />
                   </IconButton>
                 ) : (
                   <Button
-                    variant="outlined"
+                    variant="contained"
+                    color="primary"
                     size="small"
                     onClick={() => router.push('/login')}
                     sx={{
                       borderRadius: '20px',
                       textTransform: 'none',
                       fontWeight: 600,
-                      borderColor: 'divider',
-                      color: 'text.primary',
                       whiteSpace: 'nowrap',
-                      '&:hover': {
-                        borderColor: 'primary.main',
-                        color: 'primary.main',
-                      },
                     }}
                   >
                     Se connecter
@@ -446,8 +446,8 @@ export default function Navbar() {
       <Toolbar
         sx={{
           minHeight: {
-            xs: 'calc(56px + env(safe-area-inset-top, 0px))',
-            md: 'calc(64px + env(safe-area-inset-top, 0px))',
+            xs: khNavbarSpacerMinHeightXs,
+            md: khNavbarSpacerMinHeightMd,
           },
         }}
       />

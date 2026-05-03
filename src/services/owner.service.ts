@@ -762,6 +762,9 @@ export const ownerService = {
     estimated_median: number;
     estimated_max: number;
     sample_count: number;
+    type_scope_matched?: boolean;
+    bedrooms_scope_matched?: boolean;
+    error?: string;
   }> {
     const { data } = await api.get('/rent-estimate', { params });
     return data;

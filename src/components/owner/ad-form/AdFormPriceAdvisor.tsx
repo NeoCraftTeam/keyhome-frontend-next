@@ -121,6 +121,13 @@ export default function AdFormPriceAdvisor({
             </Typography>
           )}
 
+          {data.type_scope_matched === false && (
+            <Typography variant="caption" color="warning.main" display="block">
+              Peu d&apos;annonces pour ce type : la fourchette repose sur toutes
+              les locations de la ville.
+            </Typography>
+          )}
+
           {status && (
             <Box
               sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}

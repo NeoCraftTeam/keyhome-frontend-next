@@ -39,6 +39,10 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import {
+  NAV_LIST_ICON_GLYPH_PX,
+  OWNER_SIDEBAR_LIST_ICON_MIN_WIDTH_PX,
+} from '@/lib/navVisualMetrics';
 
 interface SidebarNavItem {
   label: string;
@@ -64,43 +68,43 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       {
         label: 'Dashboard',
         href: '/owner/dashboard',
-        icon: <DashboardIcon fontSize="small" />,
+        icon: <DashboardIcon />,
       },
       {
         label: 'Mes Annonces',
         href: '/owner/ads',
-        icon: <ViewListRoundedIcon fontSize="small" />,
+        icon: <ViewListRoundedIcon />,
       },
       {
         label: 'Visites',
         href: '/owner/viewings',
-        icon: <VisibilityIcon fontSize="small" />,
+        icon: <VisibilityIcon />,
         badgeKey: 'viewings',
       },
       {
         label: 'Disponibilités',
         href: '/owner/availability',
-        icon: <CalendarMonthIcon fontSize="small" />,
+        icon: <CalendarMonthIcon />,
       },
       {
         label: 'Locataires',
         href: '/owner/tenants',
-        icon: <PeopleAltIcon fontSize="small" />,
+        icon: <PeopleAltIcon />,
       },
       {
         label: 'Finances',
         href: '/owner/financials',
-        icon: <AccountBalanceIcon fontSize="small" />,
+        icon: <AccountBalanceIcon />,
       },
       {
         label: 'Contrats',
         href: '/owner/lease-contracts',
-        icon: <DescriptionIcon fontSize="small" />,
+        icon: <DescriptionIcon />,
       },
       {
         label: 'Avis',
         href: '/owner/reviews',
-        icon: <RateReviewIcon fontSize="small" />,
+        icon: <RateReviewIcon />,
       },
     ],
   },
@@ -110,17 +114,17 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       {
         label: 'Paiements',
         href: '/owner/payments',
-        icon: <PaymentIcon fontSize="small" />,
+        icon: <PaymentIcon />,
       },
       {
         label: 'Abonnements',
         href: '/owner/subscriptions',
-        icon: <SubscriptionsIcon fontSize="small" />,
+        icon: <SubscriptionsIcon />,
       },
       {
         label: 'Services Pro',
         href: '/owner/pro-services',
-        icon: <WorkspacePremiumIcon fontSize="small" />,
+        icon: <WorkspacePremiumIcon />,
       },
     ],
   },
@@ -130,22 +134,22 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       {
         label: 'Profil',
         href: '/owner/profile',
-        icon: <PersonIcon fontSize="small" />,
+        icon: <PersonIcon />,
       },
       {
         label: 'Mon équipe',
         href: '/owner/equipe',
-        icon: <GroupsIcon fontSize="small" />,
+        icon: <GroupsIcon />,
       },
       {
         label: 'Sécurité',
         href: '/owner/security',
-        icon: <SecurityIcon fontSize="small" />,
+        icon: <SecurityIcon />,
       },
       {
         label: 'Paramètres',
         href: '/owner/parametres',
-        icon: <SettingsIcon fontSize="small" />,
+        icon: <SettingsIcon />,
       },
     ],
   },
@@ -371,9 +375,14 @@ export default function OwnerSidebar({
                         <ListItemIcon
                           sx={{
                             color: isActive ? 'primary.main' : 'text.secondary',
-                            minWidth: collapsed ? 'auto' : 36,
+                            minWidth: collapsed
+                              ? 'auto'
+                              : OWNER_SIDEBAR_LIST_ICON_MIN_WIDTH_PX,
                             justifyContent: 'center',
                             transition: 'color 0.15s ease',
+                            '& .MuiSvgIcon-root': {
+                              fontSize: NAV_LIST_ICON_GLYPH_PX,
+                            },
                           }}
                         >
                           <Badge

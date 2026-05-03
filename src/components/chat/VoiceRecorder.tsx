@@ -1,6 +1,7 @@
 'use client';
 
 import type { MessageAttachment } from '@/types/chat';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import type { ChatTheme } from './chat-theme';
 import { Mic, Square, Trash2, Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -144,9 +145,9 @@ export function VoiceRecorder({
         const blob = new Blob(chunksRef.current, {
           type: mimeType,
         });
-        const duration = Math.min(
-          MAX_DURATION_MS,
-          Date.now() - startedAtRef.current
+        const duration = Math.max(
+          100,
+          Math.min(MAX_DURATION_MS, Date.now() - startedAtRef.current)
         );
         const peaks = await computePeaks(blob, WAVEFORM_PEAKS);
 
@@ -163,8 +164,10 @@ export function VoiceRecorder({
           audio_waveform_peaks: peaks,
         };
         onReady(enriched);
-      } catch {
-        setErrorMsg("Échec de l'envoi du message vocal.");
+      } catch (err: unknown) {
+        setErrorMsg(
+          getSafeErrorMessage(err, "Échec de l'envoi du message vocal.")
+        );
         setPhase('error');
       } finally {
         streamRef.current?.getTracks().forEach((t) => t.stop());

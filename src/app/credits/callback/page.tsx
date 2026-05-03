@@ -1,5 +1,6 @@
 'use client';
 
+import { consumePaymentReturnPath } from '@/lib/payment-return';
 import { creditsService } from '@/services/credits.service';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -25,6 +26,29 @@ const MAX_RETRY_MS = 5000;
 const EXTENDED_POLL_MS = 5000;
 const EXTENDED_MAX_RETRIES = 36;
 
+function isFlutterwaveRedirectSuccess(status: string | null): boolean {
+  if (!status) {
+    return false;
+  }
+  const s = status.toLowerCase();
+  return s === 'approved' || s === 'successful' || s === 'success';
+}
+
+function isFlutterwaveRedirectCancelled(status: string | null): boolean {
+  if (!status) {
+    return false;
+  }
+  return status.toLowerCase() === 'cancelled';
+}
+
+function isFlutterwaveRedirectFailed(status: string | null): boolean {
+  if (!status) {
+    return false;
+  }
+  const s = status.toLowerCase();
+  return s === 'declined' || s === 'failed' || s === 'error';
+}
+
 function CreditCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -40,7 +64,7 @@ function CreditCallbackContent() {
 
   const adId = searchParams.get('ad_id');
   const status = searchParams.get('status');
-  const isApproved = status === 'approved';
+  const isApproved = isFlutterwaveRedirectSuccess(status);
 
   const attemptVerify = useCallback(async (attempt: number) => {
     try {
@@ -115,9 +139,9 @@ function CreditCallbackContent() {
   useEffect(() => {
     if (!isApproved || verifiedRef.current) {
       if (!isApproved) {
-        if (status === 'declined' || status === 'failed') {
+        if (isFlutterwaveRedirectFailed(status)) {
           setPurchaseStatus('failed');
-        } else if (status === 'cancelled') {
+        } else if (isFlutterwaveRedirectCancelled(status)) {
           setPurchaseStatus('cancelled');
         } else {
           setPurchaseStatus('pending');
@@ -281,39 +305,24 @@ function CreditCallbackContent() {
             )}
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {adId ? (
-                <Button
-                  variant="contained"
-                  size="large"
-                  fullWidth
-                  onClick={() => router.push(`/ads/${adId}`)}
-                  sx={{
-                    py: 1.5,
-                    fontWeight: 600,
-                    background: gradient.primary,
-                    '&:hover': { background: gradient.primaryHover },
-                    '&:active': { transform: 'scale(0.97)' },
-                  }}
-                >
-                  Déverrouiller l&apos;annonce
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  size="large"
-                  fullWidth
-                  onClick={() => router.push('/home')}
-                  sx={{
-                    py: 1.5,
-                    fontWeight: 600,
-                    background: gradient.primary,
-                    '&:hover': { background: gradient.primaryHover },
-                    '&:active': { transform: 'scale(0.97)' },
-                  }}
-                >
-                  Explorer les annonces
-                </Button>
-              )}
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                onClick={() => {
+                  const fallback = adId ? `/ads/${adId}` : '/home';
+                  router.push(consumePaymentReturnPath(fallback));
+                }}
+                sx={{
+                  py: 1.5,
+                  fontWeight: 600,
+                  background: gradient.primary,
+                  '&:hover': { background: gradient.primaryHover },
+                  '&:active': { transform: 'scale(0.97)' },
+                }}
+              >
+                {adId ? 'Déverrouiller l&apos;annonce' : 'Continuer'}
+              </Button>
             </Box>
           </>
         ) : purchaseStatus === 'failed' || purchaseStatus === 'cancelled' ? (
@@ -360,11 +369,9 @@ function CreditCallbackContent() {
                 size="large"
                 fullWidth
                 onClick={() =>
-                  adId
-                    ? router.push(`/ads/${adId}`)
-                    : purchaseStatus === 'cancelled'
-                      ? router.back()
-                      : router.push('/home')
+                  router.push(
+                    consumePaymentReturnPath(adId ? `/ads/${adId}` : '/home')
+                  )
                 }
                 sx={{
                   py: 1.5,
@@ -377,7 +384,7 @@ function CreditCallbackContent() {
                 {adId
                   ? 'Retourner à l&apos;annonce'
                   : purchaseStatus === 'cancelled'
-                    ? 'Retour'
+                    ? 'Continuer'
                     : 'Réessayer'}
               </Button>
               {adId && (
@@ -386,7 +393,7 @@ function CreditCallbackContent() {
                   size="medium"
                   fullWidth
                   startIcon={<HomeIcon />}
-                  onClick={() => router.push('/home')}
+                  onClick={() => router.push(consumePaymentReturnPath('/home'))}
                   sx={{ fontWeight: 600, color: 'text.secondary' }}
                 >
                   Accueil
@@ -450,7 +457,9 @@ function CreditCallbackContent() {
                   variant="outlined"
                   size="large"
                   fullWidth
-                  onClick={() => router.push(`/ads/${adId}`)}
+                  onClick={() =>
+                    router.push(consumePaymentReturnPath(`/ads/${adId}`))
+                  }
                   sx={{
                     py: 1.5,
                     fontWeight: 600,
@@ -471,7 +480,7 @@ function CreditCallbackContent() {
                 size="medium"
                 fullWidth
                 startIcon={<HomeIcon />}
-                onClick={() => router.push('/home')}
+                onClick={() => router.push(consumePaymentReturnPath('/home'))}
                 sx={{ fontWeight: 600, color: 'text.secondary' }}
               >
                 Accueil

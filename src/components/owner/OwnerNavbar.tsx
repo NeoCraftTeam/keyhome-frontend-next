@@ -4,6 +4,10 @@ import { ChatBadgeIcon } from '@/components/chat/ChatBadgeIcon';
 import { SIDEBAR_WIDTH } from '@/components/owner/owner-constants';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { OWNER_BOTTOM_NAV_ITEMS, OWNER_NAV_ITEMS } from '@/lib/nav-config';
+import {
+  khNavbarSpacerMinHeightXs,
+  khSafeAreaTopSx,
+} from '@/lib/safe-area-insets';
 import { useAuth } from '@/providers/AuthProvider';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -59,7 +63,7 @@ export default function OwnerNavbar() {
           top: 0,
           left: 0,
           right: 0,
-          pt: 'env(safe-area-inset-top, 0px)',
+          pt: khSafeAreaTopSx,
           zIndex: (theme) => theme.zIndex.drawer + 10,
           width: { xs: '100%', md: `calc(100% - ${SIDEBAR_WIDTH}px)` },
           ml: { md: SIDEBAR_WIDTH },
@@ -313,7 +317,7 @@ export default function OwnerNavbar() {
         sx={{
           display: { xs: 'flex', md: 'none' },
           minHeight: {
-            xs: 'calc(56px + env(safe-area-inset-top, 0px))',
+            xs: khNavbarSpacerMinHeightXs,
             md: 0,
           },
         }}

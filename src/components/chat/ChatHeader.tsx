@@ -33,13 +33,12 @@ interface ChatHeaderProps {
  *
  * Layout:
  * ┌─────────────────────────────────────────────────────────┐
- * │ ← (mob) │ [Avatar → profile] [Name + status] │ Archive  │
+ * │ ← (mob) │ [Avatar + name + status] │ Archive  │
  * ├─────────────────────────────────────────────────────────┤
  * │  Ad context card (cover thumb + title + "Voir annonce") │  ← only when ad present
  * └─────────────────────────────────────────────────────────┘
  *
- * Clicking the avatar/name goes to /proprietaires/[id] (public landlord profile).
- * Clicking the ad card or "Voir l'annonce" goes to /ads/[slug].
+ * Profile navigation lives on the linked-ad row; the top row is display-only.
  */
 export function ChatHeader({
   conversation,
@@ -54,11 +53,6 @@ export function ChatHeader({
   const participant = conversation.other_participant;
   const ad = conversation.ad;
   const initial = participant?.name?.charAt(0).toUpperCase() ?? '?';
-  const profileHref = participant
-    ? theme.isOwnerPanel
-      ? `/owner/tenants`
-      : `/proprietaires/${participant.id}`
-    : null;
   const adHref = ad
     ? theme.isOwnerPanel
       ? `/owner/ads/${ad.id}`
@@ -94,60 +88,30 @@ export function ChatHeader({
           <ArrowLeft className="h-5 w-5" />
         </Link>
 
-        {/* Clickable avatar + name → public profile */}
-        {profileHref ? (
-          <Link
-            href={profileHref}
-            className="flex items-center gap-3 flex-1 min-w-0 group"
-            title={`Voir le profil de ${participant?.name}`}
-          >
-            <AvatarBadge
-              avatar={participant?.avatar ?? null}
-              initial={initial}
-              online={presenceStatus === 'online'}
+        {/* Participant — no profile link; ad context is below */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <AvatarBadge
+            avatar={participant?.avatar ?? null}
+            initial={initial}
+            online={presenceStatus === 'online'}
+            device={presenceDevice ?? null}
+            theme={theme}
+          />
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-[14px] font-semibold truncate leading-tight"
+              style={{ color: theme.textPrimary }}
+            >
+              {participant?.name ?? 'Utilisateur'}
+            </p>
+            <OnlineStatus
+              status={presenceStatus}
               device={presenceDevice ?? null}
+              lastSeenAt={participant?.last_seen_at ?? null}
               theme={theme}
             />
-            <div className="flex-1 min-w-0">
-              <p
-                className="text-[14px] font-semibold truncate leading-tight group-hover:underline decoration-1 underline-offset-2 transition-all"
-                style={{ color: theme.textPrimary }}
-              >
-                {participant?.name ?? 'Utilisateur'}
-              </p>
-              <OnlineStatus
-                status={presenceStatus}
-                device={presenceDevice ?? null}
-                lastSeenAt={participant?.last_seen_at ?? null}
-                theme={theme}
-              />
-            </div>
-          </Link>
-        ) : (
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <AvatarBadge
-              avatar={participant?.avatar ?? null}
-              initial={initial}
-              online={presenceStatus === 'online'}
-              device={presenceDevice ?? null}
-              theme={theme}
-            />
-            <div className="flex-1 min-w-0">
-              <p
-                className="text-[14px] font-semibold truncate leading-tight"
-                style={{ color: theme.textPrimary }}
-              >
-                {participant?.name ?? 'Utilisateur'}
-              </p>
-              <OnlineStatus
-                status={presenceStatus}
-                device={presenceDevice ?? null}
-                lastSeenAt={participant?.last_seen_at ?? null}
-                theme={theme}
-              />
-            </div>
           </div>
-        )}
+        </div>
 
         {/* Search toggle */}
         {onSearch && (

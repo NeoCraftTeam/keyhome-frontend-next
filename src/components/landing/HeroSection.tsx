@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
 import { useLandingStats, type LandingStat } from '@/hooks/useLandingStats';
-import { brand } from '@/theme/tokens';
+import { brand, gradient } from '@/theme/tokens';
 
 const HeroVideoBackground = dynamic(() => import('./HeroVideoBackground'), {
   ssr: false,
@@ -740,15 +740,13 @@ export default function HeroSection() {
                 color: '#fff',
                 textDecoration: 'none',
                 fontSize: 15,
-                fontWeight: 500,
+                fontWeight: 600,
                 padding: '10px 24px',
                 borderRadius: 10,
-                border: '1px solid rgba(255,255,255,0.3)',
+                background: brand.primary,
+                boxShadow: '0 4px 20px rgba(246,71,95,0.4)',
                 display: 'inline-block',
                 whiteSpace: 'nowrap',
-                transition: 'all 0.3s ease',
-                backdropFilter: 'blur(8px)',
-                background: 'rgba(255,255,255,0.08)',
               }}
             >
               Visiter
@@ -762,7 +760,7 @@ export default function HeroSection() {
                 fontWeight: 600,
                 padding: '10px 24px',
                 borderRadius: 10,
-                background: `linear-gradient(135deg, ${brand.primary}, #d93a50)`,
+                background: gradient.primary135,
                 boxShadow: '0 4px 20px rgba(246,71,95,0.4)',
                 display: 'inline-block',
                 whiteSpace: 'nowrap',

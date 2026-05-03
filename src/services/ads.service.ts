@@ -304,6 +304,7 @@ export const adsService = {
       status: 'ok' | 'degraded' | 'unavailable';
       cached: boolean;
       computed_at: string | null;
+      ors_used?: boolean;
       categories: Record<
         string,
         {

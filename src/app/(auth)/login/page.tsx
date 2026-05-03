@@ -3,10 +3,12 @@
 import PasskeyLoginButton from '@/components/auth/PasskeyLoginButton';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import { GoogleOneTap } from '@/components/auth/GoogleOneTap';
+import TurnstileConfigAlert from '@/components/auth/TurnstileConfigAlert';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/FadeIn';
 import { useLandingStats } from '@/hooks/useLandingStats';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
+import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { useAuth } from '@/providers/AuthProvider';
@@ -42,14 +44,21 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileIssueCode, setTurnstileIssueCode] = useState<string | null>(
+    null
+  );
+  const { siteKey: turnstileSiteKey, isResolved: turnstileConfigResolved } =
+    useTurnstileSiteKey();
+  const turnstileEnabled = Boolean(turnstileSiteKey);
+
   const emailLabelShrink = useOutlinedInputLabelShrink(email.length > 0);
 
-  // Turnstile is configured iff the public site key is present at build time.
-  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  // Turnstile: env `NEXT_PUBLIC_TURNSTILE_SITE_KEY` *or* API `/config/turnstile` (see hook).
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setTurnstileIssueCode(null);
     setIsSubmitting(true);
 
     try {
@@ -229,6 +238,8 @@ export default function LoginPage() {
             </FadeIn>
           )}
 
+          <TurnstileConfigAlert code={turnstileIssueCode} />
+
           <FadeIn delay={0.2} direction="up">
             <Box
               component="form"
@@ -292,7 +303,25 @@ export default function LoginPage() {
                 sx={{ mb: 1 }}
               />
 
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+              {turnstileEnabled && turnstileSiteKey && (
+                <Box sx={{ mb: 2, minHeight: 65 }}>
+                  <TurnstileWidget
+                    siteKey={turnstileSiteKey}
+                    action="login"
+                    onToken={(t) => {
+                      setTurnstileToken(t);
+                      setTurnstileIssueCode(null);
+                    }}
+                    onExpire={() => setTurnstileToken(null)}
+                    onErrorCode={(code) => {
+                      setTurnstileToken(null);
+                      setTurnstileIssueCode(code);
+                    }}
+                  />
+                </Box>
+              )}
+
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                 <Link
                   href="/forgot-password"
                   underline="hover"
@@ -306,22 +335,16 @@ export default function LoginPage() {
                 </Link>
               </Box>
 
-              {turnstileEnabled && (
-                <Box sx={{ mt: 1, mb: 1 }}>
-                  <TurnstileWidget
-                    action="login"
-                    onToken={setTurnstileToken}
-                    onExpire={() => setTurnstileToken(null)}
-                  />
-                </Box>
-              )}
-
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={isSubmitting || (turnstileEnabled && !turnstileToken)}
+                disabled={
+                  isSubmitting ||
+                  !turnstileConfigResolved ||
+                  (turnstileEnabled && !turnstileToken)
+                }
                 sx={{
                   py: 1.5,
                   fontSize: '1rem',

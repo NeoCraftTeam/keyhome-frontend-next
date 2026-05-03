@@ -5,6 +5,7 @@ import {
   CSP_FONT_HOSTS,
   CSP_FRAME_HOSTS_STATIC,
   CSP_IMG_HOSTS_STATIC,
+  CSP_MEDIA_HOSTS_STATIC,
   CSP_SCRIPT_HOSTS,
   CSP_STYLE_HOSTS,
   buildConnectSrcParts,
@@ -100,6 +101,7 @@ function buildCsp(nonce: string): string {
     `font-src 'self' ${CSP_FONT_HOSTS}`,
     "worker-src 'self' blob:",
     `img-src 'self' blob: data: ${CSP_IMG_HOSTS_STATIC} ${apiOrigin} ${backendOrigin}`,
+    `media-src 'self' blob: data: ${CSP_MEDIA_HOSTS_STATIC} ${apiOrigin} ${backendOrigin}`,
 
     `connect-src ${connectSources}`,
     `frame-src ${CSP_FRAME_HOSTS_STATIC}${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''}`,

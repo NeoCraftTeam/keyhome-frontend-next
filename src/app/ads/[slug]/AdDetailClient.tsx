@@ -62,7 +62,6 @@ import LocationOn from '@mui/icons-material/LocationOn';
 import Lock from '@mui/icons-material/Lock';
 import NearMe from '@mui/icons-material/NearMe';
 import Phone from '@mui/icons-material/Phone';
-import PdfIcon from '@mui/icons-material/PictureAsPdf';
 import PrintIcon from '@mui/icons-material/Print';
 import ReceiptLong from '@mui/icons-material/ReceiptLong';
 import Bolt from '@mui/icons-material/Bolt';
@@ -84,6 +83,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Container,
   Dialog,
   Divider,
@@ -147,6 +147,7 @@ function AdDetailContent() {
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [reportError, setReportError] = useState('');
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [isPrintPdfLoading, setIsPrintPdfLoading] = useState(false);
   const [hasStoredSanctumToken, setHasStoredSanctumToken] = useState<
     boolean | null
   >(null);
@@ -302,16 +303,6 @@ function AdDetailContent() {
   const desktopHeroImage = images[desktopHeroIndex] ?? primaryImage;
 
   const totalImageCount = ad.total_images || allImages.length;
-
-  const handleDownloadPdf = () => {
-    const apiBase =
-      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-    window.open(
-      `${apiBase}/ads/${adSlug}/pdf`,
-      '_blank',
-      'noopener,noreferrer'
-    );
-  };
 
   const handleShare = async () => {
     const shareUrl = window.location.href;
@@ -519,11 +510,47 @@ function AdDetailContent() {
     ?.replace(/[\s\-\(\)]/g, '')
     .replace(/^\+/, '');
 
+  const publisherFirstName =
+    publisherName === 'Annonceur'
+      ? ''
+      : (publisherName.trim().split(/\s+/)[0] ?? '');
+
+  const whatsappPrefillBody = `Bonjour${publisherFirstName ? ` ${publisherFirstName}` : ''},\n\nJe vous contacte au sujet de votre annonce « ${ad.title} » sur KeyHome.\n\nJe souhaite échanger avec vous concernant ce bien.\n\nBien cordialement${currentUser?.firstname ? `,\n${currentUser.firstname}` : ''}`;
+
+  const callCtaLabel = publisherFirstName
+    ? `Appeler ${publisherFirstName}`
+    : 'Appeler';
+
+  const handlePrintPdf = async () => {
+    setIsPrintPdfLoading(true);
+    try {
+      const { openAdDetailPrintPdf } =
+        await import('@/lib/ad-detail-print-pdf');
+      await openAdDetailPrintPdf({
+        filenameSlug: ad.slug ?? ad.id,
+      });
+    } catch (err) {
+      setSnackbar(
+        getSafeErrorMessage(
+          err,
+          'Impossible de générer le PDF. Réessayez dans un instant.'
+        )
+      );
+    } finally {
+      setIsPrintPdfLoading(false);
+    }
+  };
+
   return (
     <>
-      <Box sx={{ position: 'relative', overflowX: 'hidden' }}>
+      <Box
+        id="kh-ad-print-root"
+        component="main"
+        sx={{ position: 'relative', overflowX: 'hidden' }}
+      >
         {/* Mobile: full-bleed photo hero + floating back button */}
         <Box
+          className="kh-ad-print-hero-mobile"
           onClick={() => !isLocked && openLightbox(0)}
           sx={{
             display: { xs: 'block', md: 'none' },
@@ -1051,8 +1078,15 @@ function AdDetailContent() {
               <Button
                 variant="outlined"
                 size="small"
-                startIcon={<PrintIcon sx={{ fontSize: 16 }} />}
-                onClick={() => window.print()}
+                disabled={isPrintPdfLoading}
+                startIcon={
+                  isPrintPdfLoading ? (
+                    <CircularProgress size={14} sx={{ color: 'inherit' }} />
+                  ) : (
+                    <PrintIcon sx={{ fontSize: 16 }} />
+                  )
+                }
+                onClick={() => void handlePrintPdf()}
                 sx={{
                   borderRadius: '20px',
                   textTransform: 'none',
@@ -1061,20 +1095,6 @@ function AdDetailContent() {
                 }}
               >
                 Imprimer
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<PdfIcon sx={{ fontSize: 16 }} />}
-                onClick={handleDownloadPdf}
-                sx={{
-                  borderRadius: '20px',
-                  textTransform: 'none',
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                }}
-              >
-                PDF
               </Button>
               <Button
                 variant="outlined"
@@ -1165,8 +1185,15 @@ function AdDetailContent() {
                 <Button
                   variant="outlined"
                   size="small"
-                  startIcon={<PrintIcon sx={{ fontSize: 16 }} />}
-                  onClick={() => window.print()}
+                  disabled={isPrintPdfLoading}
+                  startIcon={
+                    isPrintPdfLoading ? (
+                      <CircularProgress size={14} sx={{ color: 'inherit' }} />
+                    ) : (
+                      <PrintIcon sx={{ fontSize: 16 }} />
+                    )
+                  }
+                  onClick={() => void handlePrintPdf()}
                   sx={{
                     borderRadius: '20px',
                     textTransform: 'none',
@@ -1175,20 +1202,6 @@ function AdDetailContent() {
                   }}
                 >
                   Imprimer
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<PdfIcon sx={{ fontSize: 16 }} />}
-                  onClick={handleDownloadPdf}
-                  sx={{
-                    borderRadius: '20px',
-                    textTransform: 'none',
-                    borderColor: 'divider',
-                    color: 'text.primary',
-                  }}
-                >
-                  PDF
                 </Button>
                 <Button
                   variant="outlined"
@@ -2046,7 +2059,7 @@ function AdDetailContent() {
                                 variant="contained"
                                 size="small"
                                 startIcon={<WhatsApp sx={{ fontSize: 18 }} />}
-                                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Bonjour,\n\nJe vous contacte suite à votre annonce *${ad.title}* que j'ai vue sur KeyHome.\n\nJe suis intéressé(e) par ce bien et souhaiterais avoir plus d'informations.\n\nCordialement${currentUser?.firstname ? `, ${currentUser.firstname}` : ''}`)}`}
+                                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappPrefillBody)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 sx={{
@@ -2058,7 +2071,7 @@ function AdDetailContent() {
                                   minWidth: 0,
                                 }}
                               >
-                                WhatsApp
+                                Message WhatsApp
                               </Button>
                             )}
                             <Button
@@ -2075,7 +2088,7 @@ function AdDetailContent() {
                                 minWidth: 0,
                               }}
                             >
-                              Appeler
+                              {callCtaLabel}
                             </Button>
                           </Box>
                         </Box>
@@ -2091,6 +2104,7 @@ function AdDetailContent() {
                         adTitle={ad.title}
                         transactionType={ad.transaction_type}
                         adSlug={ad.slug}
+                        hostFirstName={publisherFirstName || undefined}
                       />
                       {publisherEmail && (
                         <Box
@@ -3312,7 +3326,7 @@ function AdDetailContent() {
                                 variant="contained"
                                 size="small"
                                 startIcon={<WhatsApp sx={{ fontSize: 18 }} />}
-                                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Bonjour,\n\nJe vous contacte suite à votre annonce *${ad.title}* que j'ai vue sur KeyHome.\n\nJe suis intéressé(e) par ce bien et souhaiterais avoir plus d'informations.\n\nCordialement${currentUser?.firstname ? `, ${currentUser.firstname}` : ''}`)}`}
+                                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappPrefillBody)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 sx={{
@@ -3324,7 +3338,7 @@ function AdDetailContent() {
                                   minWidth: 0,
                                 }}
                               >
-                                WhatsApp
+                                Message WhatsApp
                               </Button>
                             )}
                             <Button
@@ -3341,7 +3355,7 @@ function AdDetailContent() {
                                 minWidth: 0,
                               }}
                             >
-                              Appeler
+                              {callCtaLabel}
                             </Button>
                           </Box>
                         </Box>
@@ -3357,6 +3371,7 @@ function AdDetailContent() {
                         adTitle={ad.title}
                         transactionType={ad.transaction_type}
                         adSlug={ad.slug}
+                        hostFirstName={publisherFirstName || undefined}
                       />
                       {publisherEmail && (
                         <Box
@@ -3394,6 +3409,7 @@ function AdDetailContent() {
                         adId={ad.id}
                         adTitle={ad.title}
                         variant="contained"
+                        hostFirstName={publisherFirstName || undefined}
                       />
                     </Box>
                   )}
@@ -3496,6 +3512,15 @@ function AdDetailContent() {
               </Box>
             </Box>
           </Paper>
+        </Container>
+        <Container
+          maxWidth="xl"
+          sx={{
+            pb: { xs: 14, md: 6 },
+            display: { xs: 'block', md: 'block', lg: 'block', xl: 'none' },
+          }}
+        >
+          <SimilarAds currentAdId={ad.id} />
         </Container>
       </Box>
 
@@ -3922,6 +3947,7 @@ function AdDetailContent() {
         <StickyPropertyBar
           price={ad.price ?? 0}
           title={ad.title}
+          hostFirstName={publisherFirstName || undefined}
           onContact={() => {
             if (isLocked) {
               setPaymentDialogOpen(true);
@@ -3961,7 +3987,8 @@ function AdDetailContent() {
                     const draft = buildDraftMessage(
                       ad.title,
                       ad.transaction_type ?? null,
-                      adUrl
+                      adUrl,
+                      publisherFirstName || undefined
                     );
                     router.push(
                       `/messages/${conversation.uuid}?draft=${encodeURIComponent(draft)}`
@@ -3978,7 +4005,7 @@ function AdDetailContent() {
           }
           whatsappUrl={
             !isLocked && publisherHasWhatsApp && whatsappNumber
-              ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Bonjour,\n\nJe vous contacte suite à votre annonce *${ad.title}* que j'ai vue sur KeyHome.\n\nJe suis intéressé(e) par ce bien et souhaiterais avoir plus d'informations.\n\nCordialement${currentUser?.firstname ? `, ${currentUser.firstname}` : ''}`)}`
+              ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappPrefillBody)}`
               : undefined
           }
           phoneUrl={
@@ -3986,17 +4013,6 @@ function AdDetailContent() {
           }
         />
       )}
-
-      {/* Similar ads — bottom section (hidden on xl, shown in sidebar instead) */}
-      <Container
-        maxWidth="xl"
-        sx={{
-          pb: { xs: 14, md: 6 },
-          display: { xs: 'block', md: 'block', lg: 'block', xl: 'none' },
-        }}
-      >
-        <SimilarAds currentAdId={ad.id} />
-      </Container>
 
       {ad && (
         <CompareDrawer

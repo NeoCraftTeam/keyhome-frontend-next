@@ -37,6 +37,26 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .heroEyebrow,
+  .heroTitle,
+  .heroBadge,
+  .heroDescription,
+  .mainContent,
+  .section,
+  .toc {
+    animation: none !important;
+  }
+
+  .backLink,
+  .tocItem,
+  .footerLink,
+  .footerLinkActive,
+  .contactEmail {
+    transition: none !important;
+  }
+}
+
 /* ─── Base ─── */
 
 .page {
@@ -93,6 +113,25 @@
   transform: translateX(-2px);
 }
 
+.brandLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 10px;
+  outline-offset: 2px;
+}
+
+.brandLink:hover {
+  opacity: 0.88;
+}
+
+.brandLink:focus-visible {
+  outline: 2px solid #f6475f;
+  outline-offset: 2px;
+}
+
 .brand {
   font-weight: 700;
   font-size: 1.05rem;
@@ -133,6 +172,8 @@
   color: white;
   padding: 28px 0 36px;
   overflow: hidden;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .hero::before {
@@ -145,17 +186,6 @@
     transparent 0
   );
   background-size: 28px 28px;
-  pointer-events: none;
-}
-
-.hero::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 36px;
-  background: linear-gradient(to top, #fafbfc 0%, transparent 100%);
   pointer-events: none;
 }
 
@@ -203,10 +233,8 @@
   gap: 6px;
   margin-top: 20px;
   padding: 6px 16px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 100px;
   font-size: 0.78rem;
   font-weight: 500;
@@ -229,12 +257,21 @@
   animation-delay: 0.2s;
 }
 
+.heroLink {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.heroLink:hover {
+  opacity: 1;
+}
+
 @media (min-width: 768px) {
   .hero {
     padding: 48px 0 56px;
-  }
-  .hero::after {
-    height: 64px;
   }
   .heroTitle {
     font-size: 2.75rem;
@@ -474,8 +511,11 @@
 .section:nth-child(9) {
   animation-delay: 0.36s;
 }
-.section:nth-child(10) {
-  animation-delay: 0.4s;
+.section:nth-child(11) {
+  animation-delay: 0.44s;
+}
+.section:nth-child(12) {
+  animation-delay: 0.48s;
 }
 
 .section:last-child {
@@ -526,6 +566,17 @@
 .strong {
   font-weight: 600;
   color: #111827;
+}
+
+.inlineLink {
+  color: #f6475f;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.inlineLink:hover {
+  opacity: 0.85;
 }
 
 /* ─── Lists ─── */

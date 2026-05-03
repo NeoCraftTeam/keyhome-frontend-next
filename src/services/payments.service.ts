@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { rememberPaymentOriginPath } from '@/lib/payment-return';
 import {
   FlutterwaveInitiatePayload,
   FlutterwaveInitiateResponse,
@@ -35,6 +36,7 @@ export const paymentsService = {
   async flutterwaveInitiate(
     payload: FlutterwaveInitiatePayload
   ): Promise<FlutterwaveInitiateResponse> {
+    rememberPaymentOriginPath();
     const { data } = await api.post('/payments/initiate_payment', payload);
     return data as FlutterwaveInitiateResponse;
   },

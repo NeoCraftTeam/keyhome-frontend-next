@@ -26,6 +26,8 @@ interface StickyPropertyBarProps {
   phoneUrl?: string;
   /** When provided, shows a Message button that calls this handler. */
   onMessage?: () => void;
+  /** Host given name — personalises CTAs. */
+  hostFirstName?: string;
 }
 
 /**
@@ -43,11 +45,21 @@ export default function StickyPropertyBar({
   whatsappUrl,
   phoneUrl,
   onMessage,
+  hostFirstName,
 }: StickyPropertyBarProps) {
   const hasDirectButtons = !!(whatsappUrl || phoneUrl || onMessage);
   const [isVisible, setIsVisible] = useState(false);
   const { scrollY } = useScroll();
   const shouldReduce = useReducedMotion();
+  const outQuint = [0.22, 1, 0.36, 1] as const;
+
+  const messageLabel = hostFirstName
+    ? `Échanger avec ${hostFirstName}`
+    : "Échanger avec l'hôte";
+  const phoneLabel = hostFirstName ? `Appeler ${hostFirstName}` : 'Appeler';
+  const contactLabel = hostFirstName
+    ? `Contacter ${hostFirstName}`
+    : 'Contacter';
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
     setIsVisible(latest > 300);
@@ -58,9 +70,7 @@ export default function StickyPropertyBar({
       initial={shouldReduce ? false : { y: 100, opacity: 0 }}
       animate={isVisible ? { y: 0, opacity: 1 } : { y: 100, opacity: 0 }}
       transition={
-        shouldReduce
-          ? { duration: 0 }
-          : { type: 'spring', stiffness: 300, damping: 30 }
+        shouldReduce ? { duration: 0 } : { duration: 0.34, ease: outQuint }
       }
       style={{
         position: 'fixed',
@@ -110,12 +120,11 @@ export default function StickyPropertyBar({
                   ? { scale: 1, opacity: 1 }
                   : { scale: 0.9, opacity: 0.65 }
             }
-            transition={{
-              type: 'spring',
-              stiffness: 420,
-              damping: 26,
-              mass: 0.7,
-            }}
+            transition={
+              shouldReduce
+                ? { duration: 0 }
+                : { duration: 0.28, ease: outQuint }
+            }
           >
             <Typography
               variant="h6"
@@ -172,6 +181,8 @@ export default function StickyPropertyBar({
                     minHeight: 46,
                     fontWeight: 700,
                     fontSize: '0.82rem',
+                    lineHeight: 1.2,
+                    whiteSpace: 'normal',
                     boxShadow: '0 2px 8px rgba(246,71,95,0.25)',
                     bgcolor: '#F6475F',
                     '&:hover': {
@@ -180,7 +191,7 @@ export default function StickyPropertyBar({
                     },
                   }}
                 >
-                  Message
+                  {messageLabel}
                 </Button>
               )}
               {whatsappUrl && (
@@ -209,7 +220,7 @@ export default function StickyPropertyBar({
                     },
                   }}
                 >
-                  WhatsApp
+                  Message WhatsApp
                 </Button>
               )}
               {phoneUrl && (
@@ -237,7 +248,7 @@ export default function StickyPropertyBar({
                     },
                   }}
                 >
-                  Appeler
+                  {phoneLabel}
                 </Button>
               )}
             </>
@@ -262,7 +273,7 @@ export default function StickyPropertyBar({
                 '&:hover': { boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)' },
               }}
             >
-              Contacter
+              {contactLabel}
             </Button>
           )}
         </Box>

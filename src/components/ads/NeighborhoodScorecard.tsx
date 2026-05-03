@@ -14,6 +14,7 @@ import Storefront from '@mui/icons-material/Storefront';
 import Info from '@mui/icons-material/Info';
 import WarningAmberRounded from '@mui/icons-material/WarningAmberRounded';
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -46,6 +47,8 @@ interface ScorecardData {
   status: 'ok' | 'degraded' | 'unavailable';
   cached: boolean;
   computed_at: string | null;
+  /** True when ORS_API_KEY is set on the API (walking routing may still fallback per POI). */
+  ors_used?: boolean;
   categories: Record<string, CategoryData>;
 }
 
@@ -271,9 +274,14 @@ function CategoryRow({
             >
               {poi.name ? `${poi.name} · ` : ''}
               {formatDistance(poi.distance_m)}
+              {poi.mode === 'walking' && (
+                <Box component="span" sx={{ color: 'success.main', ml: 0.5 }}>
+                  · à pied
+                </Box>
+              )}
               {poi.mode === 'air' && (
                 <Box component="span" sx={{ color: 'warning.main', ml: 0.5 }}>
-                  à vol d&apos;oiseau
+                  · ligne droite
                 </Box>
               )}
             </Typography>
@@ -392,7 +400,7 @@ export default function NeighborhoodScorecard({ adId }: Props) {
           </Typography>
         </Box>
         <Tooltip
-          title="Scores calculés depuis OpenStreetMap Overpass. Les données varient selon la couverture cartographique locale. Les distances sont pédestres (ORS) ou à vol d'oiseau si non disponibles."
+          title="Scores depuis OpenStreetMap (Overpass). Distances « à pied » = réseau piéton OpenRouteService lorsque configuré ; sinon approximation en ligne droite."
           arrow
         >
           <Info
@@ -420,6 +428,18 @@ export default function NeighborhoodScorecard({ adId }: Props) {
 
       {scorecard && (
         <>
+          {scorecard.ors_used === false &&
+            scorecard.status !== 'unavailable' && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  Distances en <strong>ligne droite</strong> (approximation).
+                  Les distances <strong>à pied réelles</strong> (routes)
+                  utilisent OpenRouteService — ajoutez <code>ORS_API_KEY</code>{' '}
+                  sur l&apos;API backend.
+                </Typography>
+              </Alert>
+            )}
+
           {/* Global score row */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
             <ScoreRing score={scorecard.global_score} />
@@ -434,7 +454,7 @@ export default function NeighborhoodScorecard({ adId }: Props) {
               {scorecard.status === 'degraded' && (
                 <Chip
                   icon={<WarningAmberRounded sx={{ fontSize: 13 }} />}
-                  label="Distances à vol d'oiseau (ORS indisponible)"
+                  label="Distances en ligne droite (ORS indisponible ou quota)"
                   size="small"
                   sx={{
                     mt: 0.5,

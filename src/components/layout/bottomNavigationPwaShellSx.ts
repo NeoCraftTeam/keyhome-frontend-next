@@ -1,5 +1,7 @@
 import type { SxProps, Theme } from '@mui/material/styles';
+import { NAV_LIST_ICON_GLYPH_PX } from '@/lib/navVisualMetrics';
 import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
+import { khSafeAreaBottomSx } from '@/lib/safe-area-insets';
 
 /**
  * Shared desktop-class alignment for KeyHome bottom tab shells (customer + bailleur).
@@ -7,8 +9,8 @@ import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
  */
 export function bottomNavigationPwaShellSx(): SxProps<Theme> {
   return {
-    height: `calc(${PWA_BOTTOM_NAV_INNER_HEIGHT_PX}px + env(safe-area-inset-bottom, 0px))`,
-    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+    height: `calc(${PWA_BOTTOM_NAV_INNER_HEIGHT_PX}px + ${khSafeAreaBottomSx})`,
+    paddingBottom: khSafeAreaBottomSx,
     bgcolor: 'background.paper',
     alignItems: 'stretch',
     '& .MuiBottomNavigationAction-root': {
@@ -35,7 +37,13 @@ export function bottomNavigationPwaShellSx(): SxProps<Theme> {
       width: '100%',
       marginBottom: 0,
       '& .MuiSvgIcon-root': {
-        fontSize: '1.5rem',
+        fontSize: NAV_LIST_ICON_GLYPH_PX,
+      },
+      '& img': {
+        width: NAV_LIST_ICON_GLYPH_PX,
+        height: NAV_LIST_ICON_GLYPH_PX,
+        objectFit: 'contain',
+        display: 'block',
       },
     },
     '& .MuiBottomNavigationAction-label': {

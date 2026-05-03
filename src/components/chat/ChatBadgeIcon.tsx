@@ -37,7 +37,7 @@ export function ChatBadgeIcon() {
         '& .MuiBadge-badge': { fontSize: '0.6rem', minWidth: 16, height: 16 },
       }}
     >
-      <ChatBubbleOutlineIcon />
+      <ChatBubbleOutlineIcon sx={{ fontSize: 24, color: 'inherit' }} />
     </Badge>
   );
 }

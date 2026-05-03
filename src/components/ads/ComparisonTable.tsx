@@ -2,7 +2,10 @@
 
 import { formatPrice } from '@/lib/constants';
 import { getAttributeLabel } from '@/lib/attribute-labels';
-import { Ad, PropertyAttribute } from '@/types';
+import { getComparatorAttributeSlugsForAds } from '@/lib/comparator-attributes';
+import { Ad } from '@/types';
+import { format, isValid, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import Bathtub from '@mui/icons-material/Bathtub';
 import Bed from '@mui/icons-material/Bed';
 import Check from '@mui/icons-material/Check';
@@ -26,6 +29,18 @@ const CRITERIA = [
     render: (ad: Ad) => (
       <Typography fontWeight={800} fontSize={15} color="primary.main">
         {ad.price ? formatPrice(ad.price) : '—'}
+      </Typography>
+    ),
+  },
+  {
+    label: 'Transaction',
+    render: (ad: Ad) => (
+      <Typography variant="body2" fontWeight={600}>
+        {ad.transaction_type === 'vente'
+          ? 'Vente'
+          : ad.transaction_type === 'location'
+            ? 'Location'
+            : '—'}
       </Typography>
     ),
   },
@@ -78,6 +93,81 @@ const CRITERIA = [
     ),
   },
   {
+    label: 'Disponible à partir du',
+    render: (ad: Ad) => {
+      if (!ad.available_from) {
+        return (
+          <Typography variant="caption" color="text.disabled">
+            —
+          </Typography>
+        );
+      }
+      const d = parseISO(ad.available_from);
+      if (!isValid(d)) {
+        return (
+          <Typography variant="caption" color="text.disabled">
+            —
+          </Typography>
+        );
+      }
+      return (
+        <Typography variant="body2">
+          {format(d, 'd MMM yyyy', { locale: fr })}
+        </Typography>
+      );
+    },
+  },
+  {
+    label: 'Durée minimale du bail',
+    render: (ad: Ad) =>
+      ad.minimum_lease_duration ? (
+        <Typography variant="body2">{ad.minimum_lease_duration}</Typography>
+      ) : (
+        <Typography variant="caption" color="text.disabled">
+          —
+        </Typography>
+      ),
+  },
+  {
+    label: 'Transport en commun (approx.)',
+    render: (ad: Ad) =>
+      ad.distance_transport_m != null ? (
+        <Typography variant="body2">
+          {Math.round(ad.distance_transport_m).toLocaleString('fr-FR')} m
+        </Typography>
+      ) : (
+        <Typography variant="caption" color="text.disabled">
+          —
+        </Typography>
+      ),
+  },
+  {
+    label: 'Commerces (approx.)',
+    render: (ad: Ad) =>
+      ad.distance_shops_m != null ? (
+        <Typography variant="body2">
+          {Math.round(ad.distance_shops_m).toLocaleString('fr-FR')} m
+        </Typography>
+      ) : (
+        <Typography variant="caption" color="text.disabled">
+          —
+        </Typography>
+      ),
+  },
+  {
+    label: 'École (approx.)',
+    render: (ad: Ad) =>
+      ad.distance_school_m != null ? (
+        <Typography variant="body2">
+          {Math.round(ad.distance_school_m).toLocaleString('fr-FR')} m
+        </Typography>
+      ) : (
+        <Typography variant="caption" color="text.disabled">
+          —
+        </Typography>
+      ),
+  },
+  {
     label: 'Visite 360°',
     render: (ad: Ad) =>
       ad.has_3d_tour ? (
@@ -111,11 +201,7 @@ export default function ComparisonTable({
   const theme = useTheme();
   const _isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const router = useRouter();
-  const allAttributes = [
-    ...new Set(items.flatMap((ad) => ad.attributes ?? [])),
-  ].sort((a, b) =>
-    getAttributeLabel(a).localeCompare(getAttributeLabel(b), 'fr')
-  );
+  const comparatorAttributeSlugs = getComparatorAttributeSlugsForAds(items);
 
   const handleViewAd = (ad: Ad) => {
     router.push(`/ads/${ad.slug}`);
@@ -230,16 +316,19 @@ export default function ComparisonTable({
 
       {[
         ...CRITERIA,
-        ...allAttributes.map((attr) => ({
-          label: getAttributeLabel(attr),
-          render: (ad: Ad) =>
-            (ad.attributes ?? []).includes(attr as PropertyAttribute) ? (
+        ...comparatorAttributeSlugs.map((attrSlug) => ({
+          label: getAttributeLabel(attrSlug),
+          render: (ad: Ad) => {
+            const attrs = (ad.attributes ?? []).map((a) => a.toLowerCase());
+            const hit = attrs.includes(attrSlug.toLowerCase());
+            return hit ? (
               <Check color="success" sx={{ fontSize: 18 }} />
             ) : (
               <Typography variant="caption" color="text.disabled">
                 —
               </Typography>
-            ),
+            );
+          },
         })),
       ].map(({ label, render }, idx) => (
         <Box
