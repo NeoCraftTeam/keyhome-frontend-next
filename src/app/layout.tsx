@@ -206,6 +206,14 @@ export default async function RootLayout({
             <CookieBanner />
             <SpeedInsights />
           </Providers>
+
+          {/* Cloudflare Web Analytics */}
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon='{"token": "843502f324fe4d9c89c57bbc88c80fd7"}'
+          ></script>
+          {/* End Cloudflare Web Analytics */}
         </body>
       </html>
     </ClerkProvider>
