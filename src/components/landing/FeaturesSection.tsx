@@ -1,6 +1,6 @@
 'use client';
 
-import { brand } from '@/theme/tokens';
+import { brand, semantic } from '@/theme/tokens';
 import { motion } from 'framer-motion';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
@@ -11,12 +11,19 @@ import FavoriteBorderOutlined from '@mui/icons-material/FavoriteBorderOutlined';
 import LocationOnOutlined from '@mui/icons-material/LocationOnOutlined';
 import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
 
+/** Returns matching alpha overlay tones for a brand/semantic accent. */
+function tones(color: string): { bg: string; border: string; bgHover: string } {
+  return {
+    bg: `${color}1A`, //  ~10%
+    bgHover: `${color}26`, // ~15%
+    border: `${color}33`, // ~20%
+  };
+}
+
 const features = [
   {
     icon: <SearchOutlined style={{ fontSize: 28 }} />,
-    color: '#3B82F6',
-    bg: 'rgba(59,130,246,0.1)',
-    border: 'rgba(59,130,246,0.2)',
+    color: semantic.info,
     title: 'Recherche intelligente',
     description:
       'Filtrez par ville, quartier, type de bien, superficie et budget. Trouvez exactement ce que vous cherchez en quelques secondes.',
@@ -24,9 +31,7 @@ const features = [
   },
   {
     icon: <LocationOnOutlined style={{ fontSize: 28 }} />,
-    color: '#10B981',
-    bg: 'rgba(16,185,129,0.1)',
-    border: 'rgba(16,185,129,0.2)',
+    color: semantic.successBright,
     title: 'Carte interactive',
     description:
       'Visualisez toutes les annonces sur une carte dynamique. Explorez les quartiers et estimez les distances depuis chez vous.',
@@ -35,8 +40,6 @@ const features = [
   {
     icon: <LockOpenOutlined style={{ fontSize: 28 }} />,
     color: brand.primary,
-    bg: brand.primaryAlpha10,
-    border: 'rgba(246,71,95,0.2)',
     title: 'Accès sécurisé',
     description:
       'Débloquez les coordonnées du propriétaire instantanément avec un micro-paiement sécurisé. 100% vérifié.',
@@ -44,9 +47,7 @@ const features = [
   },
   {
     icon: <PhoneEnabledOutlined style={{ fontSize: 28 }} />,
-    color: '#8B5CF6',
-    bg: 'rgba(139,92,246,0.1)',
-    border: 'rgba(139,92,246,0.2)',
+    color: semantic.purple,
     title: 'Contact direct',
     description:
       "Appelez, WhatsApp ou envoyez un email directement au propriétaire ou à l'agence. Sans intermédiaire.",
@@ -54,9 +55,7 @@ const features = [
   },
   {
     icon: <FavoriteBorderOutlined style={{ fontSize: 28 }} />,
-    color: '#F59E0B',
-    bg: 'rgba(245,158,11,0.1)',
-    border: 'rgba(245,158,11,0.2)',
+    color: semantic.warning,
     title: 'Favoris & alertes',
     description:
       'Sauvegardez vos annonces favorites et recevez des recommandations personnalisées basées sur vos préférences.',
@@ -64,9 +63,7 @@ const features = [
   },
   {
     icon: <VerifiedOutlined style={{ fontSize: 28 }} />,
-    color: '#06B6D4',
-    bg: 'rgba(6,182,212,0.1)',
-    border: 'rgba(6,182,212,0.2)',
+    color: '#06B6D4', // cyan accent — no semantic token, kept for variety
     title: 'Annonces vérifiées',
     description:
       'Toutes les annonces sont modérées par notre équipe. Photos authentiques, prix cohérents et propriétaires vérifiés.',
@@ -100,10 +97,7 @@ export default function FeaturesSection() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
-          transition={{
-            duration: 0.7,
-            ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-          }}
+          transition={{ duration: 0.7, ease: EASE }}
           style={{ textAlign: 'center', marginBottom: 72 }}
         >
           <span
@@ -112,7 +106,7 @@ export default function FeaturesSection() {
               padding: '5px 14px',
               borderRadius: 100,
               background: brand.primaryAlpha10,
-              border: '1px solid rgba(246,71,95,0.2)',
+              border: `1px solid ${brand.primaryAlpha30}`,
               color: brand.primary,
               fontSize: 13,
               fontWeight: 600,
@@ -148,81 +142,99 @@ export default function FeaturesSection() {
         </motion.div>
 
         {/* Cards grid */}
-        <div className="features-grid">
-          {features.map((f, i) => (
-            <PageTransitionLink
-              key={f.title}
-              href={f.href}
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              <motion.div
-                custom={i}
-                variants={cardVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: '-60px' }}
-                whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                style={{
-                  padding: '32px',
-                  borderRadius: 20,
-                  background: surface,
-                  border: `1px solid ${border}`,
-                  cursor: 'pointer',
-                  backdropFilter: 'blur(4px)',
-                  transition: 'border-color 0.2s, background 0.4s ease',
-                  height: '100%',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = f.border;
-                  (e.currentTarget as HTMLElement).style.background =
-                    f.bg.replace('0.1)', '0.05)');
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = border;
-                  (e.currentTarget as HTMLElement).style.background = surface;
-                }}
-              >
-                <div
+        <ul
+          className="features-grid"
+          style={{ listStyle: 'none', padding: 0, margin: 0 }}
+        >
+          {features.map((f, i) => {
+            const t = tones(f.color);
+            return (
+              <li key={f.title} style={{ display: 'flex' }}>
+                <PageTransitionLink
+                  href={f.href}
                   style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 16,
-                    background: f.bg,
-                    border: `1px solid ${f.border}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: f.color,
-                    marginBottom: 24,
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    display: 'block',
+                    width: '100%',
                   }}
                 >
-                  {f.icon}
-                </div>
-                <h3
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 700,
-                    color: text,
-                    margin: '0 0 12px',
-                    letterSpacing: '-0.3px',
-                  }}
-                >
-                  {f.title}
-                </h3>
-                <p
-                  style={{
-                    fontSize: 15,
-                    color: textSub,
-                    lineHeight: 1.65,
-                    margin: 0,
-                  }}
-                >
-                  {f.description}
-                </p>
-              </motion.div>
-            </PageTransitionLink>
-          ))}
-        </div>
+                  <motion.article
+                    custom={i}
+                    variants={cardVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: '-60px' }}
+                    whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                    style={{
+                      padding: '32px',
+                      borderRadius: 20,
+                      background: surface,
+                      border: `1px solid ${border}`,
+                      cursor: 'pointer',
+                      backdropFilter: 'blur(4px)',
+                      transition: 'border-color 0.25s, background 0.25s',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor =
+                        t.border;
+                      (e.currentTarget as HTMLElement).style.background =
+                        t.bgHover;
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor =
+                        border;
+                      (e.currentTarget as HTMLElement).style.background =
+                        surface;
+                    }}
+                  >
+                    <div
+                      aria-hidden
+                      style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 16,
+                        background: t.bg,
+                        border: `1px solid ${t.border}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: f.color,
+                        marginBottom: 24,
+                      }}
+                    >
+                      {f.icon}
+                    </div>
+                    <h3
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 700,
+                        color: text,
+                        margin: '0 0 12px',
+                        letterSpacing: '-0.3px',
+                      }}
+                    >
+                      {f.title}
+                    </h3>
+                    <p
+                      style={{
+                        fontSize: 15,
+                        color: textSub,
+                        lineHeight: 1.65,
+                        margin: 0,
+                      }}
+                    >
+                      {f.description}
+                    </p>
+                  </motion.article>
+                </PageTransitionLink>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </section>
   );

@@ -678,6 +678,24 @@ img[data-nimg] {
 }
 
 /* ---- Hero responsive ---- */
+/* Scaling hero min-heights — mobile first → desktop. Using svh keeps the hero
+ * legible on iOS Safari without the URL bar animation jumping the layout. */
+.hero-section {
+  min-height: 480px;
+  min-height: 80svh;
+}
+@media (min-width: 768px) {
+  .hero-section {
+    min-height: 620px;
+    min-height: 90svh;
+  }
+}
+@media (min-width: 1280px) {
+  .hero-section {
+    min-height: 720px;
+    min-height: 100svh;
+  }
+}
 .hero-stats {
   display: flex;
   align-items: center;
@@ -718,6 +736,15 @@ img[data-nimg] {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 32px;
+}
+/* Decorative connector behind step icons — desktop only (4-up row) */
+.steps-connector {
+  display: block;
+}
+@media (max-width: 1023px) {
+  .steps-connector {
+    display: none;
+  }
 }
 .testimonials-grid {
   display: grid;

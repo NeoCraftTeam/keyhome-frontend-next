@@ -6,6 +6,8 @@ import PeopleOutline from '@mui/icons-material/PeopleOutline';
 import VerifiedUser from '@mui/icons-material/VerifiedUser';
 import ArrowForward from '@mui/icons-material/ArrowForward';
 import { useLandingTheme } from './LandingThemeContext';
+import { PageTransitionLink } from './PageTransition';
+import { brandAgent, gradient, semantic } from '@/theme/tokens';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
@@ -14,19 +16,19 @@ const benefits = [
     icon: Dashboard,
     title: 'Tableau de bord complet',
     desc: 'Gérez toutes vos annonces, consultez les statistiques et suivez les contacts depuis un seul endroit.',
-    color: '#3B82F6',
+    color: brandAgent.primary,
   },
   {
     icon: PeopleOutline,
     title: 'Contacts qualifiés uniquement',
     desc: 'Seuls les locataires et acheteurs sérieux — ayant investi des crédits — peuvent accéder à vos coordonnées.',
-    color: '#10B981',
+    color: semantic.successBright,
   },
   {
     icon: VerifiedUser,
     title: 'Annonces vérifiées',
     desc: 'Votre profil vérifié inspire confiance. Publiez en quelques minutes et touchez des milliers de chercheurs.',
-    color: '#8B5CF6',
+    color: semantic.purple,
   },
 ];
 
@@ -54,9 +56,9 @@ export default function LandlordSection() {
               display: 'inline-block',
               padding: '5px 14px',
               borderRadius: 100,
-              background: 'rgba(59,130,246,0.1)',
-              border: '1px solid rgba(59,130,246,0.2)',
-              color: '#3B82F6',
+              background: brandAgent.primaryAlpha10,
+              border: `1px solid ${brandAgent.primaryAlpha20}`,
+              color: brandAgent.primary,
               fontSize: 13,
               fontWeight: 600,
               marginBottom: 20,
@@ -91,16 +93,18 @@ export default function LandlordSection() {
         </motion.div>
 
         {/* Benefits cards */}
-        <div
+        <ul
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: 24,
             marginBottom: 48,
+            listStyle: 'none',
+            padding: 0,
           }}
         >
           {benefits.map((b, i) => (
-            <motion.div
+            <motion.li
               key={b.title}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -117,6 +121,7 @@ export default function LandlordSection() {
               }}
             >
               <div
+                aria-hidden
                 style={{
                   width: 44,
                   height: 44,
@@ -150,9 +155,9 @@ export default function LandlordSection() {
               >
                 {b.desc}
               </p>
-            </motion.div>
+            </motion.li>
           ))}
-        </div>
+        </ul>
 
         {/* CTA */}
         <motion.div
@@ -162,13 +167,19 @@ export default function LandlordSection() {
           transition={{ duration: 0.6, ease: EASE }}
           style={{ textAlign: 'center' }}
         >
-          <a href="/owner/login" style={{ textDecoration: 'none' }}>
-            <button
+          <PageTransitionLink
+            href="/owner/login"
+            style={{ textDecoration: 'none', display: 'inline-block' }}
+          >
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2, ease: EASE }}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 8,
-                background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                background: gradient.agent,
                 color: '#fff',
                 border: 'none',
                 borderRadius: 12,
@@ -176,26 +187,14 @@ export default function LandlordSection() {
                 fontSize: 15,
                 fontWeight: 600,
                 cursor: 'pointer',
-                boxShadow: '0 4px 16px rgba(59,130,246,0.35)',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.transform =
-                  'translateY(-2px)';
-                (e.currentTarget as HTMLElement).style.boxShadow =
-                  '0 8px 24px rgba(59,130,246,0.45)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.transform =
-                  'translateY(0)';
-                (e.currentTarget as HTMLElement).style.boxShadow =
-                  '0 4px 16px rgba(59,130,246,0.35)';
+                boxShadow: `0 4px 16px ${brandAgent.primaryAlpha20}`,
+                minHeight: 44,
               }}
             >
               Publier mon annonce
               <ArrowForward style={{ fontSize: 18 }} />
-            </button>
-          </a>
+            </motion.button>
+          </PageTransitionLink>
         </motion.div>
       </div>
     </section>

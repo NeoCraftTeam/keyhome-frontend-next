@@ -9,10 +9,7 @@ import { brand } from '@/theme/tokens';
 const links = {
   Plateforme: [
     { label: 'Rechercher un logement', href: '/search' },
-    {
-      label: 'Publier une annonce',
-      href: '/owner/ads/new',
-    },
+    { label: 'Publier une annonce', href: '/owner/login' },
     { label: 'Comment ça marche', href: '#how-it-works' },
     { label: 'Témoignages clients', href: '#testimonials' },
   ],
@@ -27,6 +24,7 @@ const links = {
   Ressources: [
     { label: 'Inscription gratuite', href: '/register' },
     { label: 'Se connecter', href: '/login' },
+    { label: 'Blog', href: '/blog' },
   ],
   Légal: [
     { label: "Conditions d'utilisation", href: '/conditions' },
@@ -117,10 +115,10 @@ export default function LandingFooter() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={social.label}
+                  aria-label={`KeyHome sur ${social.label}`}
                   style={{
-                    width: 36,
-                    height: 36,
+                    width: 44,
+                    height: 44,
                     borderRadius: 10,
                     background: surface,
                     border: `1px solid ${border}`,
@@ -134,7 +132,7 @@ export default function LandingFooter() {
                   }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLElement).style.background =
-                      'rgba(246,71,95,0.15)';
+                      brand.primaryAlpha15;
                     (e.currentTarget as HTMLElement).style.borderColor =
                       brand.primaryAlpha30;
                     (e.currentTarget as HTMLElement).style.color =
@@ -147,6 +145,7 @@ export default function LandingFooter() {
                   }}
                 >
                   <svg
+                    aria-hidden
                     width="16"
                     height="16"
                     viewBox="0 0 24 24"

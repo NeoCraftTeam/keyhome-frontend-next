@@ -72,7 +72,7 @@ export default function FAQSection() {
               padding: '5px 14px',
               borderRadius: 100,
               background: brand.primaryAlpha10,
-              border: '1px solid rgba(246,71,95,0.2)',
+              border: `1px solid ${brand.primaryAlpha30}`,
               color: brand.primary,
               fontSize: 13,
               fontWeight: 600,
@@ -108,12 +108,18 @@ export default function FAQSection() {
         </motion.div>
 
         {/* Accordion */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div
+          role="list"
+          style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+        >
           {faqs.map((faq, idx) => {
             const isOpen = openIndex === idx;
+            const triggerId = `faq-trigger-${idx}`;
+            const panelId = `faq-panel-${idx}`;
             return (
               <motion.div
                 key={idx}
+                role="listitem"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-20px' }}
@@ -128,60 +134,74 @@ export default function FAQSection() {
                     transition: 'border-color 0.3s ease',
                   }}
                 >
-                  <button
-                    onClick={() => toggle(idx)}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '20px 24px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      gap: 16,
-                    }}
-                  >
-                    <span
+                  <h3 style={{ margin: 0 }}>
+                    <button
+                      id={triggerId}
+                      type="button"
+                      aria-expanded={isOpen}
+                      aria-controls={panelId}
+                      onClick={() => toggle(idx)}
                       style={{
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: isOpen ? brand.primary : text,
-                        transition: 'color 0.3s ease',
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      {faq.question}
-                    </span>
-                    <span
-                      style={{
-                        flexShrink: 0,
-                        width: 32,
-                        height: 32,
-                        borderRadius: 8,
-                        background: isOpen
-                          ? brand.primaryAlpha10
-                          : 'transparent',
+                        width: '100%',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'background 0.3s ease',
+                        justifyContent: 'space-between',
+                        padding: '20px 24px',
+                        minHeight: 60,
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        gap: 16,
+                        font: 'inherit',
+                        color: 'inherit',
                       }}
                     >
-                      {isOpen ? (
-                        <Remove
-                          style={{ fontSize: 20, color: brand.primary }}
-                        />
-                      ) : (
-                        <Add style={{ fontSize: 20, color: textMuted }} />
-                      )}
-                    </span>
-                  </button>
+                      <span
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 600,
+                          color: isOpen ? brand.primary : text,
+                          transition: 'color 0.3s ease',
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {faq.question}
+                      </span>
+                      <span
+                        aria-hidden
+                        style={{
+                          flexShrink: 0,
+                          width: 32,
+                          height: 32,
+                          borderRadius: 8,
+                          background: isOpen
+                            ? brand.primaryAlpha10
+                            : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'background 0.3s ease',
+                        }}
+                      >
+                        {isOpen ? (
+                          <Remove
+                            style={{ fontSize: 20, color: brand.primary }}
+                          />
+                        ) : (
+                          <Add style={{ fontSize: 20, color: textMuted }} />
+                        )}
+                      </span>
+                    </button>
+                  </h3>
 
                   <AnimatePresence initial={false}>
                     {isOpen && (
                       <motion.div
+                        key="panel"
+                        id={panelId}
+                        role="region"
+                        aria-labelledby={triggerId}
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}

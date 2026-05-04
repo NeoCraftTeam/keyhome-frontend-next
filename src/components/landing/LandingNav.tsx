@@ -241,11 +241,14 @@ export default function LandingNav() {
             <button
               onClick={() => setMenuOpen((o) => !o)}
               aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+              aria-expanded={menuOpen}
+              aria-controls="landing-mobile-menu"
               style={{
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                padding: 6,
+                width: 44,
+                height: 44,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 5,
@@ -302,6 +305,10 @@ export default function LandingNav() {
         {menuOpen && (
           <motion.div
             key="mobile-menu"
+            id="landing-mobile-menu"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu de navigation"
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}

@@ -1,6 +1,6 @@
 'use client';
 
-import { brand } from '@/theme/tokens';
+import { brand, semantic } from '@/theme/tokens';
 import { creditsService } from '@/services/credits.service';
 import { PointPackage } from '@/types';
 import { useQuery } from '@tanstack/react-query';
@@ -177,7 +177,7 @@ export default function PricingSection() {
               padding: '5px 14px',
               borderRadius: 100,
               background: brand.primaryAlpha10,
-              border: '1px solid rgba(246,71,95,0.2)',
+              border: `1px solid ${brand.primaryAlpha30}`,
               color: brand.primary,
               fontSize: 13,
               fontWeight: 600,
@@ -345,7 +345,7 @@ export default function PricingSection() {
                     <CheckCircleRounded
                       style={{
                         fontSize: 18,
-                        color: pkg.isPopular ? '#fff' : '#10B981',
+                        color: pkg.isPopular ? '#fff' : semantic.successBright,
                       }}
                     />
                     <span
@@ -370,6 +370,8 @@ export default function PricingSection() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: EASE }}
+                  aria-label={`Choisir le pack ${pkg.name} — ${pkg.price} FCFA`}
                   style={{
                     width: '100%',
                     padding: '16px',
@@ -380,9 +382,10 @@ export default function PricingSection() {
                     fontSize: 16,
                     fontWeight: 700,
                     cursor: 'pointer',
+                    minHeight: 44,
                     boxShadow: pkg.isPopular
                       ? '0 10px 20px rgba(0,0,0,0.1)'
-                      : '0 10px 20px rgba(246,71,95,0.2)',
+                      : `0 10px 20px ${brand.primaryAlpha25}`,
                   }}
                 >
                   Choisir ce pack
@@ -424,7 +427,9 @@ export default function PricingSection() {
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ color: '#10B981', fontWeight: 800 }}>0%</span>
+              <span style={{ color: semantic.successBright, fontWeight: 800 }}>
+                0%
+              </span>
               <span style={{ fontSize: 14, fontWeight: 600, color: textSub }}>
                 Frais de commission d&apos;agence
               </span>

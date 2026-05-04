@@ -18,6 +18,9 @@ import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import FAQSection from '@/components/landing/FAQSection';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { brand } from '@/theme/tokens';
+
+const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
 function BackToTop() {
   const { border, text } = useLandingTheme();
@@ -33,10 +36,13 @@ function BackToTop() {
     <AnimatePresence>
       {visible && (
         <motion.button
-          initial={{ opacity: 0, scale: 0.8 }}
+          type="button"
+          initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: 0, scale: 0.85 }}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.25, ease: EASE }}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label="Revenir en haut de la page"
           style={{
@@ -44,22 +50,34 @@ function BackToTop() {
             bottom: 24,
             left: 24,
             zIndex: 90,
-            width: 44,
-            height: 44,
-            borderRadius: 12,
+            width: 48,
+            height: 48,
+            borderRadius: 14,
             border: `1px solid ${border}`,
-            background: 'rgba(246,71,95,0.1)',
+            background: brand.primaryAlpha10,
             backdropFilter: 'blur(10px)',
             color: text,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 20,
-            transition: 'background 0.2s, border-color 0.2s',
+            fontSize: 22,
+            lineHeight: 1,
+            transition: 'background 0.2s, border-color 0.2s, color 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.background =
+              brand.primaryAlpha15;
+            (e.currentTarget as HTMLElement).style.borderColor =
+              brand.primaryAlpha30;
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background =
+              brand.primaryAlpha10;
+            (e.currentTarget as HTMLElement).style.borderColor = border;
           }}
         >
-          ↑
+          <span aria-hidden>↑</span>
         </motion.button>
       )}
     </AnimatePresence>

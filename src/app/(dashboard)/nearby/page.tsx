@@ -27,18 +27,56 @@ import {
 } from '@mui/material';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import mapboxgl from 'mapbox-gl';
+import type * as MapboxGL from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-mapboxgl.accessToken = MAPBOX_TOKEN;
-if (process.env.NODE_ENV === 'development') {
-  Object.defineProperty(mapboxgl.config, 'EVENTS_URL', {
-    value: '',
-    writable: false,
-  });
+/**
+ * Lazy-load mapbox-gl (~200 kB gzipped) — same pattern as `/search`.
+ */
+type MapboxLib = {
+  accessToken: string;
+  config: { EVENTS_URL?: string };
+  Marker: new (opts?: MapboxGL.MarkerOptions) => MapboxGL.Marker;
+  Map: new (opts: MapboxGL.MapOptions) => MapboxGL.Map;
+  NavigationControl: new () => MapboxGL.NavigationControl;
+  FullscreenControl: new () => MapboxGL.FullscreenControl;
+  AttributionControl: new (
+    opts?: MapboxGL.AttributionControlOptions
+  ) => MapboxGL.AttributionControl;
+  Popup: new (opts?: MapboxGL.PopupOptions) => MapboxGL.Popup;
+  LngLatBounds: new () => MapboxGL.LngLatBounds;
+};
+
+let nearbyMapboxCached: MapboxLib | null = null;
+let nearbyMapboxLoadPromise: Promise<MapboxLib> | null = null;
+
+async function loadNearbyMapbox(): Promise<MapboxLib> {
+  if (nearbyMapboxCached) {
+    return nearbyMapboxCached;
+  }
+  if (!nearbyMapboxLoadPromise) {
+    nearbyMapboxLoadPromise = import('mapbox-gl').then((mod) => {
+      const lib = (mod.default ?? mod) as unknown as MapboxLib;
+      lib.accessToken = MAPBOX_TOKEN;
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          Object.defineProperty(lib.config, 'EVENTS_URL', {
+            value: '',
+            writable: false,
+          });
+        } catch {
+          // ignore
+        }
+      }
+      nearbyMapboxCached = lib;
+      return lib;
+    });
+  }
+  return nearbyMapboxLoadPromise;
 }
+
+type NearbyMapInstance = InstanceType<MapboxLib['Map']>;
 
 const typeFilters = [
   { label: 'Tous', value: '' },
@@ -53,12 +91,12 @@ const MAX_PRICE = 5_000_000;
 
 export default function NearbyPage() {
   const { user } = useAuth();
-  const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const mapLibRef = useRef<MapboxLib | null>(null);
+  const mapRef = useRef<NearbyMapInstance | null>(null);
+  const markersRef = useRef<MapboxGL.Marker[]>([]);
 
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
     null
@@ -104,38 +142,62 @@ export default function NearbyPage() {
     }
   }, []);
 
-  // Initialize map
+  // Initialize map (async dynamic import of mapbox-gl)
   useEffect(() => {
-    if (!mapContainerRef.current || !coords || !MAPBOX_TOKEN || mapRef.current)
-      return;
+    let cancelled = false;
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [coords.lng, coords.lat],
-      zoom: 12,
-      attributionControl: false,
-    });
+    async function init(): Promise<void> {
+      if (
+        !MAPBOX_TOKEN ||
+        !mapContainerRef.current ||
+        !coords ||
+        mapRef.current
+      ) {
+        return;
+      }
+      const lib = await loadNearbyMapbox();
+      if (cancelled || !mapContainerRef.current) {
+        return;
+      }
+      mapLibRef.current = lib;
+      const map = new lib.Map({
+        container: mapContainerRef.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [coords.lng, coords.lat],
+        zoom: 12,
+        attributionControl: false,
+      });
 
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-    map.addControl(
-      new mapboxgl.AttributionControl({ compact: true }),
-      'bottom-right'
-    );
+      map.addControl(new lib.NavigationControl(), 'top-right');
+      map.addControl(new lib.FullscreenControl(), 'top-right');
+      map.addControl(
+        new lib.AttributionControl({ compact: true }),
+        'bottom-right'
+      );
 
-    // User position marker
-    new mapboxgl.Marker({ color: brand.primary })
-      .setLngLat([coords.lng, coords.lat])
-      .setPopup(new mapboxgl.Popup().setHTML('<strong>Votre position</strong>'))
-      .addTo(map);
+      new lib.Marker({ color: brand.primary })
+        .setLngLat([coords.lng, coords.lat])
+        .setPopup(new lib.Popup().setHTML('<strong>Votre position</strong>'))
+        .addTo(map);
 
-    map.on('load', () => setMapReady(true));
-    mapRef.current = map;
+      map.on('load', () => {
+        if (!cancelled) {
+          setMapReady(true);
+        }
+      });
+      mapRef.current = map;
+    }
+
+    void init();
 
     return () => {
-      map.remove();
+      cancelled = true;
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+      mapRef.current?.remove();
       mapRef.current = null;
+      mapLibRef.current = null;
+      setMapReady(false);
     };
   }, [coords]);
 
@@ -177,7 +239,9 @@ export default function NearbyPage() {
 
   // Update markers when filtered ads change
   useEffect(() => {
-    if (!mapRef.current || !mapReady) return;
+    const map = mapRef.current;
+    const lib = mapLibRef.current;
+    if (!map || !lib || !mapReady) return;
 
     // Clear old markers
     markersRef.current.forEach((m) => m.remove());
@@ -186,7 +250,7 @@ export default function NearbyPage() {
     filteredAds.forEach((ad) => {
       if (!ad.location) return;
 
-      const popup = new mapboxgl.Popup({
+      const popup = new lib.Popup({
         offset: 25,
         closeButton: false,
       }).setHTML(
@@ -196,14 +260,14 @@ export default function NearbyPage() {
         </div>`
       );
 
-      const marker = new mapboxgl.Marker({ color: brand.primary })
+      const marker = new lib.Marker({ color: brand.primary })
         .setPopup(popup)
         .setLngLat([ad.location.longitude, ad.location.latitude])
-        .addTo(mapRef.current!);
+        .addTo(map);
 
       markersRef.current.push(marker);
     });
-  }, [filteredAds, mapReady, router]);
+  }, [filteredAds, mapReady]);
 
   const relocate = () => {
     navigator.geolocation.getCurrentPosition(

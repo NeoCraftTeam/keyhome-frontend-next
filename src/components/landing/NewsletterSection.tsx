@@ -5,7 +5,10 @@ import { motion } from 'framer-motion';
 import EmailOutlined from '@mui/icons-material/EmailOutlined';
 import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
 import { useLandingTheme } from './LandingThemeContext';
-import { brand, gradient } from '@/theme/tokens';
+import { brand, gradient, semantic } from '@/theme/tokens';
+
+/** RFC-5322 compatible enough for client-side gating; backend re-validates. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export default function NewsletterSection() {
   const { bgAlt, text, textSub, surface, border } = useLandingTheme();
@@ -16,7 +19,12 @@ export default function NewsletterSection() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!email) {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      return;
+    }
+    if (!EMAIL_RE.test(trimmed)) {
+      setError('Adresse e-mail invalide.');
       return;
     }
 
@@ -32,12 +40,14 @@ export default function NewsletterSection() {
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email: trimmed }),
         }
       );
 
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
+        const data = (await response.json().catch(() => ({}))) as {
+          message?: string;
+        };
         throw new Error(data?.message ?? 'Une erreur est survenue.');
       }
 
@@ -86,6 +96,7 @@ export default function NewsletterSection() {
           transition={{ duration: 0.5 }}
         >
           <div
+            aria-hidden
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -95,9 +106,10 @@ export default function NewsletterSection() {
               borderRadius: '50%',
               background: gradient.primary135,
               marginBottom: 24,
+              boxShadow: `0 8px 24px ${brand.primaryAlpha30}`,
             }}
           >
-            <EmailOutlined style={{ color: brand.primary, fontSize: 28 }} />
+            <EmailOutlined style={{ color: '#fff', fontSize: 28 }} />
           </div>
 
           <h2
@@ -127,8 +139,14 @@ export default function NewsletterSection() {
 
           {isSuccess ? (
             <motion.div
+              role="status"
+              aria-live="polite"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
+              transition={{
+                duration: 0.4,
+                ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -139,19 +157,20 @@ export default function NewsletterSection() {
                 fontSize: '1.05rem',
               }}
             >
-              <CheckCircleOutline style={{ fontSize: 24 }} />
+              <CheckCircleOutline aria-hidden style={{ fontSize: 24 }} />
               <span>Inscription réussie ! Merci de nous rejoindre.</span>
             </motion.div>
           ) : (
             <form
               onSubmit={handleSubmit}
+              noValidate
               style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
             >
               <div
                 style={{
                   display: 'flex',
                   gap: 0,
-                  border: `1.5px solid ${error ? '#ef4444' : border}`,
+                  border: `1.5px solid ${error ? semantic.errorBright : border}`,
                   borderRadius: 12,
                   overflow: 'hidden',
                   background: surface,
@@ -162,9 +181,16 @@ export default function NewsletterSection() {
                   type="email"
                   name="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) setError(null);
+                  }}
                   placeholder="votre@email.com"
                   required
+                  autoComplete="email"
+                  inputMode="email"
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={error ? 'newsletter-error' : undefined}
                   style={{
                     flex: 1,
                     padding: '14px 18px',
@@ -178,7 +204,7 @@ export default function NewsletterSection() {
                 />
                 <button
                   type="submit"
-                  disabled={isLoading || !email}
+                  disabled={isLoading || !email.trim()}
                   style={{
                     padding: '14px 24px',
                     background: isLoading ? textSub : gradient.primary,
@@ -190,6 +216,7 @@ export default function NewsletterSection() {
                     whiteSpace: 'nowrap',
                     transition: 'background 0.2s',
                     minWidth: 120,
+                    minHeight: 44,
                   }}
                 >
                   {isLoading ? 'En cours…' : "S'abonner"}
@@ -198,7 +225,13 @@ export default function NewsletterSection() {
 
               {error && (
                 <p
-                  style={{ color: '#ef4444', fontSize: '0.875rem', margin: 0 }}
+                  id="newsletter-error"
+                  role="alert"
+                  style={{
+                    color: semantic.errorBright,
+                    fontSize: '0.875rem',
+                    margin: 0,
+                  }}
                 >
                   {error}
                 </p>

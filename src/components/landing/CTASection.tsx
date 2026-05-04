@@ -3,9 +3,12 @@
 import { motion } from 'framer-motion';
 import ArrowForward from '@mui/icons-material/ArrowForward';
 import PhoneIphoneOutlined from '@mui/icons-material/PhoneIphoneOutlined';
+import CheckRounded from '@mui/icons-material/CheckRounded';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
-import { brand, gradient } from '@/theme/tokens';
+import { brand, gradient, semantic } from '@/theme/tokens';
+
+const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
 export default function CTASection() {
   const { bgAlt, text, textSub, surface, surfaceHover, border } =
@@ -65,10 +68,7 @@ export default function CTASection() {
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
-          transition={{
-            duration: 0.7,
-            ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-          }}
+          transition={{ duration: 0.7, ease: EASE }}
         >
           <div
             style={{
@@ -134,7 +134,7 @@ export default function CTASection() {
               <motion.button
                 whileHover={{
                   scale: 1.03,
-                  boxShadow: '0 8px 40px rgba(246,71,95,0.6)',
+                  boxShadow: `0 8px 40px ${brand.primaryAlpha40}`,
                 }}
                 whileTap={{ scale: 0.97 }}
                 style={{
@@ -149,8 +149,9 @@ export default function CTASection() {
                   fontWeight: 700,
                   border: 'none',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 30px rgba(246,71,95,0.4)',
+                  boxShadow: `0 4px 30px ${brand.primaryAlpha40}`,
                   letterSpacing: '-0.3px',
+                  minHeight: 44,
                 }}
               >
                 Voir les annonces
@@ -159,7 +160,7 @@ export default function CTASection() {
             </PageTransitionLink>
 
             <PageTransitionLink
-              href="/owner/ads/new"
+              href="/owner/login"
               style={{ textDecoration: 'none' }}
             >
               <motion.button
@@ -178,6 +179,7 @@ export default function CTASection() {
                   border: `1px solid ${border}`,
                   cursor: 'pointer',
                   letterSpacing: '-0.3px',
+                  minHeight: 44,
                 }}
               >
                 Publier une annonce
@@ -186,13 +188,16 @@ export default function CTASection() {
           </div>
 
           {/* Trust badges */}
-          <div
+          <ul
+            aria-label="Garanties KeyHome"
             style={{
               marginTop: 52,
               display: 'flex',
               gap: 24,
               justifyContent: 'center',
               flexWrap: 'wrap',
+              listStyle: 'none',
+              padding: 0,
             }}
           >
             {[
@@ -201,7 +206,7 @@ export default function CTASection() {
               'Support local',
               'Sans engagement',
             ].map((badge) => (
-              <span
+              <li
                 key={badge}
                 style={{
                   display: 'flex',
@@ -211,11 +216,14 @@ export default function CTASection() {
                   color: textSub,
                 }}
               >
-                <span style={{ color: '#10B981', fontSize: 16 }}>✓</span>
+                <CheckRounded
+                  aria-hidden
+                  style={{ color: semantic.successBright, fontSize: 16 }}
+                />
                 {badge}
-              </span>
+              </li>
             ))}
-          </div>
+          </ul>
         </motion.div>
       </div>
     </section>

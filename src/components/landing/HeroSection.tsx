@@ -2,7 +2,6 @@
 
 import api from '@/lib/api';
 import { buildNlpParams } from '@/lib/nlp-search';
-import VoiceSearchButton from '@/components/search/VoiceSearchButton';
 import { useCountUp } from '@/hooks/useCountUp';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import Search from '@mui/icons-material/Search';
@@ -13,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
 import { useLandingStats, type LandingStat } from '@/hooks/useLandingStats';
-import { brand, gradient } from '@/theme/tokens';
+import { brand, gradient, semantic } from '@/theme/tokens';
 
 const HeroVideoBackground = dynamic(() => import('./HeroVideoBackground'), {
   ssr: false,
@@ -109,7 +108,7 @@ const QUICK_SUGGESTIONS = [
 ];
 
 export default function HeroSection() {
-  const { isDark, text, textSub, textMuted, bg, border } = useLandingTheme();
+  const { isDark, text, textSub, textMuted, bg } = useLandingTheme();
   const router = useRouter();
   const { stats, isLoading: statsLoading } = useLandingStats();
   const [, startTransition] = useTransition();
@@ -125,6 +124,7 @@ export default function HeroSection() {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [searchIconHovered, setSearchIconHovered] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -188,14 +188,6 @@ export default function HeroSection() {
     [query, router, startTransition]
   );
 
-  const handleAISearchRef = useRef(handleAISearch);
-  handleAISearchRef.current = handleAISearch;
-
-  const handleVoice = useCallback((transcript: string) => {
-    setQuery(transcript);
-    void handleAISearchRef.current(transcript);
-  }, []);
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -209,9 +201,10 @@ export default function HeroSection() {
 
   return (
     <section
+      aria-labelledby="hero-title"
+      className="hero-section"
       style={{
         position: 'relative',
-        minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -280,8 +273,8 @@ export default function HeroSection() {
                 gap: 8,
                 padding: '6px 16px',
                 borderRadius: 100,
-                background: 'rgba(246, 71, 95, 0.12)',
-                border: '1px solid rgba(246, 71, 95, 0.25)',
+                background: brand.primaryAlpha12,
+                border: `1px solid ${brand.primaryAlpha25}`,
                 color: brand.primary,
                 fontSize: 13,
                 fontWeight: 600,
@@ -289,6 +282,7 @@ export default function HeroSection() {
               }}
             >
               <span
+                aria-hidden
                 style={{
                   width: 7,
                   height: 7,
@@ -304,6 +298,7 @@ export default function HeroSection() {
 
           {/* Headline */}
           <motion.h1
+            id="hero-title"
             variants={itemVariants}
             style={{
               fontSize: 'clamp(32px, 7vw, 80px)',
@@ -474,46 +469,42 @@ export default function HeroSection() {
                     />
                   </div>
                 ) : (
-                  <>
-                    <VoiceSearchButton
-                      onTranscript={handleVoice}
-                      disabled={isSearching}
-                      size={32}
-                    />
-                    <button
-                      onClick={() => handleAISearch()}
-                      aria-label="Rechercher"
+                  <button
+                    type="button"
+                    onClick={() => handleAISearch()}
+                    aria-label="Rechercher"
+                    onMouseEnter={() => setSearchIconHovered(true)}
+                    onMouseLeave={() => setSearchIconHovered(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: 44,
+                      minHeight: 44,
+                      padding: 6,
+                      margin: 0,
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      borderRadius: 12,
+                      transform: searchIconHovered ? 'scale(1.08)' : 'scale(1)',
+                      transition:
+                        'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
+                    }}
+                  >
+                    <Search
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 48,
-                        height: 48,
-                        background: brand.primary,
-                        border: 'none',
-                        borderRadius: 14,
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                        transition: 'transform 0.2s, color 0.2s',
+                        color:
+                          isFocused || searchIconHovered
+                            ? brand.primary
+                            : textMuted,
+                        fontSize: 26,
+                        transition: 'color 0.2s',
+                        display: 'block',
                       }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.transform =
-                          'scale(1.1)';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.transform =
-                          'scale(1)';
-                      }}
-                    >
-                      <Search
-                        style={{
-                          color: 'white',
-                          fontSize: 24,
-                          transition: 'color 0.2s',
-                        }}
-                      />
-                    </button>
-                  </>
+                    />
+                  </button>
                 )}
               </div>
 
@@ -609,8 +600,9 @@ export default function HeroSection() {
               {/* Error message */}
               {error && (
                 <p
+                  role="alert"
                   style={{
-                    color: '#F87070',
+                    color: semantic.errorBright,
                     fontSize: 13,
                     marginTop: 8,
                     textAlign: 'center',
@@ -639,14 +631,14 @@ export default function HeroSection() {
                   gap: 4,
                   padding: '3px 10px',
                   borderRadius: 100,
-                  background: 'rgba(246,71,95,0.1)',
-                  border: '1px solid rgba(246,71,95,0.2)',
+                  background: brand.primaryAlpha10,
+                  border: `1px solid ${brand.primaryAlpha25}`,
                   color: brand.primary,
                   fontSize: 11,
                   fontWeight: 600,
                 }}
               >
-                <AutoAwesome style={{ fontSize: 11 }} />
+                <AutoAwesome aria-hidden style={{ fontSize: 11 }} />
                 Recherche IA
               </span>
               <span style={{ color: textMuted, fontSize: 12, margin: '0 4px' }}>
@@ -771,48 +763,6 @@ export default function HeroSection() {
           </motion.div>
         </motion.div>
       </div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
-        style={{
-          position: 'absolute',
-          bottom: 36,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 4,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 6,
-        }}
-      >
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-          style={{
-            width: 22,
-            height: 36,
-            borderRadius: 12,
-            border: `2px solid ${border}`,
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'center',
-            padding: '5px 0',
-          }}
-        >
-          <div
-            style={{
-              width: 3,
-              height: 8,
-              borderRadius: 2,
-              background: textSub,
-            }}
-          />
-        </motion.div>
-      </motion.div>
     </section>
   );
 }

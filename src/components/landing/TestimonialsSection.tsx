@@ -7,16 +7,17 @@ import StarBorder from '@mui/icons-material/StarBorder';
 import Verified from '@mui/icons-material/Verified';
 import { useLandingTheme } from './LandingThemeContext';
 import { brand, semantic } from '@/theme/tokens';
-// import { useLandingTestimonials } from '@/hooks/useLandingTestimonials';
 
-/** Avatar colour palette — cycles through semantic colours */
+const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+
+/** Avatar colour palette — cycles through brand + semantic accents. */
 const AVATAR_COLORS = [
   brand.primary,
   semantic.info,
   semantic.successBright,
   semantic.purple,
-  '#F59E0B',
-  '#EC4899',
+  semantic.warning,
+  semantic.pink,
 ];
 
 /** Static fallback — shown when the API has no data yet */
@@ -67,93 +68,20 @@ function RatingStars({ rating }: { rating: number }) {
   const stars = [];
   for (let i = 1; i <= 5; i++) {
     if (i <= Math.floor(rating)) {
-      stars.push(<Star key={i} style={{ fontSize: 16, color: '#F59E0B' }} />);
+      stars.push(
+        <Star key={i} style={{ fontSize: 16, color: semantic.warning }} />
+      );
     } else if (i - 0.5 === rating) {
       stars.push(
-        <StarHalf key={i} style={{ fontSize: 16, color: '#F59E0B' }} />
+        <StarHalf key={i} style={{ fontSize: 16, color: semantic.warning }} />
       );
     } else {
       stars.push(
-        <StarBorder key={i} style={{ fontSize: 16, color: '#F59E0B' }} />
+        <StarBorder key={i} style={{ fontSize: 16, color: semantic.warning }} />
       );
     }
   }
   return <>{stars}</>;
-}
-
-function SkeletonCard({
-  surface,
-  border,
-}: {
-  surface: string;
-  border: string;
-}) {
-  return (
-    <div
-      style={{
-        padding: '28px',
-        borderRadius: 20,
-        background: surface,
-        border: `1px solid ${border}`,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-        opacity: 0.6,
-        animation: 'pulse 1.5s ease-in-out infinite',
-      }}
-    >
-      <div
-        style={{
-          height: 16,
-          borderRadius: 8,
-          background: border,
-          width: '40%',
-        }}
-      />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ height: 12, borderRadius: 6, background: border }} />
-        <div style={{ height: 12, borderRadius: 6, background: border }} />
-        <div
-          style={{
-            height: 12,
-            borderRadius: 6,
-            background: border,
-            width: '70%',
-          }}
-        />
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div
-          style={{
-            width: 42,
-            height: 42,
-            borderRadius: '50%',
-            background: border,
-          }}
-        />
-        <div
-          style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}
-        >
-          <div
-            style={{
-              height: 12,
-              borderRadius: 6,
-              background: border,
-              width: '60%',
-            }}
-          />
-          <div
-            style={{
-              height: 10,
-              borderRadius: 5,
-              background: border,
-              width: '45%',
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function TestimonialsSection() {
@@ -178,10 +106,7 @@ export default function TestimonialsSection() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
-          transition={{
-            duration: 0.7,
-            ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-          }}
+          transition={{ duration: 0.7, ease: EASE }}
           style={{ textAlign: 'center', marginBottom: 72 }}
         >
           <span
@@ -190,7 +115,7 @@ export default function TestimonialsSection() {
               padding: '5px 14px',
               borderRadius: 100,
               background: brand.primaryAlpha10,
-              border: '1px solid rgba(246,71,95,0.2)',
+              border: `1px solid ${brand.primaryAlpha30}`,
               color: brand.primary,
               fontSize: 13,
               fontWeight: 600,
@@ -224,6 +149,8 @@ export default function TestimonialsSection() {
             avec KeyHome.
           </p>
           <div
+            role="img"
+            aria-label={`Note moyenne ${displayRating} sur 5, basée sur ${displayCount} avis`}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -231,16 +158,19 @@ export default function TestimonialsSection() {
               marginTop: 20,
               padding: '8px 18px',
               borderRadius: 100,
-              background: 'rgba(245,158,11,0.1)',
-              border: '1px solid rgba(245,158,11,0.2)',
+              background: `${semantic.warning}1A`,
+              border: `1px solid ${semantic.warning}33`,
             }}
           >
-            <div style={{ display: 'flex', gap: 2 }}>
+            <span aria-hidden style={{ display: 'flex', gap: 2 }}>
               {[1, 2, 3, 4].map((i) => (
-                <Star key={i} style={{ fontSize: 16, color: '#F59E0B' }} />
+                <Star
+                  key={i}
+                  style={{ fontSize: 16, color: semantic.warning }}
+                />
               ))}
-              <StarHalf style={{ fontSize: 16, color: '#F59E0B' }} />
-            </div>
+              <StarHalf style={{ fontSize: 16, color: semantic.warning }} />
+            </span>
             <span style={{ fontSize: 14, fontWeight: 700, color: text }}>
               {displayRating}/5
             </span>
@@ -251,20 +181,19 @@ export default function TestimonialsSection() {
         </motion.div>
 
         {/* Cards */}
-        <div className="testimonials-grid">
+        <ul
+          className="testimonials-grid"
+          style={{ listStyle: 'none', padding: 0, margin: 0 }}
+        >
           {testimonials.map((t, i) => {
             const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length];
             return (
-              <motion.div
+              <motion.li
                 key={t.id}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
-                transition={{
-                  duration: 0.6,
-                  delay: i * 0.1,
-                  ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-                }}
+                transition={{ duration: 0.6, delay: i * 0.1, ease: EASE }}
                 whileHover={{ y: -4, transition: { duration: 0.2 } }}
                 style={{
                   padding: '28px',
@@ -274,7 +203,6 @@ export default function TestimonialsSection() {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 20,
-                  cursor: 'default',
                 }}
               >
                 {/* Stars */}
@@ -352,10 +280,10 @@ export default function TestimonialsSection() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </motion.li>
             );
           })}
-        </div>
+        </ul>
       </div>
     </section>
   );
