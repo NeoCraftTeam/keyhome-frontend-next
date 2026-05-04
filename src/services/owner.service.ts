@@ -97,6 +97,9 @@ export interface OwnerReview {
   id: string;
   rating: number;
   comment: string | null;
+  is_verified: boolean;
+  owner_response: string | null;
+  owner_responded_at: string | null;
   created_at: string;
   ad?: { id: string; title: string };
   user?: {
@@ -387,6 +390,20 @@ export const ownerService = {
 
   async getMyReviews(params?: { page?: number; per_page?: number }) {
     const { data } = await api.get('/my/reviews', { params });
+    return data;
+  },
+
+  /**
+   * Owner reply to a single received review.
+   * Backend allows only one reply per review (`POST /reviews/{id}/respond` returns 422 if already replied).
+   */
+  async respondToReview(
+    reviewId: string,
+    response: string
+  ): Promise<{ data: OwnerReview; message: string }> {
+    const { data } = await api.post(`/reviews/${reviewId}/respond`, {
+      response,
+    });
     return data;
   },
 
