@@ -2,7 +2,7 @@
 // header is left here for grep-ability and is not parsed by the SW runtime.
 // Push + Background Sync + Caching strategy for full offline/PWA support.
 
-const VERSION      = "v9";
+const VERSION      = "v10";
 const STATIC_CACHE = `kh-static-${VERSION}`;
 const API_CACHE    = `kh-api-${VERSION}`;
 const NAV_CACHE    = `kh-nav-${VERSION}`;
@@ -122,16 +122,18 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   if (!url.protocol.startsWith("http")) return;
 
-  // Skip cross-origin requests entirely — let the browser handle CORS natively.
-  // In dev the API is on a different origin (e.g. keyhome.test vs localhost:3000);
-  // intercepting it causes "ServiceWorker passed an Error Response" CORS failures.
-  if (url.origin !== self.location.origin) return;
-
   // 1. Cacheable read-only API calls → network-first (serve stale when offline).
+  // Checked before the same-origin guard so cached owner GETs work when the API
+  // lives on another host (production / preprod). Responses must allow CORS from
+  // this origin or fetch will fail — we never synthesize synthetic cross-origin
+  // responses that would mask CORS errors.
   if (isCacheableApi(url.pathname)) {
     event.respondWith(networkFirst(request, API_CACHE));
     return;
   }
+
+  // Skip remaining cross-origin handling — static asset + HTML caching is same-origin.
+  if (url.origin !== self.location.origin) return;
 
   // 2. Immutable Next.js build output + static assets → cache-first
   //    Skip _next/static/ on localhost — Turbopack serves fresh compilations
