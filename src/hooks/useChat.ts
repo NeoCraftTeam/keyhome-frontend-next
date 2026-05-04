@@ -38,6 +38,8 @@ import {
 } from './useTypingIndicator';
 import { useAuth } from '@/providers/AuthProvider';
 import { chatKeys } from '@/lib/query-keys';
+import type { ConversationsListQueryData } from '@/lib/conversation-list-cache';
+import { applyConversationStatusToConversationsCache } from '@/lib/conversation-list-cache';
 import type { QueryClient } from '@tanstack/react-query';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -681,6 +683,50 @@ export function useChat(
       }
     };
 
+    const onConversationArchived = (raw: unknown) => {
+      const e = raw as { conversation_uuid: string };
+      if (e.conversation_uuid !== conversationUuid) {
+        return;
+      }
+      queryClient.setQueryData<Conversation | undefined>(
+        ['conversation-single', conversationUuid],
+        (old) => (old ? { ...old, status: 'archived' } : old)
+      );
+      if (userId) {
+        queryClient.setQueryData(
+          chatKeys.conversations(userId),
+          (old: ConversationsListQueryData | undefined) =>
+            applyConversationStatusToConversationsCache(
+              old,
+              conversationUuid,
+              'archived'
+            )
+        );
+      }
+    };
+
+    const onConversationUnarchived = (raw: unknown) => {
+      const e = raw as { conversation_uuid: string };
+      if (e.conversation_uuid !== conversationUuid) {
+        return;
+      }
+      queryClient.setQueryData<Conversation | undefined>(
+        ['conversation-single', conversationUuid],
+        (old) => (old ? { ...old, status: 'active' } : old)
+      );
+      if (userId) {
+        queryClient.setQueryData(
+          chatKeys.conversations(userId),
+          (old: ConversationsListQueryData | undefined) =>
+            applyConversationStatusToConversationsCache(
+              old,
+              conversationUuid,
+              'active'
+            )
+        );
+      }
+    };
+
     const handlers: Array<[string, (e: never) => void]> = [
       ['message.sent', onMessageSent as (e: never) => void],
       ['messages.read', onMessagesRead as (e: never) => void],
@@ -689,6 +735,11 @@ export function useChat(
       ['message.reaction.removed', onReactionRemoved as (e: never) => void],
       ['client-typing', onUserTyping as (e: never) => void],
       ['client-voice_recording', onVoiceRecording as (e: never) => void],
+      ['conversation.archived', onConversationArchived as (e: never) => void],
+      [
+        'conversation.unarchived',
+        onConversationUnarchived as (e: never) => void,
+      ],
     ];
 
     // ─── Race-safe binding ─────────────────────────────────────────────────
@@ -766,7 +817,15 @@ export function useChat(
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       if (voiceRecTimeoutRef.current) clearTimeout(voiceRecTimeoutRef.current);
     };
-  }, [conversationUuid, otherParticipantId, user?.id, markAsRead, updateCache]);
+  }, [
+    conversationUuid,
+    otherParticipantId,
+    user?.id,
+    userId,
+    queryClient,
+    markAsRead,
+    updateCache,
+  ]);
 
   // ─── Flush offline queue on reconnect ────────────────────────────────────
   useEffect(() => {

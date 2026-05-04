@@ -72,6 +72,18 @@ export async function archiveConversation(uuid: string): Promise<void> {
 }
 
 /**
+ * Restore an archived conversation.
+ */
+export async function unarchiveConversation(
+  uuid: string
+): Promise<Conversation> {
+  const res: AxiosResponse = await api.patch(
+    `/conversations/${uuid}/unarchive`
+  );
+  return res.data.data as Conversation;
+}
+
+/**
  * Get total unread message count (cached 30s server-side).
  */
 export async function fetchUnreadCount(): Promise<UnreadCountResponse> {

@@ -1,4 +1,4 @@
-import type { Conversation, Message } from '@/types/chat';
+import type { Conversation, ConversationStatus, Message } from '@/types/chat';
 
 /** TanStack shape returned by `/conversations` (page 1). */
 export interface ConversationsListQueryData {
@@ -87,5 +87,33 @@ export function applyMessagesReadToConversationsCache(
   });
 
   if (!mutated) return old;
+  return { ...old, data: next };
+}
+
+/**
+ * Set conversation row status (archived / active) from WS or after REST unarchive.
+ */
+export function applyConversationStatusToConversationsCache(
+  old: ConversationsListQueryData | undefined,
+  conversationUuid: string,
+  status: ConversationStatus
+): ConversationsListQueryData | undefined {
+  if (!old) {
+    return old;
+  }
+
+  let found = false;
+  const next = old.data.map((c) => {
+    if (c.uuid !== conversationUuid) {
+      return c;
+    }
+    found = true;
+    return { ...c, status };
+  });
+
+  if (!found) {
+    return old;
+  }
+
   return { ...old, data: next };
 }

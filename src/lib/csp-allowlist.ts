@@ -50,8 +50,10 @@ export function buildConnectSrcParts(ctx: CspConnectBuildContext): string[] {
     'https://*.clerk.com',
     'https://clerk.shared.global',
     'https://clerk-telemetry.com',
-    // Cloudflare (Turnstile, etc.)
+    // Cloudflare (Turnstile, Web Analytics beacon, etc.)
     'https://challenges.cloudflare.com',
+    'https://cloudflareinsights.com',
+    'https://*.cloudflareinsights.com',
     // Analytics
     'https://www.google-analytics.com',
     'https://analytics.google.com',
@@ -119,7 +121,7 @@ export function buildConnectSrcParts(ctx: CspConnectBuildContext): string[] {
 
 /** Extra script-src hosts (nonce + 'self' are added in proxy.ts). */
 export const CSP_SCRIPT_HOSTS =
-  'https://api.mapbox.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://accounts.google.com https://www.gstatic.com https://*.googleapis.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:';
+  'https://api.mapbox.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://accounts.google.com https://www.gstatic.com https://*.googleapis.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:';
 
 export const CSP_STYLE_HOSTS =
   'https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://accounts.google.com https://www.gstatic.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev';

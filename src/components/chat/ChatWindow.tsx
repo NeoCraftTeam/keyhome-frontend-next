@@ -8,7 +8,7 @@ import { ChatHeader } from './ChatHeader';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { TypingIndicator } from './TypingIndicator';
-import { archiveConversation } from '@/lib/chat-api';
+import { archiveConversation, unarchiveConversation } from '@/lib/chat-api';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { chatKeys } from '@/lib/query-keys';
 import { useEchoConnectionState } from '@/lib/echo';
@@ -182,11 +182,12 @@ export function ChatWindow({
   } = useChat(conversation.uuid, otherParticipant?.id ?? '', conversation);
 
   const listRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [archiveError, setArchiveError] = useState<string | null>(null);
+  const [isUnarchiving, setIsUnarchiving] = useState(false);
+  const [unarchiveError, setUnarchiveError] = useState<string | null>(null);
   const [newMsgCount, setNewMsgCount] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -197,6 +198,24 @@ export function ChatWindow({
   // Track which message UUIDs were present on initial load — only new ones animate
   const initialMsgIdsRef = useRef<Set<string> | null>(null);
   const initialLoadDoneRef = useRef(false);
+
+  const handleUnarchive = useCallback(async () => {
+    setUnarchiveError(null);
+    setIsUnarchiving(true);
+    try {
+      await unarchiveConversation(conversation.uuid);
+      await queryClient.invalidateQueries({
+        queryKey: chatKeys.allConversations,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['conversation-single', conversation.uuid],
+      });
+    } catch (e) {
+      setUnarchiveError(getSafeErrorMessage(e));
+    } finally {
+      setIsUnarchiving(false);
+    }
+  }, [conversation.uuid, queryClient]);
 
   useEffect(() => {
     initialLoadDoneRef.current = false;
@@ -482,6 +501,40 @@ export function ChatWindow({
             {queuedCount} message{queuedCount > 1 ? 's' : ''} en attente · Envoi
             dès reconnexion
           </span>
+        </div>
+      )}
+
+      {/* Archived thread — restore to send again */}
+      {conversation.status === 'archived' && (
+        <div
+          className="flex flex-col gap-2 px-4 py-2.5 text-[13px] shrink-0"
+          style={{
+            backgroundColor: 'rgba(251,191,36,0.12)',
+            borderBottom: '1px solid rgba(251,191,36,0.25)',
+          }}
+        >
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <span className="font-medium" style={{ color: '#92400e' }}>
+              Conversation archivée — restaurez-la pour envoyer des messages.
+            </span>
+            <button
+              type="button"
+              disabled={isUnarchiving}
+              onClick={() => {
+                void handleUnarchive();
+              }}
+              className="rounded-full px-3.5 py-1.5 text-xs font-semibold text-white transition-all active:scale-95 disabled:opacity-60"
+              style={{
+                backgroundColor: theme.accent,
+                boxShadow: `0 1px 4px ${theme.accent}30`,
+              }}
+            >
+              {isUnarchiving ? 'Restauration…' : 'Restaurer'}
+            </button>
+          </div>
+          {unarchiveError && (
+            <p className="text-xs font-medium text-red-600">{unarchiveError}</p>
+          )}
         </div>
       )}
 
@@ -867,7 +920,7 @@ export function ChatWindow({
         setVoiceRecordingActive={setVoiceRecordingActive}
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}
-        disabled={isLoading}
+        disabled={isLoading || conversation.status === 'archived'}
         theme={theme}
         initialDraft={initialDraft}
       />

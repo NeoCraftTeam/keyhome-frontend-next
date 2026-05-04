@@ -4,6 +4,7 @@ import { getEcho } from '@/lib/echo';
 import {
   applyMessageSentToConversationsCache,
   applyMessagesReadToConversationsCache,
+  applyConversationStatusToConversationsCache,
 } from '@/lib/conversation-list-cache';
 import type { ConversationsListQueryData } from '@/lib/conversation-list-cache';
 import { selectConversationsForBackgroundWs } from '@/lib/chat-subscriptions';
@@ -184,6 +185,14 @@ export function ChatNotificationListener({
       reader_id: string;
       read_at: string;
     }
+    interface ConversationArchivedPayload {
+      conversation_uuid: string;
+      archived_by_id: string;
+    }
+    interface ConversationUnarchivedPayload {
+      conversation_uuid: string;
+      unarchived_by_id: string;
+    }
     const bindings: Array<{
       pusherCh: PusherSubscription;
       event: string;
@@ -285,11 +294,47 @@ export function ChatNotificationListener({
         );
       };
 
+      const conversationArchivedHandler = (raw: unknown) => {
+        const event = raw as ConversationArchivedPayload;
+        if (event.conversation_uuid !== uuid) {
+          return;
+        }
+        queryClient.setQueryData(
+          listKey,
+          (old: ConversationsListQueryData | undefined) =>
+            applyConversationStatusToConversationsCache(old, uuid, 'archived')
+        );
+      };
+
+      const conversationUnarchivedHandler = (raw: unknown) => {
+        const event = raw as ConversationUnarchivedPayload;
+        if (event.conversation_uuid !== uuid) {
+          return;
+        }
+        queryClient.setQueryData(
+          listKey,
+          (old: ConversationsListQueryData | undefined) =>
+            applyConversationStatusToConversationsCache(old, uuid, 'active')
+        );
+      };
+
       pusherCh.bind('message.sent', messageSentHandler);
       pusherCh.bind('messages.read', messagesReadHandler);
+      pusherCh.bind('conversation.archived', conversationArchivedHandler);
+      pusherCh.bind('conversation.unarchived', conversationUnarchivedHandler);
       bindings.push(
         { pusherCh, event: 'message.sent', handler: messageSentHandler },
-        { pusherCh, event: 'messages.read', handler: messagesReadHandler }
+        { pusherCh, event: 'messages.read', handler: messagesReadHandler },
+        {
+          pusherCh,
+          event: 'conversation.archived',
+          handler: conversationArchivedHandler,
+        },
+        {
+          pusherCh,
+          event: 'conversation.unarchived',
+          handler: conversationUnarchivedHandler,
+        }
       );
     };
 

@@ -138,15 +138,30 @@ export function ConversationItem({
           >
             {participant?.name ?? 'Utilisateur'}
           </p>
-          <span
-            className="text-[11px] shrink-0 tabular-nums"
-            style={{
-              color: unread ? theme.accent : theme.textMuted,
-              fontWeight: unread ? 600 : 400,
-            }}
-          >
-            {timeAgo}
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {conversation.status === 'archived' && (
+              <span
+                className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                style={{
+                  backgroundColor: theme.isDark
+                    ? 'rgba(255,255,255,0.08)'
+                    : '#fef3c7',
+                  color: '#92400e',
+                }}
+              >
+                Archivé
+              </span>
+            )}
+            <span
+              className="text-[11px] shrink-0 tabular-nums"
+              style={{
+                color: unread ? theme.accent : theme.textMuted,
+                fontWeight: unread ? 600 : 400,
+              }}
+            >
+              {timeAgo}
+            </span>
+          </div>
         </div>
 
         {/* Row 2: tick + preview / typing + unread badge */}
