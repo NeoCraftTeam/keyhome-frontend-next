@@ -19,6 +19,8 @@ import { City } from '@/types';
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
 import PasskeyManager from '@/components/security/PasskeyManager';
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar';
+import PublicBioEditor from '@/components/owner/PublicBioEditor';
+import { markdownLightToHtml } from '@/lib/markdown-light';
 import {
   Assignment as AssignmentIcon,
   Cancel as CancelIcon,
@@ -53,7 +55,7 @@ import {
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -198,6 +200,31 @@ export default function OwnerProfilePage() {
       e.target.value = '';
     }
   };
+
+  /**
+   * Enters edit mode by snapshotting the user's current values into the form
+   * state. Used by the "Modifier" button AND by double-click / click on the
+   * bio panel in read mode (Notion / Trello-style inline editing).
+   */
+  const enterEditMode = useCallback(() => {
+    if (!user) {
+      return;
+    }
+    setCityInput(user.city_name || '');
+    setEditForm({
+      firstname: user.firstname,
+      lastname: user.lastname,
+      phone_number: user.phone_number || '',
+      phone_is_whatsapp: user.phone_is_whatsapp ?? false,
+      bio: user.bio ?? '',
+    });
+    setSelectedCity(
+      user.city_id && user.city_name
+        ? { id: user.city_id, name: user.city_name }
+        : null
+    );
+    setIsEditing(true);
+  }, [user]);
 
   const handleSaveProfile = async () => {
     if (!user) {
@@ -360,22 +387,7 @@ export default function OwnerProfilePage() {
                 variant="outlined"
                 color="primary"
                 startIcon={<EditIcon />}
-                onClick={() => {
-                  setCityInput(user.city_name || '');
-                  setEditForm({
-                    firstname: user.firstname,
-                    lastname: user.lastname,
-                    phone_number: user.phone_number || '',
-                    phone_is_whatsapp: user.phone_is_whatsapp ?? false,
-                    bio: user.bio ?? '',
-                  });
-                  setSelectedCity(
-                    user.city_id && user.city_name
-                      ? { id: user.city_id, name: user.city_name }
-                      : null
-                  );
-                  setIsEditing(true);
-                }}
+                onClick={enterEditMode}
                 sx={{ textTransform: 'none', fontWeight: 600 }}
                 size="medium"
               >
@@ -534,28 +546,84 @@ export default function OwnerProfilePage() {
             )}
           </Grid>
           <Grid size={{ xs: 12 }}>
-            <TextField
-              fullWidth
-              label="Bio publique"
-              multiline
-              rows={isEditing ? 3 : 2}
-              value={isEditing ? editForm.bio : user.bio || ''}
-              onChange={(e) =>
-                setEditForm((prev) => ({ ...prev, bio: e.target.value }))
-              }
-              disabled={!isEditing}
-              placeholder={
-                isEditing
-                  ? "Décrivez-vous : votre expérience, vos biens, votre zone d'activité…"
-                  : undefined
-              }
-              helperText={
-                isEditing
-                  ? 'Visible par les locataires sur votre profil public — recommandé pour inspirer confiance.'
-                  : undefined
-              }
-              slotProps={{ htmlInput: { maxLength: 500 } }}
-            />
+            {isEditing ? (
+              <PublicBioEditor
+                value={editForm.bio}
+                onChange={(next) =>
+                  setEditForm((prev) => ({ ...prev, bio: next }))
+                }
+                helperText="Visible par les locataires sur votre profil public — utilisez le gras / les listes pour structurer."
+              />
+            ) : (
+              <Box>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 1,
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={600}>
+                    Bio publique
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontStyle: 'italic' }}
+                  >
+                    Double-cliquez pour modifier
+                  </Typography>
+                </Box>
+                {/* Inline editing: clicking (or double-clicking) anywhere on
+                    the read-only bio surface enters edit mode. The user
+                    expects this Notion / Trello pattern — without it, the
+                    only path was the top-right "Modifier" button, which felt
+                    disconnected from the bio they wanted to update. */}
+                <Box
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Modifier la bio publique"
+                  onClick={enterEditMode}
+                  onDoubleClick={enterEditMode}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      enterEditMode();
+                    }
+                  }}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    p: 2,
+                    minHeight: 80,
+                    color: user.bio ? 'text.primary' : 'text.disabled',
+                    bgcolor: 'background.default',
+                    cursor: 'text',
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      bgcolor: 'rgba(13,148,136,0.03)',
+                    },
+                    '&:focus-visible': {
+                      outline: 'none',
+                      borderColor: 'primary.main',
+                      boxShadow: '0 0 0 3px rgba(13,148,136,0.20)',
+                    },
+                    '& p': { my: 0.75 },
+                    '& h3': { mt: 1, mb: 0.5, fontSize: '1rem' },
+                    '& ul, & ol': { my: 0.75, pl: 3 },
+                    '& a': { color: 'primary.main' },
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      markdownLightToHtml(user.bio) ||
+                      '<p>Aucune bio renseignée. Cliquez ici pour en ajouter une.</p>',
+                  }}
+                />
+              </Box>
+            )}
           </Grid>
 
           {isEditing && (
