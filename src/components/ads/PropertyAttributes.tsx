@@ -42,6 +42,18 @@ function normalizeAttributeKey(value: string): string {
 
 const FALLBACK_ICON: SvgIconComponent = MuiIcons.CheckCircleOutline;
 
+const LIST_ICON_CELL_SX = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 40,
+  height: 40,
+  minWidth: 40,
+  borderRadius: 2,
+  bgcolor: 'action.hover',
+  flexShrink: 0,
+} as const;
+
 function humanizeAttribute(value: string): string {
   const cleaned = value.replace(/[_-]+/g, ' ').trim();
   if (!cleaned) {
@@ -382,25 +394,27 @@ export default function PropertyAttributes({
               return (
                 <Box
                   key={entry.value}
-                  sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    minWidth: 0,
+                  }}
                 >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 40,
-                      height: 40,
-                      minWidth: 40,
-                      borderRadius: 2,
-                      bgcolor: 'action.hover',
-                    }}
-                  >
+                  <Box sx={LIST_ICON_CELL_SX}>
                     <IconComponent
                       sx={{ fontSize: 22, color: 'text.secondary' }}
                     />
                   </Box>
-                  <Typography variant="body2" fontWeight={500}>
+                  <Typography
+                    variant="body2"
+                    fontWeight={500}
+                    sx={{
+                      flex: 1,
+                      minWidth: 0,
+                      lineHeight: 1.35,
+                    }}
+                  >
                     {entry.label}
                   </Typography>
                 </Box>
@@ -512,19 +526,30 @@ export default function PropertyAttributes({
                           <Box
                             sx={{
                               display: 'flex',
-                              alignItems: 'center',
+                              alignItems: 'flex-start',
                               gap: 2,
                               py: 1.75,
+                              minWidth: 0,
                             }}
                           >
-                            <IconComponent
+                            <Box sx={LIST_ICON_CELL_SX}>
+                              <IconComponent
+                                sx={{
+                                  fontSize: 22,
+                                  color: 'text.secondary',
+                                }}
+                              />
+                            </Box>
+                            <Typography
+                              variant="body1"
+                              fontWeight={500}
                               sx={{
-                                fontSize: 24,
-                                color: 'text.secondary',
-                                flexShrink: 0,
+                                flex: 1,
+                                minWidth: 0,
+                                pt: 0.75,
+                                lineHeight: 1.35,
                               }}
-                            />
-                            <Typography variant="body1" fontWeight={500}>
+                            >
                               {entry.label}
                             </Typography>
                           </Box>

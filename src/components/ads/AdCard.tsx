@@ -295,6 +295,37 @@ function AdCard({ ad, showDistance }: AdCardProps) {
               </Box>
             )}
 
+            {/* Boosted badge — top left, slightly below compare badge.
+                Promoted listings carry a small "Sponsorisé" pill so users
+                see why they appear on top. */}
+            {ad.is_boosted && (
+              <Box
+                aria-label="Annonce sponsorisée"
+                sx={{
+                  position: 'absolute',
+                  top: isInComparator(ad.id) ? 36 : 8,
+                  left: 8,
+                  zIndex: 2,
+                  px: 1,
+                  py: 0.25,
+                  borderRadius: 99,
+                  bgcolor: 'rgba(15, 23, 42, 0.85)',
+                  color: 'white',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 0.3,
+                  textTransform: 'uppercase',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  boxShadow: shadow.medium,
+                  backdropFilter: 'blur(4px)',
+                }}
+              >
+                ★ Sponsorisé
+              </Box>
+            )}
+
             {/* Heart button with burst animation */}
             <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
               <motion.div

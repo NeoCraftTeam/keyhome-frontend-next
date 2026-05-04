@@ -21,6 +21,7 @@ import ViewingBookingPanel from '@/components/viewing/ViewingBookingPanel';
 import ContactChatButton from '@/components/chat/ContactChatButton';
 import QueryError from '@/components/ui/QueryError';
 import FadeIn from '@/components/ui/FadeIn';
+import { SectionBoundary } from '@/components/ui/SectionBoundary';
 import AdReportModal from '@/components/ads/AdReportModal';
 import CompareDrawer from '@/components/ads/CompareDrawer';
 import SimilarAds from '@/components/ads/SimilarAds';
@@ -33,7 +34,12 @@ import {
   COMPARATOR_MAX_ITEMS,
   useComparator,
 } from '@/providers/ComparatorProvider';
-import { formatDate, formatPrice, formatRelativeDate } from '@/lib/constants';
+import {
+  CURRENCY_SYMBOL,
+  formatDate,
+  formatPrice,
+  formatRelativeDate,
+} from '@/lib/constants';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { useAuth } from '@/providers/AuthProvider';
@@ -118,6 +124,15 @@ const SlideUpTransition = forwardRef(function SlideUpTransition(
 });
 
 const MIN_UNLOCK_LOADER_MS = 3200;
+
+const CHARGES_ICON_SLOT_SX = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 22,
+  minWidth: 22,
+  flexShrink: 0,
+} as const;
 
 function AdDetailContent() {
   const params = useParams();
@@ -1767,12 +1782,14 @@ function AdDetailContent() {
                 {/* Property Attributes */}
                 {ad.attributes && ad.attributes.length > 0 && (
                   <>
-                    <PropertyAttributes
-                      attributes={ad.attributes}
-                      maxDisplay={9}
-                      variant="list"
-                      showTitle
-                    />
+                    <SectionBoundary title="Caractéristiques">
+                      <PropertyAttributes
+                        attributes={ad.attributes}
+                        maxDisplay={9}
+                        variant="list"
+                        showTitle
+                      />
+                    </SectionBoundary>
                     <Divider sx={{ my: 3 }} />
                   </>
                 )}
@@ -1780,23 +1797,25 @@ function AdDetailContent() {
                 {/* Location map */}
                 {ad.location && (
                   <>
-                    <AdLocationMap
-                      latitude={ad.location.latitude}
-                      longitude={ad.location.longitude}
-                      quartierName={ad.quarter?.name}
-                      cityName={ad.quarter?.city_name}
-                      isLocked={isLocked}
-                      userLocation={userLocation}
-                      locationError={locationError}
-                    />
-                    {/* Directions panel — only for unlocked ads (exact GPS) */}
-                    {!isLocked && (
-                      <DirectionsPanel
-                        adLat={ad.location.latitude}
-                        adLng={ad.location.longitude}
+                    <SectionBoundary title="Localisation">
+                      <AdLocationMap
+                        latitude={ad.location.latitude}
+                        longitude={ad.location.longitude}
+                        quartierName={ad.quarter?.name}
+                        cityName={ad.quarter?.city_name}
+                        isLocked={isLocked}
                         userLocation={userLocation}
+                        locationError={locationError}
                       />
-                    )}
+                      {/* Directions panel — only for unlocked ads (exact GPS) */}
+                      {!isLocked && (
+                        <DirectionsPanel
+                          adLat={ad.location.latitude}
+                          adLng={ad.location.longitude}
+                          userLocation={userLocation}
+                        />
+                      )}
+                    </SectionBoundary>
                     <Divider sx={{ my: 3 }} />
                   </>
                 )}
@@ -1937,17 +1956,21 @@ function AdDetailContent() {
                 {/* Neighborhood scorecard (OSM) — only for ads with GPS */}
                 {ad.location && (
                   <>
-                    <NeighborhoodScorecard adId={ad.id} />
+                    <SectionBoundary title="Quartier">
+                      <NeighborhoodScorecard adId={ad.id} />
+                    </SectionBoundary>
                     <Divider sx={{ my: 3 }} />
                   </>
                 )}
 
                 {/* Reviews & ratings */}
-                <ReviewsSection
-                  reviews={reviews}
-                  averageRating={averageRating}
-                  reviewsCount={reviewsCount}
-                />
+                <SectionBoundary title="Avis">
+                  <ReviewsSection
+                    reviews={reviews}
+                    averageRating={averageRating}
+                    reviewsCount={reviewsCount}
+                  />
+                </SectionBoundary>
 
                 {/* Review submission form */}
                 <ReviewForm
@@ -2365,12 +2388,14 @@ function AdDetailContent() {
                                     gap: 1,
                                   }}
                                 >
-                                  <ReceiptLong
-                                    sx={{
-                                      fontSize: 14,
-                                      color: 'text.disabled',
-                                    }}
-                                  />
+                                  <Box sx={CHARGES_ICON_SLOT_SX}>
+                                    <ReceiptLong
+                                      sx={{
+                                        fontSize: 14,
+                                        color: 'text.disabled',
+                                      }}
+                                    />
+                                  </Box>
                                   <Typography
                                     variant="body2"
                                     color="text.secondary"
@@ -2383,7 +2408,10 @@ function AdDetailContent() {
                                   fontWeight={600}
                                   sx={{
                                     textAlign: 'right',
+                                    flex: '1 1 auto',
+                                    minWidth: 0,
                                     maxWidth: '60%',
+                                    pl: 1,
                                     whiteSpace: 'pre-line',
                                   }}
                                 >
@@ -2410,9 +2438,14 @@ function AdDetailContent() {
                                       gap: 1,
                                     }}
                                   >
-                                    <ReceiptLong
-                                      sx={{ fontSize: 14, color: '#64748B' }}
-                                    />
+                                    <Box sx={CHARGES_ICON_SLOT_SX}>
+                                      <ReceiptLong
+                                        sx={{
+                                          fontSize: 14,
+                                          color: '#64748B',
+                                        }}
+                                      />
+                                    </Box>
                                     <Typography
                                       variant="body2"
                                       color="text.secondary"
@@ -2420,11 +2453,21 @@ function AdDetailContent() {
                                       Forfait mensuel
                                     </Typography>
                                   </Box>
-                                  <Typography variant="body2" fontWeight={600}>
+                                  <Typography
+                                    variant="body2"
+                                    fontWeight={600}
+                                    sx={{
+                                      textAlign: 'right',
+                                      flex: '1 1 auto',
+                                      minWidth: 0,
+                                      maxWidth: '60%',
+                                      pl: 1,
+                                    }}
+                                  >
                                     {Number(
                                       ad.charges_montant_forfait
                                     ).toLocaleString('fr-FR')}{' '}
-                                    XOF/mois
+                                    {CURRENCY_SYMBOL}/mois
                                   </Typography>
                                 </Box>
                               )}
@@ -2446,9 +2489,14 @@ function AdDetailContent() {
                                     gap: 1,
                                   }}
                                 >
-                                  <WaterDrop
-                                    sx={{ fontSize: 14, color: '#3B82F6' }}
-                                  />
+                                  <Box sx={CHARGES_ICON_SLOT_SX}>
+                                    <WaterDrop
+                                      sx={{
+                                        fontSize: 14,
+                                        color: '#3B82F6',
+                                      }}
+                                    />
+                                  </Box>
                                   <Typography
                                     variant="body2"
                                     color="text.secondary"
@@ -2456,11 +2504,21 @@ function AdDetailContent() {
                                     Eau
                                   </Typography>
                                 </Box>
-                                <Typography variant="body2" fontWeight={600}>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  sx={{
+                                    textAlign: 'right',
+                                    flex: '1 1 auto',
+                                    minWidth: 0,
+                                    maxWidth: '60%',
+                                    pl: 1,
+                                  }}
+                                >
                                   {Number(ad.charges_eau).toLocaleString(
                                     'fr-FR'
                                   )}{' '}
-                                  XOF/mois
+                                  {CURRENCY_SYMBOL}/mois
                                 </Typography>
                               </Box>
                             )}
@@ -2486,9 +2544,14 @@ function AdDetailContent() {
                                     gap: 1,
                                   }}
                                 >
-                                  <Bolt
-                                    sx={{ fontSize: 14, color: '#F59E0B' }}
-                                  />
+                                  <Box sx={CHARGES_ICON_SLOT_SX}>
+                                    <Bolt
+                                      sx={{
+                                        fontSize: 14,
+                                        color: '#F59E0B',
+                                      }}
+                                    />
+                                  </Box>
                                   <Typography
                                     variant="body2"
                                     color="text.secondary"
@@ -2496,11 +2559,21 @@ function AdDetailContent() {
                                     Électricité
                                   </Typography>
                                 </Box>
-                                <Typography variant="body2" fontWeight={600}>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  sx={{
+                                    textAlign: 'right',
+                                    flex: '1 1 auto',
+                                    minWidth: 0,
+                                    maxWidth: '60%',
+                                    pl: 1,
+                                  }}
+                                >
                                   {Number(
                                     ad.charges_electricite
                                   ).toLocaleString('fr-FR')}{' '}
-                                  XOF/mois
+                                  {CURRENCY_SYMBOL}/mois
                                 </Typography>
                               </Box>
                             )}
@@ -2525,9 +2598,14 @@ function AdDetailContent() {
                                     flexShrink: 0,
                                   }}
                                 >
-                                  <ReceiptLong
-                                    sx={{ fontSize: 14, color: '#64748B' }}
-                                  />
+                                  <Box sx={CHARGES_ICON_SLOT_SX}>
+                                    <ReceiptLong
+                                      sx={{
+                                        fontSize: 14,
+                                        color: '#64748B',
+                                      }}
+                                    />
+                                  </Box>
                                   <Typography
                                     variant="body2"
                                     color="text.secondary"
@@ -2540,7 +2618,10 @@ function AdDetailContent() {
                                   fontWeight={600}
                                   sx={{
                                     textAlign: 'right',
-                                    maxWidth: '65%',
+                                    flex: '1 1 auto',
+                                    minWidth: 0,
+                                    maxWidth: '60%',
+                                    pl: 1,
                                     whiteSpace: 'pre-line',
                                   }}
                                 >
@@ -2637,7 +2718,11 @@ function AdDetailContent() {
                     </Box>
                   )}
 
-                  {!isLocked && <KeyScoreSection adId={ad.id} />}
+                  {!isLocked && (
+                    <SectionBoundary title="KeyScore">
+                      <KeyScoreSection adId={ad.id} />
+                    </SectionBoundary>
+                  )}
 
                   <Divider sx={{ my: 2 }} />
                   <Button
@@ -2857,12 +2942,14 @@ function AdDetailContent() {
                                     gap: 1,
                                   }}
                                 >
-                                  <ReceiptLong
-                                    sx={{
-                                      fontSize: 14,
-                                      color: 'text.disabled',
-                                    }}
-                                  />
+                                  <Box sx={CHARGES_ICON_SLOT_SX}>
+                                    <ReceiptLong
+                                      sx={{
+                                        fontSize: 14,
+                                        color: 'text.disabled',
+                                      }}
+                                    />
+                                  </Box>
                                   <Typography
                                     variant="body2"
                                     color="text.secondary"
@@ -2875,7 +2962,10 @@ function AdDetailContent() {
                                   fontWeight={600}
                                   sx={{
                                     textAlign: 'right',
+                                    flex: '1 1 auto',
+                                    minWidth: 0,
                                     maxWidth: '60%',
+                                    pl: 1,
                                     whiteSpace: 'pre-line',
                                   }}
                                 >
@@ -2902,9 +2992,14 @@ function AdDetailContent() {
                                       gap: 1,
                                     }}
                                   >
-                                    <ReceiptLong
-                                      sx={{ fontSize: 14, color: '#64748B' }}
-                                    />
+                                    <Box sx={CHARGES_ICON_SLOT_SX}>
+                                      <ReceiptLong
+                                        sx={{
+                                          fontSize: 14,
+                                          color: '#64748B',
+                                        }}
+                                      />
+                                    </Box>
                                     <Typography
                                       variant="body2"
                                       color="text.secondary"
@@ -2912,11 +3007,21 @@ function AdDetailContent() {
                                       Forfait mensuel
                                     </Typography>
                                   </Box>
-                                  <Typography variant="body2" fontWeight={600}>
+                                  <Typography
+                                    variant="body2"
+                                    fontWeight={600}
+                                    sx={{
+                                      textAlign: 'right',
+                                      flex: '1 1 auto',
+                                      minWidth: 0,
+                                      maxWidth: '60%',
+                                      pl: 1,
+                                    }}
+                                  >
                                     {Number(
                                       ad.charges_montant_forfait
                                     ).toLocaleString('fr-FR')}{' '}
-                                    XOF/mois
+                                    {CURRENCY_SYMBOL}/mois
                                   </Typography>
                                 </Box>
                               )}
@@ -2938,9 +3043,14 @@ function AdDetailContent() {
                                     gap: 1,
                                   }}
                                 >
-                                  <WaterDrop
-                                    sx={{ fontSize: 14, color: '#3B82F6' }}
-                                  />
+                                  <Box sx={CHARGES_ICON_SLOT_SX}>
+                                    <WaterDrop
+                                      sx={{
+                                        fontSize: 14,
+                                        color: '#3B82F6',
+                                      }}
+                                    />
+                                  </Box>
                                   <Typography
                                     variant="body2"
                                     color="text.secondary"
@@ -2948,11 +3058,21 @@ function AdDetailContent() {
                                     Eau
                                   </Typography>
                                 </Box>
-                                <Typography variant="body2" fontWeight={600}>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  sx={{
+                                    textAlign: 'right',
+                                    flex: '1 1 auto',
+                                    minWidth: 0,
+                                    maxWidth: '60%',
+                                    pl: 1,
+                                  }}
+                                >
                                   {Number(ad.charges_eau).toLocaleString(
                                     'fr-FR'
                                   )}{' '}
-                                  XOF/mois
+                                  {CURRENCY_SYMBOL}/mois
                                 </Typography>
                               </Box>
                             )}
@@ -2978,9 +3098,14 @@ function AdDetailContent() {
                                     gap: 1,
                                   }}
                                 >
-                                  <Bolt
-                                    sx={{ fontSize: 14, color: '#F59E0B' }}
-                                  />
+                                  <Box sx={CHARGES_ICON_SLOT_SX}>
+                                    <Bolt
+                                      sx={{
+                                        fontSize: 14,
+                                        color: '#F59E0B',
+                                      }}
+                                    />
+                                  </Box>
                                   <Typography
                                     variant="body2"
                                     color="text.secondary"
@@ -2988,11 +3113,21 @@ function AdDetailContent() {
                                     Électricité
                                   </Typography>
                                 </Box>
-                                <Typography variant="body2" fontWeight={600}>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  sx={{
+                                    textAlign: 'right',
+                                    flex: '1 1 auto',
+                                    minWidth: 0,
+                                    maxWidth: '60%',
+                                    pl: 1,
+                                  }}
+                                >
                                   {Number(
                                     ad.charges_electricite
                                   ).toLocaleString('fr-FR')}{' '}
-                                  XOF/mois
+                                  {CURRENCY_SYMBOL}/mois
                                 </Typography>
                               </Box>
                             )}
@@ -3017,9 +3152,14 @@ function AdDetailContent() {
                                     flexShrink: 0,
                                   }}
                                 >
-                                  <ReceiptLong
-                                    sx={{ fontSize: 14, color: '#64748B' }}
-                                  />
+                                  <Box sx={CHARGES_ICON_SLOT_SX}>
+                                    <ReceiptLong
+                                      sx={{
+                                        fontSize: 14,
+                                        color: '#64748B',
+                                      }}
+                                    />
+                                  </Box>
                                   <Typography
                                     variant="body2"
                                     color="text.secondary"
@@ -3032,7 +3172,10 @@ function AdDetailContent() {
                                   fontWeight={600}
                                   sx={{
                                     textAlign: 'right',
-                                    maxWidth: '65%',
+                                    flex: '1 1 auto',
+                                    minWidth: 0,
+                                    maxWidth: '60%',
+                                    pl: 1,
                                     whiteSpace: 'pre-line',
                                   }}
                                 >
@@ -3457,7 +3600,9 @@ function AdDetailContent() {
                 {/* KeyScore section — only when unlocked */}
                 {!isLocked && (
                   <Box sx={{ mt: 2 }}>
-                    <KeyScoreSection adId={ad.id} />
+                    <SectionBoundary title="KeyScore">
+                      <KeyScoreSection adId={ad.id} />
+                    </SectionBoundary>
                   </Box>
                 )}
               </Box>
@@ -3502,12 +3647,14 @@ function AdDetailContent() {
                     },
                   }}
                 >
-                  <SimilarAds
-                    currentAdId={ad.id}
-                    variant="sidebar"
-                    hideTitle
-                    hideContext
-                  />
+                  <SectionBoundary title="Annonces similaires">
+                    <SimilarAds
+                      currentAdId={ad.id}
+                      variant="sidebar"
+                      hideTitle
+                      hideContext
+                    />
+                  </SectionBoundary>
                 </Box>
               </Box>
             </Box>
@@ -3520,7 +3667,9 @@ function AdDetailContent() {
             display: { xs: 'block', md: 'block', lg: 'block', xl: 'none' },
           }}
         >
-          <SimilarAds currentAdId={ad.id} />
+          <SectionBoundary title="Annonces similaires">
+            <SimilarAds currentAdId={ad.id} />
+          </SectionBoundary>
         </Container>
       </Box>
 
