@@ -9,6 +9,7 @@ import { FavoritesProvider } from '@/providers/FavoritesProvider';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import ComparatorBar from '@/components/ads/ComparatorBar';
+import { ConfirmDialogProvider } from '@/components/ui/ConfirmDialog';
 import { SafeAreaInsetBridge } from '@/components/pwa/SafeAreaInsetBridge';
 
 /**
@@ -34,8 +35,14 @@ export function Providers({
               <SafeAreaInsetBridge />
               <FavoritesProvider>
                 <ComparatorProvider>
-                  {children}
-                  <ComparatorBar />
+                  {/* Confirm dialogs (`useConfirm`) are used by both panels
+                      (e.g. owner /ads action menu, dashboard search alerts).
+                      Mounted globally; the dialog inherits the surrounding
+                      panel theme (pink client / teal owner) at render time. */}
+                  <ConfirmDialogProvider>
+                    {children}
+                    <ComparatorBar />
+                  </ConfirmDialogProvider>
                 </ComparatorProvider>
               </FavoritesProvider>
             </AuthProvider>

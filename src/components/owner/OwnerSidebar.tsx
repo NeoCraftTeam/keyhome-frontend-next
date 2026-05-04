@@ -66,7 +66,7 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
     label: 'Gestion',
     items: [
       {
-        label: 'Dashboard',
+        label: 'Tableau de bord',
         href: '/owner/dashboard',
         icon: <DashboardIcon />,
       },
@@ -346,6 +346,7 @@ export default function OwnerSidebar({
                       arrow
                     >
                       <ListItemButton
+                        aria-current={isActive ? 'page' : undefined}
                         onClick={() => router.push(item.href)}
                         sx={{
                           borderRadius: 2,

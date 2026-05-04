@@ -145,23 +145,21 @@ export default function OwnerNavbar() {
               flexShrink: 0,
             }}
           >
-            {!isMobile && (
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<AddCircleOutlineIcon />}
-                onClick={() => router.push('/owner/ads/new')}
-                sx={{
-                  borderRadius: 99,
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  boxShadow: 'none',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                Nouvelle annonce
-              </Button>
-            )}
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddCircleOutlineIcon />}
+              onClick={() => router.push('/owner/ads/new')}
+              sx={{
+                borderRadius: 99,
+                fontWeight: 700,
+                textTransform: 'none',
+                boxShadow: 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              Nouvelle annonce
+            </Button>
             {!(isMobile && isStandalone) && (
               <IconButton
                 aria-label="Messagerie"

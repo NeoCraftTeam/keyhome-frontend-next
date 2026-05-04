@@ -109,7 +109,11 @@ export const SIDEBAR_NAV_ITEMS: NavItem[] = [
 
 /** Owner panel nav items — full list for sidebar and desktop nav */
 export const OWNER_NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/owner/dashboard', icon: <DashboardIcon /> },
+  {
+    label: 'Tableau de bord',
+    href: '/owner/dashboard',
+    icon: <DashboardIcon />,
+  },
   {
     label: 'Mes Annonces',
     href: '/owner/ads',
@@ -171,7 +175,11 @@ export const OWNER_BOTTOM_NAV_ITEMS: NavItem[] = [
 
 /** Owner panel — sidebar items (exclude Profil/Paramètres for main nav, they go in user menu) */
 export const OWNER_SIDEBAR_NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/owner/dashboard', icon: <DashboardIcon /> },
+  {
+    label: 'Tableau de bord',
+    href: '/owner/dashboard',
+    icon: <DashboardIcon />,
+  },
   {
     label: 'Mes Annonces',
     href: '/owner/ads',

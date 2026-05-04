@@ -116,13 +116,14 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     syncFromApi();
   }, [isAuthenticated, readLocal, persist]);
 
-  // Clear favorites state and reset sync flag on logout
+  // Guest session: reset server sync and re-hydrate from localStorage so UI matches
+  // persisted device favorites (logout hard-reloads usually; soft transitions keep parity).
   useEffect(() => {
     if (!isAuthenticated) {
       hasSynced.current = false;
-      setFavorites([]);
+      setFavorites(readLocal());
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, readLocal]);
 
   // ── Derived state ───────────────────────────────────────────────────
   const favoriteIds = useMemo(

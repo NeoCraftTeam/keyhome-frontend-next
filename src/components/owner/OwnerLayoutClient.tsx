@@ -22,6 +22,7 @@ import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
 import PushPrompt from '@/components/ui/PushPrompt';
+import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
 import OwnerWelcomeModal from '@/components/owner/OwnerWelcomeModal';
 import { shouldShowOwnerQuickCreateFab } from '@/lib/owner-shell-fab';
 import { useAuth } from '@/providers/AuthProvider';
@@ -206,6 +207,29 @@ export default function OwnerLayoutClient({
       setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
     }
   }, [activeSurvey?.id, surveyMounted, user]);
+
+  const handleSurveyPostponed = useCallback(async () => {
+    const survey = activeSurvey;
+    if (!survey) {
+      return;
+    }
+    setSurveyPostponed((p) => ({ ...p, [survey.id]: true }));
+    if (user) {
+      const ids = user.preferences?.survey_postponed_ids ?? [];
+      if (!ids.includes(survey.id)) {
+        try {
+          await authService.updatePreferences({
+            survey_postponed_ids: [...ids, survey.id],
+          });
+          await refreshUser();
+        } catch {
+          /* ignore */
+        }
+      }
+    } else {
+      persistSurveyPostponed(survey.id);
+    }
+  }, [activeSurvey, refreshUser, user]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -445,24 +469,7 @@ export default function OwnerLayoutClient({
               activeSurvey.description ??
               'Aidez-nous à améliorer KeyHome pour les bailleurs en répondant à quelques questions.'
             }
-            onPostponed={async () => {
-              setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
-              if (user) {
-                const ids = user.preferences?.survey_postponed_ids ?? [];
-                if (!ids.includes(activeSurvey.id)) {
-                  try {
-                    await authService.updatePreferences({
-                      survey_postponed_ids: [...ids, activeSurvey.id],
-                    });
-                    await refreshUser();
-                  } catch {
-                    /* ignore */
-                  }
-                }
-              } else {
-                persistSurveyPostponed(activeSurvey.id);
-              }
-            }}
+            onPostponed={handleSurveyPostponed}
             isPostponed={
               surveyPostponed[activeSurvey.id] ??
               getSurveyPostponed(activeSurvey.id, user)
@@ -476,6 +483,10 @@ export default function OwnerLayoutClient({
       {/* Onboarding flow: WelcomeModal → PushPrompt → Survey */}
       <PushPrompt />
       <OwnerWelcomeModal />
+
+      {/* Session idle timeout — must live inside OwnerThemeProvider so the modal
+          inherits the teal palette, mirroring the dashboard layout pattern. */}
+      {isAuthenticated && <SessionTimeoutGuard />}
     </Box>
   );
 }
