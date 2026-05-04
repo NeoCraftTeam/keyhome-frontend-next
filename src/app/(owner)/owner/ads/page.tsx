@@ -12,10 +12,12 @@ import {
   Description as ContractIcon,
   Edit as EditIcon,
   MoreVert as MoreIcon,
+  RocketLaunch as RocketLaunchIcon,
   Visibility as VisibleIcon,
   VisibilityOff as HiddenIcon,
 } from '@mui/icons-material';
 import {
+  Alert,
   Avatar,
   AvatarGroup,
   Box,
@@ -27,6 +29,7 @@ import {
   Menu,
   MenuItem,
   Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -44,6 +47,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useCallback, useEffect, useState } from 'react';
+import { getLaravelApiErrorMessage } from '@/lib/api-errors';
 import { adsService } from '@/services/ads.service';
 import { ownerService } from '@/services/owner.service';
 import { Ad } from '@/types';
@@ -83,6 +87,10 @@ export default function OwnerAdsPage() {
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedAd, setSelectedAd] = useState<Ad | null>(null);
+  const [boostFeedback, setBoostFeedback] = useState<{
+    message: string;
+    severity: 'success' | 'error';
+  } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: [
@@ -140,6 +148,17 @@ export default function OwnerAdsPage() {
       setAnchorEl(null);
       setSelectedAd(null);
     },
+    onError: (err: unknown) => {
+      setAnchorEl(null);
+      setSelectedAd(null);
+      setBoostFeedback({
+        message: getLaravelApiErrorMessage(
+          err,
+          'Impossible de modifier la visibilité.'
+        ),
+        severity: 'error',
+      });
+    },
   });
 
   const setStatusMutation = useMutation({
@@ -150,6 +169,17 @@ export default function OwnerAdsPage() {
       setAnchorEl(null);
       setSelectedAd(null);
     },
+    onError: (err: unknown) => {
+      setAnchorEl(null);
+      setSelectedAd(null);
+      setBoostFeedback({
+        message: getLaravelApiErrorMessage(
+          err,
+          'Impossible de mettre à jour le statut.'
+        ),
+        severity: 'error',
+      });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -159,6 +189,17 @@ export default function OwnerAdsPage() {
       setAnchorEl(null);
       setSelectedAd(null);
     },
+    onError: (err: unknown) => {
+      setAnchorEl(null);
+      setSelectedAd(null);
+      setBoostFeedback({
+        message: getLaravelApiErrorMessage(
+          err,
+          'Impossible de supprimer cette annonce.'
+        ),
+        severity: 'error',
+      });
+    },
   });
 
   const publishDraftMutation = useMutation({
@@ -167,6 +208,66 @@ export default function OwnerAdsPage() {
       queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
       setAnchorEl(null);
       setSelectedAd(null);
+    },
+    onError: (err: unknown) => {
+      setAnchorEl(null);
+      setSelectedAd(null);
+      setBoostFeedback({
+        message: getLaravelApiErrorMessage(
+          err,
+          'Impossible de publier le brouillon.'
+        ),
+        severity: 'error',
+      });
+    },
+  });
+
+  const boostMutation = useMutation({
+    mutationFn: (adId: string) => adsService.boost(adId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
+      setAnchorEl(null);
+      setSelectedAd(null);
+      setBoostFeedback({
+        message:
+          'Annonce boostée — elle remontera en tête des résultats de recherche.',
+        severity: 'success',
+      });
+    },
+    onError: (err: unknown) => {
+      setAnchorEl(null);
+      setSelectedAd(null);
+      setBoostFeedback({
+        message: getLaravelApiErrorMessage(
+          err,
+          'Boost impossible. Vérifiez votre abonnement actif.'
+        ),
+        severity: 'error',
+      });
+    },
+  });
+
+  const unboostMutation = useMutation({
+    mutationFn: (adId: string) => adsService.unboost(adId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
+      setAnchorEl(null);
+      setSelectedAd(null);
+      setBoostFeedback({
+        message: 'Boost retiré.',
+        severity: 'success',
+      });
+    },
+    onError: (err: unknown) => {
+      setAnchorEl(null);
+      setSelectedAd(null);
+      setBoostFeedback({
+        message: getLaravelApiErrorMessage(
+          err,
+          'Impossible de retirer le boost.'
+        ),
+        severity: 'error',
+      });
     },
   });
 
@@ -865,6 +966,25 @@ export default function OwnerAdsPage() {
                 Générer un contrat
               </MenuItem>
             )}
+            {selectedAd.status === AdStatus.AVAILABLE &&
+              (selectedAd.is_boosted ? (
+                <MenuItem
+                  onClick={() => unboostMutation.mutate(selectedAd.id)}
+                  disabled={unboostMutation.isPending}
+                >
+                  <RocketLaunchIcon fontSize="small" sx={{ mr: 1 }} />
+                  Retirer le boost
+                </MenuItem>
+              ) : (
+                <MenuItem
+                  onClick={() => boostMutation.mutate(selectedAd.id)}
+                  disabled={boostMutation.isPending}
+                  sx={{ color: 'primary.main', fontWeight: 600 }}
+                >
+                  <RocketLaunchIcon fontSize="small" sx={{ mr: 1 }} />
+                  Booster cette annonce
+                </MenuItem>
+              ))}
             <MenuItem
               onClick={async () => {
                 handleMenuClose();
@@ -901,6 +1021,23 @@ export default function OwnerAdsPage() {
           </>
         )}
       </Menu>
+      <Snackbar
+        open={!!boostFeedback}
+        autoHideDuration={4500}
+        onClose={() => setBoostFeedback(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {boostFeedback ? (
+          <Alert
+            severity={boostFeedback.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+            onClose={() => setBoostFeedback(null)}
+          >
+            {boostFeedback.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
       {/* Responsive FAB — fixed bottom-right, replaces the 3 inline create buttons */}
       <Fab
         color="primary"

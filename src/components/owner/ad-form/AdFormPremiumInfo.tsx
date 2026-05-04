@@ -23,6 +23,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { CURRENCY_SYMBOL } from '@/lib/constants';
+
 import type { AdFormValues, ChargeItem, UpdateFn } from './types';
 
 interface AdFormPremiumInfoProps {
@@ -190,7 +192,9 @@ export default function AdFormPremiumInfo({
                 }
                 InputProps={{
                   startAdornment: (
-                    <InputAdornment position="start">FCFA</InputAdornment>
+                    <InputAdornment position="start">
+                      {CURRENCY_SYMBOL}
+                    </InputAdornment>
                   ),
                 }}
               />
@@ -209,7 +213,9 @@ export default function AdFormPremiumInfo({
                   onChange={(e) => update('charges_eau', e.target.value)}
                   InputProps={{
                     startAdornment: (
-                      <InputAdornment position="start">FCFA</InputAdornment>
+                      <InputAdornment position="start">
+                        {CURRENCY_SYMBOL}
+                      </InputAdornment>
                     ),
                   }}
                 />
@@ -228,7 +234,9 @@ export default function AdFormPremiumInfo({
                   }
                   InputProps={{
                     startAdornment: (
-                      <InputAdornment position="start">FCFA</InputAdornment>
+                      <InputAdornment position="start">
+                        {CURRENCY_SYMBOL}
+                      </InputAdornment>
                     ),
                   }}
                 />
@@ -304,7 +312,7 @@ export default function AdFormPremiumInfo({
                             color="text.secondary"
                             sx={{ whiteSpace: 'nowrap' }}
                           >
-                            FCFA
+                            {CURRENCY_SYMBOL}
                           </Typography>
                         </InputAdornment>
                       ),

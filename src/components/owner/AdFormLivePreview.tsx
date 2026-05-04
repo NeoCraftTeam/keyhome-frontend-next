@@ -12,9 +12,12 @@ import {
   LocationOn,
   LocalParking,
   NearMe,
+  Panorama,
   School,
   SquareFoot,
   Storefront,
+  TrendingUp,
+  WaterDrop,
 } from '@mui/icons-material';
 import {
   Avatar,
@@ -27,13 +30,19 @@ import {
 } from '@mui/material';
 import { AnimatePresence, motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 import { formatPrice } from '@/lib/constants';
 import { useAuth } from '@/providers/AuthProvider';
 import type { AdImage, AdType, City, Quarter } from '@/types';
 import { UserRole } from '@/types';
+import {
+  AD_FORM_MAP_DEFAULT_LAT,
+  AD_FORM_MAP_DEFAULT_LNG,
+} from './ad-form/types';
 import type { AdFormValues, AttributeOption } from './ad-form/types';
+
+const EASE_OUT_QUINT = [0.22, 1, 0.36, 1] as const;
 
 const AdLocationMap = dynamic(() => import('@/components/ads/AdLocationMap'), {
   ssr: false,
@@ -55,6 +64,30 @@ const AdLocationMap = dynamic(() => import('@/components/ads/AdLocationMap'), {
   ),
 });
 
+function formatOptionalCfaAmount(raw: string): string | null {
+  const t = raw.trim();
+  if (!t) {
+    return null;
+  }
+  const n = parseFloat(t.replace(/\s/g, '').replace(',', '.'));
+  if (!Number.isFinite(n)) {
+    return t;
+  }
+  return formatPrice(Math.round(n));
+}
+
+function leaseDurationLabel(raw: string): string {
+  const t = raw.trim();
+  if (!t) {
+    return '';
+  }
+  if (/^\d+$/.test(t)) {
+    const m = parseInt(t, 10);
+    return `${m} mois`;
+  }
+  return t;
+}
+
 interface AdFormLivePreviewProps {
   values: AdFormValues;
   imagePreviewUrls: string[];
@@ -64,6 +97,8 @@ interface AdFormLivePreviewProps {
   selectedCity: City | null;
   adType: AdType | null;
   attributeOptions: AttributeOption[];
+  /** Panoramas with fichier ou image déjà chargée */
+  tourSceneCount: number;
 }
 
 function AdFormLivePreview({
@@ -75,11 +110,11 @@ function AdFormLivePreview({
   selectedCity,
   adType,
   attributeOptions,
+  tourSceneCount,
 }: AdFormLivePreviewProps) {
   const { user } = useAuth();
   const [activeIdx, setActiveIdx] = useState(0);
 
-  // Combine existing (non-deleted) images + new blob previews as unified list
   const allImages = useMemo<AdImage[]>(() => {
     const kept = existingImages.filter(
       (img) => !imagesToDelete.includes(img.id)
@@ -96,11 +131,21 @@ function AdFormLivePreview({
     return [...kept, ...previews];
   }, [existingImages, imagesToDelete, imagePreviewUrls]);
 
-  // Keep activeIdx in bounds when images change
+  useEffect(() => {
+    setActiveIdx((i) => {
+      if (allImages.length === 0) {
+        return 0;
+      }
+      return Math.min(i, allImages.length - 1);
+    });
+  }, [allImages.length]);
+
   const safeIdx =
     allImages.length > 0 ? Math.min(activeIdx, allImages.length - 1) : 0;
+  const activeImage = allImages[safeIdx];
 
   const price = values.price ? parseFloat(values.price) : null;
+  const priceValid = price !== null && Number.isFinite(price);
   const isForSale = values.transaction_type === 'vente';
 
   const featureChips = useMemo(() => {
@@ -145,10 +190,42 @@ function AdFormLivePreview({
     [values.attributes, attributeOptions]
   );
 
+  const furnishedHint = useMemo(() => {
+    const hit = resolvedAttributes.find((l) => /meubl/i.test(l));
+    return hit ?? null;
+  }, [resolvedAttributes]);
+
+  const depositDisplay = useMemo(
+    () => formatOptionalCfaAmount(values.deposit_amount),
+    [values.deposit_amount]
+  );
+
+  const chargesForfaitAmount = useMemo(
+    () => formatOptionalCfaAmount(values.charges_montant_forfait),
+    [values.charges_montant_forfait]
+  );
+
+  const chargesEau = useMemo(
+    () => formatOptionalCfaAmount(values.charges_eau),
+    [values.charges_eau]
+  );
+
+  const chargesElec = useMemo(
+    () => formatOptionalCfaAmount(values.charges_electricite),
+    [values.charges_electricite]
+  );
+
+  const hasChargesSection =
+    values.charges_forfaitaires ||
+    !!chargesForfaitAmount ||
+    !!chargesEau ||
+    !!chargesElec ||
+    !!(values.charges_autres && values.charges_autres.trim());
+
   const showAboutSection =
-    !!values.deposit_amount ||
-    !!values.minimum_lease_duration ||
-    values.charges_forfaitaires;
+    !!depositDisplay ||
+    !!values.minimum_lease_duration.trim() ||
+    hasChargesSection;
 
   const avatarInitials = user
     ? `${user.firstname?.[0] ?? ''}${user.lastname?.[0] ?? ''}`.toUpperCase()
@@ -157,14 +234,10 @@ function AdFormLivePreview({
   const ownerLabel =
     user?.role === UserRole.AGENT ? 'Agent immobilier' : 'Propriétaire';
 
-  const hasAnyContent =
-    allImages.length > 0 ||
-    !!values.title ||
-    !!price ||
-    featureChips.length > 0 ||
-    !!values.description;
+  const hasCustomMapPin =
+    values.latitude !== AD_FORM_MAP_DEFAULT_LAT ||
+    values.longitude !== AD_FORM_MAP_DEFAULT_LNG;
 
-  // Proximity items derived before render
   const proximityItems = [
     {
       key: 'main_road',
@@ -204,7 +277,9 @@ function AdFormLivePreview({
   ]
     .map((item) => {
       const m = parseFloat(item.raw);
-      if (!item.raw || isNaN(m) || m <= 0) return null;
+      if (!item.raw || Number.isNaN(m) || m <= 0) {
+        return null;
+      }
       const distance =
         m >= 1000
           ? `${(m / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`
@@ -215,10 +290,26 @@ function AdFormLivePreview({
 
   const hasProximityData = proximityItems.length > 0;
   const mapLat =
-    values.latitude && !isNaN(values.latitude) ? values.latitude : null;
+    values.latitude && !Number.isNaN(values.latitude) ? values.latitude : null;
   const mapLng =
-    values.longitude && !isNaN(values.longitude) ? values.longitude : null;
-  const hasMap = mapLat !== null && mapLng !== null;
+    values.longitude && !Number.isNaN(values.longitude)
+      ? values.longitude
+      : null;
+  const hasMap = hasCustomMapPin && mapLat !== null && mapLng !== null;
+
+  const hasStarted =
+    !!values.type_id ||
+    !!values.title.trim() ||
+    allImages.length > 0 ||
+    !!values.quarter_id ||
+    !!values.description.trim() ||
+    !!values.price.trim() ||
+    !!values.adresse.trim() ||
+    (values.attributes?.length ?? 0) > 0 ||
+    tourSceneCount > 0 ||
+    !!values.is_boost_requested ||
+    hasProximityData ||
+    hasMap;
 
   return (
     <Paper
@@ -231,11 +322,10 @@ function AdFormLivePreview({
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        bgcolor: '#fff',
+        bgcolor: 'background.paper',
         boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
       }}
     >
-      {/* ── Header ── */}
       <Box
         sx={{
           px: 2,
@@ -244,20 +334,34 @@ function AdFormLivePreview({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: 1,
           borderBottom: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
         }}
       >
-        <Typography
-          variant="overline"
-          fontWeight={700}
-          letterSpacing={1.5}
-          color="text.secondary"
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            variant="overline"
+            fontWeight={700}
+            letterSpacing={1.5}
+            color="text.secondary"
+            sx={{ display: 'block', lineHeight: 1.2 }}
+          >
+            Aperçu public
+          </Typography>
+          <Typography variant="caption" color="text.disabled">
+            Mise à jour instantanée
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.75,
+            flexShrink: 0,
+          }}
         >
-          Aperçu
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <Box
             sx={{
               width: 7,
@@ -277,10 +381,8 @@ function AdFormLivePreview({
         </Box>
       </Box>
 
-      {/* ── Scrollable body ── */}
       <Box sx={{ overflowY: 'auto', flexGrow: 1 }}>
-        {!hasAnyContent ? (
-          /* Empty state */
+        {!hasStarted ? (
           <Box
             sx={{
               display: 'flex',
@@ -298,160 +400,179 @@ function AdFormLivePreview({
               variant="body2"
               textAlign="center"
               color="text.disabled"
+              sx={{ maxWidth: 280 }}
             >
-              Commencez à remplir le formulaire pour voir l&apos;aperçu de votre
-              annonce ici.
+              Choisissez un type de bien pour voir ici le rendu de votre
+              annonce, puis complétez les étapes — tout se met à jour en temps
+              réel.
             </Typography>
           </Box>
         ) : (
           <>
-            {/* ── Image gallery — CSS Grid matching AdDetailClient ── */}
             <Box
               sx={{
                 position: 'relative',
-                display: 'grid',
-                gridTemplateColumns:
-                  allImages.length >= 5
-                    ? '2fr 1fr 1fr'
-                    : allImages.length >= 3
-                      ? '2fr 1fr'
-                      : allImages.length === 2
-                        ? '1fr 1fr'
-                        : '1fr',
-                gridTemplateRows:
-                  allImages.length <= 1 ? '280px' : '140px 140px',
-                gap: '3px',
                 bgcolor: 'grey.100',
-                overflow: 'hidden',
               }}
             >
-              {allImages.length > 0 ? (
-                <>
-                  {/* Hero image with crossfade */}
-                  <Box
-                    onClick={() => setActiveIdx(0)}
-                    sx={{
-                      gridRow: allImages.length >= 2 ? '1 / 3' : 'auto',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <AnimatePresence mode="sync">
-                      <Box
-                        component={motion.div}
-                        key={allImages[safeIdx]?.id ?? safeIdx}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
-                        sx={{ position: 'absolute', inset: 0 }}
-                      >
-                        <Box
-                          component="img"
-                          src={allImages[safeIdx]?.url}
-                          alt="preview"
-                          sx={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            display: 'block',
-                          }}
-                        />
-                      </Box>
-                    </AnimatePresence>
-                  </Box>
-
-                  {/* Secondary images */}
-                  {allImages.slice(1, 5).map((img, idx) => (
+              <Box
+                sx={{
+                  position: 'relative',
+                  aspectRatio: '3/2',
+                  width: '100%',
+                  maxHeight: { md: 340, lg: 400, xl: 460 },
+                  minHeight: { md: 200, lg: 240 },
+                  overflow: 'hidden',
+                  bgcolor: 'grey.200',
+                }}
+              >
+                {activeImage ? (
+                  <AnimatePresence mode="sync">
                     <Box
-                      key={img.id}
-                      onClick={() => setActiveIdx(idx + 1)}
+                      component={motion.div}
+                      key={`${activeImage.id}-${activeImage.url}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.22, ease: EASE_OUT_QUINT }}
                       sx={{
-                        position: 'relative',
-                        overflow: 'hidden',
-                        cursor: 'pointer',
-                        outline: safeIdx === idx + 1 ? '2px solid' : 'none',
-                        outlineColor: 'primary.main',
-                        outlineOffset: -2,
-                        '&:hover img': { transform: 'scale(1.05)' },
+                        position: 'absolute',
+                        inset: 0,
                       }}
                     >
                       <Box
                         component="img"
-                        src={img.thumb || img.url}
-                        alt={`photo-${idx + 2}`}
+                        src={activeImage.url}
+                        alt=""
                         sx={{
                           width: '100%',
                           height: '100%',
                           objectFit: 'cover',
                           display: 'block',
-                          transition: 'transform 0.3s ease',
+                        }}
+                      />
+                    </Box>
+                  </AnimatePresence>
+                ) : (
+                  <Box
+                    sx={{
+                      height: '100%',
+                      minHeight: 160,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 1,
+                      color: 'text.disabled',
+                    }}
+                  >
+                    <CameraAlt sx={{ fontSize: 40, opacity: 0.4 }} />
+                    <Typography variant="caption" color="text.disabled">
+                      Ajoutez des photos à l&apos;étape « Infos »
+                    </Typography>
+                  </Box>
+                )}
+
+                {allImages.length > 1 && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      bottom: 10,
+                      right: 10,
+                      bgcolor: 'rgba(0,0,0,0.62)',
+                      color: '#fff',
+                      px: 1,
+                      py: 0.35,
+                      borderRadius: 1,
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {safeIdx + 1} / {allImages.length}
+                  </Box>
+                )}
+              </Box>
+
+              {allImages.length > 1 && (
+                <Box
+                  role="tablist"
+                  aria-label="Photos de l'annonce"
+                  sx={{
+                    display: 'flex',
+                    gap: 0.75,
+                    p: 1,
+                    overflowX: 'auto',
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    '&::-webkit-scrollbar': { height: 4 },
+                    '&::-webkit-scrollbar-thumb': {
+                      bgcolor: 'grey.400',
+                      borderRadius: 2,
+                    },
+                  }}
+                >
+                  {allImages.map((img, idx) => (
+                    <Box
+                      key={img.id}
+                      component="button"
+                      type="button"
+                      onClick={() => setActiveIdx(idx)}
+                      aria-label={`Photo ${idx + 1}`}
+                      aria-current={idx === safeIdx ? 'true' : undefined}
+                      sx={{
+                        flex: '0 0 auto',
+                        width: 56,
+                        height: 56,
+                        p: 0,
+                        border: '2px solid',
+                        borderColor:
+                          idx === safeIdx ? 'primary.main' : 'transparent',
+                        borderRadius: 1.5,
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        bgcolor: 'grey.100',
+                        opacity: idx === safeIdx ? 1 : 0.72,
+                        transition:
+                          'border-color 160ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms',
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={img.thumb || img.url}
+                        alt=""
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          display: 'block',
                         }}
                       />
                     </Box>
                   ))}
-
-                  {/* Photo count badge */}
-                  {allImages.length > 1 && (
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        bottom: 8,
-                        right: 8,
-                        bgcolor: 'rgba(0,0,0,0.6)',
-                        color: '#fff',
-                        px: 1,
-                        py: 0.25,
-                        borderRadius: 1,
-                        fontSize: '0.72rem',
-                        fontWeight: 600,
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      {allImages.length} photos
-                    </Box>
-                  )}
-                </>
-              ) : (
-                <Box
-                  sx={{
-                    height: 280,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 1,
-                    color: 'text.disabled',
-                    gridColumn: '1 / -1',
-                  }}
-                >
-                  <CameraAlt sx={{ fontSize: 40, opacity: 0.4 }} />
-                  <Typography variant="caption" color="text.disabled">
-                    Vos photos apparaîtront ici
-                  </Typography>
                 </Box>
               )}
             </Box>
 
-            {/* ── Main content ── */}
-            <Box sx={{ px: 2, pt: 1.75, pb: 1 }}>
-              {/* Price + transaction badge */}
+            <Box sx={{ px: { md: 2.25, lg: 3 }, pt: 2, pb: 1.25 }}>
               <Box
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 1,
+                  gap: 0.75,
                   flexWrap: 'wrap',
-                  mb: 0.5,
+                  mb: 0.75,
                 }}
               >
-                {price !== null ? (
+                {priceValid ? (
                   <Typography
-                    variant="h6"
+                    variant="h5"
+                    component="div"
                     fontWeight={800}
                     color="primary"
-                    lineHeight={1}
+                    lineHeight={1.1}
+                    sx={{ fontSize: { md: '1.35rem', lg: '1.5rem' } }}
                   >
                     {formatPrice(price)}
                   </Typography>
@@ -460,7 +581,7 @@ function AdFormLivePreview({
                     sx={{
                       width: 140,
                       height: 26,
-                      bgcolor: 'grey.200',
+                      bgcolor: 'action.hover',
                       borderRadius: 1,
                     }}
                   />
@@ -479,22 +600,54 @@ function AdFormLivePreview({
                     sx={{ fontSize: '0.7rem' }}
                   />
                 )}
+                {furnishedHint && (
+                  <Chip
+                    label={furnishedHint}
+                    size="small"
+                    variant="outlined"
+                    color="secondary"
+                    sx={{ fontSize: '0.7rem' }}
+                  />
+                )}
+                {values.is_boost_requested && (
+                  <Chip
+                    icon={<TrendingUp sx={{ fontSize: '16px !important' }} />}
+                    label="Boost souhaité"
+                    size="small"
+                    color="warning"
+                    sx={{ fontSize: '0.7rem', fontWeight: 600 }}
+                  />
+                )}
+                {tourSceneCount > 0 && (
+                  <Chip
+                    icon={<Panorama sx={{ fontSize: '16px !important' }} />}
+                    label={
+                      tourSceneCount === 1
+                        ? 'Visite 360°'
+                        : `Visite 360° · ${tourSceneCount}`
+                    }
+                    size="small"
+                    sx={{ fontSize: '0.7rem', fontWeight: 600 }}
+                  />
+                )}
               </Box>
 
-              {/* Title */}
               {values.title ? (
                 <Typography
-                  variant="subtitle1"
+                  variant="h6"
+                  component="h3"
                   fontWeight={700}
-                  lineHeight={1.3}
-                  sx={{ mt: 0.5, mb: 0.75 }}
+                  lineHeight={1.35}
+                  sx={{
+                    mb: 0.75,
+                    fontSize: { md: '1.05rem', lg: '1.15rem' },
+                  }}
                 >
                   {values.title}
                 </Typography>
               ) : (
                 <Box
                   sx={{
-                    mt: 0.75,
                     mb: 1,
                     display: 'flex',
                     flexDirection: 'column',
@@ -504,48 +657,60 @@ function AdFormLivePreview({
                   <Box
                     sx={{
                       height: 16,
-                      bgcolor: 'grey.200',
+                      bgcolor: 'action.hover',
                       borderRadius: 0.5,
-                      width: '90%',
+                      width: '92%',
                     }}
                   />
                   <Box
                     sx={{
                       height: 16,
-                      bgcolor: 'grey.200',
+                      bgcolor: 'action.hover',
                       borderRadius: 0.5,
-                      width: '60%',
+                      width: '58%',
                     }}
                   />
                 </Box>
               )}
 
-              {/* Location */}
-              {(selectedQuarter || selectedCity) && (
+              {(values.adresse.trim() || selectedQuarter || selectedCity) && (
                 <Box
                   sx={{
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     gap: 0.5,
                     mb: 1,
                   }}
                 >
                   <LocationOn
                     sx={{
-                      fontSize: 14,
+                      fontSize: 16,
                       color: 'text.secondary',
                       flexShrink: 0,
+                      mt: '2px',
                     }}
                   />
-                  <Typography variant="caption" color="text.secondary" noWrap>
-                    {[selectedQuarter?.name, selectedCity?.name]
-                      .filter(Boolean)
-                      .join(', ')}
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.45 }}
+                  >
+                    {values.adresse.trim() && (
+                      <Box component="span" sx={{ display: 'block' }}>
+                        {values.adresse.trim()}
+                      </Box>
+                    )}
+                    {(selectedQuarter || selectedCity) && (
+                      <Box component="span" sx={{ display: 'block' }}>
+                        {[selectedQuarter?.name, selectedCity?.name]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </Box>
+                    )}
                   </Typography>
                 </Box>
               )}
 
-              {/* Feature chips */}
               {featureChips.length > 0 && (
                 <Box
                   sx={{
@@ -569,52 +734,59 @@ function AdFormLivePreview({
               )}
             </Box>
 
-            {/* ── Description ── */}
-            {values.description && (
-              <>
-                <Divider sx={{ mx: 2, my: 0 }} />
-                <Box sx={{ px: 2, py: 1.5 }}>
-                  <Typography variant="subtitle2" fontWeight={700} mb={0.75}>
-                    Description
-                  </Typography>
+            <Divider sx={{ mx: 2, my: 0 }} />
+            <Box sx={{ px: 2, py: 1.5 }}>
+              <Typography variant="subtitle2" fontWeight={700} mb={0.75}>
+                Description
+              </Typography>
+              {values.description.trim() ? (
+                <>
                   <Typography
                     variant="body2"
                     color="text.secondary"
                     sx={{
                       display: '-webkit-box',
-                      WebkitLineClamp: 4,
+                      WebkitLineClamp: 5,
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
-                      lineHeight: 1.6,
+                      lineHeight: 1.65,
+                      whiteSpace: 'pre-wrap',
                     }}
                   >
                     {values.description}
                   </Typography>
-                  {values.description.length > 280 && (
+                  {values.description.length > 320 && (
                     <Typography
                       variant="caption"
                       color="primary"
-                      sx={{ mt: 0.25, display: 'block', cursor: 'default' }}
+                      sx={{ mt: 0.5, display: 'block' }}
                     >
-                      Voir plus
+                      … comme sur la fiche publique (aperçu tronqué)
                     </Typography>
                   )}
-                </Box>
-              </>
-            )}
+                </>
+              ) : (
+                <Typography
+                  variant="body2"
+                  color="text.disabled"
+                  fontStyle="italic"
+                >
+                  Votre texte descriptif apparaîtra ici mot pour mot.
+                </Typography>
+              )}
+            </Box>
 
-            {/* ── About / Informations supplémentaires ── */}
             {showAboutSection && (
               <>
                 <Divider sx={{ mx: 2, my: 0 }} />
                 <Box sx={{ px: 2, py: 1.5 }}>
                   <Typography variant="subtitle2" fontWeight={700} mb={1}>
-                    Informations supplémentaires
+                    Conditions &amp; charges
                   </Typography>
                   <Box
-                    sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
                   >
-                    {values.deposit_amount && (
+                    {depositDisplay && (
                       <Box
                         sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                       >
@@ -632,12 +804,12 @@ function AdFormLivePreview({
                             fontWeight={600}
                             color="text.primary"
                           >
-                            {formatPrice(parseFloat(values.deposit_amount))}
+                            {depositDisplay}
                           </Box>
                         </Typography>
                       </Box>
                     )}
-                    {values.minimum_lease_duration && (
+                    {!!values.minimum_lease_duration.trim() && (
                       <Box
                         sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                       >
@@ -649,31 +821,124 @@ function AdFormLivePreview({
                           }}
                         />
                         <Typography variant="body2" color="text.secondary">
-                          Durée min :{' '}
+                          Durée minimale :{' '}
                           <Box
                             component="span"
                             fontWeight={600}
                             color="text.primary"
                           >
-                            {values.minimum_lease_duration} mois
+                            {leaseDurationLabel(values.minimum_lease_duration)}
                           </Box>
                         </Typography>
                       </Box>
                     )}
-                    {values.charges_forfaitaires && (
+                    {hasChargesSection && (
                       <Box
-                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        sx={{
+                          pl: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 0.75,
+                        }}
                       >
-                        <ElectricBolt
-                          sx={{
-                            fontSize: 16,
-                            color: 'text.secondary',
-                            flexShrink: 0,
-                          }}
-                        />
-                        <Typography variant="body2" color="text.secondary">
-                          Charges comprises
-                        </Typography>
+                        {values.charges_forfaitaires && (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <ElectricBolt
+                              sx={{
+                                fontSize: 16,
+                                color: 'text.secondary',
+                                flexShrink: 0,
+                              }}
+                            />
+                            <Typography variant="body2" color="text.secondary">
+                              Charges forfaitaires
+                              {chargesForfaitAmount && (
+                                <>
+                                  {' : '}
+                                  <Box
+                                    component="span"
+                                    fontWeight={600}
+                                    color="text.primary"
+                                  >
+                                    {chargesForfaitAmount}
+                                  </Box>
+                                </>
+                              )}
+                            </Typography>
+                          </Box>
+                        )}
+                        {chargesEau && (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <WaterDrop
+                              sx={{
+                                fontSize: 16,
+                                color: 'text.secondary',
+                                flexShrink: 0,
+                              }}
+                            />
+                            <Typography variant="body2" color="text.secondary">
+                              Eau :{' '}
+                              <Box
+                                component="span"
+                                fontWeight={600}
+                                color="text.primary"
+                              >
+                                {chargesEau}
+                              </Box>
+                            </Typography>
+                          </Box>
+                        )}
+                        {chargesElec && (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <ElectricBolt
+                              sx={{
+                                fontSize: 16,
+                                color: 'text.secondary',
+                                flexShrink: 0,
+                              }}
+                            />
+                            <Typography variant="body2" color="text.secondary">
+                              Électricité :{' '}
+                              <Box
+                                component="span"
+                                fontWeight={600}
+                                color="text.primary"
+                              >
+                                {chargesElec}
+                              </Box>
+                            </Typography>
+                          </Box>
+                        )}
+                        {values.charges_autres.trim() && (
+                          <Typography variant="body2" color="text.secondary">
+                            Autres charges :{' '}
+                            <Box
+                              component="span"
+                              fontWeight={600}
+                              color="text.primary"
+                            >
+                              {values.charges_autres.trim()}
+                            </Box>
+                          </Typography>
+                        )}
                       </Box>
                     )}
                   </Box>
@@ -681,16 +946,15 @@ function AdFormLivePreview({
               </>
             )}
 
-            {/* ── Equipment & attributes ── */}
             {resolvedAttributes.length > 0 && (
               <>
                 <Divider sx={{ mx: 2, my: 0 }} />
                 <Box sx={{ px: 2, py: 1.5 }}>
                   <Typography variant="subtitle2" fontWeight={700} mb={1}>
-                    Équipements &amp; Services
+                    Équipements &amp; services
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-                    {resolvedAttributes.slice(0, 8).map((label) => (
+                    {resolvedAttributes.slice(0, 12).map((label) => (
                       <Chip
                         key={label}
                         label={label}
@@ -699,9 +963,9 @@ function AdFormLivePreview({
                         sx={{ fontSize: '0.72rem' }}
                       />
                     ))}
-                    {resolvedAttributes.length > 8 && (
+                    {resolvedAttributes.length > 12 && (
                       <Chip
-                        label={`+${resolvedAttributes.length - 8} autres`}
+                        label={`+${resolvedAttributes.length - 12}`}
                         size="small"
                         color="primary"
                         sx={{ fontSize: '0.72rem' }}
@@ -712,7 +976,6 @@ function AdFormLivePreview({
               </>
             )}
 
-            {/* ── Map preview ── */}
             {hasMap && (
               <>
                 <Divider sx={{ mx: 2, my: 0 }} />
@@ -731,7 +994,6 @@ function AdFormLivePreview({
               </>
             )}
 
-            {/* ── Proximité & Accessibilité ── */}
             {hasProximityData && (
               <>
                 <Divider sx={{ mx: 2, my: 0 }} />
@@ -758,13 +1020,13 @@ function AdFormLivePreview({
                       <NearMe sx={{ fontSize: 16, color: 'text.secondary' }} />
                     </Box>
                     <Typography variant="subtitle2" fontWeight={700}>
-                      Proximité &amp; Accessibilité
+                      Proximité &amp; accessibilité
                     </Typography>
                   </Box>
                   <Box
                     sx={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                       gap: 1,
                     }}
                   >
@@ -827,7 +1089,6 @@ function AdFormLivePreview({
               </>
             )}
 
-            {/* ── Owner card ── */}
             <Divider sx={{ mx: 2, my: 0 }} />
             <Box sx={{ px: 2, py: 1.5 }}>
               <Box
@@ -873,14 +1134,13 @@ function AdFormLivePreview({
                 color="text.disabled"
                 sx={{ mt: 0.75, display: 'block', textAlign: 'center' }}
               >
-                Vous êtes l&apos;annonceur
+                Vous êtes l&apos;annonceur — bouton inactif en aperçu
               </Typography>
             </Box>
           </>
         )}
       </Box>
 
-      {/* ── Footer watermark ── */}
       <Box
         sx={{
           px: 2,
@@ -903,7 +1163,7 @@ function AdFormLivePreview({
           }}
         />
         <Typography variant="caption" fontWeight={600} color="warning.700">
-          Aperçu · Non publié
+          Brouillon · non publié
         </Typography>
       </Box>
     </Paper>

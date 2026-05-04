@@ -114,10 +114,17 @@ export const adsService = {
     return body.ad ?? body;
   },
 
-  /** Lightweight JSON-only autosave for text fields of a draft ad. */
+  /**
+   * Lightweight JSON-only autosave for text fields of a draft ad.
+   *
+   * Accepts arrays for fields like `attributes` (sent as-is in JSON body — no
+   * FormData transformation). The backend mirrors validation in
+   * `AdStatusController::autosave()`. Returns silently on success; consumers
+   * surface errors via the calling hook (`useServerAutoSave.lastError`).
+   */
   async autosaveDraft(
     id: string,
-    fields: Partial<Record<string, string | number | boolean | null>>
+    fields: Partial<Record<string, string | number | boolean | string[] | null>>
   ): Promise<void> {
     await api.patch(`/ads/${id}/autosave`, fields);
   },
@@ -151,6 +158,43 @@ export const adsService = {
 
   async destroy(id: string): Promise<void> {
     await api.delete(`/ads/${id}`);
+  },
+
+  /**
+   * Boost the given ad. Requires the owner to belong to an agency with an
+   * active subscription (handled server-side in `BoostController::boost`).
+   * The boost score and duration come from the active plan, not the client.
+   */
+  async boost(adId: string): Promise<{
+    is_boosted: boolean;
+    boost_expires_at: string | null;
+  }> {
+    const { data } = await api.post<{
+      message?: string;
+      data?: { is_boosted: boolean; boost_expires_at: string | null };
+    }>(`/my/ads/${adId}/boost`);
+    return data?.data ?? { is_boosted: false, boost_expires_at: null };
+  },
+
+  async unboost(adId: string): Promise<void> {
+    await api.delete(`/my/ads/${adId}/boost`);
+  },
+
+  async getBoostStatus(adId: string): Promise<{
+    is_boosted: boolean;
+    boost_score: number | null;
+    boost_expires_at: string | null;
+    boosted_at: string | null;
+  }> {
+    const { data } = await api.get<{
+      data: {
+        is_boosted: boolean;
+        boost_score: number | null;
+        boost_expires_at: string | null;
+        boosted_at: string | null;
+      };
+    }>(`/my/ads/${adId}/boost-status`);
+    return data.data;
   },
 
   async toggleVisibility(adId: string): Promise<{ is_visible: boolean }> {

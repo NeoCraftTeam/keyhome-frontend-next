@@ -38,6 +38,7 @@ import AdFormWizard, {
   type AdFormValues,
   type TourScene,
 } from '@/components/owner/AdFormWizard';
+import { getLaravelApiErrorMessage } from '@/lib/api-errors';
 import { adsService } from '@/services/ads.service';
 import { ownerService } from '@/services/owner.service';
 import { AdStatus } from '@/types';
@@ -225,9 +226,12 @@ export default function OwnerAdEditPage() {
         severity: 'success',
       });
     },
-    onError: () => {
+    onError: (err: unknown) => {
       setSnackbar({
-        message: 'Erreur lors de la mise à jour',
+        message: getLaravelApiErrorMessage(
+          err,
+          'Erreur lors de la mise à jour.'
+        ),
         severity: 'error',
       });
     },
@@ -243,6 +247,15 @@ export default function OwnerAdEditPage() {
         severity: 'success',
       });
     },
+    onError: (err: unknown) => {
+      setSnackbar({
+        message: getLaravelApiErrorMessage(
+          err,
+          'Impossible de modifier la visibilité.'
+        ),
+        severity: 'error',
+      });
+    },
   });
 
   const setStatusMutation = useMutation({
@@ -252,12 +265,30 @@ export default function OwnerAdEditPage() {
       queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
       setSnackbar({ message: 'Statut mis à jour', severity: 'success' });
     },
+    onError: (err: unknown) => {
+      setSnackbar({
+        message: getLaravelApiErrorMessage(
+          err,
+          'Impossible de mettre à jour le statut.'
+        ),
+        severity: 'error',
+      });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: () => adsService.destroy(id),
     onSuccess: () => {
       router.push('/owner/ads');
+    },
+    onError: (err: unknown) => {
+      setSnackbar({
+        message: getLaravelApiErrorMessage(
+          err,
+          'Impossible de supprimer cette annonce.'
+        ),
+        severity: 'error',
+      });
     },
   });
 
@@ -273,10 +304,13 @@ export default function OwnerAdEditPage() {
       });
     },
     onError: (err: unknown) => {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? 'Erreur lors de la publication';
-      setSnackbar({ message: msg, severity: 'error' });
+      setSnackbar({
+        message: getLaravelApiErrorMessage(
+          err,
+          'Erreur lors de la publication.'
+        ),
+        severity: 'error',
+      });
     },
   });
 
@@ -371,9 +405,12 @@ export default function OwnerAdEditPage() {
         severity: 'success',
       });
     },
-    onError: () => {
+    onError: (err: unknown) => {
       setSnackbar({
-        message: 'Erreur lors de la sauvegarde du brouillon',
+        message: getLaravelApiErrorMessage(
+          err,
+          'Erreur lors de la sauvegarde du brouillon.'
+        ),
         severity: 'error',
       });
     },
@@ -405,9 +442,12 @@ export default function OwnerAdEditPage() {
         severity: 'success',
       });
     },
-    onError: () => {
+    onError: (err: unknown) => {
       setSnackbar({
-        message: 'Erreur lors de la génération du contrat',
+        message: getLaravelApiErrorMessage(
+          err,
+          'Erreur lors de la génération du contrat.'
+        ),
         severity: 'error',
       });
     },
@@ -969,7 +1009,7 @@ export default function OwnerAdEditPage() {
             </Select>
           </FormControl>
           <TextField
-            label="Loyer mensuel (XAF)"
+            label="Loyer mensuel (FCFA)"
             size="small"
             type="number"
             value={contractForm.monthly_rent}
@@ -978,7 +1018,7 @@ export default function OwnerAdEditPage() {
             }
           />
           <TextField
-            label="Caution (XAF)"
+            label="Caution (FCFA)"
             size="small"
             type="number"
             value={contractForm.deposit_amount}
@@ -1019,6 +1059,14 @@ export default function OwnerAdEditPage() {
                     ...p,
                     special_conditions: enhanced,
                   }));
+                } catch (err: unknown) {
+                  setSnackbar({
+                    message: getLaravelApiErrorMessage(
+                      err,
+                      "Impossible d'améliorer le texte avec l'IA."
+                    ),
+                    severity: 'error',
+                  });
                 } finally {
                   setEnhancingConditions(false);
                 }
@@ -1223,7 +1271,7 @@ export default function OwnerAdEditPage() {
                 </Typography>
                 <Typography variant="body2" fontWeight={600}>
                   {Number(contractForm.monthly_rent).toLocaleString('fr-FR')}{' '}
-                  XAF
+                  FCFA
                 </Typography>
               </Box>
             )}
@@ -1242,7 +1290,7 @@ export default function OwnerAdEditPage() {
                 </Typography>
                 <Typography variant="body2" fontWeight={600}>
                   {Number(contractForm.deposit_amount).toLocaleString('fr-FR')}{' '}
-                  XAF
+                  FCFA
                 </Typography>
               </Box>
             )}

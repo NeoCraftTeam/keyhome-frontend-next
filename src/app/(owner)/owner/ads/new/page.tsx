@@ -47,6 +47,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AdFormWizard, { type TourScene } from '@/components/owner/AdFormWizard';
+import { getLaravelApiErrorMessage } from '@/lib/api-errors';
 import { adsService } from '@/services/ads.service';
 import { ownerService } from '@/services/owner.service';
 
@@ -283,9 +284,12 @@ export default function OwnerNewAdPage() {
       // Redirect to edit page so further saves update the same ad
       router.push(`/owner/ads/${ad.id}`);
     },
-    onError: () => {
+    onError: (err: unknown) => {
       setDraftSnackbar({
-        message: "Erreur lors de l'enregistrement du brouillon.",
+        message: getLaravelApiErrorMessage(
+          err,
+          "Erreur lors de l'enregistrement du brouillon."
+        ),
         severity: 'error',
       });
     },
@@ -347,9 +351,10 @@ export default function OwnerNewAdPage() {
       setScheduleDialogOpen(true);
     },
     onError: (err: unknown) => {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? "Erreur lors de la création de l'annonce.";
+      const msg = getLaravelApiErrorMessage(
+        err,
+        "Erreur lors de la création de l'annonce."
+      );
       setDraftSnackbar({ message: msg, severity: 'error' });
     },
   });

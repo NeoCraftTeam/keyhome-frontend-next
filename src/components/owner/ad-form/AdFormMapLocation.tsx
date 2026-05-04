@@ -2,10 +2,12 @@ import MapIcon from '@mui/icons-material/Map';
 import { Box, Paper, Typography } from '@mui/material';
 import dynamic from 'next/dynamic';
 import type { AdFormValues, UpdateFn } from './types';
-import { sectionSx, sectionTitleSx } from './types';
-
-const DEFAULT_LAT = 4.0511;
-const DEFAULT_LNG = 9.7679;
+import {
+  AD_FORM_MAP_DEFAULT_LAT,
+  AD_FORM_MAP_DEFAULT_LNG,
+  sectionSx,
+  sectionTitleSx,
+} from './types';
 
 const MapPicker = dynamic(() => import('../MapPicker'), {
   ssr: false,
@@ -47,8 +49,12 @@ export default function AdFormMapLocation({
         localiser facilement.
       </Typography>
       <MapPicker
-        latitude={values.latitude !== DEFAULT_LAT ? values.latitude : null}
-        longitude={values.longitude !== DEFAULT_LNG ? values.longitude : null}
+        latitude={
+          values.latitude !== AD_FORM_MAP_DEFAULT_LAT ? values.latitude : null
+        }
+        longitude={
+          values.longitude !== AD_FORM_MAP_DEFAULT_LNG ? values.longitude : null
+        }
         onLocationChange={(lat, lng) => {
           update('latitude', lat);
           update('longitude', lng);

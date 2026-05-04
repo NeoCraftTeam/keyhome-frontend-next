@@ -1,5 +1,9 @@
 import type { TourHotspot } from '@/types';
 
+/** Defaults for map picker / preview — keep in sync with `AdFormMapLocation` */
+export const AD_FORM_MAP_DEFAULT_LAT = 4.0511;
+export const AD_FORM_MAP_DEFAULT_LNG = 9.7679;
+
 export interface ChargeItem {
   label: string;
   amount: string;
@@ -82,8 +86,8 @@ export const initialValues: AdFormValues = {
   bedrooms: '0',
   bathrooms: '0',
   has_parking: false,
-  latitude: 4.0511,
-  longitude: 9.7679,
+  latitude: AD_FORM_MAP_DEFAULT_LAT,
+  longitude: AD_FORM_MAP_DEFAULT_LNG,
   quarter_id: '',
   type_id: '',
   transaction_type: 'location',

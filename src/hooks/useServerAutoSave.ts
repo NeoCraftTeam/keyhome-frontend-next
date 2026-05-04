@@ -4,8 +4,9 @@
 // - On first save: calls onCreateDraft(values) → returns { id: string }
 // - On subsequent saves: calls onUpdateDraft(draftId, values)
 // - Debounced (default 5000ms)
-// - Provides: savedAt (Date|null), isSaving (boolean), draftId (string|null), clearSavedAt()
+// - Provides: savedAt, isSaving, draftId, lastError, clearSavedAt()
 
+import { getLaravelApiErrorMessage } from '@/lib/api-errors';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseServerAutoSaveOptions<T> {
@@ -21,6 +22,12 @@ interface UseServerAutoSaveReturn {
   savedAt: Date | null;
   isSaving: boolean;
   draftId: string | null;
+  /**
+   * Surfaces the last auto-save failure so the consumer can render a discrete
+   * inline indicator. Cleared automatically on the next successful save.
+   * Auto-save itself never throws or interrupts the user.
+   */
+  lastError: Error | null;
   clearSavedAt: () => void;
 }
 
@@ -34,6 +41,7 @@ export function useServerAutoSave<T>({
 }: UseServerAutoSaveOptions<T>): UseServerAutoSaveReturn {
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [lastError, setLastError] = useState<Error | null>(null);
   const [internalDraftId, setInternalDraftId] = useState<string | null>(
     externalDraftId
   );
@@ -104,8 +112,13 @@ export function useServerAutoSave<T>({
         }
         lastSavedDataRef.current = currentSerialized;
         setSavedAt(new Date());
-      } catch {
-        // Silent failure — auto-save must never interrupt the user
+        setLastError(null);
+      } catch (err) {
+        const msg = getLaravelApiErrorMessage(
+          err,
+          'Échec de la sauvegarde auto.'
+        );
+        setLastError(new Error(msg));
       } finally {
         isPendingRef.current = false;
         setIsSaving(false);
@@ -117,7 +130,16 @@ export function useServerAutoSave<T>({
     };
   }, [data, enabled, debounceMs]);
 
-  const clearSavedAt = useCallback(() => setSavedAt(null), []);
+  const clearSavedAt = useCallback(() => {
+    setSavedAt(null);
+    setLastError(null);
+  }, []);
 
-  return { savedAt, isSaving, draftId: internalDraftId, clearSavedAt };
+  return {
+    savedAt,
+    isSaving,
+    draftId: internalDraftId,
+    lastError,
+    clearSavedAt,
+  };
 }

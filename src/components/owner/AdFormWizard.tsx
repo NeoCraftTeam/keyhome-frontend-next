@@ -6,9 +6,16 @@ import {
   Button,
   CircularProgress,
   Collapse,
+  Drawer,
+  Fab,
+  IconButton,
   Snackbar,
+  Tooltip,
+  Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CloseIcon from '@mui/icons-material/Close';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import PublishIcon from '@mui/icons-material/Publish';
@@ -141,6 +148,7 @@ function AdFormWizard({
   const [photoLightboxOpen, setPhotoLightboxOpen] = useState(false);
   const [photoLightboxIndex, setPhotoLightboxIndex] = useState(0);
   const [compressingPhotos, setCompressingPhotos] = useState(false);
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
   /* ── Category state ── */
   const [selectedCategory, setSelectedCategory] =
@@ -154,8 +162,15 @@ function AdFormWizard({
       return null;
     });
 
-  /* ── Server-side auto-save ── */
-  // Builds a plain JSON object from form values (no images — too heavy for autosave)
+  /* ── Server-side auto-save ──
+   * Builds a plain JSON snapshot of every text/structured field the backend
+   * `autosave` endpoint accepts. **Images** (photos, panoramas, PDF) are
+   * intentionally NOT auto-saved — only the manual "Enregistrer le brouillon"
+   * (full PUT multipart) handles media. This is communicated to the user via
+   * the helperText next to the save button.
+   *
+   * Whitelist mirrors `AdStatusController::autosave()` validation rules.
+   */
   const autoSaveData = useMemo(
     () => ({
       title: values.title,
@@ -169,11 +184,21 @@ function AdFormWizard({
       deposit_amount: values.deposit_amount,
       minimum_lease_duration: values.minimum_lease_duration,
       charges_forfaitaires: values.charges_forfaitaires,
+      charges_montant_forfait: values.charges_montant_forfait,
+      charges_eau: values.charges_eau,
+      charges_electricite: values.charges_electricite,
+      charges_autres: values.charges_autres,
       quarter_id: values.quarter_id,
       type_id: values.type_id,
       transaction_type: values.transaction_type,
       latitude: values.latitude,
       longitude: values.longitude,
+      distance_main_road_m: values.distance_main_road_m,
+      distance_shops_m: values.distance_shops_m,
+      distance_transport_m: values.distance_transport_m,
+      distance_school_m: values.distance_school_m,
+      distance_hospital_m: values.distance_hospital_m,
+      attributes: values.attributes,
     }),
     [values]
   );
@@ -182,12 +207,24 @@ function AdFormWizard({
     async (data: typeof autoSaveData): Promise<string> => {
       const formData = new FormData();
       (Object.entries(data) as [string, unknown][]).forEach(([k, v]) => {
-        if (v !== null && v !== undefined && v !== '') {
-          formData.append(
-            k,
-            typeof v === 'boolean' ? (v ? '1' : '0') : String(v)
-          );
+        if (v === null || v === undefined || v === '') {
+          return;
         }
+        if (Array.isArray(v)) {
+          // Skip empty arrays so we don't overwrite server-side values with []
+          // until the user explicitly interacts with the chips.
+          if (v.length === 0) {
+            return;
+          }
+          v.forEach((item, idx) => {
+            formData.append(`${k}[${idx}]`, String(item));
+          });
+          return;
+        }
+        formData.append(
+          k,
+          typeof v === 'boolean' ? (v ? '1' : '0') : String(v)
+        );
       });
       const created = await adsService.saveDraft(formData);
       return created.id;
@@ -197,9 +234,19 @@ function AdFormWizard({
 
   const onUpdateDraftCb = useCallback(
     async (id: string, data: typeof autoSaveData): Promise<void> => {
+      // PATCH /ads/{id}/autosave is a JSON endpoint; arrays/booleans/numerics
+      // are sent as-is. Empty strings are dropped so a never-touched field
+      // doesn't blank a previously-saved value.
+      const payload: Record<string, unknown> = {};
+      (Object.entries(data) as [string, unknown][]).forEach(([k, v]) => {
+        if (v === undefined || v === '') {
+          return;
+        }
+        payload[k] = v;
+      });
       await adsService.autosaveDraft(
         id,
-        data as Partial<Record<string, string | number | boolean | null>>
+        payload as Partial<Record<string, string | number | boolean | null>>
       );
     },
     []
@@ -209,6 +256,7 @@ function AdFormWizard({
     savedAt,
     isSaving: isAutoSaving,
     draftId: autoSaveDraftId,
+    lastError: autoSaveError,
     clearSavedAt,
   } = useServerAutoSave({
     data: autoSaveData,
@@ -399,6 +447,36 @@ function AdFormWizard({
       ...(ad?.images?.filter((img) => !imagesToDelete.includes(img.id)) ?? []),
     ],
     [imagePreviewUrls, imagesToDelete, ad?.images]
+  );
+
+  const tourSceneCount = useMemo(
+    () => tourScenes.filter((s) => Boolean(s.previewUrl || s.file)).length,
+    [tourScenes]
+  );
+
+  const livePreviewProps = useMemo(
+    () => ({
+      values,
+      imagePreviewUrls,
+      existingImages: ad?.images ?? [],
+      imagesToDelete,
+      selectedQuarter,
+      selectedCity,
+      adType: adTypes.find((t) => t.id === values.type_id) ?? null,
+      attributeOptions: autocompleteOptions,
+      tourSceneCount,
+    }),
+    [
+      values,
+      imagePreviewUrls,
+      ad?.images,
+      imagesToDelete,
+      selectedQuarter,
+      selectedCity,
+      adTypes,
+      autocompleteOptions,
+      tourSceneCount,
+    ]
   );
 
   /* ── Field update ── */
@@ -752,340 +830,480 @@ function AdFormWizard({
   /* ================================================================== */
 
   return (
-    <Box
-      sx={{
-        display: { xs: 'block', md: 'flex' },
-        gap: { md: 3 },
-        alignItems: 'flex-start',
-        ml: { md: -2 },
-      }}
-    >
-      {/* ── Left column: Form ── */}
-      <Box sx={{ width: { xs: '100%', md: 560 }, flexShrink: 0, minWidth: 0 }}>
-        <form onSubmit={handleSubmit} noValidate>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {/* ── Stepper — sticky so it stays visible as the user scrolls ── */}
-            <Box
-              sx={{
-                position: 'sticky',
-                top: { xs: 56, md: 72 },
-                zIndex: 10,
-                bgcolor: 'background.default',
-                pt: 1,
-                pb: 0.5,
-                mx: -2,
-                px: 2,
-              }}
-            >
-              <AuthFlowStepper labels={STEP_LABELS} activeStep={activeStep} />
-            </Box>
-
-            {/* ══════════════════ Step 0: Type ══════════════════ */}
-            <Collapse in={activeStep === 0} unmountOnExit>
-              <AdFormStepType
-                selectedCategory={selectedCategory}
-                selectedTransactionType={values.transaction_type}
-                selectedTypeId={values.type_id}
-                adTypes={adTypes}
-                onCategoryChange={setSelectedCategory}
-                onTransactionTypeChange={(t) => update('transaction_type', t)}
-                onTypeIdChange={(id) => update('type_id', id)}
-                errors={errors}
-              />
-            </Collapse>
-
-            {/* ══════════════════ Step 1: Basic Info + Photos ══════════════════ */}
-            <Collapse in={activeStep === 1} unmountOnExit>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <AdFormBasicInfo
-                  values={values}
-                  update={update}
-                  errors={errors}
-                  enhancing={enhancing}
-                  onEnhance={onEnhanceDescription ? handleEnhance : null}
-                />
-                <AdFormPhotos
-                  imagePreviewUrls={imagePreviewUrls}
-                  existingImages={ad?.images}
-                  imagesToDelete={imagesToDelete}
-                  imageCount={images.length}
-                  adTitle={ad?.title}
-                  errors={errors}
-                  isCompressing={compressingPhotos}
-                  onImageChange={handleImageChange}
-                  onRemoveImage={removeImage}
-                  onDeleteExistingImage={(id) =>
-                    setImagesToDelete((prev) => [...prev, id])
-                  }
-                  onOpenLightbox={openPhotoLightbox}
-                  onReorderImages={reorderImages}
-                />
+    <>
+      <Box
+        sx={{
+          display: { xs: 'block', md: 'flex' },
+          gap: { md: 3, lg: 4 },
+          alignItems: 'flex-start',
+          ml: { md: -2 },
+          width: '100%',
+        }}
+      >
+        {/* ── Left column: Form (largeur maîtrisée pour laisser place à l’aperçu) ── */}
+        <Box
+          sx={{
+            width: { xs: '100%', md: 480, lg: 520, xl: 540 },
+            flexShrink: 0,
+            minWidth: 0,
+            maxWidth: { md: 560 },
+          }}
+        >
+          <form onSubmit={handleSubmit} noValidate>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* ── Stepper — sticky so it stays visible as the user scrolls ── */}
+              <Box
+                sx={{
+                  position: 'sticky',
+                  top: { xs: 56, md: 72 },
+                  zIndex: 10,
+                  bgcolor: 'background.default',
+                  pt: 1,
+                  pb: 0.5,
+                  mx: -2,
+                  px: 2,
+                }}
+              >
+                <AuthFlowStepper labels={STEP_LABELS} activeStep={activeStep} />
               </Box>
-            </Collapse>
 
-            {/* ══════════════════ Step 2: Details ══════════════════ */}
-            <Collapse in={activeStep === 2} unmountOnExit>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <AdFormLocation
-                  values={values}
-                  update={update}
-                  errors={errors}
-                  cities={cities}
-                  quarters={quarters}
+              {/* ══════════════════ Step 0: Type ══════════════════ */}
+              <Collapse in={activeStep === 0} unmountOnExit>
+                <AdFormStepType
+                  selectedCategory={selectedCategory}
+                  selectedTransactionType={values.transaction_type}
+                  selectedTypeId={values.type_id}
                   adTypes={adTypes}
-                  selectedCity={selectedCity}
-                  selectedQuarter={selectedQuarter}
-                  cityInput={cityInput}
-                  quarterInput={quarterInput}
-                  isCitiesLoading={isCitiesLoading}
-                  isQuartersLoading={isQuartersLoading}
-                  onCityInputChange={setCityInput}
-                  onCityChange={handleCityChange}
-                  onQuarterInputChange={setQuarterInput}
-                  onQuarterChange={setSelectedQuarter}
-                  citySlotProps={citySlotProps}
-                  renderCityOption={renderCityOption}
-                  cityInputSx={cityInputSx}
-                  hideTypeSelector
+                  onCategoryChange={setSelectedCategory}
+                  onTransactionTypeChange={(t) => update('transaction_type', t)}
+                  onTypeIdChange={(id) => update('type_id', id)}
+                  errors={errors}
                 />
-                {!hiddenFields.has('bedrooms') && (
-                  <AdFormFeatures
+              </Collapse>
+
+              {/* ══════════════════ Step 1: Basic Info + Photos ══════════════════ */}
+              <Collapse in={activeStep === 1} unmountOnExit>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <AdFormBasicInfo
                     values={values}
                     update={update}
                     errors={errors}
+                    enhancing={enhancing}
+                    onEnhance={onEnhanceDescription ? handleEnhance : null}
                   />
-                )}
-              </Box>
-            </Collapse>
-
-            {/* ══════════════════ Step 3: Equipment & Conditions ══════════════════ */}
-            <Collapse in={activeStep === 3} unmountOnExit>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {!hiddenFields.has('attributes') && (
-                  <AdFormEquipment
-                    values={values}
-                    update={update}
-                    autocompleteOptions={autocompleteOptions}
-                  />
-                )}
-                {!hiddenFields.has('deposit_amount') && (
-                  <AdFormPremiumInfo
-                    values={values}
-                    update={update}
-                    defaultExpanded={
-                      !!(
-                        initialData?.deposit_amount ||
-                        initialData?.minimum_lease_duration
-                      )
+                  <AdFormPhotos
+                    imagePreviewUrls={imagePreviewUrls}
+                    existingImages={ad?.images}
+                    imagesToDelete={imagesToDelete}
+                    imageCount={images.length}
+                    adTitle={ad?.title}
+                    errors={errors}
+                    isCompressing={compressingPhotos}
+                    onImageChange={handleImageChange}
+                    onRemoveImage={removeImage}
+                    onDeleteExistingImage={(id) =>
+                      setImagesToDelete((prev) => [...prev, id])
                     }
-                    propertyConditionPdf={propertyConditionPdf}
-                    onPdfChange={setPropertyConditionPdf}
+                    onOpenLightbox={openPhotoLightbox}
+                    onReorderImages={reorderImages}
                   />
-                )}
-              </Box>
-            </Collapse>
+                </Box>
+              </Collapse>
 
-            {/* ══════════════════ Step 4: Media & Location ══════════════════ */}
-            <Collapse in={activeStep === 4} unmountOnExit>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <AdFormTour
-                  tourScenes={tourScenes}
-                  ad={ad}
-                  errors={errors}
-                  onAddScene={addTourScene}
-                  onUpdateScene={updateTourScene}
-                  onRemoveScene={removeTourScene}
+              {/* ══════════════════ Step 2: Details ══════════════════ */}
+              <Collapse in={activeStep === 2} unmountOnExit>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <AdFormLocation
+                    values={values}
+                    update={update}
+                    errors={errors}
+                    cities={cities}
+                    quarters={quarters}
+                    adTypes={adTypes}
+                    selectedCity={selectedCity}
+                    selectedQuarter={selectedQuarter}
+                    cityInput={cityInput}
+                    quarterInput={quarterInput}
+                    isCitiesLoading={isCitiesLoading}
+                    isQuartersLoading={isQuartersLoading}
+                    onCityInputChange={setCityInput}
+                    onCityChange={handleCityChange}
+                    onQuarterInputChange={setQuarterInput}
+                    onQuarterChange={setSelectedQuarter}
+                    citySlotProps={citySlotProps}
+                    renderCityOption={renderCityOption}
+                    cityInputSx={cityInputSx}
+                    hideTypeSelector
+                  />
+                  {!hiddenFields.has('bedrooms') && (
+                    <AdFormFeatures
+                      values={values}
+                      update={update}
+                      errors={errors}
+                    />
+                  )}
+                </Box>
+              </Collapse>
+
+              {/* ══════════════════ Step 3: Equipment & Conditions ══════════════════ */}
+              <Collapse in={activeStep === 3} unmountOnExit>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {!hiddenFields.has('attributes') && (
+                    <AdFormEquipment
+                      values={values}
+                      update={update}
+                      autocompleteOptions={autocompleteOptions}
+                    />
+                  )}
+                  {!hiddenFields.has('deposit_amount') && (
+                    <AdFormPremiumInfo
+                      values={values}
+                      update={update}
+                      defaultExpanded={
+                        !!(
+                          initialData?.deposit_amount ||
+                          initialData?.minimum_lease_duration
+                        )
+                      }
+                      propertyConditionPdf={propertyConditionPdf}
+                      onPdfChange={setPropertyConditionPdf}
+                    />
+                  )}
+                </Box>
+              </Collapse>
+
+              {/* ══════════════════ Step 4: Media & Location ══════════════════ */}
+              <Collapse in={activeStep === 4} unmountOnExit>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <AdFormTour
+                    tourScenes={tourScenes}
+                    ad={ad}
+                    errors={errors}
+                    onAddScene={addTourScene}
+                    onUpdateScene={updateTourScene}
+                    onRemoveScene={removeTourScene}
+                  />
+                  <AdFormPriceAdvisor
+                    values={values}
+                    cityId={selectedCity?.id}
+                  />
+                  <AdFormBoost values={values} update={update} />
+                  <AdFormMapLocation values={values} update={update} />
+                </Box>
+              </Collapse>
+
+              {/* ══════════════════ Step 5: Review ══════════════════ */}
+              <Collapse in={activeStep === 5} unmountOnExit>
+                <AdFormStepReview
+                  values={values}
+                  imageCount={images.length}
+                  existingImageCount={existingImageCount}
+                  imagesToDeleteCount={imagesToDelete.length}
+                  tourScenesCount={tourScenes.length}
+                  hasPdf={!!propertyConditionPdf}
+                  selectedCategory={selectedCategory}
+                  adTypes={adTypes}
+                  onGoToStep={goToStep}
                 />
-                <AdFormPriceAdvisor values={values} cityId={selectedCity?.id} />
-                <AdFormBoost values={values} update={update} />
-                <AdFormMapLocation values={values} update={update} />
-              </Box>
-            </Collapse>
+              </Collapse>
 
-            {/* ══════════════════ Step 5: Review ══════════════════ */}
-            <Collapse in={activeStep === 5} unmountOnExit>
-              <AdFormStepReview
-                values={values}
-                imageCount={images.length}
-                existingImageCount={existingImageCount}
-                imagesToDeleteCount={imagesToDelete.length}
-                tourScenesCount={tourScenes.length}
-                hasPdf={!!propertyConditionPdf}
-                selectedCategory={selectedCategory}
-                adTypes={adTypes}
-                onGoToStep={goToStep}
-              />
-            </Collapse>
+              {/* ══════════════════ Navigation ══════════════════ */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 2,
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  pt: 1,
+                  borderTop: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                {/* Left side */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 0.25,
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  {onSaveDraft && (
+                    <Tooltip
+                      title={autoSaveError ? autoSaveError.message : ''}
+                      disableHoverListener={!autoSaveError}
+                      arrow
+                      enterDelay={400}
+                    >
+                      <span>
+                        <Button
+                          variant="text"
+                          size="small"
+                          onClick={
+                            isAutoSaving || isSavingDraft
+                              ? undefined
+                              : handleSaveDraft
+                          }
+                          disabled={isSubmitting || isSavingDraft}
+                          startIcon={
+                            isAutoSaving || isSavingDraft ? (
+                              <CircularProgress size={14} />
+                            ) : autoSaveError ? (
+                              <SaveOutlined
+                                sx={{ color: 'warning.main', fontSize: 16 }}
+                              />
+                            ) : savedAt ? (
+                              <CheckCircleOutlined
+                                sx={{ color: 'success.main', fontSize: 16 }}
+                              />
+                            ) : (
+                              <SaveOutlined sx={{ fontSize: 16 }} />
+                            )
+                          }
+                          sx={{
+                            borderRadius: 2,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            color: autoSaveError
+                              ? 'warning.main'
+                              : savedAt
+                                ? 'success.main'
+                                : 'text.secondary',
+                            '&:hover': {
+                              bgcolor: autoSaveError
+                                ? 'warning.50'
+                                : savedAt
+                                  ? 'success.50'
+                                  : undefined,
+                            },
+                          }}
+                        >
+                          {isAutoSaving
+                            ? 'Sauvegarde...'
+                            : isSavingDraft
+                              ? 'Sauvegarde...'
+                              : autoSaveError
+                                ? 'Brouillon · Sauvegarde auto en échec'
+                                : savedAt
+                                  ? `Brouillon · Enregistré le ${savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+                                  : draftLabel}
+                        </Button>
+                      </span>
+                    </Tooltip>
+                  )}
+                  {onSaveDraft && (
+                    <Box
+                      component="span"
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 0.5,
+                        px: 1,
+                        maxWidth: 420,
+                      }}
+                    >
+                      <Box
+                        component="span"
+                        sx={{
+                          fontSize: '0.7rem',
+                          color: 'text.secondary',
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        Texte et infos enregistrés automatiquement. Photos,
+                        visite 360° et PDF : utilisez « Enregistrer le brouillon
+                        ».
+                      </Box>
+                      {autoSaveError && (
+                        <Typography
+                          component="span"
+                          variant="caption"
+                          sx={{
+                            color: 'warning.main',
+                            lineHeight: 1.35,
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          {autoSaveError.message}
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
+                </Box>
 
-            {/* ══════════════════ Navigation ══════════════════ */}
-            <Box
-              sx={{
-                display: 'flex',
-                gap: 2,
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                pt: 1,
-                borderTop: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              {/* Left side */}
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                {onSaveDraft && (
-                  <Button
-                    variant="text"
-                    size="small"
-                    onClick={
-                      isAutoSaving || isSavingDraft
-                        ? undefined
-                        : handleSaveDraft
-                    }
-                    disabled={isSubmitting || isSavingDraft}
-                    startIcon={
-                      isAutoSaving || isSavingDraft ? (
-                        <CircularProgress size={14} />
-                      ) : savedAt ? (
-                        <CheckCircleOutlined
-                          sx={{ color: 'success.main', fontSize: 16 }}
-                        />
-                      ) : (
-                        <SaveOutlined sx={{ fontSize: 16 }} />
-                      )
-                    }
-                    sx={{
-                      borderRadius: 2,
-                      fontWeight: 600,
-                      textTransform: 'none',
-                      color: savedAt ? 'success.main' : 'text.secondary',
-                      '&:hover': {
-                        bgcolor: savedAt ? 'success.50' : undefined,
-                      },
-                    }}
-                  >
-                    {isAutoSaving
-                      ? 'Sauvegarde...'
-                      : isSavingDraft
-                        ? 'Sauvegarde...'
-                        : savedAt
-                          ? `Brouillon · Enregistré le ${savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
-                          : draftLabel}
-                  </Button>
-                )}
-              </Box>
-
-              {/* Right side */}
-              <Box sx={{ display: 'flex', gap: 1.5, ml: 'auto' }}>
-                {onCancel && activeStep === 0 && (
-                  <Button
-                    onClick={onCancel}
-                    disabled={isSubmitting || isSavingDraft}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    Annuler
-                  </Button>
-                )}
-                {activeStep > 0 && (
-                  <Button
-                    variant="outlined"
-                    startIcon={<ArrowBackIcon />}
-                    onClick={handleBack}
-                    disabled={isSubmitting}
-                    sx={{ borderRadius: 2, fontWeight: 600 }}
-                  >
-                    Précédent
-                  </Button>
-                )}
-                {!isReviewStep ? (
-                  <Button
-                    variant="contained"
-                    endIcon={<ArrowForwardIcon />}
-                    onClick={handleNext}
-                    disabled={nextDisabled}
-                    sx={{
-                      borderRadius: 2,
-                      fontWeight: 700,
-                      px: 3,
-                    }}
-                  >
-                    Suivant
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={isSubmitting || isSavingDraft}
-                    startIcon={
-                      isSubmitting ? (
-                        <CircularProgress size={18} />
-                      ) : (
-                        <PublishIcon />
-                      )
-                    }
-                    sx={{
-                      borderRadius: 2,
-                      fontWeight: 700,
-                      px: 4,
-                      py: 1.25,
-                    }}
-                  >
-                    {submitLabel}
-                  </Button>
-                )}
+                {/* Right side */}
+                <Box sx={{ display: 'flex', gap: 1.5, ml: 'auto' }}>
+                  {onCancel && activeStep === 0 && (
+                    <Button
+                      onClick={onCancel}
+                      disabled={isSubmitting || isSavingDraft}
+                      sx={{ borderRadius: 2 }}
+                    >
+                      Annuler
+                    </Button>
+                  )}
+                  {activeStep > 0 && (
+                    <Button
+                      variant="outlined"
+                      startIcon={<ArrowBackIcon />}
+                      onClick={handleBack}
+                      disabled={isSubmitting}
+                      sx={{ borderRadius: 2, fontWeight: 600 }}
+                    >
+                      Précédent
+                    </Button>
+                  )}
+                  {!isReviewStep ? (
+                    <Button
+                      variant="contained"
+                      endIcon={<ArrowForwardIcon />}
+                      onClick={handleNext}
+                      disabled={nextDisabled}
+                      sx={{
+                        borderRadius: 2,
+                        fontWeight: 700,
+                        px: 3,
+                      }}
+                    >
+                      Suivant
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={isSubmitting || isSavingDraft}
+                      startIcon={
+                        isSubmitting ? (
+                          <CircularProgress size={18} />
+                        ) : (
+                          <PublishIcon />
+                        )
+                      }
+                      sx={{
+                        borderRadius: 2,
+                        fontWeight: 700,
+                        px: 4,
+                        py: 1.25,
+                      }}
+                    >
+                      {submitLabel}
+                    </Button>
+                  )}
+                </Box>
               </Box>
             </Box>
-          </Box>
 
-          <ImageLightbox
-            images={lightboxImages}
-            open={photoLightboxOpen}
-            initialIndex={photoLightboxIndex}
-            onClose={() => setPhotoLightboxOpen(false)}
-          />
-        </form>
+            <ImageLightbox
+              images={lightboxImages}
+              open={photoLightboxOpen}
+              initialIndex={photoLightboxIndex}
+              onClose={() => setPhotoLightboxOpen(false)}
+            />
+          </form>
+        </Box>
+
+        {/* ── Right column: Live Preview — grande colonne fluide (desktop) ── */}
+        <Box
+          sx={{
+            display: { xs: 'none', md: 'block' },
+            flex: '1 1 0%',
+            minWidth: { md: 420, lg: 480, xl: 520 },
+            position: 'sticky',
+            top: 80,
+            alignSelf: 'flex-start',
+            maxHeight: 'calc(100vh - 96px)',
+            overflowY: 'auto',
+            '&::-webkit-scrollbar': { width: 6 },
+            '&::-webkit-scrollbar-thumb': {
+              bgcolor: 'grey.300',
+              borderRadius: 2,
+            },
+          }}
+        >
+          <AdFormLivePreview {...livePreviewProps} />
+        </Box>
+
+        {/* AI enhance error snackbar */}
+        <Snackbar
+          open={!!enhanceError}
+          autoHideDuration={5000}
+          onClose={() => setEnhanceError(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert severity="error" onClose={() => setEnhanceError(null)}>
+            {enhanceError}
+          </Alert>
+        </Snackbar>
       </Box>
 
-      {/* ── Right column: Live Preview (desktop only) ── */}
       <Box
         sx={{
-          display: { xs: 'none', md: 'block' },
-          width: { md: 300, lg: 340 },
-          flexShrink: 0,
-          minWidth: 0,
-          position: 'sticky',
-          top: 80,
-          maxHeight: 'calc(100vh - 96px)',
-          overflowY: 'auto',
-          '&::-webkit-scrollbar': { width: 4 },
-          '&::-webkit-scrollbar-thumb': {
-            bgcolor: 'grey.300',
-            borderRadius: 2,
-          },
+          display: { xs: 'block', md: 'none' },
+          position: 'fixed',
+          right: 16,
+          bottom: `calc(88px + env(safe-area-inset-bottom, 0px))`,
+          zIndex: 1090,
+          pointerEvents: 'none',
+          '& > *': { pointerEvents: 'auto' },
         }}
       >
-        <AdFormLivePreview
-          values={values}
-          imagePreviewUrls={imagePreviewUrls}
-          existingImages={ad?.images ?? []}
-          imagesToDelete={imagesToDelete}
-          selectedQuarter={selectedQuarter}
-          selectedCity={selectedCity}
-          adType={adTypes.find((t) => t.id === values.type_id) ?? null}
-          attributeOptions={autocompleteOptions}
-        />
+        <Fab
+          color="primary"
+          size="medium"
+          aria-label="Aperçu de l'annonce en direct"
+          onClick={() => setMobilePreviewOpen(true)}
+        >
+          <VisibilityIcon />
+        </Fab>
       </Box>
 
-      {/* AI enhance error snackbar */}
-      <Snackbar
-        open={!!enhanceError}
-        autoHideDuration={5000}
-        onClose={() => setEnhanceError(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      <Drawer
+        anchor="bottom"
+        open={mobilePreviewOpen}
+        onClose={() => setMobilePreviewOpen(false)}
+        PaperProps={{
+          sx: {
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            maxHeight: 'min(92dvh, 900px)',
+          },
+        }}
+        sx={{ display: { xs: 'block', md: 'none' }, zIndex: 1200 }}
       >
-        <Alert severity="error" onClose={() => setEnhanceError(null)}>
-          {enhanceError}
-        </Alert>
-      </Snackbar>
-    </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1,
+            px: 2,
+            py: 1.25,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight={700}>
+            Aperçu en direct
+          </Typography>
+          <IconButton
+            onClick={() => setMobilePreviewOpen(false)}
+            aria-label="Fermer l'aperçu"
+            size="small"
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Box
+          sx={{
+            overflowY: 'auto',
+            maxHeight: 'calc(min(92dvh, 900px) - 52px)',
+            p: 2,
+          }}
+        >
+          <AdFormLivePreview {...livePreviewProps} />
+        </Box>
+      </Drawer>
+    </>
   );
 }
 

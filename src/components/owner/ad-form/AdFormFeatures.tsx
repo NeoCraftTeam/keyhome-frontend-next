@@ -7,6 +7,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { CURRENCY_SYMBOL } from '@/lib/constants';
+
 import type { AdFormValues, UpdateFn } from './types';
 import { sectionSx, sectionTitleSx } from './types';
 
@@ -52,7 +54,9 @@ export default function AdFormFeatures({
             helperText={errors.price}
             InputProps={{
               startAdornment: (
-                <InputAdornment position="start">₣</InputAdornment>
+                <InputAdornment position="start">
+                  {CURRENCY_SYMBOL}
+                </InputAdornment>
               ),
             }}
           />
