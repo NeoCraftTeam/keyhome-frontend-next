@@ -6,6 +6,8 @@ import { useClerk, useAuth as useClerkAuth, useSignIn } from '@clerk/nextjs';
 import { useQueryClient } from '@tanstack/react-query';
 import { flushSync } from 'react-dom';
 import api, { ensureCsrfCookie, resetCsrfState } from '@/lib/api';
+import { removeFcmToken } from '@/lib/chat-api';
+import { FCM_TOKEN_STORAGE_KEY } from '@/lib/fcm-token-key';
 import {
   clearAllInMemoryTokens,
   clearRoleCookie,
@@ -20,6 +22,7 @@ import {
 } from '@/lib/auth-session';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { disconnectEcho } from '@/lib/echo';
+import { resetChatE2eeBootstrap } from '@/lib/chat-e2ee-identity';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
 
@@ -221,6 +224,28 @@ export function useAuthActions({
         await api.post('/auth/logout', undefined, logoutConfig);
       };
 
+      const unregisterFcmDevice = async (): Promise<void> => {
+        if (typeof window === 'undefined') {
+          return;
+        }
+        const fcm =
+          localStorage.getItem(FCM_TOKEN_STORAGE_KEY) ??
+          sessionStorage.getItem(FCM_TOKEN_STORAGE_KEY);
+        if (!fcm) {
+          return;
+        }
+        try {
+          await removeFcmToken(fcm);
+        } catch {
+          /* best-effort */
+        }
+        localStorage.removeItem(FCM_TOKEN_STORAGE_KEY);
+        sessionStorage.removeItem(FCM_TOKEN_STORAGE_KEY);
+      };
+
+      // 0) FCM: unregister while the Sanctum bearer is still valid (logout revokes it).
+      await unregisterFcmDevice();
+
       // 1) Server: revoke Sanctum token + invalidate Laravel session (cookie).
       try {
         await postLaravelLogout();
@@ -258,6 +283,7 @@ export function useAuthActions({
       setUserState(null);
       clearRoleCookie();
       wipeBrowserStoragesForLogout();
+      resetChatE2eeBootstrap();
       resetCsrfState();
 
       // 4) Overlay until minimum duration AND all steps above have finished.

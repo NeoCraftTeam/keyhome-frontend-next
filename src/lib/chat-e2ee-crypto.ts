@@ -3,7 +3,8 @@
  * Private key material never leaves the device (stored in localStorage — XSS caveat).
  */
 
-const STORAGE_KEY = 'kh:chat-e2ee:v1';
+/** Legacy single-bucket key (pre–per-user storage). Migrated on first read per account. */
+const LEGACY_E2EE_STORAGE_KEY = 'kh:chat-e2ee:v1';
 
 export type StoredE2eeIdentity = {
   privateJwk: JsonWebKey;
@@ -14,19 +15,42 @@ function rtrimPem(pem: string): string {
   return pem.trim().replace(/\r\n/g, '\n');
 }
 
-function readStored(): StoredE2eeIdentity | null {
-  if (typeof window === 'undefined') return null;
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return null;
+/**
+ * Per-user storage key so multiple accounts on one browser do not share an identity,
+ * and identities can be retained across logout (see `wipeBrowserStoragesForLogout`).
+ */
+export function chatE2eeStorageKeyForUser(userId: string): string {
+  return `${LEGACY_E2EE_STORAGE_KEY}:${userId}`;
+}
+
+function readStored(userId: string): StoredE2eeIdentity | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const namespaced = localStorage.getItem(chatE2eeStorageKeyForUser(userId));
+  if (namespaced) {
+    try {
+      return JSON.parse(namespaced) as StoredE2eeIdentity;
+    } catch {
+      return null;
+    }
+  }
+  const legacy = localStorage.getItem(LEGACY_E2EE_STORAGE_KEY);
+  if (!legacy) {
+    return null;
+  }
   try {
-    return JSON.parse(raw) as StoredE2eeIdentity;
+    const parsed = JSON.parse(legacy) as StoredE2eeIdentity;
+    localStorage.setItem(chatE2eeStorageKeyForUser(userId), legacy);
+    localStorage.removeItem(LEGACY_E2EE_STORAGE_KEY);
+    return parsed;
   } catch {
     return null;
   }
 }
 
-function writeStored(data: StoredE2eeIdentity): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+function writeStored(userId: string, data: StoredE2eeIdentity): void {
+  localStorage.setItem(chatE2eeStorageKeyForUser(userId), JSON.stringify(data));
 }
 
 function pemPublicKeyToSpkiDer(pem: string): ArrayBuffer {
@@ -94,7 +118,7 @@ async function importRsaPrivateKeyFromJwk(jwk: JsonWebKey): Promise<CryptoKey> {
   );
 }
 
-async function generateRsaKeyPairAndPersist(): Promise<{
+async function generateRsaKeyPairAndPersist(userId: string): Promise<{
   privateKey: CryptoKey;
   publicPem: string;
 }> {
@@ -111,7 +135,7 @@ async function generateRsaKeyPairAndPersist(): Promise<{
   const privJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
   const spki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
   const publicPem = spkiDerToPem(spki);
-  writeStored({
+  writeStored(userId, {
     privateJwk: privJwk,
     publicPem,
   });
@@ -123,13 +147,14 @@ async function generateRsaKeyPairAndPersist(): Promise<{
  * Regenerates keys if storage is missing or PEM does not match (device reset / key rotation).
  */
 export async function ensureLocalE2eeIdentity(
-  serverPublicPem: string | null | undefined
+  serverPublicPem: string | null | undefined,
+  userId: string
 ): Promise<{ privateKey: CryptoKey; publicPem: string }> {
   if (!crypto.subtle) {
     throw new Error('Web Crypto API unavailable');
   }
 
-  const stored = readStored();
+  const stored = readStored(userId);
   const want = serverPublicPem ? rtrimPem(serverPublicPem) : '';
 
   if (stored?.privateJwk && stored.publicPem) {
@@ -142,12 +167,19 @@ export async function ensureLocalE2eeIdentity(
     }
   }
 
-  return generateRsaKeyPairAndPersist();
+  return generateRsaKeyPairAndPersist(userId);
 }
 
-export async function getChatE2eePrivateKey(): Promise<CryptoKey | null> {
-  const stored = readStored();
-  if (!stored?.privateJwk) return null;
+export async function getChatE2eePrivateKey(
+  userId: string | null | undefined
+): Promise<CryptoKey | null> {
+  if (!userId) {
+    return null;
+  }
+  const stored = readStored(userId);
+  if (!stored?.privateJwk) {
+    return null;
+  }
   try {
     return await importRsaPrivateKeyFromJwk(stored.privateJwk);
   } catch {

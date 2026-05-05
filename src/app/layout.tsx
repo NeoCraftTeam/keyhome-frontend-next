@@ -136,7 +136,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
+  /** PWA: disable pinch-zoom for native-app feel (Safari may still allow minimal zoom). */
+  maximumScale: 1,
+  userScalable: false,
   // Brand-aware status bar: pink on the customer panel (this root viewport),
   // teal on the owner panel (overridden at runtime by `OwnerManifestSwitch`).
   // Dark mode keeps the deep neutral background so the OS status bar blends

@@ -269,7 +269,7 @@ export default function OwnerSidebar({
               '& .MuiSvgIcon-root': { fontSize: collapsed ? 18 : 20 },
             }}
           >
-            <ChatBadgeIcon />
+            <ChatBadgeIcon badgeColor="primary" />
           </IconButton>
         </Tooltip>
         <Tooltip

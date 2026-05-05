@@ -2,7 +2,7 @@
 // header is left here for grep-ability and is not parsed by the SW runtime.
 // Push + Background Sync + Caching strategy for full offline/PWA support.
 
-const VERSION      = "v10";
+const VERSION      = "v11";
 const STATIC_CACHE = `kh-static-${VERSION}`;
 const API_CACHE    = `kh-api-${VERSION}`;
 const NAV_CACHE    = `kh-nav-${VERSION}`;

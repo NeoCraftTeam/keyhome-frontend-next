@@ -1,10 +1,9 @@
 'use client';
 
 import { registerFcmToken, removeFcmToken } from '@/lib/chat-api';
+import { FCM_TOKEN_STORAGE_KEY } from '@/lib/fcm-token-key';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEffect, useRef, useState } from 'react';
-
-const FCM_TOKEN_KEY = 'kh_fcm_token';
 const WELCOME_DISMISSED_KEY = 'kh:welcome-dismissed';
 const WELCOME_EVENT = 'kh:welcome-dismissed';
 
@@ -33,6 +32,10 @@ export function useFcmToken(): void {
   const { user, isAuthenticated } = useAuth();
   const registeredRef = useRef(false);
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+
+  useEffect(() => {
+    registeredRef.current = false;
+  }, [user?.id]);
 
   // Defer FCM permission prompt until the user has dismissed the welcome /
   // onboarding flow. Asking for system push permission too early (before the
@@ -113,7 +116,9 @@ export function useFcmToken(): void {
         // Reuse the main /sw.js registration (already registered by
         // ServiceWorkerRegistrar). FCM delivers messages via the standard
         // Web Push API; sw.js's `push` event handler extracts the payload.
-        const swReg = await navigator.serviceWorker.ready;
+        const swReg =
+          (await navigator.serviceWorker.getRegistration()) ??
+          (await navigator.serviceWorker.ready);
 
         const token = await getToken(messaging, {
           vapidKey: firebaseVapidKey,
@@ -121,10 +126,14 @@ export function useFcmToken(): void {
         });
 
         if (token) {
-          const cached = sessionStorage.getItem(FCM_TOKEN_KEY);
+          const legacy = sessionStorage.getItem(FCM_TOKEN_STORAGE_KEY);
+          if (legacy && legacy !== token) {
+            sessionStorage.removeItem(FCM_TOKEN_STORAGE_KEY);
+          }
+          const cached = localStorage.getItem(FCM_TOKEN_STORAGE_KEY);
           if (cached !== token) {
             await registerFcmToken(token, 'web');
-            sessionStorage.setItem(FCM_TOKEN_KEY, token);
+            localStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
           }
           registeredRef.current = true;
         }
@@ -159,13 +168,16 @@ export function useFcmToken(): void {
  * Remove the cached FCM token from the backend on logout.
  */
 export async function removeFcmTokenOnLogout(): Promise<void> {
-  const token = sessionStorage.getItem(FCM_TOKEN_KEY);
+  const token =
+    localStorage.getItem(FCM_TOKEN_STORAGE_KEY) ??
+    sessionStorage.getItem(FCM_TOKEN_STORAGE_KEY);
   if (token) {
     try {
       await removeFcmToken(token);
     } catch {
       // Best-effort
     }
-    sessionStorage.removeItem(FCM_TOKEN_KEY);
+    localStorage.removeItem(FCM_TOKEN_STORAGE_KEY);
+    sessionStorage.removeItem(FCM_TOKEN_STORAGE_KEY);
   }
 }

@@ -108,7 +108,7 @@ export function registerInMemoryGetter(): void {
 /* ── Role cookie management ──────────────────────────────────────── */
 
 const ROLE_COOKIE = 'kh_role';
-const ROLE_COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days
+const ROLE_COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days — aligned with Laravel session / Sanctum PAT defaults
 
 export function setRoleCookie(role: string): void {
   if (typeof document === 'undefined') {
@@ -258,7 +258,9 @@ const DEVICE_LOCALSTORAGE_KEYS = [
 
 /**
  * Full tab session wipe for logout: clears sessionStorage entirely and localStorage
- * except for {@link DEVICE_LOCALSTORAGE_KEYS}.
+ * except for {@link DEVICE_LOCALSTORAGE_KEYS} and per-user chat E2EE identities
+ * ({@link chatE2eeStorageKeyForUser} prefixes) so the same account can decrypt
+ * existing sealed threads after signing back in on this device.
  */
 export function wipeBrowserStoragesForLogout(): void {
   if (typeof window === 'undefined') {
@@ -272,6 +274,18 @@ export function wipeBrowserStoragesForLogout(): void {
       preserved[key] = v;
     }
   }
+
+  const E2EE_LS_PREFIX = 'kh:chat-e2ee:v1';
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key !== null && key.startsWith(E2EE_LS_PREFIX)) {
+      const v = localStorage.getItem(key);
+      if (v !== null) {
+        preserved[key] = v;
+      }
+    }
+  }
+
   localStorage.clear();
   for (const [key, val] of Object.entries(preserved)) {
     localStorage.setItem(key, val);

@@ -19,6 +19,42 @@ interface OnlineStatusProps {
 }
 
 /**
+ * Picks the freshest timestamp for "Vu …" when merging API `last_seen_at` with
+ * real-time thread activity (e.g. last inbound message). Conversation payloads
+ * are often stale while the message list updates via WebSocket.
+ */
+export function resolvePeerLastSeenForDisplay(
+  serverLastSeen: string | null | undefined,
+  messageActivityAt: string | null | undefined
+): string | null {
+  const parseMs = (s: string): number => {
+    const t = Date.parse(s);
+    return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
+  };
+
+  const a =
+    typeof serverLastSeen === 'string' && serverLastSeen.trim() !== ''
+      ? serverLastSeen
+      : null;
+  const b =
+    typeof messageActivityAt === 'string' && messageActivityAt.trim() !== ''
+      ? messageActivityAt
+      : null;
+
+  if (a === null && b === null) {
+    return null;
+  }
+  if (a === null) {
+    return b;
+  }
+  if (b === null) {
+    return a;
+  }
+
+  return parseMs(a) >= parseMs(b) ? a : b;
+}
+
+/**
  * Format a "last seen" timestamp for the chat header (French).
  *
  * Shown as `Vu …` in the UI, so strings are written to read naturally after "Vu":
@@ -64,7 +100,7 @@ export function formatLastSeenShort(lastSeenAt: string): string {
 }
 
 /**
- * Teal dot + device icon for online; gray dot for offline with "last seen" text.
+ * Accent dot + label for online; gray dot for offline with "last seen" text.
  */
 export function OnlineStatus({
   status,
@@ -72,7 +108,7 @@ export function OnlineStatus({
   lastSeenAt,
   theme = CLIENT_THEME,
 }: OnlineStatusProps) {
-  void device; // reserved for future device-icon variant
+  void device;
   const color = theme.accent;
 
   if (status === 'online') {

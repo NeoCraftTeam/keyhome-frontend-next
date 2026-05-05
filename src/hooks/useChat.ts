@@ -20,6 +20,7 @@ import {
   rsaOaepUnwrap,
   rsaOaepWrap,
 } from '@/lib/chat-e2ee-crypto';
+import { CHAT_E2EE_READY_EVENT } from '@/lib/chat-e2ee-identity';
 import { getEcho, useEchoConnectionState } from '@/lib/echo';
 import type {
   Conversation,
@@ -56,18 +57,27 @@ type QueuedMessage = {
 
 const OPTIMISTIC_PREFIX = '__optimistic__';
 
+function convSessionAesMapKey(
+  userId: string,
+  conversationUuid: string
+): string {
+  return `${userId}:${conversationUuid}`;
+}
+
 async function buildSealedMessagePayload(
   conv: Conversation,
   conversationUuid: string,
   plaintext: string,
-  convAesKeyRef: { current: Map<string, CryptoKey> }
+  convAesKeyRef: { current: Map<string, CryptoKey> },
+  userId: string
 ): Promise<SendMessageInput> {
   const e2ee = conv.e2ee;
   if (!e2ee?.tenant_public_key_pem || !e2ee.landlord_public_key_pem) {
     throw new Error('E2EE keys missing');
   }
 
-  const cachedAes = convAesKeyRef.current.get(conversationUuid) ?? null;
+  const sessionKey = convSessionAesMapKey(userId, conversationUuid);
+  const cachedAes = convAesKeyRef.current.get(sessionKey) ?? null;
   if (cachedAes) {
     const { ciphertextB64, ivB64 } = await aesGcmEncrypt(cachedAes, plaintext);
     return {
@@ -78,12 +88,12 @@ async function buildSealedMessagePayload(
   }
 
   if (e2ee.session_ready && e2ee.wrapped_conversation_key_b64) {
-    const priv = await getChatE2eePrivateKey();
+    const priv = await getChatE2eePrivateKey(userId);
     if (!priv) {
       throw new Error('No local E2EE private key');
     }
     const aesKey = await rsaOaepUnwrap(priv, e2ee.wrapped_conversation_key_b64);
-    convAesKeyRef.current.set(conversationUuid, aesKey);
+    convAesKeyRef.current.set(sessionKey, aesKey);
     const { ciphertextB64, ivB64 } = await aesGcmEncrypt(aesKey, plaintext);
     return {
       is_client_sealed: true,
@@ -93,7 +103,7 @@ async function buildSealedMessagePayload(
   }
 
   const aesKey = await createConversationAesKey();
-  convAesKeyRef.current.set(conversationUuid, aesKey);
+  convAesKeyRef.current.set(sessionKey, aesKey);
   const raw = await exportAesRawKey(aesKey);
   const tenantPub = await importRsaPublicKeyFromPem(e2ee.tenant_public_key_pem);
   const landlordPub = await importRsaPublicKeyFromPem(
@@ -206,6 +216,19 @@ export function useChat(
 } {
   const { user } = useAuth();
   const userId = user?.id ?? '';
+  const [e2eeBootstrapTick, setE2eeBootstrapTick] = useState(0);
+
+  useEffect(() => {
+    const onReady = (): void => {
+      setE2eeBootstrapTick((n) => n + 1);
+    };
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.addEventListener(CHAT_E2EE_READY_EVENT, onReady);
+    return () => window.removeEventListener(CHAT_E2EE_READY_EVENT, onReady);
+  }, []);
+
   const queryClient = useQueryClient();
   const [otherIsTyping, setOtherIsTyping] = useState(false);
   const [otherIsRecordingVoice, setOtherIsRecordingVoice] = useState(false);
@@ -216,17 +239,34 @@ export function useChat(
   const convAesKeyRef = useRef<Map<string, CryptoKey>>(new Map());
   const decryptedIdsRef = useRef<Set<string>>(new Set());
   const prevConversationUuidRef = useRef<string | null>(null);
+  const prevUserIdForConvKeyRef = useRef<string>('');
 
   useEffect(() => {
+    const uid = userId;
+    if (
+      prevUserIdForConvKeyRef.current !== '' &&
+      prevUserIdForConvKeyRef.current !== uid
+    ) {
+      convAesKeyRef.current.clear();
+      decryptedIdsRef.current.clear();
+    }
+    prevUserIdForConvKeyRef.current = uid;
+
+    if (!uid) {
+      prevConversationUuidRef.current = conversationUuid;
+      return;
+    }
     if (
       prevConversationUuidRef.current !== null &&
       prevConversationUuidRef.current !== conversationUuid
     ) {
-      convAesKeyRef.current.delete(prevConversationUuidRef.current);
+      convAesKeyRef.current.delete(
+        convSessionAesMapKey(uid, prevConversationUuidRef.current)
+      );
       decryptedIdsRef.current.clear();
     }
     prevConversationUuidRef.current = conversationUuid;
-  }, [conversationUuid]);
+  }, [conversationUuid, userId]);
 
   const conversationRef = useRef(conversation ?? null);
 
@@ -325,6 +365,7 @@ export function useChat(
     const conv = conversationRef.current;
     const e2ee = conv?.e2ee;
     if (
+      !userId ||
       !e2ee?.session_ready ||
       !e2ee.wrapped_conversation_key_b64 ||
       typeof crypto === 'undefined' ||
@@ -341,30 +382,19 @@ export function useChat(
         return;
       }
 
-      let aesKey = convAesKeyRef.current.get(conversationUuid) ?? null;
+      const mapKey = convSessionAesMapKey(userId, conversationUuid);
+      let aesKey = convAesKeyRef.current.get(mapKey) ?? null;
       if (!aesKey) {
-        const priv = await getChatE2eePrivateKey();
-        if (cancelled) return;
+        const priv = await getChatE2eePrivateKey(userId);
+        if (cancelled) {
+          return;
+        }
         if (!priv) {
-          // No local private key — sealed messages cannot be opened on this
-          // device. Mark every sealed-without-decrypted-body message as failed
-          // so the UI shows a definitive state instead of an indefinite spinner.
-          updateCache((old) => ({
-            ...old,
-            messages: old.messages.map((x) =>
-              x.is_client_sealed &&
-              (x.decrypted_body == null || x.decrypted_body === '')
-                ? { ...x, decryption_failed: true }
-                : x
-            ),
-          }));
           return;
         }
         try {
           aesKey = await rsaOaepUnwrap(priv, wrappedB64);
         } catch {
-          // Wrapped key was encrypted with a different public key (different
-          // device/identity). Same fallback as no-key case.
           updateCache((old) => ({
             ...old,
             messages: old.messages.map((x) =>
@@ -376,7 +406,7 @@ export function useChat(
           }));
           return;
         }
-        convAesKeyRef.current.set(conversationUuid, aesKey);
+        convAesKeyRef.current.set(mapKey, aesKey);
       }
 
       for (const m of messages) {
@@ -404,8 +434,6 @@ export function useChat(
             ),
           }));
         } catch {
-          // Per-message corruption — flag this one as failed but keep trying
-          // the others.
           if (cancelled) return;
           updateCache((old) => ({
             ...old,
@@ -426,6 +454,8 @@ export function useChat(
     conversation?.e2ee?.wrapped_conversation_key_b64,
     messages,
     updateCache,
+    userId,
+    e2eeBootstrapTick,
   ]);
 
   // ─── Load older messages ─────────────────────────────────────────────────
@@ -1007,7 +1037,8 @@ export function useChat(
           conv as Conversation,
           conversationUuid,
           body,
-          convAesKeyRef
+          convAesKeyRef,
+          userId
         );
         const withReply: SendMessageInput =
           replyToId !== undefined
@@ -1087,7 +1118,7 @@ export function useChat(
         throw err;
       }
     },
-    [conversationUuid, user, updateCache, queryClient]
+    [conversationUuid, user, userId, updateCache, queryClient]
   );
 
   // ─── Upload file ─────────────────────────────────────────────────────────

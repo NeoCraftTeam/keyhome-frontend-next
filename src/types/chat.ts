@@ -79,6 +79,8 @@ export interface ConversationAd {
 
 export interface ConversationParticipant {
   id: string;
+  /** Public profile slug when set; use with `/bailleurs/{username}`. */
+  username: string | null;
   name: string;
   avatar: string | null;
   /** ISO-8601 timestamp of last authenticated activity. Used by `OnlineStatus`

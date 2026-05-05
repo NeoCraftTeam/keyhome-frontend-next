@@ -159,7 +159,11 @@ export const OWNER_BOTTOM_NAV_ITEMS: NavItem[] = [
     href: '/owner/ads',
     icon: <ViewListRoundedIcon />,
   },
-  { label: 'Messages', href: '/owner/messages', icon: <ChatBadgeIcon /> },
+  {
+    label: 'Messages',
+    href: '/owner/messages',
+    icon: <ChatBadgeIcon badgeColor="primary" />,
+  },
   {
     label: 'Accueil',
     href: '/owner/dashboard',
@@ -185,7 +189,11 @@ export const OWNER_SIDEBAR_NAV_ITEMS: NavItem[] = [
     href: '/owner/ads',
     icon: <ViewListRoundedIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
   },
-  { label: 'Messages', href: '/owner/messages', icon: <ChatBadgeIcon /> },
+  {
+    label: 'Messages',
+    href: '/owner/messages',
+    icon: <ChatBadgeIcon badgeColor="primary" />,
+  },
   { label: 'Locataires', href: '/owner/tenants', icon: <PeopleAltIcon /> },
   {
     label: 'Finances',

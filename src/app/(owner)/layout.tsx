@@ -31,7 +31,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
+  /** Match root: no pinch-zoom in installed PWA / mobile shell. */
+  maximumScale: 1,
+  userScalable: false,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#0D9488' },
     { media: '(prefers-color-scheme: dark)', color: '#134E4A' },

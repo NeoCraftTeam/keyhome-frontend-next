@@ -10,6 +10,7 @@ function conv(uuid: string, unread: number, lastAt: string): Conversation {
     status: 'active',
     other_participant: {
       id: 'u1',
+      username: null,
       name: 'A B',
       avatar: null,
       last_seen_at: null,

@@ -113,7 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void (async () => {
       try {
         const pem = await syncChatE2eePublicKeyWithServer(
-          user.chat_e2ee_public_key_pem ?? null
+          user.chat_e2ee_public_key_pem ?? null,
+          user.id
         );
         if (cancelled || !pem) {
           return;

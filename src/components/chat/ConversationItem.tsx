@@ -3,11 +3,20 @@
 import type { ChatTheme } from './chat-theme';
 import { CLIENT_THEME } from './chat-theme';
 import type { Conversation } from '@/types/chat';
-import { prefetchChatMessages } from '@/hooks/useChat';
-import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import {
+  prefetchChatMessages,
+  chatMessagesKey,
+  type MessagesCache,
+} from '@/hooks/useChat';
+import { useChatMessagesCacheEntry } from '@/hooks/useChatMessagesCacheEntry';
+import { mergeConversationLastMessage } from '@/lib/conversation-list-preview';
+import { decryptSealedTextForListPreview } from '@/lib/conversation-list-sealed-decrypt';
+import type { ConversationsListQueryData } from '@/lib/conversation-list-cache';
+import { chatKeys } from '@/lib/query-keys';
+import { formatConversationListTimestamp } from '@/lib/conversation-list-time';
+import { CHAT_E2EE_READY_EVENT } from '@/lib/chat-e2ee-identity';
 import Image from 'next/image';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -33,36 +42,187 @@ export function ConversationItem({
   const queryClient = useQueryClient();
   const router = useRouter();
   const prefetchedRef = useRef(false);
+  const [e2eeListDecryptTick, setE2eeListDecryptTick] = useState(0);
   const participant = conversation.other_participant;
+
+  const messagesCache = useChatMessagesCacheEntry(user?.id, conversation.uuid);
+  const mergedLast = useMemo(
+    () =>
+      mergeConversationLastMessage(conversation.last_message, messagesCache),
+    [conversation.last_message, messagesCache]
+  );
+
+  useEffect(() => {
+    const onReady = (): void => setE2eeListDecryptTick((n) => n + 1);
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.addEventListener(CHAT_E2EE_READY_EVENT, onReady);
+    return () => window.removeEventListener(CHAT_E2EE_READY_EVENT, onReady);
+  }, []);
+
+  useEffect(() => {
+    const msg = mergedLast;
+    if (msg == null || msg.is_client_sealed !== true) {
+      return;
+    }
+    const seal = msg.e2ee;
+    if (seal == null) {
+      return;
+    }
+    if (
+      (msg.decrypted_body != null && msg.decrypted_body !== '') ||
+      msg.decryption_failed === true
+    ) {
+      return;
+    }
+    if (user?.id == null) {
+      return;
+    }
+    const meta = conversation.e2ee;
+    const wrappedB64 = meta?.wrapped_conversation_key_b64;
+    if (
+      meta?.session_ready !== true ||
+      wrappedB64 == null ||
+      wrappedB64 === ''
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      const outcome = await decryptSealedTextForListPreview(
+        user.id,
+        conversation.uuid,
+        wrappedB64,
+        seal.ciphertext_b64,
+        seal.iv_b64
+      );
+      if (cancelled) {
+        return;
+      }
+      if (outcome.kind === 'pending') {
+        return;
+      }
+      if (outcome.kind === 'failed') {
+        queryClient.setQueryData<ConversationsListQueryData>(
+          chatKeys.conversations(user.id),
+          (old) => {
+            if (old == null) {
+              return old;
+            }
+            let changed = false;
+            const data = old.data.map((c) => {
+              if (c.uuid !== conversation.uuid) {
+                return c;
+              }
+              const lm = c.last_message;
+              if (lm == null || lm.uuid !== msg.uuid) {
+                return c;
+              }
+              changed = true;
+              return {
+                ...c,
+                last_message: { ...lm, decryption_failed: true },
+              };
+            });
+            return changed ? { ...old, data } : old;
+          }
+        );
+        return;
+      }
+
+      const plain = outcome.text;
+      const snippet = plain.slice(0, 80);
+      queryClient.setQueryData<ConversationsListQueryData>(
+        chatKeys.conversations(user.id),
+        (old) => {
+          if (old == null) {
+            return old;
+          }
+          let changed = false;
+          const data = old.data.map((c) => {
+            if (c.uuid !== conversation.uuid) {
+              return c;
+            }
+            const lm = c.last_message;
+            if (lm == null || lm.uuid !== msg.uuid) {
+              return c;
+            }
+            changed = true;
+            return {
+              ...c,
+              last_message: {
+                ...lm,
+                decrypted_body: plain,
+                body: snippet,
+                decryption_failed: false,
+              },
+            };
+          });
+          return changed ? { ...old, data } : old;
+        }
+      );
+
+      const mk = chatMessagesKey(user.id, conversation.uuid);
+      const existing = queryClient.getQueryData<MessagesCache>(mk);
+      if (existing != null) {
+        queryClient.setQueryData<MessagesCache>(mk, {
+          ...existing,
+          messages: existing.messages.map((m) =>
+            m.uuid === msg.uuid
+              ? { ...m, decrypted_body: plain, decryption_failed: false }
+              : m
+          ),
+        });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    mergedLast?.uuid,
+    mergedLast?.is_client_sealed,
+    mergedLast?.e2ee?.ciphertext_b64,
+    mergedLast?.e2ee?.iv_b64,
+    mergedLast?.decrypted_body,
+    mergedLast?.decryption_failed,
+    conversation.uuid,
+    conversation.e2ee?.session_ready,
+    conversation.e2ee?.wrapped_conversation_key_b64,
+    user?.id,
+    queryClient,
+    e2eeListDecryptTick,
+  ]);
 
   useEffect(() => {
     prefetchedRef.current = false;
   }, [user?.id]);
   const unread = conversation.unread_count > 0;
-  const lastMsg = conversation.last_message;
+  const lastMsg = mergedLast;
 
-  const timeAgo = conversation.last_message_at
-    ? formatDistanceToNow(new Date(conversation.last_message_at), {
-        addSuffix: false,
-        locale: fr,
-      })
+  const timeLabel = conversation.last_message_at
+    ? formatConversationListTimestamp(conversation.last_message_at)
     : '';
 
   const isOwnLastMsg = !!lastMsg?.sender_id && lastMsg.sender_id === user?.id;
-  // Build preview in priority order: sealed → text body → attachment hint.
-  // Without this, sealed messages render an empty preview because `body` is null.
+  const plainPreview =
+    lastMsg?.decrypted_body?.trim() ||
+    (lastMsg?.is_client_sealed !== true ? lastMsg?.body?.trim() : '');
   let rawPreview: string | null = null;
   if (lastMsg) {
-    if (lastMsg.is_client_sealed) {
-      rawPreview = '🔐 Message sécurisé';
-    } else if (lastMsg.body) {
-      rawPreview = lastMsg.body.slice(0, 52);
+    if (plainPreview) {
+      rawPreview = plainPreview.slice(0, 52);
     } else if (lastMsg.type === 'image') {
       rawPreview = '📷 Photo';
     } else if (lastMsg.type === 'audio') {
       rawPreview = '🎙 Message vocal';
     } else if (lastMsg.type === 'file') {
       rawPreview = '📎 Document';
+    } else if (lastMsg.is_client_sealed === true) {
+      rawPreview = '🔐 Message sécurisé';
     }
   }
   const preview = rawPreview ?? 'Démarrez la conversation';
@@ -159,7 +319,7 @@ export function ConversationItem({
                 fontWeight: unread ? 600 : 400,
               }}
             >
-              {timeAgo}
+              {timeLabel}
             </span>
           </div>
         </div>

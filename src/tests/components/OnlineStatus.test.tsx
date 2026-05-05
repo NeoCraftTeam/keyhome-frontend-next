@@ -4,7 +4,10 @@
  * Locks down French formatting for the chat header "Vu …" line.
  */
 import { describe, expect, it, beforeAll, afterAll, vi } from 'vitest';
-import { formatLastSeenShort } from '@/components/chat/OnlineStatus';
+import {
+  formatLastSeenShort,
+  resolvePeerLastSeenForDisplay,
+} from '@/components/chat/OnlineStatus';
 
 describe('formatLastSeenShort', () => {
   const NOW = new Date('2026-05-01T18:00:00Z');
@@ -52,5 +55,25 @@ describe('formatLastSeenShort', () => {
     ).toISOString();
     const result = formatLastSeenShort(seenAt);
     expect(result).toMatch(/^le \d{2}\/\d{2}\/\d{4} à \d{2}:\d{2}$/);
+  });
+});
+
+describe('resolvePeerLastSeenForDisplay', () => {
+  it('returns null when both inputs are empty', () => {
+    expect(resolvePeerLastSeenForDisplay(null, null)).toBeNull();
+    expect(resolvePeerLastSeenForDisplay(undefined, '')).toBeNull();
+  });
+
+  it('returns the only non-empty timestamp', () => {
+    const t = '2026-05-05T10:00:00.000Z';
+    expect(resolvePeerLastSeenForDisplay(t, null)).toBe(t);
+    expect(resolvePeerLastSeenForDisplay(null, t)).toBe(t);
+  });
+
+  it('returns the newer of two valid timestamps', () => {
+    const older = '2026-05-04T02:35:00.000Z';
+    const newer = '2026-05-05T18:42:00.000Z';
+    expect(resolvePeerLastSeenForDisplay(older, newer)).toBe(newer);
+    expect(resolvePeerLastSeenForDisplay(newer, older)).toBe(newer);
   });
 });

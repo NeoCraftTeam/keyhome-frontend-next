@@ -25,6 +25,11 @@ interface SessionTimeoutModalProps {
   onLogout: () => void;
   /** When true, the refresh failed — shows an error banner before redirect. */
   refreshError?: boolean;
+  /**
+   * Owner panel (teal theme): progress ring, top bar, icon and countdown use
+   * primary instead of warning/error so the modal matches bailleur branding.
+   */
+  useOwnerAccent?: boolean;
 }
 
 export default function SessionTimeoutModal({
@@ -34,11 +39,20 @@ export default function SessionTimeoutModal({
   onExtend,
   onLogout,
   refreshError = false,
+  useOwnerAccent = false,
 }: SessionTimeoutModalProps) {
   const [extending, setExtending] = useState(false);
 
   const progress = (secondsLeft / countdownTotal) * 100;
   const isBlocked = extending || refreshError;
+
+  const accentStrong = useOwnerAccent
+    ? progress > 30
+      ? 'primary.main'
+      : 'primary.dark'
+    : progress > 30
+      ? 'warning.main'
+      : 'error.main';
 
   const handleExtend = async () => {
     if (isBlocked) return;
@@ -71,7 +85,7 @@ export default function SessionTimeoutModal({
         sx={{
           height: 4,
           '& .MuiLinearProgress-bar': {
-            bgcolor: progress > 30 ? 'warning.main' : 'error.main',
+            bgcolor: accentStrong,
             transition: 'transform 1s linear',
           },
         }}
@@ -92,7 +106,7 @@ export default function SessionTimeoutModal({
               value={progress}
               size={72}
               thickness={3}
-              sx={{ color: progress > 30 ? 'warning.main' : 'error.main' }}
+              sx={{ color: accentStrong }}
             />
             <Box
               sx={{
@@ -106,7 +120,7 @@ export default function SessionTimeoutModal({
               <TimerOffIcon
                 sx={{
                   fontSize: 28,
-                  color: progress > 30 ? 'warning.main' : 'error.main',
+                  color: accentStrong,
                 }}
               />
             </Box>
@@ -142,7 +156,7 @@ export default function SessionTimeoutModal({
               variant="h3"
               fontWeight={800}
               sx={{
-                color: progress > 30 ? 'warning.main' : 'error.main',
+                color: accentStrong,
                 fontVariantNumeric: 'tabular-nums',
                 mb: 1,
               }}

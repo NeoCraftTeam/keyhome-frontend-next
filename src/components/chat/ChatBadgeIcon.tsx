@@ -11,7 +11,12 @@ import { useQuery } from '@tanstack/react-query';
  * Chat icon with live unread-message badge.
  * Safe to use as a nav icon — internally fetches unread count every 60s.
  */
-export function ChatBadgeIcon() {
+export function ChatBadgeIcon({
+  badgeColor = 'error',
+}: {
+  /** Owner panel: use `primary` (teal) to match bailleur theme. */
+  badgeColor?: 'primary' | 'error';
+}) {
   const { isAuthenticated, user } = useAuth();
 
   const { data } = useQuery({
@@ -28,7 +33,7 @@ export function ChatBadgeIcon() {
   return (
     <Badge
       badgeContent={unreadConversations || null}
-      color="error"
+      color={badgeColor}
       max={99}
       sx={{
         display: 'inline-flex',

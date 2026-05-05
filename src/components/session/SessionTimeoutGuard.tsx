@@ -85,6 +85,7 @@ export default function SessionTimeoutGuard() {
       onExtend={handleExtend}
       onLogout={() => void logout(logoutTarget)}
       refreshError={refreshError}
+      useOwnerAccent={isOwner}
     />
   );
 }

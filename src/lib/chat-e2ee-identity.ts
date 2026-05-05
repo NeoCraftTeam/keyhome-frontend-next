@@ -18,7 +18,16 @@
 import api from '@/lib/api';
 import { ensureLocalE2eeIdentity, rtrimPem } from '@/lib/chat-e2ee-crypto';
 
-let inFlight: Promise<string | null> | null = null;
+const inFlightByUser = new Map<string, Promise<string | null>>();
+
+export const CHAT_E2EE_READY_EVENT = 'kh:chat-e2ee-ready';
+
+function dispatchE2eeReady(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent(CHAT_E2EE_READY_EVENT));
+}
 
 /**
  * Make sure the device has an RSA-OAEP keypair, push the public PEM to the
@@ -26,14 +35,16 @@ let inFlight: Promise<string | null> | null = null;
  * up-to-date local public PEM.
  *
  * @param serverPem  The user's currently registered public PEM (passed in so
- *                   we can avoid an extra round-trip when the caller already
- *                   has it from `/auth/me`).
- * @returns          The up-to-date local public PEM, or `null` if the bootstrap
- *                   failed (caller should not throw — chat falls back to
- *                   server-encrypted messages).
+ *                    we can avoid an extra round-trip when the caller already
+ *                    has it from `/auth/me`).
+ * @param userId      Authenticated user id (required for per-user key storage).
+ * @returns           The up-to-date local public PEM, or `null` if the bootstrap
+ *                    failed (caller should not throw — chat falls back to
+ *                    server-encrypted messages).
  */
 export function syncChatE2eePublicKeyWithServer(
-  serverPem: string | null
+  serverPem: string | null,
+  userId: string
 ): Promise<string | null> {
   if (typeof window === 'undefined') {
     return Promise.resolve(null);
@@ -41,14 +52,17 @@ export function syncChatE2eePublicKeyWithServer(
   if (typeof crypto === 'undefined' || !crypto.subtle) {
     return Promise.resolve(null);
   }
-  if (inFlight) {
-    return inFlight;
+  if (!userId) {
+    return Promise.resolve(null);
   }
 
-  inFlight = (async (): Promise<string | null> => {
+  const existing = inFlightByUser.get(userId);
+  if (existing) {
+    return existing;
+  }
+
+  const promise = (async (): Promise<string | null> => {
     try {
-      // Resolve the canonical server PEM. The caller's hint is authoritative
-      // when set; otherwise hit the dedicated endpoint.
       let canonicalServer: string | null = serverPem;
       if (canonicalServer === null) {
         try {
@@ -61,7 +75,10 @@ export function syncChatE2eePublicKeyWithServer(
         }
       }
 
-      const { publicPem } = await ensureLocalE2eeIdentity(canonicalServer);
+      const { publicPem } = await ensureLocalE2eeIdentity(
+        canonicalServer,
+        userId
+      );
 
       const localNorm = rtrimPem(publicPem);
       const serverNorm = canonicalServer ? rtrimPem(canonicalServer) : '';
@@ -72,10 +89,6 @@ export function syncChatE2eePublicKeyWithServer(
             public_key_pem: publicPem,
           });
         } catch (err) {
-          // Push failure → peers won't be able to wrap a session key for this
-          // device until the next attempt. Sealed messages we receive can still
-          // be decrypted using the existing session AES key (already unwrapped
-          // server-side for this user under their previous key).
           if (process.env.NODE_ENV !== 'production') {
             console.warn(
               '[chat-e2ee] failed to push public key to server',
@@ -85,6 +98,7 @@ export function syncChatE2eePublicKeyWithServer(
         }
       }
 
+      dispatchE2eeReady();
       return publicPem;
     } catch (err) {
       if (process.env.NODE_ENV !== 'production') {
@@ -92,21 +106,20 @@ export function syncChatE2eePublicKeyWithServer(
       }
       return null;
     } finally {
-      // Allow re-bootstrap when auth state changes (logout → re-login).
       queueMicrotask(() => {
-        inFlight = null;
+        inFlightByUser.delete(userId);
       });
     }
   })();
 
-  return inFlight;
+  inFlightByUser.set(userId, promise);
+  return promise;
 }
 
 /**
- * Force-clear the in-flight bootstrap promise. Use on logout so a different
- * user signing in on the same browser triggers a fresh bootstrap (their
- * server PEM is different).
+ * Force-clear in-flight bootstrap promises. Use on logout so state does not leak
+ * across sessions.
  */
 export function resetChatE2eeBootstrap(): void {
-  inFlight = null;
+  inFlightByUser.clear();
 }

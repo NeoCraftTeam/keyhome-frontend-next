@@ -181,6 +181,22 @@ export function ChatWindow({
     queuedCount,
   } = useChat(conversation.uuid, otherParticipant?.id ?? '', conversation);
 
+  const peerMessageActivityAt = useMemo(() => {
+    if (!otherParticipant?.id) {
+      return null;
+    }
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.uuid.startsWith('__optimistic__')) {
+        continue;
+      }
+      if (m.sender_id === otherParticipant.id) {
+        return m.created_at;
+      }
+    }
+    return null;
+  }, [messages, otherParticipant?.id]);
+
   const listRef = useRef<HTMLDivElement>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
@@ -438,6 +454,7 @@ export function ChatWindow({
         conversation={conversation}
         presenceStatus={onlineStatus}
         presenceDevice={presenceDevice}
+        peerMessageActivityAt={peerMessageActivityAt}
         backHref={backHref}
         theme={theme}
         onArchive={() => {

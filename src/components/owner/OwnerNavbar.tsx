@@ -16,13 +16,13 @@ import {
   AppBar,
   Avatar,
   Box,
-  Button,
   Chip,
   IconButton,
   Divider,
   Menu,
   MenuItem,
   Toolbar,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -76,15 +76,20 @@ export default function OwnerNavbar() {
             maxWidth: 1760,
             width: '100%',
             mx: 'auto',
-            px: { xs: 1.5, md: 2 },
+            px: { xs: 1, sm: 1.5, md: 2 },
             minHeight: { xs: 56, md: 64 },
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            gap: 1,
           }}
         >
           <Box
-            sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
+            sx={{
+              flex: '1 1 auto',
+              minWidth: 0,
+              display: 'flex',
+              alignItems: 'center',
+            }}
           >
             <Box
               onClick={() => router.push('/owner/dashboard')}
@@ -92,8 +97,9 @@ export default function OwnerNavbar() {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1,
-                flexShrink: 0,
+                gap: { xs: 0.75, sm: 1 },
+                minWidth: 0,
+                maxWidth: '100%',
                 transition: 'opacity 0.2s',
                 '&:hover': { opacity: 0.85 },
               }}
@@ -104,15 +110,24 @@ export default function OwnerNavbar() {
                 width={isMobile ? 36 : 44}
                 height={isMobile ? 36 : 44}
                 priority
-                style={{ objectFit: 'contain' }}
+                style={{ objectFit: 'contain', flexShrink: 0 }}
               />
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.75,
+                  minWidth: 0,
+                  overflow: 'hidden',
+                }}
+              >
                 <Typography
                   variant="h6"
+                  noWrap
                   sx={{
                     color: 'inherit',
                     fontWeight: 800,
-                    fontSize: { xs: '1.05rem', md: '1.2rem' },
+                    fontSize: { xs: '1rem', sm: '1.05rem', md: '1.2rem' },
                     letterSpacing: -0.5,
                   }}
                 >
@@ -129,7 +144,8 @@ export default function OwnerNavbar() {
                     bgcolor: 'rgba(255,255,255,0.18)',
                     color: '#fff',
                     border: 'none',
-                    display: 'flex',
+                    display: { xs: 'none', sm: 'flex' },
+                    flexShrink: 0,
                     '& .MuiChip-label': { px: 0.75 },
                   }}
                 />
@@ -141,25 +157,25 @@ export default function OwnerNavbar() {
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: { xs: 0.75, sm: 1 },
+              gap: { xs: 0.5, sm: 0.75 },
               flexShrink: 0,
             }}
           >
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddCircleOutlineIcon />}
-              onClick={() => router.push('/owner/ads/new')}
-              sx={{
-                borderRadius: 99,
-                fontWeight: 700,
-                textTransform: 'none',
-                boxShadow: 'none',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              Nouvelle annonce
-            </Button>
+            <Tooltip title="Nouvelle annonce">
+              <IconButton
+                aria-label="Nouvelle annonce"
+                onClick={() => router.push('/owner/ads/new')}
+                sx={{
+                  width: 44,
+                  height: 44,
+                  color: 'common.white',
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+                }}
+              >
+                <AddCircleOutlineIcon />
+              </IconButton>
+            </Tooltip>
             {!(isMobile && isStandalone) && (
               <IconButton
                 aria-label="Messagerie"
@@ -176,7 +192,7 @@ export default function OwnerNavbar() {
                   '& .MuiSvgIcon-root': { color: 'inherit' },
                 }}
               >
-                <ChatBadgeIcon />
+                <ChatBadgeIcon badgeColor="primary" />
               </IconButton>
             )}
             <Box
