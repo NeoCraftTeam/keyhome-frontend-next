@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { smartBack } from '@/lib/smart-back';
+import { khSafeAreaTopSx } from '@/lib/safe-area-insets';
 
 interface ConversationListProps {
   activeUuid?: string;
@@ -73,8 +74,10 @@ export function ConversationList({
     >
       {/* Header */}
       <div
-        className="px-5 pt-5 pb-4 shrink-0"
+        className="px-5 pb-4 shrink-0"
         style={{
+          // Match ChatHeader: keep title row below iOS status bar / notch in PWA & Safari.
+          paddingTop: `calc(${khSafeAreaTopSx} + 1.25rem)`,
           borderBottom: `1px solid ${theme.glassBorder}`,
           background: theme.isDark
             ? theme.listBg

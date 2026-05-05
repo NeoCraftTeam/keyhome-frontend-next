@@ -52,10 +52,18 @@ export function syncKhSafeAreaInsets(): void {
 
 /** MUI `sx` / CSS strings: use env() and JS-updated fallbacks together */
 export const khSafeAreaTopSx =
-  'max(env(safe-area-inset-top, 0px), var(--kh-safe-area-top))';
+  'max(env(safe-area-inset-top, 0px), var(--kh-safe-area-top, 0px))';
 
 export const khSafeAreaBottomSx =
-  'max(env(safe-area-inset-bottom, 0px), var(--kh-safe-area-bottom))';
+  'max(env(safe-area-inset-bottom, 0px), var(--kh-safe-area-bottom, 0px))';
+
+/** Landscape / edge cutouts — `env()` only (stable on first paint). */
+export const khSafeAreaLeftSx = 'env(safe-area-inset-left, 0px)';
+
+export const khSafeAreaRightSx = 'env(safe-area-inset-right, 0px)';
+
+/** Left rail pattern: inset top + left (notch / status bar), same idea as iOS HIG. */
+export const khLeftRailPaddingSx = `${khSafeAreaTopSx} 0 0 ${khSafeAreaLeftSx}`;
 
 /** In-flow spacer under fixed AppBar (toolbar height + top inset). */
 export const khNavbarSpacerMinHeightXs = `calc(56px + ${khSafeAreaTopSx})`;

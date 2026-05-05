@@ -34,6 +34,7 @@ import { Box, Drawer, Fab, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
 import { isLikelyIosWebKit } from '@/lib/ios-environment';
+import { khLeftRailPaddingSx } from '@/lib/safe-area-insets';
 import { useCallback, useEffect, useState } from 'react';
 
 function FcmRegistrar() {
@@ -359,6 +360,11 @@ export default function OwnerLayoutClient({
             height: '100vh',
             transition: 'width 0.2s ease',
             overflowX: 'hidden',
+            // Fixed rail: extend under notch using env + measured top inset (viewport-fit=cover).
+            padding: khLeftRailPaddingSx,
+            // Shell chrome: avoid iOS callout menu on long-press over nav labels.
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
           },
         }}
       >

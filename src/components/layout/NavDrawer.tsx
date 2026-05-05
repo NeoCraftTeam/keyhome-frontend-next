@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import { AUTH_DRAWER_QUICK_NAV, SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
+import { khLeftRailPaddingSx } from '@/lib/safe-area-insets';
 import {
   CLIENT_DRAWER_LIST_ICON_MIN_WIDTH_PX,
   NAV_LIST_ICON_GLYPH_PX,
@@ -206,6 +207,10 @@ export default function NavDrawer({
           maxWidth: 320,
           display: 'flex',
           flexDirection: 'column',
+          boxSizing: 'border-box',
+          padding: khLeftRailPaddingSx,
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
         },
       }}
     >

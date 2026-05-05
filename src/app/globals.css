@@ -17,6 +17,10 @@ html {
 :root {
   --kh-safe-area-top: 0px;
   --kh-safe-area-bottom: 0px;
+  /* Optional stack matching platform UI (dialogs / native feel) — prefer MUI theme elsewhere */
+  --kh-font-system-ui:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto,
+    Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
 }
 
 html[data-kh-theme='dark']:not([data-kh-panel='owner']) {
@@ -75,13 +79,22 @@ html:has(body[style*='overflow:hidden']) {
   overflow: hidden;
 }
 
-/* PWA standalone mode — hide browser chrome helpers */
+/* PWA standalone: reduce rubber-band refresh fighting custom scroll/gestures.
+ * Body padding still uses safe-area insets above. Main content stays text-selectable. */
 @media all and (display-mode: standalone) {
   body {
-    -webkit-user-select: none;
-    user-select: auto;
     -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: contain;
   }
+}
+
+/*
+ * iOS / Android shell chrome (nav, drawers): discourage system text selection
+ * on long-press. Apply only to fixed rails — not on main/article content.
+ */
+.kh-shell-no-select {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* ===== Dark mode pre-render (set by FOUC script before Emotion loads) ===== */

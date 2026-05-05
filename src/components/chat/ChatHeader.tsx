@@ -17,6 +17,7 @@ import {
   UserRound,
   X,
 } from 'lucide-react';
+import { khSafeAreaTopSx } from '@/lib/safe-area-insets';
 import Image from 'next/image';
 import Link from 'next/link';
 import { createPortal } from 'react-dom';
@@ -104,6 +105,8 @@ export function ChatHeader({
     <div
       className="shrink-0 touch-manipulation"
       style={{
+        // iOS notch / Dynamic Island / status bar — HIG: content must sit below safe area.
+        paddingTop: khSafeAreaTopSx,
         backgroundColor: theme.isDark ? theme.listBg : 'rgba(255,255,255,0.95)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
