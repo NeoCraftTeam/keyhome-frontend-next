@@ -11,6 +11,7 @@ import JsonLd from '@/components/seo/JsonLd';
 import { WebVitals } from '@/components/seo/WebVitals';
 import { Analytics } from '@vercel/analytics/next';
 import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
+import ViewportInteractiveWidget from '@/components/pwa/ViewportInteractiveWidget';
 import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import NetworkStatus from '@/components/pwa/NetworkStatus';
 import CookieBanner from '@/components/ui/CookieBanner';
@@ -145,14 +146,9 @@ export const viewport: Viewport = {
     { media: '(prefers-color-scheme: dark)', color: '#0A0A0F' },
   ],
   viewportFit: 'cover',
-  // Make the on-screen keyboard SHRINK the layout viewport instead of
-  // overlaying content. Without this, iOS Safari/PWA leaves `100dvh` and
-  // `position: fixed` elements at their full layout size, then auto-scrolls
-  // the page upward to bring the focused input into view — pushing the chat
-  // header off-screen. With `resizes-content`, `dvh` and `100%` containers
-  // actually update when the keyboard shows, so the layout adapts naturally
-  // (matches Android Chrome behaviour).
-  interactiveWidget: 'resizes-content',
+  // `interactiveWidget` is applied client-side in `ViewportInteractiveWidget`
+  // so Safari does not warn on unknown viewport keys; Chromium still gets
+  // `resizes-content` for keyboard/layout sync (see component docstring).
 };
 
 export default async function RootLayout({
@@ -193,6 +189,7 @@ export default async function RootLayout({
           <JsonLd />
         </head>
         <body className={`${inter.variable} ${jakarta.variable} antialiased`}>
+          <ViewportInteractiveWidget />
           <Providers nonce={nonce}>
             <Suspense fallback={null}>
               <RouteProgressBar />

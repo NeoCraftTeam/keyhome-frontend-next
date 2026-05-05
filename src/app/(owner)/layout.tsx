@@ -37,9 +37,8 @@ export const viewport: Viewport = {
     { media: '(prefers-color-scheme: dark)', color: '#134E4A' },
   ],
   viewportFit: 'cover',
-  // Same as root customer layout — required or iOS may omit interactive resize
-  // when this segment defines its own viewport (chat keyboard / PWA).
-  interactiveWidget: 'resizes-content',
+  // Keyboard resize for Chromium is handled in root `ViewportInteractiveWidget`
+  // (omitted here so Safari does not warn; this segment only overrides theme).
 };
 
 export default function OwnerLayout({
