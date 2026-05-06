@@ -1,7 +1,7 @@
 {
-  "name": "KeyHome — Immobilier en Afrique",
+  "name": "KeyHome — Votre patrimoine immobilier en poche",
   "short_name": "KeyHome",
-  "description": "Trouvez votre bien immobilier idéal en Afrique. Annonces vérifiées, paiement sécurisé, contact direct.",
+  "description": "Votre patrimoine immobilier en poche. Trouvez votre bien en Afrique : annonces vérifiées, paiement sécurisé, contact direct.",
   "start_url": "/home",
   "scope": "/",
   "display": "standalone",

@@ -1,16 +1,13 @@
+import { LEGAL_DOCUMENTS_LAST_UPDATED_LABEL } from '@/lib/legal-documents';
 import Image from 'next/image';
 import Link from 'next/link';
-import { LEGAL_DOCUMENTS_LAST_UPDATED_LABEL } from '@/lib/legal-documents';
 import styles from './legal.module.css';
 
 const sections = [
   { id: 'collecte', title: 'Informations collectées' },
   { id: 'utilisation', title: 'Utilisation des données' },
   { id: 'partage', title: 'Partage des informations' },
-  {
-    id: 'prestataires-messagerie',
-    title: 'Prestataires, messagerie et transferts',
-  },
+  { id: 'prestataires-messagerie', title: 'Prestataires & messagerie' },
   { id: 'connexion-sociale', title: 'Connexion et authentification' },
   { id: 'score-confiance', title: 'Score de Confiance' },
   { id: 'securite', title: 'Sécurité et conservation' },
@@ -226,6 +223,17 @@ export default function PrivacyPolicyPage() {
                   Assurer la sécurité de la plateforme et prévenir les fraudes
                 </li>
               </ul>
+              <div className={styles.note}>
+                <span className={styles.strong}>
+                  Bases légales du traitement :
+                </span>{' '}
+                selon la finalité, vos données sont traitées sur la base de
+                l&apos;exécution du contrat (fourniture du service), de votre
+                consentement explicite (Score de Confiance, notifications
+                marketing), de notre intérêt légitime (sécurité, prévention des
+                fraudes et amélioration du service) ou d&apos;une obligation
+                légale (conservation comptable).
+              </div>
             </section>
 
             {/* §3 — Partage des informations */}
@@ -505,6 +513,35 @@ export default function PrivacyPolicyPage() {
                 être gardées pendant une durée limitée pour des raisons légales
                 ou comptables.
               </div>
+              <ul className={styles.list}>
+                <li>
+                  <span className={styles.strong}>Données de compte :</span>{' '}
+                  conservées pendant toute la durée de vie du compte, puis
+                  supprimées dans les{' '}
+                  <span className={styles.strong}>30 jours</span> suivant la
+                  demande de suppression
+                </li>
+                <li>
+                  <span className={styles.strong}>Données de paiement :</span>{' '}
+                  conservées pendant{' '}
+                  <span className={styles.strong}>5 ans</span> à compter de la
+                  transaction, conformément aux obligations légales comptables
+                </li>
+                <li>
+                  <span className={styles.strong}>Journaux de sécurité :</span>{' '}
+                  conservés pendant{' '}
+                  <span className={styles.strong}>12 mois</span> à des fins de
+                  prévention des fraudes et de sécurité
+                </li>
+                <li>
+                  <span className={styles.strong}>
+                    Messages et historique de conversation :
+                  </span>{' '}
+                  supprimés dans les{' '}
+                  <span className={styles.strong}>90 jours</span> suivant la
+                  clôture du compte
+                </li>
+              </ul>
             </section>
 
             {/* §8 — Vos droits */}

@@ -1,7 +1,7 @@
 {
   "name": "KeyHome Propriétaire",
   "short_name": "KH Owner",
-  "description": "Gérez vos annonces, visites et baux immobiliers en Afrique. Tableau de bord propriétaire KeyHome.",
+  "description": "Votre patrimoine immobilier en poche. Gérez vos annonces, visites et baux depuis le tableau de bord KeyHome (Afrique).",
   "start_url": "/owner/dashboard",
   "scope": "/owner/",
   "display": "standalone",

@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { BRAND_TAGLINE } from '@/lib/brand';
+import { absoluteAssetUrl, absoluteUrl } from '@/lib/site-url';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -20,19 +22,20 @@ export async function generateMetadata({
       const agency = json.data ?? json;
       const name: string = agency.name ?? 'Agence immobilière';
       const total: number = json.meta?.total ?? 0;
+      const path = `/agences/${id}`;
 
       return {
         title: `${name} — Agence immobilière sur KeyHome`,
-        description: `Découvrez les annonces de l'agence ${name} sur KeyHome.${total ? ` ${total} bien${total > 1 ? 's' : ''} disponible${total > 1 ? 's' : ''}.` : ''} Annonces vérifiées, contact direct.`,
-        alternates: { canonical: `https://keyhome.app/agences/${id}` },
+        description: `${BRAND_TAGLINE}. Découvrez les annonces de l'agence ${name} sur KeyHome.${total ? ` ${total} bien${total > 1 ? 's' : ''} disponible${total > 1 ? 's' : ''}.` : ''} Annonces vérifiées, contact direct.`,
+        alternates: { canonical: absoluteUrl(path) },
         openGraph: {
           title: `${name} — Agence immobilière | KeyHome`,
-          description: `Toutes les annonces de l'agence ${name}. Biens vérifiés disponibles sur KeyHome.`,
-          url: `https://keyhome.app/agences/${id}`,
+          description: `${BRAND_TAGLINE}. Toutes les annonces de l'agence ${name}. Biens vérifiés disponibles sur KeyHome.`,
+          url: absoluteUrl(path),
           siteName: 'KeyHome',
           images: [
             {
-              url: agency.logo ?? 'https://keyhome.app/opengraph-image',
+              url: absoluteAssetUrl(agency.logo as string | undefined),
               width: 1200,
               height: 630,
               alt: name,
@@ -45,11 +48,12 @@ export async function generateMetadata({
     // Fail silently — fallback metadata below
   }
 
+  const path = `/agences/${id}`;
+
   return {
     title: 'Profil agence — KeyHome',
-    description:
-      'Découvrez les annonces de cette agence immobilière sur KeyHome. Biens vérifiés, contact direct propriétaire.',
-    alternates: { canonical: `https://keyhome.app/agences/${id}` },
+    description: `${BRAND_TAGLINE}. Découvrez les annonces de cette agence immobilière sur KeyHome. Biens vérifiés, contact direct propriétaire.`,
+    alternates: { canonical: absoluteUrl(path) },
   };
 }
 

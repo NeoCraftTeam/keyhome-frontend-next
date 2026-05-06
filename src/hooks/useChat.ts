@@ -21,28 +21,28 @@ import {
   rsaOaepWrap,
 } from '@/lib/chat-e2ee-crypto';
 import { CHAT_E2EE_READY_EVENT } from '@/lib/chat-e2ee-identity';
+import type { ConversationsListQueryData } from '@/lib/conversation-list-cache';
+import { applyConversationStatusToConversationsCache } from '@/lib/conversation-list-cache';
 import { getEcho, useEchoConnectionState } from '@/lib/echo';
+import { chatKeys } from '@/lib/query-keys';
+import { useAuth } from '@/providers/AuthProvider';
 import type {
   Conversation,
   Message,
   MessageAttachment,
   TypingEvent,
-  VoiceRecordingEvent,
   UnreadCountResponse,
+  VoiceRecordingEvent,
 } from '@/types/chat';
-import type { DeviceType } from './usePresence';
+import type { QueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { DeviceType } from './usePresence';
 import { usePresence } from './usePresence';
 import {
   TYPING_RECEIVER_FALLBACK_MS,
   useTypingIndicator,
 } from './useTypingIndicator';
-import { useAuth } from '@/providers/AuthProvider';
-import { chatKeys } from '@/lib/query-keys';
-import type { ConversationsListQueryData } from '@/lib/conversation-list-cache';
-import { applyConversationStatusToConversationsCache } from '@/lib/conversation-list-cache';
-import type { QueryClient } from '@tanstack/react-query';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 /** Safety clear if is_recording false whisper is lost — matches VoiceRecorder max + margin. */
 const VOICE_RECORDING_RECEIVER_FALLBACK_MS = 125_000;
@@ -806,10 +806,12 @@ export function useChat(
         // never "subscription_succeeded", the channel auth is failing (check
         // Network tab for /broadcasting/auth → expect 200 + {auth: "key:hash"}).
         const onSubSuccess = () => {
-          console.info(
-            '%c[useChat] ✓ subscribed to conversation.' + conversationUuid,
-            'color:#10b981;font-weight:bold'
-          );
+          if (process.env.NODE_ENV === 'development') {
+            console.info(
+              '%c[useChat] ✓ subscribed to conversation.' + conversationUuid,
+              'color:#10b981;font-weight:bold'
+            );
+          }
         };
         const onSubError = (err: unknown) => {
           console.error(
@@ -829,9 +831,11 @@ export function useChat(
           'pusher:subscription_error',
           onSubError as (e: never) => void,
         ]);
-        console.debug(
-          '[useChat] Bound handlers for conversation.' + conversationUuid
-        );
+        if (process.env.NODE_ENV === 'development') {
+          console.debug(
+            '[useChat] Bound handlers for conversation.' + conversationUuid
+          );
+        }
       }
     };
 

@@ -1,16 +1,17 @@
 import type { MetadataRoute } from 'next';
 import { BLOG_POSTS } from './blog/posts';
+import { getSiteOrigin } from '@/lib/site-url';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 /**
- * Dynamic sitemap — includes static pages + all public ad listings.
- * Auth-gated pages (/home, /nearby, /login, /register) are excluded
- * since they either can't be crawled or have low SEO value.
+ * Dynamic sitemap — static + programmatic URLs + listings from the API.
+ * Auth-only shells (/profile, /messages, /owner, …) are omitted; see robots.txt.
+ * /login and /register are included (indexable marketing entry points).
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://keyhome.app';
+  const baseUrl = getSiteOrigin();
   const now = new Date().toISOString();
 
   // ── Static pages ────────────────────────────────────────────────
@@ -22,10 +23,34 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1.0,
     },
     {
+      url: `${baseUrl}/home`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/nearby`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.75,
+    },
+    {
       url: `${baseUrl}/search`,
       lastModified: now,
       changeFrequency: 'daily',
-      priority: 0.9,
+      priority: 0.95,
+    },
+    {
+      url: `${baseUrl}/register`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.55,
+    },
+    {
+      url: `${baseUrl}/login`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.5,
     },
     {
       url: `${baseUrl}/conditions`,

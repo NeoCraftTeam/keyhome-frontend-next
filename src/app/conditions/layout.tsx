@@ -1,21 +1,31 @@
 import type { Metadata } from 'next';
+import { BRAND_TAGLINE } from '@/lib/brand';
+import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+
+const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
   title: "Conditions Générales d'Utilisation — KeyHome",
-  description:
-    "Consultez les conditions générales d'utilisation de KeyHome : règles de publication, système de crédits, Score de Confiance, propriété intellectuelle et responsabilités sur notre plateforme immobilière en Afrique.",
+  description: `${BRAND_TAGLINE}. Consultez les conditions générales d'utilisation de KeyHome : règles de publication, système de crédits, Score de Confiance, propriété intellectuelle et responsabilités sur notre plateforme immobilière en Afrique.`,
   robots: { index: true, follow: true },
   alternates: {
-    canonical: 'https://keyhome.app/conditions',
+    canonical: absoluteUrl('/conditions'),
   },
   openGraph: {
     title: "Conditions Générales d'Utilisation — KeyHome",
-    description:
-      'CGU de KeyHome : règles de publication, crédits, responsabilités et droits des utilisateurs.',
-    url: 'https://keyhome.app/conditions',
+    description: `${BRAND_TAGLINE}. CGU de KeyHome : règles de publication, crédits, responsabilités et droits des utilisateurs.`,
+    url: absoluteUrl('/conditions'),
     siteName: 'KeyHome',
     type: 'website',
     locale: 'fr_FR',
+    images: [
+      {
+        url: `${SITE}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: 'KeyHome — CGU',
+      },
+    ],
   },
 };
 

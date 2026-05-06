@@ -1,67 +1,83 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { brand, gradient } from '@/theme/tokens';
+import { BRAND_TAGLINE } from '@/lib/brand';
+import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
-/** Canonical city data used for static generation and display */
+/** Approximate city centers (WGS84) for GEO / Local SEO structured data */
 const CITIES: Record<
   string,
-  { display: string; country: string; description: string }
+  {
+    display: string;
+    country: string;
+    description: string;
+    geo?: { lat: number; lng: number };
+  }
 > = {
   douala: {
     display: 'Douala',
     country: 'Cameroun',
     description:
       'capitale économique du Cameroun, avec ses quartiers prisés comme Bonamoussadi, Akwa et Bonapriso',
+    geo: { lat: 4.0511, lng: 9.7679 },
   },
   yaounde: {
     display: 'Yaoundé',
     country: 'Cameroun',
     description:
       'capitale politique du Cameroun, réputée pour ses quartiers résidentiels comme Bastos et Omnisport',
+    geo: { lat: 3.848, lng: 11.5021 },
   },
   bafoussam: {
     display: 'Bafoussam',
     country: 'Cameroun',
     description:
       "chef-lieu de la région de l'Ouest, ville dynamique au cœur du pays Bamiléké",
+    geo: { lat: 5.4779, lng: 10.4176 },
   },
   abidjan: {
     display: 'Abidjan',
     country: "Côte d'Ivoire",
     description:
       "poumon économique de l'Afrique de l'Ouest, avec Cocody, Marcory et Plateau",
+    geo: { lat: 5.36, lng: -4.0083 },
   },
   cotonou: {
     display: 'Cotonou',
     country: 'Bénin',
     description:
       'capitale économique du Bénin, ville portuaire en pleine expansion',
+    geo: { lat: 6.3654, lng: 2.4183 },
   },
   lome: {
     display: 'Lomé',
     country: 'Togo',
     description: "capitale togolaise bordée par l'océan Atlantique",
+    geo: { lat: 6.1375, lng: 1.2123 },
   },
   accra: {
     display: 'Accra',
     country: 'Ghana',
     description:
       "capitale ghanéenne, hub technologique et immobilier d'Afrique de l'Ouest",
+    geo: { lat: 5.6037, lng: -0.187 },
   },
   dakar: {
     display: 'Dakar',
     country: 'Sénégal',
     description:
       "capitale sénégalaise, entre modernité et tradition, sur la presqu'île du Cap-Vert",
+    geo: { lat: 14.7167, lng: -17.4677 },
   },
   bamako: {
     display: 'Bamako',
     country: 'Mali',
     description:
       'capitale malienne en bord du fleuve Niger, marché immobilier en croissance',
+    geo: { lat: 12.6392, lng: -8.0029 },
   },
 };
 
@@ -77,27 +93,40 @@ export async function generateMetadata({
   const { ville } = await params;
   const city = CITIES[ville.toLowerCase()];
   const name = city?.display || ville;
+  const site = getSiteOrigin();
+  const path = `/immobilier/${ville.toLowerCase()}`;
 
   return {
     title: `Immobilier à ${name} — Location & Vente`,
-    description: `Trouvez votre logement à ${name}${city ? `, ${city.country}` : ''}. Annonces vérifiées : appartements, maisons, terrains et villas. Contact direct propriétaire sur KeyHome.`,
+    description: `${BRAND_TAGLINE}. Trouvez votre logement à ${name}${city ? `, ${city.country}` : ''}. Annonces vérifiées : appartements, maisons, terrains et villas. Contact direct propriétaire sur KeyHome.`,
     alternates: {
-      canonical: `https://keyhome.app/immobilier/${ville.toLowerCase()}`,
+      canonical: absoluteUrl(path),
+      languages: {
+        'fr-FR': absoluteUrl(path),
+        'x-default': absoluteUrl(path),
+      },
     },
     openGraph: {
       title: `Immobilier à ${name} | KeyHome`,
-      description: `Annonces immobilières vérifiées à ${name}. Trouvez votre bien idéal.`,
-      url: `https://keyhome.app/immobilier/${ville.toLowerCase()}`,
+      description: `${BRAND_TAGLINE}. Annonces immobilières vérifiées à ${name}. Trouvez votre bien idéal.`,
+      url: absoluteUrl(path),
       siteName: 'KeyHome',
       images: [
         {
-          url: 'https://keyhome.app/opengraph-image',
+          url: `${site}/opengraph-image`,
           width: 1200,
           height: 630,
           alt: `Immobilier à ${name} — KeyHome`,
         },
       ],
     },
+    ...(city?.geo && {
+      other: {
+        'geo.placename': name,
+        'geo.position': `${city.geo.lat};${city.geo.lng}`,
+        ICBM: `${city.geo.lat}, ${city.geo.lng}`,
+      },
+    }),
   };
 }
 
@@ -110,6 +139,7 @@ export default async function CityPage({
   const cityKey = ville.toLowerCase();
   const city = CITIES[cityKey];
   const name = city?.display || ville.charAt(0).toUpperCase() + ville.slice(1);
+  const site = getSiteOrigin();
 
   // Fetch ads for this city from the API
   let ads: Array<{
@@ -143,11 +173,11 @@ export default async function CityPage({
   }
 
   // JSON-LD for local business presence
-  const jsonLd = {
+  const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'RealEstateAgent',
     name: `KeyHome ${name}`,
-    url: `https://keyhome.app/immobilier/${cityKey}`,
+    url: absoluteUrl(`/immobilier/${cityKey}`),
     areaServed: {
       '@type': 'City',
       name,
@@ -155,8 +185,16 @@ export default async function CityPage({
         containedInPlace: { '@type': 'Country', name: city.country },
       }),
     },
-    description: `Trouvez votre logement à ${name} avec KeyHome. ${total} annonces vérifiées disponibles.`,
+    description: `${BRAND_TAGLINE}. Trouvez votre logement à ${name} avec KeyHome. ${total} annonces vérifiées disponibles.`,
   };
+
+  if (city?.geo) {
+    jsonLd.geo = {
+      '@type': 'GeoCoordinates',
+      latitude: city.geo.lat,
+      longitude: city.geo.lng,
+    };
+  }
 
   // BreadcrumbList JSON-LD for rich snippets
   const breadcrumbJsonLd = {
@@ -167,13 +205,13 @@ export default async function CityPage({
         '@type': 'ListItem',
         position: 1,
         name: 'Accueil',
-        item: 'https://keyhome.app',
+        item: site,
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: `Immobilier à ${name}`,
-        item: `https://keyhome.app/immobilier/${cityKey}`,
+        item: absoluteUrl(`/immobilier/${cityKey}`),
       },
     ],
   };

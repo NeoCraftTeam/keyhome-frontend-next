@@ -104,9 +104,6 @@ export default function BottomNav() {
                 ? {
                     '&.Mui-selected': {
                       color: `${brand.primary} !important`,
-                      '&::after': {
-                        bgcolor: `${brand.primary} !important`,
-                      },
                     },
                   }
                 : undefined

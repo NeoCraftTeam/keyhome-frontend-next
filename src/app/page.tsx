@@ -1,10 +1,15 @@
-import LandingPage from '@/components/landing/LandingPage';
 import type { Metadata } from 'next';
+import LandingPage from '@/components/landing/LandingPage';
+import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
+import { getSiteOrigin } from '@/lib/site-url';
+
+const SITE = getSiteOrigin();
+
+const LANDING_DESCRIPTION = `${BRAND_TAGLINE}. KeyHome : des milliers d'annonces immobilières vérifiées — maisons, appartements, terrains et villas. Recherchez, comparez et contactez directement les propriétaires.`;
 
 export const metadata: Metadata = {
-  title: "KeyHome — L'immobilier de confiance",
-  description:
-    "KeyHome : des milliers d'annonces immobilières vérifiées — maisons, appartements, terrains et villas. Recherchez, comparez et contactez directement les propriétaires.",
+  title: BRAND_TITLE_WITH_TAGLINE,
+  description: LANDING_DESCRIPTION,
   keywords: [
     'immobilier Afrique',
     'location maison',
@@ -19,21 +24,19 @@ export const metadata: Metadata = {
     'KeyHome',
   ],
   openGraph: {
-    title: "KeyHome — L'immobilier de confiance",
-    description:
-      "Des milliers d'annonces immobilières vérifiées. Accédez aux coordonnées en toute sécurité.",
+    title: BRAND_TITLE_WITH_TAGLINE,
+    description: LANDING_DESCRIPTION,
     type: 'website',
     locale: 'fr_FR',
     siteName: 'KeyHome',
   },
   twitter: {
     card: 'summary_large_image',
-    title: "KeyHome — L'immobilier de confiance",
-    description:
-      "Trouvez votre maison, appartement ou terrain idéal parmi des milliers d'annonces vérifiées.",
+    title: BRAND_TITLE_WITH_TAGLINE,
+    description: `${BRAND_TAGLINE}. Des milliers d'annonces vérifiées — accès coordonnées sécurisé.`,
   },
   alternates: {
-    canonical: 'https://keyhome.app/',
+    canonical: `${SITE}/`,
   },
 };
 

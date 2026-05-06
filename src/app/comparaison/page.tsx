@@ -2,21 +2,29 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { COMPARISONS } from './comparisons';
 import { brand, gradient } from '@/theme/tokens';
+import { BRAND_TAGLINE } from '@/lib/brand';
+import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+
+const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
   title: 'Comparaisons immobilières en Afrique — KeyHome',
-  description:
-    "Louer vs acheter, Douala vs Yaoundé, appartement vs maison… Comparez les options immobilières en Afrique de l'Ouest pour faire le meilleur choix.",
-  alternates: { canonical: 'https://keyhome.app/comparaison' },
+  description: `${BRAND_TAGLINE}. Louer vs acheter, Douala vs Yaoundé, appartement vs maison… Comparez les options immobilières en Afrique de l'Ouest pour faire le meilleur choix.`,
+  alternates: {
+    canonical: absoluteUrl('/comparaison'),
+    languages: {
+      'fr-FR': absoluteUrl('/comparaison'),
+      'x-default': absoluteUrl('/comparaison'),
+    },
+  },
   openGraph: {
     title: 'Comparaisons immobilières — KeyHome',
-    description:
-      'Analyses comparatives pour vous aider à prendre les meilleures décisions immobilières en Afrique.',
-    url: 'https://keyhome.app/comparaison',
+    description: `${BRAND_TAGLINE}. Analyses comparatives pour vous aider à prendre les meilleures décisions immobilières en Afrique.`,
+    url: absoluteUrl('/comparaison'),
     siteName: 'KeyHome',
     images: [
       {
-        url: 'https://keyhome.app/opengraph-image',
+        url: `${SITE}/opengraph-image`,
         width: 1200,
         height: 630,
         alt: 'Comparaisons immobilières — KeyHome',

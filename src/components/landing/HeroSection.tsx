@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
 import { useLandingStats, type LandingStat } from '@/hooks/useLandingStats';
+import { BRAND_TAGLINE } from '@/lib/brand';
 import { brand, gradient, semantic } from '@/theme/tokens';
 
 const HeroVideoBackground = dynamic(() => import('./HeroVideoBackground'), {
@@ -269,16 +270,18 @@ export default function HeroSection() {
             <span
               style={{
                 display: 'inline-flex',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 gap: 8,
-                padding: '6px 16px',
+                padding: '8px 16px',
                 borderRadius: 100,
                 background: brand.primaryAlpha12,
                 border: `1px solid ${brand.primaryAlpha25}`,
                 color: brand.primary,
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: 600,
-                letterSpacing: '0.3px',
+                letterSpacing: '0.2px',
+                lineHeight: 1.35,
+                maxWidth: 380,
               }}
             >
               <span
@@ -290,9 +293,13 @@ export default function HeroSection() {
                   background: brand.primary,
                   display: 'inline-block',
                   animation: 'pulseGlow 2s infinite',
+                  flexShrink: 0,
+                  marginTop: 4,
                 }}
               />
-              Plateforme immobilière panafricaine
+              <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                {BRAND_TAGLINE}
+              </span>
             </span>
           </motion.div>
 

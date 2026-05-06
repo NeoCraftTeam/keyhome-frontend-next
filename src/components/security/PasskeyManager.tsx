@@ -4,11 +4,13 @@ import EmptyState from '@/components/ui/EmptyState';
 import FadeIn from '@/components/ui/FadeIn';
 import { usePasskeyManager } from '@/hooks/usePasskey';
 import { getSafeErrorMessage } from '@/lib/error-messages';
+import { formatWebAuthnClientError } from '@/lib/passkey-support';
 import Add from '@mui/icons-material/Add';
 import Delete from '@mui/icons-material/Delete';
 import Edit from '@mui/icons-material/Edit';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import Key from '@mui/icons-material/Key';
+import Refresh from '@mui/icons-material/Refresh';
 import {
   Alert,
   Box,
@@ -30,6 +32,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import { useState } from 'react';
 
 function formatDate(dateString: string): string {
@@ -52,32 +55,28 @@ function getDefaultAlias(): string {
 }
 
 interface PasskeyManagerProps {
+  /** Semantic panel; colors follow the active MUI theme (client pink / owner teal). */
   variant?: 'client' | 'owner';
 }
 
-const BRAND = {
-  client: {
-    main: '#F6475F',
-    dark: '#d93d52',
-    bg: 'rgba(246, 71, 95, 0.1)',
-    hover: 'rgba(246, 71, 95, 0.08)',
-  },
-  owner: {
-    main: '#0D9488',
-    dark: '#0b7e73',
-    bg: 'rgba(13, 148, 136, 0.1)',
-    hover: 'rgba(13, 148, 136, 0.08)',
-  },
-} as const;
-
 export default function PasskeyManager({
-  variant = 'client',
+  variant: _variant = 'client',
 }: PasskeyManagerProps) {
-  const c = BRAND[variant];
+  void _variant;
+  const theme = useTheme();
+  const primary = theme.palette.primary.main;
+  const primaryDark = theme.palette.primary.dark ?? theme.palette.primary.main;
+  const primarySoft = alpha(primary, 0.12);
+  const primaryHover = alpha(primary, 0.08);
+
   const {
     supported,
+    unsupportedReason,
     passkeys,
     isLoading,
+    isError,
+    listError,
+    refetch,
     register,
     isRegistering,
     rename,
@@ -96,9 +95,33 @@ export default function PasskeyManager({
     severity: 'success' | 'error';
   } | null>(null);
 
-  if (!supported) return null;
+  if (!supported) {
+    return (
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+          mb: 3,
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.5 }}>
+            <FingerprintIcon sx={{ color: primary }} />
+            <Typography variant="h6" fontWeight={700}>
+              Passkeys
+            </Typography>
+          </Stack>
+          <Alert severity="info" sx={{ borderRadius: 2 }}>
+            {unsupportedReason ??
+              'Les passkeys ne sont pas disponibles dans cet environnement.'}
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const handleRegister = async () => {
+  const handleRegister = async (): Promise<void> => {
     try {
       const alias = newAlias.trim() || getDefaultAlias();
       await register(alias);
@@ -108,25 +131,25 @@ export default function PasskeyManager({
         message: 'Passkey ajoutée avec succès !',
         severity: 'success',
       });
-    } catch (err) {
+    } catch (err: unknown) {
       setSnackbar({
-        message: getSafeErrorMessage(
+        message: formatWebAuthnClientError(
           err,
-          "Erreur lors de l'ajout de la passkey."
+          getSafeErrorMessage(err, "Erreur lors de l'ajout de la passkey.")
         ),
         severity: 'error',
       });
     }
   };
 
-  const handleRename = async () => {
+  const handleRename = async (): Promise<void> => {
     if (!editId || !editAlias.trim()) return;
     try {
       await rename({ id: editId, alias: editAlias.trim() });
       setEditId(null);
       setEditAlias('');
       setSnackbar({ message: 'Passkey renommée.', severity: 'success' });
-    } catch (err) {
+    } catch (err: unknown) {
       setSnackbar({
         message: getSafeErrorMessage(err, 'Erreur lors du renommage.'),
         severity: 'error',
@@ -134,19 +157,26 @@ export default function PasskeyManager({
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (): Promise<void> => {
     if (!deleteId) return;
     try {
       await remove(deleteId);
       setDeleteId(null);
       setSnackbar({ message: 'Passkey supprimée.', severity: 'success' });
-    } catch (err) {
+    } catch (err: unknown) {
       setSnackbar({
         message: getSafeErrorMessage(err, 'Erreur lors de la suppression.'),
         severity: 'error',
       });
     }
   };
+
+  const listErrorMessage = listError
+    ? getSafeErrorMessage(
+        listError,
+        'Impossible de charger la liste des passkeys.'
+      )
+    : 'Impossible de charger la liste des passkeys.';
 
   return (
     <>
@@ -155,6 +185,7 @@ export default function PasskeyManager({
           borderRadius: 3,
           border: '1px solid',
           borderColor: 'divider',
+          mb: 3,
         }}
       >
         <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
@@ -165,12 +196,12 @@ export default function PasskeyManager({
             sx={{ mb: 2 }}
           >
             <Stack direction="row" alignItems="center" gap={1}>
-              <FingerprintIcon sx={{ color: c.main }} />
+              <FingerprintIcon sx={{ color: primary }} />
               <Typography variant="h6" fontWeight={700}>
                 Passkeys
               </Typography>
             </Stack>
-            {!showAddForm && (
+            {!showAddForm && !isError && (
               <Button
                 size="small"
                 startIcon={<Add />}
@@ -182,8 +213,8 @@ export default function PasskeyManager({
                 sx={{
                   borderRadius: 2,
                   textTransform: 'none',
-                  color: c.main,
-                  '&:hover': { bgcolor: c.hover },
+                  color: primary,
+                  '&:hover': { bgcolor: primaryHover },
                 }}
               >
                 Ajouter
@@ -196,8 +227,27 @@ export default function PasskeyManager({
             clé de sécurité.
           </Typography>
 
+          {isError && (
+            <Alert
+              severity="error"
+              sx={{ mb: 2, borderRadius: 2 }}
+              action={
+                <Button
+                  color="inherit"
+                  size="small"
+                  startIcon={<Refresh />}
+                  onClick={() => void refetch()}
+                >
+                  Réessayer
+                </Button>
+              }
+            >
+              {listErrorMessage}
+            </Alert>
+          )}
+
           {/* ── Add form ── */}
-          {showAddForm && (
+          {showAddForm && !isError && (
             <FadeIn>
               <Box
                 sx={{
@@ -219,7 +269,7 @@ export default function PasskeyManager({
                   value={newAlias}
                   onChange={(e) => setNewAlias(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleRegister();
+                    if (e.key === 'Enter') void handleRegister();
                   }}
                   disabled={isRegistering}
                   sx={{ mb: 1.5 }}
@@ -246,13 +296,13 @@ export default function PasskeyManager({
                         <FingerprintIcon />
                       )
                     }
-                    onClick={handleRegister}
+                    onClick={() => void handleRegister()}
                     disabled={isRegistering}
                     sx={{
                       borderRadius: 2,
                       textTransform: 'none',
-                      bgcolor: c.main,
-                      '&:hover': { bgcolor: c.dark },
+                      bgcolor: primary,
+                      '&:hover': { bgcolor: primaryDark },
                     }}
                   >
                     {isRegistering ? 'Validation…' : 'Enregistrer'}
@@ -263,137 +313,139 @@ export default function PasskeyManager({
           )}
 
           {/* ── List ── */}
-          {isLoading ? (
-            <Stack gap={1}>
-              {[1, 2].map((i) => (
-                <Skeleton
-                  key={i}
-                  variant="rectangular"
-                  height={56}
-                  sx={{ borderRadius: 2 }}
-                />
-              ))}
-            </Stack>
-          ) : passkeys.length === 0 ? (
-            <EmptyState
-              title="Aucune passkey"
-              description="Ajoutez une passkey pour vous connecter sans mot de passe."
-              size="sm"
-            />
-          ) : (
-            <Stack gap={1}>
-              {passkeys.map((passkey) => (
-                <Box
-                  key={passkey.id}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    p: 1.5,
-                    borderRadius: 2,
-                    bgcolor: 'action.hover',
-                    transition: 'background-color 0.15s',
-                    '&:hover': { bgcolor: 'action.selected' },
-                  }}
-                >
+          {!isError &&
+            (isLoading ? (
+              <Stack gap={1}>
+                {[1, 2].map((i) => (
+                  <Skeleton
+                    key={i}
+                    variant="rectangular"
+                    height={56}
+                    sx={{ borderRadius: 2 }}
+                  />
+                ))}
+              </Stack>
+            ) : passkeys.length === 0 ? (
+              <EmptyState
+                title="Aucune passkey"
+                description="Ajoutez une passkey pour vous connecter sans mot de passe."
+                size="sm"
+              />
+            ) : (
+              <Stack gap={1}>
+                {passkeys.map((passkey) => (
                   <Box
+                    key={passkey.id}
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 36,
-                      height: 36,
-                      borderRadius: 1.5,
-                      bgcolor: c.bg,
-                      flexShrink: 0,
+                      gap: 1.5,
+                      p: 1.5,
+                      borderRadius: 2,
+                      bgcolor: 'action.hover',
+                      transition: 'background-color 0.15s',
+                      '&:hover': { bgcolor: 'action.selected' },
                     }}
                   >
-                    <Key sx={{ fontSize: 18, color: c.main }} />
-                  </Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 36,
+                        height: 36,
+                        borderRadius: 1.5,
+                        bgcolor: primarySoft,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Key sx={{ fontSize: 18, color: primary }} />
+                    </Box>
 
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    {editId === passkey.id ? (
-                      <Stack direction="row" gap={0.5} alignItems="center">
-                        <TextField
-                          size="small"
-                          value={editAlias}
-                          onChange={(e) => setEditAlias(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleRename();
-                            if (e.key === 'Escape') setEditId(null);
-                          }}
-                          disabled={isRenaming}
-                          sx={{ flex: 1 }}
-                          autoFocus
-                        />
-                        <Button
-                          size="small"
-                          onClick={handleRename}
-                          disabled={isRenaming || !editAlias.trim()}
-                          sx={{
-                            borderRadius: 2,
-                            textTransform: 'none',
-                            minWidth: 'auto',
-                          }}
-                        >
-                          OK
-                        </Button>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      {editId === passkey.id ? (
+                        <Stack direction="row" gap={0.5} alignItems="center">
+                          <TextField
+                            size="small"
+                            value={editAlias}
+                            onChange={(e) => setEditAlias(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') void handleRename();
+                              if (e.key === 'Escape') setEditId(null);
+                            }}
+                            disabled={isRenaming}
+                            sx={{ flex: 1 }}
+                            autoFocus
+                          />
+                          <Button
+                            size="small"
+                            onClick={() => void handleRename()}
+                            disabled={isRenaming || !editAlias.trim()}
+                            sx={{
+                              borderRadius: 2,
+                              textTransform: 'none',
+                              minWidth: 'auto',
+                            }}
+                          >
+                            OK
+                          </Button>
+                        </Stack>
+                      ) : (
+                        <>
+                          <Typography variant="body2" fontWeight={600} noWrap>
+                            {passkey.alias || 'Passkey sans nom'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Ajoutée le {formatDate(passkey.created_at)}
+                          </Typography>
+                        </>
+                      )}
+                    </Box>
+
+                    {passkey.disabled && (
+                      <Chip
+                        size="small"
+                        label="Désactivée"
+                        color="warning"
+                        variant="outlined"
+                        sx={{ fontSize: '0.7rem' }}
+                      />
+                    )}
+
+                    {editId !== passkey.id && (
+                      <Stack direction="row" gap={0.25}>
+                        <Tooltip title="Renommer">
+                          <IconButton
+                            size="small"
+                            aria-label="Renommer cette passkey"
+                            onClick={() => {
+                              setEditId(passkey.id);
+                              setEditAlias(passkey.alias || '');
+                            }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Supprimer">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            aria-label="Supprimer cette passkey"
+                            onClick={() => setDeleteId(passkey.id)}
+                            disabled={isDeleting}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       </Stack>
-                    ) : (
-                      <>
-                        <Typography variant="body2" fontWeight={600} noWrap>
-                          {passkey.alias || 'Passkey sans nom'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Ajoutée le {formatDate(passkey.created_at)}
-                        </Typography>
-                      </>
                     )}
                   </Box>
-
-                  {passkey.disabled && (
-                    <Chip
-                      size="small"
-                      label="Désactivée"
-                      color="warning"
-                      variant="outlined"
-                      sx={{ fontSize: '0.7rem' }}
-                    />
-                  )}
-
-                  {editId !== passkey.id && (
-                    <Stack direction="row" gap={0.25}>
-                      <Tooltip title="Renommer">
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            setEditId(passkey.id);
-                            setEditAlias(passkey.alias || '');
-                          }}
-                        >
-                          <Edit fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Supprimer">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => setDeleteId(passkey.id)}
-                          disabled={isDeleting}
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  )}
-                </Box>
-              ))}
-            </Stack>
-          )}
+                ))}
+              </Stack>
+            ))}
         </CardContent>
       </Card>
 
-      {/* ── Confirm Delete Dialog ── */}
       <Dialog
         open={Boolean(deleteId)}
         onClose={() => setDeleteId(null)}
@@ -417,7 +469,7 @@ export default function PasskeyManager({
           <Button
             color="error"
             variant="contained"
-            onClick={handleDelete}
+            onClick={() => void handleDelete()}
             disabled={isDeleting}
             sx={{ borderRadius: 2, textTransform: 'none' }}
           >
@@ -426,7 +478,6 @@ export default function PasskeyManager({
         </DialogActions>
       </Dialog>
 
-      {/* ── Snackbar ── */}
       <Snackbar
         open={Boolean(snackbar)}
         autoHideDuration={4000}

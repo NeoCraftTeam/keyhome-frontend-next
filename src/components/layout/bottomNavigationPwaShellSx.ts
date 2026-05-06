@@ -1,7 +1,7 @@
-import type { SxProps, Theme } from '@mui/material/styles';
 import { NAV_LIST_ICON_GLYPH_PX } from '@/lib/navVisualMetrics';
 import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
 import { khSafeAreaBottomSx } from '@/lib/safe-area-insets';
+import type { SxProps, Theme } from '@mui/material/styles';
 
 /**
  * Shared desktop-class alignment for KeyHome bottom tab shells (customer + bailleur).
@@ -18,12 +18,11 @@ export function bottomNavigationPwaShellSx(): SxProps<Theme> {
       minWidth: 0,
       maxWidth: 'none',
       px: 0.25,
-      pt: 1,
-      pb: 0.625,
+      pt: 0.5,
+      pb: 0.5,
       gap: 0.25,
       color: 'text.secondary',
-      justifyContent: 'flex-start',
-      position: 'relative',
+      justifyContent: 'center',
       '&:active': { transform: 'scale(0.97)' },
       '&.Mui-selected': {
         color: 'primary.main',
@@ -59,19 +58,6 @@ export function bottomNavigationPwaShellSx(): SxProps<Theme> {
       '&.Mui-selected': {
         fontSize: '0.62rem',
         fontWeight: 700,
-      },
-    },
-    '& .MuiBottomNavigationAction-root.Mui-selected': {
-      '&::after': {
-        content: '""',
-        position: 'absolute',
-        bottom: 0,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 22,
-        height: 3,
-        borderRadius: '3px 3px 0 0',
-        bgcolor: 'primary.main',
       },
     },
   };

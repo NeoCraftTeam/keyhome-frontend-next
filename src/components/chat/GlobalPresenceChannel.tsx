@@ -24,9 +24,11 @@ export function GlobalPresenceChannel() {
     const echo = getEcho();
     echo.join('online-users');
 
-    return () => {
-      echo.leave('online-users');
-    };
+    // Intentionally no cleanup: leaving the channel on every navigation (React
+    // effect teardown) causes a brief member_removed → member_added cycle that
+    // makes the user appear offline to their peers while pages are loading.
+    // The channel stays alive for the whole session; echo.disconnect() on
+    // logout cleanly tears down all subscriptions.
   }, [isAuthenticated]);
 
   return null;

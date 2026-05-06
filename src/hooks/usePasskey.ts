@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  explainPasskeyUnsupported,
+  formatWebAuthnClientError,
+} from '@/lib/passkey-support';
 import { passkeyKeys } from '@/lib/query-keys';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import {
@@ -17,18 +21,27 @@ import { useCallback, useEffect, useState } from 'react';
 export function usePasskeyManager() {
   const queryClient = useQueryClient();
   const [supported, setSupported] = useState(false);
+  const [unsupportedReason, setUnsupportedReason] = useState<string | null>(
+    null
+  );
+
   useEffect(() => {
-    setSupported(isWebAuthnSupported());
+    const ok = isWebAuthnSupported();
+    setSupported(ok);
+    setUnsupportedReason(ok ? null : explainPasskeyUnsupported());
   }, []);
 
   const {
     data: passkeys = [],
     isLoading,
     isError,
+    error: listError,
+    refetch,
   } = useQuery<PasskeyCredential[]>({
     queryKey: passkeyKeys.all,
     queryFn: () => webAuthnService.list(),
     enabled: supported,
+    retry: 1,
   });
 
   const registerMutation = useMutation({
@@ -55,9 +68,12 @@ export function usePasskeyManager() {
 
   return {
     supported,
+    unsupportedReason,
     passkeys,
     isLoading,
     isError,
+    listError,
+    refetch,
     register: registerMutation.mutateAsync,
     isRegistering: registerMutation.isPending,
     registerError: registerMutation.error,
@@ -73,8 +89,13 @@ export function usePasskeyManager() {
  */
 export function usePasskeyLogin(loginContext: 'owner' | 'client' = 'client') {
   const [supported, setSupported] = useState(false);
+  const [unsupportedReason, setUnsupportedReason] = useState<string | null>(
+    null
+  );
   useEffect(() => {
-    setSupported(isWebAuthnSupported());
+    const ok = isWebAuthnSupported();
+    setSupported(ok);
+    setUnsupportedReason(ok ? null : explainPasskeyUnsupported());
   }, []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,14 +107,12 @@ export function usePasskeyLogin(loginContext: 'owner' | 'client' = 'client') {
       const result = await webAuthnService.login(loginContext);
       return result;
     } catch (err: unknown) {
-      const e = err as { name?: string };
-      if (e.name === 'NotAllowedError') {
-        setError('Authentification annulée.');
-      } else {
-        setError(
+      setError(
+        formatWebAuthnClientError(
+          err,
           getSafeErrorMessage(err, 'Erreur lors de la connexion par passkey.')
-        );
-      }
+        )
+      );
       return null;
     } finally {
       setIsLoading(false);
@@ -102,6 +121,7 @@ export function usePasskeyLogin(loginContext: 'owner' | 'client' = 'client') {
 
   return {
     supported,
+    unsupportedReason,
     isLoading,
     error,
     loginWithPasskey,

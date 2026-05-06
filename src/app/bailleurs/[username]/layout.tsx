@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { BRAND_TAGLINE } from '@/lib/brand';
+import { absoluteAssetUrl, absoluteUrl } from '@/lib/site-url';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -24,17 +26,20 @@ export async function generateMetadata({
           'Propriétaire');
       const total: number = user.total_active_ads ?? 0;
       const city: string = user.city_name ? ` à ${user.city_name}` : '';
-      const avatarUrl: string =
-        user.avatar ?? 'https://keyhome.app/images/logo.png';
+      const avatarUrl: string = user.avatar
+        ? absoluteAssetUrl(user.avatar as string)
+        : absoluteAssetUrl('/images/logo.png');
+
+      const path = `/bailleurs/${username}`;
 
       return {
         title: `${displayName} — Propriétaire immobilier | KeyHome`,
-        description: `Découvrez les ${total ? `${total} annonce${total > 1 ? 's' : ''} de ` : 'annonces de '}${displayName}${city} sur KeyHome. Biens vérifiés, contact direct.`,
-        alternates: { canonical: `https://keyhome.app/bailleurs/${username}` },
+        description: `${BRAND_TAGLINE}. Découvrez les ${total ? `${total} annonce${total > 1 ? 's' : ''} de ` : 'annonces de '}${displayName}${city} sur KeyHome. Biens vérifiés, contact direct.`,
+        alternates: { canonical: absoluteUrl(path) },
         openGraph: {
           title: `${displayName} — Propriétaire | KeyHome`,
-          description: `Profil propriétaire de ${displayName} sur KeyHome.${total ? ` ${total} bien${total > 1 ? 's' : ''} disponible${total > 1 ? 's' : ''}.` : ''}`,
-          url: `https://keyhome.app/bailleurs/${username}`,
+          description: `${BRAND_TAGLINE}. Profil propriétaire de ${displayName} sur KeyHome.${total ? ` ${total} bien${total > 1 ? 's' : ''} disponible${total > 1 ? 's' : ''}.` : ''}`,
+          url: absoluteUrl(path),
           siteName: 'KeyHome',
           images: [
             { url: avatarUrl, width: 400, height: 400, alt: displayName },
@@ -46,11 +51,12 @@ export async function generateMetadata({
     // Fail silently — fallback metadata below
   }
 
+  const path = `/bailleurs/${username}`;
+
   return {
     title: 'Profil propriétaire — KeyHome',
-    description:
-      'Découvrez les annonces de ce propriétaire sur KeyHome. Biens immobiliers vérifiés, contact direct.',
-    alternates: { canonical: `https://keyhome.app/bailleurs/${username}` },
+    description: `${BRAND_TAGLINE}. Découvrez les annonces de ce propriétaire sur KeyHome. Biens immobiliers vérifiés, contact direct.`,
+    alternates: { canonical: absoluteUrl(path) },
   };
 }
 

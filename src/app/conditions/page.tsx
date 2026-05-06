@@ -1,6 +1,6 @@
+import { LEGAL_DOCUMENTS_LAST_UPDATED_LABEL } from '@/lib/legal-documents';
 import Image from 'next/image';
 import Link from 'next/link';
-import { LEGAL_DOCUMENTS_LAST_UPDATED_LABEL } from '@/lib/legal-documents';
 import styles from '../confidentialite/legal.module.css';
 
 const sections = [
@@ -15,6 +15,7 @@ const sections = [
   { id: 'resiliation', title: 'Résiliation' },
   { id: 'limitation', title: 'Limitation de responsabilité' },
   { id: 'modifications', title: 'Modifications et contact' },
+  { id: 'droit-applicable', title: 'Droit applicable et litiges' },
 ];
 
 export default function TermsOfUsePage() {
@@ -213,6 +214,15 @@ export default function TermsOfUsePage() {
                 <li>
                   Nous informer immédiatement de toute utilisation non autorisée
                   de votre compte
+                </li>
+                <li>
+                  Utiliser la plateforme conformément à sa destination et aux
+                  présentes conditions, sans en détourner les fonctionnalités
+                </li>
+                <li>
+                  Ne pas tenter de nuire au bon fonctionnement du site, de ses
+                  serveurs ou de ses réseaux, ni de contourner ses systèmes de
+                  sécurité
                 </li>
               </ul>
               <p>
@@ -507,6 +517,24 @@ export default function TermsOfUsePage() {
                   Nous recommandons fortement de visiter tout bien avant tout
                   engagement financier
                 </li>
+                <li>
+                  KeyHome met tout en œuvre pour assurer la disponibilité du
+                  service, mais ne garantit pas un accès ininterrompu ; des
+                  interruptions temporaires pour maintenance ou raisons
+                  techniques n&apos;engagent pas sa responsabilité
+                </li>
+                <li>
+                  Les liens hypertextes vers des sites tiers sont fournis à
+                  titre indicatif ; KeyHome ne contrôle pas ces contenus et
+                  décline toute responsabilité quant à leur exactitude ou leur
+                  disponibilité
+                </li>
+                <li>
+                  KeyHome ne peut être tenu responsable des contenus publiés par
+                  les utilisateurs (annonces, messages, avis) ; tout contenu
+                  illicite peut être signalé et sera traité de bonne foi dans
+                  les meilleurs délais
+                </li>
               </ul>
             </section>
 
@@ -546,6 +574,28 @@ export default function TermsOfUsePage() {
                 afficher ce contenu sur la plateforme et dans les communications
                 promotionnelles liées au service.
               </p>
+              <ul className={styles.list}>
+                <li>
+                  Toutes les informations de la plateforme sont réservées à un
+                  usage strictement personnel et non commercial, sauf accord
+                  préalable écrit de KeyHome
+                </li>
+                <li>
+                  Toute utilisation à des fins commerciales ou publicitaires,
+                  toute reproduction totale ou partielle du site ou de son
+                  contenu est interdite et engage la responsabilité de
+                  l&apos;auteur
+                </li>
+                <li>
+                  La reproduction à titre strictement personnel est tolérée sous
+                  réserve de mentionner KeyHome comme source
+                </li>
+                <li>
+                  Tout scraping, extraction automatisée ou utilisation de robots
+                  est strictement prohibé et peut engager la responsabilité
+                  civile et pénale de son auteur
+                </li>
+              </ul>
             </section>
 
             {/* §9 — Résiliation */}
@@ -701,6 +751,66 @@ export default function TermsOfUsePage() {
                     juridique est à votre disposition.
                   </span>
                 </div>
+              </div>
+            </section>
+
+            {/* §12 — Droit applicable et litiges */}
+            <section id="droit-applicable" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    aria-hidden="true"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 6l9-4 9 4v6c0 5.55-3.84 10.74-9 12-5.16-1.26-9-6.45-9-12V6z" />
+                    <path d="M9 12l2 2 4-4" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>
+                  12. Droit applicable et règlement des litiges
+                </h2>
+              </div>
+              <p>
+                Les présentes CGU sont régies par le droit applicable dans
+                l&apos;espace CEMAC/UEMOA, et notamment par le droit
+                camerounais, sans préjudice des dispositions d&apos;ordre public
+                qui pourraient s&apos;appliquer dans le pays de résidence de
+                l&apos;utilisateur.
+              </p>
+              <p>
+                En cas de litige ou de réclamation, nous vous encourageons
+                vivement à nous contacter en premier lieu à{' '}
+                <a
+                  href="mailto:contact@keyhome.app"
+                  className={styles.inlineLink}
+                >
+                  contact@keyhome.app
+                </a>{' '}
+                afin de rechercher une solution amiable.{' '}
+                <span className={styles.strong}>
+                  Nous nous engageons à répondre dans les 15 jours ouvrés.
+                </span>
+              </p>
+              <p>
+                À défaut de résolution amiable dans un délai de{' '}
+                <span className={styles.strong}>30 jours</span> à compter de la
+                première réclamation écrite, le litige sera soumis à la
+                juridiction compétente du ressort du siège de KeyHome, sauf
+                disposition légale impérative applicable en votre faveur en tant
+                que consommateur.
+              </p>
+              <div className={styles.note}>
+                En tant que consommateur, vous bénéficiez des protections
+                offertes par les lois impératives de votre pays de résidence.
+                Les présentes CGU ne sauraient vous priver de ces droits
+                fondamentaux.
               </div>
             </section>
           </div>

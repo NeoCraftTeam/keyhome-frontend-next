@@ -301,7 +301,12 @@
   .layout {
     flex-direction: row;
     gap: 40px;
-    padding: 40px 24px 0;
+    padding: 0 24px;
+    /* Split-pane: stick right below the header and fill the remaining viewport */
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
+    overflow: hidden;
   }
 }
 
@@ -317,8 +322,10 @@
   scrollbar-width: none;
   background: white;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  position: relative;
-  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 60px;
+  z-index: 50;
 }
 
 .toc::-webkit-scrollbar {
@@ -369,16 +376,18 @@
 /* Desktop: sticky sidebar */
 @media (min-width: 1024px) {
   .toc {
-    position: sticky;
-    top: 72px;
+    /* No longer needs sticky — the layout container is sticky */
+    position: static;
     flex-direction: column;
     gap: 2px;
     padding: 20px 12px;
-    overflow-x: visible;
+    overflow-x: hidden;
     overflow-y: auto;
-    max-height: calc(100vh - 100px);
+    /* Cap height so it scrolls internally if sections overflow */
+    max-height: calc(100% - 48px);
     width: 260px;
     min-width: 260px;
+    flex-shrink: 0;
     background: white;
     border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 16px;
@@ -386,6 +395,7 @@
       0 1px 3px rgba(0, 0, 0, 0.04),
       0 8px 32px rgba(0, 0, 0, 0.02);
     align-self: flex-start;
+    margin: 24px 0;
     animation: slideInFromLeft 0.5s ease both;
     animation-delay: 0.3s;
   }
@@ -405,6 +415,9 @@
     padding: 9px 12px;
     font-size: 0.82rem;
     background: transparent;
+    white-space: normal;
+    overflow-wrap: break-word;
+    line-height: 1.4;
   }
 
   .tocItem:hover {
@@ -432,7 +445,10 @@
 
 @media (min-width: 1024px) {
   .mainContent {
-    padding: 0;
+    /* Only this pane scrolls — the surrounding layout is fixed */
+    padding: 24px 0 0;
+    overflow-y: auto;
+    height: 100%;
   }
 }
 

@@ -19,8 +19,55 @@ export function usePresence(userId: string): {
   status: PresenceStatus;
   device: DeviceType;
 } {
-  const [status, setStatus] = useState<PresenceStatus>('unknown');
-  const [device, setDevice] = useState<DeviceType>(null);
+  /**
+   * Lazy initializer: if GlobalPresenceChannel has already subscribed to
+   * `online-users`, resolve the status synchronously so the very first render
+   * shows the correct state and there is no flickering "Vu à" frame.
+   */
+  const [status, setStatus] = useState<PresenceStatus>(() => {
+    if (!userId) return 'unknown';
+    try {
+      const echo = getEcho();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ch = (echo.connector as any).pusher?.channel(
+        'presence-online-users'
+      );
+      if (!ch?.subscribed || !ch?.members || ch.members.count === 0)
+        return 'unknown';
+      let found = false;
+      ch.members.each((m: PresenceMember) => {
+        if (String(m.id) === String(userId)) found = true;
+      });
+      return found ? 'online' : 'offline';
+    } catch {
+      return 'unknown';
+    }
+  });
+  const [device, setDevice] = useState<DeviceType>(() => {
+    if (!userId) return null;
+    try {
+      const echo = getEcho();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ch = (echo.connector as any).pusher?.channel(
+        'presence-online-users'
+      );
+      if (!ch?.subscribed || !ch?.members || ch.members.count === 0)
+        return null;
+      let found: DeviceType = null;
+      ch.members.each((m: PresenceMember) => {
+        if (String(m.id) === String(userId))
+          found =
+            m.info?.device === 'mobile'
+              ? 'mobile'
+              : m.info?.device === 'desktop'
+                ? 'desktop'
+                : null;
+      });
+      return found;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     if (!userId) return;

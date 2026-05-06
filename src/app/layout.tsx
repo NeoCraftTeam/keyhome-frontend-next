@@ -20,6 +20,16 @@ import { ThemeInitScript } from '@/components/ThemeInitScript';
 import { KH_SAFE_AREA_INIT_SCRIPT } from '@/lib/safe-area-init-inline';
 import { Suspense } from 'react';
 import { getClerkPreconnectOrigin } from '@/lib/clerk-frontend-origins';
+import { BRAND_TITLE_WITH_TAGLINE, BRAND_TAGLINE } from '@/lib/brand';
+import { buildSiteVerification } from '@/lib/seo-verification';
+import { getSiteOrigin } from '@/lib/site-url';
+
+const SITE = getSiteOrigin();
+const siteVerification = buildSiteVerification();
+
+const SITE_META_DESCRIPTION = `${BRAND_TAGLINE}. KeyHome : des milliers d'annonces immobilières vérifiées. Maisons, appartements, terrains et villas à Douala, Abidjan, Cotonou, Lomé et partout dans le monde. Inscription gratuite, paiement sécurisé.`;
+
+const TWITTER_CARD_DESCRIPTION = `${BRAND_TAGLINE}. Trouvez votre bien parmi des milliers d'annonces vérifiées. Inscription gratuite, paiement sécurisé, contact direct.`;
 
 const inter = Inter({
   variable: '--font-inter',
@@ -35,14 +45,12 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://keyhome.app'),
+  metadataBase: new URL(SITE),
   title: {
-    default:
-      'KeyHome — Annonces immobilières vérifiées | Location, Vente, Terrains',
+    default: BRAND_TITLE_WITH_TAGLINE,
     template: '%s | KeyHome',
   },
-  description:
-    "KeyHome : des milliers d'annonces immobilières vérifiées. Maisons, appartements, terrains et villas à Douala, Abidjan, Cotonou, Lomé et partout dans le monde. Inscription gratuite, paiement sécurisé.",
+  description: SITE_META_DESCRIPTION,
   keywords: [
     'immobilier Afrique',
     'location appartement',
@@ -58,9 +66,9 @@ export const metadata: Metadata = {
     'achat terrain Afrique',
     'agence immobilière en ligne',
   ],
-  authors: [{ name: 'KeyHome', url: 'https://keyhome.app' }],
+  authors: [{ name: 'KeyHome', url: SITE }],
   creator: 'NeoCraftTeam',
-  publisher: 'KeyHome',
+  publisher: 'Cedrick Feze',
   applicationName: 'KeyHome',
   generator: 'Next.js',
   referrer: 'strict-origin-when-cross-origin',
@@ -76,37 +84,34 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: 'https://keyhome.app',
+    canonical: SITE,
     languages: {
-      'fr-FR': 'https://keyhome.app',
-      'x-default': 'https://keyhome.app',
+      'fr-FR': SITE,
+      'x-default': SITE,
     },
   },
   openGraph: {
     type: 'website',
     locale: 'fr_FR',
-    url: 'https://keyhome.app',
+    url: SITE,
     siteName: 'KeyHome',
-    title: "KeyHome — L'immobilier de confiance",
-    description:
-      "Des milliers d'annonces immobilières vérifiées. Maisons, appartements, terrains et villas partout dans le monde. " +
-      'Inscription gratuite, paiement sécurisé, contact direct avec les propriétaires. Zéro intermédiaire.',
+    title: BRAND_TITLE_WITH_TAGLINE,
+    description: SITE_META_DESCRIPTION,
     images: [
       {
-        url: 'https://keyhome.app/images/og-cover.png',
+        url: `${SITE}/images/og-cover.png`,
         width: 1200,
         height: 630,
-        alt: 'KeyHome — Immobilier en Afrique',
+        alt: BRAND_TITLE_WITH_TAGLINE,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: "KeyHome — L'immobilier de confiance",
-    description:
-      "Trouvez votre bien idéal parmi des milliers d'annonces vérifiées. Inscription gratuite, paiement sécurisé, contact direct propriétaire.",
+    title: BRAND_TITLE_WITH_TAGLINE,
+    description: TWITTER_CARD_DESCRIPTION,
     creator: '@keyhome_app',
-    images: ['https://keyhome.app/images/og-cover.png'],
+    images: [`${SITE}/images/og-cover.png`],
   },
   icons: {
     icon: [
@@ -131,6 +136,7 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-capable': 'yes',
   },
   category: 'real estate',
+  ...(siteVerification ? { verification: siteVerification } : {}),
 };
 
 export const viewport: Viewport = {

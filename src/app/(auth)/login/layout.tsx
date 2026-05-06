@@ -1,18 +1,29 @@
 import type { Metadata } from 'next';
+import { BRAND_TAGLINE } from '@/lib/brand';
+import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+
+const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
   title: 'Connexion — Accédez à votre espace KeyHome',
-  description:
-    'Connectez-vous à KeyHome et retrouvez vos annonces favorites, vos contacts débloqués et votre historique de paiements. Accès rapide via email ou réseaux sociaux.',
+  description: `${BRAND_TAGLINE}. Connectez-vous à KeyHome et retrouvez vos annonces favorites, vos contacts débloqués et votre historique de paiements. Accès rapide via email ou réseaux sociaux.`,
   robots: { index: true, follow: true },
   alternates: {
-    canonical: 'https://keyhome.app/login',
+    canonical: absoluteUrl('/login'),
   },
   openGraph: {
     title: 'Connexion — KeyHome',
-    description:
-      'Accédez à votre espace personnel KeyHome. Retrouvez vos annonces, vos favoris et contactez les propriétaires directement.',
-    url: 'https://keyhome.app/login',
+    description: `${BRAND_TAGLINE}. Accédez à votre espace personnel KeyHome. Retrouvez vos annonces, vos favoris et contactez les propriétaires directement.`,
+    url: absoluteUrl('/login'),
+    siteName: 'KeyHome',
+    images: [
+      {
+        url: `${SITE}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: 'Connexion — KeyHome',
+      },
+    ],
   },
 };
 

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { COMPARISONS } from '../comparisons';
 import { brand, gradient } from '@/theme/tokens';
+import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
 
 export function generateStaticParams() {
   return Object.keys(COMPARISONS).map((slug) => ({ slug }));
@@ -18,20 +19,27 @@ export async function generateMetadata({
   const data = COMPARISONS[slug];
   if (!data) return { title: 'Comparaison immobilière — KeyHome' };
 
+  const site = getSiteOrigin();
+  const path = `/comparaison/${slug}`;
+
   return {
     title: data.metaTitle,
     description: data.metaDescription,
     alternates: {
-      canonical: `https://keyhome.app/comparaison/${slug}`,
+      canonical: absoluteUrl(path),
+      languages: {
+        'fr-FR': absoluteUrl(path),
+        'x-default': absoluteUrl(path),
+      },
     },
     openGraph: {
       title: data.metaTitle,
       description: data.metaDescription,
-      url: `https://keyhome.app/comparaison/${slug}`,
+      url: absoluteUrl(path),
       siteName: 'KeyHome',
       images: [
         {
-          url: 'https://keyhome.app/opengraph-image',
+          url: `${site}/opengraph-image`,
           width: 1200,
           height: 630,
           alt: data.metaTitle,
@@ -56,11 +64,11 @@ export default async function ComparisonPage({
     '@type': 'Article',
     headline: data.title,
     description: data.metaDescription,
-    url: `https://keyhome.app/comparaison/${slug}`,
+    url: absoluteUrl(`/comparaison/${slug}`),
     publisher: {
       '@type': 'Organization',
       name: 'KeyHome',
-      url: 'https://keyhome.app',
+      url: absoluteUrl('/'),
     },
     dateModified: new Date().toISOString(),
   };
@@ -74,19 +82,19 @@ export default async function ComparisonPage({
         '@type': 'ListItem',
         position: 1,
         name: 'Accueil',
-        item: 'https://keyhome.app',
+        item: getSiteOrigin(),
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'Comparaisons',
-        item: 'https://keyhome.app/comparaison',
+        item: absoluteUrl('/comparaison'),
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: `${data.labelA} vs ${data.labelB}`,
-        item: `https://keyhome.app/comparaison/${slug}`,
+        item: absoluteUrl(`/comparaison/${slug}`),
       },
     ],
   };

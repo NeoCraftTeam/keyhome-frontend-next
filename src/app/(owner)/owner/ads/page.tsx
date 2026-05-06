@@ -1,20 +1,26 @@
 'use client';
 
-import ShareAdButtons from '@/components/owner/ShareAdButtons';
 import OwnerAdCard from '@/components/owner/OwnerAdCard';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import ShareAdButtons from '@/components/owner/ShareAdButtons';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
-import StaggerList from '@/components/ui/StaggerList';
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
+import { getLaravelApiErrorMessage } from '@/lib/api-errors';
+import { formatPrice } from '@/lib/constants';
+import { adsService } from '@/services/ads.service';
+import { adTypesService, citiesService } from '@/services/cities.service';
+import { ownerService } from '@/services/owner.service';
+import { Ad, AdStatus, AdType, City } from '@/types';
 import {
   Add as AddIcon,
-  Delete as DeleteIcon,
   Description as ContractIcon,
+  Delete as DeleteIcon,
   Edit as EditIcon,
+  VisibilityOff as HiddenIcon,
   MoreVert as MoreIcon,
   RocketLaunch as RocketLaunchIcon,
   Visibility as VisibleIcon,
-  VisibilityOff as HiddenIcon,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -23,12 +29,15 @@ import {
   Box,
   Chip,
   Fab,
+  FormControl,
   Grid,
   IconButton,
   InputAdornment,
+  InputLabel,
   Menu,
   MenuItem,
   Paper,
+  Select,
   Snackbar,
   Table,
   TableBody,
@@ -37,6 +46,7 @@ import {
   TableHead,
   TablePagination,
   TableRow,
+  TableSortLabel,
   TextField,
   Typography,
   useMediaQuery,
@@ -45,18 +55,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useCallback, useEffect, useState } from 'react';
-import { getLaravelApiErrorMessage } from '@/lib/api-errors';
-import { adsService } from '@/services/ads.service';
-import { ownerService } from '@/services/owner.service';
-import { Ad } from '@/types';
-import { formatPrice } from '@/lib/constants';
-import { AdStatus } from '@/types';
-import { adTypesService, citiesService } from '@/services/cities.service';
-import { FormControl, InputLabel, Select, TableSortLabel } from '@mui/material';
-import { City } from '@/types';
-import { AdType } from '@/types';
 
 const MotionTableRow = motion(TableRow);
 
@@ -631,24 +630,38 @@ export default function OwnerAdsPage() {
             action={undefined}
           />
         ) : isMobile ? (
-          <Box sx={{ p: 2 }}>
-            <StaggerList
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '16px',
+          <Box sx={{ pb: 2 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                overflowX: 'auto',
+                scrollSnapType: 'x mandatory',
+                WebkitOverflowScrolling: 'touch',
+                gap: 2,
+                px: 2,
+                py: 1,
+                /* hide scrollbar but keep scroll */
+                scrollbarWidth: 'none',
+                '&::-webkit-scrollbar': { display: 'none' },
               }}
-              stagger={0.07}
             >
               {ads.map((ad) => (
-                <OwnerAdCard
+                <Box
                   key={ad.id}
-                  ad={ad}
-                  onToggleVisibility={(a) => toggleMutation.mutate(a.id)}
-                  isToggling={toggleMutation.isPending}
-                />
+                  sx={{
+                    flex: '0 0 72%',
+                    maxWidth: 280,
+                    scrollSnapAlign: 'start',
+                  }}
+                >
+                  <OwnerAdCard
+                    ad={ad}
+                    onToggleVisibility={(a) => toggleMutation.mutate(a.id)}
+                    isToggling={toggleMutation.isPending}
+                  />
+                </Box>
               ))}
-            </StaggerList>
+            </Box>
             {meta && meta.last_page > 1 && (
               <TablePagination
                 component="div"

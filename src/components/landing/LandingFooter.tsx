@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useLandingTheme } from './LandingThemeContext';
 import { brand } from '@/theme/tokens';
+import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
 
 const links = {
   Plateforme: [
@@ -12,6 +13,16 @@ const links = {
     { label: 'Publier une annonce', href: '/owner/login' },
     { label: 'Comment ça marche', href: '#how-it-works' },
     { label: 'Témoignages clients', href: '#testimonials' },
+  ],
+  'Guides & villes': [
+    { label: 'Immobilier à Douala', href: '/immobilier/douala' },
+    { label: 'Immobilier à Abidjan', href: '/immobilier/abidjan' },
+    { label: 'Immobilier à Yaoundé', href: '/immobilier/yaounde' },
+    { label: 'Immobilier à Dakar', href: '/immobilier/dakar' },
+    { label: 'Appartements (type de bien)', href: '/type-bien/appartement' },
+    { label: 'Maisons (type de bien)', href: '/type-bien/maison' },
+    { label: 'Comparaisons', href: '/comparaison' },
+    { label: 'Annonces à proximité', href: '/nearby' },
   ],
   'Villes populaires': [
     { label: 'Immobilier Douala', href: '/search?city=douala' },
@@ -68,7 +79,7 @@ export default function LandingFooter() {
             >
               <Image
                 src="/images/logo.png"
-                alt="KeyHome — Immobilier en Afrique"
+                alt={BRAND_TITLE_WITH_TAGLINE}
                 width={36}
                 height={36}
                 style={{ borderRadius: 8 }}
@@ -93,8 +104,9 @@ export default function LandingFooter() {
                 margin: '0 0 24px',
               }}
             >
-              La plateforme immobilière numérique de référence en Afrique.
-              Trouvez, louez ou achetez votre bien en toute confiance.
+              {BRAND_TAGLINE}. La plateforme immobilière numérique de référence
+              en Afrique. Trouvez, louez ou achetez votre bien en toute
+              confiance.
             </p>
             {/* Social links */}
             <div style={{ display: 'flex', gap: 12 }}>

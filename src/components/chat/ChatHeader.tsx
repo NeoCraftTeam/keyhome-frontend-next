@@ -1,27 +1,28 @@
 'use client';
 
-import type { Conversation } from '@/types/chat';
 import type { DeviceType, PresenceStatus } from '@/hooks/usePresence';
-import type { ChatTheme } from './chat-theme';
-import { CLIENT_THEME } from './chat-theme';
-import { OnlineStatus, resolvePeerLastSeenForDisplay } from './OnlineStatus';
+import { khSafeAreaTopSx } from '@/lib/safe-area-insets';
+import type { Conversation } from '@/types/chat';
 import {
-  ArrowLeft,
   Archive,
+  ArrowLeft,
   Building2,
   ExternalLink,
   Globe2,
   Home,
+  MoreVertical,
   Search,
   Smartphone,
   UserRound,
   X,
 } from 'lucide-react';
-import { khSafeAreaTopSx } from '@/lib/safe-area-insets';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useCallback, useEffect, useId, useState } from 'react';
+import type { ChatTheme } from './chat-theme';
+import { CLIENT_THEME } from './chat-theme';
+import { OnlineStatus, resolvePeerLastSeenForDisplay } from './OnlineStatus';
 
 interface ChatHeaderProps {
   conversation: Conversation;
@@ -73,6 +74,8 @@ export function ChatHeader({
       : null;
 
   const [mobileAdOpen, setMobileAdOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreWrapRef = useRef<HTMLDivElement>(null);
   const mobileAdTitleId = useId();
 
   const closeMobileAd = useCallback(() => setMobileAdOpen(false), []);
@@ -101,6 +104,20 @@ export function ChatHeader({
     };
   }, [mobileAdOpen]);
 
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (
+        moreWrapRef.current &&
+        !moreWrapRef.current.contains(e.target as Node)
+      ) {
+        setMoreOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [moreOpen]);
+
   return (
     <div
       className="shrink-0 touch-manipulation"
@@ -112,6 +129,10 @@ export function ChatHeader({
         WebkitBackdropFilter: 'blur(12px)',
         borderBottom: `1px solid ${theme.glassBorder}`,
         boxShadow: theme.isDark ? 'none' : '0 1px 6px rgba(0,0,0,0.05)',
+        // backdrop-filter creates a stacking context — keep z-index above the
+        // scroll container so the ⋮ dropdown is never clipped behind messages.
+        position: 'relative',
+        zIndex: 200,
       }}
     >
       {/* ── Top row: back / participant / ad (mob) / search / archive ── */}
@@ -137,7 +158,7 @@ export function ChatHeader({
           />
           <div className="flex-1 min-w-0">
             <p
-              className="text-[14px] font-semibold truncate leading-tight"
+              className="text-[15px] font-semibold truncate leading-tight"
               style={{ color: theme.textPrimary }}
             >
               {participant?.name ?? 'Utilisateur'}
@@ -151,71 +172,179 @@ export function ChatHeader({
           </div>
         </div>
 
-        {/* Client: link to landlord public profile (new tab — keep chat open). */}
-        {landlordPublicHref && (
-          <Link
-            href={landlordPublicHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 flex items-center justify-center p-2 min-h-11 min-w-11 transition-opacity active:scale-95 hover:opacity-80"
-            style={{ color: theme.accent }}
-            aria-label="Profil public du bailleur"
-            title="Profil public du bailleur"
-          >
-            <UserRound className="h-5 w-5" aria-hidden />
-          </Link>
-        )}
+        {/* ── Desktop (md+): all action buttons individually ── */}
+        <div className="hidden md:flex items-center">
+          {landlordPublicHref && (
+            <Link
+              href={landlordPublicHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 flex items-center justify-center p-2 min-h-11 min-w-11 transition-opacity active:scale-95 hover:opacity-80"
+              style={{ color: theme.accent }}
+              aria-label="Profil public du bailleur"
+              title="Profil public du bailleur"
+            >
+              <UserRound className="h-5 w-5" aria-hidden />
+            </Link>
+          )}
+          {ad && adHref && (
+            <button
+              type="button"
+              className="shrink-0 flex items-center justify-center p-2 min-h-11 min-w-11 transition-opacity active:scale-95 hover:opacity-80"
+              style={{ color: theme.accent }}
+              aria-label="Annonce liée"
+              aria-expanded={mobileAdOpen}
+              aria-haspopup="dialog"
+              onClick={() => setMobileAdOpen(true)}
+            >
+              <Building2 className="h-5 w-5" aria-hidden />
+            </button>
+          )}
+          {onSearch && (
+            <button
+              onClick={onSearch}
+              className="shrink-0 flex items-center justify-center p-2 min-h-11 min-w-11 transition-opacity active:scale-95 hover:opacity-80"
+              style={{ color: searchOpen ? theme.accent : theme.textMuted }}
+              aria-label="Rechercher dans la conversation"
+              title="Rechercher"
+            >
+              <Search className="h-5 w-5" />
+            </button>
+          )}
+          {onArchive && (
+            <button
+              onClick={onArchive}
+              className="shrink-0 flex items-center justify-center p-2 min-h-11 min-w-11 transition-all active:scale-95"
+              style={{ color: theme.textMuted }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = theme.accent;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = theme.textMuted;
+              }}
+              aria-label="Archiver la conversation"
+              title="Archiver"
+            >
+              <Archive className="h-5 w-5" />
+            </button>
+          )}
+        </div>
 
-        {/* Linked listing — mobile: compact toolbar control */}
-        {ad && adHref && (
-          <button
-            type="button"
-            className="md:hidden shrink-0 flex items-center justify-center p-2 min-h-11 min-w-11 transition-opacity active:scale-95 hover:opacity-80"
-            style={{
-              color: theme.accent,
-            }}
-            aria-label="Annonce liée"
-            aria-expanded={mobileAdOpen}
-            aria-haspopup="dialog"
-            onClick={() => setMobileAdOpen(true)}
-          >
-            <Building2 className="h-5 w-5" aria-hidden />
-          </button>
-        )}
-
-        {/* Search toggle */}
-        {onSearch && (
-          <button
-            onClick={onSearch}
-            className="shrink-0 flex items-center justify-center p-2 min-h-11 min-w-11 transition-opacity active:scale-95 hover:opacity-80"
-            style={{
-              color: searchOpen ? theme.accent : theme.textMuted,
-            }}
-            aria-label="Rechercher dans la conversation"
-            title="Rechercher"
-          >
-            <Search className="h-5 w-5" />
-          </button>
-        )}
-
-        {/* Archive action */}
-        {onArchive && (
-          <button
-            onClick={onArchive}
-            className="shrink-0 flex items-center justify-center p-2 min-h-11 min-w-11 transition-all active:scale-95"
-            style={{ color: theme.textMuted }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = theme.accent;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = theme.textMuted;
-            }}
-            aria-label="Archiver la conversation"
-            title="Archiver"
-          >
-            <Archive className="h-5 w-5" />
-          </button>
-        )}
+        {/* ── Mobile (< md): search + ⋮ overflow menu ── */}
+        <div className="flex items-center md:hidden">
+          {onSearch && (
+            <button
+              onClick={onSearch}
+              className="shrink-0 flex items-center justify-center p-2 min-h-11 min-w-11 transition-opacity active:scale-95 hover:opacity-80"
+              style={{ color: searchOpen ? theme.accent : theme.textMuted }}
+              aria-label="Rechercher dans la conversation"
+            >
+              <Search className="h-5 w-5" />
+            </button>
+          )}
+          {(landlordPublicHref || (ad && adHref) || onArchive) && (
+            <div className="relative" ref={moreWrapRef}>
+              <button
+                type="button"
+                onClick={() => setMoreOpen((o) => !o)}
+                className="shrink-0 flex items-center justify-center p-2 min-h-11 min-w-11 transition-opacity active:scale-95 hover:opacity-80"
+                style={{ color: moreOpen ? theme.accent : theme.textMuted }}
+                aria-label="Plus d'options"
+                aria-expanded={moreOpen}
+                aria-haspopup="menu"
+              >
+                <MoreVertical className="h-5 w-5" aria-hidden />
+              </button>
+              {moreOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full mt-1 min-w-[200px] rounded-2xl overflow-hidden"
+                  style={{
+                    backgroundColor: theme.isDark ? theme.listBg : '#ffffff',
+                    border: `1px solid ${theme.glassBorder}`,
+                    boxShadow: theme.isDark
+                      ? '0 8px 32px rgba(0,0,0,0.55)'
+                      : '0 8px 32px rgba(0,0,0,0.12)',
+                    zIndex: 500,
+                  }}
+                >
+                  {landlordPublicHref && (
+                    <Link
+                      href={landlordPublicHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      role="menuitem"
+                      onClick={() => setMoreOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3.5 active:opacity-70"
+                      style={{
+                        color: theme.textPrimary,
+                        borderBottom:
+                          (ad && adHref) || onArchive
+                            ? `1px solid ${theme.glassBorder}`
+                            : 'none',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <UserRound
+                        className="h-4 w-4 shrink-0"
+                        style={{ color: theme.accent }}
+                      />
+                      <span className="text-[13.5px] font-medium flex-1">
+                        Profil du bailleur
+                      </span>
+                      <ExternalLink className="h-3.5 w-3.5 opacity-35 shrink-0" />
+                    </Link>
+                  )}
+                  {ad && adHref && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        setMobileAdOpen(true);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 active:opacity-70 text-left"
+                      style={{
+                        color: theme.textPrimary,
+                        borderBottom: onArchive
+                          ? `1px solid ${theme.glassBorder}`
+                          : 'none',
+                      }}
+                    >
+                      <Building2
+                        className="h-4 w-4 shrink-0"
+                        style={{ color: theme.accent }}
+                      />
+                      <span className="text-[13.5px] font-medium">
+                        Annonce liée
+                      </span>
+                    </button>
+                  )}
+                  {onArchive && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        onArchive();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 active:opacity-70 text-left"
+                      style={{ color: theme.textPrimary }}
+                    >
+                      <Archive
+                        className="h-4 w-4 shrink-0"
+                        style={{ color: theme.textMuted }}
+                      />
+                      <span className="text-[13.5px] font-medium">
+                        Archiver
+                      </span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Ad context card (desktop / tablet only) ── */}

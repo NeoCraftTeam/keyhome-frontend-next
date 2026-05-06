@@ -1,8 +1,10 @@
+import { markdownBlogToHtml } from '@/lib/markdown-blog';
+import { absoluteAssetUrl, absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+import { brand, gradient } from '@/theme/tokens';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BLOG_POSTS } from '../posts';
-import { brand, gradient } from '@/theme/tokens';
 import { notFound } from 'next/navigation';
+import { BLOG_POSTS } from '../posts';
 
 export function generateStaticParams() {
   return BLOG_POSTS.map((post) => ({ slug: post.slug }));
@@ -17,22 +19,29 @@ export async function generateMetadata({
   const post = BLOG_POSTS.find((p) => p.slug === slug);
   if (!post) return { title: 'Article introuvable | KeyHome' };
 
+  const site = getSiteOrigin();
+  const path = `/blog/${slug}`;
+
   return {
     title: post.title,
     description: post.excerpt,
     alternates: {
-      canonical: `https://keyhome.app/blog/${slug}`,
+      canonical: absoluteUrl(path),
+      languages: {
+        'fr-FR': absoluteUrl(path),
+        'x-default': absoluteUrl(path),
+      },
     },
     openGraph: {
       type: 'article',
       title: post.title,
       description: post.excerpt,
-      url: `https://keyhome.app/blog/${slug}`,
+      url: absoluteUrl(path),
       publishedTime: post.date,
       siteName: 'KeyHome',
       images: [
         {
-          url: 'https://keyhome.app/opengraph-image',
+          url: `${site}/opengraph-image`,
           width: 1200,
           height: 630,
           alt: post.title,
@@ -62,17 +71,17 @@ export default async function BlogPostPage({
     author: {
       '@type': 'Organization',
       name: 'KeyHome',
-      url: 'https://keyhome.app',
+      url: getSiteOrigin(),
     },
     publisher: {
       '@type': 'Organization',
       name: 'KeyHome',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://keyhome.app/images/logo.png',
+        url: absoluteAssetUrl('/images/logo.png'),
       },
     },
-    mainEntityOfPage: `https://keyhome.app/blog/${slug}`,
+    mainEntityOfPage: absoluteUrl(`/blog/${slug}`),
   };
 
   return (
@@ -178,38 +187,7 @@ export default async function BlogPostPage({
               marginBottom: 40,
             }}
             dangerouslySetInnerHTML={{
-              __html: post.content
-                .trim()
-                .replace(
-                  /^### (.+)$/gm,
-                  '<h3 style="font-size:20px;font-weight:700;margin:32px 0 12px">$1</h3>'
-                )
-                .replace(
-                  /^## (.+)$/gm,
-                  '<h2 style="font-size:26px;font-weight:800;margin:40px 0 16px">$1</h2>'
-                )
-                .replace(
-                  /^# (.+)$/gm,
-                  '<h1 style="font-size:32px;font-weight:800;margin:0 0 24px">$1</h1>'
-                )
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(
-                  /^---$/gm,
-                  '<hr style="border:none;border-top:1px solid var(--kh-border-subtle);margin:32px 0">'
-                )
-                .replace(
-                  /^- \[ \] (.+)$/gm,
-                  '<li style="list-style:none;margin:6px 0">&#9744; $1</li>'
-                )
-                .replace(
-                  /^- (.+)$/gm,
-                  '<li style="margin:6px 0 6px 20px">$1</li>'
-                )
-                .replace(
-                  /^\d+\. (.+)$/gm,
-                  '<li style="margin:6px 0 6px 20px">$1</li>'
-                )
-                .replace(/\n\n/g, '</p><p style="margin:16px 0">'),
+              __html: markdownBlogToHtml(post.content),
             }}
           />
         ) : (

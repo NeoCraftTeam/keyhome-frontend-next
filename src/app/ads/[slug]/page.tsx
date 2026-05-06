@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import AdDetailClient from './AdDetailClient';
+import { absoluteAssetUrl, absoluteUrl } from '@/lib/site-url';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -43,7 +44,7 @@ export async function generateMetadata({
     const primaryImage =
       ad.images?.find((img: { is_primary?: boolean }) => img.is_primary) ||
       ad.images?.[0];
-    const imageUrl = primaryImage?.url || '/images/og-cover.png';
+    const ogImage = absoluteAssetUrl(primaryImage?.url as string | undefined);
 
     return {
       title: `${title}${location ? ` — ${location}` : ''}`,
@@ -52,10 +53,10 @@ export async function generateMetadata({
         type: 'article',
         title: `${title}${price ? ` — ${price}` : ''}`,
         description,
-        url: `https://keyhome.app/ads/${slug}`,
+        url: absoluteUrl(`/ads/${slug}`),
         images: [
           {
-            url: imageUrl,
+            url: ogImage,
             width: 1200,
             height: 630,
             alt: title,
@@ -68,10 +69,22 @@ export async function generateMetadata({
         card: 'summary_large_image',
         title: `${title}${price ? ` — ${price}` : ''}`,
         description,
-        images: [imageUrl],
+        images: [ogImage],
       },
       alternates: {
-        canonical: `https://keyhome.app/ads/${slug}`,
+        canonical: absoluteUrl(`/ads/${slug}`),
+        languages: {
+          'fr-FR': absoluteUrl(`/ads/${slug}`),
+          'x-default': absoluteUrl(`/ads/${slug}`),
+        },
+      },
+      other: {
+        // Local / geographic hints for some crawlers and AI overviews (harmless if ignored)
+        ...(ad.location?.latitude != null &&
+          ad.location?.longitude != null && {
+            'geo.position': `${ad.location.latitude};${ad.location.longitude}`,
+            ICBM: `${ad.location.latitude}, ${ad.location.longitude}`,
+          }),
       },
     };
   } catch {
@@ -91,7 +104,6 @@ export default async function AdDetailPage({
 }) {
   const { slug } = await params;
 
-  // Fetch ad data server-side for JSON-LD structured data
   let adJsonLd: React.JSX.Element | null = null;
   try {
     const res = await fetch(`${API_URL}/ads/${slug}`, {
@@ -104,14 +116,20 @@ export default async function AdDetailPage({
       const city = ad.quarter?.city_name || '';
       const quarter = ad.quarter?.name || '';
       const country = ad.quarter?.country_code || 'CM';
-      const images = ad.images?.map((img: { url: string }) => img.url) || [];
+      const images =
+        (ad.images?.map((img: { url: string }) =>
+          absoluteAssetUrl(img.url)
+        ) as string[]) || [];
 
-      const schema = {
+      const lat = ad.location?.latitude;
+      const lng = ad.location?.longitude;
+
+      const schema: Record<string, unknown> = {
         '@context': 'https://schema.org',
         '@type': 'RealEstateListing',
         name: ad.title,
         description: ad.description?.slice(0, 300),
-        url: `https://keyhome.app/ads/${slug}`,
+        url: absoluteUrl(`/ads/${slug}`),
         datePosted: ad.created_at,
         image: images,
         address: {
@@ -120,52 +138,72 @@ export default async function AdDetailPage({
           addressRegion: quarter,
           addressCountry: country,
         },
-        ...(ad.price && {
-          offers: {
-            '@type': 'Offer',
-            price: String(ad.price),
-            priceCurrency: 'XAF',
-            availability: 'https://schema.org/InStock',
-          },
-        }),
-        ...(ad.surface_area && {
-          floorSize: {
-            '@type': 'QuantitativeValue',
-            value: ad.surface_area,
-            unitCode: 'MTK',
-          },
-        }),
-        ...(ad.bedrooms && { numberOfRooms: ad.bedrooms }),
-        ...(ad.rating != null &&
-          (ad.reviews_count ?? 0) > 0 && {
-            aggregateRating: {
-              '@type': 'AggregateRating',
-              ratingValue: Number(ad.rating).toFixed(1),
-              reviewCount: ad.reviews_count,
-              bestRating: '5',
-              worstRating: '1',
-            },
-          }),
-        ...(ad.has_3d_tour &&
-          ad.tour_config?.scenes?.length && {
-            video: {
-              '@type': 'VideoObject',
-              name: `Visite 360° — ${ad.title}`,
-              description: `Visitez virtuellement ce bien immobilier : ${ad.title}`,
-              thumbnailUrl: images[0] ?? '/images/og-cover.png',
-              contentUrl:
-                ad.tour_config.scenes[0]?.image_url ??
-                images[0] ??
-                '/images/og-cover.png',
-              uploadDate: ad.created_at,
-            },
-          }),
       };
+
+      if (
+        typeof lat === 'number' &&
+        typeof lng === 'number' &&
+        !Number.isNaN(lat) &&
+        !Number.isNaN(lng)
+      ) {
+        schema.geo = {
+          '@type': 'GeoCoordinates',
+          latitude: lat,
+          longitude: lng,
+        };
+      }
+
+      if (ad.price) {
+        schema.offers = {
+          '@type': 'Offer',
+          price: String(ad.price),
+          priceCurrency: 'XAF',
+          availability: 'https://schema.org/InStock',
+        };
+      }
+
+      if (ad.surface_area) {
+        schema.floorSize = {
+          '@type': 'QuantitativeValue',
+          value: ad.surface_area,
+          unitCode: 'MTK',
+        };
+      }
+
+      if (ad.bedrooms) {
+        schema.numberOfRooms = ad.bedrooms;
+      }
+
+      if (ad.rating != null && (ad.reviews_count ?? 0) > 0) {
+        schema.aggregateRating = {
+          '@type': 'AggregateRating',
+          ratingValue: Number(ad.rating).toFixed(1),
+          reviewCount: ad.reviews_count,
+          bestRating: '5',
+          worstRating: '1',
+        };
+      }
+
+      if (ad.has_3d_tour && ad.tour_config?.scenes?.length) {
+        schema.video = {
+          '@type': 'VideoObject',
+          name: `Visite 360° — ${ad.title}`,
+          description: `Visitez virtuellement ce bien immobilier : ${ad.title}`,
+          thumbnailUrl: images[0] ?? absoluteAssetUrl(null),
+          contentUrl:
+            ad.tour_config.scenes[0]?.image_url ??
+            images[0] ??
+            absoluteAssetUrl(null),
+          uploadDate: ad.created_at,
+        };
+      }
 
       adJsonLd = (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(schema),
+          }}
         />
       );
     }

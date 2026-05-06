@@ -1,57 +1,54 @@
 'use client';
 
-import { ChatBadgeIcon } from '@/components/chat/ChatBadgeIcon';
 import { SIDEBAR_WIDTH } from '@/components/owner/owner-constants';
-import { useIsStandalone } from '@/hooks/useIsStandalone';
-import { OWNER_BOTTOM_NAV_ITEMS, OWNER_NAV_ITEMS } from '@/lib/nav-config';
+import { OWNER_NAV_ITEMS } from '@/lib/nav-config';
 import {
+  khLeftRailPaddingSx,
   khNavbarSpacerMinHeightXs,
+  khSafeAreaBottomSx,
   khSafeAreaTopSx,
 } from '@/lib/safe-area-insets';
 import { useAuth } from '@/providers/AuthProvider';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CloseIcon from '@mui/icons-material/Close';
 import LogoutIcon from '@mui/icons-material/Logout';
 import {
   AppBar,
   Avatar,
   Box,
-  Chip,
-  IconButton,
   Divider,
-  Menu,
-  MenuItem,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Toolbar,
-  Tooltip,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
-
-const bottomHrefSet = new Set(OWNER_BOTTOM_NAV_ITEMS.map((i) => i.href));
+import { useState } from 'react';
 
 export default function OwnerNavbar() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isStandalone = useIsStandalone();
 
-  const moreNavItems = useMemo(
-    () => OWNER_NAV_ITEMS.filter((item) => !bottomHrefSet.has(item.href)),
-    []
-  );
-
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleLogout = async () => {
-    setAnchorEl(null);
+    setDrawerOpen(false);
     await logout('/owner/login');
   };
+
+  const go = (href: string) => {
+    setDrawerOpen(false);
+    router.push(href);
+  };
+
+  const isActive = (href: string) =>
+    pathname === href || (pathname?.startsWith(href + '/') ?? false);
 
   return (
     <>
@@ -59,15 +56,20 @@ export default function OwnerNavbar() {
         position="fixed"
         elevation={0}
         sx={{
-          color: 'common.white',
           top: 0,
           left: 0,
           right: 0,
           pt: khSafeAreaTopSx,
-          zIndex: (theme) => theme.zIndex.drawer + 10,
+          zIndex: (t) => t.zIndex.appBar,
           width: { xs: '100%', md: `calc(100% - ${SIDEBAR_WIDTH}px)` },
           ml: { md: SIDEBAR_WIDTH },
           display: { xs: 'flex', md: 'none' },
+          bgcolor: 'background.paper',
+          color: 'text.primary',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
         }}
       >
         <Toolbar
@@ -76,266 +78,230 @@ export default function OwnerNavbar() {
             maxWidth: 1760,
             width: '100%',
             mx: 'auto',
-            px: { xs: 1, sm: 1.5, md: 2 },
+            px: { xs: 1, sm: 1.5 },
             minHeight: { xs: 56, md: 64 },
             display: 'flex',
             alignItems: 'center',
-            gap: 1,
           }}
         >
+          {/* Left: avatar → opens navigation drawer */}
+          <IconButton
+            aria-label="Menu navigation"
+            onClick={() => setDrawerOpen(true)}
+            sx={{ width: 44, height: 44, flexShrink: 0 }}
+          >
+            <Avatar
+              src={user?.avatar || undefined}
+              sx={{
+                width: 32,
+                height: 32,
+                bgcolor: 'primary.main',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+              }}
+            >
+              {user?.firstname?.[0]?.toUpperCase() || 'U'}
+            </Avatar>
+          </IconButton>
+
+          {/* Center: teal logo + "KeyHome" */}
           <Box
+            onClick={() => router.push('/owner/dashboard')}
             sx={{
-              flex: '1 1 auto',
-              minWidth: 0,
+              flex: 1,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
+              gap: 0.75,
+              cursor: 'pointer',
+              userSelect: 'none',
+              transition: 'opacity 0.2s',
+              '&:hover': { opacity: 0.8 },
             }}
           >
-            <Box
-              onClick={() => router.push('/owner/dashboard')}
+            <Image
+              src="/images/logo-teal.png"
+              alt="KeyHome — Panneau propriétaire"
+              width={28}
+              height={28}
+              priority
+              style={{ objectFit: 'contain', flexShrink: 0 }}
+            />
+            <Typography
+              variant="h6"
+              noWrap
               sx={{
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: { xs: 0.75, sm: 1 },
-                minWidth: 0,
-                maxWidth: '100%',
-                transition: 'opacity 0.2s',
-                '&:hover': { opacity: 0.85 },
+                color: 'primary.main',
+                fontWeight: 800,
+                fontSize: { xs: '1rem', sm: '1.05rem' },
+                letterSpacing: -0.5,
               }}
             >
-              <Image
-                src="/images/logo-teal.png"
-                alt="KeyHome — Panneau propriétaire"
-                width={isMobile ? 36 : 44}
-                height={isMobile ? 36 : 44}
-                priority
-                style={{ objectFit: 'contain', flexShrink: 0 }}
-              />
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.75,
-                  minWidth: 0,
-                  overflow: 'hidden',
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  noWrap
-                  sx={{
-                    color: 'inherit',
-                    fontWeight: 800,
-                    fontSize: { xs: '1rem', sm: '1.05rem', md: '1.2rem' },
-                    letterSpacing: -0.5,
-                  }}
-                >
-                  KeyHome
-                </Typography>
-                <Chip
-                  label="Propriétaire"
-                  size="small"
-                  sx={{
-                    height: 20,
-                    fontSize: '0.62rem',
-                    fontWeight: 700,
-                    letterSpacing: 0.3,
-                    bgcolor: 'rgba(255,255,255,0.18)',
-                    color: '#fff',
-                    border: 'none',
-                    display: { xs: 'none', sm: 'flex' },
-                    flexShrink: 0,
-                    '& .MuiChip-label': { px: 0.75 },
-                  }}
-                />
-              </Box>
-            </Box>
+              KeyHome
+            </Typography>
           </Box>
 
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: { xs: 0.5, sm: 0.75 },
-              flexShrink: 0,
-            }}
-          >
-            <Tooltip title="Nouvelle annonce">
-              <IconButton
-                aria-label="Nouvelle annonce"
-                onClick={() => router.push('/owner/ads/new')}
-                sx={{
-                  width: 44,
-                  height: 44,
-                  color: 'common.white',
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                }}
-              >
-                <AddCircleOutlineIcon />
-              </IconButton>
-            </Tooltip>
-            {!(isMobile && isStandalone) && (
-              <IconButton
-                aria-label="Messagerie"
-                onClick={() => router.push('/owner/messages')}
-                sx={{
-                  width: 44,
-                  height: 44,
-                  color: 'common.white',
-                  border: '1px solid rgba(255,255,255,0.38)',
-                  borderRadius: '50%',
-                  '&:hover': {
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                  },
-                  '& .MuiSvgIcon-root': { color: 'inherit' },
-                }}
-              >
-                <ChatBadgeIcon badgeColor="primary" />
-              </IconButton>
-            )}
-            <Box
-              role="button"
-              tabIndex={0}
-              aria-label="Menu utilisateur"
-              aria-haspopup="true"
-              aria-expanded={Boolean(anchorEl)}
-              onClick={(e) => setAnchorEl(e.currentTarget)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setAnchorEl(e.currentTarget);
-                }
-              }}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                border: '1px solid',
-                borderColor: 'rgba(255,255,255,0.3)',
-                borderRadius: '40px',
-                px: 1.5,
-                py: 0.5,
-                cursor: 'pointer',
-                '&:hover': {
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                  bgcolor: 'rgba(255,255,255,0.08)',
-                },
-                '&:focus-visible': {
-                  outline: '2px solid',
-                  outlineColor: 'rgba(255,255,255,0.6)',
-                  outlineOffset: 2,
-                },
-              }}
-            >
-              <ExpandMoreIcon
-                sx={{ fontSize: 18, color: 'rgba(255,255,255,0.75)' }}
-              />
-              <Avatar
-                src={user?.avatar || undefined}
-                sx={{
-                  width: 28,
-                  height: 28,
-                  bgcolor: user?.avatar ? undefined : 'rgba(255,255,255,0.22)',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                }}
-              >
-                {user?.firstname?.[0]?.toUpperCase() || 'U'}
-              </Avatar>
-            </Box>
-
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={() => setAnchorEl(null)}
-              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-              slotProps={{
-                paper: {
-                  sx: {
-                    mt: 1.5,
-                    minWidth: 240,
-                    maxWidth: 320,
-                    borderRadius: 3,
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-                  },
-                },
-              }}
-            >
-              <Box sx={{ px: 2, py: 1.5 }}>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  {user?.firstname} {user?.lastname}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {user?.email}
-                </Typography>
-              </Box>
-              <Divider />
-              {isMobile
-                ? [
-                    <MenuItem
-                      key="owner-nav-new-ad"
-                      onClick={() => {
-                        setAnchorEl(null);
-                        router.push('/owner/ads/new');
-                      }}
-                    >
-                      <AddCircleOutlineIcon
-                        sx={{ mr: 1.5, fontSize: 22, color: 'primary.main' }}
-                      />
-                      Nouvelle annonce
-                    </MenuItem>,
-                    <Divider key="owner-nav-divider-mobile" />,
-                  ]
-                : null}
-              {moreNavItems.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  pathname?.startsWith(item.href + '/');
-                return (
-                  <MenuItem
-                    key={item.href}
-                    onClick={() => {
-                      setAnchorEl(null);
-                      router.push(item.href);
-                    }}
-                    selected={isActive}
-                    sx={{ py: 1.25 }}
-                  >
-                    <Box
-                      sx={{
-                        mr: 1.5,
-                        display: 'flex',
-                        color: isActive ? 'primary.main' : 'text.secondary',
-                      }}
-                    >
-                      {item.icon}
-                    </Box>
-                    {item.label}
-                  </MenuItem>
-                );
-              })}
-              <Divider />
-              <MenuItem onClick={handleLogout}>
-                <LogoutIcon sx={{ mr: 1.5, fontSize: 22 }} />
-                Déconnexion
-              </MenuItem>
-            </Menu>
-          </Box>
+          {/* Right: spacer keeps logo perfectly centered */}
+          <Box sx={{ width: 44, height: 44, flexShrink: 0 }} />
         </Toolbar>
       </AppBar>
 
+      {/* In-flow spacer so page content starts below the AppBar */}
       <Toolbar
         sx={{
           display: { xs: 'flex', md: 'none' },
-          minHeight: {
-            xs: khNavbarSpacerMinHeightXs,
-            md: 0,
-          },
+          minHeight: { xs: khNavbarSpacerMinHeightXs, md: 0 },
         }}
       />
+
+      {/* Slide-in navigation drawer */}
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        transitionDuration={{ enter: 280, exit: 200 }}
+        PaperProps={{
+          sx: {
+            width: { xs: '85vw', sm: 300 },
+            maxWidth: 320,
+            display: 'flex',
+            flexDirection: 'column',
+            boxSizing: 'border-box',
+            padding: khLeftRailPaddingSx,
+            paddingBottom: khSafeAreaBottomSx,
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+          },
+        }}
+      >
+        {/* Drawer header */}
+        <Box
+          sx={{
+            p: 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Image
+              src="/images/logo-teal.png"
+              alt="KeyHome"
+              width={32}
+              height={32}
+            />
+            <Typography variant="h6" fontWeight={700} color="primary.main">
+              KeyHome
+            </Typography>
+          </Box>
+          <IconButton
+            aria-label="Fermer le menu"
+            onClick={() => setDrawerOpen(false)}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Divider />
+
+        {/* User info */}
+        {user && (
+          <>
+            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Avatar
+                src={user.avatar || undefined}
+                sx={{ width: 44, height: 44 }}
+              >
+                {user.firstname?.[0]}
+              </Avatar>
+              <Box>
+                <Typography variant="subtitle2" fontWeight={600}>
+                  {user.firstname} {user.lastname}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {user.email}
+                </Typography>
+              </Box>
+            </Box>
+            <Divider />
+          </>
+        )}
+
+        {/* Navigation items */}
+        <List sx={{ px: 1, py: 0.5, flex: 1, overflowY: 'auto' }}>
+          {OWNER_NAV_ITEMS.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <ListItem key={item.href} disablePadding>
+                <ListItemButton
+                  onClick={() => go(item.href)}
+                  sx={{
+                    borderRadius: 2,
+                    mb: 0.25,
+                    bgcolor: active ? 'rgba(20,184,166,0.08)' : 'transparent',
+                    color: active ? 'primary.main' : 'text.primary',
+                    '&:hover': {
+                      bgcolor: active
+                        ? 'rgba(20,184,166,0.12)'
+                        : 'action.hover',
+                    },
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      color: active ? 'primary.main' : 'text.secondary',
+                      minWidth: 40,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.label}
+                    slotProps={{
+                      primary: {
+                        sx: {
+                          fontWeight: active ? 600 : 500,
+                          fontSize: '0.875rem',
+                          lineHeight: 1.35,
+                        },
+                      },
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+        </List>
+
+        <Divider />
+        {/* Logout */}
+        <Box sx={{ px: 1, pt: 0.5, pb: `max(12px, ${khSafeAreaBottomSx})` }}>
+          <ListItemButton
+            onClick={handleLogout}
+            sx={{ borderRadius: 2, color: 'error.main' }}
+          >
+            <ListItemIcon
+              sx={{
+                color: 'error.main',
+                minWidth: 40,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary="Déconnexion"
+              slotProps={{
+                primary: { sx: { fontWeight: 500, fontSize: '0.875rem' } },
+              }}
+            />
+          </ListItemButton>
+        </Box>
+      </Drawer>
     </>
   );
 }

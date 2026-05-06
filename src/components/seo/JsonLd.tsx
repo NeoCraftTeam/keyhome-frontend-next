@@ -1,3 +1,6 @@
+import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
+import { getSiteOrigin } from '@/lib/site-url';
+
 /**
  * JSON-LD structured data schemas for SEO rich snippets.
  *
@@ -11,7 +14,7 @@
  * from Google SERPs.
  */
 
-const BASE_URL = 'https://keyhome.app';
+const BASE_URL = getSiteOrigin();
 
 /* ------------------------------------------------------------------ */
 /*  1. WebSite — enables the Google sitelinks search box              */
@@ -20,10 +23,11 @@ const websiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'KeyHome',
-  alternateName: "KeyHome — L'immobilier de confiance",
+  alternateName: BRAND_TITLE_WITH_TAGLINE,
   url: BASE_URL,
   inLanguage: 'fr',
   description:
+    `${BRAND_TAGLINE}. ` +
     'KeyHome vous connecte directement aux propriétaires vérifiés, sans intermédiaire. ' +
     "Parcourez des milliers d'annonces avec photos réelles, prix transparents et coordonnées débloquées en un clic sécurisé.",
   potentialAction: {
@@ -48,11 +52,12 @@ const organizationSchema = {
   logo: `${BASE_URL}/images/logo.png`,
   image: `${BASE_URL}/opengraph-image`,
   description:
+    `${BRAND_TAGLINE}. ` +
     'KeyHome est la plateforme immobilière de confiance. ' +
     'Nous vérifions chaque annonce manuellement — photos authentiques, prix cohérents, propriétaires identifiés — ' +
     'pour que vous trouviez votre bien en toute sécurité. ' +
     'Inscription gratuite, paiement sécurisé, contact direct : votre futur logement est à portée de clic.',
-  slogan: "L'immobilier de confiance.",
+  slogan: BRAND_TAGLINE,
   foundingDate: '2024',
   sameAs: [
     'https://twitter.com/keyhome_app',
@@ -89,6 +94,7 @@ const realEstateAgentSchema = {
   url: BASE_URL,
   logo: `${BASE_URL}/images/logo.png`,
   description:
+    `${BRAND_TAGLINE}. ` +
     'Vous cherchez un appartement à Douala, une villa à Abidjan ou un terrain à Cotonou ? ' +
     'KeyHome regroupe les meilleures offres immobilières en Afrique, vérifiées une par une par notre équipe. ' +
     'Zéro arnaque, zéro intermédiaire : vous contactez directement le propriétaire après un micro-paiement sécurisé.',
@@ -125,6 +131,7 @@ const softwareApplicationSchema = {
   operatingSystem: 'Web, Android, iOS',
   url: BASE_URL,
   description:
+    `${BRAND_TAGLINE}. ` +
     "L'application qui révolutionne la recherche immobilière en Afrique. " +
     'Carte interactive, filtres intelligents, photos vérifiées et contact direct avec les propriétaires. ' +
     'Plus besoin de faire confiance à des intermédiaires — débloquez les coordonnées en toute sécurité avec Mobile Money. ' +
@@ -285,6 +292,7 @@ const howToSchema = {
   '@type': 'HowTo',
   name: 'Comment trouver un logement vérifié avec KeyHome',
   description:
+    `${BRAND_TAGLINE}. ` +
     'Marre de perdre du temps avec de fausses annonces ? ' +
     'Voici comment trouver et contacter un vrai propriétaire en moins de 5 minutes sur KeyHome — ' +
     'la méthode la plus sûre pour chercher un logement.',

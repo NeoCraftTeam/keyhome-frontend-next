@@ -1,5 +1,6 @@
 'use client';
 
+import FadeIn from '@/components/ui/FadeIn';
 import { useThemeMode } from '@/providers/ThemeProvider';
 import { brand } from '@/theme/tokens';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -16,6 +17,7 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Alert,
   Box,
   Button,
   Chip,
@@ -23,15 +25,15 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  Snackbar,
   TextField,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import FadeIn from '@/components/ui/FadeIn';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 const BRAND = brand.primary;
 const BRAND_DARK = '#C73048';
@@ -60,28 +62,43 @@ const CATEGORIES = [
 
 const GUIDES = [
   {
-    tag: 'S\u00e9curit\u00e9',
-    title: 'S\u00e9curiser une transaction immobili\u00e8re',
+    tag: 'Sécurité',
+    title: 'Sécuriser une transaction immobilière',
+    excerpt:
+      'Les étapes essentielles pour éviter les arnaques et conclure une transaction en toute sérénité.',
+    readTime: '7 min',
     Icon: HomeWorkIcon,
   },
   {
     tag: 'Locataire',
     title: 'Checklist avant de signer un bail',
+    excerpt:
+      'Tout ce que vous devez vérifier avant de parapher votre contrat de location.',
+    readTime: '4 min',
     Icon: KeyIcon,
   },
   {
-    tag: 'Compte',
-    title: 'Comprendre le syst\u00e8me de cr\u00e9dits',
+    tag: 'Crédits',
+    title: 'Comprendre le système de crédits',
+    excerpt:
+      'Comment acheter, utiliser et optimiser vos crédits pour publier et débloquer des annonces.',
+    readTime: '3 min',
     Icon: StorefrontIcon,
   },
   {
     tag: 'Photos',
     title: 'Prendre des photos qui vendent',
+    excerpt:
+      'Nos conseils pratiques pour des photos professionnelles qui attirent plus de visiteurs.',
+    readTime: '6 min',
     Icon: HomeWorkIcon,
   },
   {
     tag: 'Agent',
-    title: 'Obtenir le badge Agent V\u00e9rifi\u00e9',
+    title: 'Obtenir le badge Agent Vérifié',
+    excerpt:
+      'Les documents requis et le processus de validation pour obtenir votre badge de professionnel.',
+    readTime: '4 min',
     Icon: PersonIcon,
   },
 ];
@@ -195,6 +212,7 @@ export default function AidePage() {
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | false>(false);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const filtered = FAQ_ITEMS.filter((item) => {
     const matchCat = !activeCat || item.cat === activeCat;
@@ -773,6 +791,7 @@ export default function AidePage() {
           <Grid container spacing={3} alignItems="stretch">
             <Grid size={{ xs: 12, md: 5 }}>
               <Box
+                onClick={() => setGuideOpen(true)}
                 sx={{
                   background: `linear-gradient(135deg, ${NAVY} 0%, #1A2F5A 100%)`,
                   borderRadius: '20px',
@@ -852,83 +871,126 @@ export default function AidePage() {
             </Grid>
 
             <Grid size={{ xs: 12, md: 7 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 2,
-                  height: '100%',
-                }}
-              >
-                {GUIDES.map((g, idx) => (
-                  <Box
-                    key={idx}
-                    sx={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2.5,
-                      borderRadius: '14px',
-                      p: 2.5,
-                      bgcolor: isDark ? '#1A1E2E' : '#fff',
-                      border: '1px solid',
-                      borderColor: isDark
-                        ? 'rgba(255,255,255,0.07)'
-                        : 'rgba(0,0,0,0.06)',
-                      cursor: 'pointer',
-                      transition: 'all 0.25s ease',
-                      '&:hover': {
-                        transform: 'translateX(8px)',
-                        borderColor: BRAND,
-                        boxShadow: `0 4px 24px ${BRAND}1A`,
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 44,
-                        height: 44,
-                        flexShrink: 0,
-                        borderRadius: '12px',
-                        bgcolor: `${BRAND}12`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <g.Icon
-                        sx={{ fontSize: 22, color: BRAND, opacity: 0.85 }}
-                      />
-                    </Box>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography
+              <Grid container spacing={2}>
+                {GUIDES.map((g, idx) => {
+                  const isLastOdd =
+                    GUIDES.length % 2 !== 0 && idx === GUIDES.length - 1;
+                  return (
+                    <Grid key={idx} size={{ xs: 12, sm: isLastOdd ? 12 : 6 }}>
+                      <Box
+                        onClick={() => setGuideOpen(true)}
                         sx={{
-                          color: BRAND,
-                          fontWeight: 700,
-                          letterSpacing: 0.5,
-                          textTransform: 'uppercase',
-                          fontSize: '0.68rem',
+                          borderRadius: '16px',
+                          p: 3,
+                          bgcolor: isDark ? '#1A1E2E' : '#fff',
+                          border: '1px solid',
+                          borderColor: isDark
+                            ? 'rgba(255,255,255,0.07)'
+                            : 'rgba(0,0,0,0.06)',
+                          cursor: 'pointer',
+                          transition: 'all 0.25s ease',
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          '&:hover': {
+                            borderColor: BRAND,
+                            boxShadow: `0 4px 24px ${BRAND}1A`,
+                            transform: 'translateY(-4px)',
+                          },
                         }}
                       >
-                        {g.tag}
-                      </Typography>
-                      <Typography
-                        fontWeight={600}
-                        sx={{ fontSize: '0.875rem', mt: 0.3, lineHeight: 1.4 }}
-                      >
-                        {g.title}
-                      </Typography>
-                    </Box>
-                    <ArrowForwardIcon
-                      sx={{
-                        fontSize: 18,
-                        color: 'text.disabled',
-                        flexShrink: 0,
-                      }}
-                    />
-                  </Box>
-                ))}
-              </Box>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                            mb: 2,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: '10px',
+                              bgcolor: `${BRAND}12`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <g.Icon
+                              sx={{ fontSize: 20, color: BRAND, opacity: 0.85 }}
+                            />
+                          </Box>
+                          <Chip
+                            label={g.tag}
+                            size="small"
+                            sx={{
+                              fontSize: '0.68rem',
+                              fontWeight: 700,
+                              bgcolor: `${BRAND}15`,
+                              color: BRAND,
+                              border: `1px solid ${BRAND}2A`,
+                            }}
+                          />
+                        </Box>
+                        <Typography
+                          fontWeight={700}
+                          sx={{
+                            fontSize: { xs: '0.9rem', md: '0.95rem' },
+                            lineHeight: 1.4,
+                            mb: 1,
+                          }}
+                        >
+                          {g.title}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            fontSize: '0.82rem',
+                            lineHeight: 1.65,
+                            mb: 2.5,
+                            flex: 1,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {g.excerpt}
+                        </Typography>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            pt: 1.5,
+                            borderTop: '1px solid',
+                            borderColor: isDark
+                              ? 'rgba(255,255,255,0.06)'
+                              : 'rgba(0,0,0,0.05)',
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              fontSize: '0.78rem',
+                              color: 'text.disabled',
+                              fontWeight: 500,
+                            }}
+                          >
+                            {g.readTime} de lecture
+                          </Typography>
+                          <ArrowForwardIcon
+                            sx={{ fontSize: 16, color: BRAND, opacity: 0.7 }}
+                          />
+                        </Box>
+                      </Box>
+                    </Grid>
+                  );
+                })}
+              </Grid>
             </Grid>
           </Grid>
         </Container>
@@ -1176,18 +1238,6 @@ export default function AidePage() {
               </Grid>
             ))}
           </Grid>
-
-          <Box sx={{ textAlign: 'center', mt: { xs: 4, md: 5 } }}>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ lineHeight: 1.8 }}
-            >
-              <strong>NéoCraft SARL</strong> — Douala, Cameroun
-              <br />
-              RCCM: RC/DLA/2024/A/XXXX · N° Contribuable: M0XXX00XXXXX
-            </Typography>
-          </Box>
         </Container>
       </Box>
 
@@ -1262,11 +1312,32 @@ export default function AidePage() {
             color="text.disabled"
             sx={{ textAlign: 'center', mt: 2, fontSize: '0.8rem' }}
           >
-            © {new Date().getFullYear()} KeyHome — NéoCraft SARL. Tous droits
-            réservés.
+            © {new Date().getFullYear()} KeyHome — Tous droits réservés.
           </Typography>
         </Container>
       </Box>
+      <Snackbar
+        open={guideOpen}
+        autoHideDuration={4000}
+        onClose={() => setGuideOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setGuideOpen(false)}
+          severity="info"
+          variant="filled"
+          sx={{
+            borderRadius: '14px',
+            bgcolor: NAVY,
+            color: '#fff',
+            fontWeight: 500,
+            '& .MuiAlert-icon': { color: BRAND },
+          }}
+        >
+          Ce guide arrive bientôt — consultez notre FAQ pour une réponse
+          immédiate.
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

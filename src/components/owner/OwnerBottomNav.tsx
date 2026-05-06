@@ -5,6 +5,7 @@ import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { OWNER_BOTTOM_NAV_ITEMS } from '@/lib/nav-config';
 import { NAV_LIST_ICON_GLYPH_PX } from '@/lib/navVisualMetrics';
 import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
+import { brandAgent } from '@/theme/tokens';
 import {
   BottomNavigation,
   BottomNavigationAction,
@@ -13,7 +14,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { brandAgent } from '@/theme/tokens';
 import { usePathname, useRouter } from 'next/navigation';
 
 /** @deprecated Prefer {@link PWA_BOTTOM_NAV_INNER_HEIGHT_PX} — kept for owner layout FAB offset */
@@ -104,9 +104,6 @@ export default function OwnerBottomNav() {
                 ? {
                     '&.Mui-selected': {
                       color: `${brandAgent.primary} !important`,
-                      '&::after': {
-                        bgcolor: `${brandAgent.primary} !important`,
-                      },
                     },
                   }
                 : undefined

@@ -157,7 +157,9 @@ export function getEcho(): Echo<'reverb'> {
     });
 
     echo.connector.pusher.connection.bind('state_change', (states: unknown) => {
-      console.debug('[Echo] Connection state changed', states);
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('[Echo] Connection state changed', states);
+      }
     });
   }
 

@@ -1,7 +1,8 @@
 import { ImageResponse } from 'next/og';
+import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
 
 export const runtime = 'edge';
-export const alt = "KeyHome — L'immobilier de confiance";
+export const alt = BRAND_TITLE_WITH_TAGLINE;
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -83,14 +84,17 @@ export default async function OgImage() {
         {/* Tagline */}
         <p
           style={{
-            fontSize: 32,
+            fontSize: 28,
             fontWeight: 600,
             color: '#F6475F',
             margin: '20px 0 0 0',
             letterSpacing: '-0.5px',
+            textAlign: 'center',
+            maxWidth: 1000,
+            lineHeight: 1.25,
           }}
         >
-          L&apos;immobilier de confiance
+          {BRAND_TAGLINE}
         </p>
 
         {/* Separator */}

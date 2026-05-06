@@ -3,21 +3,29 @@ import Link from 'next/link';
 import BlogPostsList from '@/components/blog/BlogPostsList';
 import { BLOG_POSTS } from './posts';
 import { brand } from '@/theme/tokens';
+import { BRAND_TAGLINE } from '@/lib/brand';
+import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+
+const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
   title: "Blog immobilier — Conseils & Guides pour l'Afrique | KeyHome",
-  description:
-    'Guides pratiques, analyses de marché et conseils immobiliers. Location, achat, terrains : tous les conseils KeyHome.',
-  alternates: { canonical: 'https://keyhome.app/blog' },
+  description: `${BRAND_TAGLINE}. Guides pratiques, analyses de marché et conseils immobiliers. Location, achat, terrains : tous les conseils KeyHome.`,
+  alternates: {
+    canonical: absoluteUrl('/blog'),
+    languages: {
+      'fr-FR': absoluteUrl('/blog'),
+      'x-default': absoluteUrl('/blog'),
+    },
+  },
   openGraph: {
     title: 'Blog KeyHome — Immobilier en Afrique',
-    description:
-      'Guides et conseils pour trouver votre logement en Afrique. Analyses de marché, astuces location et achat.',
-    url: 'https://keyhome.app/blog',
+    description: `${BRAND_TAGLINE}. Guides et conseils pour trouver votre logement en Afrique. Analyses de marché, astuces location et achat.`,
+    url: absoluteUrl('/blog'),
     siteName: 'KeyHome',
     images: [
       {
-        url: 'https://keyhome.app/opengraph-image',
+        url: `${SITE}/opengraph-image`,
         width: 1200,
         height: 630,
         alt: 'Blog KeyHome',

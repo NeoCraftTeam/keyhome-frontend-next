@@ -4,6 +4,12 @@ import DashboardHeroStatCard from '@/components/owner/dashboard/DashboardHeroSta
 import OwnerTopAdsTable from '@/components/owner/dashboard/OwnerTopAdsTable';
 import OwnerViewsFavoritesAreaChart from '@/components/owner/dashboard/OwnerViewsFavoritesAreaChart';
 import ProfileCompletionCard from '@/components/owner/dashboard/ProfileCompletionCard';
+import AppTour from '@/components/ui/AppTour';
+import EmptyState from '@/components/ui/EmptyState';
+import FadeIn from '@/components/ui/FadeIn';
+import { ShimmerBox } from '@/components/ui/ShimmerCard';
+import StaggerList from '@/components/ui/StaggerList';
+import { useGreeting } from '@/hooks/useGreeting';
 import {
   extractMetricSeries,
   mergeViewsAndFavoritesSeries,
@@ -15,24 +21,19 @@ import {
   type OwnerAnalyticsOverview,
   type OwnerViewingReservation,
 } from '@/services/owner.service';
-import FadeIn from '@/components/ui/FadeIn';
-import StaggerList from '@/components/ui/StaggerList';
-import EmptyState from '@/components/ui/EmptyState';
-import { ShimmerBox } from '@/components/ui/ShimmerCard';
-import GradientText from '@/components/ui/GradientText';
-import AppTour from '@/components/ui/AppTour';
-import { useGreeting } from '@/hooks/useGreeting';
+import { brandAgent, semantic } from '@/theme/tokens';
+import { Ad } from '@/types';
 import {
+  ArrowForward as ArrowIcon,
+  RocketLaunch as BoostIcon,
   CalendarMonth as CalendarIcon,
   CheckCircle as CheckIcon,
-  Download as DownloadIcon,
-  Favorite as FavoriteIcon,
-  BarChart as EngagementIcon,
-  Home as HomeIcon,
-  RocketLaunch as BoostIcon,
-  Visibility as VisibilityIcon,
-  ArrowForward as ArrowIcon,
   AccessTime as ClockIcon,
+  Download as DownloadIcon,
+  BarChart as EngagementIcon,
+  Favorite as FavoriteIcon,
+  Home as HomeIcon,
+  Visibility as VisibilityIcon,
   WavingHand as WavingHandIcon,
 } from '@mui/icons-material';
 import {
@@ -53,8 +54,6 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
-import { Ad } from '@/types';
-import { brandAgent, semantic } from '@/theme/tokens';
 
 /** Vibrant accent colors for dashboard cards */
 const TEAL = brandAgent.primary; // #0D9488 — primary teal
@@ -290,15 +289,8 @@ export default function OwnerDashboardPage() {
                 </Typography>
               </Box>
             </FadeIn>
-            <Typography
-              variant="h4"
-              fontWeight={800}
-              sx={{ fontSize: { xs: '1.35rem', sm: '2rem' } }}
-            >
-              Tableau de <GradientText variant="owner">bord</GradientText>
-            </Typography>
             <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-              Suivez vos annonces et vos performances en un coup d’œil.
+              {'Suivez vos annonces et vos performances en un coup d’œil.'}
             </Typography>
           </Box>
           <Box

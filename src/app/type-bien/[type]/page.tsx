@@ -11,6 +11,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { brand, gradient } from '@/theme/tokens';
+import { BRAND_TAGLINE } from '@/lib/brand';
+import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -147,20 +149,27 @@ export async function generateMetadata({
   const data = PROPERTY_TYPES[type.toLowerCase()];
   if (!data) return { title: 'Bien immobilier — KeyHome' };
 
+  const site = getSiteOrigin();
+  const path = `/type-bien/${type.toLowerCase()}`;
+
   return {
     title: `${data.plural} à louer et à vendre en Afrique — KeyHome`,
-    description: `${data.description}. Annonces vérifiées avec contact direct propriétaire. Prix, photos et carte.`,
+    description: `${BRAND_TAGLINE}. ${data.description}. Annonces vérifiées avec contact direct propriétaire. Prix, photos et carte.`,
     alternates: {
-      canonical: `https://keyhome.app/type-bien/${type.toLowerCase()}`,
+      canonical: absoluteUrl(path),
+      languages: {
+        'fr-FR': absoluteUrl(path),
+        'x-default': absoluteUrl(path),
+      },
     },
     openGraph: {
       title: `${data.plural} en Afrique | KeyHome`,
-      description: `${data.description}. Annonces vérifiées.`,
-      url: `https://keyhome.app/type-bien/${type.toLowerCase()}`,
+      description: `${BRAND_TAGLINE}. ${data.description}. Annonces vérifiées.`,
+      url: absoluteUrl(path),
       siteName: 'KeyHome',
       images: [
         {
-          url: 'https://keyhome.app/opengraph-image',
+          url: `${site}/opengraph-image`,
           width: 1200,
           height: 630,
           alt: `${data.plural} — KeyHome`,
@@ -217,13 +226,13 @@ export default async function PropertyTypePage({
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: `${data.plural} en Afrique de l'Ouest — KeyHome`,
-    description: data.description,
-    url: `https://keyhome.app/type-bien/${typeKey}`,
+    description: `${BRAND_TAGLINE}. ${data.description}`,
+    url: absoluteUrl(`/type-bien/${typeKey}`),
     numberOfItems: total,
     itemListElement: ads.slice(0, 10).map((ad, i) => ({
       '@type': 'ListItem',
       position: i + 1,
-      url: `https://keyhome.app/ads/${ad.id}/${ad.slug || ad.id}`,
+      url: absoluteUrl(`/ads/${ad.slug || ad.id}`),
       name: ad.title,
     })),
   };
@@ -237,19 +246,19 @@ export default async function PropertyTypePage({
         '@type': 'ListItem',
         position: 1,
         name: 'Accueil',
-        item: 'https://keyhome.app',
+        item: getSiteOrigin(),
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'Types de biens',
-        item: 'https://keyhome.app/type-bien',
+        item: absoluteUrl('/type-bien'),
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: data.plural,
-        item: `https://keyhome.app/type-bien/${typeKey}`,
+        item: absoluteUrl(`/type-bien/${typeKey}`),
       },
     ],
   };

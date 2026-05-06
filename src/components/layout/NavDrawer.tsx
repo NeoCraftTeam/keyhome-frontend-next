@@ -1,5 +1,17 @@
 'use client';
 
+import { AUTH_DRAWER_QUICK_NAV, SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
+import {
+  CLIENT_DRAWER_LIST_ICON_MIN_WIDTH_PX,
+  NAV_LIST_ICON_GLYPH_PX,
+} from '@/lib/navVisualMetrics';
+import {
+  khLeftRailPaddingSx,
+  khSafeAreaBottomSx,
+} from '@/lib/safe-area-insets';
+import { creditsService } from '@/services/credits.service';
+import { brand } from '@/theme/tokens';
+import { type User } from '@/types';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CloseIcon from '@mui/icons-material/Close';
 import FacebookIcon from '@mui/icons-material/Facebook';
@@ -26,17 +38,8 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import Image from 'next/image';
-import { AUTH_DRAWER_QUICK_NAV, SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
-import { khLeftRailPaddingSx } from '@/lib/safe-area-insets';
-import {
-  CLIENT_DRAWER_LIST_ICON_MIN_WIDTH_PX,
-  NAV_LIST_ICON_GLYPH_PX,
-} from '@/lib/navVisualMetrics';
-import { type User } from '@/types';
 import { useQuery } from '@tanstack/react-query';
-import { creditsService } from '@/services/credits.service';
-import { brand } from '@/theme/tokens';
+import Image from 'next/image';
 
 interface NavDrawerProps {
   open: boolean;
@@ -209,6 +212,7 @@ export default function NavDrawer({
           flexDirection: 'column',
           boxSizing: 'border-box',
           padding: khLeftRailPaddingSx,
+          paddingBottom: khSafeAreaBottomSx,
           userSelect: 'none',
           WebkitUserSelect: 'none',
         },
@@ -478,7 +482,8 @@ export default function NavDrawer({
           borderTop: '1px solid',
           borderColor: 'divider',
           px: 2,
-          py: 2,
+          pt: 2,
+          pb: `max(16px, ${khSafeAreaBottomSx})`,
           textAlign: 'center',
         }}
       >

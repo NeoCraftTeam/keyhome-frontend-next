@@ -2,12 +2,12 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { useClerk } from '@clerk/nextjs';
-import Script from 'next/script';
-import { useCallback, useEffect, useRef } from 'react';
 import type {
   CredentialResponse,
   PromptMomentNotification,
 } from 'google-one-tap';
+import Script from 'next/script';
+import { useCallback, useEffect, useRef } from 'react';
 
 /** Sentinel ID — IntersectionObserver watches this to detect when the
  *  component is truly visible (not hidden behind splash / overlay). */
@@ -45,28 +45,28 @@ export function GoogleOneTap() {
 
   const handleCredential = useCallback(
     async ({ credential }: CredentialResponse) => {
-      console.log('[GoogleOneTap] 1 — credential received');
+      if (process.env.NODE_ENV === 'development')
+        console.log('[GoogleOneTap] 1 — credential received');
       try {
         const res = await clerk.authenticateWithGoogleOneTap({
           token: credential,
         });
 
-        console.log('[GoogleOneTap] 2 — authenticateWithGoogleOneTap result:', {
-          status: res.status,
-          createdSessionId: res.createdSessionId,
-        });
+        if (process.env.NODE_ENV === 'development')
+          console.log('[GoogleOneTap] 2 — result:', res.status);
 
         if (res.status === 'complete' && res.createdSessionId) {
-          console.log('[GoogleOneTap] 3 — calling setActive…');
+          if (process.env.NODE_ENV === 'development')
+            console.log('[GoogleOneTap] 3 — calling setActive…');
           await clerk.setActive({ session: res.createdSessionId });
-          console.log('[GoogleOneTap] 4 — setActive OK, navigating to /home');
+          if (process.env.NODE_ENV === 'development')
+            console.log('[GoogleOneTap] 4 — setActive OK');
           window.location.href = '/home';
           return;
         }
 
-        console.warn(
-          '[GoogleOneTap] 3 — non-complete status, falling back to handleGoogleOneTapCallback'
-        );
+        if (process.env.NODE_ENV === 'development')
+          console.warn('[GoogleOneTap] non-complete status, using fallback');
         await clerk.handleGoogleOneTapCallback(
           res,
           {
@@ -74,7 +74,8 @@ export function GoogleOneTap() {
             signUpFallbackRedirectUrl: '/home',
           },
           async (to: string) => {
-            console.log('[GoogleOneTap] fallback navigate to:', to);
+            if (process.env.NODE_ENV === 'development')
+              console.log('[GoogleOneTap] fallback navigate to:', to);
             window.location.href = to || '/home';
           }
         );
