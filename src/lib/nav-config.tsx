@@ -12,9 +12,11 @@ import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 import PaymentIcon from '@mui/icons-material/Payment';
+import GroupsIcon from '@mui/icons-material/Groups';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import PersonIcon from '@mui/icons-material/Person';
 import RateReviewIcon from '@mui/icons-material/RateReview';
+import SecurityIcon from '@mui/icons-material/Security';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SubscriptionsIcon from '@mui/icons-material/Subscriptions';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -107,17 +109,28 @@ export const SIDEBAR_NAV_ITEMS: NavItem[] = [
   },
 ];
 
-/** Owner panel nav items — full list for sidebar and desktop nav */
+/** Owner panel nav items — aligné sur la sidebar bailleur (drawer mobile). */
 export const OWNER_NAV_ITEMS: NavItem[] = [
   {
     label: 'Tableau de bord',
     href: '/owner/dashboard',
-    icon: <DashboardIcon />,
+    icon: <DashboardIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
   },
   {
     label: 'Mes Annonces',
     href: '/owner/ads',
     icon: <ViewListRoundedIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
+  },
+  {
+    label: 'Messages',
+    href: '/owner/messages',
+    icon: <ChatBadgeIcon badgeColor="primary" />,
+  },
+  { label: 'Visites', href: '/owner/viewings', icon: <VisibilityIcon /> },
+  {
+    label: 'Disponibilités',
+    href: '/owner/availability',
+    icon: <CalendarMonthIcon />,
   },
   { label: 'Locataires', href: '/owner/tenants', icon: <PeopleAltIcon /> },
   {
@@ -131,12 +144,6 @@ export const OWNER_NAV_ITEMS: NavItem[] = [
     icon: <DescriptionIcon />,
   },
   { label: 'Avis', href: '/owner/reviews', icon: <RateReviewIcon /> },
-  { label: 'Visites', href: '/owner/viewings', icon: <VisibilityIcon /> },
-  {
-    label: 'Disponibilités',
-    href: '/owner/availability',
-    icon: <CalendarMonthIcon />,
-  },
   { label: 'Paiements', href: '/owner/payments', icon: <PaymentIcon /> },
   {
     label: 'Abonnements',
@@ -149,6 +156,8 @@ export const OWNER_NAV_ITEMS: NavItem[] = [
     icon: <WorkspacePremiumIcon />,
   },
   { label: 'Profil', href: '/owner/profile', icon: <PersonIcon /> },
+  { label: 'Mon équipe', href: '/owner/equipe', icon: <GroupsIcon /> },
+  { label: 'Sécurité', href: '/owner/security', icon: <SecurityIcon /> },
   { label: 'Paramètres', href: '/owner/parametres', icon: <SettingsIcon /> },
 ];
 
@@ -177,52 +186,5 @@ export const OWNER_BOTTOM_NAV_ITEMS: NavItem[] = [
   },
 ];
 
-/** Owner panel — sidebar items (exclude Profil/Paramètres for main nav, they go in user menu) */
-export const OWNER_SIDEBAR_NAV_ITEMS: NavItem[] = [
-  {
-    label: 'Tableau de bord',
-    href: '/owner/dashboard',
-    icon: <DashboardIcon />,
-  },
-  {
-    label: 'Mes Annonces',
-    href: '/owner/ads',
-    icon: <ViewListRoundedIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
-  },
-  {
-    label: 'Messages',
-    href: '/owner/messages',
-    icon: <ChatBadgeIcon badgeColor="primary" />,
-  },
-  { label: 'Locataires', href: '/owner/tenants', icon: <PeopleAltIcon /> },
-  {
-    label: 'Finances',
-    href: '/owner/financials',
-    icon: <AccountBalanceIcon />,
-  },
-  {
-    label: 'Contrats',
-    href: '/owner/lease-contracts',
-    icon: <DescriptionIcon />,
-  },
-  { label: 'Avis', href: '/owner/reviews', icon: <RateReviewIcon /> },
-  { label: 'Visites', href: '/owner/viewings', icon: <VisibilityIcon /> },
-  {
-    label: 'Disponibilités',
-    href: '/owner/availability',
-    icon: <CalendarMonthIcon />,
-  },
-  { label: 'Paiements', href: '/owner/payments', icon: <PaymentIcon /> },
-  {
-    label: 'Abonnements',
-    href: '/owner/subscriptions',
-    icon: <SubscriptionsIcon />,
-  },
-  {
-    label: 'Services Pro',
-    href: '/owner/pro-services',
-    icon: <WorkspacePremiumIcon />,
-  },
-  { label: 'Profil', href: '/owner/profile', icon: <PersonIcon /> },
-  { label: 'Paramètres', href: '/owner/parametres', icon: <SettingsIcon /> },
-];
+/** Flat copy of owner main nav — kept for call sites that expect a list (sync with OWNER_NAV_ITEMS). */
+export const OWNER_SIDEBAR_NAV_ITEMS: NavItem[] = OWNER_NAV_ITEMS;

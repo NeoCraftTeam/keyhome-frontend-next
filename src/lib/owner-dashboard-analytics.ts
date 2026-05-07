@@ -11,9 +11,8 @@ export function periodParamToDays(period: string): number {
 }
 
 /**
- * Clé calendaire UTC (YYYY-MM-DD), alignée sur DATE(created_at) côté MySQL quand les timestamps
- * sont stockés en UTC — évite le décalage « favoris dans le KPI mais 0 sur le graphique »
- * (anciennement toISOString() après minuit local).
+ * Clé calendaire UTC (YYYY-MM-DD), alignée sur DATE(created_at) côté base (timestamps UTC),
+ * pour éviter le décalage « favoris dans le KPI mais 0 sur le graphique ».
  */
 function toUtcDateKeyFromMillis(utcMidnightMs: number): string {
   return new Date(utcMidnightMs).toISOString().slice(0, 10);

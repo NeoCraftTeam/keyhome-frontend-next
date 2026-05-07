@@ -38,9 +38,24 @@ export default function OwnerManifestSwitch() {
       'meta[name="theme-color"]'
     );
     const originalThemes: string[] = [];
+    const applyOwnerThemeColor = (el: HTMLMetaElement): void => {
+      const media = el.getAttribute('media') ?? '';
+      if (media.includes('prefers-color-scheme: dark')) {
+        el.content = OWNER_BG;
+        return;
+      }
+      if (media.includes('prefers-color-scheme: light')) {
+        el.content = OWNER_THEME;
+        return;
+      }
+      el.content = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? OWNER_BG
+        : OWNER_THEME;
+    };
+
     themeColorEls.forEach((el) => {
       originalThemes.push(el.content);
-      el.content = OWNER_THEME;
+      applyOwnerThemeColor(el);
     });
 
     // If no theme-color meta exists yet, inject one

@@ -76,6 +76,11 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         icon: <ViewListRoundedIcon />,
       },
       {
+        label: 'Messages',
+        href: '/owner/messages',
+        icon: <ChatBadgeIcon badgeColor="primary" />,
+      },
+      {
         label: 'Visites',
         href: '/owner/viewings',
         icon: <VisibilityIcon />,

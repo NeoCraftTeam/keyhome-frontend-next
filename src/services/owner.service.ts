@@ -786,4 +786,75 @@ export const ownerService = {
     const { data } = await api.get('/rent-estimate', { params });
     return data;
   },
+
+  // ─── QR & printables (owner marketing) ───
+
+  async getAdQrCodeMeta(adId: string): Promise<{
+    ad_url: string;
+    profile_url: string | null;
+    qr_data_uri: string;
+  }> {
+    const { data } = await api.get<{
+      data: {
+        ad_url: string;
+        profile_url: string | null;
+        qr_data_uri: string;
+      };
+    }>(`/my/ads/${adId}/qr-code`);
+    return data.data;
+  },
+
+  async downloadAdQrPng(adId: string): Promise<Blob> {
+    const { data } = await api.get(`/my/ads/${adId}/qr-code/image`, {
+      responseType: 'blob',
+    });
+    return data;
+  },
+
+  async downloadAdPlacarde(adId: string): Promise<Blob> {
+    const { data } = await api.get(`/my/ads/${adId}/placarde`, {
+      responseType: 'blob',
+    });
+    return data;
+  },
+
+  async getProfileQrMeta(): Promise<{
+    profile_url: string;
+    qr_data_uri: string;
+  }> {
+    const { data } = await api.get<{
+      data: { profile_url: string; qr_data_uri: string };
+    }>('/my/profile/qr-code');
+    return data.data;
+  },
+
+  async downloadProfileQrPng(): Promise<Blob> {
+    const { data } = await api.get('/my/profile/qr-code/image', {
+      responseType: 'blob',
+    });
+    return data;
+  },
+
+  async downloadBusinessCard(): Promise<Blob> {
+    const { data } = await api.get('/my/profile/business-card', {
+      responseType: 'blob',
+    });
+    return data;
+  },
+
+  /**
+   * Fetch a self-contained HTML preview of the business card. Same template
+   * as the printable PDF — used as iframe `srcDoc` so the in-app preview is
+   * a faithful 1:1 representation of what the user will download.
+   */
+  async fetchBusinessCardPreviewHtml(): Promise<string> {
+    const { data } = await api.get<string>(
+      '/my/profile/business-card/preview',
+      {
+        responseType: 'text',
+        headers: { Accept: 'text/html' },
+      }
+    );
+    return data;
+  },
 };

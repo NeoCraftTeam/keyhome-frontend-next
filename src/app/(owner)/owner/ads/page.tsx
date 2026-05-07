@@ -1,6 +1,7 @@
 'use client';
 
 import OwnerAdCard from '@/components/owner/OwnerAdCard';
+import QrCodeDialog from '@/components/owner/QrCodeDialog';
 import ShareAdButtons from '@/components/owner/ShareAdButtons';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -19,6 +20,7 @@ import {
   Edit as EditIcon,
   VisibilityOff as HiddenIcon,
   MoreVert as MoreIcon,
+  QrCode2 as QrCodeIcon,
   RocketLaunch as RocketLaunchIcon,
   Visibility as VisibleIcon,
 } from '@mui/icons-material';
@@ -90,6 +92,7 @@ export default function OwnerAdsPage() {
     message: string;
     severity: 'success' | 'error';
   } | null>(null);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: [
@@ -936,6 +939,15 @@ export default function OwnerAdsPage() {
                 </>
               )}
             </MenuItem>
+            <MenuItem
+              onClick={() => {
+                setAnchorEl(null);
+                setQrDialogOpen(true);
+              }}
+            >
+              <QrCodeIcon fontSize="small" sx={{ mr: 1 }} />
+              QR code & pancarte
+            </MenuItem>
             {selectedAd.status !== AdStatus.PENDING &&
               selectedAd.status !== AdStatus.DECLINED && (
                 <>
@@ -1028,12 +1040,25 @@ export default function OwnerAdsPage() {
             >
               <ShareAdButtons
                 adTitle={selectedAd.title}
-                adUrl={`/annonces/${selectedAd.slug || selectedAd.id}`}
+                adUrl={`/ads/${selectedAd.slug || selectedAd.id}`}
               />
             </Box>
           </>
         )}
       </Menu>
+      <QrCodeDialog
+        open={qrDialogOpen}
+        onClose={() => {
+          setQrDialogOpen(false);
+          setSelectedAd(null);
+        }}
+        variant="ad"
+        ad={
+          selectedAd
+            ? { id: selectedAd.id, title: selectedAd.title }
+            : undefined
+        }
+      />
       <Snackbar
         open={!!boostFeedback}
         autoHideDuration={4500}

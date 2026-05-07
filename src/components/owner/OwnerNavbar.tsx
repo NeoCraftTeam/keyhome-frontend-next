@@ -68,8 +68,6 @@ export default function OwnerNavbar() {
           color: 'text.primary',
           borderBottom: '1px solid',
           borderColor: 'divider',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
         }}
       >
         <Toolbar

@@ -20,6 +20,7 @@ import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
 import PasskeyManager from '@/components/security/PasskeyManager';
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar';
 import PublicBioEditor from '@/components/owner/PublicBioEditor';
+import QrCodeDialog from '@/components/owner/QrCodeDialog';
 import { markdownLightToHtml } from '@/lib/markdown-light';
 import {
   Assignment as AssignmentIcon,
@@ -28,6 +29,7 @@ import {
   Edit as EditIcon,
   Lock as LockIcon,
   PhotoCamera,
+  QrCode2 as QrCodeIcon,
   ReceiptLong as ReceiptLongIcon,
   Save as SaveIcon,
   Visibility,
@@ -80,10 +82,11 @@ const primaryButtonSx = {
 };
 
 export default function OwnerProfilePage() {
-  const { user, setUser, refreshUser } = useAuth();
+  const { user, setUser, refreshUser, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
   const [tab, setTab] = useState(0);
+  const [profileQrOpen, setProfileQrOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     firstname: user?.firstname ?? '',
@@ -126,17 +129,22 @@ export default function OwnerProfilePage() {
   } = useCityAutocompleteConfig();
 
   const { data: activeSurvey, isLoading: isSurveyLoading } = useQuery({
-    queryKey: ['active-survey'],
+    queryKey: ['active-survey-owner', isAuthenticated],
     queryFn: () => surveysService.getActive(),
-    staleTime: 30 * 60 * 1000,
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const { data: surveyAnsweredData, isLoading: isSurveyAnsweredLoading } =
     useQuery({
-      queryKey: ['survey-has-answered', activeSurvey?.id],
+      queryKey: [
+        'survey-has-answered-owner',
+        activeSurvey?.id,
+        isAuthenticated,
+      ],
       queryFn: () => surveysService.hasAnswered(activeSurvey!.id),
-      enabled: !!activeSurvey?.id,
+      enabled: isAuthenticated && !!activeSurvey?.id,
       staleTime: 5 * 60 * 1000,
     });
 
@@ -651,6 +659,33 @@ export default function OwnerProfilePage() {
           )}
         </Grid>
 
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            mb: 3,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+            QR code & carte de visite
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Partagez votre profil public : lien tracké, PNG et PDF prêts à
+            imprimer.
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<QrCodeIcon />}
+            onClick={() => setProfileQrOpen(true)}
+            sx={primaryButtonSx}
+          >
+            Ouvrir
+          </Button>
+        </Paper>
+
         {isEditing && (
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <Button
@@ -933,6 +968,12 @@ export default function OwnerProfilePage() {
           </Paper>
         )}
       </TabPanel>
+
+      <QrCodeDialog
+        open={profileQrOpen}
+        onClose={() => setProfileQrOpen(false)}
+        variant="profile"
+      />
 
       <Snackbar
         open={!!snackbar}

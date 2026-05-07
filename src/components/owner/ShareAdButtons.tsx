@@ -7,7 +7,18 @@ import {
   WhatsApp as WhatsAppIcon,
 } from '@mui/icons-material';
 import { IconButton, Snackbar, Stack, Tooltip } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+
+function buildFullShareUrl(adUrl: string): string {
+  if (adUrl.startsWith('http://') || adUrl.startsWith('https://')) {
+    return adUrl;
+  }
+  if (typeof window === 'undefined') {
+    return adUrl;
+  }
+  const path = adUrl.startsWith('/') ? adUrl : `/${adUrl}`;
+  return `${window.location.origin}${path}`;
+}
 
 interface ShareAdButtonsProps {
   adTitle: string;
@@ -22,8 +33,7 @@ export default function ShareAdButtons({
 }: ShareAdButtonsProps) {
   const [copied, setCopied] = useState(false);
 
-  const fullUrl =
-    typeof window !== 'undefined' ? `${window.location.origin}${adUrl}` : adUrl;
+  const fullUrl = useMemo(() => buildFullShareUrl(adUrl), [adUrl]);
 
   const handleCopyLink = useCallback(async () => {
     await navigator.clipboard.writeText(fullUrl);

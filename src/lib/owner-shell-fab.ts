@@ -1,6 +1,6 @@
 /**
- * FAB « action rapide » : uniquement là où « nouvelle annonce » est pertinent.
- * Sur le tableau de bord et les autres écrans, pas de FAB (menu avatar / liste annonces).
+ * FAB « Nouvelle annonce » : mobile, uniquement sur la liste des annonces.
+ * Masqué sur les routes d’auth, la création (`/new`) et la fiche édition (`/owner/ads/:id`).
  */
 export function shouldShowOwnerQuickCreateFab(
   pathname: string | null
@@ -17,12 +17,8 @@ export function shouldShowOwnerQuickCreateFab(
     return false;
   }
 
-  if (pathname === '/owner/ads/new') {
-    return false;
-  }
-
-  if (/^\/owner\/ads\/[^/]+\/edit$/.test(pathname)) {
-    return false;
+  if (pathname === '/owner/ads') {
+    return true;
   }
 
   return false;
