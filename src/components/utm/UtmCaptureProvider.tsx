@@ -3,37 +3,44 @@
 import api from '@/lib/api';
 import {
   getAttributionBodyForApi,
-  hasPostedVisitThisBrowserSession,
-  markVisitPosted,
-  persistUtmFromCurrentUrl,
+  persistUtmFromSearchParams,
 } from '@/lib/utm';
-import { useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
 
 /**
- * Runs once per browser tab session: stores UTM params from the URL and notifies
- * the API so admin analytics can attribute traffic.
+ * Best-effort POST to Laravel: persists UTM from the active URL on every
+ * navigation, then ingests {@code /api/v1/track/visit}. Duplicate payloads are
+ * deduped for ~60s server-side; distinct {@code utm_content} creates distinct rows.
  */
+function UtmCaptureEffects(): null {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const querySignature = searchParams.toString();
+
+  useEffect(() => {
+    persistUtmFromSearchParams(new URLSearchParams(querySignature));
+    const body = getAttributionBodyForApi();
+    if (!body.session_id) {
+      return;
+    }
+    void api.post('/track/visit', body).catch(() => {});
+  }, [pathname, querySignature]);
+
+  return null;
+}
+
 export function UtmCaptureProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  useEffect(() => {
-    persistUtmFromCurrentUrl();
-    if (hasPostedVisitThisBrowserSession()) {
-      return;
-    }
-    const body = getAttributionBodyForApi();
-    if (!body.session_id) {
-      return;
-    }
-    void api
-      .post('/track/visit', body)
-      .then(() => {
-        markVisitPosted();
-      })
-      .catch(() => {});
-  }, []);
-
-  return <>{children}</>;
+  return (
+    <>
+      <Suspense fallback={null}>
+        <UtmCaptureEffects />
+      </Suspense>
+      {children}
+    </>
+  );
 }

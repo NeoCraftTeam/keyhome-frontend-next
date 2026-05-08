@@ -29,14 +29,6 @@ export type FunnelEvent =
   | 'favorite_added'
   | 'share_clicked';
 
-/** @internal GA4 dataLayer type shim. */
-declare global {
-  interface Window {
-    dataLayer?: Record<string, unknown>[];
-    gtag?: (...args: unknown[]) => void;
-  }
-}
-
 /**
  * Reads the current UTM params from sessionStorage.
  * Returns null if none have been captured yet.

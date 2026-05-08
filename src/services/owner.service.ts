@@ -752,20 +752,31 @@ export const ownerService = {
     return data.data ?? data;
   },
 
-  async getPublicSignatureRequest(
-    token: string
-  ): Promise<{ request: SignatureRequest & { contract: LeaseContract } }> {
+  async getPublicSignatureRequest(token: string): Promise<{
+    request: SignatureRequest & { contract: LeaseContract };
+    security?: { otp_required_for_sign_or_decline: boolean };
+  }> {
     return publicFetch(`/signatures/${token}`);
   },
 
-  async signSignatureRequest(token: string): Promise<void> {
-    await publicFetch(`/signatures/${token}/sign`, { method: 'POST' });
+  async sendSignatureOtp(token: string): Promise<void> {
+    await publicFetch(`/signatures/${token}/send-otp`, { method: 'POST' });
   },
 
-  async declineSignatureRequest(token: string, reason?: string): Promise<void> {
+  async signSignatureRequest(token: string, otp: string): Promise<void> {
+    await publicFetch(`/signatures/${token}/sign`, {
+      method: 'POST',
+      body: JSON.stringify({ otp }),
+    });
+  },
+
+  async declineSignatureRequest(
+    token: string,
+    payload: { otp: string; reason?: string }
+  ): Promise<void> {
     await publicFetch(`/signatures/${token}/decline`, {
       method: 'POST',
-      body: JSON.stringify({ reason }),
+      body: JSON.stringify(payload),
     });
   },
 

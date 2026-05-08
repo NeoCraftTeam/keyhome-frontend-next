@@ -21,6 +21,7 @@ const AUTH_ROUTES = [
   '/auth/webauthn/login/options', // Passkey login options is unauthenticated
   '/auth/refresh', // Session timeout guard handles its own retry/error path
   '/broadcasting/auth', // WebSocket subscription auth — own retry path
+  '/track/visit', // Anonymous acquisition ping — must not trigger kh:auth-expired
 ];
 
 const api = axios.create({

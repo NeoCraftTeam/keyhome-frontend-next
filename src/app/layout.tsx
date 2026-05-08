@@ -22,6 +22,8 @@ import { Suspense } from 'react';
 import { getClerkPreconnectOrigin } from '@/lib/clerk-frontend-origins';
 import { BRAND_TITLE_WITH_TAGLINE, BRAND_TAGLINE } from '@/lib/brand';
 import { buildSiteVerification } from '@/lib/seo-verification';
+import { GOOGLE_CONSENT_MODE_DEFAULT_SCRIPT } from '@/lib/analytics/consent-default-inline';
+import { isGoogleMarketingConfigured } from '@/lib/analytics/google-marketing-env';
 import { getSiteOrigin } from '@/lib/site-url';
 
 const SITE = getSiteOrigin();
@@ -180,6 +182,16 @@ export default async function RootLayout({
           {/* ThemeInitScript uses useServerInsertedHTML — injected server-side only,
               never reconciled on the client, so React 19 never warns. */}
           <ThemeInitScript nonce={nonce} />
+          {isGoogleMarketingConfigured() ? (
+            <script
+              id="google-consent-default"
+              nonce={nonce}
+              suppressHydrationWarning
+              dangerouslySetInnerHTML={{
+                __html: GOOGLE_CONSENT_MODE_DEFAULT_SCRIPT,
+              }}
+            />
+          ) : null}
           <script
             id="kh-safe-area-init"
             nonce={nonce}

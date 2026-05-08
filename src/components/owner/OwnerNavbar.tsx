@@ -278,11 +278,15 @@ export default function OwnerNavbar() {
         <Box sx={{ px: 1, pt: 0.5, pb: `max(12px, ${khSafeAreaBottomSx})` }}>
           <ListItemButton
             onClick={handleLogout}
-            sx={{ borderRadius: 2, color: 'error.main' }}
+            sx={{
+              borderRadius: 2,
+              color: 'primary.main',
+              '&:hover': { bgcolor: 'rgba(20,184,166,0.08)' },
+            }}
           >
             <ListItemIcon
               sx={{
-                color: 'error.main',
+                color: 'primary.main',
                 minWidth: 40,
                 display: 'flex',
                 alignItems: 'center',

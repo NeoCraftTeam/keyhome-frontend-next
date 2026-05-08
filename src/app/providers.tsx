@@ -1,7 +1,9 @@
 'use client';
 
+import { GoogleMarketing } from '@/components/analytics/GoogleMarketing';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { UtmCaptureProvider } from '@/components/utm/UtmCaptureProvider';
+import { isGoogleMarketingConfigured } from '@/lib/analytics/google-marketing-env';
 import SkipLink from '@/components/ui/SkipLink';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { ComparatorProvider } from '@/providers/ComparatorProvider';
@@ -29,6 +31,9 @@ export function Providers({
     <QueryProvider>
       <ThemeProvider nonce={nonce}>
         <UtmCaptureProvider>
+          {isGoogleMarketingConfigured() ? (
+            <GoogleMarketing nonce={nonce} />
+          ) : null}
           <SkipLink />
           <ErrorBoundary>
             <AuthProvider>

@@ -832,8 +832,9 @@ export default function ProfilePage() {
             Zone de danger
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            La suppression de votre compte est définitive. Toutes vos annonces,
-            favoris et données seront supprimés.
+            La suppression de votre compte est définitive. Vos crédits, favoris,
+            messages et autres données de compte particulier seront supprimés ou
+            anonymisés (voir la politique de confidentialité).
           </Typography>
           <Button
             variant="outlined"
@@ -848,6 +849,7 @@ export default function ProfilePage() {
         <DeleteAccountModal
           open={showDeleteModal}
           onClose={() => setShowDeleteModal(false)}
+          variant="client"
         />
       </TabPanel>
 

@@ -5,7 +5,6 @@
  */
 
 const SESSION_ID_KEY = 'kh_visit_session_id';
-const VISIT_TRACKED_KEY = 'kh_track_visit_posted_v1';
 
 const UTM_KEYS = [
   'utm_source',
@@ -48,19 +47,28 @@ export function getOrCreateSessionId(): string {
 }
 
 /**
- * Merge UTM query params from the current URL into sessionStorage (last non-empty value wins).
+ * Merge UTM query params into sessionStorage (last non-empty value wins).
  */
-export function persistUtmFromCurrentUrl(): void {
+export function persistUtmFromSearchParams(params: URLSearchParams): void {
   if (typeof window === 'undefined') {
     return;
   }
-  const params = new URLSearchParams(window.location.search);
   for (const key of UTM_KEYS) {
     const v = params.get(key);
     if (v && v.trim() !== '') {
       sessionStorage.setItem(`kh_${key}`, v.trim());
     }
   }
+}
+
+/**
+ * Merge UTM query params from the current URL into sessionStorage (last non-empty value wins).
+ */
+export function persistUtmFromCurrentUrl(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  persistUtmFromSearchParams(new URLSearchParams(window.location.search));
 }
 
 /**
@@ -82,20 +90,6 @@ export function getAttributionBodyForApi(): AttributionPayload {
     }
   }
   return out;
-}
-
-export function hasPostedVisitThisBrowserSession(): boolean {
-  if (typeof window === 'undefined') {
-    return true;
-  }
-  return sessionStorage.getItem(VISIT_TRACKED_KEY) === '1';
-}
-
-export function markVisitPosted(): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  sessionStorage.setItem(VISIT_TRACKED_KEY, '1');
 }
 
 /**

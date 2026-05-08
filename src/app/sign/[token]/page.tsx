@@ -61,7 +61,9 @@ export default function SignPage() {
 
   const [signDialogOpen, setSignDialogOpen] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [signOtp, setSignOtp] = useState('');
   const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
+  const [declineOtp, setDeclineOtp] = useState('');
   const [declineReason, setDeclineReason] = useState('');
   const [finalStatus, setFinalStatus] = useState<'signed' | 'declined' | null>(
     null
@@ -74,16 +76,23 @@ export default function SignPage() {
   });
 
   const signMutation = useMutation({
-    mutationFn: () => ownerService.signSignatureRequest(token),
+    mutationFn: () => ownerService.signSignatureRequest(token, signOtp),
     onSuccess: () => {
       setSignDialogOpen(false);
       setFinalStatus('signed');
     },
   });
 
+  const sendSignOtpMutation = useMutation({
+    mutationFn: () => ownerService.sendSignatureOtp(token),
+  });
+
   const declineMutation = useMutation({
     mutationFn: () =>
-      ownerService.declineSignatureRequest(token, declineReason || undefined),
+      ownerService.declineSignatureRequest(token, {
+        otp: declineOtp,
+        reason: declineReason || undefined,
+      }),
     onSuccess: () => {
       setDeclineDialogOpen(false);
       setFinalStatus('declined');
@@ -132,6 +141,9 @@ export default function SignPage() {
 
   const request: SignatureData = data.request;
   const contract = request.contract;
+  const requireOtp =
+    data.security?.otp_required_for_sign_or_decline ??
+    (request.status === 'pending' || request.status === 'viewed');
 
   const effectiveStatus = finalStatus ?? request.status;
   const expired =
@@ -261,6 +273,7 @@ export default function SignPage() {
             startIcon={<DrawIcon />}
             onClick={() => {
               setAcceptedTerms(false);
+              setSignOtp('');
               setSignDialogOpen(true);
             }}
             sx={{
@@ -277,6 +290,7 @@ export default function SignPage() {
             fullWidth
             onClick={() => {
               setDeclineReason('');
+              setDeclineOtp('');
               setDeclineDialogOpen(true);
             }}
             sx={{ textTransform: 'none', color: 'text.secondary' }}
@@ -309,6 +323,57 @@ export default function SignPage() {
             }
             label="J'ai lu et j'accepte les termes du contrat"
           />
+          {requireOtp && (
+            <>
+              <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 2 }}>
+                Code de vérification
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+              >
+                Un code à 6 chiffres est envoyé à {request.signer_email}.
+                Saisissez-le ci-dessous pour confirmer votre identité.
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                disabled={sendSignOtpMutation.isPending}
+                onClick={() => sendSignOtpMutation.mutate()}
+                sx={{ mt: 1, textTransform: 'none' }}
+              >
+                {sendSignOtpMutation.isPending
+                  ? 'Envoi…'
+                  : 'Recevoir le code par e-mail'}
+              </Button>
+              {sendSignOtpMutation.isSuccess && (
+                <Alert severity="success" sx={{ mt: 1 }}>
+                  Code envoyé. Vérifiez votre boîte e-mail.
+                </Alert>
+              )}
+              {sendSignOtpMutation.isError && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  Impossible d&apos;envoyer le code. Réessayez dans un instant.
+                </Alert>
+              )}
+              <TextField
+                label="Code à 6 chiffres"
+                value={signOtp}
+                onChange={(e) =>
+                  setSignOtp(e.target.value.replace(/\D/g, '').slice(0, 6))
+                }
+                fullWidth
+                size="small"
+                sx={{ mt: 2 }}
+                inputProps={{
+                  inputMode: 'numeric',
+                  maxLength: 6,
+                  'aria-label': 'Code de vérification à six chiffres',
+                }}
+              />
+            </>
+          )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button
@@ -321,7 +386,11 @@ export default function SignPage() {
           <Button
             onClick={() => signMutation.mutate()}
             variant="contained"
-            disabled={!acceptedTerms || signMutation.isPending}
+            disabled={
+              !acceptedTerms ||
+              signMutation.isPending ||
+              (requireOtp && signOtp.length !== 6)
+            }
             startIcon={
               signMutation.isPending ? (
                 <CircularProgress size={16} />
@@ -346,6 +415,42 @@ export default function SignPage() {
       >
         <DialogTitle fontWeight={700}>Refuser le contrat</DialogTitle>
         <DialogContent>
+          {requireOtp && (
+            <>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+              >
+                Même code à 6 chiffres que pour la signature (e-mail sur{' '}
+                {request.signer_email}
+                ).
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                disabled={sendSignOtpMutation.isPending}
+                onClick={() => sendSignOtpMutation.mutate()}
+                sx={{ mt: 1, mb: 1, textTransform: 'none' }}
+              >
+                Recevoir le code par e-mail
+              </Button>
+              <TextField
+                label="Code à 6 chiffres"
+                value={declineOtp}
+                onChange={(e) =>
+                  setDeclineOtp(e.target.value.replace(/\D/g, '').slice(0, 6))
+                }
+                fullWidth
+                size="small"
+                inputProps={{
+                  inputMode: 'numeric',
+                  maxLength: 6,
+                  'aria-label': 'Code de vérification à six chiffres',
+                }}
+              />
+            </>
+          )}
           <TextField
             label="Raison du refus (optionnel)"
             multiline
@@ -354,7 +459,7 @@ export default function SignPage() {
             size="small"
             value={declineReason}
             onChange={(e) => setDeclineReason(e.target.value)}
-            sx={{ mt: 1 }}
+            sx={{ mt: 2 }}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -369,7 +474,10 @@ export default function SignPage() {
             onClick={() => declineMutation.mutate()}
             variant="contained"
             color="error"
-            disabled={declineMutation.isPending}
+            disabled={
+              declineMutation.isPending ||
+              (requireOtp && declineOtp.length !== 6)
+            }
             sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
           >
             {declineMutation.isPending ? 'Refus…' : 'Confirmer le refus'}
