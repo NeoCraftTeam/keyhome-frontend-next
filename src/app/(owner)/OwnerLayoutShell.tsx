@@ -3,6 +3,7 @@
 import OwnerLayoutClient from '@/components/owner/OwnerLayoutClient';
 import OwnerManifestSwitch from '@/components/owner/OwnerManifestSwitch';
 import OwnerPWAInstallPrompt from '@/components/pwa/OwnerPWAInstallPrompt';
+import PWASplash from '@/components/pwa/PWASplash';
 import { OwnerThemeProvider } from '@/providers/OwnerThemeProvider';
 
 /**
@@ -21,6 +22,7 @@ export default function OwnerLayoutShell({
   return (
     <>
       <OwnerManifestSwitch />
+      <PWASplash panel="owner" />
       <OwnerThemeProvider>
         <OwnerLayoutClient>{children}</OwnerLayoutClient>
         <OwnerPWAInstallPrompt />

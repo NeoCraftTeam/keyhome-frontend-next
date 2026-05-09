@@ -102,12 +102,25 @@ export default function OwnerManifestSwitch() {
     const originalAppName = appNameEl?.content ?? '';
     if (appNameEl) appNameEl.content = 'KeyHome Propriétaire';
 
-    // ── apple-touch-icon → teal logo ─────────────────────────────────────────
+    // ── apple-touch-icon → teal 180px ────────────────────────────────────────
     const appleTouchEl = document.querySelector<HTMLLinkElement>(
       'link[rel="apple-touch-icon"]'
     );
     const originalAppleIcon = appleTouchEl?.href ?? '';
-    if (appleTouchEl) appleTouchEl.href = '/images/logo-teal.png';
+    if (appleTouchEl) appleTouchEl.href = '/icons/owner/icon-180x180.png';
+
+    // ── apple-touch-startup-image (iOS PWA splash) → /splash/owner/* ────────
+    // The root layout emits the client splash images; rewrite each link's href
+    // (preserving the `media` query) so an installed-from-owner PWA shows the
+    // teal launch screen until React mounts and PWASplash takes over.
+    const startupEls = document.querySelectorAll<HTMLLinkElement>(
+      'link[rel="apple-touch-startup-image"]'
+    );
+    const originalStartups: string[] = [];
+    startupEls.forEach((el) => {
+      originalStartups.push(el.href);
+      el.href = el.href.replace('/splash/client/', '/splash/owner/');
+    });
 
     // ── data-kh-panel='owner' on <html> ─────────────────────────────────────
     // Drives the CSS rule in globals.css that re-tints the body's brand band
@@ -154,6 +167,12 @@ export default function OwnerManifestSwitch() {
 
       if (appNameEl) appNameEl.content = originalAppName;
       if (appleTouchEl) appleTouchEl.href = originalAppleIcon;
+
+      // Restore client splash images
+      startupEls.forEach((el, i) => {
+        const original = originalStartups[i];
+        if (original) el.href = original;
+      });
     };
   }, []);
 
