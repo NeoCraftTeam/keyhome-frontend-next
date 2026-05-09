@@ -2,7 +2,7 @@
 // header is left here for grep-ability and is not parsed by the SW runtime.
 // Push + Background Sync + Caching strategy for full offline/PWA support.
 
-const VERSION      = "v11";
+const VERSION      = "v12";
 const STATIC_CACHE = `kh-static-${VERSION}`;
 const API_CACHE    = `kh-api-${VERSION}`;
 const NAV_CACHE    = `kh-nav-${VERSION}`;
@@ -16,6 +16,8 @@ const PRECACHE_URLS = [
   "/images/logo-teal.png",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
+  "/icons/owner/icon-192x192.png",
+  "/icons/owner/icon-512x512.png",
 ];
 
 // ─── Install ────────────────────────────────────────────────────────────────
@@ -142,7 +144,8 @@ self.addEventListener("fetch", (event) => {
   if (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/icons/") ||
-    url.pathname.startsWith("/images/")
+    url.pathname.startsWith("/images/") ||
+    url.pathname.startsWith("/splash/")
   ) {
     if (isDevServer && url.pathname.startsWith("/_next/static/")) return;
     event.respondWith(cacheFirst(request, STATIC_CACHE));
@@ -165,11 +168,14 @@ self.addEventListener("fetch", (event) => {
 // `data.conversation_uuid` and `data.role` so we can build a panel-aware
 // deep-link without server-side branching.
 self.addEventListener("push", (event) => {
+  // Default to the client (crimson) panel icon. Owner-context pushes (chat
+  // messages with role=agent/admin) override below to the teal icon so the
+  // user sees the right brand on their lock screen.
   let data = {
     title: "KeyHome",
     body: "Vous avez une nouvelle notification.",
-    icon: "/images/logo-teal.png",
-    badge: "/images/logo-teal.png",
+    icon: "/icons/icon-192x192.png",
+    badge: "/icons/icon-192x192.png",
     tag: "keyhome-notification",
     data: { url: "/home" },
   };
@@ -196,6 +202,11 @@ self.addEventListener("push", (event) => {
         // Stack pushes per-conversation so multiple messages collapse.
         data.tag = `chat-${fcmData.conversation_uuid}`;
         data.renotify = true;
+        // Brand the notification with the panel's own icon (teal for owner).
+        if (isOwner) {
+          data.icon = '/icons/owner/icon-192x192.png';
+          data.badge = '/icons/owner/icon-192x192.png';
+        }
       }
     } catch {
       data.body = event.data.text();
