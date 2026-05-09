@@ -1,109 +1,147 @@
 'use client';
 
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { getSafeErrorMessage } from '@/lib/error-messages';
+import { supportService } from '@/services/support.service';
+import { brand, gradient } from '@/theme/tokens';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import KeyboardReturnIcon from '@mui/icons-material/KeyboardReturn';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import SendIcon from '@mui/icons-material/Send';
-import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import {
+  Alert,
   Box,
   Button,
+  Chip,
+  CircularProgress,
   Container,
-  Divider,
-  FormControl,
   IconButton,
-  InputLabel,
-  LinearProgress,
-  MenuItem,
-  Paper,
-  Select,
-  TextField,
+  InputBase,
+  Stack,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { useMutation } from '@tanstack/react-query';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { brand, gradient } from '@/theme/tokens';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from 'react';
 
-const SUBJECTS = [
-  'Question générale',
-  'Problème technique',
-  'Signaler une annonce',
-  'Proposition de partenariat',
-  'Demande de remboursement',
-  'Autre',
-];
-
-const STEPS = [
-  { title: 'Vos coordonnées', subtitle: "Pour qu'on puisse vous répondre" },
-  { title: 'Sujet', subtitle: "De quoi s'agit-il ?" },
-  { title: 'Votre message', subtitle: 'Dites-nous tout' },
-];
+type FormStep = 'name' | 'email' | 'subject' | 'message';
+const STEPS: readonly FormStep[] = [
+  'name',
+  'email',
+  'subject',
+  'message',
+] as const;
 
 const WHATSAPP_NUMBER =
   process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '237657507909';
 const CONTACT_EMAIL =
   process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'support@keyhome.app';
 const CONTACT_PHONE =
-  process.env.NEXT_PUBLIC_PHONE_NUMBER || '+237 657 507 909';
+  process.env.NEXT_PUBLIC_PHONE_NUMBER || '+237 693 118 109';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ContactPage() {
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const [step, setStep] = useState(0);
-  const [direction, setDirection] = useState(1);
+  const [currentStep, setCurrentStep] = useState<FormStep>('name');
   const [success, setSuccess] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [hasInteracted, setHasInteracted] = useState(false);
 
-  const progress = ((step + 1) / STEPS.length) * 100;
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
-  const isStepValid = (): boolean => {
-    if (step === 0) {
-      return name.trim().length > 1 && email.includes('@');
-    }
-    if (step === 1) {
-      return subject.length > 0;
-    }
-    if (step === 2) {
-      return message.trim().length > 10;
-    }
-    return true;
-  };
+  const submitMutation = useMutation({
+    mutationFn: () =>
+      supportService.contact({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        subject: subject.trim(),
+        message: message.trim(),
+      }),
+    onSuccess: () => setSuccess(true),
+  });
+  const isSubmitting = submitMutation.isPending;
+  const submitError = submitMutation.isError
+    ? getSafeErrorMessage(submitMutation.error)
+    : null;
 
-  const goNext = () => {
-    if (step < STEPS.length - 1) {
-      setDirection(1);
-      setStep((s) => s + 1);
-    }
-  };
+  // Auto-focus the active input as the user advances through steps.
+  useEffect(() => {
+    if (!hasInteracted || success) return;
+    const t = setTimeout(() => inputRef.current?.focus(), 200);
+    return () => clearTimeout(t);
+  }, [currentStep, hasInteracted, success]);
 
-  const goBack = () => {
-    if (step > 0) {
-      setDirection(-1);
-      setStep((s) => s - 1);
+  const isStepValid = useCallback(
+    (step: FormStep): boolean => {
+      switch (step) {
+        case 'name':
+          return name.trim().length > 1;
+        case 'email':
+          return EMAIL_RE.test(email.trim());
+        case 'subject':
+          return subject.trim().length >= 2;
+        case 'message':
+          return message.trim().length >= 10;
+      }
+    },
+    [name, email, subject, message]
+  );
+
+  const goNext = useCallback(() => {
+    const idx = STEPS.indexOf(currentStep);
+    if (idx < STEPS.length - 1) {
+      setCurrentStep(STEPS[idx + 1]);
+    }
+  }, [currentStep]);
+
+  const goBack = useCallback(() => {
+    const idx = STEPS.indexOf(currentStep);
+    if (idx > 0) {
+      setCurrentStep(STEPS[idx - 1]);
     } else {
       router.back();
     }
-  };
+  }, [currentStep, router]);
 
-  const waText = encodeURIComponent(
-    `Bonjour KeyHome ! 👋\n\nNom: ${name}\nEmail: ${email}\nSujet: ${subject}\n\n${message}`
+  const handleSubmit = useCallback(() => {
+    if (isSubmitting || !isStepValid('message')) return;
+    submitMutation.mutate();
+  }, [isSubmitting, isStepValid, submitMutation]);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      // Enter advances except in the message step where it produces a newline.
+      if (e.key !== 'Enter' || e.shiftKey || currentStep === 'message') return;
+      e.preventDefault();
+      if (isStepValid(currentStep)) goNext();
+    },
+    [currentStep, isStepValid, goNext]
   );
 
-  const handleSubmit = () => {
-    setSuccess(true);
-  };
+  const stepIndex = STEPS.indexOf(currentStep);
+  const progressPct = ((stepIndex + 1) / STEPS.length) * 100;
 
+  // ── Success screen ────────────────────────────────────────────────────────
   if (success) {
     return (
       <Box
@@ -117,653 +155,624 @@ export default function ContactPage() {
         }}
       >
         <motion.div
-          initial={{ scale: 0.75, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-          style={{ width: '100%', maxWidth: 440, textAlign: 'center' }}
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          style={{ width: '100%', maxWidth: 460, textAlign: 'center' }}
         >
           <Box
             sx={{
-              width: 100,
-              height: 100,
+              width: 72,
+              height: 72,
               borderRadius: '50%',
-              background: gradient.primary135,
+              bgcolor: 'action.hover',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               mx: 'auto',
-              mb: 3,
-              boxShadow: `0 20px 60px ${brand.primaryAlpha30}`,
+              mb: 5,
             }}
           >
-            <CheckCircleIcon sx={{ fontSize: 52, color: '#fff' }} />
+            <CheckCircleOutlineIcon
+              sx={{ fontSize: 36, color: 'text.primary', strokeWidth: 1.5 }}
+            />
           </Box>
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+          <Typography
+            sx={{
+              fontSize: { xs: '1.65rem', md: '1.9rem' },
+              fontWeight: 800,
+              letterSpacing: -0.6,
+              mb: 2.5,
+              color: 'text.primary',
+            }}
           >
-            <Typography
-              variant="h5"
-              fontWeight={900}
-              sx={{ mb: 1, letterSpacing: -0.5 }}
-            >
-              Prêt à envoyer !
-            </Typography>
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{ mb: 4, maxWidth: 360, mx: 'auto', lineHeight: 1.7 }}
-            >
-              Cliquez sur le bouton ci-dessous pour envoyer votre message via
-              WhatsApp. Notre équipe répond en moins de 2h.
-            </Typography>
+            Merci {name.trim().split(/\s+/)[0] || 'à vous'} !
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              color: 'text.secondary',
+              maxWidth: 420,
+              mx: 'auto',
+              lineHeight: 1.75,
+              fontSize: '1rem',
+              mb: 4,
+            }}
+          >
+            Votre message a été envoyé avec succès. Nous vous répondrons dans
+            les plus brefs délais à l&apos;adresse{' '}
             <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1.5,
-                maxWidth: 300,
-                mx: 'auto',
-              }}
+              component="span"
+              sx={{ color: 'text.primary', fontWeight: 600 }}
             >
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<WhatsAppIcon />}
-                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waText}`}
-                target="_blank"
-                component="a"
-                rel="noopener noreferrer"
-                sx={{
-                  borderRadius: 3,
-                  py: 1.5,
-                  bgcolor: '#25D366',
-                  fontWeight: 700,
-                  fontSize: '0.95rem',
-                  '&:hover': { bgcolor: '#1DA851' },
-                  boxShadow: '0 8px 24px rgba(37,211,102,0.35)',
-                }}
-              >
-                Envoyer via WhatsApp
-              </Button>
-              <Button
-                variant="outlined"
-                size="large"
-                onClick={() => router.push('/home')}
-                sx={{ borderRadius: 3, py: 1.25 }}
-              >
-                Revenir à l&apos;accueil
-              </Button>
+              {email}
             </Box>
-          </motion.div>
+            .
+          </Typography>
+          <Chip
+            label="Temps de réponse habituel : moins de 24h"
+            sx={{
+              bgcolor: 'action.hover',
+              color: 'text.primary',
+              fontWeight: 500,
+              fontSize: '0.82rem',
+              borderRadius: '999px',
+              px: 1.5,
+              py: 2.25,
+              height: 'auto',
+              border: 'none',
+            }}
+          />
         </motion.div>
       </Box>
     );
   }
 
+  // ── Step content (single field at a time) ────────────────────────────────
+  const STEP_TITLES: Record<FormStep, string> = {
+    name: 'Comment puis-je vous appeler ?',
+    email: name
+      ? `Sur quelle adresse vous joindre, ${name.split(' ')[0]} ?`
+      : 'Quelle est votre adresse e-mail ?',
+    subject: "Quel est l'objet de votre message ?",
+    message: 'Que pouvons-nous faire pour vous ?',
+  };
+
+  const STEP_PLACEHOLDERS: Record<FormStep, string> = {
+    name: 'Votre nom complet',
+    email: 'vous@exemple.com',
+    subject: 'Ex : Question sur les crédits',
+    message: 'Décrivez-nous votre demande en quelques mots…',
+  };
+
+  const stepValid = isStepValid(currentStep);
+
   return (
     <MotionConfig reducedMotion="user">
-      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-        {/* ── Hero header ── */}
-        <Box
-          sx={{
-            background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 50%, #A01030 100%)`,
-            pt: { xs: 10, md: 12 },
-            pb: { xs: 7, md: 9 },
-            textAlign: 'center',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <Box
-            sx={{
-              position: 'absolute',
-              top: { xs: 70, md: 76 },
-              left: { xs: 16, md: 24 },
-              zIndex: 10,
-            }}
-          >
-            <IconButton
-              onClick={() => router.back()}
-              size="small"
-              aria-label="Retour"
+      <Box
+        sx={{
+          minHeight: '100vh',
+          bgcolor: 'background.default',
+          py: { xs: 4, md: 8 },
+        }}
+      >
+        <Container maxWidth="lg">
+          {/* Header */}
+          <Box sx={{ textAlign: 'center', mb: { xs: 5, md: 8 } }}>
+            <Chip
+              label="Nous sommes à votre écoute"
               sx={{
-                bgcolor: 'rgba(255,255,255,0.15)',
-                backdropFilter: 'blur(8px)',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.25)',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' },
+                mb: 3,
+                px: 1.5,
+                py: 0.5,
+                borderRadius: '999px',
+                bgcolor: brand.primaryAlpha10,
+                color: 'primary.main',
+                fontWeight: 600,
+                border: '1px solid',
+                borderColor: brand.primaryAlpha30,
               }}
-            >
-              <ChevronLeftIcon />
-            </IconButton>
-          </Box>
-          <Box
-            sx={{
-              position: 'absolute',
-              top: -80,
-              right: -80,
-              width: 300,
-              height: 300,
-              borderRadius: '50%',
-              bgcolor: 'rgba(255,255,255,0.07)',
-              pointerEvents: 'none',
-            }}
-          />
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: -60,
-              left: -60,
-              width: 240,
-              height: 240,
-              borderRadius: '50%',
-              bgcolor: 'rgba(0,0,0,0.1)',
-              pointerEvents: 'none',
-            }}
-          />
-          <Container maxWidth="sm" sx={{ position: 'relative' }}>
-            <Box
-              sx={{
-                width: 64,
-                height: 64,
-                borderRadius: '18px',
-                bgcolor: 'rgba(255,255,255,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mx: 'auto',
-                mb: 2.5,
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255,255,255,0.3)',
-              }}
-            >
-              <SupportAgentIcon sx={{ fontSize: 32, color: '#fff' }} />
-            </Box>
+            />
             <Typography
-              variant="h4"
+              variant="h3"
               fontWeight={900}
               sx={{
-                color: '#fff',
-                letterSpacing: -1,
-                mb: 1.5,
+                letterSpacing: -1.5,
+                mb: 2,
+                fontSize: { xs: '2rem', md: '3rem' },
                 lineHeight: 1.1,
               }}
             >
-              Nous contacter
+              Parlons de votre projet
             </Typography>
             <Typography
               variant="body1"
-              sx={{
-                color: 'rgba(255,255,255,0.85)',
-                lineHeight: 1.7,
-                maxWidth: 400,
-                mx: 'auto',
-              }}
+              color="text.secondary"
+              sx={{ maxWidth: 560, mx: 'auto', lineHeight: 1.7 }}
             >
-              Une question, un problème ? Notre équipe est là pour vous aider
-              7j/7.
+              Une question, un problème, une idée ? Notre équipe vous répond
+              personnellement, en moins de 2h, 7j/7.
             </Typography>
+          </Box>
+
+          {/* Layout: form (left) + contact info (right) */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', lg: '3fr 2fr' },
+              gap: { xs: 3, md: 5 },
+              alignItems: 'start',
+            }}
+          >
+            {/* ─── Form card (glass) ─── */}
             <Box
               sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.75,
-                mt: 2.5,
-                bgcolor: 'rgba(255,255,255,0.15)',
-                borderRadius: '40px',
-                px: 2,
-                py: 0.75,
-                border: '1px solid rgba(255,255,255,0.2)',
-              }}
-            >
-              <AccessTimeIcon sx={{ fontSize: 14, color: '#fff' }} />
-              <Typography
-                variant="caption"
-                sx={{ color: '#fff', fontWeight: 600, fontSize: '0.72rem' }}
-              >
-                Temps de réponse : moins de 2h
-              </Typography>
-            </Box>
-          </Container>
-        </Box>
-
-        <Container
-          maxWidth="lg"
-          sx={{
-            mt: { xs: -4, md: -5 },
-            position: 'relative',
-            pb: { xs: 6, md: 10 },
-          }}
-        >
-          <Box
-            sx={{ display: 'flex', gap: { md: 4 }, alignItems: 'flex-start' }}
-          >
-            {/* ─── Left: Form card ─── */}
-            <Paper
-              elevation={0}
-              sx={{
-                flex: 1,
-                minWidth: 0,
-                borderRadius: 4,
-                border: '1px solid',
-                borderColor: 'divider',
+                position: 'relative',
+                borderRadius: { xs: 4, md: 6 },
                 overflow: 'hidden',
                 bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
+                boxShadow:
+                  '0 1px 2px rgba(15,23,42,0.04), 0 12px 40px rgba(15,23,42,0.06)',
+                minHeight: { xs: 460, md: 520 },
+                display: 'flex',
+                flexDirection: 'column',
               }}
             >
               {/* Progress bar */}
-              <LinearProgress
-                variant="determinate"
-                value={progress}
+              <Box
                 sx={{
                   height: 3,
-                  bgcolor: 'divider',
-                  '& .MuiLinearProgress-bar': {
-                    background: gradient.primary,
-                  },
+                  width: '100%',
+                  bgcolor: brand.primaryAlpha10,
+                  position: 'relative',
+                  overflow: 'hidden',
                 }}
-              />
-              <Box sx={{ p: { xs: 3, md: 4 } }}>
-                {/* Step heading */}
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={`heading-${step}`}
-                    initial={{ opacity: 0, x: direction * 40 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: direction * -40 }}
-                    transition={{ duration: 0.22 }}
-                  >
-                    <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5 }}>
-                      {STEPS[step].title}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 3 }}
-                    >
-                      {STEPS[step].subtitle}
-                    </Typography>
-                  </motion.div>
-                </AnimatePresence>
-
-                {/* Step fields */}
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={`fields-${step}`}
-                    initial={{ opacity: 0, x: direction * 40 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: direction * -40 }}
-                    transition={{ duration: 0.22 }}
-                  >
-                    {step === 0 && (
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 2.5,
-                        }}
-                      >
-                        <TextField
-                          label="Votre nom complet"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          fullWidth
-                          autoFocus
-                          helperText="Ex : Jean Dupont"
-                        />
-                        <TextField
-                          label="Adresse email"
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          fullWidth
-                        />
-                      </Box>
-                    )}
-
-                    {step === 1 && (
-                      <FormControl fullWidth>
-                        <InputLabel>Sujet de votre message</InputLabel>
-                        <Select
-                          value={subject}
-                          label="Sujet de votre message"
-                          onChange={(e) => setSubject(e.target.value)}
-                          autoFocus
-                        >
-                          {SUBJECTS.map((s) => (
-                            <MenuItem key={s} value={s}>
-                              {s}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    )}
-
-                    {step === 2 && (
-                      <TextField
-                        label="Votre message"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        fullWidth
-                        multiline
-                        rows={6}
-                        autoFocus
-                        helperText={`${message.length} caractères (minimum 10)`}
-                      />
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-
-                {/* Navigation buttons */}
-                <Box sx={{ display: 'flex', gap: 1.5, mt: 4 }}>
-                  {step > 0 && (
-                    <Button
-                      variant="outlined"
-                      onClick={goBack}
-                      startIcon={<ChevronLeftIcon />}
-                      sx={{
-                        borderRadius: 2.5,
-                        px: 2.5,
-                        borderColor: 'divider',
-                      }}
-                    >
-                      Retour
-                    </Button>
-                  )}
-                  {step < STEPS.length - 1 ? (
-                    <Button
-                      variant="contained"
-                      onClick={goNext}
-                      disabled={!isStepValid()}
-                      fullWidth={step === 0}
-                      sx={{
-                        borderRadius: 2.5,
-                        px: 4,
-                        py: 1.25,
-                        fontWeight: 700,
-                        background: gradient.primary,
-                        flex: step > 0 ? 1 : undefined,
-                        '&:disabled': { opacity: 0.4 },
-                      }}
-                    >
-                      Continuer
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="contained"
-                      onClick={handleSubmit}
-                      disabled={!isStepValid()}
-                      startIcon={<SendIcon />}
-                      sx={{
-                        borderRadius: 2.5,
-                        px: 4,
-                        py: 1.25,
-                        fontWeight: 700,
-                        flex: 1,
-                        background: gradient.primary,
-                        '&:disabled': { opacity: 0.4 },
-                      }}
-                    >
-                      Envoyer le message
-                    </Button>
-                  )}
-                </Box>
-              </Box>
-            </Paper>
-
-            {/* ─── Right: Contact info (desktop only) ─── */}
-            {!isMobile && (
-              <Box
-                sx={{ width: 320, flexShrink: 0, position: 'sticky', top: 100 }}
               >
-                <Paper
-                  elevation={0}
-                  sx={{
-                    borderRadius: 4,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    overflow: 'hidden',
+                <motion.div
+                  initial={false}
+                  animate={{ width: `${progressPct}%` }}
+                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  style={{
+                    height: '100%',
+                    background: gradient.primary,
                   }}
-                >
-                  <Box
+                />
+              </Box>
+
+              {/* Back button (top-left) — except first step */}
+              {stepIndex > 0 && (
+                <Box sx={{ p: { xs: 2, md: 3 }, pb: 0 }}>
+                  <IconButton
+                    size="small"
+                    onClick={goBack}
+                    disabled={isSubmitting}
+                    aria-label="Étape précédente"
                     sx={{
-                      p: 3,
-                      background: gradient.primary135Stops,
-                      color: '#fff',
+                      color: 'text.secondary',
+                      '&:hover': { color: 'primary.main' },
                     }}
                   >
-                    <Typography variant="h6" fontWeight={800} sx={{ mb: 0.5 }}>
-                      Besoin d&apos;aide rapide ?
-                    </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.88 }}>
-                      Notre équipe est disponible 7j/7 pour vous accompagner.
-                    </Typography>
-                  </Box>
+                    <ChevronLeftIcon />
+                  </IconButton>
+                </Box>
+              )}
 
-                  <Box
-                    sx={{
-                      p: 3,
+              {/* Step content */}
+              <Box
+                sx={{
+                  flex: 1,
+                  p: { xs: 3, md: 6 },
+                  pt: { xs: stepIndex > 0 ? 1 : 4, md: stepIndex > 0 ? 2 : 6 },
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentStep}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    style={{
+                      flex: 1,
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 2.5,
                     }}
                   >
-                    {/* WhatsApp */}
-                    <Box
-                      component="a"
-                      href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Bonjour KeyHome ! 👋')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2,
-                        textDecoration: 'none',
-                        color: 'inherit',
-                        p: 1.5,
-                        borderRadius: 2,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        transition: 'border-color 0.2s',
-                        '&:hover': { borderColor: '#25D366' },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: '50%',
-                          bgcolor: 'rgba(37,211,102,0.1)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <WhatsAppIcon sx={{ color: '#25D366', fontSize: 20 }} />
-                      </Box>
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                        >
-                          WhatsApp
-                        </Typography>
-                        <Typography variant="body2" fontWeight={600}>
-                          Chat instantané
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {/* Email */}
-                    <Box
-                      component="a"
-                      href={`mailto:${CONTACT_EMAIL}`}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2,
-                        textDecoration: 'none',
-                        color: 'inherit',
-                        p: 1.5,
-                        borderRadius: 2,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        transition: 'border-color 0.2s',
-                        '&:hover': { borderColor: 'primary.main' },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: '50%',
-                          bgcolor: brand.primaryAlpha10,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <EmailOutlinedIcon
-                          sx={{ color: 'primary.main', fontSize: 20 }}
-                        />
-                      </Box>
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                        >
-                          Email
-                        </Typography>
-                        <Typography variant="body2" fontWeight={600}>
-                          {CONTACT_EMAIL}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {/* Phone */}
-                    <Box
-                      component="a"
-                      href={`tel:${CONTACT_PHONE}`}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2,
-                        textDecoration: 'none',
-                        color: 'inherit',
-                        p: 1.5,
-                        borderRadius: 2,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        transition: 'border-color 0.2s',
-                        '&:hover': { borderColor: 'primary.main' },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: '50%',
-                          bgcolor: brand.primaryAlpha10,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <PhoneOutlinedIcon
-                          sx={{ color: 'primary.main', fontSize: 20 }}
-                        />
-                      </Box>
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                        >
-                          Téléphone
-                        </Typography>
-                        <Typography variant="body2" fontWeight={600}>
-                          {CONTACT_PHONE}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    <Divider />
-
+                    {/* Step counter */}
                     <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ textAlign: 'center' }}
+                      variant="overline"
+                      sx={{
+                        color: 'primary.main',
+                        opacity: 0.6,
+                        fontWeight: 700,
+                        letterSpacing: '0.2em',
+                        mb: 1.5,
+                        display: 'block',
+                      }}
                     >
-                      Temps de réponse moyen : moins de 2h
+                      Étape {stepIndex + 1} sur {STEPS.length}
                     </Typography>
-                  </Box>
-                </Paper>
-              </Box>
-            )}
-          </Box>
 
-          {/* Mobile contact links */}
-          {isMobile && (
-            <Box
-              sx={{
-                mt: 5,
-                pt: 3,
-                borderTop: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 2 }}>
-                Autres moyens de nous joindre
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                <Button
-                  component="a"
-                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  variant="outlined"
-                  startIcon={<WhatsAppIcon />}
-                  size="small"
-                  sx={{
-                    borderColor: '#25D366',
-                    color: '#25D366',
-                    borderRadius: 2,
-                  }}
-                >
-                  WhatsApp
-                </Button>
-                <Button
-                  component="a"
-                  href={`mailto:${CONTACT_EMAIL}`}
-                  variant="outlined"
-                  startIcon={<EmailOutlinedIcon />}
-                  size="small"
-                  sx={{ borderRadius: 2 }}
-                >
-                  Email
-                </Button>
-                <Button
-                  component="a"
-                  href={`tel:${CONTACT_PHONE}`}
-                  variant="outlined"
-                  startIcon={<PhoneOutlinedIcon />}
-                  size="small"
-                  sx={{ borderRadius: 2 }}
-                >
-                  Appeler
-                </Button>
+                    {/* Step title */}
+                    <Typography
+                      sx={{
+                        fontSize: { xs: '1.6rem', md: '2.25rem' },
+                        fontWeight: 800,
+                        letterSpacing: -0.8,
+                        lineHeight: 1.15,
+                        mb: { xs: 4, md: 6 },
+                        color: 'text.primary',
+                      }}
+                    >
+                      {STEP_TITLES[currentStep]}
+                    </Typography>
+
+                    {/* Single field (transparent, big, no border) */}
+                    <Box sx={{ flex: 1 }}>
+                      {currentStep === 'name' && (
+                        <InputBase
+                          inputRef={inputRef}
+                          fullWidth
+                          autoFocus
+                          autoComplete="name"
+                          placeholder={STEP_PLACEHOLDERS.name}
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          onFocus={() => setHasInteracted(true)}
+                          onKeyDown={handleKeyDown}
+                          inputProps={{
+                            'aria-label': STEP_PLACEHOLDERS.name,
+                            maxLength: 120,
+                          }}
+                          sx={fieldSx}
+                        />
+                      )}
+                      {currentStep === 'email' && (
+                        <InputBase
+                          inputRef={inputRef}
+                          fullWidth
+                          autoFocus
+                          type="email"
+                          autoComplete="email"
+                          placeholder={STEP_PLACEHOLDERS.email}
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          onFocus={() => setHasInteracted(true)}
+                          onKeyDown={handleKeyDown}
+                          inputProps={{
+                            'aria-label': STEP_PLACEHOLDERS.email,
+                            maxLength: 255,
+                            inputMode: 'email',
+                          }}
+                          sx={fieldSx}
+                        />
+                      )}
+                      {currentStep === 'subject' && (
+                        <InputBase
+                          inputRef={inputRef}
+                          fullWidth
+                          autoFocus
+                          placeholder={STEP_PLACEHOLDERS.subject}
+                          value={subject}
+                          onChange={(e) => setSubject(e.target.value)}
+                          onFocus={() => setHasInteracted(true)}
+                          onKeyDown={handleKeyDown}
+                          inputProps={{
+                            'aria-label': STEP_PLACEHOLDERS.subject,
+                            maxLength: 120,
+                          }}
+                          sx={fieldSx}
+                        />
+                      )}
+                      {currentStep === 'message' && (
+                        <InputBase
+                          inputRef={inputRef}
+                          fullWidth
+                          autoFocus
+                          multiline
+                          minRows={4}
+                          maxRows={10}
+                          placeholder={STEP_PLACEHOLDERS.message}
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
+                          onFocus={() => setHasInteracted(true)}
+                          inputProps={{
+                            'aria-label': STEP_PLACEHOLDERS.message,
+                            maxLength: 5000,
+                          }}
+                          sx={{
+                            ...fieldSx,
+                            alignItems: 'flex-start',
+                          }}
+                        />
+                      )}
+
+                      {/* Helper text under message */}
+                      {currentStep === 'message' && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: 'text.secondary',
+                            opacity: 0.6,
+                            display: 'block',
+                            mt: 1.5,
+                          }}
+                        >
+                          {message.trim().length} caractère
+                          {message.trim().length > 1 ? 's' : ''} (10 minimum)
+                        </Typography>
+                      )}
+                    </Box>
+
+                    {/* Submission error */}
+                    {submitError && currentStep === 'message' && (
+                      <Alert
+                        severity="error"
+                        icon={<ErrorOutlineIcon />}
+                        sx={{ mt: 3, borderRadius: 2.5 }}
+                      >
+                        {submitError}
+                      </Alert>
+                    )}
+
+                    {/* Footer: hint + primary button */}
+                    <Box
+                      sx={{
+                        mt: { xs: 4, md: 6 },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 2,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      {!isMobile && currentStep !== 'message' ? (
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            color: 'text.secondary',
+                            opacity: 0.55,
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            Appuyez sur Entrée pour continuer
+                          </Typography>
+                          <KeyboardReturnIcon sx={{ fontSize: 16 }} />
+                        </Box>
+                      ) : (
+                        <Box />
+                      )}
+
+                      {currentStep === 'message' ? (
+                        <Button
+                          variant="contained"
+                          size="large"
+                          onClick={handleSubmit}
+                          disabled={!stepValid || isSubmitting}
+                          startIcon={
+                            isSubmitting ? (
+                              <CircularProgress
+                                size={18}
+                                thickness={5}
+                                sx={{ color: 'inherit' }}
+                              />
+                            ) : (
+                              <SendIcon />
+                            )
+                          }
+                          sx={{
+                            borderRadius: 3,
+                            px: { xs: 3.5, md: 5 },
+                            py: 1.5,
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            background: gradient.primary,
+                            boxShadow: `0 8px 24px ${brand.primaryAlpha30}`,
+                            '&:disabled': { opacity: 0.5, color: '#fff' },
+                          }}
+                        >
+                          {isSubmitting
+                            ? 'Envoi en cours…'
+                            : 'Envoyer le message'}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          size="large"
+                          onClick={goNext}
+                          disabled={!stepValid}
+                          sx={{
+                            borderRadius: 3,
+                            px: { xs: 3.5, md: 5 },
+                            py: 1.5,
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            background: gradient.primary,
+                            boxShadow: `0 8px 24px ${brand.primaryAlpha30}`,
+                            '&:disabled': { opacity: 0.5, color: '#fff' },
+                          }}
+                        >
+                          Continuer
+                        </Button>
+                      )}
+                    </Box>
+                  </motion.div>
+                </AnimatePresence>
               </Box>
             </Box>
-          )}
+
+            {/* ─── Contact info sidebar ─── */}
+            <Stack spacing={3}>
+              <Box
+                sx={{
+                  p: { xs: 3, md: 4 },
+                  borderRadius: { xs: 4, md: 6 },
+                  bgcolor: 'background.paper',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  boxShadow:
+                    '0 1px 2px rgba(15,23,42,0.04), 0 12px 40px rgba(15,23,42,0.04)',
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  fontWeight={800}
+                  sx={{ letterSpacing: -0.5, mb: 3 }}
+                >
+                  Autres canaux
+                </Typography>
+                <Stack spacing={3}>
+                  <ContactRow
+                    icon={
+                      <EmailOutlinedIcon
+                        sx={{ color: 'text.secondary', fontSize: 22 }}
+                      />
+                    }
+                    label="E-mail"
+                    value={CONTACT_EMAIL}
+                    href={`mailto:${CONTACT_EMAIL}`}
+                  />
+                  <ContactRow
+                    icon={
+                      <WhatsAppIcon
+                        sx={{ color: 'text.secondary', fontSize: 22 }}
+                      />
+                    }
+                    label="WhatsApp"
+                    value={`+${WHATSAPP_NUMBER.replace(/^237/, '237 ')}`}
+                    href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                    external
+                  />
+                  <ContactRow
+                    icon={
+                      <PhoneOutlinedIcon
+                        sx={{ color: 'text.secondary', fontSize: 22 }}
+                      />
+                    }
+                    label="Téléphone"
+                    value={CONTACT_PHONE}
+                    href={`tel:${CONTACT_PHONE.replace(/\s+/g, '')}`}
+                  />
+                </Stack>
+              </Box>
+
+              <Box
+                sx={{
+                  p: { xs: 3, md: 4 },
+                  borderRadius: { xs: 4, md: 6 },
+                  bgcolor: 'background.paper',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  boxShadow:
+                    '0 1px 2px rgba(15,23,42,0.04), 0 12px 40px rgba(15,23,42,0.04)',
+                }}
+              >
+                <Stack spacing={2}>
+                  <CalendarMonthIcon
+                    sx={{ color: 'text.secondary', fontSize: 28 }}
+                  />
+                  <Typography
+                    variant="h6"
+                    fontWeight={800}
+                    sx={{ letterSpacing: -0.5 }}
+                  >
+                    Réponse en moins de 2h
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.7 }}
+                  >
+                    Notre équipe support est disponible 7j/7 pour vous
+                    accompagner. Merci de privilégier ce formulaire pour un
+                    suivi optimal de votre demande.
+                  </Typography>
+                </Stack>
+              </Box>
+            </Stack>
+          </Box>
         </Container>
       </Box>
     </MotionConfig>
+  );
+}
+
+// ── Reusable styles & sub-components ─────────────────────────────────────────
+
+const fieldSx = {
+  width: '100%',
+  fontSize: { xs: '1.4rem', md: '1.9rem' },
+  fontWeight: 600,
+  lineHeight: 1.4,
+  py: 1,
+  letterSpacing: -0.3,
+  '& input, & textarea': {
+    px: 0,
+    py: 1,
+    '&::placeholder': {
+      opacity: 0.25,
+      color: 'text.primary',
+    },
+  },
+} as const;
+
+interface ContactRowProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  href: string;
+  external?: boolean;
+}
+
+function ContactRow({ icon, label, value, href, external }: ContactRowProps) {
+  return (
+    <Box
+      component="a"
+      href={href}
+      target={external ? '_blank' : undefined}
+      rel={external ? 'noopener noreferrer' : undefined}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        textDecoration: 'none',
+        color: 'inherit',
+        transition: 'transform 0.2s ease',
+        '&:hover .ContactRow-value': { color: 'primary.main' },
+      }}
+    >
+      {icon}
+      <Box>
+        <Typography
+          variant="caption"
+          sx={{
+            display: 'block',
+            color: 'primary.main',
+            opacity: 0.55,
+            fontWeight: 700,
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            mb: 0.25,
+            fontSize: '0.68rem',
+          }}
+        >
+          {label}
+        </Typography>
+        <Typography
+          className="ContactRow-value"
+          variant="body1"
+          fontWeight={600}
+          sx={{ transition: 'color 0.2s ease' }}
+        >
+          {value}
+        </Typography>
+      </Box>
+    </Box>
   );
 }
