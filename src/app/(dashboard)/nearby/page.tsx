@@ -316,6 +316,7 @@ export default function NearbyPage() {
         min={1}
         max={50}
         step={1}
+        getAriaLabel={() => 'Rayon de recherche en kilomètres'}
         sx={{ color: 'primary.main' }}
       />
 
@@ -372,6 +373,9 @@ export default function NearbyPage() {
         step={50000}
         valueLabelDisplay="auto"
         valueLabelFormat={(val) => `${(val / 1000).toFixed(0)}k`}
+        getAriaLabel={(index) =>
+          index === 0 ? 'Prix minimum en FCFA' : 'Prix maximum en FCFA'
+        }
         sx={{ mb: 0.5 }}
       />
 

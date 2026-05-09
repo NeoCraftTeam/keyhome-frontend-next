@@ -64,9 +64,11 @@ describe('getSafeErrorMessage', () => {
     expect(getSafeErrorMessage(err)).toBe('Erreur serveur.');
   });
 
-  it('returns fallback when response has no message', () => {
+  it('returns status-coded message when response has no safe message', () => {
     const err = makeAxiosError(500, {});
-    expect(getSafeErrorMessage(err, 'Défaut')).toBe('Défaut');
+    expect(getSafeErrorMessage(err, 'Défaut')).toBe(
+      "Une erreur inattendue s'est produite. Notre équipe a été notifiée."
+    );
   });
 
   // BUG CATCH: `null` slipping through as error argument should not crash
@@ -94,8 +96,8 @@ describe('getSafeErrorMessage', () => {
   it('returns French guidance for Axios network errors (no response)', () => {
     const error = new AxiosError('Network Error', 'ERR_NETWORK');
     const msg = getSafeErrorMessage(error, 'Réseau indisponible');
-    expect(msg).toContain('Impossible de joindre le serveur');
-    expect(msg).toContain('NEXT_PUBLIC_API_URL');
+    expect(msg).toContain('Impossible de contacter le serveur');
+    expect(msg).toContain('connexion internet');
   });
 
   // BUG CATCH: 422 with empty errors object should fall through to
@@ -103,7 +105,7 @@ describe('getSafeErrorMessage', () => {
   it('handles 422 with empty errors object', () => {
     const err = makeAxiosError(422, { errors: {} });
     expect(getSafeErrorMessage(err)).toBe(
-      'Une erreur est survenue. Veuillez réessayer.'
+      'Certaines informations sont invalides. Vérifiez le formulaire.'
     );
   });
 

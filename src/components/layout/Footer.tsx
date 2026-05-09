@@ -10,7 +10,6 @@ const LEGAL_LINKS = [
   { label: 'Confidentialité', href: '/confidentialite' },
   { label: 'Conditions générales', href: '/conditions' },
   { label: 'Aide', href: '/aide' },
-  { label: 'Contact', href: '/contact' },
 ];
 
 const SOCIAL_LINKS = [

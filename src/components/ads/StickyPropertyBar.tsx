@@ -1,6 +1,10 @@
 'use client';
 
-import { formatPrice } from '@/lib/constants';
+import { Price } from '@/components/ui/Price';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import PhoneIcon from '@mui/icons-material/Phone';
+import WhatsApp from '@mui/icons-material/WhatsApp';
+import { Box, Button, Typography } from '@mui/material';
 import {
   motion,
   useMotionValueEvent,
@@ -8,10 +12,6 @@ import {
   useScroll,
 } from 'framer-motion';
 import { useState } from 'react';
-import { Box, Button, Typography } from '@mui/material';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import PhoneIcon from '@mui/icons-material/Phone';
-import WhatsApp from '@mui/icons-material/WhatsApp';
 
 interface StickyPropertyBarProps {
   price: number;
@@ -136,7 +136,7 @@ export default function StickyPropertyBar({
                 color: 'text.primary',
               }}
             >
-              {formatPrice(price)}
+              <Price amountXAF={price} />
             </Typography>
           </motion.div>
           <Typography

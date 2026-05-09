@@ -1,24 +1,26 @@
 'use client';
 
-import { brand, semantic } from '@/theme/tokens';
+import { Price } from '@/components/ui/Price';
 import { creditsService } from '@/services/credits.service';
+import { brand, semantic } from '@/theme/tokens';
 import { PointPackage } from '@/types';
+import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
+import CreditCard from '@mui/icons-material/CreditCard';
+import HelpOutline from '@mui/icons-material/HelpOutline';
+import LocalFireDepartment from '@mui/icons-material/LocalFireDepartment';
+import Toll from '@mui/icons-material/Toll';
+import { Tooltip } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useLandingTheme } from './LandingThemeContext';
-import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
-import Toll from '@mui/icons-material/Toll';
-import LocalFireDepartment from '@mui/icons-material/LocalFireDepartment';
-import CreditCard from '@mui/icons-material/CreditCard';
-import HelpOutline from '@mui/icons-material/HelpOutline';
 import { PageTransitionLink } from './PageTransition';
-import { Tooltip } from '@mui/material';
 
 type LandingPackageCard = {
   id: string;
   name: string;
   points: number;
-  price: string;
+  /** Canonical price in XAF (FCFA) — converted at render via <Price>. */
+  priceXaf: number;
   description: string;
   features: string[];
   badge: string;
@@ -31,7 +33,7 @@ const fallbackPackages: LandingPackageCard[] = [
     id: 'fallback-starter',
     name: 'Starter',
     points: 10,
-    price: '1 000',
+    priceXaf: 1000,
     description:
       'Débloquez vos premiers contacts propriétaires vérifiés pour lancer votre recherche.',
     features: [
@@ -46,7 +48,7 @@ const fallbackPackages: LandingPackageCard[] = [
     id: 'fallback-standard',
     name: 'Standard',
     points: 50,
-    price: '4 000',
+    priceXaf: 4000,
     description:
       'Le pack équilibré pour comparer plus d’annonces et contacter rapidement les bons propriétaires.',
     features: [
@@ -63,7 +65,7 @@ const fallbackPackages: LandingPackageCard[] = [
     id: 'fallback-premium',
     name: 'Premium',
     points: 120,
-    price: '10 000',
+    priceXaf: 10000,
     description:
       'Conçu pour les chercheurs intensifs et pros qui veulent traiter un grand volume d’annonces.',
     features: [
@@ -118,7 +120,7 @@ const mapApiPackageToCard = (pkg: PointPackage): LandingPackageCard => {
     id: pkg.id,
     name: normalizedName || pkg.name,
     points: pkg.points_awarded,
-    price: formatFcfa(pkg.price),
+    priceXaf: pkg.price,
     description: trimmedDescription || defaultDescription(pkg.points_awarded),
     features:
       cleanedFeatures.length > 0
@@ -293,27 +295,14 @@ export default function PricingSection() {
                   alignItems: 'baseline',
                   gap: 6,
                   marginBottom: 16,
+                  fontSize: 48,
+                  fontWeight: 900,
+                  color: pkg.isPopular ? '#fff' : text,
+                  letterSpacing: '-1.5px',
+                  lineHeight: 1.05,
                 }}
               >
-                <span
-                  style={{
-                    fontSize: 48,
-                    fontWeight: 900,
-                    color: pkg.isPopular ? '#fff' : text,
-                    letterSpacing: '-1.5px',
-                  }}
-                >
-                  {pkg.price}
-                </span>
-                <span
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 700,
-                    color: pkg.isPopular ? 'rgba(255,255,255,0.7)' : textSub,
-                  }}
-                >
-                  FCFA
-                </span>
+                <Price amountXAF={pkg.priceXaf} showOriginal />
               </div>
 
               <p
@@ -371,7 +360,7 @@ export default function PricingSection() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ duration: 0.2, ease: EASE }}
-                  aria-label={`Choisir le pack ${pkg.name} — ${pkg.price} FCFA`}
+                  aria-label={`Choisir le pack ${pkg.name} — ${formatFcfa(pkg.priceXaf)} FCFA`}
                   style={{
                     width: '100%',
                     padding: '16px',

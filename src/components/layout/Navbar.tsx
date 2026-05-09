@@ -1,19 +1,22 @@
 'use client';
 
+import { ChatBadgeIcon } from '@/components/chat/ChatBadgeIcon';
 import CreditsWidget from '@/components/layout/CreditsWidget';
+import { CurrencySelector } from '@/components/layout/CurrencySelector';
 import NavDesktopMenu from '@/components/layout/NavDesktopMenu';
 import NavDrawer from '@/components/layout/NavDrawer';
 import NavLogoutDialog from '@/components/layout/NavLogoutDialog';
+import { Button } from '@/components/ui/Button';
+import { Typography } from '@/components/ui/Typography';
+import { useIsStandalone } from '@/hooks/useIsStandalone';
+import { useNavbarState } from '@/hooks/useNavbarState';
 import {
   khNavbarSpacerMinHeightMd,
   khNavbarSpacerMinHeightXs,
   khSafeAreaTopSx,
 } from '@/lib/safe-area-insets';
-import { useIsStandalone } from '@/hooks/useIsStandalone';
-import { useNavbarState } from '@/hooks/useNavbarState';
 import { useAuth } from '@/providers/AuthProvider';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import { ChatBadgeIcon } from '@/components/chat/ChatBadgeIcon';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
@@ -30,8 +33,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Button } from '@/components/ui/Button';
-import { Typography } from '@/components/ui/Typography';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -302,6 +303,9 @@ export default function Navbar() {
               gap: { xs: 0.5, md: 1 },
             }}
           >
+            {/* Currency selector — desktop only; mobile uses the drawer.
+                Visible to authenticated and anonymous visitors alike. */}
+            {!isMobile && <CurrencySelector variant="desktop" />}
             {isAuthenticated ? (
               <>
                 {(user?.role === 'agent' || user?.role === 'admin') &&

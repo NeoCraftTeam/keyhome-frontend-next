@@ -2,6 +2,7 @@ import api from '@/lib/api';
 import {
   Ad,
   AutocompleteResult,
+  CursorPaginatedResponse,
   FacetsResponse,
   NearbyParams,
   PaginatedResponse,
@@ -44,6 +45,25 @@ export const adsService = {
     exclude_ids?: string[];
   }): Promise<PaginatedResponse<Ad>> {
     const { data } = await api.get('/ads', { params });
+    return data;
+  },
+
+  /**
+   * Cursor-paginated public feed (`GET /ads/feed`) for infinite scroll
+   * (home page — no total count).
+   */
+  async feed(params?: {
+    cursor?: string | null;
+    per_page?: number;
+    type?: string;
+    exclude_ids?: string[];
+  }): Promise<CursorPaginatedResponse<Ad>> {
+    const { data } = await api.get<CursorPaginatedResponse<Ad>>('/ads/feed', {
+      params: {
+        ...params,
+        cursor: params?.cursor ?? undefined,
+      },
+    });
     return data;
   },
 

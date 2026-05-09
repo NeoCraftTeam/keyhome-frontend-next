@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import RetryButton from './RetryButton';
 
 export const dynamic = 'force-static';
 
@@ -22,21 +21,26 @@ export default function OfflinePage() {
       }}
     >
       <div style={{ textAlign: 'center', maxWidth: 420 }}>
-        {/* Offline illustration */}
         <div
           style={{
-            width: 80,
-            height: 80,
+            width: 88,
+            height: 88,
             margin: '0 auto 1.5rem',
             borderRadius: '50%',
             background: 'rgba(246,71,95,0.12)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 36,
           }}
         >
-          📡
+          {/* eslint-disable-next-line @next/next/no-img-element -- local /public asset; must work without optimizer when offline */}
+          <img
+            src="/icons/icon-512x512.png"
+            alt="KeyHome"
+            width={52}
+            height={52}
+            style={{ display: 'block', borderRadius: 12 }}
+          />
         </div>
 
         <h1
@@ -58,11 +62,37 @@ export default function OfflinePage() {
             margin: '0 0 2rem',
           }}
         >
-          Impossible de charger cette page. Vérifiez votre connexion internet
-          puis réessayez.
+          Cette page n&apos;a pas pu être chargée. Vérifiez votre connexion
+          internet, puis utilisez « Réessayer » pour relancer le chargement.
         </p>
 
-        <RetryButton />
+        {/* GET submit = full navigation to current URL. Works when client bundles fail offline. */}
+        <form method="get" style={{ display: 'inline' }}>
+          <button
+            type="submit"
+            style={{
+              background: 'linear-gradient(135deg, #F6475F 0%, #E11D48 100%)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 12,
+              padding: '14px 32px',
+              fontSize: '1rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Réessayer
+          </button>
+        </form>
+
+        <p style={{ margin: '1.25rem 0 0', fontSize: '0.9rem' }}>
+          <a
+            href="/home"
+            style={{ color: 'rgba(246,71,95,0.95)', fontWeight: 600 }}
+          >
+            Aller à l&apos;accueil
+          </a>
+        </p>
       </div>
     </div>
   );

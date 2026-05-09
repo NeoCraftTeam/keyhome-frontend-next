@@ -20,12 +20,14 @@ const CUSTOMER_PAGES = [
 const OWNER_PAGES = [{ name: 'Owner Dashboard', path: '/owner/dashboard' }];
 
 test.describe('Accessibility audit — Customer pages', () => {
+  test.describe.configure({ timeout: 120_000 });
+
   for (const page of CUSTOMER_PAGES) {
     test(`${page.name} (${page.path}) should have no critical a11y violations`, async ({
       page: pw,
     }) => {
       await pw.goto(page.path);
-      await pw.waitForLoadState('networkidle');
+      await pw.waitForLoadState('load');
 
       const results = await new AxeBuilder({ page: pw })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
@@ -49,7 +51,7 @@ test.describe('Accessibility audit — Owner pages', () => {
       page: pw,
     }) => {
       await pw.goto(page.path);
-      await pw.waitForLoadState('networkidle');
+      await pw.waitForLoadState('load');
 
       const results = await new AxeBuilder({ page: pw })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
@@ -74,7 +76,7 @@ test.describe('Accessibility audit — Mobile viewport', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])

@@ -10,6 +10,7 @@ import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { OWNER_LOGIN_HERO_SRC, OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
+import { setRoleCookie } from '@/lib/auth-session';
 import { useAuth } from '@/providers/AuthProvider';
 import { AxiosError } from 'axios';
 import EmailIcon from '@mui/icons-material/Email';
@@ -44,6 +45,7 @@ export default function OwnerLoginPage() {
       user &&
       (user.role === UserRole.AGENT || user.role === UserRole.ADMIN)
     ) {
+      setRoleCookie(user.role);
       const redirect =
         sessionStorage.getItem('kh_owner_redirect') || '/owner/dashboard';
       sessionStorage.removeItem('kh_owner_redirect');

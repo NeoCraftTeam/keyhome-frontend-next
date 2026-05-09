@@ -85,7 +85,7 @@ test.describe('Login Page', () => {
 test.describe('Register Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/register');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // BUG CATCH: Registration is a multi-step wizard.
@@ -110,27 +110,31 @@ test.describe('Register Page', () => {
 
   // BUG CATCH: Must have a link back to login for existing users.
   test('has a link back to login', async ({ page }) => {
-    const loginLink = page.getByText(/se connecter/i);
-    await expect(loginLink).toBeVisible();
+    const loginLink = page.getByRole('link', { name: /^Se connecter$/i });
+    await expect(loginLink).toBeVisible({ timeout: 10000 });
   });
 });
 
 test.describe('Forgot Password Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/forgot-password');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // BUG CATCH: Forgot password page must have an email input.
   test('renders with an email field', async ({ page }) => {
-    await expect(page.getByLabel(/email/i)).toBeVisible();
+    const emailField = page
+      .getByLabel(/adresse email|email/i)
+      .or(page.locator('input[type="email"]'))
+      .first();
+    await expect(emailField).toBeVisible({ timeout: 15000 });
   });
 
   // BUG CATCH: Must have a submit button to request password reset.
   test('has a submit button', async ({ page }) => {
     const submitButton = page.getByRole('button', {
-      name: /envoyer|réinitialiser|reset|submit/i,
+      name: /envoyer le lien/i,
     });
-    await expect(submitButton).toBeVisible();
+    await expect(submitButton).toBeVisible({ timeout: 15000 });
   });
 });

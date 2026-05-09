@@ -1,34 +1,37 @@
 'use client';
 
-import { formatPrice } from '@/lib/constants';
+import { Price } from '@/components/ui/Price';
+import { brandAgent } from '@/theme/tokens';
 import { Ad } from '@/types';
 import EditIcon from '@mui/icons-material/Edit';
-import VisibleIcon from '@mui/icons-material/Visibility';
-import HiddenIcon from '@mui/icons-material/VisibilityOff';
+import QrCode2Icon from '@mui/icons-material/QrCode2';
 import BoostIcon from '@mui/icons-material/RocketLaunch';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import VisibleIcon from '@mui/icons-material/Visibility';
+import HiddenIcon from '@mui/icons-material/VisibilityOff';
 import {
   Box,
+  Button,
   Chip,
   IconButton,
-  Typography,
   Tooltip,
-  Button,
+  Typography,
 } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { brandAgent } from '@/theme/tokens';
 
 interface OwnerAdCardProps {
   ad: Ad;
   onToggleVisibility?: (ad: Ad) => void;
   isToggling?: boolean;
+  onShowQrCode?: (ad: Ad) => void;
 }
 
 export default function OwnerAdCard({
   ad,
   onToggleVisibility,
   isToggling,
+  onShowQrCode,
 }: OwnerAdCardProps) {
   const router = useRouter();
   const image = ad.images?.[0];
@@ -158,6 +161,27 @@ export default function OwnerAdCard({
           >
             <EditIcon fontSize="small" />
           </IconButton>
+          {onShowQrCode && (
+            <Tooltip title="QR code & pancarte">
+              <IconButton
+                size="small"
+                aria-label="QR code et pancarte"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShowQrCode(ad);
+                }}
+                sx={{
+                  bgcolor: (t) =>
+                    t.palette.mode === 'dark'
+                      ? 'rgba(19,19,26,0.9)'
+                      : 'rgba(255,255,255,0.9)',
+                  '&:hover': { bgcolor: 'background.paper' },
+                }}
+              >
+                <QrCode2Icon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       </Box>
       <Box sx={{ p: 2 }}>
@@ -201,8 +225,8 @@ export default function OwnerAdCard({
           ch.
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography fontWeight={700} color="primary.main">
-            {ad.price != null ? formatPrice(ad.price) : '—'}
+          <Typography fontWeight={700} color="primary.main" component="div">
+            {ad.price != null ? <Price amountXAF={ad.price} /> : '—'}
           </Typography>
           {ad.reviews_count != null && ad.reviews_count > 0 && (
             <Typography variant="caption" color="text.secondary">

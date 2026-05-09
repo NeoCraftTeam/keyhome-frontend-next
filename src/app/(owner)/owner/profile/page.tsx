@@ -28,8 +28,8 @@ import {
   CheckCircleOutline as CheckCircleOutlineIcon,
   Edit as EditIcon,
   Lock as LockIcon,
-  PictureAsPdf,
   PhotoCamera,
+  QrCode2 as QrCodeIcon,
   ReceiptLong as ReceiptLongIcon,
   Save as SaveIcon,
   Visibility,
@@ -50,7 +50,6 @@ import {
   InputAdornment,
   Paper,
   Snackbar,
-  Stack,
   Tab,
   Tabs,
   TextField,
@@ -391,40 +390,18 @@ export default function OwnerProfilePage() {
                 {user.email}
               </Typography>
             </Box>
-            <Stack
-              direction="row"
-              spacing={1}
-              useFlexGap
-              flexWrap="wrap"
-              sx={{
-                width: { xs: '100%', sm: 'auto' },
-                ml: { xs: 0, sm: 'auto' },
-                justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-              }}
-            >
-              {!isEditing && (
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<EditIcon />}
-                  onClick={enterEditMode}
-                  sx={{ textTransform: 'none', fontWeight: 600 }}
-                  size="medium"
-                >
-                  Modifier
-                </Button>
-              )}
+            {!isEditing && (
               <Button
                 variant="outlined"
                 color="primary"
-                startIcon={<PictureAsPdf />}
-                onClick={() => setProfileQrOpen(true)}
+                startIcon={<EditIcon />}
+                onClick={enterEditMode}
                 sx={{ textTransform: 'none', fontWeight: 600 }}
                 size="medium"
               >
-                Carte de visite
+                Modifier
               </Button>
-            </Stack>
+            )}
           </Box>
         </Paper>
       </FadeIn>
@@ -682,6 +659,33 @@ export default function OwnerProfilePage() {
           )}
         </Grid>
 
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            mb: 3,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+            QR code & carte de visite
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Partagez votre profil public : lien tracké, PNG et PDF prêts à
+            imprimer.
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<QrCodeIcon />}
+            onClick={() => setProfileQrOpen(true)}
+            sx={primaryButtonSx}
+          >
+            Ouvrir
+          </Button>
+        </Paper>
+
         {isEditing && (
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <Button
@@ -873,13 +877,12 @@ export default function OwnerProfilePage() {
             Zone de danger
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            La suppression de votre compte est définitive. Vos annonces,
-            abonnement agence, crédits, messages et données de compte bailleur
-            seront concernés (voir la politique de confidentialité).
+            La suppression de votre compte est définitive. Toutes vos annonces,
+            favoris et données seront supprimés.
           </Typography>
           <Button
             variant="outlined"
-            color="primary"
+            color="error"
             onClick={() => setShowDeleteModal(true)}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
@@ -890,7 +893,6 @@ export default function OwnerProfilePage() {
         <DeleteAccountModal
           open={showDeleteModal}
           onClose={() => setShowDeleteModal(false)}
-          variant="owner"
         />
       </TabPanel>
 

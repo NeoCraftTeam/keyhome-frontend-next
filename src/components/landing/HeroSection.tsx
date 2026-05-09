@@ -1,8 +1,12 @@
 'use client';
 
-import api from '@/lib/api';
-import { buildNlpParams } from '@/lib/nlp-search';
 import { useCountUp } from '@/hooks/useCountUp';
+import { useLandingStats, type LandingStat } from '@/hooks/useLandingStats';
+import api from '@/lib/api';
+import { BRAND_TAGLINE } from '@/lib/brand';
+import { buildNlpParams } from '@/lib/nlp-search';
+import { useCurrency } from '@/providers/CurrencyProvider';
+import { brand, gradient, semantic } from '@/theme/tokens';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import Search from '@mui/icons-material/Search';
 import { motion } from 'framer-motion';
@@ -11,9 +15,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
-import { useLandingStats, type LandingStat } from '@/hooks/useLandingStats';
-import { BRAND_TAGLINE } from '@/lib/brand';
-import { brand, gradient, semantic } from '@/theme/tokens';
 
 const HeroVideoBackground = dynamic(() => import('./HeroVideoBackground'), {
   ssr: false,
@@ -112,6 +113,7 @@ export default function HeroSection() {
   const { isDark, text, textSub, textMuted, bg } = useLandingTheme();
   const router = useRouter();
   const { stats, isLoading: statsLoading } = useLandingStats();
+  const { currency } = useCurrency();
   const [, startTransition] = useTransition();
 
   // Skip heavy Three.js canvas on mobile for better LCP / performance
@@ -177,7 +179,10 @@ export default function HeroSection() {
       setError(null);
 
       try {
-        const res = await api.post('/search/parse', { q: searchQuery });
+        const res = await api.post('/search/parse', {
+          q: searchQuery,
+          display_currency: currency,
+        });
         const params = buildNlpParams(res.data);
         startTransition(() => router.push(`/search?${params.toString()}`));
       } catch {
@@ -186,7 +191,7 @@ export default function HeroSection() {
         setIsSearching(false);
       }
     },
-    [query, router, startTransition]
+    [query, router, startTransition, currency]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

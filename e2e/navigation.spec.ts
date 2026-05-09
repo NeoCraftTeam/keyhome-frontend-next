@@ -31,13 +31,15 @@ test.describe('Navigation', () => {
 
   // BUG CATCH: /home requires authentication. Unauthenticated users should
   // see a redirect or at least not see a 500 error.
-  test('/home does not show a server error for unauthenticated users', async ({ page }) => {
+  test('/home does not show a server error for unauthenticated users', async ({
+    page,
+  }) => {
     // /home redirects unauthenticated users to /login via client-side router.replace.
     // Use waitUntil:'commit' to capture the initial response before the redirect fires.
     const response = await page.goto('/home', { waitUntil: 'commit' });
     // Should not be a server error
     expect(response?.status()).toBeLessThan(500);
-    
+
     await page.waitForTimeout(2000);
     const body = await page.textContent('body');
     expect(body).not.toContain('Internal Server Error');
@@ -63,7 +65,7 @@ test.describe('SEO', () => {
   // BUG CATCH: Missing meta description hurts search ranking.
   test('landing page has a meta description', async ({ page }) => {
     await page.goto('/');
-    const metaDesc = page.locator('meta[name="description"]');
+    const metaDesc = page.locator('meta[name="description"]').first();
     const content = await metaDesc.getAttribute('content');
     expect(content).toBeTruthy();
     expect(content!.length).toBeGreaterThan(10);

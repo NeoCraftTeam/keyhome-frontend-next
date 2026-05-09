@@ -1,10 +1,10 @@
 'use client';
 
-import { estimatorService } from '@/services/estimator.service';
-import { adTypesService, citiesService } from '@/services/cities.service';
+import { Price } from '@/components/ui/Price';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
-import { formatPrice } from '@/lib/constants';
-import { City, AdType } from '@/types';
+import { adTypesService, citiesService } from '@/services/cities.service';
+import { estimatorService } from '@/services/estimator.service';
+import { AdType, City } from '@/types';
 import Calculate from '@mui/icons-material/Calculate';
 import TrendingDown from '@mui/icons-material/TrendingDown';
 import TrendingFlat from '@mui/icons-material/TrendingFlat';
@@ -277,7 +277,7 @@ export default function RentEstimatorWidget() {
                     fontSize={13}
                     mt={{ xs: 0, sm: 0.5 }}
                   >
-                    {formatPrice(value)}
+                    <Price amountXAF={value} />
                   </Typography>
                   <Typography
                     variant="caption"

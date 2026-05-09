@@ -1,9 +1,9 @@
 'use client';
 
 import AdCard from '@/components/ads/AdCard';
-import ClientProfileBanner from '@/components/dashboard/ClientProfileBanner';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import HeroSearch from '@/components/ads/HeroSearch';
+import ClientProfileBanner from '@/components/dashboard/ClientProfileBanner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import FadeIn from '@/components/ui/FadeIn';
 import QueryError from '@/components/ui/QueryError';
@@ -30,17 +30,17 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Container,
   Dialog,
   DialogContent,
   Divider,
   Grid,
-  Pagination,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
@@ -83,7 +83,6 @@ const CATEGORIES = [
 
 export default function HomePage() {
   const prefersReducedMotion = useReducedMotion();
-  const [page, setPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState('');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -198,28 +197,37 @@ export default function HomePage() {
     [recommendationsData]
   );
 
+  // Cursor-based infinite scroll backed by `GET /api/v1/ads/feed`.
+  // Replaces the previous offset pagination — no `COUNT(*)`, no `OFFSET N`,
+  // scales linearly regardless of catalogue size.
   const {
     data: adsData,
     isLoading,
     isFetching,
+    isFetchingNextPage,
     isError,
     refetch,
-  } = useQuery({
-    queryKey: ['ads', page, selectedCategory, recommendedIds],
-    queryFn: () =>
-      adsService.list({
-        page,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['ads-feed', selectedCategory, recommendedIds],
+    queryFn: ({ pageParam }) =>
+      adsService.feed({
+        cursor: pageParam ?? undefined,
         per_page: 20,
         type: selectedCategory || undefined,
         exclude_ids: recommendedIds.length > 0 ? recommendedIds : undefined,
       }),
-    placeholderData: keepPreviousData,
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.meta.next_cursor,
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  const ads = adsData?.data || [];
-  const totalPages = adsData?.meta?.last_page || 1;
+  const ads = useMemo(
+    () => adsData?.pages.flatMap((p) => p.data) ?? [],
+    [adsData]
+  );
   const skeletonCount = isMobile ? 4 : 12;
   const showShimmer =
     isLoading || (isFetching && ads.length === 0) || isPending;
@@ -228,18 +236,28 @@ export default function HomePage() {
     (val: string) => {
       startTransition(() => {
         setSelectedCategory(val);
-        setPage(1);
       });
     },
     [startTransition]
   );
 
-  const handlePageChange = useCallback((_: unknown, val: number) => {
-    setPage(val);
-    if (gridRef.current) {
-      gridRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, []);
+  // IntersectionObserver-driven auto-load. Fires `fetchNextPage()` when the
+  // sentinel enters the viewport (with a 300px buffer for smooth UX).
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !hasNextPage || isFetchingNextPage) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <Box sx={{ pb: { xs: 12, sm: 6 } }}>
@@ -589,24 +607,32 @@ export default function HomePage() {
                 />
               )}
 
-              {totalPages > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                  <Pagination
-                    count={totalPages}
-                    page={page}
-                    onChange={handlePageChange}
-                    shape="rounded"
-                    size={isMobile ? 'small' : 'medium'}
-                    siblingCount={isMobile ? 0 : 1}
-                    aria-label="Pagination des annonces"
-                    sx={{
-                      '& .MuiPaginationItem-root.Mui-selected': {
-                        bgcolor: 'primary.main',
-                        color: '#fff',
-                        '&:hover': { bgcolor: 'primary.dark' },
-                      },
-                    }}
-                  />
+              {(hasNextPage || isFetchingNextPage) && ads.length > 0 && (
+                <Box
+                  ref={sentinelRef}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    mt: 4,
+                    py: 3,
+                    minHeight: 64,
+                  }}
+                >
+                  {isFetchingNextPage ? (
+                    <CircularProgress
+                      size={28}
+                      aria-label="Chargement de plus d'annonces"
+                    />
+                  ) : (
+                    <Button
+                      variant="outlined"
+                      onClick={() => void fetchNextPage()}
+                      sx={{ textTransform: 'none', fontWeight: 600 }}
+                    >
+                      Charger plus d&apos;annonces
+                    </Button>
+                  )}
                 </Box>
               )}
             </FadeIn>
@@ -861,24 +887,32 @@ export default function HomePage() {
                 />
               )}
 
-              {totalPages > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                  <Pagination
-                    count={totalPages}
-                    page={page}
-                    onChange={handlePageChange}
-                    shape="rounded"
-                    size={isMobile ? 'small' : 'medium'}
-                    siblingCount={isMobile ? 0 : 1}
-                    aria-label="Pagination des annonces"
-                    sx={{
-                      '& .MuiPaginationItem-root.Mui-selected': {
-                        bgcolor: 'primary.main',
-                        color: '#fff',
-                        '&:hover': { bgcolor: 'primary.dark' },
-                      },
-                    }}
-                  />
+              {(hasNextPage || isFetchingNextPage) && ads.length > 0 && (
+                <Box
+                  ref={sentinelRef}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    mt: 4,
+                    py: 3,
+                    minHeight: 64,
+                  }}
+                >
+                  {isFetchingNextPage ? (
+                    <CircularProgress
+                      size={28}
+                      aria-label="Chargement de plus d'annonces"
+                    />
+                  ) : (
+                    <Button
+                      variant="outlined"
+                      onClick={() => void fetchNextPage()}
+                      sx={{ textTransform: 'none', fontWeight: 600 }}
+                    >
+                      Charger plus d&apos;annonces
+                    </Button>
+                  )}
                 </Box>
               )}
             </FadeIn>

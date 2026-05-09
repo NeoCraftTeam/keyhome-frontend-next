@@ -1,11 +1,9 @@
 'use client';
 
-import { formatPrice } from '@/lib/constants';
+import { Price } from '@/components/ui/Price';
 import { getAttributeLabel } from '@/lib/attribute-labels';
 import { getComparatorAttributeSlugsForAds } from '@/lib/comparator-attributes';
 import { Ad } from '@/types';
-import { format, isValid, parseISO } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import Bathtub from '@mui/icons-material/Bathtub';
 import Bed from '@mui/icons-material/Bed';
 import Check from '@mui/icons-material/Check';
@@ -21,14 +19,21 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { format, isValid, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 
 const CRITERIA = [
   {
     label: 'Prix / mois',
     render: (ad: Ad) => (
-      <Typography fontWeight={800} fontSize={15} color="primary.main">
-        {ad.price ? formatPrice(ad.price) : '—'}
+      <Typography
+        fontWeight={800}
+        fontSize={15}
+        color="primary.main"
+        component="div"
+      >
+        {ad.price ? <Price amountXAF={ad.price} /> : '—'}
       </Typography>
     ),
   },

@@ -4,12 +4,17 @@ import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import SearchAlertButton from '@/components/ads/SearchAlertButton';
 import AppLoader from '@/components/ui/AppLoader';
-import dynamic from 'next/dynamic';
 import { useAuth } from '@/providers/AuthProvider';
+import dynamic from 'next/dynamic';
 
+import { useSearchFilters } from '@/hooks/useSearchFilters';
+import { useSearchHistory } from '@/hooks/useSearchHistory';
+import { useSearchResults } from '@/hooks/useSearchResults';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
-import { DEFAULT_CENTER, formatPrice, MAPBOX_TOKEN } from '@/lib/constants';
+import { DEFAULT_CENTER, MAPBOX_TOKEN } from '@/lib/constants';
 import { escapeHtml } from '@/lib/sanitize';
+import { formatVisitorPrice } from '@/providers/CurrencyProvider';
+import { gradient } from '@/theme/tokens';
 import CloseIcon from '@mui/icons-material/Close';
 import HistoryIcon from '@mui/icons-material/History';
 import ListIcon from '@mui/icons-material/List';
@@ -21,9 +26,6 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import ViewInArIcon from '@mui/icons-material/ViewInAr';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
-import { useSearchHistory } from '@/hooks/useSearchHistory';
-import { useSearchFilters } from '@/hooks/useSearchFilters';
-import { useSearchResults } from '@/hooks/useSearchResults';
 import {
   Autocomplete,
   Box,
@@ -48,12 +50,11 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import type * as MapboxGL from 'mapbox-gl';
 import { motion, MotionConfig } from 'framer-motion';
+import type * as MapboxGL from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { useRouter } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { gradient } from '@/theme/tokens';
 
 /**
  * Mapbox GL is lazy-loaded the first time the user actually needs the map.
@@ -494,7 +495,7 @@ function SearchContent() {
               <div style="width:100%;height:140px;overflow:hidden;background:#f1f5f9;position:relative;">
                 <img src="${escapeHtml(props.thumb)}" alt="${escapeHtml(props.title)}" class="kh-map-popup-img" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" />
                 <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.45) 0%,transparent 100%);height:48px;"></div>
-                <div style="position:absolute;bottom:8px;left:10px;font-size:13px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.5);">${formatPrice(props.price)}</div>
+                <div style="position:absolute;bottom:8px;left:10px;font-size:13px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.5);">${formatVisitorPrice(props.price)}</div>
               </div>
               <div style="padding:8px 10px 10px;">
                 <div style="font-size:12px;font-weight:700;color:#0f172a;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:2px;">${escapeHtml(props.title)}</div>

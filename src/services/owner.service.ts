@@ -9,9 +9,25 @@ async function publicFetch<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   });
   if (!res.ok) {
-    throw new Error(`${res.status} ${res.statusText}`);
+    let message = `${res.status} ${res.statusText}`;
+    try {
+      const body = (await res.json()) as { message?: string };
+      if (body.message) {
+        message = body.message;
+      }
+    } catch {
+      /* ignore non-JSON */
+    }
+    throw new Error(message);
   }
-  return res.json() as Promise<T>;
+  if (res.status === 204) {
+    return undefined as T;
+  }
+  const text = await res.text();
+  if (text === '') {
+    return undefined as T;
+  }
+  return JSON.parse(text) as T;
 }
 
 export interface AvailabilityPeriod {
@@ -280,6 +296,15 @@ export interface SignatureRequest {
   expires_at: string | null;
   created_at: string;
 }
+
+export interface PublicSignatureSecurity {
+  otp_required_for_sign_or_decline: boolean;
+}
+
+export type PublicSignatureShowResponse = {
+  security?: PublicSignatureSecurity;
+  request: SignatureRequest & { contract: LeaseContract };
+};
 
 export const ownerService = {
   async getAnalytics(
@@ -752,15 +777,16 @@ export const ownerService = {
     return data.data ?? data;
   },
 
-  async getPublicSignatureRequest(token: string): Promise<{
-    request: SignatureRequest & { contract: LeaseContract };
-    security?: { otp_required_for_sign_or_decline: boolean };
-  }> {
-    return publicFetch(`/signatures/${token}`);
+  async getPublicSignatureRequest(
+    token: string
+  ): Promise<PublicSignatureShowResponse> {
+    return publicFetch<PublicSignatureShowResponse>(`/signatures/${token}`);
   },
 
-  async sendSignatureOtp(token: string): Promise<void> {
-    await publicFetch(`/signatures/${token}/send-otp`, { method: 'POST' });
+  async sendSignatureOtp(token: string): Promise<{ message?: string }> {
+    return publicFetch<{ message?: string }>(`/signatures/${token}/send-otp`, {
+      method: 'POST',
+    });
   },
 
   async signSignatureRequest(token: string, otp: string): Promise<void> {
@@ -776,7 +802,10 @@ export const ownerService = {
   ): Promise<void> {
     await publicFetch(`/signatures/${token}/decline`, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        otp: payload.otp,
+        reason: payload.reason,
+      }),
     });
   },
 

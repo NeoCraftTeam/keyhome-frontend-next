@@ -1,9 +1,10 @@
 'use client';
 
-import api from '@/lib/api';
-import { buildNlpParams } from '@/lib/nlp-search';
 import { type ParsedSearchParams } from '@/components/search/ImageSearchButton';
 import VoiceSearchButton from '@/components/search/VoiceSearchButton';
+import api from '@/lib/api';
+import { buildNlpParams } from '@/lib/nlp-search';
+import { useCurrency } from '@/providers/CurrencyProvider';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import Search from '@mui/icons-material/Search';
 import {
@@ -16,9 +17,9 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { motion, useAnimation } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
-import { motion, useAnimation } from 'framer-motion';
 
 const EXAMPLES = [
   'Appartement 3 pièces à Bastos moins de 150 000 FCFA',
@@ -31,6 +32,7 @@ export default function NaturalSearchBar() {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { currency } = useCurrency();
   const [isMultiline, setIsMultiline] = useState(false);
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -82,7 +84,10 @@ export default function NaturalSearchBar() {
     setError(null);
 
     try {
-      const res = await api.post('/search/parse', { q: searchQuery });
+      const res = await api.post('/search/parse', {
+        q: searchQuery,
+        display_currency: currency,
+      });
       navigateFromParsed(res.data as ParsedSearchParams);
     } catch {
       setError('Impossible de traiter votre recherche. Réessayez.');

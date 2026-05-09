@@ -1,5 +1,6 @@
 'use client';
 
+import { CurrencySelector } from '@/components/layout/CurrencySelector';
 import { AUTH_DRAWER_QUICK_NAV, SIDEBAR_NAV_ITEMS } from '@/lib/nav-config';
 import {
   CLIENT_DRAWER_LIST_ICON_MIN_WIDTH_PX,
@@ -487,6 +488,18 @@ export default function NavDrawer({
           textAlign: 'center',
         }}
       >
+        {/* Currency selector — lets the visitor override the geo-detected
+            currency. Persisted in the `kh_currency` cookie for 30 days. */}
+        <Box sx={{ mb: 2 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: 'block', mb: 0.75, fontWeight: 600 }}
+          >
+            Devise
+          </Typography>
+          <CurrencySelector variant="drawer" />
+        </Box>
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 1 }}>
           {SOCIAL_LINKS.map((s) => (
             <Link

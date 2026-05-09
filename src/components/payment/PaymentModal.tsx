@@ -1,7 +1,9 @@
 'use client';
 
 import PaymentMethodSelector from '@/components/payment/PaymentMethodSelector';
+import { Price } from '@/components/ui/Price';
 import { usePayment } from '@/hooks/usePayment';
+import { brand } from '@/theme/tokens';
 import {
   FlutterwaveInitiatePayload,
   PaymentMethod,
@@ -24,7 +26,6 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
-import { brand } from '@/theme/tokens';
 
 type Step = 'select-method' | 'enter-phone' | 'loading' | 'done';
 
@@ -46,14 +47,6 @@ interface PaymentModalProps {
 
 /** Cameroon phone number: must start with 6, 7 or 2, 9 digits total */
 const PHONE_REGEX = /^(6|7|2)\d{8}$/;
-
-function formatAmount(amount: number): string {
-  return new Intl.NumberFormat('fr-CM', {
-    style: 'currency',
-    currency: 'XAF',
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
 
 function methodRequiresPhone(method: PaymentMethod | null): boolean {
   return (
@@ -246,9 +239,10 @@ export default function PaymentModal({
         <Typography
           variant="h5"
           fontWeight={900}
+          component="div"
           sx={{ color: brand.primary, letterSpacing: -1 }}
         >
-          {formatAmount(amount)}
+          <Price amountXAF={amount} primary="xaf" />
         </Typography>
       </Box>
 

@@ -36,7 +36,7 @@ test.describe('Payment Security — No Secret Key Exposure', () => {
     });
 
     await page.goto('/payment/callback?tx_ref=KH-SEC-001&status=successful');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const content = await page.content();
     for (const pattern of FORBIDDEN_PATTERNS) {
@@ -46,7 +46,7 @@ test.describe('Payment Security — No Secret Key Exposure', () => {
 
   test('no secrets in home page source', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const content = await page.content();
     for (const pattern of FORBIDDEN_PATTERNS) {
@@ -56,7 +56,7 @@ test.describe('Payment Security — No Secret Key Exposure', () => {
 
   test('no secrets in login page source', async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const content = await page.content();
     for (const pattern of FORBIDDEN_PATTERNS) {
@@ -94,7 +94,7 @@ test.describe('Payment Security — No Secret Key Exposure', () => {
     });
 
     await page.goto('/payment/callback?tx_ref=KH-NET-001&status=successful');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     for (const body of requestBodies) {
       for (const pattern of FORBIDDEN_PATTERNS) {
@@ -170,7 +170,7 @@ test.describe('Payment Security — No FedaPay References', () => {
     });
 
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Check that no JS bundle references FedaPay
     for (const js of jsContents) {

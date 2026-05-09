@@ -2,28 +2,79 @@ import { AxiosError } from 'axios';
 
 const DEFAULT_ERROR = 'Une erreur est survenue. Veuillez réessayer.';
 
+const NETWORK_TIMEOUT_FR =
+  'Impossible de contacter le serveur. Vérifiez votre connexion internet et réessayez.';
+
+const STATUS_MESSAGES: Record<number, string> = {
+  400: 'Requête invalide. Vérifiez les informations saisies et réessayez.',
+  401: 'Vous devez être connecté pour effectuer cette action.',
+  403: "Vous n'avez pas l'autorisation d'effectuer cette action.",
+  404: 'Ce service est temporairement indisponible. Veuillez réessayer plus tard.',
+  408: 'Le serveur a mis trop de temps à répondre. Veuillez réessayer.',
+  409: 'Cette action est en conflit avec une donnée existante.',
+  413: 'Le fichier ou la requête est trop volumineux.',
+  419: 'Votre session a expiré. Reconnectez-vous puis réessayez.',
+  422: 'Certaines informations sont invalides. Vérifiez le formulaire.',
+  423: 'Cette ressource est temporairement verrouillée.',
+  429: 'Trop de tentatives. Patientez quelques instants avant de réessayer.',
+  500: "Une erreur inattendue s'est produite. Notre équipe a été notifiée.",
+  502: 'Le serveur est momentanément injoignable. Réessayez dans un instant.',
+  503: 'Le service est temporairement indisponible. Réessayez plus tard.',
+  504: 'Le serveur met trop de temps à répondre. Réessayez dans un instant.',
+};
+
+/**
+ * Patterns that indicate a backend-internal message that must NEVER reach
+ * the end user (security: avoid endpoint enumeration, stack traces, etc.).
+ */
+const UNSAFE_PATTERNS: RegExp[] = [
+  /\bapi\/v\d/i,
+  /\broute\b/i,
+  /\bcontroller\b/i,
+  /\bnamespace\b/i,
+  /\bSQLSTATE\b/i,
+  /\bclass\s+[A-Z][\w\\]+/,
+  /\bcould not be found\b/i,
+  /\bnot found\b/i,
+  /\bundefined\s+(method|index|variable|property|offset)/i,
+  /\bcall to (a member|undefined)/i,
+  /\bnull on type\b/i,
+  /\bTrace:/i,
+  /\b(Exception|Error)\b.{0,60}\bin\s+\/?\w+/i,
+  /https?:\/\/\S+/i,
+  /\b(127\.0\.0\.1|localhost|0\.0\.0\.0)\b/i,
+  /\.env\b/i,
+  /\bphp\b/i,
+  /\bLaravel\b/i,
+  /\bMeilisearch\b/i,
+  /\bPostgres(?:ql)?\b/i,
+];
+
+export function isUnsafeBackendMessage(msg: string): boolean {
+  return UNSAFE_PATTERNS.some((re) => re.test(msg));
+}
+
 /**
  * Extract validation errors from a 422 response (Laravel format).
- * Returns all field errors joined, or null.
+ * Returns the first field error (translated by the backend), or null.
  */
 function getValidationErrors(
   error: AxiosError<{ message?: string; errors?: Record<string, string[]> }>
 ): string | null {
   const data = error.response?.data;
   const errors = data?.errors;
-  if (!errors) return data?.message || null;
+  if (!errors)
+    return data?.message && !isUnsafeBackendMessage(data.message)
+      ? data.message
+      : null;
 
-  const messages = Object.values(errors).flat();
+  const messages = Object.values(errors)
+    .flat()
+    .filter(
+      (m): m is string => typeof m === 'string' && !isUnsafeBackendMessage(m)
+    );
   return messages.length > 0 ? messages.join(' ') : null;
 }
-
-/**
- * Get the error message directly from the API response.
- * For 422 (validation), returns specific field errors from Laravel.
- * For all other codes, returns the response `message` field as-is.
- */
-const NETWORK_TIMEOUT_FR =
-  "Impossible de joindre le serveur (délai dépassé). Vérifiez que l'API Laravel tourne, que NEXT_PUBLIC_API_URL dans .env.local pointe vers la bonne adresse (ex. http://127.0.0.1:8000/api/v1 plutôt que localhost si la connexion reste bloquée), puis réessayez.";
 
 function isAxiosNetworkOrTimeout(error: unknown): boolean {
   if (!(error instanceof AxiosError) || error.response) {
@@ -41,6 +92,14 @@ function isAxiosNetworkOrTimeout(error: unknown): boolean {
   return msg.includes('timeout') || msg.includes('network error');
 }
 
+/**
+ * Returns a user-safe French error message.
+ *
+ * Security policy: NEVER expose backend internals (route paths, stack traces,
+ * server hostnames, env-var names, framework class names). Such messages are
+ * filtered out and replaced with a status-coded fallback so a malicious user
+ * cannot enumerate endpoints or fingerprint the stack.
+ */
 export function getSafeErrorMessage(
   error: unknown,
   fallback: string = DEFAULT_ERROR
@@ -50,9 +109,8 @@ export function getSafeErrorMessage(
   }
 
   if (!(error instanceof AxiosError) || !error.response) {
-    // Propagate plain Error messages (e.g. thrown by AuthProvider for role restrictions)
     if (error instanceof Error && error.message) {
-      return error.message;
+      return isUnsafeBackendMessage(error.message) ? fallback : error.message;
     }
     return fallback;
   }
@@ -62,7 +120,7 @@ export function getSafeErrorMessage(
     | { message?: string; errors?: Record<string, string[]> }
     | undefined;
 
-  // For validation errors, return specific field errors from Laravel
+  // Validation errors: surface field-level messages (already translated by backend).
   if (status === 422) {
     const validationMsg = getValidationErrors(
       error as AxiosError<{
@@ -73,10 +131,10 @@ export function getSafeErrorMessage(
     if (validationMsg) return validationMsg;
   }
 
-  // Return the message from the API response directly
-  if (data?.message) {
+  // Trust backend `message` only if it's already user-facing French copy.
+  if (data?.message && !isUnsafeBackendMessage(data.message)) {
     return data.message;
   }
 
-  return fallback;
+  return STATUS_MESSAGES[status] ?? fallback;
 }

@@ -167,7 +167,12 @@ export default function SearchAlertButton({
                 </Typography>
               </Box>
 
-              {prefill.city_name && (
+              {(prefill.city_name ||
+                prefill.type_name ||
+                prefill.price_min ||
+                prefill.price_max ||
+                prefill.surface_min ||
+                prefill.bedrooms_min) && (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                   {prefill.city_name && (
                     <Chip
@@ -185,9 +190,25 @@ export default function SearchAlertButton({
                       variant="outlined"
                     />
                   )}
-                  {prefill.price_max && (
+                  {Boolean(prefill.price_min) && (
                     <Chip
-                      label={`Max : ${prefill.price_max.toLocaleString('fr-FR')} FCFA`}
+                      label={`Min : ${prefill.price_min!.toLocaleString('fr-FR')} FCFA`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                  {Boolean(prefill.price_max) && (
+                    <Chip
+                      label={`Max : ${prefill.price_max!.toLocaleString('fr-FR')} FCFA`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                  {Boolean(prefill.surface_min) && (
+                    <Chip
+                      label={`Surface ≥ ${prefill.surface_min} m²`}
                       size="small"
                       color="primary"
                       variant="outlined"

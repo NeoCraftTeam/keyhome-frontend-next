@@ -350,6 +350,23 @@ export interface PaginatedResponse<T> {
   };
 }
 
+/** Laravel cursor paginator (`cursorPaginate`) — home feed, infinite scroll. */
+export interface CursorPaginatedResponse<T> {
+  data: T[];
+  meta: {
+    path: string;
+    per_page: number;
+    next_cursor: string | null;
+    prev_cursor?: string | null;
+  };
+  links?: {
+    first: string | null;
+    last: string | null;
+    prev: string | null;
+    next: string | null;
+  };
+}
+
 export interface AuthResponse {
   user: User;
   token: string;

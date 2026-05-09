@@ -1,13 +1,12 @@
 'use client';
 
-import { formatPrice } from '@/lib/constants';
-import { useComparator } from '@/providers/ComparatorProvider';
+import { Price } from '@/components/ui/Price';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { useComparator } from '@/providers/ComparatorProvider';
 import { Ad } from '@/types';
 import AccessTime from '@mui/icons-material/AccessTime';
 import Add from '@mui/icons-material/Add';
 import Close from '@mui/icons-material/Close';
-import { alpha } from '@mui/material/styles';
 import {
   Box,
   Button,
@@ -17,6 +16,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 
 interface CompareDrawerProps {
   currentAd: Ad;
@@ -172,8 +172,9 @@ export default function CompareDrawer({
                         variant="caption"
                         fontWeight={700}
                         color="primary.main"
+                        component="div"
                       >
-                        {formatPrice(ad.price)}
+                        <Price amountXAF={ad.price} />
                       </Typography>
                     </Box>
                     <Button

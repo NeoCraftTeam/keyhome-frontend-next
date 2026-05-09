@@ -1,5 +1,7 @@
 'use client';
 
+import { Price } from '@/components/ui/Price';
+import { neutral } from '@/theme/tokens';
 import type { PointPackage } from '@/types';
 import ArrowForward from '@mui/icons-material/ArrowForward';
 import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
@@ -14,7 +16,6 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { neutral } from '@/theme/tokens';
 
 export default function PackageCard({
   pkg,
@@ -325,18 +326,11 @@ export default function PackageCard({
           <Box>
             <Typography
               variant="h6"
+              component="div"
               fontWeight={900}
               sx={{ color: neutral.white, letterSpacing: -0.5, lineHeight: 1 }}
             >
-              {pkg.price.toLocaleString('fr-FR')}
-              <Typography
-                component="span"
-                variant="caption"
-                fontWeight={700}
-                sx={{ ml: 0.4, color: 'rgba(255,255,255,0.6)' }}
-              >
-                FCFA
-              </Typography>
+              <Price amountXAF={pkg.price} showOriginal />
             </Typography>
             <Typography
               variant="caption"

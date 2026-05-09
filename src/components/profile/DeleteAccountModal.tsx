@@ -1,7 +1,6 @@
 'use client';
 
 import { getSafeErrorMessage } from '@/lib/error-messages';
-import { brand, brandAgent } from '@/theme/tokens';
 import { useAuth } from '@/providers/AuthProvider';
 import { usersService } from '@/services/users.service';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
@@ -18,18 +17,15 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
 
 const CONFIRMATION_PHRASE = 'SUPPRIMER MON COMPTE';
 
-export type DeleteAccountModalVariant = 'client' | 'owner';
-
 interface Props {
   open: boolean;
   onClose: () => void;
-  /** Client = particulier (crédits, favoris…). Owner = bailleur/agence (abonnement, annonces…). */
-  variant?: DeleteAccountModalVariant;
+  /** Panel theme: owner uses teal accents; default client stays crimson/error. */
+  variant?: 'client' | 'owner';
 }
 
 export default function DeleteAccountModal({
@@ -37,7 +33,6 @@ export default function DeleteAccountModal({
   onClose,
   variant = 'client',
 }: Props) {
-  const theme = useTheme();
   const { logout } = useAuth();
   const [input, setInput] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
@@ -53,7 +48,8 @@ export default function DeleteAccountModal({
     try {
       await usersService.deleteAccount(CONFIRMATION_PHRASE);
 
-      await logout(isOwner ? '/owner/login' : '/home');
+      // Wipe session fully then redirect to public home
+      await logout('/home');
     } catch (err) {
       setError(
         getSafeErrorMessage(
@@ -73,27 +69,17 @@ export default function DeleteAccountModal({
   };
 
   const isOwner = variant === 'owner';
-  const accentColor = isOwner ? brandAgent.primary : theme.palette.primary.main;
-  const paperBg = isOwner ? '#FFFFFF' : '#FFF5F5';
 
   return (
     <Dialog
       open={open}
       onClose={handleClose}
-      maxWidth="sm"
+      maxWidth="xs"
       fullWidth
-      slotProps={{
-        backdrop: { sx: { bgcolor: 'rgba(15, 23, 42, 0.5)' } },
-      }}
       PaperProps={{
         sx: {
           borderRadius: 3,
-          bgcolor: paperBg,
-          backgroundImage: 'none',
-          boxShadow: isOwner
-            ? `0 20px 50px rgba(15, 23, 42, 0.12), 0 0 0 1px ${brandAgent.primaryAlpha20}`
-            : undefined,
-          border: isOwner ? `1px solid ${brandAgent.primaryLight}` : undefined,
+          bgcolor: isOwner ? '#F0FDFA' : '#FFF5F5',
         },
       }}
     >
@@ -104,42 +90,23 @@ export default function DeleteAccountModal({
           gap: 1,
           fontWeight: 700,
           pb: 0,
-          color: isOwner ? brandAgent.primaryDark : undefined,
         }}
       >
-        <WarningAmberIcon
-          sx={{
-            color: isOwner ? brandAgent.primary : brand.primaryDark,
-          }}
-        />
+        <WarningAmberIcon color={isOwner ? 'primary' : 'error'} />
         Supprimer le compte
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 2, bgcolor: paperBg }}>
+      <DialogContent sx={{ pt: 2 }}>
         <Typography variant="body2" sx={{ mb: 1.5 }}>
-          La suppression de votre compte est <strong>irréversible</strong>. Vous
-          perdrez l&apos;accès à votre compte et vos données personnelles seront
-          traitées conformément à notre politique de confidentialité
-          (anonymisation, délais légaux).
+          Nous supprimerons immédiatement <strong>TOUTES les données</strong>{' '}
+          associées à votre compte. Vous ne pourrez pas récupérer vos données.
         </Typography>
 
-        {isOwner ? (
-          <Typography variant="body2" sx={{ mb: 1.5 }}>
-            Votre <strong>abonnement </strong> sera résilié immédiatement. Aucun
-            remboursement ni avoir ne sera accordé pour la période en cours. Vos{' '}
-            <strong>annonces</strong>, paiements en cours et données associées
-            au compte professionnel seront impactés.
-          </Typography>
-        ) : (
-          <Typography variant="body2" sx={{ mb: 1.5 }}>
-            Vos <strong>crédits</strong> seront{' '}
-            <strong>perdus sans remboursement</strong>. Seront également
-            supprimés ou anonymisés : favoris, annonces dont vous avez débloqué
-            le contact, historiques de recherche, alertes, messages,
-            réservations et le reste des données liées à votre compte
-            particulier.
-          </Typography>
-        )}
+        <Typography variant="body2" sx={{ mb: 1.5 }}>
+          Cela annulera immédiatement votre abonnement. Si vous êtes
+          actuellement sur un compte payant, vous ne recevrez pas de
+          remboursement.
+        </Typography>
 
         <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>
           Pour confirmer, tapez{' '}
@@ -147,7 +114,7 @@ export default function DeleteAccountModal({
             component="span"
             sx={{
               fontWeight: 800,
-              color: accentColor,
+              color: isOwner ? 'primary.main' : 'error.main',
               letterSpacing: 0.5,
             }}
           >
@@ -165,7 +132,7 @@ export default function DeleteAccountModal({
           onPaste={(e) => {
             e.preventDefault();
             const pasted = e.clipboardData.getData('text');
-            setInput((prev) => `${prev}${pasted.toLocaleLowerCase('fr-FR')}`);
+            setInput((prev) => prev + pasted.toLowerCase());
           }}
           onDrop={(e) => e.preventDefault()}
           disabled={isDeleting}
@@ -184,9 +151,7 @@ export default function DeleteAccountModal({
         )}
       </DialogContent>
 
-      <DialogActions
-        sx={{ px: 3, pb: 2.5, gap: 1, bgcolor: paperBg, flexWrap: 'wrap' }}
-      >
+      <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
         <Button
           onClick={handleClose}
           disabled={isDeleting}
@@ -199,7 +164,7 @@ export default function DeleteAccountModal({
           onClick={handleDelete}
           disabled={!isMatch || isDeleting}
           variant="contained"
-          color="error"
+          color={isOwner ? 'primary' : 'error'}
           startIcon={
             isDeleting ? (
               <CircularProgress size={16} color="inherit" />

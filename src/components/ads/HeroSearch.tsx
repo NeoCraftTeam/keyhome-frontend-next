@@ -1,10 +1,11 @@
 'use client';
 
-import api from '@/lib/api';
-import { buildNlpParams } from '@/lib/nlp-search';
 import { type ParsedSearchParams } from '@/components/search/ImageSearchButton';
 import VoiceSearchButton from '@/components/search/VoiceSearchButton';
+import api from '@/lib/api';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
+import { buildNlpParams } from '@/lib/nlp-search';
+import { useCurrency } from '@/providers/CurrencyProvider';
 import { City } from '@/types';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import LocationOn from '@mui/icons-material/LocationOn';
@@ -59,6 +60,7 @@ export default function HeroSearch({
   const [aiLoading, setAiLoading] = useState(false);
   const [aiFocused, setAiFocused] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const { currency } = useCurrency();
   const router = useRouter();
   const [, startTransition] = useTransition();
 
@@ -110,7 +112,10 @@ export default function HeroSearch({
     setAiLoading(true);
     setAiError(null);
     try {
-      const res = await api.post('/search/parse', { q: searchQuery });
+      const res = await api.post('/search/parse', {
+        q: searchQuery,
+        display_currency: currency,
+      });
       navigateFromParsed(res.data as ParsedSearchParams);
     } catch {
       startTransition(() => {

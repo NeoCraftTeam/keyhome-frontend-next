@@ -6,7 +6,7 @@ import { expect, test } from '@playwright/test';
  * These tests verify:
  *  1. The service worker registers and becomes active
  *  2. The app responds with a meaningful page when going offline (from cache)
- *  3. Uncached pages show the offline fallback  
+ *  3. Uncached pages show the offline fallback
  *  4. The manifest is linked and parseable
  *  5. Critical PWA meta tags are present
  */
@@ -16,11 +16,14 @@ import { expect, test } from '@playwright/test';
 const SW_ENABLED = !!process.env.PLAYWRIGHT_SW;
 
 test.describe('PWA — Service Worker', () => {
-  test.skip(!SW_ENABLED, 'Skipped: set PLAYWRIGHT_SW=1 to run service-worker tests against a production build');
+  test.skip(
+    !SW_ENABLED,
+    'Skipped: set PLAYWRIGHT_SW=1 to run service-worker tests against a production build'
+  );
 
   test('service worker registers and becomes active', async ({ page }) => {
     await page.goto('/home');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const swActive = await page.evaluate(async () => {
       const reg = await navigator.serviceWorker.ready;
@@ -32,7 +35,7 @@ test.describe('PWA — Service Worker', () => {
 
   test('service worker scope is root (/)', async ({ page }) => {
     await page.goto('/home');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const swScope = await page.evaluate(async () => {
       const reg = await navigator.serviceWorker.ready;
@@ -44,14 +47,18 @@ test.describe('PWA — Service Worker', () => {
 
   test('service worker controls the current page', async ({ page }) => {
     await page.goto('/home');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const isControlled = await page.evaluate(async () => {
       if (navigator.serviceWorker.controller) return true;
       await navigator.serviceWorker.ready;
       if (navigator.serviceWorker.controller) return true;
       await new Promise<void>((resolve) => {
-        navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true });
+        navigator.serviceWorker.addEventListener(
+          'controllerchange',
+          () => resolve(),
+          { once: true }
+        );
         setTimeout(resolve, 3000);
       });
       return !!navigator.serviceWorker.controller;
@@ -61,19 +68,26 @@ test.describe('PWA — Service Worker', () => {
 });
 
 test.describe('PWA — Offline Behaviour', () => {
-  test.skip(!SW_ENABLED, 'Skipped: set PLAYWRIGHT_SW=1 to run offline tests against a production build');
+  test.skip(
+    !SW_ENABLED,
+    'Skipped: set PLAYWRIGHT_SW=1 to run offline tests against a production build'
+  );
 
   test('cached /home page loads when offline', async ({ page, context }) => {
     // Warm the cache
     await page.goto('/home');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Wait for the SW to be controlling the page (skipWaiting + clients.claim)
     await page.evaluate(async () => {
       await navigator.serviceWorker.ready;
       if (!navigator.serviceWorker.controller) {
         await new Promise<void>((resolve) => {
-          navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true });
+          navigator.serviceWorker.addEventListener(
+            'controllerchange',
+            () => resolve(),
+            { once: true }
+          );
           setTimeout(resolve, 3000);
         });
       }
@@ -92,17 +106,24 @@ test.describe('PWA — Offline Behaviour', () => {
     await context.setOffline(false);
   });
 
-  test('uncached navigation shows offline fallback page', async ({ page, context }) => {
+  test('uncached navigation shows offline fallback page', async ({
+    page,
+    context,
+  }) => {
     // Visit home to activate the SW first
     await page.goto('/home');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Wait for the SW to be controlling the page (skipWaiting + clients.claim)
     await page.evaluate(async () => {
       await navigator.serviceWorker.ready;
       if (!navigator.serviceWorker.controller) {
         await new Promise<void>((resolve) => {
-          navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true });
+          navigator.serviceWorker.addEventListener(
+            'controllerchange',
+            () => resolve(),
+            { once: true }
+          );
           setTimeout(resolve, 3000);
         });
       }
@@ -112,7 +133,9 @@ test.describe('PWA — Offline Behaviour', () => {
     await context.setOffline(true);
 
     // Navigate to a page that was never visited (not in cache)
-    await page.goto('/some-definitely-uncached-page-xyz-' + Date.now()).catch(() => {});
+    await page
+      .goto('/some-definitely-uncached-page-xyz-' + Date.now())
+      .catch(() => {});
 
     // Should show the offline page (either /offline or the inline fallback)
     const body = await page.locator('body').textContent();
@@ -133,11 +156,16 @@ test.describe('PWA — Offline Behaviour', () => {
 test.describe('PWA — Manifest & Meta Tags', () => {
   test('manifest.json is linked in <head>', async ({ page }) => {
     await page.goto('/');
-    const manifestHref = await page.locator('link[rel="manifest"]').getAttribute('href');
+    const manifestHref = await page
+      .locator('link[rel="manifest"]')
+      .first()
+      .getAttribute('href');
     expect(manifestHref).toBe('/manifest.json');
   });
 
-  test('manifest.json is valid JSON with required fields', async ({ request }) => {
+  test('manifest.json is valid JSON with required fields', async ({
+    request,
+  }) => {
     const response = await request.get('/manifest.json');
     expect(response.ok()).toBe(true);
 
@@ -149,14 +177,21 @@ test.describe('PWA — Manifest & Meta Tags', () => {
     expect(manifest.icons).toBeInstanceOf(Array);
     expect(manifest.icons.length).toBeGreaterThanOrEqual(2);
 
-    const has192 = manifest.icons.some((i: { sizes: string }) => i.sizes === '192x192');
-    const has512 = manifest.icons.some((i: { sizes: string }) => i.sizes === '512x512');
+    const has192 = manifest.icons.some(
+      (i: { sizes: string }) => i.sizes === '192x192'
+    );
+    const has512 = manifest.icons.some(
+      (i: { sizes: string }) => i.sizes === '512x512'
+    );
     expect(has192).toBe(true);
     expect(has512).toBe(true);
   });
 
   test('Apple PWA meta tags are present', async ({ page }) => {
-    test.skip(!SW_ENABLED, 'Apple meta tags are only emitted by the production Next.js build');
+    test.skip(
+      !SW_ENABLED,
+      'Apple meta tags are only emitted by the production Next.js build'
+    );
     await page.goto('/');
 
     // Next.js Metadata API emits these via the <head>

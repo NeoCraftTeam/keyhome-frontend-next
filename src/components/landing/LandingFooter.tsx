@@ -1,11 +1,11 @@
 'use client';
 
-import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
-import { brand } from '@/theme/tokens';
 import Code from '@mui/icons-material/Code';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLandingTheme } from './LandingThemeContext';
+import { brand } from '@/theme/tokens';
+import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
 
 const links = {
   Plateforme: [
@@ -36,7 +36,6 @@ const links = {
     { label: 'Inscription gratuite', href: '/register' },
     { label: 'Se connecter', href: '/login' },
     { label: 'Blog', href: '/blog' },
-    { label: 'Nous contacter', href: '/contact' },
   ],
   Légal: [
     { label: "Conditions d'utilisation", href: '/conditions' },

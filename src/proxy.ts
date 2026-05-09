@@ -1,5 +1,12 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+  COUNTRY_COOKIE,
+  CURRENCY_COOKIE,
+  CURRENCY_COOKIE_MAX_AGE,
+  getCurrencyFromCountry,
+  parseSupportedCurrencyCookie,
+} from '@/lib/currency';
 import { getClerkFrontendOrigins } from '@/lib/clerk-frontend-origins';
 import {
   CSP_FONT_HOSTS,
@@ -147,6 +154,47 @@ function isNextPrefetch(
 }
 
 /**
+ * Geo-derived `kh_country` / `kh_currency` cookies (Cloudflare or Vercel country
+ * header). Skips `/api` and `/trpc` like the former `middleware.ts` matcher.
+ * Does not overwrite a valid `kh_currency` already set by the client selector.
+ */
+function applyGeoCurrencyCookies(
+  req: NextRequest,
+  res: NextResponse
+): NextResponse {
+  const { pathname } = req.nextUrl;
+  if (pathname.startsWith('/api') || pathname.startsWith('/trpc')) {
+    return res;
+  }
+
+  const country =
+    req.headers.get('CF-IPCountry') ??
+    req.headers.get('x-vercel-ip-country') ??
+    'CM';
+
+  const existingCurrency = parseSupportedCurrencyCookie(
+    req.cookies.get(CURRENCY_COOKIE)?.value
+  );
+  const currency = existingCurrency ?? getCurrencyFromCountry(country);
+
+  const cookieOpts = {
+    maxAge: CURRENCY_COOKIE_MAX_AGE,
+    path: '/',
+    sameSite: 'lax' as const,
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+  };
+
+  res.cookies.set(COUNTRY_COOKIE, country, cookieOpts);
+
+  if (!existingCurrency) {
+    res.cookies.set(CURRENCY_COOKIE, currency, cookieOpts);
+  }
+
+  return res;
+}
+
+/**
  * Clerk proxy — runs on every matched request (Next.js 16+ uses `proxy.ts` only; `middleware.ts` is deprecated).
  *
  * SEO-critical: redirects authenticated users away from the landing page
@@ -164,10 +212,16 @@ export default clerkMiddleware(async (auth, req) => {
   if (isOwnerProtectedPath(pathname)) {
     const role = req.cookies.get('kh_role')?.value;
     if (!role) {
-      return NextResponse.redirect(new URL('/owner/login', req.url));
+      return applyGeoCurrencyCookies(
+        req,
+        NextResponse.redirect(new URL('/owner/login', req.url))
+      );
     }
     if (role === 'customer') {
-      return NextResponse.redirect(new URL('/home', req.url));
+      return applyGeoCurrencyCookies(
+        req,
+        NextResponse.redirect(new URL('/home', req.url))
+      );
     }
   }
 
@@ -175,22 +229,28 @@ export default clerkMiddleware(async (auth, req) => {
   if (isCustomerPrivatePath(pathname)) {
     const role = req.cookies.get('kh_role')?.value;
     if (role === 'agent' || role === 'admin') {
-      return NextResponse.redirect(new URL('/owner/dashboard', req.url));
+      return applyGeoCurrencyCookies(
+        req,
+        NextResponse.redirect(new URL('/owner/dashboard', req.url))
+      );
     }
   }
 
   // Authenticated users on the landing page → redirect to dashboard
   if (userId && pathname === '/') {
-    return NextResponse.redirect(new URL('/home', req.url));
+    return applyGeoCurrencyCookies(
+      req,
+      NextResponse.redirect(new URL('/home', req.url))
+    );
   }
 
   // Match old middleware: do not attach CSP / nonce for prefetch navigations
   if (isNextPrefetch(req.headers) && shouldApplyCsp(pathname)) {
-    return NextResponse.next();
+    return applyGeoCurrencyCookies(req, NextResponse.next());
   }
 
   if (!shouldApplyCsp(pathname)) {
-    return NextResponse.next();
+    return applyGeoCurrencyCookies(req, NextResponse.next());
   }
 
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
@@ -202,7 +262,7 @@ export default clerkMiddleware(async (auth, req) => {
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set('Content-Security-Policy', csp);
 
-  return response;
+  return applyGeoCurrencyCookies(req, response);
 });
 
 export const config = {

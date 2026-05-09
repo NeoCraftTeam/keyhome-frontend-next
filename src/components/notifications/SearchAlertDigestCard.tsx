@@ -1,5 +1,6 @@
 'use client';
 
+import { Price } from '@/components/ui/Price';
 import { brand } from '@/theme/tokens';
 import AiIcon from '@mui/icons-material/AutoAwesome';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -42,10 +43,6 @@ interface SearchAlertDigestCardProps {
   isUnread: boolean;
 }
 
-function formatPrice(p: number): string {
-  return new Intl.NumberFormat('fr-FR').format(p) + ' FCFA';
-}
-
 function AdMiniRow({ ad }: { ad: DigestAd }) {
   const href = `/ads/${ad.slug ?? ad.id}`;
 
@@ -86,7 +83,7 @@ function AdMiniRow({ ad }: { ad: DigestAd }) {
             color="primary.main"
             noWrap
           >
-            {formatPrice(ad.price)}
+            <Price amountXAF={ad.price} />
           </Typography>
         )}
         <ChevronRightIcon sx={{ fontSize: 14, color: 'text.disabled' }} />

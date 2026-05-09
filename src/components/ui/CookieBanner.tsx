@@ -19,13 +19,45 @@ import Close from '@mui/icons-material/Close';
 import CookieOutlined from '@mui/icons-material/CookieOutlined';
 import Shield from '@mui/icons-material/Shield';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
-import {
-  DEFAULT_COOKIE_CONSENT,
-  loadCookieConsentPreferences,
-  saveCookieConsentPreferences,
-  type CookieConsentPreferences,
-} from '@/lib/cookie-consent-storage';
 import { brand, brandAgent, gradient } from '@/theme/tokens';
+
+const COOKIE_KEY = 'keyhome_cookie_consent_v1';
+
+interface CookiePreferences {
+  necessary: true;
+  analytics: boolean;
+  marketing: boolean;
+}
+
+const DEFAULT_PREFS: CookiePreferences = {
+  necessary: true,
+  analytics: false,
+  marketing: false,
+};
+
+function loadPrefs(): CookiePreferences | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    const raw = localStorage.getItem(COOKIE_KEY);
+    return raw ? (JSON.parse(raw) as CookiePreferences) : null;
+  } catch {
+    return null;
+  }
+}
+
+function savePrefs(prefs: CookiePreferences): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(COOKIE_KEY, JSON.stringify(prefs));
+    window.dispatchEvent(
+      new CustomEvent('kh:cookie-consent', { detail: prefs })
+    );
+  } catch {
+    // localStorage may be full or disabled (private mode)
+  }
+}
 
 interface CookieBannerProps {
   /**
@@ -42,9 +74,7 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
-  const [prefs, setPrefs] = useState<CookieConsentPreferences>(
-    DEFAULT_COOKIE_CONSENT
-  );
+  const [prefs, setPrefs] = useState<CookiePreferences>(DEFAULT_PREFS);
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
 
@@ -60,26 +90,22 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
     : gradient.primary;
 
   useEffect(() => {
-    if (loadCookieConsentPreferences() === null) {
+    if (loadPrefs() === null) {
       const t = setTimeout(() => setVisible(true), 1200);
       return () => clearTimeout(t);
     }
   }, []);
 
   const acceptAll = () => {
-    saveCookieConsentPreferences({
-      necessary: true,
-      analytics: true,
-      marketing: true,
-    });
+    savePrefs({ necessary: true, analytics: true, marketing: true });
     setVisible(false);
   };
   const rejectAll = () => {
-    saveCookieConsentPreferences(DEFAULT_COOKIE_CONSENT);
+    savePrefs(DEFAULT_PREFS);
     setVisible(false);
   };
   const saveCustom = () => {
-    saveCookieConsentPreferences(prefs);
+    savePrefs(prefs);
     setCustomizeOpen(false);
     setVisible(false);
   };
@@ -282,7 +308,7 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
             },
             {
               label: 'Analytiques',
-              desc: "Mesure d'audience (ex. Google Analytics, outils hébergés Vercel) lorsque configurés.",
+              desc: "Mesure d'audience anonyme (Vercel Analytics).",
               checked: prefs.analytics,
               disabled: false,
               onChange: (v: boolean) =>

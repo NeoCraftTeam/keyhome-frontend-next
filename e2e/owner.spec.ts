@@ -15,7 +15,7 @@ test.describe('Owner Auth Pages', () => {
   test.describe('Owner Login', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/owner/login');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
     });
 
     // BUG CATCH: Owner login page must render — if it 404s or 500s, owners
@@ -73,7 +73,7 @@ test.describe('Owner Auth Pages', () => {
 
     test('shared registration page has a continue button', async ({ page }) => {
       await page.goto('/register');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
       const btn = page.getByRole('button', { name: /continuer/i });
       await expect(btn).toBeVisible({ timeout: 10000 });
     });
@@ -152,7 +152,7 @@ test.describe('Owner Route Separation (Customer Isolation)', () => {
 test.describe('Owner Login Form Validation', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/owner/login');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // BUG CATCH: Submitting with empty fields must not cause a 500 — the UI

@@ -1,5 +1,6 @@
 import { getAuthToken } from '@/lib/auth-token';
 import { getEchoSocketId } from '@/lib/echo';
+import { getOrCreateCorrelationId } from '@/lib/request-correlation';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 export const API_URL =
@@ -21,7 +22,6 @@ const AUTH_ROUTES = [
   '/auth/webauthn/login/options', // Passkey login options is unauthenticated
   '/auth/refresh', // Session timeout guard handles its own retry/error path
   '/broadcasting/auth', // WebSocket subscription auth — own retry path
-  '/track/visit', // Anonymous acquisition ping — must not trigger kh:auth-expired
 ];
 
 const api = axios.create({
@@ -102,6 +102,20 @@ api.interceptors.request.use(
         }
       } catch {
         /* swallow — request must always proceed */
+      }
+
+      if (typeof window !== 'undefined') {
+        if (
+          !config.headers['X-Request-ID'] &&
+          typeof crypto !== 'undefined' &&
+          typeof crypto.randomUUID === 'function'
+        ) {
+          config.headers['X-Request-ID'] = crypto.randomUUID();
+        }
+        const correlationId = getOrCreateCorrelationId();
+        if (correlationId) {
+          config.headers['X-Correlation-ID'] = correlationId;
+        }
       }
     }
 
