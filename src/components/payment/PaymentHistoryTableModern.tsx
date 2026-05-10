@@ -2,8 +2,14 @@
 
 import PaymentAmountDisplay from '@/components/payment/PaymentAmountDisplay';
 import PaymentStatusBadge from '@/components/payment/PaymentStatusBadge';
+import { Price } from '@/components/ui/Price';
+import { useCurrency } from '@/providers/CurrencyProvider';
 import { paymentsService } from '@/services/payments.service';
 import { PaymentHistoryItem } from '@/types';
+import DateIcon from '@mui/icons-material/DateRange';
+import DownloadIcon from '@mui/icons-material/PictureAsPdf';
+import ReceiptIcon from '@mui/icons-material/Receipt';
+import CreditsIcon from '@mui/icons-material/Toll';
 import {
   Box,
   Button,
@@ -26,12 +32,8 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/PictureAsPdf';
-import DateIcon from '@mui/icons-material/DateRange';
-import ReceiptIcon from '@mui/icons-material/Receipt';
-import CreditsIcon from '@mui/icons-material/Toll';
 import { useQuery } from '@tanstack/react-query';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 const TYPE_LABELS: Record<string, string> = {
   unlock: 'Déblocage',
@@ -57,6 +59,7 @@ export default function PaymentHistoryTableModern({
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { currency, convert } = useCurrency();
   const [page, setPage] = useState(1);
   const [selectedPeriod, setSelectedPeriod] = useState<
     'all' | '30' | '90' | '365'
@@ -103,7 +106,15 @@ export default function PaymentHistoryTableModern({
             : selectedPeriod === '365'
               ? 365
               : undefined;
-      await paymentsService.exportPdf(pdfPeriod as 30 | 90 | 365 | undefined);
+      // Pass the visitor's active currency + the per-XAF rate so the PDF
+      // renders the local amount as primary (e.g. CHF) and the FCFA value
+      // as a small reference subtitle. `convert(1)` returns the rate (1
+      // for XAF/XOF — controller will skip the conversion in that case).
+      await paymentsService.exportPdf(
+        pdfPeriod as 30 | 90 | 365 | undefined,
+        currency,
+        convert(1)
+      );
     } catch (error) {
       console.error('Export PDF failed:', error);
     } finally {
@@ -458,11 +469,17 @@ export default function PaymentHistoryTableModern({
             <Typography variant="caption" color="text.secondary" gutterBottom>
               Montant total
             </Typography>
-            <Typography variant="h6" fontWeight={800} color="info.main">
-              {items
-                .reduce((sum, item) => sum + item.amount, 0)
-                .toLocaleString('fr-CM')}{' '}
-              XOF
+            <Typography
+              variant="h6"
+              fontWeight={800}
+              color="info.main"
+              component="div"
+            >
+              <Price
+                amountXAF={items.reduce((sum, item) => sum + item.amount, 0)}
+                primary="local"
+                showOriginal
+              />
             </Typography>
           </Card>
         </Box>

@@ -13,10 +13,17 @@ interface PaymentAmountDisplayProps {
 }
 
 /**
- * Always renders the FCFA amount as the primary value (Flutterwave bills XAF
- * exclusively — receipts, history, modals must keep that as the canonical
- * legal record). Visitors in EUR/USD/etc. get a small `≈ X €` subtitle for
- * comprehension, never the other way round.
+ * Renders the visitor's LOCAL currency (CHF / EUR / USD…) as the primary
+ * value with the FCFA canonical amount as a small subtitle below. Matches
+ * what Stripe will actually charge (peg conversion XAF→EUR, Stripe then
+ * converts EUR→CHF for Swiss cardholders) and what we display in the
+ * payment modal hero. For visitors already in XAF/XOF the component
+ * collapses to a single FCFA line — no redundant subtitle.
+ *
+ * Historical note: previously kept FCFA primary because Flutterwave bills
+ * XAF only. Switched to local-primary for consistency with the in-flow
+ * checkout hero and to better reflect what the cardholder is debited for
+ * (Stripe charges in EUR/USD, displayed locally).
  */
 export default function PaymentAmountDisplay({
   amount,
@@ -40,7 +47,7 @@ export default function PaymentAmountDisplay({
 
   return (
     <Typography variant={variant} fontWeight={fontWeight} component="span">
-      <Price amountXAF={amount} primary="xaf" />
+      <Price amountXAF={amount} primary="local" showOriginal />
     </Typography>
   );
 }
