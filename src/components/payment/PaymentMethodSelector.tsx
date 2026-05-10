@@ -1,9 +1,10 @@
 'use client';
 
-import { PaymentMethod } from '@/types';
+import { PaymentMethod, type PaymentMethodInfo } from '@/types';
 import CreditCard from '@mui/icons-material/CreditCard';
 import PhoneIphone from '@mui/icons-material/PhoneIphone';
 import { Box, Typography, useTheme } from '@mui/material';
+import { useMemo } from 'react';
 
 interface PaymentOption {
   method: PaymentMethod;
@@ -45,19 +46,40 @@ interface PaymentMethodSelectorProps {
   selected: PaymentMethod | null;
   onChange: (method: PaymentMethod) => void;
   disabled?: boolean;
+  /**
+   * Admin-gated catalogue from `GET /payments/methods`. When :
+   *  - `null` (still loading)        → render the full hardcoded list (snappy first paint)
+   *  - `[]` (fetch failed/empty)     → fall back to the full list (the backend will
+   *                                     still reject disabled methods, so the worst case
+   *                                     is a 422 — better than a frozen modal)
+   *  - non-empty                     → render only the methods present in the catalogue
+   */
+  availableMethods?: PaymentMethodInfo[] | null;
 }
 
 export default function PaymentMethodSelector({
   selected,
   onChange,
   disabled = false,
+  availableMethods = null,
 }: PaymentMethodSelectorProps): React.ReactElement {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
+  // Filter the hardcoded UI options against the admin gate.
+  const visibleOptions = useMemo(() => {
+    if (availableMethods === null || availableMethods.length === 0) {
+      return PAYMENT_OPTIONS;
+    }
+    const enabledValues = new Set<string>(availableMethods.map((m) => m.value));
+    return PAYMENT_OPTIONS.filter((opt) =>
+      enabledValues.has(opt.method as string)
+    );
+  }, [availableMethods]);
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      {PAYMENT_OPTIONS.map((option) => {
+      {visibleOptions.map((option) => {
         const isSelected = selected === option.method;
         return (
           <Box

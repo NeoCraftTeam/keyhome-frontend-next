@@ -5,10 +5,29 @@ import {
   FlutterwaveInitiateResponse,
   FlutterwaveVerifyResponse,
   PaymentHistoryItem,
+  PaymentMethodInfo,
   UnlockResponse,
 } from '@/types';
 
 export const paymentsService = {
+  /**
+   * Catalogue of payment methods currently enabled by the admin.
+   *
+   * Backed by `GET /api/v1/payments/methods` (PaymentMethodGateService).
+   * Returns ONLY enabled methods, with their gateway routing rule, so the
+   * `<PaymentModal>` can render a dynamic selector instead of hard-coding
+   * the four PaymentMethod cases.
+   *
+   * Cached upstream by the API throttle middleware ; safe to call on every
+   * modal open without flooding the backend.
+   */
+  async fetchAvailableMethods(): Promise<PaymentMethodInfo[]> {
+    const { data } = await api.get<{ data: PaymentMethodInfo[] }>(
+      '/payments/methods'
+    );
+    return data.data ?? [];
+  },
+
   /**
    * Attempt to unlock an ad using credits.
    * If the user has enough points → returns { status: 'unlocked' }.
@@ -28,12 +47,20 @@ export const paymentsService = {
     }
   },
 
-  // ─── Flutterwave ─────────────────────────────────────────────────────────
+  // ─── Multi-gateway lifecycle ─────────────────────────────────────────────
+  // The naming is deliberately gateway-agnostic — the same endpoints route
+  // through `PaymentMethod::gateway()` server-side and call the right
+  // implementation (Flutterwave hosted checkout OR Stripe PaymentIntent).
 
   /**
-   * Initiate a Flutterwave payment and receive a hosted checkout link.
+   * Initiate a payment and receive either :
+   *  - a hosted-checkout URL (`gateway === 'flutterwave'`), or
+   *  - a PaymentIntent client secret in `payment_link` (`gateway === 'stripe'`).
+   *
+   * The persisted `tx_ref` doubles as our cross-gateway lookup key — used
+   * by `verify()` and `cancel()` regardless of the gateway.
    */
-  async flutterwaveInitiate(
+  async initiate(
     payload: FlutterwaveInitiatePayload
   ): Promise<FlutterwaveInitiateResponse> {
     rememberPaymentOriginPath();
@@ -42,9 +69,14 @@ export const paymentsService = {
   },
 
   /**
-   * Verify a Flutterwave payment after the user returns from checkout.
+   * Verify a payment with the gateway and grant credits / unlocks if paid.
+   * Idempotent — safe to retry. The backend uses a row lock to avoid
+   * double-spending. Used :
+   *  - by the Flutterwave callback page after the user returns from checkout
+   *  - by the Stripe flow after `confirmPayment` succeeds, to fast-track
+   *    the optimistic UI without waiting for the webhook
    */
-  async flutterwaveVerify(txRef: string): Promise<FlutterwaveVerifyResponse> {
+  async verify(txRef: string): Promise<FlutterwaveVerifyResponse> {
     const { data } = await api.post('/payments/verify_payment', {
       tx_ref: txRef,
     });
@@ -52,15 +84,33 @@ export const paymentsService = {
   },
 
   /**
-   * Cancel a pending Flutterwave payment.
+   * Cancel a pending payment on user request. Marks the local row as
+   * `cancelled` ; on Stripe, the PaymentIntent stays in
+   * `requires_payment_method` until it auto-expires (no webhook side-effect
+   * because our handler ignores cancelled rows).
    */
-  async flutterwaveCancel(
-    txRef: string
-  ): Promise<{ message: string; status: string }> {
+  async cancel(txRef: string): Promise<{ message: string; status: string }> {
     const { data } = await api.post('/payments/cancel_payment', {
       tx_ref: txRef,
     });
     return data;
+  },
+
+  // Legacy aliases — kept temporarily for backward compatibility with any
+  // call site that still uses the Flutterwave-prefixed names. Prefer the
+  // gateway-agnostic helpers above.
+  flutterwaveInitiate(
+    payload: FlutterwaveInitiatePayload
+  ): Promise<FlutterwaveInitiateResponse> {
+    return this.initiate(payload);
+  },
+  flutterwaveVerify(txRef: string): Promise<FlutterwaveVerifyResponse> {
+    return this.verify(txRef);
+  },
+  flutterwaveCancel(
+    txRef: string
+  ): Promise<{ message: string; status: string }> {
+    return this.cancel(txRef);
   },
 
   /**
@@ -68,10 +118,30 @@ export const paymentsService = {
    * Opens a browser download dialog with the generated file.
    *
    * @param period - Number of days to include (30 | 90 | 365 | undefined = all)
+   * @param currency - ISO currency code of the visitor (e.g. 'CHF') so the
+   *   PDF renders the local amount as primary and the XAF canonical value
+   *   as a reference subtitle. Falls back to XAF when omitted.
+   * @param rate - Conversion rate from 1 XAF to `currency` (e.g. 0.0014
+   *   for CHF). Required when `currency` is non-XAF, otherwise ignored.
    */
-  async exportPdf(period?: 30 | 90 | 365): Promise<void> {
+  async exportPdf(
+    period?: 30 | 90 | 365,
+    currency?: string,
+    rate?: number
+  ): Promise<void> {
     const params: Record<string, string> = {};
     if (period) params['period'] = String(period);
+    if (
+      currency &&
+      currency !== 'XAF' &&
+      currency !== 'XOF' &&
+      typeof rate === 'number' &&
+      Number.isFinite(rate) &&
+      rate > 0
+    ) {
+      params['currency'] = currency;
+      params['rate'] = String(rate);
+    }
 
     const response = await api.get('/payments/export', {
       params,

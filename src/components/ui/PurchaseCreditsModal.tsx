@@ -1,12 +1,14 @@
 'use client';
 
+import PaymentFlow from '@/components/payment/PaymentFlow';
 import PackageCard from '@/components/ui/PackageCard';
+import { Price } from '@/components/ui/Price';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
 import { creditsService } from '@/services/credits.service';
-import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
-import type { PointPackage } from '@/types';
-import AutoAwesome from '@mui/icons-material/AutoAwesome';
+import { PaymentType, type PointPackage } from '@/types';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import Close from '@mui/icons-material/Close';
+import CreditCard from '@mui/icons-material/CreditCard';
 import LockIcon from '@mui/icons-material/Lock';
 import Toll from '@mui/icons-material/Toll';
 import {
@@ -18,8 +20,8 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
 
 interface PurchaseCreditsModalProps {
@@ -31,7 +33,9 @@ export default function PurchaseCreditsModal({
   open,
   onClose,
 }: PurchaseCreditsModalProps) {
-  const [loadingPkg, setLoadingPkg] = useState<string | null>(null);
+  // Track which pack the user clicked. While non-null, <PaymentModal> is
+  // mounted on top of this dialog and drives the actual gateway selection.
+  const [pendingPkg, setPendingPkg] = useState<PointPackage | null>(null);
   const [pkgError, setPkgError] = useState('');
   const queryClient = useQueryClient();
   const theme = useTheme();
@@ -57,26 +61,43 @@ export default function PurchaseCreditsModal({
   const creditsLabel =
     availableCredits > 1 ? 'crédits disponibles' : 'crédit disponible';
 
-  const handlePurchase = async (pkg: PointPackage) => {
-    setLoadingPkg(pkg.id);
+  // Step 1 : user picks a pack — we DON'T initiate the payment yet. The
+  // <PaymentModal> is mounted next, lets the user choose a method (mobile
+  // money / card) and only THEN does the backend route through the right
+  // gateway via `PaymentMethod::gateway()`.
+  const handlePurchase = (pkg: PointPackage) => {
     setPkgError('');
-    try {
-      const callbackUrl = `${window.location.origin}/credits/callback`;
-      const response = await creditsService.purchase(pkg.id, callbackUrl);
-      if (!redirectToTrustedUrl(response.payment_url)) {
-        throw new Error('URL de paiement non approuvee.');
-      }
-      queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
-    } catch {
-      setPkgError("Erreur lors de l\'initialisation du paiement.");
-    } finally {
-      setLoadingPkg(null);
-    }
+    setPendingPkg(pkg);
+  };
+
+  // Step 2 : the user closed the payment modal without paying. Drop the
+  // pending pack and stay on the catalogue so they can retry or pick another.
+  const handlePaymentModalClose = () => {
+    setPendingPkg(null);
+  };
+
+  // Step 3 : payment confirmed (Stripe `confirmPayment` succeeded + the
+  // server-side verify call returned `is_paid=true`). We :
+  //  1. Refresh the cached balance so the header reflects the new credits.
+  //  2. Show the "Paiement confirmé" state for ~1.8 s so the user has
+  //     visual confirmation, then auto-close — matching the Flutterwave
+  //     callback experience (user lands back on the page with credits
+  //     already visible in the header pill).
+  //
+  // Flutterwave success is handled separately by the callback page after
+  // the user returns from the hosted checkout — this handler is Stripe-only
+  // in practice.
+  const handlePaymentSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
+    setTimeout(() => {
+      setPendingPkg(null);
+      onClose();
+    }, 1800);
   };
 
   const handleClose = () => {
     setPkgError('');
-    setLoadingPkg(null);
+    setPendingPkg(null);
     onClose();
   };
 
@@ -90,51 +111,65 @@ export default function PurchaseCreditsModal({
       PaperProps={{
         sx: {
           borderRadius: isMobile ? 0 : 5,
-          overflow: 'hidden',
-          maxHeight: isMobile ? '100vh' : '92vh',
+          // If the content ever exceeds the dialog height, we scroll the
+          // WHOLE modal as one block (header + body + footer together)
+          // rather than scrolling the body alone. Matches the user ask :
+          // "les cards des packs et le formulaire stripe doivent être
+          // fix et non scrollable" — the cards/form never scroll inside.
+          overflow: 'auto',
+          maxHeight: isMobile ? '100vh' : '95vh',
           background: 'transparent',
           boxShadow: isMobile ? 'none' : '0 32px 80px rgba(0,0,0,0.28)',
+          // Hide the scrollbar for a clean look (accessibility : keyboard
+          // scroll still works — just the visual thumb is removed).
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          '&::-webkit-scrollbar': { display: 'none', width: 0, height: 0 },
         },
       }}
     >
-      {/* ── HEADER ────────────────────────────────────────── */}
+      {/* ── HEADER (navy gradient, premium fintech aesthetic) ─────────── */}
       <Box
         sx={{
           position: 'relative',
-          px: { xs: 2, sm: 3 },
-          pt: { xs: 2.5, sm: 4 },
-          pb: { xs: 2, sm: 3.5 },
-          background: (theme) =>
-            theme.palette.gradient?.primary135 ??
-            `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          px: { xs: 2.5, sm: 4 },
+          pt: { xs: 3, sm: 4.5 },
+          pb: { xs: 2.5, sm: 4 },
+          // Deep navy gradient inspired by premium fintech apps (Revolut,
+          // Stripe, N26). The brand crimson is used sparingly as an accent
+          // further down, not as the dominant colour — more sober.
+          background:
+            'linear-gradient(135deg, #0A1628 0%, #132138 55%, #0D1F3C 100%)',
           textAlign: 'center',
           overflow: 'hidden',
         }}
       >
-        {/* Background blobs */}
+        {/* Soft crimson glow in the corner — ties the header to the brand
+            without overwhelming the composition. */}
         <Box
           sx={{
             position: 'absolute',
-            top: -40,
-            left: -40,
+            top: -60,
+            left: -60,
+            width: 220,
+            height: 220,
+            borderRadius: '50%',
+            background:
+              'radial-gradient(circle, rgba(246,71,95,0.22) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
+        {/* Cool accent glow on the opposite corner for visual balance. */}
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: -40,
+            right: -40,
             width: 180,
             height: 180,
             borderRadius: '50%',
             background:
-              'radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: -30,
-            right: -30,
-            width: 150,
-            height: 150,
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)',
+              'radial-gradient(circle, rgba(99,102,241,0.16) 0%, transparent 70%)',
             pointerEvents: 'none',
           }}
         />
@@ -142,214 +177,325 @@ export default function PurchaseCreditsModal({
         <IconButton
           aria-label="Fermer"
           onClick={handleClose}
+          size="small"
           sx={{
             position: 'absolute',
-            top: 12,
-            right: 12,
-            color: 'rgba(255,255,255,0.9)',
-            '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.2)' },
+            top: { xs: 8, sm: 12 },
+            right: { xs: 8, sm: 12 },
+            color: 'rgba(255,255,255,0.55)',
+            bgcolor: 'rgba(255,255,255,0.04)',
+            width: 32,
+            height: 32,
+            '&:hover': {
+              color: '#fff',
+              bgcolor: 'rgba(255,255,255,0.12)',
+            },
           }}
         >
-          <Close fontSize="small" />
+          <Close sx={{ fontSize: 18 }} />
         </IconButton>
 
-        {/* Balance widget — white pill visible on gradient background */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            mb: { xs: 1.5, sm: 3 },
-          }}
-        >
-          <Box
+        {pendingPkg && (
+          <IconButton
+            aria-label="Retour aux packs"
+            onClick={handlePaymentModalClose}
+            size="small"
             sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 0.75,
-              bgcolor: 'rgba(255,255,255,0.2)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.4)',
-              borderRadius: '40px',
-              px: 2,
-              py: 0.75,
-              cursor: 'default',
-              userSelect: 'none',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              position: 'absolute',
+              top: { xs: 8, sm: 12 },
+              left: { xs: 8, sm: 12 },
+              color: 'rgba(255,255,255,0.55)',
+              bgcolor: 'rgba(255,255,255,0.04)',
+              width: 32,
+              height: 32,
+              '&:hover': {
+                color: '#fff',
+                bgcolor: 'rgba(255,255,255,0.12)',
+              },
             }}
           >
-            <Toll sx={{ fontSize: 16, color: 'rgba(255,255,255,0.95)' }} />
-            {balanceLoading ? (
-              <ShimmerBox
-                width={32}
-                height={14}
+            <ArrowBack sx={{ fontSize: 18 }} />
+          </IconButton>
+        )}
+
+        {pendingPkg ? (
+          // ── Compact header for the payment step ─────────────────────
+          <Box sx={{ pt: { xs: 0.5, sm: 1 }, position: 'relative', zIndex: 1 }}>
+            {/* Crimson-tinted icon circle — ties to brand subtly. */}
+            <Box
+              sx={{
+                width: { xs: 44, sm: 52 },
+                height: { xs: 44, sm: 52 },
+                borderRadius: '50%',
+                bgcolor: 'rgba(246,71,95,0.14)',
+                border: '1px solid rgba(246,71,95,0.28)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 1.5,
+              }}
+            >
+              <CreditCard
                 sx={{
-                  borderRadius: '6px',
-                  bgcolor: 'rgba(255,255,255,0.25)',
-                  '&::after': {
-                    background:
-                      'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                  },
+                  color: '#F6475F',
+                  fontSize: { xs: 20, sm: 24 },
                 }}
               />
-            ) : (
-              <Typography
-                variant="body2"
-                fontWeight={900}
-                sx={{
-                  color: '#fff',
-                  lineHeight: 1,
-                  letterSpacing: -0.3,
-                  fontSize: '0.9rem',
-                }}
-              >
-                {(balance ?? 0).toLocaleString('fr-FR')}{' '}
-                {(balance ?? 0) <= 1 ? 'crédit' : 'crédits'}
-              </Typography>
-            )}
+            </Box>
+
+            <Typography
+              variant="overline"
+              sx={{
+                display: 'block',
+                color: 'rgba(255,255,255,0.5)',
+                letterSpacing: 2,
+                fontSize: { xs: '0.6rem', sm: '0.65rem' },
+                fontWeight: 700,
+                mb: 0.75,
+              }}
+            >
+              Étape 2 sur 2 · Paiement
+            </Typography>
+            <Typography
+              sx={{
+                color: 'rgba(255,255,255,0.85)',
+                fontWeight: 600,
+                lineHeight: 1.25,
+                mb: 0.75,
+                fontSize: { xs: '0.95rem', sm: '1.05rem' },
+                letterSpacing: -0.2,
+              }}
+            >
+              {pendingPkg.name}
+            </Typography>
+            <Box
+              component="div"
+              sx={{
+                color: '#fff',
+                fontWeight: 800,
+                letterSpacing: -1.2,
+                fontSize: { xs: '1.75rem', sm: '2.1rem' },
+                lineHeight: 1.1,
+                fontFamily: 'inherit',
+                // Display the visitor's LOCAL currency (what Stripe will
+                // actually charge — e.g. 1.40 CHF / 1.52 EUR) in the hero
+                // position, with the XAF canonical value rendered as a
+                // small subtitle. The <Price primary="local" showOriginal>
+                // component injects the XAF line inside a nested <Box>
+                // styled `color: text.secondary` (dark grey, unreadable
+                // on our navy background) — we override every descendant
+                // so the XAF subtitle is visible and proportionate.
+                '& > span > span:first-of-type': {
+                  display: 'block',
+                  lineHeight: 1.05,
+                },
+                '& > span > .MuiBox-root, & > span > span + span': {
+                  color: 'rgba(255,255,255,0.55) !important',
+                  fontSize: '0.45em !important',
+                  fontWeight: 500,
+                  letterSpacing: 0,
+                  mt: '6px !important',
+                },
+              }}
+            >
+              <Price
+                amountXAF={pendingPkg.price}
+                primary="local"
+                showOriginal
+              />
+            </Box>
+            <Typography
+              sx={{
+                mt: 1.5,
+                color: 'rgba(255,255,255,0.6)',
+                fontSize: { xs: '0.7rem', sm: '0.78rem' },
+                fontWeight: 500,
+              }}
+            >
+              {pendingPkg.points_awarded.toLocaleString('fr-FR')}{' '}
+              {pendingPkg.points_awarded > 1 ? 'crédits' : 'crédit'} seront
+              ajoutés à votre compte
+            </Typography>
           </Box>
-        </Box>
+        ) : (
+          // ── Landing header (pack catalogue) ─────────────────────────
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
+            {/* Overline label — sober, uppercase, letter-spaced. */}
+            <Typography
+              variant="overline"
+              sx={{
+                display: 'block',
+                color: 'rgba(255,255,255,0.45)',
+                letterSpacing: 2,
+                fontSize: { xs: '0.6rem', sm: '0.65rem' },
+                fontWeight: 700,
+                mb: { xs: 1, sm: 1.25 },
+              }}
+            >
+              Votre solde
+            </Typography>
 
-        <Typography
-          variant="h6"
-          fontWeight={800}
-          sx={{
-            color: '#fff',
-            letterSpacing: -0.5,
-            lineHeight: 1.2,
-            mb: 0.5,
-            fontSize: { xs: '1.1rem', sm: '1.25rem' },
-          }}
-        >
-          {balanceLoading ? (
-            <ShimmerBox
-              width={80}
-              height={32}
-              borderRadius={8}
-              sx={{ mx: 'auto' }}
-            />
-          ) : (
-            availableCredits.toLocaleString('fr-FR')
-          )}
-        </Typography>
-        <Typography
-          variant="body1"
-          fontWeight={600}
-          sx={{
-            color: 'rgba(255,255,255,0.9)',
-            letterSpacing: 0.2,
-            mb: { xs: 1, sm: 2 },
-          }}
-        >
-          {balanceLoading ? 'crédits disponibles' : creditsLabel}
-        </Typography>
+            {/* Hero balance — white with crimson accent on the number. */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'center',
+                gap: 1,
+                mb: 0.5,
+              }}
+            >
+              {balanceLoading ? (
+                <ShimmerBox
+                  width={88}
+                  height={48}
+                  borderRadius={8}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.08)',
+                    '&::after': {
+                      background:
+                        'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
+                    },
+                  }}
+                />
+              ) : (
+                <>
+                  <Toll
+                    sx={{
+                      fontSize: { xs: 22, sm: 26 },
+                      color: '#F6475F',
+                      mb: { xs: 0.4, sm: 0.5 },
+                    }}
+                  />
+                  <Typography
+                    component="span"
+                    sx={{
+                      color: '#fff',
+                      fontWeight: 800,
+                      letterSpacing: -2,
+                      fontSize: { xs: '2.4rem', sm: '3rem' },
+                      lineHeight: 1,
+                    }}
+                  >
+                    {availableCredits.toLocaleString('fr-FR')}
+                  </Typography>
+                </>
+              )}
+            </Box>
 
-        {/* Trust badge */}
-        <Box
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.75,
-            mt: { xs: 1, sm: 2 },
-            bgcolor: 'rgba(255,255,255,0.15)',
-            borderRadius: '40px',
-            px: 2,
-            py: 0.75,
-            border: '1px solid rgba(255,255,255,0.25)',
-          }}
-        >
-          <AutoAwesome sx={{ fontSize: 12, color: 'rgba(255,255,255,0.95)' }} />
-          <Typography
-            variant="caption"
-            sx={{
-              color: 'rgba(255,255,255,0.9)',
-              fontSize: '0.7rem',
-              fontWeight: 600,
-            }}
-          >
-            +5 000 utilisateurs en Afrique
-          </Typography>
-        </Box>
+            <Typography
+              sx={{
+                color: 'rgba(255,255,255,0.55)',
+                fontWeight: 500,
+                letterSpacing: 0.2,
+                fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                mb: { xs: 1.75, sm: 2.25 },
+              }}
+            >
+              {balanceLoading ? 'crédits disponibles' : creditsLabel}
+            </Typography>
+          </Box>
+        )}
       </Box>
 
-      {/* ── PACKAGES ─────────────────────────────────────── */}
+      {/* ── BODY (packs grid OR payment flow) ─────────────────────────── */}
+      {/* No internal scroll: the Dialog grows to fit its content. Packs are
+          compact enough to fit in 95vh even on the shortest laptops (720p)
+          and the payment form is fixed-height. On very tall content we
+          rely on the Dialog-level overflow to let the whole modal scroll
+          as a single block — never the body alone. */}
       <Box
         sx={{
           px: { xs: 2, sm: 3 },
           pt: { xs: 2, sm: 3 },
           pb: 2.5,
           bgcolor: 'background.paper',
-          overflowY: 'auto',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          '&::-webkit-scrollbar': { display: 'none', width: 0, height: 0 },
+          overflow: 'visible',
         }}
       >
-        <Typography
-          variant="overline"
-          sx={{
-            color: 'text.secondary',
-            letterSpacing: 1.5,
-            fontSize: '0.65rem',
-            fontWeight: 700,
-          }}
-        >
-          Choisir un pack
-        </Typography>
+        {pendingPkg ? (
+          <PaymentFlow
+            amount={pendingPkg.price}
+            type={PaymentType.CREDIT}
+            planId={pendingPkg.id}
+            onSuccess={handlePaymentSuccess}
+            onBack={handlePaymentModalClose}
+          />
+        ) : (
+          <>
+            <Typography
+              variant="overline"
+              sx={{
+                color: 'text.secondary',
+                letterSpacing: 1.5,
+                fontSize: '0.65rem',
+                fontWeight: 700,
+              }}
+            >
+              Choisir un pack
+            </Typography>
 
-        {pkgError && (
-          <Typography
-            variant="caption"
-            color="error"
-            sx={{ display: 'block', mt: 1, mb: 0.5 }}
-          >
-            {pkgError}
-          </Typography>
-        )}
-
-        <AnimatePresence mode="wait">
-          {packagesLoading ? (
-            <Grid key="loading" container spacing={2} sx={{ mt: 1.5 }}>
-              {[1, 2, 3].map((i) => (
-                <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Box
-                    sx={{ borderRadius: 4, overflow: 'hidden', height: 220 }}
-                  >
-                    <ShimmerBox height={220} borderRadius={16} />
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-          ) : packages && packages.length > 0 ? (
-            <Grid key="packages" container spacing={2} sx={{ mt: 1.5 }}>
-              {packages.map((pkg, idx) => (
-                <Grid
-                  key={pkg.id}
-                  size={{ xs: 12, sm: 6, md: 4 }}
-                  component={motion.div}
-                  initial={{ opacity: 0, y: 24, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{
-                    duration: 0.38,
-                    delay: idx * 0.1,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                >
-                  <PackageCard
-                    pkg={pkg}
-                    loading={loadingPkg === pkg.id}
-                    onPurchase={handlePurchase}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-          ) : (
-            <Box key="empty" sx={{ textAlign: 'center', py: 6, px: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Aucun pack disponible pour le moment.
+            {pkgError && (
+              <Typography
+                variant="caption"
+                color="error"
+                sx={{ display: 'block', mt: 1, mb: 0.5 }}
+              >
+                {pkgError}
               </Typography>
-            </Box>
-          )}
-        </AnimatePresence>
+            )}
+
+            <AnimatePresence mode="wait">
+              {packagesLoading ? (
+                <Grid key="loading" container spacing={2} sx={{ mt: 1.5 }}>
+                  {[1, 2, 3].map((i) => (
+                    <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+                      <Box
+                        sx={{
+                          borderRadius: 4,
+                          overflow: 'hidden',
+                          height: 220,
+                        }}
+                      >
+                        <ShimmerBox height={220} borderRadius={16} />
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : packages && packages.length > 0 ? (
+                <Grid key="packages" container spacing={2} sx={{ mt: 1.5 }}>
+                  {packages.map((pkg, idx) => (
+                    <Grid
+                      key={pkg.id}
+                      size={{ xs: 12, sm: 6, md: 4 }}
+                      component={motion.div}
+                      initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{
+                        duration: 0.38,
+                        delay: idx * 0.1,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                    >
+                      <PackageCard
+                        pkg={pkg}
+                        loading={false}
+                        onPurchase={handlePurchase}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : (
+                <Box key="empty" sx={{ textAlign: 'center', py: 6, px: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Aucun pack disponible pour le moment.
+                  </Typography>
+                </Box>
+              )}
+            </AnimatePresence>
+          </>
+        )}
       </Box>
 
       {/* ── FOOTER ────────────────────────────────────────────── */}
@@ -377,7 +523,7 @@ export default function PurchaseCreditsModal({
           }}
         >
           Les crédits permettent de déverrouiller les coordonnées des
-          annonceurs. Paiement sécurisé via Mobile Money &amp; carte.
+          annonceurs.
         </Typography>
       </Box>
     </Dialog>

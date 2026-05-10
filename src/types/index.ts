@@ -69,7 +69,7 @@ export enum PaymentMethod {
   FLUTTERWAVE = 'flutterwave',
 }
 
-export type PaymentGateway = 'flutterwave';
+export type PaymentGateway = 'flutterwave' | 'stripe';
 
 export interface FlutterwaveInitiatePayload {
   type: 'unlock' | 'subscription' | 'credit';
@@ -81,12 +81,34 @@ export interface FlutterwaveInitiatePayload {
   period?: 'monthly' | 'yearly' | null;
 }
 
+/**
+ * Response from `POST /payments/initiate_payment`.
+ *
+ * `payment_link` is overloaded by gateway :
+ *  - `gateway === 'flutterwave'` → URL of the hosted checkout (redirect target)
+ *  - `gateway === 'stripe'` → PaymentIntent client secret (`pi_xxx_secret_yyy`)
+ *    consumed by `<Elements clientSecret>` on the frontend; NO redirect.
+ *
+ * The naming was kept for backwards compatibility with the existing call
+ * sites; the response shape is otherwise identical between gateways.
+ */
 export interface FlutterwaveInitiateResponse {
   reference: string;
   payment_link: string;
   tx_ref: string;
   gateway: PaymentGateway;
   status: 'pending';
+}
+
+/**
+ * Catalogue entry returned by `GET /payments/methods`. Reflects the runtime
+ * admin gating (PaymentMethodGateService); only enabled methods are listed.
+ */
+export interface PaymentMethodInfo {
+  value: 'mobile_money' | 'orange_money' | 'card' | 'flutterwave';
+  label: string;
+  gateway: PaymentGateway;
+  enabled: boolean;
 }
 
 export interface FlutterwaveVerifyResponse {

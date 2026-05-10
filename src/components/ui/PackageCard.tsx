@@ -356,6 +356,11 @@ export default function PackageCard({
               e.stopPropagation();
               onPurchase(pkg);
             }}
+            // The hover bg turns solid white for ALL variants, so the text
+            // colour MUST be dark at rest *and* at hover — otherwise the
+            // "Starter" button (which keeps white text on a 22% white bg at
+            // rest) renders invisible when hovered. We compute one colour
+            // that works in both states.
             sx={{
               borderRadius: 99,
               textTransform: 'none',
@@ -365,21 +370,18 @@ export default function PackageCard({
               py: 0.65,
               bgcolor:
                 isPopular || wouldBeEnough
-                  ? 'rgba(255,255,255,0.9)'
-                  : 'rgba(255,255,255,0.22)',
-              color:
-                isPopular || wouldBeEnough
-                  ? wouldBeEnough
-                    ? '#1B5E20'
-                    : theme.palette.primary.dark
-                  : neutral.white,
+                  ? 'rgba(255,255,255,0.95)'
+                  : 'rgba(255,255,255,0.95)',
+              color: wouldBeEnough ? '#1B5E20' : theme.palette.primary.dark,
               backdropFilter: 'blur(8px)',
               border: '1px solid rgba(255,255,255,0.3)',
               flexShrink: 0,
-              boxShadow: isPopular ? '0 4px 16px rgba(0,0,0,0.2)' : 'none',
+              boxShadow: isPopular ? '0 4px 16px rgba(0,0,0,0.25)' : 'none',
               '&:hover': {
-                bgcolor: 'rgba(255,255,255,1)',
-                boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+                bgcolor: '#fff',
+                color: wouldBeEnough ? '#1B5E20' : theme.palette.primary.dark,
+                boxShadow: '0 6px 20px rgba(0,0,0,0.3)',
+                transform: 'translateY(-1px)',
               },
               '&:disabled': { opacity: 0.5 },
             }}
