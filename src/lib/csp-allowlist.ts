@@ -66,6 +66,12 @@ export function buildConnectSrcParts(ctx: CspConnectBuildContext): string[] {
     'https://www.gstatic.com',
     // Payments
     'https://api.flutterwave.com',
+    // Stripe — connect-src for the Stripe SDK + Elements analytics.
+    // Iframe sources (`js.stripe.com`, `hooks.stripe.com`) are listed in
+    // CSP_FRAME_HOSTS_STATIC below.
+    'https://api.stripe.com',
+    'https://maps.stripe.com',
+    'https://merchant-ui-api.stripe.com',
     // R2 public + signed URLs
     'https://*.r2.dev',
     'https://*.r2.cloudflarestorage.com',
@@ -121,7 +127,7 @@ export function buildConnectSrcParts(ctx: CspConnectBuildContext): string[] {
 
 /** Extra script-src hosts (nonce + 'self' are added in proxy.ts). */
 export const CSP_SCRIPT_HOSTS =
-  'https://api.mapbox.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://accounts.google.com https://www.gstatic.com https://*.googleapis.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:';
+  'https://api.mapbox.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://accounts.google.com https://www.gstatic.com https://*.googleapis.com https://js.stripe.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:';
 
 export const CSP_STYLE_HOSTS =
   'https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://accounts.google.com https://www.gstatic.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev';
@@ -137,4 +143,4 @@ export const CSP_IMG_HOSTS_STATIC =
 export const CSP_MEDIA_HOSTS_STATIC = CSP_IMG_HOSTS_STATIC;
 
 export const CSP_FRAME_HOSTS_STATIC =
-  'https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://checkout.flutterwave.com https://vercel.live https://accounts.google.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev';
+  'https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://checkout.flutterwave.com https://js.stripe.com https://hooks.stripe.com https://vercel.live https://accounts.google.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev';
