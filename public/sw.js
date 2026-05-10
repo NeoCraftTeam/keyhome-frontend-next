@@ -2,7 +2,7 @@
 // header is left here for grep-ability and is not parsed by the SW runtime.
 // Push + Background Sync + Caching strategy for full offline/PWA support.
 
-const VERSION      = "v12";
+const VERSION      = "v13";
 const STATIC_CACHE = `kh-static-${VERSION}`;
 const API_CACHE    = `kh-api-${VERSION}`;
 const NAV_CACHE    = `kh-nav-${VERSION}`;
@@ -115,6 +115,21 @@ function isCacheableApi(pathname) {
   return CACHEABLE_OWNER_PATHS.some((p) => pathname.startsWith(p));
 }
 
+// Post-checkout pages MUST always go to the network and NEVER fall back to
+// the generic /offline page — users who paid expect to see the verification
+// flow, not a "you're offline" splash. The pages handle their own polling
+// and surface their own loading / error UI when the network is flaky.
+const NO_OFFLINE_FALLBACK_PATHS = [
+  "/credits/callback",
+  "/payment-success",
+  "/payment/callback",
+  "/sso-callback",
+];
+
+function isNoOfflineFallback(pathname) {
+  return NO_OFFLINE_FALLBACK_PATHS.some((p) => pathname.startsWith(p));
+}
+
 // ─── Fetch ───────────────────────────────────────────────────────────────────
 self.addEventListener("fetch", (event) => {
   const { request } = event;
@@ -152,8 +167,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 3. Navigation requests → network-first with /offline fallback
+  // 3. Navigation requests → network-first with /offline fallback.
+  //    Post-checkout pages SKIP the offline fallback so a transient network
+  //    blip doesn't display a "you're offline" splash to a user who just
+  //    paid. They render their own polling UI and never need a cached copy.
   if (request.mode === "navigate") {
+    if (isNoOfflineFallback(url.pathname)) {
+      // Pure network — let the browser surface its own connectivity error
+      // if the request fails. Do NOT fall back to /offline.
+      return;
+    }
     event.respondWith(navigationWithOfflineFallback(request));
     return;
   }

@@ -1,5 +1,3 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
-import { type NextRequest, NextResponse } from 'next/server';
 import { getClerkFrontendOrigins } from '@/lib/clerk-frontend-origins';
 import {
   CSP_FONT_HOSTS,
@@ -10,6 +8,8 @@ import {
   CSP_STYLE_HOSTS,
   buildConnectSrcParts,
 } from '@/lib/csp-allowlist';
+import { clerkMiddleware } from '@clerk/nextjs/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 const OWNER_PUBLIC_PATHS = [
   '/owner/login',
@@ -86,11 +86,13 @@ function buildCsp(nonce: string): string {
 
   const directives = [
     "default-src 'self'",
-    // script-src: nonce + explicit third-party origins (Clerk live host when pk_live_)
-    // 'unsafe-inline' is intentionally omitted — nonce supersedes it.
-    // Vercel injects _vercel/insights/script.js dynamically (no nonce); 'self' covers same-origin
-    // scripts. va.vercel-scripts.com is Vercel Web Analytics CDN.
-    `script-src 'self' 'unsafe-inline' 'nonce-${nonce}'${scriptSrcEvalOrStrict ? ` ${scriptSrcEvalOrStrict}` : ''} ${CSP_SCRIPT_HOSTS}${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''}`,
+    // script-src: nonce + explicit third-party origins (Clerk live host when pk_live_).
+    // 'unsafe-inline' is intentionally omitted — under CSP3 the nonce gates inline
+    // scripts and modern browsers ignore 'unsafe-inline' when a nonce is present.
+    // Vercel injects `_vercel/insights/script.js` as a <script src=…>; that's a
+    // same-origin file covered by 'self', so it does NOT require 'unsafe-inline'.
+    // va.vercel-scripts.com (Vercel Web Analytics CDN) is in CSP_SCRIPT_HOSTS.
+    `script-src 'self' 'nonce-${nonce}'${scriptSrcEvalOrStrict ? ` ${scriptSrcEvalOrStrict}` : ''} ${CSP_SCRIPT_HOSTS}${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''}`,
 
     // style-src: 'unsafe-inline' only — no nonce.
     // CSP3 spec: when a nonce is present in style-src, 'unsafe-inline' is silently ignored,

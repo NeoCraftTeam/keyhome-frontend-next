@@ -3,6 +3,7 @@
 import PaymentMethodSelector from '@/components/payment/PaymentMethodSelector';
 import StripeConfirmStep from '@/components/payment/StripeConfirmStep';
 import { usePayment } from '@/hooks/usePayment';
+import { useAuth } from '@/providers/AuthProvider';
 import { paymentsService } from '@/services/payments.service';
 import { brand } from '@/theme/tokens';
 import {
@@ -24,6 +25,21 @@ import { motion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
+ * Extracts the 9-digit Cameroon local phone number from a profile value that
+ * may include the +237 country prefix (e.g. "+237650000000" → "650000000").
+ * Returns an empty string when the value cannot be normalised to 9 digits.
+ */
+function extractCamPhoneDigits(raw: string | null | undefined): string {
+  if (!raw) return '';
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('237')) {
+    return digits.slice(3);
+  }
+  if (digits.length === 9) return digits;
+  return '';
+}
+
+/**
  * Shared transition config for step changes. A soft slide + fade —
  * neither distracting nor instant. Tuned to feel like a premium fintech
  * flow (Revolut / Stripe checkout) rather than a brutal state swap.
@@ -42,11 +58,8 @@ const STEP_MOTION = {
  */
 const PHONE_REGEX = /^(6|7|2)\d{8}$/;
 
-function methodRequiresPhone(method: PaymentMethod | null): boolean {
-  return (
-    method === PaymentMethod.MOBILE_MONEY ||
-    method === PaymentMethod.ORANGE_MONEY
-  );
+function methodRequiresPhone(_method: PaymentMethod | null): boolean {
+  return false;
 }
 
 type Step =
@@ -107,6 +120,9 @@ export default function PaymentFlow({
   onSuccess,
   onBack,
 }: PaymentFlowProps): React.ReactElement {
+  const { user } = useAuth();
+  const profilePhone = extractCamPhoneDigits(user?.phone_number);
+
   const [step, setStep] = useState<Step>('select-method');
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(
     null
@@ -206,11 +222,22 @@ export default function PaymentFlow({
   const handleMethodConfirm = useCallback(() => {
     if (!selectedMethod) return;
     if (methodRequiresPhone(selectedMethod)) {
+      // Pre-fill with the profile phone when available and the field is still empty.
+      if (profilePhone && !phone) {
+        setPhone(profilePhone);
+      }
       setStep('enter-phone');
     } else {
-      submit(selectedMethod, null);
+      // For mobile money: forward the profile phone (if available) so that
+      // Flutterwave can pre-fill the phone field on its hosted checkout.
+      // submit() will prepend +237 before sending to the backend.
+      const phoneArg =
+        selectedMethod === PaymentMethod.MOBILE_MONEY
+          ? profilePhone || null
+          : null;
+      submit(selectedMethod, phoneArg);
     }
-  }, [selectedMethod, submit]);
+  }, [selectedMethod, submit, profilePhone, phone]);
 
   const handlePhoneConfirm = useCallback(() => {
     const cleaned = phone.trim();
@@ -341,6 +368,8 @@ export default function PaymentFlow({
   }
 
   if (step === 'enter-phone') {
+    const isUsingProfilePhone = Boolean(profilePhone && phone === profilePhone);
+
     return (
       <motion.div key="enter-phone" {...STEP_MOTION}>
         <Box>
@@ -390,7 +419,12 @@ export default function PaymentFlow({
               ),
             }}
             error={Boolean(phoneError)}
-            helperText={phoneError || ' '}
+            helperText={
+              phoneError ||
+              (isUsingProfilePhone
+                ? 'Numéro issu de votre profil · Modifiez-le si besoin'
+                : ' ')
+            }
             onKeyDown={(e) => {
               if (e.key === 'Enter') handlePhoneConfirm();
             }}

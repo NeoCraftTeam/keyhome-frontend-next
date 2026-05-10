@@ -22,6 +22,14 @@ const AUTH_ROUTES = [
   '/auth/webauthn/login/options', // Passkey login options is unauthenticated
   '/auth/refresh', // Session timeout guard handles its own retry/error path
   '/broadcasting/auth', // WebSocket subscription auth — own retry path
+  // Post-checkout verify endpoints. Returning from a cross-origin Flutterwave
+  // redirect can briefly drop the session cookie (Safari/Firefox SameSite=Lax
+  // on cross-domain XHR). A 401 here MUST NOT log the user out — the callback
+  // page handles its own retry path and falls back to the public status route.
+  '/credits/verify-purchase',
+  '/payments/verify_payment',
+  // Public, auth-less payment status (always 200) — listed for symmetry only.
+  '/public-status',
 ];
 
 const api = axios.create({

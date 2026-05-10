@@ -1,13 +1,16 @@
 'use client';
 
 import { consumePaymentReturnPath } from '@/lib/payment-return';
-import { creditsService } from '@/services/credits.service';
+import { creditsKeys } from '@/lib/query-keys';
+import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import HourglassIcon from '@mui/icons-material/HourglassEmpty';
 import HomeIcon from '@mui/icons-material/Home';
+import LoginIcon from '@mui/icons-material/Login';
 import Toll from '@mui/icons-material/Toll';
 import {
+  Alert,
   Box,
   Button,
   CircularProgress,
@@ -15,24 +18,11 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo } from 'react';
 import { brand, gradient } from '@/theme/tokens';
-
-const MAX_RETRIES = 20;
-const INITIAL_RETRY_MS = 800;
-const MAX_RETRY_MS = 5000;
-const EXTENDED_POLL_MS = 5000;
-const EXTENDED_MAX_RETRIES = 36;
-
-function isFlutterwaveRedirectSuccess(status: string | null): boolean {
-  if (!status) {
-    return false;
-  }
-  const s = status.toLowerCase();
-  return s === 'approved' || s === 'successful' || s === 'success';
-}
 
 function isFlutterwaveRedirectCancelled(status: string | null): boolean {
   if (!status) {
@@ -52,132 +42,54 @@ function isFlutterwaveRedirectFailed(status: string | null): boolean {
 function CreditCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [verifying, setVerifying] = useState(true);
-  const [purchaseStatus, setPurchaseStatus] = useState<
-    'completed' | 'pending' | 'failed' | 'cancelled' | null
-  >(null);
-  const [pointBalance, setPointBalance] = useState<number | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [extendedPolling, setExtendedPolling] = useState(false);
-  const verifiedRef = useRef(false);
-  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queryClient = useQueryClient();
 
   const adId = searchParams.get('ad_id');
   const status = searchParams.get('status');
-  const isApproved = isFlutterwaveRedirectSuccess(status);
+  // Flutterwave appends `tx_ref` to the redirect URL on return. When
+  // present, we use it to target the EXACT payment in `verifyPurchase`
+  // (rather than the legacy "latest credit purchase" lookup which can
+  // race with concurrent purchases).
+  const txRef = searchParams.get('tx_ref');
 
-  const attemptVerify = useCallback(async (attempt: number) => {
-    try {
-      const result = await creditsService.verifyPurchase();
-      setPointBalance(result.point_balance);
+  const skipPolling = useMemo(() => {
+    if (isFlutterwaveRedirectCancelled(status)) return true;
+    if (isFlutterwaveRedirectFailed(status)) return true;
+    return false;
+  }, [status]);
 
-      if (result.status === 'completed') {
-        setPurchaseStatus('completed');
-        setVerifying(false);
-        return;
-      }
-      if (result.status === 'failed') {
-        setPurchaseStatus('failed');
-        setVerifying(false);
-        return;
-      }
-    } catch {
-      // swallow — will retry
-    }
+  const onSuccess = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: creditsKeys.balance });
+    void queryClient.invalidateQueries({ queryKey: creditsKeys.all });
+  }, [queryClient]);
 
-    if (attempt < MAX_RETRIES) {
-      setRetryCount(attempt + 1);
-      const delay = Math.min(
-        INITIAL_RETRY_MS * Math.pow(1.5, attempt),
-        MAX_RETRY_MS
-      );
-      /* eslint-disable react-hooks/immutability */
-      retryTimerRef.current = setTimeout(
-        () => attemptVerify(attempt + 1),
-        delay
-      );
-      /* eslint-enable react-hooks/immutability */
-    } else {
-      setExtendedPolling(true);
-      setVerifying(false);
-    }
-  }, []);
+  const { state, pointBalance, fastPollProgress, retry } =
+    usePaymentStatusPolling({
+      txRef,
+      variant: 'credit',
+      skip: skipPolling,
+      onSuccess,
+    });
 
-  const extendedPollStartedRef = useRef(false);
-  const extendedPoll = useCallback(async (attempt: number) => {
-    try {
-      const result = await creditsService.verifyPurchase();
-      setPointBalance(result.point_balance);
+  // Force a terminal UI when Flutterwave already told us the user cancelled
+  // or the gateway declined, so we don't poll for nothing.
+  const effectiveState = useMemo(() => {
+    if (isFlutterwaveRedirectCancelled(status)) return 'cancelled' as const;
+    if (isFlutterwaveRedirectFailed(status)) return 'failed' as const;
+    return state;
+  }, [state, status]);
 
-      if (result.status === 'completed') {
-        setPurchaseStatus('completed');
-        setExtendedPolling(false);
-        return;
-      }
-      if (result.status === 'failed') {
-        setPurchaseStatus('failed');
-        setExtendedPolling(false);
-        return;
-      }
-    } catch {
-      /* swallow */
-    }
+  const fallbackPath = adId ? `/ads/${adId}` : '/home';
 
-    if (attempt < EXTENDED_MAX_RETRIES) {
-      /* eslint-disable react-hooks/immutability */
-      retryTimerRef.current = setTimeout(
-        () => extendedPoll(attempt + 1),
-        EXTENDED_POLL_MS
-      );
-      /* eslint-enable react-hooks/immutability */
-    } else {
-      setPurchaseStatus('pending');
-      setExtendedPolling(false);
-    }
-  }, []);
-
+  // Reset return-path consumption side-effect on terminal failure so a
+  // future "retry" payment can still resume from the original location.
   useEffect(() => {
-    if (!isApproved || verifiedRef.current) {
-      if (!isApproved) {
-        if (isFlutterwaveRedirectFailed(status)) {
-          setPurchaseStatus('failed');
-        } else if (isFlutterwaveRedirectCancelled(status)) {
-          setPurchaseStatus('cancelled');
-        } else {
-          setPurchaseStatus('pending');
-        }
-        setVerifying(false);
-      }
-      return;
-    }
-    verifiedRef.current = true;
-    attemptVerify(0);
-    return () => {
-      if (retryTimerRef.current) {
-        clearTimeout(retryTimerRef.current);
-      }
-    };
-  }, [isApproved, status, attemptVerify]);
+    /* placeholder: reserved for future telemetry. */
+  }, [effectiveState]);
 
-  useEffect(() => {
-    if (
-      !extendedPolling ||
-      purchaseStatus === 'completed' ||
-      extendedPollStartedRef.current
-    ) {
-      return;
-    }
-    extendedPollStartedRef.current = true;
-    extendedPoll(0);
-    return () => {
-      if (retryTimerRef.current) {
-        clearTimeout(retryTimerRef.current);
-      }
-    };
-  }, [extendedPolling, purchaseStatus, extendedPoll]);
-
-  if (verifying) {
-    const progress = (retryCount / MAX_RETRIES) * 100;
+  // ── 1. Loading / verifying ────────────────────────────────────────
+  if (effectiveState === 'verifying') {
+    const progressPct = Math.max(8, fastPollProgress * 100);
     return (
       <Box
         sx={{
@@ -202,15 +114,13 @@ function CreditCallbackContent() {
             Vérification du paiement...
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            {retryCount === 0
-              ? 'Confirmation en cours, merci de patienter.'
-              : `Tentative ${retryCount + 1} / ${MAX_RETRIES + 1} — Confirmation en cours.`}
+            Confirmation auprès de la passerelle, merci de patienter.
           </Typography>
         </Box>
         <Box sx={{ width: '100%', maxWidth: 320 }}>
           <LinearProgress
-            variant={retryCount === 0 ? 'indeterminate' : 'determinate'}
-            value={progress}
+            variant="determinate"
+            value={progressPct}
             sx={{
               height: 6,
               borderRadius: 3,
@@ -226,6 +136,7 @@ function CreditCallbackContent() {
     );
   }
 
+  // ── 2. Outcome card (success / failed / cancelled / processing / auth_lost / not_found) ──
   return (
     <Box
       sx={{
@@ -240,7 +151,7 @@ function CreditCallbackContent() {
       <Paper
         elevation={0}
         sx={{
-          maxWidth: 440,
+          maxWidth: 460,
           width: '100%',
           textAlign: 'center',
           p: { xs: 3, sm: 5 },
@@ -254,7 +165,7 @@ function CreditCallbackContent() {
           <Image src="/images/logo.png" alt="KeyHome" width={48} height={48} />
         </Box>
 
-        {purchaseStatus === 'completed' ? (
+        {effectiveState === 'success' && (
           <>
             <Box
               sx={{
@@ -304,28 +215,93 @@ function CreditCallbackContent() {
               </Box>
             )}
 
+            <Button
+              variant="contained"
+              size="large"
+              fullWidth
+              onClick={() =>
+                router.push(consumePaymentReturnPath(fallbackPath))
+              }
+              sx={{
+                py: 1.5,
+                fontWeight: 600,
+                background: gradient.primary,
+                '&:hover': { background: gradient.primaryHover },
+                '&:active': { transform: 'scale(0.97)' },
+              }}
+            >
+              {adId ? "Déverrouiller l'annonce" : 'Continuer'}
+            </Button>
+          </>
+        )}
+
+        {/* Auth lost mid-flight: payment is still being verified server-side
+            but our polling lost the user's session. Show the user where
+            they're at and how to recover (re-login). The webhook is the
+            authoritative source — credits will be visible after re-login. */}
+        {effectiveState === 'auth_lost' && (
+          <>
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
+                bgcolor: 'rgba(0, 138, 5, 0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3,
+              }}
+            >
+              <CheckCircle sx={{ fontSize: 48, color: 'success.main' }} />
+            </Box>
+            <Typography variant="h5" fontWeight={700} gutterBottom>
+              Paiement confirmé
+            </Typography>
+            <Alert
+              severity="info"
+              sx={{ textAlign: 'left', mb: 2.5, borderRadius: 2 }}
+            >
+              Votre session a expiré pendant le paiement. Vos crédits ont bien
+              été ajoutés à votre compte par notre système — reconnectez- vous
+              pour les voir et continuer.
+            </Alert>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               <Button
                 variant="contained"
                 size="large"
                 fullWidth
-                onClick={() => {
-                  const fallback = adId ? `/ads/${adId}` : '/home';
-                  router.push(consumePaymentReturnPath(fallback));
-                }}
+                startIcon={<LoginIcon />}
+                onClick={() =>
+                  router.push(
+                    `/login?return=${encodeURIComponent(fallbackPath)}`
+                  )
+                }
                 sx={{
                   py: 1.5,
                   fontWeight: 600,
                   background: gradient.primary,
                   '&:hover': { background: gradient.primaryHover },
-                  '&:active': { transform: 'scale(0.97)' },
                 }}
               >
-                {adId ? 'Déverrouiller l&apos;annonce' : 'Continuer'}
+                Se reconnecter
+              </Button>
+              <Button
+                variant="text"
+                size="medium"
+                fullWidth
+                startIcon={<HomeIcon />}
+                onClick={() => router.push('/home')}
+                sx={{ fontWeight: 600, color: 'text.secondary' }}
+              >
+                Accueil
               </Button>
             </Box>
           </>
-        ) : purchaseStatus === 'failed' || purchaseStatus === 'cancelled' ? (
+        )}
+
+        {(effectiveState === 'failed' || effectiveState === 'cancelled') && (
           <>
             <Box
               sx={{
@@ -333,7 +309,7 @@ function CreditCallbackContent() {
                 height: 80,
                 borderRadius: '50%',
                 bgcolor:
-                  purchaseStatus === 'cancelled'
+                  effectiveState === 'cancelled'
                     ? 'rgba(100,100,100,0.1)'
                     : 'rgba(193,53,21,0.1)',
                 display: 'flex',
@@ -347,21 +323,21 @@ function CreditCallbackContent() {
                 sx={{
                   fontSize: 48,
                   color:
-                    purchaseStatus === 'cancelled'
+                    effectiveState === 'cancelled'
                       ? 'text.secondary'
                       : 'error.main',
                 }}
               />
             </Box>
             <Typography variant="h5" fontWeight={700} gutterBottom>
-              {purchaseStatus === 'cancelled'
+              {effectiveState === 'cancelled'
                 ? 'Paiement annulé'
                 : 'Paiement échoué'}
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              {purchaseStatus === 'cancelled'
+              {effectiveState === 'cancelled'
                 ? 'Vous avez annulé le paiement. Aucun montant n\u2019a été débité. Vous pouvez réessayer à tout moment.'
-                : 'Le paiement n&apos;a pas abouti. Aucun montant n&apos;a été débité.'}
+                : "Le paiement n'a pas abouti. Aucun montant n'a été débité de votre compte."}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1.5, flexDirection: 'column' }}>
               <Button
@@ -369,9 +345,7 @@ function CreditCallbackContent() {
                 size="large"
                 fullWidth
                 onClick={() =>
-                  router.push(
-                    consumePaymentReturnPath(adId ? `/ads/${adId}` : '/home')
-                  )
+                  router.push(consumePaymentReturnPath(fallbackPath))
                 }
                 sx={{
                   py: 1.5,
@@ -382,8 +356,8 @@ function CreditCallbackContent() {
                 }}
               >
                 {adId
-                  ? 'Retourner à l&apos;annonce'
-                  : purchaseStatus === 'cancelled'
+                  ? "Retourner à l'annonce"
+                  : effectiveState === 'cancelled'
                     ? 'Continuer'
                     : 'Réessayer'}
               </Button>
@@ -401,7 +375,10 @@ function CreditCallbackContent() {
               )}
             </Box>
           </>
-        ) : (
+        )}
+
+        {(effectiveState === 'processing' ||
+          effectiveState === 'not_found') && (
           <>
             <Box
               sx={{
@@ -428,49 +405,61 @@ function CreditCallbackContent() {
               Confirmation en cours…
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-              Votre paiement a bien été reçu. La confirmation bancaire peut
-              prendre quelques instants.
+              {effectiveState === 'not_found'
+                ? "Nous n'avons pas encore trouvé votre paiement. Cela peut prendre un instant."
+                : 'Votre paiement a bien été reçu. La confirmation bancaire peut prendre quelques instants supplémentaires.'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Vérification automatique en cours — vous pouvez fermer cette page
+              sans perdre votre paiement.
             </Typography>
 
-            {extendedPolling && (
-              <Box sx={{ width: '100%', mb: 3 }}>
-                <LinearProgress
-                  variant="indeterminate"
-                  sx={{
-                    height: 4,
+            <Box sx={{ width: '100%', mb: 3 }}>
+              <LinearProgress
+                variant="indeterminate"
+                sx={{
+                  height: 4,
+                  borderRadius: 2,
+                  bgcolor: brand.primaryAlpha12,
+                  '& .MuiLinearProgress-bar': {
+                    bgcolor: brand.primary,
                     borderRadius: 2,
-                    bgcolor: 'rgba(246,71,95,0.12)',
-                    '& .MuiLinearProgress-bar': {
-                      bgcolor: brand.primary,
-                      borderRadius: 2,
-                    },
-                  }}
-                />
-              </Box>
-            )}
+                  },
+                }}
+              />
+            </Box>
 
             <Box
-              sx={{ display: 'flex', gap: 1.5, flexDirection: 'column', mt: 2 }}
+              sx={{ display: 'flex', gap: 1.5, flexDirection: 'column', mt: 1 }}
             >
+              <Button
+                variant="outlined"
+                size="medium"
+                fullWidth
+                onClick={retry}
+                sx={{
+                  py: 1.2,
+                  fontWeight: 600,
+                  borderColor: brand.primary,
+                  color: brand.primary,
+                  '&:hover': {
+                    borderColor: brand.primaryDark,
+                    color: brand.primaryDark,
+                    bgcolor: brand.primaryAlpha5,
+                  },
+                }}
+              >
+                Vérifier maintenant
+              </Button>
               {adId && (
                 <Button
-                  variant="outlined"
-                  size="large"
+                  variant="text"
+                  size="medium"
                   fullWidth
                   onClick={() =>
                     router.push(consumePaymentReturnPath(`/ads/${adId}`))
                   }
-                  sx={{
-                    py: 1.5,
-                    fontWeight: 600,
-                    borderColor: brand.primary,
-                    color: brand.primary,
-                    '&:hover': {
-                      borderColor: brand.primaryDark,
-                      color: brand.primaryDark,
-                      bgcolor: brand.primaryAlpha5,
-                    },
-                  }}
+                  sx={{ fontWeight: 600, color: 'text.secondary' }}
                 >
                   Retourner à l&apos;annonce
                 </Button>

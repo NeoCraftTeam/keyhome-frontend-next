@@ -18,19 +18,11 @@ interface PaymentOption {
 const PAYMENT_OPTIONS: PaymentOption[] = [
   {
     method: PaymentMethod.MOBILE_MONEY,
-    label: 'MTN Mobile Money',
-    shortLabel: 'MTN MoMo',
-    color: '#FFCC00',
-    icon: <PhoneIphone sx={{ fontSize: 28 }} />,
-    logoText: 'MTN',
-  },
-  {
-    method: PaymentMethod.ORANGE_MONEY,
-    label: 'Orange Money',
-    shortLabel: 'Orange',
+    label: 'Paiement Mobile',
+    shortLabel: 'Mobile Money',
     color: '#FF6600',
     icon: <PhoneIphone sx={{ fontSize: 28 }} />,
-    logoText: 'OM',
+    logoText: 'MM',
   },
   {
     method: PaymentMethod.CARD,

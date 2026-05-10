@@ -105,6 +105,9 @@ export interface UnlockResponse {
 
 export interface CreditPurchaseResponse {
   payment_url: string;
+  /** Returned so the callback page can target this exact payment in `verifyPurchase`. */
+  tx_ref: string;
+  gateway: string;
   message: string;
 }
 

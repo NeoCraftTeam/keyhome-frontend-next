@@ -96,6 +96,29 @@ export const paymentsService = {
     return data;
   },
 
+  /**
+   * Public payment status — works WITHOUT auth, returns ONLY the status.
+   *
+   * Used by the post-checkout callback page as a session-loss-resilient
+   * fallback. Knowing the `tx_ref` is sufficient to read the status; no PII
+   * is ever exposed. The endpoint returns `{ status: 'unknown' }` (not 404)
+   * for missing/invalid references so callers can poll uniformly.
+   */
+  async publicStatus(txRef: string): Promise<{
+    status:
+      | 'pending'
+      | 'success'
+      | 'failed'
+      | 'cancelled'
+      | 'refunded'
+      | 'unknown';
+  }> {
+    const { data } = await api.get(
+      `/payments/${encodeURIComponent(txRef)}/public-status`
+    );
+    return data;
+  },
+
   // Legacy aliases — kept temporarily for backward compatibility with any
   // call site that still uses the Flutterwave-prefixed names. Prefer the
   // gateway-agnostic helpers above.

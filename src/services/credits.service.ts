@@ -50,10 +50,18 @@ export const creditsService = {
   },
 
   /**
-   * Verify the most recent credit purchase and return updated balance.
+   * Verify a credit purchase and return updated balance.
+   *
+   * Pass the `tx_ref` returned by `purchase()` so the backend targets the
+   * exact payment created in this checkout session (the legacy "latest" lookup
+   * could race with concurrent purchases or stale rows). Omitting it falls
+   * back to "latest credit purchase" for backward compatibility.
    */
-  async verifyPurchase(): Promise<CreditVerifyResponse> {
-    const { data } = await api.post('/credits/verify-purchase');
+  async verifyPurchase(txRef?: string | null): Promise<CreditVerifyResponse> {
+    const { data } = await api.post(
+      '/credits/verify-purchase',
+      txRef ? { tx_ref: txRef } : {}
+    );
     return data;
   },
 };

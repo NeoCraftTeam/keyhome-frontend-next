@@ -110,23 +110,38 @@ export function registerInMemoryGetter(): void {
 const ROLE_COOKIE = 'kh_role';
 const ROLE_COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days — aligned with Laravel session / Sanctum PAT defaults
 
+/**
+ * Append the `Secure` cookie flag whenever the document is served over
+ * HTTPS. The role cookie is non-sensitive (it only drives an edge UX
+ * redirection — never authorization), but flagging it `Secure` in prod
+ * matches OWASP A04 hygiene and avoids leaking the user's panel
+ * preference over plaintext on a misconfigured deploy.
+ */
+function secureAttr(): string {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  return window.location.protocol === 'https:' ? '; Secure' : '';
+}
+
 export function setRoleCookie(role: string): void {
   if (typeof document === 'undefined') {
     return;
   }
   const isOwner = role === UserRole.AGENT || role === UserRole.ADMIN;
+  const secure = secureAttr();
 
   // Strict path scoping for role cookies.
   // The browser only sends the 'agent' role cookie to /owner routes
   // and the 'customer' role cookie to other routes, preventing state bleed.
   if (isOwner) {
-    document.cookie = `${ROLE_COOKIE}=${encodeURIComponent(role)}; path=/owner; SameSite=Lax; Max-Age=${ROLE_COOKIE_MAX_AGE}`;
+    document.cookie = `${ROLE_COOKIE}=${encodeURIComponent(role)}; path=/owner; SameSite=Lax${secure}; Max-Age=${ROLE_COOKIE_MAX_AGE}`;
     // Also clear any customer role cookie that might exist at root to avoid ambiguity
-    document.cookie = `${ROLE_COOKIE}=; path=/; Max-Age=0; SameSite=Lax`;
+    document.cookie = `${ROLE_COOKIE}=; path=/; Max-Age=0; SameSite=Lax${secure}`;
   } else {
-    document.cookie = `${ROLE_COOKIE}=${encodeURIComponent(role)}; path=/; SameSite=Lax; Max-Age=${ROLE_COOKIE_MAX_AGE}`;
+    document.cookie = `${ROLE_COOKIE}=${encodeURIComponent(role)}; path=/; SameSite=Lax${secure}; Max-Age=${ROLE_COOKIE_MAX_AGE}`;
     // Clear any owner role cookie
-    document.cookie = `${ROLE_COOKIE}=; path=/owner; Max-Age=0; SameSite=Lax`;
+    document.cookie = `${ROLE_COOKIE}=; path=/owner; Max-Age=0; SameSite=Lax${secure}`;
   }
 }
 
@@ -134,8 +149,9 @@ export function clearRoleCookie(): void {
   if (typeof document === 'undefined') {
     return;
   }
-  document.cookie = `${ROLE_COOKIE}=; path=/; Max-Age=0; SameSite=Lax`;
-  document.cookie = `${ROLE_COOKIE}=; path=/owner; Max-Age=0; SameSite=Lax`;
+  const secure = secureAttr();
+  document.cookie = `${ROLE_COOKIE}=; path=/; Max-Age=0; SameSite=Lax${secure}`;
+  document.cookie = `${ROLE_COOKIE}=; path=/owner; Max-Age=0; SameSite=Lax${secure}`;
 }
 
 /* ── Legacy token migration ──────────────────────────────────────── */
