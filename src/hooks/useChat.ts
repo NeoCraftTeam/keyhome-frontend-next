@@ -21,6 +21,7 @@ import {
   rsaOaepWrap,
 } from '@/lib/chat-e2ee-crypto';
 import { CHAT_E2EE_READY_EVENT } from '@/lib/chat-e2ee-identity';
+import { enrichReplyToQuotes } from '@/lib/chat-reply-enrich';
 import type { ConversationsListQueryData } from '@/lib/conversation-list-cache';
 import { applyConversationStatusToConversationsCache } from '@/lib/conversation-list-cache';
 import { getEcho, useEchoConnectionState } from '@/lib/echo';
@@ -354,6 +355,24 @@ export function useChat(
     },
     [queryClient, userId, conversationUuid]
   );
+
+  // API leaves `reply_to.body` null for E2EE parents; once the parent row is
+  // decrypted client-side, fill the quote so replies don't show a false
+  // "Message sécurisé" preview.
+  useEffect(() => {
+    const list = data?.messages;
+    if (!userId || !conversationUuid || !list?.length) {
+      return;
+    }
+    updateCache((old) => {
+      const nextMsgs = enrichReplyToQuotes(old.messages);
+      if (nextMsgs === old.messages) {
+        return old;
+      }
+
+      return { ...old, messages: nextMsgs };
+    });
+  }, [conversationUuid, data?.messages, updateCache, userId]);
 
   // Decryption pass — runs whenever the message list or the conversation's
   // wrapped session key changes. Tries to decrypt every sealed message that
