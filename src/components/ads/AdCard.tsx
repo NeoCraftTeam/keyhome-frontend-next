@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice } from '@/lib/constants';
+import { Price } from '@/components/ui/Price';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useFavorites } from '@/providers/FavoritesProvider';
 import { useComparator } from '@/providers/ComparatorProvider';
@@ -700,6 +700,7 @@ function AdCard({ ad, showDistance }: AdCardProps) {
             >
               <Typography
                 variant="h6"
+                component="div"
                 sx={{
                   fontSize: '0.9375rem',
                   fontWeight: 700,
@@ -709,7 +710,11 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                   color: 'text.primary',
                 }}
               >
-                {formatPrice(ad.price)}
+                {ad.price != null ? (
+                  <Price amountXAF={ad.price} compact />
+                ) : (
+                  '—'
+                )}
               </Typography>
               <Tooltip
                 title={

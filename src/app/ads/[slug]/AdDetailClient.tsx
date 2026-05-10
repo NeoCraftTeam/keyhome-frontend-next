@@ -16,6 +16,7 @@ const TourViewer = dynamic(() => import('@/components/ads/TourViewerPSV'), {
 import ReviewForm from '@/components/reviews/ReviewForm';
 import ReviewsSection from '@/components/reviews/ReviewsSection';
 import PackageCard from '@/components/ui/PackageCard';
+import { Price } from '@/components/ui/Price';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import ViewingBookingPanel from '@/components/viewing/ViewingBookingPanel';
 import ContactChatButton from '@/components/chat/ContactChatButton';
@@ -2184,7 +2185,7 @@ function AdDetailContent() {
                         fontWeight={700}
                         sx={{ mb: 0.5 }}
                       >
-                        {formatPrice(ad.price)}
+                        <Price amountXAF={ad.price} />
                       </Typography>
                       {ad.type && (
                         <Typography
@@ -2778,7 +2779,7 @@ function AdDetailContent() {
                   }}
                 >
                   <Typography variant="h4" fontWeight={700}>
-                    {formatPrice(ad.price)}
+                    <Price amountXAF={ad.price} />
                   </Typography>
                   {ad.type && (
                     <Typography
