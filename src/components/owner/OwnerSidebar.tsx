@@ -1,6 +1,11 @@
 'use client';
 
 import { ChatBadgeIcon } from '@/components/chat/ChatBadgeIcon';
+import { CurrencySelector } from '@/components/layout/CurrencySelector';
+import {
+  NAV_LIST_ICON_GLYPH_PX,
+  OWNER_SIDEBAR_LIST_ICON_MIN_WIDTH_PX,
+} from '@/lib/navVisualMetrics';
 import { ownerService } from '@/services/owner.service';
 import {
   AccountBalance as AccountBalanceIcon,
@@ -39,10 +44,6 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  NAV_LIST_ICON_GLYPH_PX,
-  OWNER_SIDEBAR_LIST_ICON_MIN_WIDTH_PX,
-} from '@/lib/navVisualMetrics';
 
 interface SidebarNavItem {
   label: string;
@@ -427,6 +428,39 @@ export default function OwnerSidebar({
           </Box>
         ))}
       </Box>
+
+      {/* Currency selector — desktop. Hidden when the sidebar is collapsed
+          (no room for the popover trigger pill). The customer-side counterpart
+          lives in `Navbar.tsx`; here it is anchored just above the CTA so the
+          owner can switch the visitor display currency without leaving the
+          panel. The choice persists across both panels via the `kh_currency`
+          cookie. */}
+      {!collapsed && (
+        <Box
+          sx={{
+            px: 2,
+            pt: 1.25,
+            pb: 1,
+            borderTop: '1px solid',
+            borderColor: 'divider',
+          }}
+        >
+          <Typography
+            variant="overline"
+            sx={{
+              display: 'block',
+              color: 'text.secondary',
+              fontWeight: 700,
+              fontSize: 11,
+              letterSpacing: 0.6,
+              mb: 0.5,
+            }}
+          >
+            Devise
+          </Typography>
+          <CurrencySelector variant="drawer" />
+        </Box>
+      )}
 
       {/* CTA */}
       <Box

@@ -1,5 +1,6 @@
 'use client';
 
+import { CurrencySelector } from '@/components/layout/CurrencySelector';
 import { SIDEBAR_WIDTH } from '@/components/owner/owner-constants';
 import { OWNER_NAV_ITEMS } from '@/lib/nav-config';
 import {
@@ -273,6 +274,26 @@ export default function OwnerNavbar() {
           })}
         </List>
 
+        <Divider />
+        {/* Currency selector — same UX as the customer NavDrawer footer.
+            The owner can switch the visitor-side display currency without
+            leaving the panel; the choice persists across both panels (cookie). */}
+        <Box sx={{ px: 2, pt: 1.25, pb: 1 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              display: 'block',
+              mb: 0.75,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+            }}
+          >
+            Devise
+          </Typography>
+          <CurrencySelector variant="drawer" />
+        </Box>
         <Divider />
         {/* Logout */}
         <Box sx={{ px: 1, pt: 0.5, pb: `max(12px, ${khSafeAreaBottomSx})` }}>

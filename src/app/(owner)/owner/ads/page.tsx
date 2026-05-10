@@ -661,6 +661,10 @@ export default function OwnerAdsPage() {
                     ad={ad}
                     onToggleVisibility={(a) => toggleMutation.mutate(a.id)}
                     isToggling={toggleMutation.isPending}
+                    onShowQrCode={(a) => {
+                      setSelectedAd(a);
+                      setQrDialogOpen(true);
+                    }}
                   />
                 </Box>
               ))}

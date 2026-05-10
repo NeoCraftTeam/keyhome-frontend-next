@@ -1,31 +1,28 @@
-import IosSplashLinks from '@/components/pwa/IosSplashLinks';
-import NetworkStatus from '@/components/pwa/NetworkStatus';
-import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
-import PWASplash from '@/components/pwa/PWASplash';
-import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
-import ViewportInteractiveWidget from '@/components/pwa/ViewportInteractiveWidget';
-import JsonLd from '@/components/seo/JsonLd';
-import { WebVitals } from '@/components/seo/WebVitals';
-import { ThemeInitScript } from '@/components/ThemeInitScript';
-import CookieBanner from '@/components/ui/CookieBanner';
-import RouteProgressBar from '@/components/ui/RouteProgressBar';
-import { GOOGLE_CONSENT_MODE_DEFAULT_SCRIPT } from '@/lib/analytics/consent-default-inline';
-import { isGoogleMarketingConfigured } from '@/lib/analytics/google-marketing-env';
-import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
-import { getClerkPreconnectOrigin } from '@/lib/clerk-frontend-origins';
-import { KH_SAFE_AREA_INIT_SCRIPT } from '@/lib/safe-area-init-inline';
-import { buildSiteVerification } from '@/lib/seo-verification';
-import { getSiteOrigin } from '@/lib/site-url';
-import { frFR } from '@clerk/localizations';
-import { ClerkProvider } from '@clerk/nextjs';
-import { Analytics } from '@vercel/analytics/next';
+import type { Metadata } from 'next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import type { Metadata, Viewport } from 'next';
+import type { Viewport } from 'next';
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import { headers } from 'next/headers';
-import { Suspense } from 'react';
 import './globals.css';
 import { Providers } from './providers';
+import { ClerkProvider } from '@clerk/nextjs';
+import { frFR } from '@clerk/localizations';
+import JsonLd from '@/components/seo/JsonLd';
+import { WebVitals } from '@/components/seo/WebVitals';
+import { Analytics } from '@vercel/analytics/next';
+import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
+import ViewportInteractiveWidget from '@/components/pwa/ViewportInteractiveWidget';
+import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
+import NetworkStatus from '@/components/pwa/NetworkStatus';
+import CookieBanner from '@/components/ui/CookieBanner';
+import RouteProgressBar from '@/components/ui/RouteProgressBar';
+import { ThemeInitScript } from '@/components/ThemeInitScript';
+import { KH_SAFE_AREA_INIT_SCRIPT } from '@/lib/safe-area-init-inline';
+import { Suspense } from 'react';
+import { getClerkPreconnectOrigin } from '@/lib/clerk-frontend-origins';
+import { BRAND_TITLE_WITH_TAGLINE, BRAND_TAGLINE } from '@/lib/brand';
+import { buildSiteVerification } from '@/lib/seo-verification';
+import { getSiteOrigin } from '@/lib/site-url';
 
 const SITE = getSiteOrigin();
 const siteVerification = buildSiteVerification();
@@ -124,9 +121,7 @@ export const metadata: Metadata = {
     ],
     apple: [
       { url: '/icons/icon-152x152.png', sizes: '152x152' },
-      // 180x180 is the size Apple actually serves on modern iPhones; using
-      // an exact-size asset prevents Safari from down-scaling 192px on the fly.
-      { url: '/icons/icon-180x180.png', sizes: '180x180' },
+      { url: '/icons/icon-192x192.png', sizes: '180x180' },
     ],
   },
   manifest: '/manifest.json',
@@ -147,14 +142,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  /**
-   * Initial HTML ships with zoom locked so the very first paint of the
-   * installed PWA matches the native-app feel. `ViewportInteractiveWidget`
-   * re-evaluates this on the client and *re-enables* pinch-zoom (up to 500%)
-   * when the page is loaded inside a regular browser tab — that keeps WCAG
-   * 1.4.4 satisfied for browser users while preserving the locked feel for
-   * users who installed the PWA on their home screen.
-   */
+  /** PWA: disable pinch-zoom for native-app feel (Safari may still allow minimal zoom). */
   maximumScale: 1,
   userScalable: false,
   // Brand-aware status bar: pink on the customer panel (this root viewport),
@@ -192,16 +180,6 @@ export default async function RootLayout({
           {/* ThemeInitScript uses useServerInsertedHTML — injected server-side only,
               never reconciled on the client, so React 19 never warns. */}
           <ThemeInitScript nonce={nonce} />
-          {isGoogleMarketingConfigured() ? (
-            <script
-              id="google-consent-default"
-              nonce={nonce}
-              suppressHydrationWarning
-              dangerouslySetInnerHTML={{
-                __html: GOOGLE_CONSENT_MODE_DEFAULT_SCRIPT,
-              }}
-            />
-          ) : null}
           <script
             id="kh-safe-area-init"
             nonce={nonce}
@@ -209,7 +187,6 @@ export default async function RootLayout({
             dangerouslySetInnerHTML={{ __html: KH_SAFE_AREA_INIT_SCRIPT }}
           />
           <link rel="preconnect" href="https://api.mapbox.com" />
-          <IosSplashLinks panel="client" />
           {clerkOrigin ? (
             <>
               <link rel="preconnect" href={clerkOrigin} />
@@ -221,7 +198,6 @@ export default async function RootLayout({
         </head>
         <body className={`${inter.variable} ${jakarta.variable} antialiased`}>
           <ViewportInteractiveWidget />
-          <PWASplash panel="client" />
           <Providers nonce={nonce}>
             <Suspense fallback={null}>
               <RouteProgressBar />
