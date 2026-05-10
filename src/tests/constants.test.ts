@@ -41,16 +41,20 @@ describe('formatPrice', () => {
 });
 
 describe('formatPriceCompact', () => {
-  it('formats thousands with k suffix', () => {
-    expect(formatPriceCompact(75000)).toBe('75k FCFA');
+  // PRODUCT DECISION (May 2026) : no more k/M abbreviations. The function
+  // now delegates to `formatPrice()` and returns the full amount with
+  // NBSP thousand separators.
+
+  it('formats thousands with full digits and NBSP separators', () => {
+    expect(formatPriceCompact(75000)).toBe('75\u00a0000 FCFA');
   });
 
-  it('formats millions with M suffix', () => {
-    expect(formatPriceCompact(1500000)).toBe('1,5M FCFA');
+  it('formats millions with full digits', () => {
+    expect(formatPriceCompact(1500000)).toBe('1\u00a0500\u00a0000 FCFA');
   });
 
-  it('formats exact millions without decimals', () => {
-    expect(formatPriceCompact(2000000)).toBe('2M FCFA');
+  it('formats exact millions with full digits', () => {
+    expect(formatPriceCompact(2000000)).toBe('2\u00a0000\u00a0000 FCFA');
   });
 
   it('formats small amounts as-is', () => {
@@ -61,27 +65,22 @@ describe('formatPriceCompact', () => {
     expect(formatPriceCompact(null)).toBe('Prix N/D');
   });
 
-  it('formats exact thousands without decimals', () => {
-    expect(formatPriceCompact(100000)).toBe('100k FCFA');
+  it('formats exact thousands with NBSP separators', () => {
+    expect(formatPriceCompact(100000)).toBe('100\u00a0000 FCFA');
   });
 
-  // BUG CATCH: Zero should display as "0 FCFA", not trigger the k/M path.
   it('formats zero correctly', () => {
     expect(formatPriceCompact(0)).toBe('0 FCFA');
   });
 
-  // BUG CATCH: 999 is below the 1000 threshold — should NOT get "k" suffix.
-  it('formats 999 without k suffix', () => {
+  it('formats sub-thousand amounts without separators', () => {
     expect(formatPriceCompact(999)).toBe('999 FCFA');
   });
 
-  // BUG CATCH: 999_999 is at the boundary between k and M.
-  // Should be 1000k, not 1M.
-  it('formats 999999 at boundary between k and M', () => {
-    expect(formatPriceCompact(999999)).toBe('1000k FCFA');
+  it('formats values just under a million with full digits', () => {
+    expect(formatPriceCompact(999999)).toBe('999\u00a0999 FCFA');
   });
 
-  // BUG CATCH: undefined coerced through number param.
   it('returns fallback for undefined', () => {
     expect(formatPriceCompact(undefined as unknown as null)).toBe('Prix N/D');
   });

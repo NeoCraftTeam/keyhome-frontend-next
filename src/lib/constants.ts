@@ -17,22 +17,21 @@ export function formatPrice(price: number | null): string {
 }
 
 /**
- * Returns a compact price for listing cards.
- * 75 000 → "75k FCFA" | 1 500 000 → "1,5M FCFA" | 500 → "500 FCFA"
+ * Format compact pour les cartes d'annonces.
+ *
+ * **Décision produit (mai 2026)** : on n'utilise plus les abréviations
+ * `k`/`M` (ex. « 230k FCFA »). On affiche le montant complet avec
+ * séparateurs de milliers — `230\u00a0000\u00a0FCFA` — pour un rendu
+ * professionnel cohérent avec les fiches détaillées et la modale paiement.
+ *
+ * Conservée pour compatibilité avec les call-sites existants ; délègue à
+ * `formatPrice()` qui produit le format canonique.
  */
 export function formatPriceCompact(price: number | null): string {
   if (price === null || price === undefined) {
     return 'Prix N/D';
   }
-  if (price >= 1_000_000) {
-    const m = price / 1_000_000;
-    const formatted = m % 1 === 0 ? `${m}` : m.toFixed(1).replace('.', ',');
-    return `${formatted}M ${CURRENCY_SYMBOL}`;
-  }
-  if (price >= 1_000) {
-    return `${Math.round(price / 1_000)}k ${CURRENCY_SYMBOL}`;
-  }
-  return `${price} ${CURRENCY_SYMBOL}`;
+  return formatPrice(price);
 }
 
 export function formatDate(dateStr: string): string {

@@ -345,16 +345,18 @@ export function convertFromXAF(
 /**
  * Format an amount in the given currency using locale-appropriate rules.
  *
- * Decisions:
- *  - **XAF / XOF** → integers only (FCFA never uses decimals in real life).
- *  - **JPY** → integers only.
- *  - **EUR / GBP / CHF** → `fr-FR` locale, symbol after.
- *  - **USD / CAD** → `en-US`, symbol before.
- *  - Other → `fr-FR`, symbol after.
+ * Decisions (deliberately professional — no `k`/`M` abbreviations) :
+ *  - **XAF / XOF / JPY / KRW** → entiers, séparateur de milliers en espace
+ *    insécable, ex. `230\u00a0000\u00a0FCFA`. Aucune décimale.
+ *  - **EUR / GBP / CHF / autres devises européennes** → `fr-FR` locale,
+ *    virgule décimale, ex. `60\u00a0000,08\u00a0€`. Arrondi au centime
+ *    (2 décimales fixes pour les valeurs non-entières).
+ *  - **USD / CAD / AUD / MXN / BRL / CNY** → `en-US`, symbole avant,
+ *    point décimal, virgule de milliers, ex. `$60,000.08`.
  *
- * The `fr-FR` locale yields narrow no-break spaces (U+202F) — we normalise
- * them to regular non-breaking spaces (U+00A0) for consistent rendering
- * across browsers.
+ * Le locale `fr-FR` produit des espaces fines insécables (U+202F) que nous
+ * normalisons en espaces insécables classiques (U+00A0) pour un rendu
+ * stable sur tous les navigateurs.
  */
 export function formatCurrency(
   amount: number,
@@ -362,81 +364,66 @@ export function formatCurrency(
 ): string {
   const symbol = CURRENCY_SYMBOLS[currency];
 
-  // Integer-only currencies (no fractional units in everyday usage).
+  // Devises qui n'utilisent pas de subdivision décimale en usage courant.
   const noDecimals =
     currency === 'XAF' ||
     currency === 'XOF' ||
     currency === 'JPY' ||
     currency === 'KRW';
+
+  // Pour les devises décimales, on affiche TOUJOURS 2 décimales (ex. 60 000,08 €)
+  // afin que les conversions au centime près soient lisibles et cohérentes.
+  // Exception : si le montant est exactement un entier (ex. 230 €), on omet
+  // les décimales pour ne pas afficher « 230,00 € » sans raison.
+  const isInteger = Number.isInteger(amount);
+  const decimals = noDecimals ? 0 : isInteger ? 0 : 2;
+
   const value = noDecimals ? Math.round(amount) : amount;
 
-  // Currencies whose convention is symbol BEFORE the amount (en-US style).
+  // Devises dont la convention est symbole AVANT le montant (style en-US).
   const prefixSymbol =
     currency === 'USD' ||
     currency === 'CAD' ||
     currency === 'AUD' ||
     currency === 'MXN' ||
     currency === 'BRL' ||
-    currency === 'CNY' ||
-    currency === 'JPY' ||
-    currency === 'KRW';
+    currency === 'CNY';
 
   if (prefixSymbol) {
     const formatted = new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: noDecimals ? 0 : 0,
-      maximumFractionDigits: noDecimals ? 0 : 2,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     }).format(value);
     return `${symbol}${formatted}`;
   }
 
-  const locale =
-    currency === 'EUR' || currency === 'GBP' || currency === 'CHF'
-      ? 'fr-FR'
-      : 'fr-FR';
-
-  const formatted = new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: noDecimals ? 0 : 2,
+  const formatted = new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   })
     .format(value)
+    // Normalise narrow NBSP (U+202F) → NBSP (U+00A0) pour un rendu stable.
     .replace(/\u202f/g, '\u00a0');
 
-  return `${formatted} ${symbol}`;
+  return `${formatted}\u00a0${symbol}`;
 }
 
 /**
- * Compact format for cards / map labels (e.g. "229 €", "1,5M FCFA").
+ * Format dit « compact » pour les cartes et tooltips serrés.
+ *
+ * **Décision produit (mai 2026)** : on n'utilise PLUS les abréviations `k`/`M`
+ * (ex. « 230k FCFA » → « 230\u00a0000\u00a0FCFA »). Cette fonction est conservée
+ * pour ne pas casser les call-sites existants mais délègue maintenant au
+ * formatteur complet — le résultat est identique à `formatCurrency()`.
+ *
+ * Si vous avez besoin d'un libellé ultra-court (ex. heatmap zoomé dehors),
+ * passez par votre propre `Intl.NumberFormat({ notation: 'compact' })`.
  */
 export function formatCurrencyCompact(
   amount: number,
   currency: SupportedCurrency
 ): string {
-  const symbol = CURRENCY_SYMBOLS[currency];
-  const noDecimals =
-    currency === 'XAF' ||
-    currency === 'XOF' ||
-    currency === 'JPY' ||
-    currency === 'KRW';
-  const prefixSymbol =
-    currency === 'USD' ||
-    currency === 'CAD' ||
-    currency === 'AUD' ||
-    currency === 'MXN' ||
-    currency === 'BRL' ||
-    currency === 'CNY' ||
-    currency === 'JPY' ||
-    currency === 'KRW';
-
-  if (amount >= 1_000_000) {
-    const m = amount / 1_000_000;
-    const formatted = m % 1 === 0 ? `${m}` : m.toFixed(1).replace('.', ',');
-    return prefixSymbol ? `${symbol}${formatted}M` : `${formatted}M ${symbol}`;
-  }
-  if (amount >= 10_000) {
-    const k = Math.round(amount / 1_000);
-    return prefixSymbol ? `${symbol}${k}k` : `${k}k ${symbol}`;
-  }
-  return formatCurrency(noDecimals ? Math.round(amount) : amount, currency);
+  return formatCurrency(amount, currency);
 }
 
 /**

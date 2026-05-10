@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import {
   BASE_CURRENCY,
   convertFromXAF,
@@ -10,6 +9,7 @@ import {
   resolveDisplayedMoney,
   SUPPORTED_CURRENCIES,
 } from '@/lib/currency';
+import { describe, expect, it } from 'vitest';
 
 describe('getCurrencyFromCountry', () => {
   it('maps CEMAC countries to XAF', () => {
@@ -198,24 +198,38 @@ describe('formatCurrency', () => {
 });
 
 describe('formatCurrencyCompact', () => {
-  it('formats millions with the M suffix', () => {
-    expect(formatCurrencyCompact(1_500_000, 'XAF')).toBe('1,5M FCFA');
-    expect(formatCurrencyCompact(2_000_000, 'XAF')).toBe('2M FCFA');
+  // PRODUCT DECISION (May 2026) : the compact formatter no longer truncates
+  // amounts to k/M. It now returns the same output as `formatCurrency`,
+  // i.e. full digits with locale-appropriate thousand separators.
+
+  it('formats millions with full digits (no M suffix)', () => {
+    expect(formatCurrencyCompact(1_500_000, 'XAF')).toBe(
+      '1\u00a0500\u00a0000\u00a0FCFA'
+    );
+    expect(formatCurrencyCompact(2_000_000, 'XAF')).toBe(
+      '2\u00a0000\u00a0000\u00a0FCFA'
+    );
   });
 
-  it('formats values ≥10 000 with the k suffix', () => {
-    expect(formatCurrencyCompact(75_000, 'XAF')).toBe('75k FCFA');
-    expect(formatCurrencyCompact(15_000, 'XAF')).toBe('15k FCFA');
+  it('formats values ≥10 000 with full digits (no k suffix)', () => {
+    expect(formatCurrencyCompact(75_000, 'XAF')).toBe('75\u00a0000\u00a0FCFA');
+    expect(formatCurrencyCompact(15_000, 'XAF')).toBe('15\u00a0000\u00a0FCFA');
   });
 
-  it('uses USD-style prefix for $-currencies', () => {
-    expect(formatCurrencyCompact(2_500_000, 'USD')).toBe('$2,5M');
-    expect(formatCurrencyCompact(50_000, 'CAD')).toBe('CA$50k');
+  it('preserves USD-style prefix and en-US separators for $-currencies', () => {
+    expect(formatCurrencyCompact(2_500_000, 'USD')).toBe('$2,500,000');
+    expect(formatCurrencyCompact(50_000, 'CAD')).toBe('CA$50,000');
   });
 
-  it('falls back to formatCurrency for small amounts', () => {
+  it('matches formatCurrency for small amounts', () => {
     const out = formatCurrencyCompact(500, 'XAF');
     expect(out).toContain('500');
     expect(out).toMatch(/FCFA$/);
+  });
+
+  it('formats EUR with comma decimal and 2-digit cents', () => {
+    expect(formatCurrencyCompact(60_000.08, 'EUR')).toBe(
+      '60\u00a0000,08\u00a0€'
+    );
   });
 });
