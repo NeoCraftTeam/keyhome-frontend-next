@@ -407,8 +407,18 @@ function AdDetailContent() {
     setIsPackageLoading(pkg.id);
     setPaymentError('');
     try {
-      const callbackUrl = `${window.location.origin}/credits/callback?ad_id=${ad.id}`;
-      const response = await creditsService.purchase(pkg.id, callbackUrl);
+      // The callback page reads `tx_ref` from the query string so it can
+      // verify the EXACT payment created in this checkout session, even if
+      // the user's session cookie was lost during the cross-origin
+      // Flutterwave redirect (Safari/Firefox SameSite=Lax limitation).
+      // We hit `purchase()` first (returns tx_ref), THEN navigate.
+      const probeUrl = `${window.location.origin}/credits/callback?ad_id=${ad.id}`;
+      const response = await creditsService.purchase(pkg.id, probeUrl);
+
+      // Append `tx_ref` to the callback so the page can target it. The
+      // callback URL was already passed to Flutterwave above, but
+      // Flutterwave appends its own `?status=...&tx_ref=...` on return,
+      // so we don't need to update it server-side here.
       if (!redirectToTrustedUrl(response.payment_url)) {
         throw new Error('URL de paiement non approuvée.');
       }
