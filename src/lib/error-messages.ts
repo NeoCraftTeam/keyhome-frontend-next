@@ -1,5 +1,7 @@
 import { AxiosError } from 'axios';
 
+import { parseLaravelNestedApiErrorPayload } from '@/lib/api-errors';
+
 const DEFAULT_ERROR = 'Une erreur est survenue. Veuillez réessayer.';
 
 const NETWORK_TIMEOUT_FR =
@@ -129,6 +131,17 @@ export function getSafeErrorMessage(
       }>
     );
     if (validationMsg) return validationMsg;
+  }
+
+  // Domain envelope `{ error: { code, message, hint } }` (e.g. HTTP 410 SLOT_NOT_AVAILABLE).
+  const nested = parseLaravelNestedApiErrorPayload(data);
+  if (nested && nested.message && !isUnsafeBackendMessage(nested.message)) {
+    const hintOk =
+      nested.hint &&
+      nested.hint !== nested.message &&
+      !isUnsafeBackendMessage(nested.hint);
+
+    return hintOk ? `${nested.message} · ${nested.hint}` : nested.message;
   }
 
   // Trust backend `message` only if it's already user-facing French copy.

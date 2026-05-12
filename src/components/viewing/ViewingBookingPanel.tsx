@@ -1,9 +1,14 @@
 'use client';
 
-import { gradient } from '@/theme/tokens';
+import {
+  getLaravelNestedApiError,
+  getLaravelNestedApiErrorCode,
+  getLaravelApiErrorMessage,
+} from '@/lib/api-errors';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { viewingsService } from '@/services/viewings.service';
+import { gradient, transition } from '@/theme/tokens';
 import {
   type BookableSlot,
   CancelledBy,
@@ -33,6 +38,7 @@ import {
   Divider,
   IconButton,
   Paper,
+  Skeleton,
   Tab,
   Tabs,
   TextField,
@@ -59,7 +65,7 @@ import {
   startOfToday,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // ─── constants ──────────────────────────────────────────────────────────────
 
@@ -85,6 +91,13 @@ function formatSlot(time: string) {
 
 // ─── sub-components ──────────────────────────────────────────────────────────
 
+const SLOT_MOTION_SX = {
+  transition: transition.polish,
+  '@media (prefers-reduced-motion: reduce)': {
+    transition: 'none',
+  },
+} as const;
+
 function StatusChip({ status }: { status: ReservationStatus }) {
   const cfg = STATUS_CONFIG[status] ?? {
     label: status,
@@ -95,7 +108,12 @@ function StatusChip({ status }: { status: ReservationStatus }) {
       label={cfg.label}
       color={cfg.color}
       size="small"
-      sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+      sx={{
+        fontWeight: 600,
+        fontSize: '0.75rem',
+        height: 28,
+        '& .MuiChip-label': { px: 1, lineHeight: 1.2 },
+      }}
     />
   );
 }
@@ -109,6 +127,14 @@ interface Props {
   variant?: 'outlined' | 'contained';
   /** Host given name — personalises the booking CTA. */
   hostFirstName?: string;
+  /**
+   * Controlled mode — when provided, the component's own trigger button is
+   * hidden and the dialog open-state is driven externally (e.g. from the
+   * mobile `StickyPropertyBar`).
+   */
+  open?: boolean;
+  /** Required when `open` is set. Called when the user closes the dialog. */
+  onClose?: () => void;
 }
 
 // ─── component ────────────────────────────────────────────────────────────────
@@ -118,14 +144,23 @@ export default function ViewingBookingPanel({
   adTitle,
   variant = DEFAULT_VARIANT,
   hostFirstName,
+  open: openProp,
+  onClose: onCloseProp,
 }: Props) {
+  const isControlled = openProp !== undefined;
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
 
-  // Dialog open
-  const [open, setOpen] = useState(false);
+  // Dialog open — internal state used only in uncontrolled mode.
+  const [openInternal, setOpenInternal] = useState(false);
+  const open = isControlled ? openProp! : openInternal;
+  const setOpen = isControlled
+    ? (_v: boolean) => {
+        if (!_v) onCloseProp?.();
+      }
+    : setOpenInternal;
 
   // Tab: 0 = book, 1 = my reservations
   const [tab, setTab] = useState(0);
@@ -141,6 +176,9 @@ export default function ViewingBookingPanel({
   const [selectedSlot, setSelectedSlot] = useState<BookableSlot | null>(null);
   const [message, setMessage] = useState('');
   const [bookingError, setBookingError] = useState('');
+  const [bookingErrorHint, setBookingErrorHint] = useState('');
+  /** Blocks duplicate POST before React applies isPending (double-click / dual pointer). */
+  const bookingSubmitLockRef = useRef(false);
 
   // Calendar month currently displayed
   const [calendarMonth, setCalendarMonth] = useState<Date>(startOfMonth(today));
@@ -159,11 +197,29 @@ export default function ViewingBookingPanel({
         setSelectedSlot(null);
         setMessage('');
         setBookingError('');
+        setBookingErrorHint('');
+        bookingSubmitLockRef.current = false;
         setCalendarMonth(startOfMonth(today));
       }, 300);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // ── Month-range slots (for calendar dot hints) ────────────────────────────
+  const monthFrom = format(startOfMonth(calendarMonth), 'yyyy-MM-dd');
+  const monthTo = format(endOfMonth(calendarMonth), 'yyyy-MM-dd');
+  const { data: monthSlots } = useQuery({
+    queryKey: ['slots-range', adId, monthFrom, monthTo],
+    queryFn: () => viewingsService.getSlotsByRange(adId, monthFrom, monthTo),
+    enabled: open,
+    staleTime: 5 * 60_000,
+  });
+
+  /** Returns true if the given date has at least one available slot this month. */
+  const dateHasAvailableSlot = (d: Date): boolean => {
+    const key = format(d, 'yyyy-MM-dd');
+    return (monthSlots?.[key] ?? []).some((s) => s.is_available);
+  };
 
   // ── Slots query ───────────────────────────────────────────────────────────
   const dateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
@@ -183,6 +239,8 @@ export default function ViewingBookingPanel({
   const {
     data: myReservations,
     isLoading: myResLoading,
+    isError: myResError,
+    isFetching: myResFetching,
     refetch: refetchMyRes,
   } = useQuery({
     queryKey: ['my-reservations', adId],
@@ -190,6 +248,13 @@ export default function ViewingBookingPanel({
     enabled: isAuthenticated && open,
     staleTime: 30_000,
   });
+
+  const activeMyReservationsCount =
+    myReservations?.filter(
+      (r) =>
+        r.status === ReservationStatus.Pending ||
+        r.status === ReservationStatus.Confirmed
+    ).length ?? 0;
 
   // ── Create reservation mutation ────────────────────────────────────────────
   const { mutate: createReservation, isPending: isCreating } = useMutation({
@@ -206,9 +271,31 @@ export default function ViewingBookingPanel({
       queryClient.invalidateQueries({ queryKey: ['slots', adId, dateStr] });
     },
     onError: (err) => {
-      setBookingError(
-        getSafeErrorMessage(err, 'Impossible de créer la réservation.')
-      );
+      const nested = getLaravelNestedApiError(err);
+      if (nested) {
+        setBookingError(nested.message);
+        setBookingErrorHint(
+          nested.hint && nested.hint !== nested.message ? nested.hint : ''
+        );
+      } else {
+        setBookingError(
+          getLaravelApiErrorMessage(
+            err,
+            getSafeErrorMessage(err, 'Impossible de créer la réservation.')
+          )
+        );
+        setBookingErrorHint('');
+      }
+
+      if (getLaravelNestedApiErrorCode(err) === 'SLOT_NOT_AVAILABLE') {
+        void queryClient.invalidateQueries({ queryKey: ['slots', adId] });
+        void queryClient.invalidateQueries({ queryKey: ['slots-range', adId] });
+        setSelectedSlot(null);
+        setStep(1);
+      }
+    },
+    onSettled: () => {
+      bookingSubmitLockRef.current = false;
     },
   });
 
@@ -261,6 +348,7 @@ export default function ViewingBookingPanel({
     setSelectedDate(d);
     setSelectedSlot(null);
     setBookingError('');
+    setBookingErrorHint('');
     setStep(1);
   }
 
@@ -301,10 +389,10 @@ export default function ViewingBookingPanel({
         {/* Month navigator */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
           <IconButton
-            size="small"
             onClick={handlePrevMonth}
             disabled={!canGoPrevMonth}
             aria-label="Mois précédent"
+            sx={{ minWidth: 44, minHeight: 44 }}
           >
             <ChevronLeft fontSize="small" />
           </IconButton>
@@ -316,10 +404,10 @@ export default function ViewingBookingPanel({
             {format(calendarMonth, 'MMMM yyyy', { locale: fr })}
           </Typography>
           <IconButton
-            size="small"
             onClick={handleNextMonth}
             disabled={!canGoNextMonth}
             aria-label="Mois suivant"
+            sx={{ minWidth: 44, minHeight: 44 }}
           >
             <ChevronRight fontSize="small" />
           </IconButton>
@@ -409,6 +497,7 @@ export default function ViewingBookingPanel({
                 sx={{
                   aspectRatio: '1',
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: '50%',
@@ -421,7 +510,11 @@ export default function ViewingBookingPanel({
                     : isNow
                       ? 'primary.main'
                       : 'transparent',
-                  transition: 'all 0.15s',
+                  transition:
+                    'background-color 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
+                  '@media (prefers-reduced-motion: reduce)': {
+                    transition: 'none',
+                  },
                   '&:hover': !isDisabled
                     ? { bgcolor: isSel ? 'primary.dark' : 'action.hover' }
                     : {},
@@ -442,6 +535,18 @@ export default function ViewingBookingPanel({
                 >
                   {format(d, 'd')}
                 </Typography>
+                {/* Green dot when the date has at least one available slot */}
+                {!isDisabled && dateHasAvailableSlot(d) && (
+                  <Box
+                    sx={{
+                      width: 4,
+                      height: 4,
+                      borderRadius: '50%',
+                      bgcolor: isSel ? 'primary.contrastText' : 'success.main',
+                      mt: '2px',
+                    }}
+                  />
+                )}
               </Box>
             );
           })}
@@ -452,7 +557,7 @@ export default function ViewingBookingPanel({
           color="text.secondary"
           sx={{ display: 'block', mt: 1.5, textAlign: 'center' }}
         >
-          Sélectionnez une date pour voir les créneaux disponibles
+          • = créneaux disponibles — sélectionnez une date pour réserver
         </Typography>
       </Box>
     );
@@ -467,12 +572,12 @@ export default function ViewingBookingPanel({
         {/* Back + date label */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <IconButton
-            size="small"
             onClick={() => {
               setStep(0);
               setSelectedSlot(null);
             }}
-            aria-label="Retour"
+            aria-label="Retour au choix de la date"
+            sx={{ minWidth: 44, minHeight: 44 }}
           >
             <ChevronLeft fontSize="small" />
           </IconButton>
@@ -499,6 +604,12 @@ export default function ViewingBookingPanel({
               size="small"
               startIcon={<Refresh />}
               onClick={() => refetchSlots()}
+              sx={{
+                mt: 1,
+                textTransform: 'none',
+                fontWeight: 600,
+                minHeight: 44,
+              }}
             >
               Réessayer
             </Button>
@@ -554,18 +665,23 @@ export default function ViewingBookingPanel({
                         }}
                         aria-pressed={isSel}
                         sx={{
-                          py: 1,
-                          px: 0.5,
+                          py: 1.25,
+                          px: 0.75,
                           borderRadius: 2,
                           border: '2px solid',
                           borderColor: isSel ? 'primary.main' : 'divider',
                           bgcolor: isSel ? 'primary.main' : 'background.paper',
                           cursor: 'pointer',
                           textAlign: 'center',
-                          transition: 'all 0.15s',
+                          ...SLOT_MOTION_SX,
                           '&:hover': {
                             borderColor: 'primary.main',
                             bgcolor: 'primary.50',
+                          },
+                          '&:focus-visible': {
+                            outline: '2px solid',
+                            outlineColor: 'primary.main',
+                            outlineOffset: 2,
                           },
                         }}
                       >
@@ -634,9 +750,9 @@ export default function ViewingBookingPanel({
         {/* Back + summary */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <IconButton
-            size="small"
             onClick={() => setStep(1)}
-            aria-label="Retour"
+            aria-label="Retour au choix du créneau"
+            sx={{ minWidth: 44, minHeight: 44 }}
           >
             <ChevronLeft fontSize="small" />
           </IconButton>
@@ -698,6 +814,11 @@ export default function ViewingBookingPanel({
         {bookingError && (
           <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
             {bookingError}
+            {bookingErrorHint ? (
+              <Typography variant="body2" sx={{ mt: 1, opacity: 0.92 }}>
+                {bookingErrorHint}
+              </Typography>
+            ) : null}
           </Alert>
         )}
 
@@ -705,7 +826,13 @@ export default function ViewingBookingPanel({
           fullWidth
           variant="contained"
           size="large"
-          onClick={() => createReservation()}
+          onClick={() => {
+            if (bookingSubmitLockRef.current || isCreating) {
+              return;
+            }
+            bookingSubmitLockRef.current = true;
+            createReservation();
+          }}
           disabled={isCreating}
           startIcon={
             isCreating ? (
@@ -782,6 +909,7 @@ export default function ViewingBookingPanel({
               setSelectedSlot(null);
               setMessage('');
               setBookingError('');
+              setBookingErrorHint('');
             }}
           >
             Voir mes visites
@@ -818,8 +946,57 @@ export default function ViewingBookingPanel({
 
     if (myResLoading) {
       return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress size={32} />
+        <Box
+          sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+          role="status"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          {[1, 2, 3].map((i) => (
+            <Paper
+              key={i}
+              variant="outlined"
+              sx={{ p: 2.5, borderRadius: 2, borderColor: 'divider' }}
+            >
+              <Skeleton
+                variant="rounded"
+                width={100}
+                height={28}
+                sx={{ mb: 1.5 }}
+              />
+              <Skeleton variant="text" width="85%" height={22} />
+              <Skeleton variant="text" width="55%" height={20} />
+            </Paper>
+          ))}
+        </Box>
+      );
+    }
+
+    if (myResError) {
+      return (
+        <Box sx={{ py: 2 }}>
+          <Alert
+            severity="error"
+            sx={{ borderRadius: 2, mb: 2 }}
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => void refetchMyRes()}
+                disabled={myResFetching}
+                sx={{ minHeight: 44, textTransform: 'none', fontWeight: 600 }}
+              >
+                Réessayer
+              </Button>
+            }
+          >
+            <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+              Impossible de charger vos réservations
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Vérifiez votre connexion puis réessayez.
+            </Typography>
+          </Alert>
         </Box>
       );
     }
@@ -832,13 +1009,22 @@ export default function ViewingBookingPanel({
           <EventAvailable
             sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }}
           />
-          <Typography variant="body2" color="text.secondary">
-            Vous n&apos;avez aucune visite planifiée pour cette annonce.
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ maxWidth: 320, mx: 'auto' }}
+          >
+            Les visites que vous réservez sur cette annonce apparaissent ici (en
+            attente, confirmées, annulées).
           </Typography>
           <Button
-            size="small"
             variant="outlined"
-            sx={{ mt: 2 }}
+            sx={{
+              mt: 2,
+              textTransform: 'none',
+              minHeight: 44,
+              borderRadius: 2,
+            }}
             onClick={() => setTab(0)}
           >
             Réserver une visite
@@ -862,21 +1048,42 @@ export default function ViewingBookingPanel({
             mb: 2,
           }}
         >
-          <Typography variant="subtitle2" fontWeight={600}>
-            Mes réservations ({reservations.length})
+          <Typography variant="subtitle1" fontWeight={700}>
+            Mes réservations
+            <Box
+              component="span"
+              sx={{
+                ml: 0.75,
+                fontWeight: 600,
+                color: 'text.secondary',
+                fontSize: '0.9rem',
+              }}
+            >
+              ({reservations.length})
+            </Box>
           </Typography>
-          <Tooltip title="Actualiser">
+          <Tooltip title="Actualiser la liste">
             <IconButton
-              size="small"
               onClick={() => refetchMyRes()}
-              aria-label="Actualiser"
+              aria-label="Actualiser la liste des réservations"
+              sx={{ minWidth: 44, minHeight: 44 }}
             >
               <Refresh fontSize="small" />
             </IconButton>
           </Tooltip>
         </Box>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box
+          component="ul"
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            listStyle: 'none',
+            m: 0,
+            p: 0,
+          }}
+        >
           {sortedRes.map((r) => {
             const canCancel =
               r.status === ReservationStatus.Pending ||
@@ -884,9 +1091,18 @@ export default function ViewingBookingPanel({
             const slotDate = parseISO(r.slot_date);
             return (
               <Paper
+                component="li"
                 key={r.id}
                 variant="outlined"
-                sx={{ p: 2, borderRadius: 2, borderColor: 'divider' }}
+                sx={{
+                  p: { xs: 2, sm: 2.5 },
+                  borderRadius: 2,
+                  borderColor: 'divider',
+                  ...SLOT_MOTION_SX,
+                  '&:hover': {
+                    boxShadow: (t) => t.shadows[2],
+                  },
+                }}
               >
                 <Box
                   sx={{
@@ -919,9 +1135,10 @@ export default function ViewingBookingPanel({
                         sx={{ fontSize: 13, color: 'text.secondary' }}
                       />
                       <Typography
-                        variant="body2"
-                        fontWeight={600}
-                        sx={{ fontSize: '0.82rem' }}
+                        component="h3"
+                        variant="subtitle2"
+                        fontWeight={700}
+                        sx={{ fontSize: '0.9375rem', lineHeight: 1.35 }}
                       >
                         {format(slotDate, 'EEEE d MMMM yyyy', { locale: fr })}
                       </Typography>
@@ -935,7 +1152,7 @@ export default function ViewingBookingPanel({
                       <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{ fontSize: '0.8rem' }}
+                        sx={{ fontSize: '0.875rem', lineHeight: 1.45 }}
                       >
                         {formatSlot(r.slot_starts_at)} –{' '}
                         {formatSlot(r.slot_ends_at)}
@@ -958,9 +1175,9 @@ export default function ViewingBookingPanel({
                           }}
                         />
                         <Typography
-                          variant="caption"
+                          variant="body2"
                           color="text.secondary"
-                          sx={{ fontStyle: 'italic' }}
+                          sx={{ fontStyle: 'italic', lineHeight: 1.45 }}
                         >
                           {r.client_message}
                         </Typography>
@@ -1003,7 +1220,6 @@ export default function ViewingBookingPanel({
                   </Box>
                   {canCancel && (
                     <Button
-                      size="small"
                       color="error"
                       variant="outlined"
                       onClick={() => {
@@ -1012,11 +1228,16 @@ export default function ViewingBookingPanel({
                         setCancelReason('');
                       }}
                       sx={{
-                        borderRadius: 1.5,
                         flexShrink: 0,
-                        minWidth: 0,
-                        fontSize: '0.72rem',
-                        px: 1,
+                        minWidth: 44,
+                        minHeight: 44,
+                        px: 1.5,
+                        alignSelf: { xs: 'stretch', sm: 'flex-start' },
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        fontSize: '0.8125rem',
+                        '&:focus-visible': { outlineOffset: 2 },
                       }}
                     >
                       Annuler
@@ -1087,7 +1308,8 @@ export default function ViewingBookingPanel({
 
   return (
     <>
-      {triggerButton}
+      {/* Trigger button is hidden in controlled mode (opened by the parent). */}
+      {!isControlled && triggerButton}
 
       {/* ── Main booking dialog ── */}
       <Dialog
@@ -1126,9 +1348,9 @@ export default function ViewingBookingPanel({
             </span>
           </Typography>
           <IconButton
-            size="small"
             onClick={() => setOpen(false)}
-            aria-label="Fermer"
+            aria-label="Fermer la fenêtre de réservation"
+            sx={{ minWidth: 44, minHeight: 44 }}
           >
             <Close fontSize="small" />
           </IconButton>
@@ -1138,44 +1360,61 @@ export default function ViewingBookingPanel({
         <Tabs
           value={tab}
           onChange={(_, v: number) => setTab(v)}
+          aria-label="Visite : réserver ou mes réservations"
           sx={{
             px: 3,
             borderBottom: '1px solid',
             borderColor: 'divider',
-            minHeight: 40,
+            minHeight: 48,
             '& .MuiTab-root': {
-              minHeight: 40,
+              minHeight: 48,
               textTransform: 'none',
               fontWeight: 600,
-              fontSize: '0.85rem',
+              fontSize: '0.875rem',
+              '&:focus-visible': { outlineOffset: -2 },
             },
           }}
         >
-          <Tab label="Réserver" />
+          <Tab
+            label="Réserver"
+            id="viewing-tab-book"
+            aria-controls="viewing-panel-book"
+          />
           <Tab
             label={
-              myReservations &&
-              myReservations.filter(
-                (r) =>
-                  r.status === ReservationStatus.Pending ||
-                  r.status === ReservationStatus.Confirmed
-              ).length > 0
-                ? `Mes réservations (${myReservations.filter((r) => r.status === ReservationStatus.Pending || r.status === ReservationStatus.Confirmed).length})`
+              activeMyReservationsCount > 0
+                ? `Mes réservations (${activeMyReservationsCount})`
                 : 'Mes réservations'
             }
+            id="viewing-tab-reservations"
+            aria-controls="viewing-panel-reservations"
           />
         </Tabs>
 
         <DialogContent sx={{ pt: 2.5, pb: 3, px: 3 }}>
-          {tab === 0 && (
-            <>
-              {step === 0 && renderDateStep()}
-              {step === 1 && renderSlotStep()}
-              {step === 2 && renderMessageStep()}
-              {step === 3 && renderSuccessStep()}
-            </>
-          )}
-          {tab === 1 && renderMyReservations()}
+          <Box
+            id="viewing-panel-book"
+            role="tabpanel"
+            aria-labelledby="viewing-tab-book"
+            hidden={tab !== 0}
+          >
+            {tab === 0 && (
+              <>
+                {step === 0 && renderDateStep()}
+                {step === 1 && renderSlotStep()}
+                {step === 2 && renderMessageStep()}
+                {step === 3 && renderSuccessStep()}
+              </>
+            )}
+          </Box>
+          <Box
+            id="viewing-panel-reservations"
+            role="tabpanel"
+            aria-labelledby="viewing-tab-reservations"
+            hidden={tab !== 1}
+          >
+            {tab === 1 && renderMyReservations()}
+          </Box>
         </DialogContent>
       </Dialog>
 
@@ -1194,31 +1433,45 @@ export default function ViewingBookingPanel({
         PaperProps={{ sx: { borderRadius: isMobile ? 0 : 3 } }}
       >
         <Box sx={{ p: 3 }}>
-          <Typography variant="h6" fontWeight={700} gutterBottom>
-            Annuler la visite
+          <Typography component="h2" variant="h6" fontWeight={700} gutterBottom>
+            Annuler cette visite&nbsp;?
           </Typography>
           {cancelTarget && (
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {format(parseISO(cancelTarget.slot_date), 'EEEE d MMMM yyyy', {
-                locale: fr,
-              })}
-              {' · '}
-              {formatSlot(cancelTarget.slot_starts_at)} –{' '}
-              {formatSlot(cancelTarget.slot_ends_at)}
+              Le créneau sera libéré pour d&apos;autres visiteurs. Le
+              propriétaire sera informé de l&apos;annulation.
+              <Box component="span" sx={{ display: 'block', mt: 1 }}>
+                <strong>
+                  {format(
+                    parseISO(cancelTarget.slot_date),
+                    'EEEE d MMMM yyyy',
+                    {
+                      locale: fr,
+                    }
+                  )}
+                </strong>
+                {' · '}
+                <strong>
+                  {formatSlot(cancelTarget.slot_starts_at)} –{' '}
+                  {formatSlot(cancelTarget.slot_ends_at)}
+                </strong>
+              </Box>
             </Typography>
           )}
 
-          <TextField
-            label="Motif d'annulation (optionnel)"
-            multiline
-            minRows={2}
-            fullWidth
-            value={cancelReason}
-            onChange={(e) => setCancelReason(e.target.value)}
-            inputProps={{ maxLength: 250 }}
-            size="small"
-            sx={{ mb: 2 }}
-          />
+          {cancelTarget && (
+            <TextField
+              label="Motif d'annulation (optionnel)"
+              multiline
+              minRows={2}
+              fullWidth
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              inputProps={{ maxLength: 250 }}
+              size="small"
+              sx={{ mb: 2 }}
+            />
+          )}
 
           {cancelError && (
             <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
@@ -1236,6 +1489,7 @@ export default function ViewingBookingPanel({
                 setCancelError('');
               }}
               disabled={isCancelling}
+              sx={{ textTransform: 'none', minHeight: 44 }}
             >
               Retour
             </Button>
@@ -1249,6 +1503,12 @@ export default function ViewingBookingPanel({
                   <CircularProgress size={14} color="inherit" />
                 ) : undefined
               }
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                minHeight: 44,
+                borderRadius: 2,
+              }}
             >
               {isCancelling ? 'Annulation…' : "Confirmer l'annulation"}
             </Button>

@@ -18,7 +18,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import LogoutIcon from '@mui/icons-material/Logout';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -370,19 +369,6 @@ export default function NavDrawer({
                 </ListItemIcon>
                 <ListItemText
                   primary="Mes réservations"
-                  slotProps={ACCOUNT_LIST_ITEM_TEXT_SLOT_PROPS}
-                />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => go('/notifications')} sx={ITEM_SX}>
-                <ListItemIcon sx={ACCOUNT_LIST_ITEM_ICON_SX}>
-                  <Box sx={DRAWER_ICON_SLOT_SX}>
-                    <NotificationsIcon />
-                  </Box>
-                </ListItemIcon>
-                <ListItemText
-                  primary="Notifications"
                   slotProps={ACCOUNT_LIST_ITEM_TEXT_SLOT_PROPS}
                 />
               </ListItemButton>

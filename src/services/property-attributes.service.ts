@@ -16,14 +16,14 @@ export interface PropertyAttributeGroup {
 }
 
 export const propertyAttributesService = {
-  async list(): Promise<{
+  async list(config?: { signal?: AbortSignal }): Promise<{
     data: PropertyAttributeItem[];
     grouped: PropertyAttributeGroup[];
   }> {
     const { data } = await api.get<{
       data: PropertyAttributeItem[];
       grouped: PropertyAttributeGroup[];
-    }>('/property-attributes');
+    }>('/property-attributes', config?.signal ? { signal: config.signal } : {});
     return data;
   },
 };

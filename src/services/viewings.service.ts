@@ -17,6 +17,22 @@ export const viewingsService = {
   },
 
   /**
+   * Fetch slots for a date range — used to mark calendar dates with availability.
+   * GET /api/v1/ads/{adId}/slots?from=YYYY-MM-DD&to=YYYY-MM-DD
+   * Returns { "YYYY-MM-DD": BookableSlot[] }
+   */
+  async getSlotsByRange(
+    adId: string,
+    from: string,
+    to: string
+  ): Promise<Record<string, BookableSlot[]>> {
+    const { data } = await api.get(`/ads/${adId}/slots`, {
+      params: { from, to },
+    });
+    return data.data?.slots_by_date ?? {};
+  },
+
+  /**
    * Create a tentative reservation for a slot.
    * POST /api/v1/ads/{adId}/reservations
    */

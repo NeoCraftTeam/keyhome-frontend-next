@@ -77,7 +77,7 @@ function PaymentsContent() {
         </Typography>
       </FadeIn>
       <FadeIn delay={0.1}>
-        <PaymentHistoryTableModern perPage={15} />
+        <PaymentHistoryTableModern />
       </FadeIn>
     </Container>
   );

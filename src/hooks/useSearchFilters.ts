@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
 import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { propertyAttributesService } from '@/services/property-attributes.service';
 import type { AdType, City, FacetsResponse, SearchParams } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 /* ── Types ───────────────────────────────────────────────────── */
 
@@ -39,8 +39,6 @@ export interface SearchFiltersState {
   setTransactionType: (v: 'location' | 'vente' | null) => void;
   has3dTour: boolean;
   setHas3dTour: (v: boolean) => void;
-  isVerified: boolean;
-  setIsVerified: (v: boolean) => void;
   selectedAmenities: string[];
   setSelectedAmenities: React.Dispatch<React.SetStateAction<string[]>>;
   page: number;
@@ -97,7 +95,6 @@ export function useSearchFilters(): SearchFiltersReturn {
     'location' | 'vente' | null
   >(null);
   const [has3dTour, setHas3dTour] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [mapStyle, setMapStyle] = useState<'streets' | 'satellite' | 'dark'>(
     'streets'
@@ -263,7 +260,6 @@ export function useSearchFilters(): SearchFiltersReturn {
       has_parking: hasParking || undefined,
       transaction_type: transactionType || undefined,
       has_3d_tour: has3dTour || undefined,
-      is_verified: isVerified || undefined,
       attributes: selectedAmenities.length > 0 ? selectedAmenities : undefined,
       latitude:
         sortBy === '_geoPoint' && userLocation ? userLocation.lat : undefined,
@@ -287,7 +283,6 @@ export function useSearchFilters(): SearchFiltersReturn {
       hasParking,
       transactionType,
       has3dTour,
-      isVerified,
       selectedAmenities,
       sortBy,
       sortOrder,
@@ -309,7 +304,6 @@ export function useSearchFilters(): SearchFiltersReturn {
     setHasParking(false);
     setTransactionType(null);
     setHas3dTour(false);
-    setIsVerified(false);
     setBathrooms(undefined);
     setSelectedAmenities([]);
     setSortBy('created_at');
@@ -332,7 +326,6 @@ export function useSearchFilters(): SearchFiltersReturn {
         hasParking,
         transactionType,
         has3dTour,
-        isVerified,
         ...selectedAmenities,
       ].filter(Boolean).length,
     [
@@ -346,7 +339,6 @@ export function useSearchFilters(): SearchFiltersReturn {
       hasParking,
       transactionType,
       has3dTour,
-      isVerified,
       selectedAmenities,
     ]
   );
@@ -405,8 +397,6 @@ export function useSearchFilters(): SearchFiltersReturn {
     setTransactionType,
     has3dTour,
     setHas3dTour,
-    isVerified,
-    setIsVerified,
     selectedAmenities,
     setSelectedAmenities,
     page,

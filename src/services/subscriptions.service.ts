@@ -61,17 +61,22 @@ export interface SubscriptionInitiateResponse {
 }
 
 export const subscriptionsService = {
-  async getPlans(): Promise<SubscriptionPlan[]> {
+  async getPlans(config?: {
+    signal?: AbortSignal;
+  }): Promise<SubscriptionPlan[]> {
     const { data } = await api.get<
       { data?: SubscriptionPlan[] } | SubscriptionPlan[]
-    >('/subscriptions/plans');
+    >('/subscriptions/plans', config?.signal ? { signal: config.signal } : {});
     if (Array.isArray(data)) return data;
     return data?.data ?? [];
   },
 
-  async getCurrent(): Promise<CurrentSubscriptionResponse> {
+  async getCurrent(config?: {
+    signal?: AbortSignal;
+  }): Promise<CurrentSubscriptionResponse> {
     const { data } = await api.get<CurrentSubscriptionResponse>(
-      '/subscriptions/current'
+      '/subscriptions/current',
+      config?.signal ? { signal: config.signal } : {}
     );
     return {
       has_subscription: Boolean(data?.has_subscription),

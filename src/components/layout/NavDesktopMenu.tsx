@@ -1,8 +1,8 @@
 'use client';
 
+import type { User } from '@/types';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import LogoutIcon from '@mui/icons-material/Logout';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -17,7 +17,6 @@ import {
   MenuItem,
   Typography,
 } from '@mui/material';
-import type { User } from '@/types';
 
 interface NavDesktopMenuProps {
   anchorEl: HTMLElement | null;
@@ -93,12 +92,6 @@ export default function NavDesktopMenu({
           <CalendarMonthIcon />
         </ListItemIcon>
         <ListItemText>Mes réservations</ListItemText>
-      </MenuItem>
-      <MenuItem onClick={() => navigate('/notifications')}>
-        <ListItemIcon>
-          <NotificationsIcon />
-        </ListItemIcon>
-        <ListItemText>Notifications</ListItemText>
       </MenuItem>
       <MenuItem onClick={() => navigate('/search-alerts')}>
         <ListItemIcon>

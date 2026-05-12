@@ -1,40 +1,32 @@
 'use client';
 
 import AdLocationMap from '@/components/ads/AdLocationMap';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
-import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { useSoundFeedback } from '@/hooks/useSoundFeedback';
-import { useUserLocation } from '@/hooks/useUserLocation';
-import PropertyAttributes from '@/components/ads/PropertyAttributes';
-import StickyPropertyBar from '@/components/ads/StickyPropertyBar';
-import dynamic from 'next/dynamic';
-const TourViewer = dynamic(() => import('@/components/ads/TourViewerPSV'), {
-  ssr: false,
-  loading: () => null,
-});
-import ReviewForm from '@/components/reviews/ReviewForm';
-import ReviewsSection from '@/components/reviews/ReviewsSection';
-import PackageCard from '@/components/ui/PackageCard';
-import { Price } from '@/components/ui/Price';
-import ImageLightbox from '@/components/ui/ImageLightbox';
-import ViewingBookingPanel from '@/components/viewing/ViewingBookingPanel';
-import ContactChatButton from '@/components/chat/ContactChatButton';
-import QueryError from '@/components/ui/QueryError';
-import FadeIn from '@/components/ui/FadeIn';
-import { SectionBoundary } from '@/components/ui/SectionBoundary';
 import AdReportModal from '@/components/ads/AdReportModal';
 import CompareDrawer from '@/components/ads/CompareDrawer';
-import SimilarAds from '@/components/ads/SimilarAds';
+import DirectionsPanel from '@/components/ads/DirectionsPanel';
 import KeyScoreBadge from '@/components/ads/KeyScoreBadge';
 import KeyScoreSection from '@/components/ads/KeyScoreSection';
 import NeighborhoodScorecard from '@/components/ads/NeighborhoodScorecard';
-import DirectionsPanel from '@/components/ads/DirectionsPanel';
+import PropertyAttributes from '@/components/ads/PropertyAttributes';
+import SimilarAds from '@/components/ads/SimilarAds';
+import StickyPropertyBar from '@/components/ads/StickyPropertyBar';
+import ContactChatButton from '@/components/chat/ContactChatButton';
+import ReviewForm from '@/components/reviews/ReviewForm';
+import ReviewsSection from '@/components/reviews/ReviewsSection';
 import TrustScoreBadge from '@/components/trust/TrustScoreBadge';
-import {
-  COMPARATOR_MAX_ITEMS,
-  useComparator,
-} from '@/providers/ComparatorProvider';
+import AppLoader from '@/components/ui/AppLoader';
+import FadeIn from '@/components/ui/FadeIn';
+import ImageLightbox from '@/components/ui/ImageLightbox';
+import PackageCard from '@/components/ui/PackageCard';
+import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import { Price } from '@/components/ui/Price';
+import QueryError from '@/components/ui/QueryError';
+import { SectionBoundary } from '@/components/ui/SectionBoundary';
+import ViewingBookingPanel from '@/components/viewing/ViewingBookingPanel';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useUserLocation } from '@/hooks/useUserLocation';
 import {
   CURRENCY_SYMBOL,
   formatDate,
@@ -44,15 +36,23 @@ import {
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { useAuth } from '@/providers/AuthProvider';
+import {
+  COMPARATOR_MAX_ITEMS,
+  useComparator,
+} from '@/providers/ComparatorProvider';
 import { useFavorites } from '@/providers/FavoritesProvider';
 import { adsService } from '@/services/ads.service';
 import { creditsService } from '@/services/credits.service';
 import { paymentsService } from '@/services/payments.service';
+import { brand, gradient } from '@/theme/tokens';
 import type { PointPackage, UnlockResponse } from '@/types';
 import AccountBalanceWallet from '@mui/icons-material/AccountBalanceWallet';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import BathtubOutlined from '@mui/icons-material/BathtubOutlined';
 import BedOutlined from '@mui/icons-material/BedOutlined';
+import Bolt from '@mui/icons-material/Bolt';
+import Bookmark from '@mui/icons-material/Bookmark';
+import BookmarkBorder from '@mui/icons-material/BookmarkBorder';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import Call from '@mui/icons-material/Call';
 import CompareArrows from '@mui/icons-material/CompareArrows';
@@ -60,8 +60,6 @@ import ContentCopy from '@mui/icons-material/ContentCopy';
 import Description from '@mui/icons-material/Description';
 import DirectionsBus from '@mui/icons-material/DirectionsBus';
 import Email from '@mui/icons-material/Email';
-import Bookmark from '@mui/icons-material/Bookmark';
-import BookmarkBorder from '@mui/icons-material/BookmarkBorder';
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import LocalHospital from '@mui/icons-material/LocalHospital';
 import LocalParking from '@mui/icons-material/LocalParking';
@@ -71,8 +69,6 @@ import NearMe from '@mui/icons-material/NearMe';
 import Phone from '@mui/icons-material/Phone';
 import PrintIcon from '@mui/icons-material/Print';
 import ReceiptLong from '@mui/icons-material/ReceiptLong';
-import Bolt from '@mui/icons-material/Bolt';
-import WaterDrop from '@mui/icons-material/WaterDrop';
 import Schedule from '@mui/icons-material/Schedule';
 import School from '@mui/icons-material/School';
 import Share from '@mui/icons-material/Share';
@@ -80,10 +76,10 @@ import SquareFootOutlined from '@mui/icons-material/SquareFootOutlined';
 import Star from '@mui/icons-material/Star';
 import Storefront from '@mui/icons-material/Storefront';
 import Verified from '@mui/icons-material/Verified';
-import Visibility from '@mui/icons-material/Visibility';
 import ViewInAr from '@mui/icons-material/ViewInAr';
+import Visibility from '@mui/icons-material/Visibility';
+import WaterDrop from '@mui/icons-material/WaterDrop';
 import WhatsApp from '@mui/icons-material/WhatsApp';
-import AppLoader from '@/components/ui/AppLoader';
 import {
   Alert,
   Avatar,
@@ -103,8 +99,9 @@ import {
   Typography,
 } from '@mui/material';
 import type { TransitionProps } from '@mui/material/transitions';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { AnimatePresence, motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -115,7 +112,10 @@ import {
   useRef,
   useState,
 } from 'react';
-import { brand, gradient } from '@/theme/tokens';
+const TourViewer = dynamic(() => import('@/components/ads/TourViewerPSV'), {
+  ssr: false,
+  loading: () => null,
+});
 
 const SlideUpTransition = forwardRef(function SlideUpTransition(
   props: TransitionProps & { children: React.ReactElement },
@@ -161,6 +161,7 @@ function AdDetailContent() {
   const [snackbarSuccess, setSnackbarSuccess] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [mobileBookingOpen, setMobileBookingOpen] = useState(false);
   const [reportError, setReportError] = useState('');
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [isPrintPdfLoading, setIsPrintPdfLoading] = useState(false);
@@ -2140,6 +2141,31 @@ function AdDetailContent() {
                         adSlug={ad.slug}
                         hostFirstName={publisherFirstName || undefined}
                       />
+                      {/* Booking button — mobile only, unlocked */}
+                      {!isOwnAd && !isLocked && (
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          size="medium"
+                          startIcon={<CalendarMonth sx={{ fontSize: 18 }} />}
+                          onClick={() => setMobileBookingOpen(true)}
+                          sx={{
+                            mt: 1,
+                            textTransform: 'none',
+                            fontWeight: 700,
+                            borderRadius: 2,
+                            py: 1,
+                            borderColor: 'primary.main',
+                            color: 'primary.main',
+                            '&:hover': {
+                              bgcolor: 'rgba(246,71,95,0.06)',
+                              borderColor: 'primary.dark',
+                            },
+                          }}
+                        >
+                          Programmer une visite
+                        </Button>
+                      )}
                       {publisherEmail && (
                         <Box
                           sx={{
@@ -4171,6 +4197,20 @@ function AdDetailContent() {
           phoneUrl={
             !isLocked && publisherPhone ? `tel:${publisherPhone}` : undefined
           }
+          onBooking={
+            !isOwnAd && !isLocked ? () => setMobileBookingOpen(true) : undefined
+          }
+        />
+      )}
+
+      {/* Mobile-triggered viewing booking dialog (controlled by StickyPropertyBar) */}
+      {ad && !isOwnAd && !isLocked && (
+        <ViewingBookingPanel
+          adId={ad.id}
+          adTitle={ad.title}
+          hostFirstName={publisherFirstName || undefined}
+          open={mobileBookingOpen}
+          onClose={() => setMobileBookingOpen(false)}
         />
       )}
 

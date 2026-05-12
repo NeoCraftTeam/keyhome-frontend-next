@@ -22,7 +22,6 @@ import MapIcon from '@mui/icons-material/Map';
 import SearchIcon from '@mui/icons-material/Search';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import TuneIcon from '@mui/icons-material/Tune';
-import VerifiedIcon from '@mui/icons-material/Verified';
 import ViewInArIcon from '@mui/icons-material/ViewInAr';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
@@ -194,8 +193,6 @@ function SearchContent() {
     setTransactionType,
     has3dTour,
     setHas3dTour,
-    isVerified,
-    setIsVerified,
     selectedAmenities,
     setSelectedAmenities,
     page,
@@ -800,25 +797,6 @@ function SearchContent() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <ViewInArIcon sx={{ fontSize: 16, color: 'primary.main' }} />
             Visite 3D disponible
-          </Box>
-        }
-        sx={{ mb: 1 }}
-      />
-
-      <FormControlLabel
-        control={
-          <Switch
-            checked={isVerified}
-            onChange={(e) => {
-              setIsVerified(e.target.checked);
-              setPage(1);
-            }}
-          />
-        }
-        label={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <VerifiedIcon sx={{ fontSize: 16, color: 'success.main' }} />
-            Annonce vérifiée
           </Box>
         }
         sx={{ mb: 2 }}
@@ -1633,15 +1611,6 @@ function SearchContent() {
                 icon={<ViewInArIcon sx={{ fontSize: 14 }} />}
                 label="Visite 3D"
                 onDelete={() => setHas3dTour(false)}
-                size="small"
-                variant="outlined"
-              />
-            )}
-            {isVerified && (
-              <Chip
-                icon={<VerifiedIcon sx={{ fontSize: 14 }} />}
-                label="Vérifiée"
-                onDelete={() => setIsVerified(false)}
                 size="small"
                 variant="outlined"
               />

@@ -1,6 +1,7 @@
 'use client';
 
 import { Price } from '@/components/ui/Price';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import PhoneIcon from '@mui/icons-material/Phone';
 import WhatsApp from '@mui/icons-material/WhatsApp';
@@ -26,6 +27,11 @@ interface StickyPropertyBarProps {
   phoneUrl?: string;
   /** When provided, shows a Message button that calls this handler. */
   onMessage?: () => void;
+  /**
+   * When provided and the ad is unlocked, shows a "Réserver une visite"
+   * button that triggers the viewing booking flow on mobile.
+   */
+  onBooking?: () => void;
   /** Host given name — personalises CTAs. */
   hostFirstName?: string;
 }
@@ -45,9 +51,15 @@ export default function StickyPropertyBar({
   whatsappUrl,
   phoneUrl,
   onMessage,
+  onBooking,
   hostFirstName,
 }: StickyPropertyBarProps) {
-  const hasDirectButtons = !!(whatsappUrl || phoneUrl || onMessage);
+  const hasDirectButtons = !!(
+    whatsappUrl ||
+    phoneUrl ||
+    onMessage ||
+    onBooking
+  );
   const [isVisible, setIsVisible] = useState(false);
   const { scrollY } = useScroll();
   const shouldReduce = useReducedMotion();
@@ -98,13 +110,12 @@ export default function StickyPropertyBar({
         sx={{
           display: hideOnDesktop ? { xs: 'flex', md: 'none' } : 'flex',
           width: '100%',
-          flexDirection: hasDirectButtons ? 'column' : 'row',
-          alignItems: hasDirectButtons ? 'stretch' : 'center',
-          justifyContent: 'space-between',
-          gap: hasDirectButtons ? 1 : 2,
-          px: 2.5,
-          pt: 1.5,
-          pb: 'max(1rem, env(safe-area-inset-bottom))',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          gap: 0,
+          px: 2,
+          pt: 1.25,
+          pb: 'max(0.875rem, env(safe-area-inset-bottom))',
           bgcolor: 'background.paper',
           borderRadius: '20px 20px 0 0',
           boxShadow: '0 -8px 32px rgba(0,0,0,0.12)',
@@ -155,128 +166,186 @@ export default function StickyPropertyBar({
           </Typography>
         </Box>
 
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 1,
-            flexShrink: 0,
-            width: hasDirectButtons ? '100%' : 'auto',
-          }}
-        >
-          {hasDirectButtons ? (
-            <>
+        {hasDirectButtons ? (
+          /* ── Unlocked: 2-row action layout ────────────────────────── */
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+              width: '100%',
+              mt: 0.5,
+            }}
+          >
+            {/* Primary row: Visite + primary contact CTA */}
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              {onBooking && (
+                <Button
+                  variant="outlined"
+                  size="medium"
+                  component={motion.button}
+                  whileTap={shouldReduce ? undefined : { scale: 0.96 }}
+                  onClick={onBooking}
+                  startIcon={<CalendarMonthIcon sx={{ fontSize: 16 }} />}
+                  sx={{
+                    flex: onMessage ? '0 0 auto' : 1,
+                    minWidth: onMessage ? 110 : 'auto',
+                    borderRadius: '10px',
+                    py: 1.1,
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    textTransform: 'none',
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    '&:hover': {
+                      borderColor: 'primary.dark',
+                      bgcolor: 'rgba(246,71,95,0.06)',
+                    },
+                  }}
+                >
+                  Visite
+                </Button>
+              )}
               {onMessage && (
                 <Button
                   variant="contained"
-                  size="large"
+                  size="medium"
                   component={motion.button}
                   whileTap={shouldReduce ? undefined : { scale: 0.96 }}
-                  whileHover={shouldReduce ? undefined : { scale: 1.03 }}
                   onClick={onMessage}
-                  startIcon={<ChatBubbleOutlineIcon sx={{ fontSize: 18 }} />}
+                  startIcon={<ChatBubbleOutlineIcon sx={{ fontSize: 16 }} />}
                   sx={{
                     flex: 1,
-                    borderRadius: '12px',
-                    py: 1.5,
-                    minHeight: 46,
+                    borderRadius: '10px',
+                    py: 1.1,
                     fontWeight: 700,
                     fontSize: '0.82rem',
-                    lineHeight: 1.2,
-                    whiteSpace: 'normal',
-                    boxShadow: '0 2px 8px rgba(246,71,95,0.25)',
+                    textTransform: 'none',
+                    boxShadow: '0 2px 8px rgba(246,71,95,0.22)',
                     bgcolor: '#F6475F',
                     '&:hover': {
                       bgcolor: '#e03050',
-                      boxShadow: '0 4px 12px rgba(246,71,95,0.35)',
+                      boxShadow: '0 4px 12px rgba(246,71,95,0.32)',
                     },
                   }}
                 >
                   {messageLabel}
                 </Button>
               )}
-              {whatsappUrl && (
+              {/* Fallback primary CTA when only phone/WhatsApp available */}
+              {!onMessage && !onBooking && (whatsappUrl || phoneUrl) && (
                 <Button
                   variant="contained"
-                  size="large"
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  size="medium"
+                  href={whatsappUrl ?? phoneUrl}
+                  target={whatsappUrl ? '_blank' : undefined}
+                  rel={whatsappUrl ? 'noopener noreferrer' : undefined}
                   component={motion.a}
                   whileTap={shouldReduce ? undefined : { scale: 0.96 }}
-                  whileHover={shouldReduce ? undefined : { scale: 1.03 }}
-                  startIcon={<WhatsApp sx={{ fontSize: 18 }} />}
+                  startIcon={
+                    whatsappUrl ? (
+                      <WhatsApp sx={{ fontSize: 16 }} />
+                    ) : (
+                      <PhoneIcon sx={{ fontSize: 16 }} />
+                    )
+                  }
                   sx={{
                     flex: 1,
-                    borderRadius: '12px',
-                    py: 1.5,
-                    minHeight: 46,
+                    borderRadius: '10px',
+                    py: 1.1,
                     fontWeight: 700,
                     fontSize: '0.82rem',
-                    bgcolor: '#128C7E',
-                    boxShadow: '0 2px 8px rgba(18,140,126,0.25)',
-                    '&:hover': {
-                      bgcolor: '#0e7268',
-                      boxShadow: '0 4px 12px rgba(18,140,126,0.35)',
-                    },
+                    textTransform: 'none',
+                    bgcolor: whatsappUrl ? '#128C7E' : '#F6475F',
+                    boxShadow: 'none',
+                    '&:hover': { bgcolor: whatsappUrl ? '#0e7268' : '#e03050' },
                   }}
                 >
-                  Message WhatsApp
+                  {whatsappUrl ? 'WhatsApp' : phoneLabel}
                 </Button>
               )}
-              {phoneUrl && (
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  size="large"
-                  href={phoneUrl}
-                  component={motion.a}
-                  whileTap={shouldReduce ? undefined : { scale: 0.96 }}
-                  whileHover={shouldReduce ? undefined : { scale: 1.03 }}
-                  startIcon={<PhoneIcon sx={{ fontSize: 18 }} />}
-                  sx={{
-                    flex: 1,
-                    borderRadius: '12px',
-                    py: 1.5,
-                    minHeight: 46,
-                    fontWeight: 700,
-                    fontSize: '0.82rem',
-                    borderColor: '#F6475F',
-                    color: '#F6475F',
-                    '&:hover': {
-                      borderColor: '#e03050',
-                      bgcolor: 'rgba(246,71,95,0.06)',
-                    },
-                  }}
-                >
-                  {phoneLabel}
-                </Button>
-              )}
-            </>
-          ) : (
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              component={motion.button}
-              whileTap={shouldReduce ? undefined : { scale: 0.96 }}
-              whileHover={shouldReduce ? undefined : { scale: 1.03 }}
-              startIcon={<PhoneIcon sx={{ fontSize: 20 }} />}
-              onClick={onContact}
-              sx={{
-                borderRadius: '12px',
-                px: 2.5,
-                py: 1.5,
-                minHeight: 48,
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                boxShadow: 'none',
-                '&:hover': { boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)' },
-              }}
-            >
-              {contactLabel}
-            </Button>
-          )}
-        </Box>
+            </Box>
+
+            {/* Secondary row: compact icon+label buttons for WhatsApp and/or Phone (only when primary row already has onMessage) */}
+            {onMessage && (whatsappUrl || phoneUrl) && (
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                {whatsappUrl && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    component={motion.a}
+                    whileTap={shouldReduce ? undefined : { scale: 0.96 }}
+                    startIcon={<WhatsApp sx={{ fontSize: 15 }} />}
+                    sx={{
+                      flex: 1,
+                      borderRadius: '8px',
+                      py: 0.6,
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                      textTransform: 'none',
+                      borderColor: '#128C7E',
+                      color: '#128C7E',
+                      '&:hover': { bgcolor: 'rgba(18,140,126,0.06)' },
+                    }}
+                  >
+                    WhatsApp
+                  </Button>
+                )}
+                {phoneUrl && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    href={phoneUrl}
+                    component={motion.a}
+                    whileTap={shouldReduce ? undefined : { scale: 0.96 }}
+                    startIcon={<PhoneIcon sx={{ fontSize: 15 }} />}
+                    sx={{
+                      flex: 1,
+                      borderRadius: '8px',
+                      py: 0.6,
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                      textTransform: 'none',
+                      borderColor: '#F6475F',
+                      color: '#F6475F',
+                      '&:hover': { bgcolor: 'rgba(246,71,95,0.06)' },
+                    }}
+                  >
+                    {phoneLabel}
+                  </Button>
+                )}
+              </Box>
+            )}
+          </Box>
+        ) : (
+          /* ── Locked / no direct buttons: single CTA ─────────────── */
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            component={motion.button}
+            whileTap={shouldReduce ? undefined : { scale: 0.96 }}
+            whileHover={shouldReduce ? undefined : { scale: 1.03 }}
+            startIcon={<PhoneIcon sx={{ fontSize: 20 }} />}
+            onClick={onContact}
+            sx={{
+              borderRadius: '12px',
+              px: 2.5,
+              py: 1.5,
+              minHeight: 48,
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              textTransform: 'none',
+              boxShadow: 'none',
+              '&:hover': { boxShadow: '0 4px 12px rgba(246, 71, 95, 0.3)' },
+            }}
+          >
+            {contactLabel}
+          </Button>
+        )}
       </Box>
     </motion.div>
   );

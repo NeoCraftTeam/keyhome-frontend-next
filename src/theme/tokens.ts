@@ -35,9 +35,16 @@ export const brandAgent = {
   secondary: '#0EA5E9',
   secondaryDark: '#0284C7',
   /** Alpha variants for overlays */
+  primaryAlpha05: 'rgba(13,148,136,0.05)',
+  primaryAlpha08: 'rgba(13,148,136,0.08)',
   primaryAlpha10: 'rgba(13,148,136,0.1)',
+  primaryAlpha12: 'rgba(13,148,136,0.12)',
+  primaryAlpha16: 'rgba(13,148,136,0.16)',
   primaryAlpha20: 'rgba(13,148,136,0.2)',
+  primaryAlpha25: 'rgba(13,148,136,0.25)',
   accentAlpha10: 'rgba(245,158,11,0.1)',
+  /** Owner PWA: dark theme-color meta / Windows tile tint (status bar chrome) */
+  pwaChromeDark: '#134E4A',
 } as const;
 
 /* ── Gradients ───────────────────────────────────────────────── */
@@ -69,7 +76,11 @@ export const semantic = {
   errorBright: '#EF4444',
   warning: '#F59E0B',
   info: '#3B82F6',
+  /** Chart / status slice — reserved listings (indigo family) */
+  indigo: '#6366F1',
   whatsapp: '#25D366',
+  /** Facebook share / Meta brand */
+  facebookBrand: '#1877F2',
   purple: '#8B5CF6',
   /** Pink accent — used by owner dashboard analytics charts and badges. */
   pink: '#EC4899',
@@ -116,6 +127,8 @@ export const dark = {
   },
   errorBright: '#FF6B6B',
   successBright: '#4CAF50',
+  /** Photo Sphere Viewer letterbox / chrome */
+  panoramaViewer: '#1a1a2e',
 } as const;
 
 /* ── Neutral helpers ─────────────────────────────────────────── */
@@ -170,6 +183,20 @@ export const shadow = {
   successRing: '0 0 0 4px rgba(0,138,5,0.10)',
   /** Focus ring — error/red */
   errorRing: '0 0 0 4px rgba(193,53,21,0.10)',
+  /** Owner shell — AppBar / nav chrome */
+  ownerAppBar: '0 1px 8px rgba(13,148,136,0.18)',
+  ownerAppBarDark: '0 1px 8px rgba(13,148,136,0.25)',
+  ownerContainedHover: '0 8px 24px rgba(13,148,136,0.30)',
+  ownerContainedHoverElevated: '0 8px 24px rgba(13,148,136,0.40)',
+  ownerSidebarCtaHover: '0 6px 20px rgba(13,148,136,0.30)',
+  /** Elevated surfaces (standalone bottom nav, etc.) */
+  ownerElevatedRail: '0 -2px 12px rgba(0,0,0,0.08)',
+  /** Owner listing cards (Mes annonces grid) — hover lift */
+  ownerAdCardHover: '0 10px 32px rgba(13,148,136,0.14)',
+  /** Owner dashboard/profile completion teaser — hover */
+  ownerTeaserHover: '0 8px 32px rgba(13,148,136,0.1)',
+  /** Reservation / medium list rows — hover (replaces arbitrary elevation-4 use) */
+  ownerListCardHover: '0 4px 20px rgba(0,0,0,0.08)',
 } as const;
 
 /* ── Spacing scale (in px — use as MUI sx numeric values / 8) ── */
@@ -193,4 +220,7 @@ export const transition = {
   base: 'all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1)',
   /** Smooth, spring-like transitions */
   spring: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+  /** Cards / chips / short UI polish — out-quint, max ~250ms feel */
+  polish:
+    'box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s cubic-bezier(0.22, 1, 0.36, 1), transform 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
 } as const;

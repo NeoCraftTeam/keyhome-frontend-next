@@ -5,8 +5,8 @@ export const surveysService = {
   /**
    * Récupère le sondage actuellement actif (sans questions).
    */
-  async getActive(): Promise<Survey> {
-    const { data } = await api.get('/surveys/active');
+  async getActive(config?: { signal?: AbortSignal }): Promise<Survey> {
+    const { data } = await api.get('/surveys/active', config);
     return data.data ?? data;
   },
 
@@ -36,8 +36,11 @@ export const surveysService = {
    * Vérifie si l'utilisateur authentifié a déjà répondu à un sondage.
    * @param surveyId - L'ID du sondage.
    */
-  async hasAnswered(surveyId: string): Promise<{ has_answered: boolean }> {
-    const { data } = await api.get(`/surveys/${surveyId}/has-answered`);
+  async hasAnswered(
+    surveyId: string,
+    config?: { signal?: AbortSignal }
+  ): Promise<{ has_answered: boolean }> {
+    const { data } = await api.get(`/surveys/${surveyId}/has-answered`, config);
     return data;
   },
 };
