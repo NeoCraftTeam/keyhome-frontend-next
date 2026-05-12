@@ -79,7 +79,46 @@ export interface FlutterwaveInitiatePayload {
   agency_id?: string | null;
   plan_id?: string | null;
   period?: 'monthly' | 'yearly' | null;
+  /**
+   * Stripe-only. When `true`, the PaymentIntent is created with
+   * `setup_future_usage: 'off_session'` so the card is attached to the
+   * authenticated user's Stripe Customer on success and can be reused
+   * later without re-entering details.
+   */
+  save_payment_method?: boolean;
+  /**
+   * Stripe-only. When set, the PaymentIntent is created with
+   * `payment_method: <id>` + `confirm: true` + `off_session: true`. The
+   * gateway returns either `status: 'success'` (one-shot charge cleared),
+   * `'requires_action'` (3DS challenge) or `'failed'`.
+   */
+  payment_method_id?: string;
+  /**
+   * Cloudflare Turnstile response token. Sent for `type=credit` when the UI
+   * showed the captcha step ({@see GET /config/turnstile} — includes
+   * `show_credits_turnstile` in local/testing with dummy keys; production
+   * uses real keys and `verification_required`).
+   */
+  turnstile_token?: string | null;
 }
+
+/**
+ * Normalised gateway status returned by the backend's central orchestrator.
+ *
+ *  - `pending` — default; the gateway is awaiting user input.
+ *  - `success` — Stripe off-session charge cleared with no 3DS challenge.
+ *  - `failed` — Stripe rejected the off-session call (insufficient funds,
+ *    expired card, fraud rule, etc.).
+ *  - `requires_action` — Stripe needs a 3DS challenge; frontend must mount
+ *    Stripe Elements and call `stripe.confirmCardPayment(clientSecret)`.
+ *  - `cancelled` — explicit user cancellation before any confirmation.
+ */
+export type PaymentInitiateStatus =
+  | 'pending'
+  | 'success'
+  | 'failed'
+  | 'requires_action'
+  | 'cancelled';
 
 /**
  * Response from `POST /payments/initiate_payment`.
@@ -97,7 +136,34 @@ export interface FlutterwaveInitiateResponse {
   payment_link: string;
   tx_ref: string;
   gateway: PaymentGateway;
-  status: 'pending';
+  status: PaymentInitiateStatus;
+}
+
+/**
+ * A Stripe `PaymentMethod` of type `card` attached to the authenticated
+ * user's Stripe Customer. Returned by `GET /payments/stripe/payment-methods`
+ * and consumed by the saved-card selector + profile management section.
+ *
+ * `is_default` mirrors Stripe's `invoice_settings.default_payment_method` —
+ * the card automatically pre-selected when the user pays again.
+ */
+export interface StripePaymentMethod {
+  id: string;
+  brand: string;
+  last4: string;
+  exp_month: number;
+  exp_year: number;
+  is_default: boolean;
+}
+
+/**
+ * Stripe SetupIntent client secret + ID returned by
+ * `POST /payments/stripe/setup-intent`. Used by the profile "Ajouter une
+ * carte" flow to collect new card details *without* charging the user.
+ */
+export interface StripeSetupIntent {
+  client_secret: string;
+  id: string;
 }
 
 /**
@@ -129,7 +195,10 @@ export interface PaymentHistoryItem {
   type: string;
   amount: number;
   gateway: PaymentGateway | null;
+  gateway_label?: string | null;
   payment_method: string | null;
+  payment_method_label?: string | null;
+  payment_method_detail?: string | null;
   phone_number: string | null;
   payment_link: string | null;
   ad: { id: string } | null;
@@ -317,6 +386,8 @@ export interface Ad {
   distance_transport_m?: number | null;
   distance_school_m?: number | null;
   distance_hospital_m?: number | null;
+  /** Pending-edit draft — populated only for the ad owner. Non-null means unsaved changes exist. */
+  draft_payload?: Record<string, unknown> | null;
 }
 
 export interface Review {

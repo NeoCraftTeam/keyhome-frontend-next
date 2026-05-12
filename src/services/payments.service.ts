@@ -4,8 +4,11 @@ import {
   FlutterwaveInitiatePayload,
   FlutterwaveInitiateResponse,
   FlutterwaveVerifyResponse,
+  PaginatedResponse,
   PaymentHistoryItem,
   PaymentMethodInfo,
+  StripePaymentMethod,
+  StripeSetupIntent,
   UnlockResponse,
 } from '@/types';
 
@@ -185,18 +188,134 @@ export const paymentsService = {
   },
 
   /**
-   * Get the authenticated user's payment history (all gateways).
+   * Length-aware paginated payment history (`GET /api/v1/payments/history`).
+   *
+   * Client tables use TanStack Query with `paymentKeys.list(perPage, page)` (`src/lib/query-keys.ts`).
    */
-  async getHistory(page = 1): Promise<{
-    data: PaymentHistoryItem[];
-    meta: {
-      current_page: number;
-      last_page: number;
-      per_page: number;
-      total: number;
+  async getHistory(options?: {
+    page?: number;
+    perPage?: number;
+  }): Promise<PaginatedResponse<PaymentHistoryItem>> {
+    const params: Record<string, string | number> = {
+      per_page: options?.perPage ?? 10,
+      page: options?.page ?? 1,
     };
-  }> {
-    const { data } = await api.get('/payments/history', { params: { page } });
+
+    // Return full Laravel `{ data, meta, links }` — callers need meta for Pagination.
+    const res = await api.get<PaginatedResponse<PaymentHistoryItem>>(
+      '/payments/history',
+      { params }
+    );
+    return res.data;
+  },
+
+  /**
+   * Open a single-transaction receipt in a new tab (`auth:sanctum`).
+   * Uses blob + object URL because the route requires credentials (Bearer /
+   * Sanctum cookie); `window.open(apiUrl)` would not send auth and popups
+   * with opaque URLs are unreliable.
+   */
+  async downloadReceipt(
+    paymentId: string,
+    options?: { currency?: string; rate?: number }
+  ): Promise<void> {
+    const params: Record<string, string> = {};
+    if (
+      options?.currency &&
+      options.currency !== 'XAF' &&
+      options.currency !== 'XOF' &&
+      typeof options.rate === 'number' &&
+      Number.isFinite(options.rate) &&
+      options.rate > 0
+    ) {
+      params.currency = options.currency;
+      params.rate = String(options.rate);
+    }
+
+    const response = await api.get(
+      `/payments/${encodeURIComponent(paymentId)}/receipt`,
+      {
+        params,
+        responseType: 'blob',
+      }
+    );
+
+    const blob = new Blob([response.data as BlobPart], {
+      type: 'application/pdf',
+    });
+    const url = URL.createObjectURL(blob);
+    const child = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!child) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.rel = 'noopener noreferrer';
+      a.target = '_blank';
+      a.click();
+    }
+    // Blob URL must stay valid while the new tab loads the PDF; revoke later.
+    setTimeout(() => URL.revokeObjectURL(url), 120_000);
+  },
+
+  // ─── Stripe saved cards ──────────────────────────────────────────────
+  // All endpoints below require `auth:sanctum` and target the authenticated
+  // user's Stripe Customer (managed via Cashier `Billable`).
+
+  /**
+   * List the authenticated user's saved Stripe cards.
+   *
+   * Returns `[]` when the user has no Stripe Customer attached yet (typical
+   * for users who never paid by card). Backed by
+   * `GET /payments/stripe/payment-methods` (`StripePaymentMethodController::index`).
+   */
+  async listStripePaymentMethods(): Promise<StripePaymentMethod[]> {
+    const { data } = await api.get<{ data: StripePaymentMethod[] }>(
+      '/payments/stripe/payment-methods'
+    );
+    return data.data ?? [];
+  },
+
+  /**
+   * Detach a previously saved Stripe card from the authenticated user.
+   *
+   * Idempotent server-side (a 404 from Stripe is silently swallowed).
+   * The card is removed from the Customer's payment methods AND, if it was
+   * marked as default, the default slot is cleared.
+   */
+  async deleteStripePaymentMethod(
+    paymentMethodId: string
+  ): Promise<{ message: string }> {
+    const { data } = await api.delete<{ message: string }>(
+      `/payments/stripe/payment-methods/${encodeURIComponent(paymentMethodId)}`
+    );
     return data;
+  },
+
+  /**
+   * Mark a saved Stripe card as the default one (sets
+   * `invoice_settings.default_payment_method` on the Customer). The default
+   * card is the one the saved-card selector auto-selects on next payment.
+   */
+  async setDefaultStripePaymentMethod(
+    paymentMethodId: string
+  ): Promise<{ message: string }> {
+    const { data } = await api.post<{ message: string }>(
+      `/payments/stripe/payment-methods/${encodeURIComponent(paymentMethodId)}/set-default`
+    );
+    return data;
+  },
+
+  /**
+   * Create a Stripe SetupIntent so the user can save a new card *without*
+   * paying. Returned `client_secret` is consumed by `<Elements>` +
+   * `<CardElement>` (or `<PaymentElement>` in setup mode) on the frontend.
+   *
+   * Used by the profile "Ajouter une carte" CTA — distinct from the
+   * `initiate_payment` flow which always charges the user.
+   */
+  async createStripeSetupIntent(): Promise<StripeSetupIntent> {
+    const { data } = await api.post<{ data: StripeSetupIntent }>(
+      '/payments/stripe/setup-intent'
+    );
+    return data.data;
   },
 };

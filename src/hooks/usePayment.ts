@@ -1,9 +1,10 @@
 'use client';
 
 import { paymentsService } from '@/services/payments.service';
-import {
+import type {
   FlutterwaveInitiatePayload,
   FlutterwaveInitiateResponse,
+  PaymentInitiateStatus,
 } from '@/types';
 import { useCallback, useState } from 'react';
 
@@ -18,6 +19,14 @@ interface UsePaymentState {
    * KeyHome instead of redirecting.
    */
   stripeClientSecret: string | null;
+  /**
+   * Normalised initial status the backend reported AFTER calling the
+   * gateway. For Stripe off-session charges this is the one-shot result
+   * (`success` | `requires_action` | `failed`) — the caller can skip the
+   * Stripe Elements roundtrip in those cases. For new-card flows this
+   * stays `pending` until the user confirms.
+   */
+  stripeInitialStatus: PaymentInitiateStatus | null;
 }
 
 interface UsePaymentReturn extends UsePaymentState {
@@ -49,6 +58,7 @@ export function usePayment(): UsePaymentReturn {
     error: null,
     response: null,
     stripeClientSecret: null,
+    stripeInitialStatus: null,
   });
 
   const initiatePayment = useCallback(
@@ -60,6 +70,7 @@ export function usePayment(): UsePaymentReturn {
         error: null,
         response: null,
         stripeClientSecret: null,
+        stripeInitialStatus: null,
       });
 
       try {
@@ -82,20 +93,18 @@ export function usePayment(): UsePaymentReturn {
             error: null,
             response: result,
             stripeClientSecret: result.payment_link,
+            stripeInitialStatus: result.status,
           });
           return result;
         }
 
-        // Flutterwave : redirect to the hosted checkout. We update the
-        // state first so the caller observes the result before the
-        // navigation tears down the React tree.
-        setState({
-          isLoading: false,
-          error: null,
-          response: result,
-          stripeClientSecret: null,
-        });
-        window.location.href = result.payment_link;
+        // Flutterwave : send the browser to hosted checkout immediately.
+        // Avoid setting React state first — that paints a one-frame KeyHome
+        // "redirection…" step before the Flutterwave UI, which feels like
+        // our page stole focus from the gateway.
+        if (typeof window !== 'undefined') {
+          window.location.assign(result.payment_link);
+        }
         return result;
       } catch (err: unknown) {
         const axiosErr = err as {
@@ -105,10 +114,13 @@ export function usePayment(): UsePaymentReturn {
         };
         // Backend gating rejects disabled methods via 422 with a French
         // label — surface that exact message to the user.
-        const validationErr =
+        const validationPaymentMethod =
           axiosErr?.response?.data?.errors?.['payment_method']?.[0];
+        const validationTurnstile =
+          axiosErr?.response?.data?.errors?.['turnstile_token']?.[0];
         const message =
-          validationErr ||
+          validationPaymentMethod ||
+          validationTurnstile ||
           axiosErr?.response?.data?.message ||
           "Une erreur est survenue lors de l'initialisation du paiement.";
 
@@ -117,6 +129,7 @@ export function usePayment(): UsePaymentReturn {
           error: message,
           response: null,
           stripeClientSecret: null,
+          stripeInitialStatus: null,
         });
         return null;
       }
@@ -130,6 +143,7 @@ export function usePayment(): UsePaymentReturn {
       error: null,
       response: null,
       stripeClientSecret: null,
+      stripeInitialStatus: null,
     });
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('kh_flw_tx_ref');

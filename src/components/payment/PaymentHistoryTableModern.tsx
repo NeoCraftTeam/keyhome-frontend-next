@@ -2,12 +2,17 @@
 
 import PaymentAmountDisplay from '@/components/payment/PaymentAmountDisplay';
 import PaymentStatusBadge from '@/components/payment/PaymentStatusBadge';
-import { Price } from '@/components/ui/Price';
-import { useCurrency } from '@/providers/CurrencyProvider';
+import {
+  formatPaymentHistoryDate,
+  paymentHistoryMethodPrimary,
+  paymentHistoryMethodSecondary,
+} from '@/lib/payment-history-display';
+import { paymentKeys } from '@/lib/query-keys';
 import { paymentsService } from '@/services/payments.service';
-import { PaymentHistoryItem } from '@/types';
+import { useCurrency } from '@/providers/CurrencyProvider';
+import type { PaymentHistoryItem } from '@/types';
 import DateIcon from '@mui/icons-material/DateRange';
-import DownloadIcon from '@mui/icons-material/PictureAsPdf';
+import PdfIcon from '@mui/icons-material/PictureAsPdf';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import CreditsIcon from '@mui/icons-material/Toll';
 import {
@@ -18,7 +23,9 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  IconButton,
   LinearProgress,
+  Pagination,
   Paper,
   Skeleton,
   Table,
@@ -32,8 +39,9 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 
 const TYPE_LABELS: Record<string, string> = {
   unlock: 'Déblocage',
@@ -42,60 +50,303 @@ const TYPE_LABELS: Record<string, string> = {
   credit: 'Crédits',
 };
 
-const METHOD_LABELS: Record<string, string> = {
-  mobile_money: 'MTN MoMo',
-  orange_money: 'Orange Money',
-  card: 'Carte',
-  flutterwave: 'Flutterwave',
-};
+const PERIOD_CHIPS_MOBILE = [
+  { value: 'all' as const, label: 'Tout' },
+  { value: '30' as const, label: '30 jours' },
+  { value: '90' as const, label: '90 jours' },
+  { value: '365' as const, label: '1 an' },
+] as const;
+
+const PERIOD_CHIPS_DESKTOP = [
+  { value: 'all' as const, label: 'Tout' },
+  { value: '30' as const, label: '30j' },
+  { value: '90' as const, label: '90j' },
+  { value: '365' as const, label: '1an' },
+] as const;
+
+const TABLE_HEADERS = [
+  'Date',
+  'Description',
+  'Réf.',
+  'Crédits',
+  'Montant',
+  'Méthode',
+  'Statut',
+  '',
+] as const;
+
+interface ModernMobilePaymentCardProps {
+  readonly item: PaymentHistoryItem;
+  readonly receiptBusyId: string | null;
+  readonly onReceipt: (id: string) => void;
+}
+
+const ModernMobilePaymentCard = memo(function ModernMobilePaymentCard({
+  item,
+  receiptBusyId,
+  onReceipt,
+}: ModernMobilePaymentCardProps): ReactElement {
+  const title = item.pack_name ?? TYPE_LABELS[item.type] ?? item.type;
+  const primary = paymentHistoryMethodPrimary(item);
+  const secondary = paymentHistoryMethodSecondary(item);
+  const methodTooltip = `${primary}${secondary ? ` — ${secondary}` : ''}`;
+
+  return (
+    <Card
+      sx={{
+        mb: 2,
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
+      <CardContent sx={{ p: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            mb: 1,
+            gap: 1,
+          }}
+        >
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+              {title}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <DateIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              <Typography variant="caption" color="text.secondary">
+                {formatPaymentHistoryDate(item.created_at)}
+              </Typography>
+            </Box>
+            {item.reference ? (
+              <Typography
+                variant="caption"
+                sx={{ fontFamily: 'monospace', color: 'text.disabled' }}
+              >
+                Réf: {item.reference.slice(0, 12)}…
+              </Typography>
+            ) : null}
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              gap: 0.5,
+            }}
+          >
+            <PaymentStatusBadge status={item.status} />
+            <Tooltip title="Reçu PDF">
+              <IconButton
+                size="small"
+                onClick={() => onReceipt(item.id)}
+                disabled={receiptBusyId === item.id}
+                sx={{ color: '#F6475F' }}
+                aria-label="Télécharger le reçu"
+              >
+                {receiptBusyId === item.id ? (
+                  <CircularProgress size={18} />
+                ) : (
+                  <PdfIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {item.points_awarded != null ? (
+              <Chip
+                icon={<CreditsIcon sx={{ fontSize: 14 }} />}
+                label={`${item.points_awarded} crédits`}
+                size="small"
+                color="primary"
+                variant="filled"
+                sx={{ fontWeight: 600 }}
+              />
+            ) : null}
+            <PaymentAmountDisplay
+              amount={item.amount}
+              variant="body1"
+              fontWeight={700}
+            />
+          </Box>
+          <Tooltip title={methodTooltip}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ textAlign: 'right', maxWidth: 180 }}
+            >
+              {primary}
+              {secondary ? (
+                <>
+                  <br />
+                  <Box
+                    component="span"
+                    sx={{
+                      color: 'text.disabled',
+                      fontSize: '0.68rem',
+                    }}
+                  >
+                    {secondary}
+                  </Box>
+                </>
+              ) : null}
+            </Typography>
+          </Tooltip>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+});
+
+interface ModernDesktopRowProps {
+  readonly item: PaymentHistoryItem;
+  readonly isDark: boolean;
+  readonly receiptBusyId: string | null;
+  readonly onReceipt: (id: string) => void;
+}
+
+const ModernDesktopRow = memo(function ModernDesktopRow({
+  item,
+  isDark,
+  receiptBusyId,
+  onReceipt,
+}: ModernDesktopRowProps): ReactElement {
+  const title = item.pack_name ?? TYPE_LABELS[item.type] ?? item.type;
+  const primary = paymentHistoryMethodPrimary(item);
+  const secondary = paymentHistoryMethodSecondary(item);
+
+  return (
+    <TableRow
+      sx={{
+        '&:hover': {
+          bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'grey.50',
+        },
+      }}
+    >
+      <TableCell sx={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+        {formatPaymentHistoryDate(item.created_at)}
+      </TableCell>
+      <TableCell sx={{ maxWidth: 200 }}>
+        <Typography variant="body2" fontWeight={600} noWrap>
+          {title}
+        </Typography>
+      </TableCell>
+      <TableCell sx={{ fontSize: '0.75rem' }}>
+        {item.reference ? (
+          <Typography variant="body2" sx={{ fontFamily: 'monospace' }} noWrap>
+            {item.reference.slice(0, 14)}…
+          </Typography>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            —
+          </Typography>
+        )}
+      </TableCell>
+      <TableCell>
+        {item.points_awarded != null ? (
+          <Chip
+            icon={<CreditsIcon sx={{ fontSize: 14 }} />}
+            label={item.points_awarded.toString()}
+            size="small"
+            color="primary"
+            variant="filled"
+            sx={{ fontWeight: 600 }}
+          />
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            —
+          </Typography>
+        )}
+      </TableCell>
+      <TableCell>
+        <PaymentAmountDisplay
+          amount={item.amount}
+          variant="body2"
+          fontWeight={700}
+        />
+      </TableCell>
+      <TableCell sx={{ maxWidth: 200 }}>
+        <Typography variant="body2" fontWeight={600}>
+          {primary}
+        </Typography>
+        {secondary ? (
+          <Typography variant="caption" color="text.secondary" display="block">
+            {secondary}
+          </Typography>
+        ) : null}
+      </TableCell>
+      <TableCell>
+        <PaymentStatusBadge status={item.status} />
+      </TableCell>
+      <TableCell align="center" sx={{ width: 48 }}>
+        <Tooltip title="Reçu PDF">
+          <IconButton
+            size="small"
+            onClick={() => onReceipt(item.id)}
+            disabled={receiptBusyId === item.id}
+            aria-label="Télécharger le reçu"
+            sx={{ color: '#F6475F' }}
+          >
+            {receiptBusyId === item.id ? (
+              <CircularProgress size={18} />
+            ) : (
+              <PdfIcon fontSize="small" />
+            )}
+          </IconButton>
+        </Tooltip>
+      </TableCell>
+    </TableRow>
+  );
+});
 
 interface PaymentHistoryTableModernProps {
   perPage?: number;
 }
 
 export default function PaymentHistoryTableModern({
-  perPage = 15,
-}: PaymentHistoryTableModernProps): React.ReactElement {
+  perPage = 10,
+}: PaymentHistoryTableModernProps): ReactElement {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMdDown = useMediaQuery(theme.breakpoints.down('md'));
   const { currency, convert } = useCurrency();
   const [page, setPage] = useState(1);
   const [selectedPeriod, setSelectedPeriod] = useState<
     'all' | '30' | '90' | '365'
   >('all');
   const [isExporting, setIsExporting] = useState(false);
+  const [receiptBusyId, setReceiptBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPage(1);
+  }, [perPage]);
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['payment-history', page, selectedPeriod],
-    queryFn: () => paymentsService.getHistory(page),
-    staleTime: 30_000,
+    queryKey: paymentKeys.list(perPage, page),
+    queryFn: () => paymentsService.getHistory({ page, perPage }),
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    gcTime: 600_000,
   });
 
   const items: PaymentHistoryItem[] = data?.data ?? [];
-  const totalPages: number = data?.meta?.last_page ?? 1;
+  const meta = data?.meta;
+  const totalRows = meta?.total ?? 0;
+  const lastPage = Math.max(meta?.last_page ?? 1, 1);
 
-  // Filter items based on selected period
-  const filteredItems = useMemo(() => {
-    if (selectedPeriod === 'all') return items;
-
-    const now = new Date();
-    const daysAgo = new Date();
-    daysAgo.setDate(now.getDate() - parseInt(selectedPeriod));
-
-    return items.filter((item) => new Date(item.created_at) >= daysAgo);
-  }, [items, selectedPeriod]);
-
-  const formatDate = (iso: string): string =>
-    new Intl.DateTimeFormat('fr-CM', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(iso));
-
-  const handleDownloadAll = async () => {
+  const handleDownloadAll = useCallback(async () => {
     setIsExporting(true);
     try {
       const pdfPeriod =
@@ -106,10 +357,6 @@ export default function PaymentHistoryTableModern({
             : selectedPeriod === '365'
               ? 365
               : undefined;
-      // Pass the visitor's active currency + the per-XAF rate so the PDF
-      // renders the local amount as primary (e.g. CHF) and the FCFA value
-      // as a small reference subtitle. `convert(1)` returns the rate (1
-      // for XAF/XOF — controller will skip the conversion in that case).
       await paymentsService.exportPdf(
         pdfPeriod as 30 | 90 | 365 | undefined,
         currency,
@@ -120,7 +367,35 @@ export default function PaymentHistoryTableModern({
     } finally {
       setIsExporting(false);
     }
-  };
+  }, [selectedPeriod, currency, convert]);
+
+  const handleOneReceipt = useCallback(
+    async (id: string) => {
+      setReceiptBusyId(id);
+      try {
+        const rate = convert(1);
+        await paymentsService.downloadReceipt(id, {
+          currency:
+            currency !== 'XAF' && currency !== 'XOF' ? currency : undefined,
+          rate: currency !== 'XAF' && currency !== 'XOF' ? rate : undefined,
+        });
+      } finally {
+        setReceiptBusyId(null);
+      }
+    },
+    [currency, convert]
+  );
+
+  const handlePageChange = useCallback((_: unknown, value: number) => {
+    setPage(value);
+  }, []);
+
+  const handlePeriodChange = useCallback(
+    (value: 'all' | '30' | '90' | '365') => {
+      setSelectedPeriod(value);
+    },
+    []
+  );
 
   if (isMobile) {
     return (
@@ -153,11 +428,11 @@ export default function PaymentHistoryTableModern({
                   isExporting ? (
                     <CircularProgress size={14} color="inherit" />
                   ) : (
-                    <DownloadIcon />
+                    <PdfIcon />
                   )
                 }
                 onClick={handleDownloadAll}
-                disabled={isExporting || items.length === 0}
+                disabled={isExporting || totalRows === 0}
                 sx={{
                   borderRadius: 2,
                   bgcolor: '#F6475F',
@@ -173,20 +448,11 @@ export default function PaymentHistoryTableModern({
 
             {/* Period filter */}
             <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-              {[
-                { value: 'all', label: 'Tout' },
-                { value: '30', label: '30 jours' },
-                { value: '90', label: '90 jours' },
-                { value: '365', label: '1 an' },
-              ].map((period) => (
+              {PERIOD_CHIPS_MOBILE.map((period) => (
                 <Chip
                   key={period.value}
                   label={period.label}
-                  onClick={() =>
-                    setSelectedPeriod(
-                      period.value as 'all' | '30' | '90' | '365'
-                    )
-                  }
+                  onClick={() => handlePeriodChange(period.value)}
                   variant={
                     selectedPeriod === period.value ? 'filled' : 'outlined'
                   }
@@ -198,14 +464,21 @@ export default function PaymentHistoryTableModern({
                 />
               ))}
             </Box>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              display="block"
+            >
+              Période appliquée au PDF uniquement (pas au tableau).
+            </Typography>
           </CardContent>
         </Card>
 
-        {isFetching && !isLoading && (
+        {isFetching && !isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
             <LinearProgress sx={{ width: 200, borderRadius: 2 }} />
           </Box>
-        )}
+        ) : null}
 
         {isLoading ? (
           Array.from({ length: perPage }, (_, i) => (
@@ -217,7 +490,7 @@ export default function PaymentHistoryTableModern({
               </CardContent>
             </Card>
           ))
-        ) : filteredItems.length === 0 ? (
+        ) : items.length === 0 ? (
           <Card sx={{ borderRadius: 3, textAlign: 'center', py: 6 }}>
             <ReceiptIcon
               sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }}
@@ -226,118 +499,34 @@ export default function PaymentHistoryTableModern({
               Aucune transaction trouvée
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {selectedPeriod === 'all'
-                ? "Vous n'avez aucune transaction pour le moment."
-                : `Aucune transaction sur les ${selectedPeriod === '30' ? '30' : selectedPeriod === '90' ? '90' : '365'} derniers jours.`}
+              Vous n&apos;avez aucune transaction pour le moment.
             </Typography>
           </Card>
         ) : (
-          filteredItems.map((item) => (
-            <Card
+          items.map((item) => (
+            <ModernMobilePaymentCard
               key={item.id}
-              sx={{
-                mb: 2,
-                borderRadius: 3,
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <CardContent sx={{ p: 2 }}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    mb: 1,
-                  }}
-                >
-                  <Box sx={{ flex: 1 }}>
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight={700}
-                      gutterBottom
-                    >
-                      {item.pack_name ?? TYPE_LABELS[item.type] ?? item.type}
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        mb: 1,
-                      }}
-                    >
-                      <DateIcon
-                        sx={{ fontSize: 14, color: 'text.secondary' }}
-                      />
-                      <Typography variant="caption" color="text.secondary">
-                        {formatDate(item.created_at)}
-                      </Typography>
-                    </Box>
-                    {item.reference && (
-                      <Typography
-                        variant="caption"
-                        sx={{ fontFamily: 'monospace', color: 'text.disabled' }}
-                      >
-                        Réf: {item.reference.slice(0, 12)}...
-                      </Typography>
-                    )}
-                  </Box>
-                  <PaymentStatusBadge status={item.status} />
-                </Box>
-
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {item.points_awarded != null && (
-                      <Chip
-                        icon={<CreditsIcon sx={{ fontSize: 14 }} />}
-                        label={`${item.points_awarded} crédits`}
-                        size="small"
-                        color="primary"
-                        variant="filled"
-                        sx={{ fontWeight: 600 }}
-                      />
-                    )}
-                    <PaymentAmountDisplay
-                      amount={item.amount}
-                      variant="body1"
-                      fontWeight={700}
-                    />
-                  </Box>
-                  <Tooltip title="Méthode de paiement">
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ textAlign: 'right' }}
-                    >
-                      {METHOD_LABELS[item.payment_method as string] ||
-                        item.payment_method}
-                    </Typography>
-                  </Tooltip>
-                </Box>
-              </CardContent>
-            </Card>
+              item={item}
+              receiptBusyId={receiptBusyId}
+              onReceipt={handleOneReceipt}
+            />
           ))
         )}
 
-        {totalPages > 1 && (
+        {lastPage > 1 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-            <Button
-              variant="outlined"
-              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-              disabled={page >= totalPages}
-              sx={{ borderRadius: 2 }}
-            >
-              Charger plus
-            </Button>
+            <Pagination
+              count={lastPage}
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
+              size="medium"
+              showFirstButton
+              showLastButton
+              siblingCount={0}
+            />
           </Box>
-        )}
+        ) : null}
       </Box>
     );
   }
@@ -360,6 +549,8 @@ export default function PaymentHistoryTableModern({
             justifyContent: 'space-between',
             alignItems: 'center',
             mb: 3,
+            flexWrap: 'wrap',
+            gap: 2,
           }}
         >
           <Typography variant="h5" fontWeight={700}>
@@ -367,21 +558,12 @@ export default function PaymentHistoryTableModern({
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             {/* Period filter */}
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              {[
-                { value: 'all', label: 'Tout' },
-                { value: '30', label: '30j' },
-                { value: '90', label: '90j' },
-                { value: '365', label: '1an' },
-              ].map((period) => (
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              {PERIOD_CHIPS_DESKTOP.map((period) => (
                 <Chip
                   key={period.value}
                   label={period.label}
-                  onClick={() =>
-                    setSelectedPeriod(
-                      period.value as 'all' | '30' | '90' | '365'
-                    )
-                  }
+                  onClick={() => handlePeriodChange(period.value)}
                   variant={
                     selectedPeriod === period.value ? 'filled' : 'outlined'
                   }
@@ -403,11 +585,11 @@ export default function PaymentHistoryTableModern({
                 isExporting ? (
                   <CircularProgress size={14} color="inherit" />
                 ) : (
-                  <DownloadIcon />
+                  <PdfIcon />
                 )
               }
               onClick={handleDownloadAll}
-              disabled={isExporting || items.length === 0}
+              disabled={isExporting || totalRows === 0}
               size="small"
               sx={{
                 borderRadius: 2,
@@ -423,74 +605,30 @@ export default function PaymentHistoryTableModern({
           </Box>
         </Box>
 
-        {/* Summary stats */}
-        <Box sx={{ display: 'flex', gap: 3, mb: 2 }}>
-          <Card
-            sx={{
-              flex: 1,
-              p: 2,
-              textAlign: 'center',
-              borderRadius: 2,
-              bgcolor: isDark ? 'rgba(246,71,95,0.04)' : 'rgba(246,71,95,0.02)',
-            }}
-          >
-            <Typography variant="caption" color="text.secondary" gutterBottom>
-              Total des transactions
-            </Typography>
-            <Typography variant="h6" fontWeight={800} color="primary.main">
-              {items.length}
-            </Typography>
-          </Card>
-          <Card
-            sx={{
-              flex: 1,
-              p: 2,
-              textAlign: 'center',
-              borderRadius: 2,
-              bgcolor: isDark ? 'rgba(46,125,50,0.04)' : 'rgba(46,125,50,0.02)',
-            }}
-          >
-            <Typography variant="caption" color="text.secondary" gutterBottom>
-              Crédits obtenus
-            </Typography>
-            <Typography variant="h6" fontWeight={800} color="success.main">
-              {items.reduce((sum, item) => sum + (item.points_awarded || 0), 0)}
-            </Typography>
-          </Card>
-          <Card
-            sx={{
-              flex: 1,
-              p: 2,
-              textAlign: 'center',
-              borderRadius: 2,
-              bgcolor: isDark ? 'rgba(25,135,84,0.04)' : 'rgba(25,135,84,0.02)',
-            }}
-          >
-            <Typography variant="caption" color="text.secondary" gutterBottom>
-              Montant total
-            </Typography>
-            <Typography
-              variant="h6"
-              fontWeight={800}
-              color="info.main"
-              component="div"
-            >
-              <Price
-                amountXAF={items.reduce((sum, item) => sum + item.amount, 0)}
-                primary="local"
-                showOriginal
-              />
-            </Typography>
-          </Card>
-        </Box>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          display="block"
+          sx={{ mb: 1 }}
+        >
+          Les pastilles de période s&apos;appliquent uniquement au PDF
+          téléchargé.
+        </Typography>
+
+        {meta ? (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {totalRows} transaction{totalRows > 1 ? 's' : ''} au total · page{' '}
+            {meta.current_page} sur {meta.last_page}
+          </Typography>
+        ) : null}
       </Paper>
 
       {/* Loading indicator */}
-      {isFetching && !isLoading && (
+      {isFetching && !isLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
           <LinearProgress sx={{ width: 200, borderRadius: 2 }} />
         </Box>
-      )}
+      ) : null}
 
       {/* Table */}
       <TableContainer
@@ -501,24 +639,17 @@ export default function PaymentHistoryTableModern({
           border: '1px solid',
           borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'divider',
           overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
-        <Table>
+        <Table size="small" sx={{ minWidth: isMdDown ? 900 : 820 }}>
           <TableHead>
             <TableRow
               sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'grey.50' }}
             >
-              {[
-                'Date',
-                'Type',
-                'Pack',
-                'Crédits',
-                'Montant',
-                'Méthode',
-                'Statut',
-              ].map((header) => (
+              {TABLE_HEADERS.map((header, idx) => (
                 <TableCell
-                  key={header}
+                  key={`${header}-${idx}`}
                   sx={{
                     fontWeight: 700,
                     fontSize: '0.75rem',
@@ -538,7 +669,7 @@ export default function PaymentHistoryTableModern({
             {isLoading ? (
               Array.from({ length: perPage }, (_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 7 }, (__, j) => (
+                  {Array.from({ length: 8 }, (__, j) => (
                     <TableCell key={j}>
                       <Skeleton
                         height={20}
@@ -548,9 +679,9 @@ export default function PaymentHistoryTableModern({
                   ))}
                 </TableRow>
               ))
-            ) : filteredItems.length === 0 ? (
+            ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} sx={{ textAlign: 'center', py: 6 }}>
+                <TableCell colSpan={8} sx={{ textAlign: 'center', py: 6 }}>
                   <ReceiptIcon
                     sx={{
                       fontSize: 48,
@@ -566,94 +697,34 @@ export default function PaymentHistoryTableModern({
                 </TableCell>
               </TableRow>
             ) : (
-              filteredItems.map((item) => (
-                <TableRow
+              items.map((item) => (
+                <ModernDesktopRow
                   key={item.id}
-                  sx={{
-                    '&:hover': {
-                      bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'grey.50',
-                      cursor: 'pointer',
-                    },
-                  }}
-                >
-                  <TableCell sx={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-                    {formatDate(item.created_at)}
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight={600}>
-                      {item.pack_name ?? TYPE_LABELS[item.type] ?? item.type}
-                    </Typography>
-                  </TableCell>
-                  <TableCell sx={{ fontSize: '0.8rem' }}>
-                    {item.reference ? (
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-                      >
-                        <Typography
-                          variant="body2"
-                          sx={{ fontFamily: 'monospace' }}
-                        >
-                          {item.reference.slice(0, 10)}...
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        —
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {item.points_awarded != null ? (
-                      <Chip
-                        icon={<CreditsIcon sx={{ fontSize: 14 }} />}
-                        label={item.points_awarded.toString()}
-                        size="small"
-                        color="primary"
-                        variant="filled"
-                        sx={{ fontWeight: 600 }}
-                      />
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        —
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <PaymentAmountDisplay
-                      amount={item.amount}
-                      variant="body2"
-                      fontWeight={700}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="caption" color="text.secondary">
-                      {METHOD_LABELS[item.payment_method as string] ||
-                        item.payment_method}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <PaymentStatusBadge status={item.status} />
-                  </TableCell>
-                </TableRow>
+                  item={item}
+                  isDark={isDark}
+                  receiptBusyId={receiptBusyId}
+                  onReceipt={handleOneReceipt}
+                />
               ))
             )}
           </TableBody>
         </Table>
       </TableContainer>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
+      {lastPage > 1 ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <Button
-            variant="outlined"
-            onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-            disabled={page >= totalPages}
-            sx={{ borderRadius: 2 }}
-          >
-            Charger plus de transactions
-          </Button>
+          <Pagination
+            count={lastPage}
+            page={page}
+            onChange={handlePageChange}
+            color="primary"
+            size="large"
+            showFirstButton
+            showLastButton
+            siblingCount={1}
+          />
         </Box>
-      )}
+      ) : null}
     </Box>
   );
 }

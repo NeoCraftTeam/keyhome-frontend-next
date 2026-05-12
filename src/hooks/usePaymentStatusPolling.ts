@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import axios from 'axios';
-import { paymentsService } from '@/services/payments.service';
 import { creditsService } from '@/services/credits.service';
+import { paymentsService } from '@/services/payments.service';
+import axios from 'axios';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Public payment statuses returned by the auth-less endpoint.
@@ -56,6 +56,19 @@ interface UsePaymentStatusPollingOptions {
   skip?: boolean;
   /** Called once when polling reaches a terminal `success` state. */
   onSuccess?: () => void;
+  /**
+   * Minimum time the verifying UI is displayed before transitioning to a
+   * terminal state. Stripe off-session charges resolve in ~150 ms, which
+   * makes the verification feel skipped — gating the transition to ~2.5 s
+   * gives the user a deliberate, calm "we are checking your payment"
+   * moment, matching the perceived flow of hosted checkouts. Side effects
+   * (`onSuccess`, balance refresh) fire IMMEDIATELY ; only the visible
+   * state transition is deferred.
+   *
+   * Set to `0` to disable.
+   * @default 2500
+   */
+  minimumVerifyingMs?: number;
 }
 
 interface UsePaymentStatusPollingResult {
@@ -98,6 +111,7 @@ export function usePaymentStatusPolling({
   variant,
   skip = false,
   onSuccess,
+  minimumVerifyingMs = 2500,
 }: UsePaymentStatusPollingOptions): UsePaymentStatusPollingResult {
   const [state, setState] = useState<PaymentPollingState>('verifying');
   const [pointBalance, setPointBalance] = useState<number | null>(null);
@@ -105,9 +119,16 @@ export function usePaymentStatusPolling({
 
   const cancelledRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Floor timer dedicated to the minimum-verifying-duration gate. Kept
+  // separate from `timerRef` so a parallel polling iteration can't cancel
+  // the deferred terminal transition (or vice-versa).
+  const floorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const authLostRef = useRef(false);
   const successFiredRef = useRef(false);
   const onSuccessRef = useRef(onSuccess);
+  // Seeded in the polling `useEffect` / `retry()` — avoid Date.now in ref init
+  // (React purity rule: render must not call impure fns).
+  const startTsRef = useRef(0);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -117,6 +138,10 @@ export function usePaymentStatusPolling({
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
+    }
+    if (floorTimerRef.current) {
+      clearTimeout(floorTimerRef.current);
+      floorTimerRef.current = null;
     }
   }, []);
 
@@ -129,6 +154,48 @@ export function usePaymentStatusPolling({
       /* never let a parent callback throw inside polling */
     }
   }, []);
+
+  // Defers a terminal state transition until `minimumVerifyingMs` has
+  // elapsed since the polling session started. The optional `sideEffect`
+  // callback (typically `fireSuccessOnce`) is invoked at the SAME moment
+  // as the state mutation so the consuming UI never displays a half-step
+  // where downstream caches (header credit-balance, etc.) have refreshed
+  // but the verifying screen is still on display — a confusing pattern
+  // that suggests the payment is being credited before being verified.
+  //
+  // Money-safety note: the underlying payment is already idempotently
+  // settled server-side by the time we reach this function (Stripe
+  // off-session: `PaymentSucceeded` listener ran inside the same
+  // synchronous `createPayment` transaction). Deferring the UI signals
+  // does NOT delay actual fulfilment — only the user-perceived flow.
+  const commitTerminal = useCallback(
+    (terminal: PaymentPollingState, sideEffect?: () => void): void => {
+      if (cancelledRef.current) return;
+
+      const elapsed = Date.now() - startTsRef.current;
+      const remaining = minimumVerifyingMs - elapsed;
+
+      const commit = (): void => {
+        if (cancelledRef.current) return;
+        sideEffect?.();
+        setState(terminal);
+      };
+
+      if (remaining <= 0) {
+        commit();
+        return;
+      }
+
+      if (floorTimerRef.current) {
+        clearTimeout(floorTimerRef.current);
+      }
+      floorTimerRef.current = setTimeout(() => {
+        floorTimerRef.current = null;
+        commit();
+      }, remaining);
+    },
+    [minimumVerifyingMs]
+  );
 
   // Single poll iteration. Returns `true` when the loop should stop
   // (terminal status reached or polling was cancelled externally).
@@ -144,16 +211,15 @@ export function usePaymentStatusPolling({
           setPointBalance(result.point_balance ?? null);
 
           if (result.status === 'completed') {
-            setState('success');
-            fireSuccessOnce();
+            commitTerminal('success', fireSuccessOnce);
             return true;
           }
           if (result.status === 'failed') {
-            setState('failed');
+            commitTerminal('failed');
             return true;
           }
           if (result.status === 'not_found') {
-            setState('not_found');
+            commitTerminal('not_found');
             return true;
           }
           return false;
@@ -161,17 +227,16 @@ export function usePaymentStatusPolling({
 
         const verify = await paymentsService.verify(txRef);
         if (verify.is_paid) {
-          setState('success');
-          fireSuccessOnce();
+          commitTerminal('success', fireSuccessOnce);
           return true;
         }
         const s = verify.status?.toLowerCase();
         if (s === 'failed' || s === 'declined' || s === 'error') {
-          setState('failed');
+          commitTerminal('failed');
           return true;
         }
         if (s === 'cancelled') {
-          setState('cancelled');
+          commitTerminal('cancelled');
           return true;
         }
         return false;
@@ -185,7 +250,7 @@ export function usePaymentStatusPolling({
           err.response?.status === 404 &&
           variant === 'credit'
         ) {
-          setState('not_found');
+          commitTerminal('not_found');
           return true;
         }
         // Any other error → retry on next tick.
@@ -196,20 +261,18 @@ export function usePaymentStatusPolling({
     try {
       const { status } = await paymentsService.publicStatus(txRef);
       if (status === 'success') {
-        if (authLostRef.current) {
-          setState('auth_lost');
-        } else {
-          setState('success');
-        }
-        fireSuccessOnce();
+        commitTerminal(
+          authLostRef.current ? 'auth_lost' : 'success',
+          fireSuccessOnce
+        );
         return true;
       }
       if (status === 'failed' || status === 'refunded') {
-        setState('failed');
+        commitTerminal('failed');
         return true;
       }
       if (status === 'cancelled') {
-        setState('cancelled');
+        commitTerminal('cancelled');
         return true;
       }
       // 'pending' / 'unknown' → keep polling
@@ -217,7 +280,7 @@ export function usePaymentStatusPolling({
     } catch {
       return false;
     }
-  }, [txRef, variant, fireSuccessOnce]);
+  }, [txRef, variant, fireSuccessOnce, commitTerminal]);
 
   // Refs avoid the cyclic deps between fast and slow loops while keeping
   // a single source of truth for the current iteration logic.
@@ -275,6 +338,7 @@ export function usePaymentStatusPolling({
     cancelledRef.current = false;
     authLostRef.current = false;
     successFiredRef.current = false;
+    startTsRef.current = Date.now();
     setFastAttempt(0);
     setState('verifying');
     runFastLoopRef.current(0);
@@ -282,6 +346,7 @@ export function usePaymentStatusPolling({
 
   useEffect(() => {
     cancelledRef.current = false;
+    startTsRef.current = Date.now();
     if (skip || !txRef) {
       return () => {
         cancelledRef.current = true;

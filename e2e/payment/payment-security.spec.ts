@@ -1,6 +1,27 @@
 import { expect, test } from '@playwright/test';
 
 /**
+ * Next.js dev server can intermittently reset connections under parallel Playwright load.
+ */
+async function gotoWithRetry(
+  page: import('@playwright/test').Page,
+  url: string,
+  attempts = 3
+): Promise<void> {
+  let last: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      await page.goto(url);
+      return;
+    } catch (err) {
+      last = err;
+      await page.waitForTimeout(400 * (i + 1));
+    }
+  }
+  throw last;
+}
+
+/**
  * E2E: Security tests for the payment system.
  *
  * Ensures that secret keys, API tokens, and sensitive data are never
@@ -93,7 +114,10 @@ test.describe('Payment Security — No Secret Key Exposure', () => {
       });
     });
 
-    await page.goto('/payment/callback?tx_ref=KH-NET-001&status=successful');
+    await gotoWithRetry(
+      page,
+      '/payment/callback?tx_ref=KH-NET-001&status=successful'
+    );
     await page.waitForLoadState('load');
 
     for (const body of requestBodies) {

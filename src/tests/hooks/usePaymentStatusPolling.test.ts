@@ -75,6 +75,7 @@ describe('usePaymentStatusPolling — credit variant', () => {
         txRef: 'KH-AAAAAA000001',
         variant: 'credit',
         onSuccess,
+        minimumVerifyingMs: 0,
       })
     );
 
@@ -98,6 +99,7 @@ describe('usePaymentStatusPolling — credit variant', () => {
         txRef: 'KH-BBBBBB000002',
         variant: 'credit',
         onSuccess,
+        minimumVerifyingMs: 0,
       })
     );
 
@@ -121,6 +123,7 @@ describe('usePaymentStatusPolling — credit variant', () => {
         txRef: 'KH-CCCCCC000003',
         variant: 'credit',
         onSuccess,
+        minimumVerifyingMs: 0,
       })
     );
 
@@ -160,6 +163,7 @@ describe('usePaymentStatusPolling — credit variant', () => {
       usePaymentStatusPolling({
         txRef: 'KH-EEEEEE000005',
         variant: 'credit',
+        minimumVerifyingMs: 0,
       })
     );
 
@@ -187,6 +191,7 @@ describe('usePaymentStatusPolling — unlock variant', () => {
         txRef: 'KH-UNLK000001',
         variant: 'unlock',
         onSuccess,
+        minimumVerifyingMs: 0,
       })
     );
 
@@ -210,6 +215,7 @@ describe('usePaymentStatusPolling — unlock variant', () => {
       usePaymentStatusPolling({
         txRef: 'KH-UNLK000002',
         variant: 'unlock',
+        minimumVerifyingMs: 0,
       })
     );
 

@@ -4,14 +4,21 @@ import { COUNTRY_COOKIE } from '@/lib/currency';
 import { getStripePromise } from '@/lib/stripe';
 import { brand } from '@/theme/tokens';
 import ErrorIcon from '@mui/icons-material/Error';
-import { Box, Button, CircularProgress, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  Typography,
+} from '@mui/material';
 import {
   Elements,
   PaymentElement,
   useElements,
   useStripe,
 } from '@stripe/react-stripe-js';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * Read the `kh_country` cookie set by the Next.js middleware (`proxy.ts`)
@@ -38,6 +45,11 @@ interface StripeConfirmStepProps {
    */
   clientSecret: string;
   /**
+   * HTTPS URL Stripe redirects to after PayPal, Bancontact, or other
+   * redirect-based PMs (`confirmPayment` requirement).
+   */
+  paymentConfirmReturnUrl: string;
+  /**
    * Called when Stripe.confirmPayment succeeds (the PaymentIntent is in
    * `succeeded` state — the webhook is what triggers the post-payment
    * actions, but the modal can close immediately).
@@ -51,6 +63,33 @@ interface StripeConfirmStepProps {
    * Visible amount label — purely cosmetic, shown above the payment form.
    */
   amountLabel?: string;
+  /**
+   * When `true`, render the "Sauvegarder pour mes prochains paiements"
+   * checkbox under the Stripe form. The actual server-side wiring
+   * (`setup_future_usage`) happens at PaymentIntent creation time — this
+   * prop only controls the visual feedback to the user. The PaymentIntent
+   * was already created with the same flag when the parent submitted.
+   */
+  showSaveCheckbox?: boolean;
+  /** Initial checkbox state. Defaults to `true` (best UX). */
+  defaultSaveCheckbox?: boolean;
+  /** Called whenever the checkbox toggles. */
+  onSaveCheckboxChange?: (next: boolean) => void;
+  /**
+   * When set, the user is reusing a previously saved card. The step
+   * skips the full Stripe Elements form and goes straight to
+   * `stripe.confirmCardPayment(clientSecret)` so Stripe can drive the
+   * 3DS challenge on the same PaymentIntent (returned with status
+   * `requires_action`).
+   */
+  reuseSavedPaymentMethodId?: string | null;
+  /**
+   * Auto-confirm on mount instead of waiting for the user to click. Used
+   * when the saved-card initiate response was `requires_action` — the
+   * 3DS overlay must flash open immediately so the user understands
+   * why the bank popup appeared.
+   */
+  autoConfirmOnMount?: boolean;
 }
 
 /**
@@ -63,9 +102,15 @@ interface StripeConfirmStepProps {
  */
 export default function StripeConfirmStep({
   clientSecret,
+  paymentConfirmReturnUrl,
   onSuccess,
   onBack,
   amountLabel,
+  showSaveCheckbox = false,
+  defaultSaveCheckbox = true,
+  onSaveCheckboxChange,
+  reuseSavedPaymentMethodId = null,
+  autoConfirmOnMount = false,
 }: StripeConfirmStepProps): React.ReactElement {
   // `getStripePromise()` returns a memoised promise. We resolve it once on
   // mount so we can render a configuration error if the publishable key is
@@ -127,10 +172,17 @@ export default function StripeConfirmStep({
       }}
     >
       <StripeConfirmInner
+        clientSecret={clientSecret}
+        paymentConfirmReturnUrl={paymentConfirmReturnUrl}
         onSuccess={onSuccess}
         onBack={onBack}
         amountLabel={amountLabel}
         defaultCountry={visitorCountry}
+        showSaveCheckbox={showSaveCheckbox}
+        defaultSaveCheckbox={defaultSaveCheckbox}
+        onSaveCheckboxChange={onSaveCheckboxChange}
+        reuseSavedPaymentMethodId={reuseSavedPaymentMethodId}
+        autoConfirmOnMount={autoConfirmOnMount}
       />
     </Elements>
   );
@@ -188,18 +240,32 @@ function PaymentConfigError({
 }
 
 interface StripeConfirmInnerProps {
+  clientSecret: string;
+  paymentConfirmReturnUrl: string;
   onSuccess: () => void;
   onBack?: () => void;
   amountLabel?: string;
   /** ISO 3166-1 alpha-2 country code prefilled in the billing form. */
   defaultCountry: string;
+  showSaveCheckbox: boolean;
+  defaultSaveCheckbox: boolean;
+  onSaveCheckboxChange?: (next: boolean) => void;
+  reuseSavedPaymentMethodId: string | null;
+  autoConfirmOnMount: boolean;
 }
 
 function StripeConfirmInner({
+  clientSecret,
+  paymentConfirmReturnUrl,
   onSuccess,
   onBack,
   amountLabel,
   defaultCountry,
+  showSaveCheckbox,
+  defaultSaveCheckbox,
+  onSaveCheckboxChange,
+  reuseSavedPaymentMethodId,
+  autoConfirmOnMount,
 }: StripeConfirmInnerProps): React.ReactElement {
   const stripe = useStripe();
   const elements = useElements();
@@ -212,23 +278,67 @@ function StripeConfirmInner({
   // dedicated error state instead of the empty form.
   const [loadError, setLoadError] = useState<string | null>(null);
   const [elementReady, setElementReady] = useState(false);
+  const [saveChecked, setSaveChecked] = useState<boolean>(defaultSaveCheckbox);
+  // Guards `autoConfirmOnMount` so the effect runs exactly once, even if
+  // React StrictMode double-invokes the mount effect in dev.
+  const autoConfirmedRef = useRef(false);
+
+  const isReusing = reuseSavedPaymentMethodId !== null;
 
   const handleSubmit = useCallback(async () => {
-    if (!stripe || !elements) {
-      // Stripe.js not ready yet — should not happen if the form button
-      // stays disabled until both objects are available.
+    if (!stripe) {
       return;
     }
 
     setSubmitting(true);
     setError(null);
 
+    // Branch A — Reusing a saved card. The PaymentIntent was already
+    // created server-side with `payment_method = pm_xxx`, `confirm =
+    // true`, `off_session = true`. If the bank accepted, Stripe returned
+    // status `succeeded` and we're not here. If the bank requires 3DS,
+    // status is `requires_action` and we drive the challenge through
+    // `confirmCardPayment` on the same intent.
+    if (isReusing) {
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        return_url: paymentConfirmReturnUrl,
+      });
+      if (result.error) {
+        setError(
+          result.error.message ??
+            'Une erreur est survenue lors du paiement. Réessayez.'
+        );
+        setSubmitting(false);
+        return;
+      }
+      if (
+        result.paymentIntent &&
+        (result.paymentIntent.status === 'succeeded' ||
+          result.paymentIntent.status === 'processing')
+      ) {
+        onSuccess();
+        return;
+      }
+      setError(
+        "Le paiement n'a pas été finalisé. Vérifiez votre carte ou réessayez."
+      );
+      setSubmitting(false);
+      return;
+    }
+
+    // Branch B — New card via the PaymentElement form.
+    if (!elements) {
+      return;
+    }
     // `confirmPayment` resolves with either an error OR a PaymentIntent.
     // Setting `redirect: 'if_required'` keeps the user on KeyHome unless a
     // 3DS challenge mandates a redirect (then Stripe handles it).
     const result = await stripe.confirmPayment({
       elements,
       redirect: 'if_required',
+      confirmParams: {
+        return_url: paymentConfirmReturnUrl,
+      },
     });
 
     if (result.error) {
@@ -255,7 +365,38 @@ function StripeConfirmInner({
       "Le paiement n'a pas été finalisé. Vérifiez votre carte ou réessayez."
     );
     setSubmitting(false);
-  }, [stripe, elements, onSuccess]);
+  }, [
+    stripe,
+    elements,
+    onSuccess,
+    isReusing,
+    clientSecret,
+    paymentConfirmReturnUrl,
+  ]);
+
+  // Auto-trigger the 3DS challenge as soon as Stripe.js is ready when the
+  // parent flagged `autoConfirmOnMount`. The bank popup must feel like a
+  // continuation of the previous click, not a manual confirmation.
+  useEffect(() => {
+    if (
+      autoConfirmOnMount &&
+      isReusing &&
+      stripe !== null &&
+      !autoConfirmedRef.current
+    ) {
+      autoConfirmedRef.current = true;
+      void handleSubmit();
+    }
+  }, [autoConfirmOnMount, isReusing, stripe, handleSubmit]);
+
+  const handleSaveCheckboxChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const next = event.target.checked;
+      setSaveChecked(next);
+      onSaveCheckboxChange?.(next);
+    },
+    [onSaveCheckboxChange]
+  );
 
   if (loadError) {
     return (
@@ -274,6 +415,7 @@ function StripeConfirmInner({
           variant="overline"
           sx={{
             display: 'block',
+            textAlign: 'center',
             color: 'text.secondary',
             letterSpacing: 1.5,
             fontSize: '0.65rem',
@@ -285,60 +427,115 @@ function StripeConfirmInner({
         </Typography>
       )}
 
-      <Box sx={{ mb: 2, minHeight: 64 }}>
-        {/* Stripe injects an iframe here — height is computed by Stripe. */}
-        {!elementReady && (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              py: 2,
-            }}
-          >
-            <CircularProgress size={24} sx={{ color: brand.primary }} />
+      {isReusing ? (
+        // Saved card reuse — Stripe is driving 3DS in an iframe / popup.
+        // The PaymentElement is not rendered; we just show a calming
+        // status block while the bank challenge runs.
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            p: 2,
+            mb: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2.5,
+            bgcolor: brand.primaryAlpha10,
+          }}
+        >
+          <CircularProgress size={22} sx={{ color: brand.primary }} />
+          <Box>
+            <Typography variant="body2" fontWeight={600}>
+              Validation en cours par votre banque
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: 'block', mt: 0.25 }}
+            >
+              Suivez les instructions affichées par votre banque pour finaliser
+              le paiement.
+            </Typography>
           </Box>
-        )}
-        <PaymentElement
-          options={{
-            // Tabs layout surfaces every method enabled in the Stripe
-            // Dashboard that's eligible for the visitor's region/currency
-            // (Card, Apple Pay, Google Pay, SEPA, Bancontact, iDEAL, Cash
-            // App Pay, Link, Klarna…).
-            layout: 'tabs',
-            // Prefill the billing country from the geo-derived `kh_country`
-            // cookie. Drives BOTH the country selector AND the dynamic
-            // method offering — Stripe shows iDEAL when country=NL,
-            // Bancontact when country=BE, only card when country=CM, etc.
-            // The user can always change it manually if their card is
-            // issued in another country.
-            defaultValues: {
-              billingDetails: {
-                address: {
-                  country: defaultCountry,
+        </Box>
+      ) : (
+        <Box sx={{ mb: 2, minHeight: 64 }}>
+          {/* Stripe injects an iframe here — height is computed by Stripe. */}
+          {!elementReady && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                py: 2,
+              }}
+            >
+              <CircularProgress size={24} sx={{ color: brand.primary }} />
+            </Box>
+          )}
+          <PaymentElement
+            options={{
+              // Tabs layout surfaces every method enabled in the Stripe
+              // Dashboard that's eligible for the visitor's region/currency
+              // (Card, Apple Pay, Google Pay, SEPA, Bancontact, iDEAL, Cash
+              // App Pay, Link, Klarna…).
+              layout: 'tabs',
+              // Prefill the billing country from the geo-derived `kh_country`
+              // cookie. Drives BOTH the country selector AND the dynamic
+              // method offering — Stripe shows iDEAL when country=NL,
+              // Bancontact when country=BE, only card when country=CM, etc.
+              // The user can always change it manually if their card is
+              // issued in another country.
+              defaultValues: {
+                billingDetails: {
+                  address: {
+                    country: defaultCountry,
+                  },
                 },
               },
-            },
-            // We do NOT restrict address fields : SEPA needs an IBAN +
-            // name, Klarna may require a full address for credit checks,
-            // Cash App Pay needs a phone, etc. Letting Stripe own the
-            // form keeps us forward-compatible as new methods land.
-          }}
-          onReady={() => setElementReady(true)}
-          onLoadError={(event) => {
-            // The SDK exposes `event.error` of type `StripeError`. The
-            // `message` is end-user safe (Stripe localises it) but the
-            // 401 case has a generic message. Fall back to a clearer
-            // French copy that hints at the most likely cause.
-            const stripeMessage = event.error?.message;
-            const friendly =
-              stripeMessage && stripeMessage !== 'An unknown error occurred.'
-                ? stripeMessage
-                : "Impossible d'initialiser le formulaire de paiement. V\u00e9rifiez votre connexion ou d\u00e9sactivez les bloqueurs de publicit\u00e9, puis r\u00e9essayez.";
-            setLoadError(friendly);
-          }}
+              // We do NOT restrict address fields : SEPA needs an IBAN +
+              // name, Klarna may require a full address for credit checks,
+              // Cash App Pay needs a phone, etc. Letting Stripe own the
+              // form keeps us forward-compatible as new methods land.
+            }}
+            onReady={() => setElementReady(true)}
+            onLoadError={(event) => {
+              // The SDK exposes `event.error` of type `StripeError`. The
+              // `message` is end-user safe (Stripe localises it) but the
+              // 401 case has a generic message. Fall back to a clearer
+              // French copy that hints at the most likely cause.
+              const stripeMessage = event.error?.message;
+              const friendly =
+                stripeMessage && stripeMessage !== 'An unknown error occurred.'
+                  ? stripeMessage
+                  : "Impossible d'initialiser le formulaire de paiement. V\u00e9rifiez votre connexion ou d\u00e9sactivez les bloqueurs de publicit\u00e9, puis r\u00e9essayez.";
+              setLoadError(friendly);
+            }}
+          />
+        </Box>
+      )}
+
+      {showSaveCheckbox && !isReusing && (
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={saveChecked}
+              onChange={handleSaveCheckboxChange}
+              sx={{
+                color: 'text.secondary',
+                '&.Mui-checked': { color: brand.primary },
+              }}
+            />
+          }
+          label={
+            <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+              Sauvegarder pour mes prochains paiements
+            </Typography>
+          }
+          sx={{ mb: 1, mr: 0 }}
         />
-      </Box>
+      )}
 
       {error && (
         <Typography
@@ -371,7 +568,14 @@ function StripeConfirmInner({
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={!stripe || !elements || !elementReady || submitting}
+          disabled={
+            !stripe ||
+            submitting ||
+            // For new cards, wait until Elements is ready. For saved-card
+            // reuse, the form is hidden so the readiness gate doesn't
+            // apply.
+            (!isReusing && (!elements || !elementReady))
+          }
           sx={{
             flex: 2,
             py: 1.4,
@@ -390,24 +594,13 @@ function StripeConfirmInner({
               size={20}
               sx={{ color: 'rgba(255,255,255,0.5)' }}
             />
+          ) : isReusing ? (
+            'Confirmer le paiement'
           ) : (
             'Payer maintenant'
           )}
         </Button>
       </Box>
-
-      <Typography
-        variant="caption"
-        sx={{
-          display: 'block',
-          mt: 1.5,
-          textAlign: 'center',
-          color: 'text.disabled',
-          fontSize: '0.7rem',
-        }}
-      >
-        Paiement sécurisé via Stripe · Aucune donnée carte stockée par KeyHome
-      </Typography>
     </Box>
   );
 }

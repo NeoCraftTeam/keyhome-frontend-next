@@ -6,6 +6,7 @@ const SKIP_PREFIXES = [
   '/credits/callback',
   '/payment-success',
   '/payment/callback',
+  '/payment/return',
 ];
 
 function shouldSkipRemember(path: string): boolean {

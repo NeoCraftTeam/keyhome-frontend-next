@@ -4,7 +4,15 @@ import PaymentFlow from '@/components/payment/PaymentFlow';
 import PackageCard from '@/components/ui/PackageCard';
 import { Price } from '@/components/ui/Price';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
+import { API_URL } from '@/lib/api';
+import {
+  khSafeAreaBottomSx,
+  khSafeAreaTopSx,
+  syncKhSafeAreaInsets,
+} from '@/lib/safe-area-insets';
+import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
 import { creditsService } from '@/services/credits.service';
+import { brand, brandAgent } from '@/theme/tokens';
 import { PaymentType, type PointPackage } from '@/types';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import Close from '@mui/icons-material/Close';
@@ -22,7 +30,8 @@ import {
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 
 interface PurchaseCreditsModalProps {
   open: boolean;
@@ -33,13 +42,102 @@ export default function PurchaseCreditsModal({
   open,
   onClose,
 }: PurchaseCreditsModalProps) {
-  // Track which pack the user clicked. While non-null, <PaymentModal> is
-  // mounted on top of this dialog and drives the actual gateway selection.
+  /** After pack selection → PaymentFlow (Turnstile after payment method when enforced). */
+  type CreditPhase = 'packs' | 'payment';
+
+  const [phase, setPhase] = useState<CreditPhase>('packs');
   const [pendingPkg, setPendingPkg] = useState<PointPackage | null>(null);
+
+  const [creditCaptchaConfig, setCreditCaptchaConfig] = useState<{
+    loaded: boolean;
+    showCreditsTurnstile: boolean;
+    apiSiteKey: string | null;
+  }>({
+    loaded: false,
+    showCreditsTurnstile: false,
+    apiSiteKey: null,
+  });
+
   const [pkgError, setPkgError] = useState('');
   const queryClient = useQueryClient();
+  const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const ownerShell = pathname === '/owner' || pathname?.startsWith('/owner/');
+
+  const shellPrimary = ownerShell ? brandAgent.primary : brand.primary;
+
+  const { siteKey: hookSiteKey, isResolved } = useTurnstileSiteKey();
+  const turnstileWidgetSiteKey = creditCaptchaConfig.apiSiteKey ?? hookSiteKey;
+
+  useEffect(() => {
+    if (!open) {
+      setPhase('packs');
+      setPendingPkg(null);
+      setCreditCaptchaConfig({
+        loaded: false,
+        showCreditsTurnstile: false,
+        apiSiteKey: null,
+      });
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const base = API_URL.replace(/\/$/, '');
+        const res = await fetch(`${base}/config/turnstile`, {
+          headers: { Accept: 'application/json' },
+          credentials: 'omit',
+        });
+        if (!res.ok) {
+          throw new Error(`turnstile config ${res.status}`);
+        }
+        const json: {
+          data?: {
+            site_key?: string | null;
+            show_credits_turnstile?: boolean;
+          };
+        } = await res.json();
+        const sk =
+          typeof json?.data?.site_key === 'string' &&
+          json.data.site_key.trim() !== ''
+            ? json.data.site_key.trim()
+            : null;
+        const showCredits = Boolean(json?.data?.show_credits_turnstile);
+        if (!cancelled) {
+          setCreditCaptchaConfig({
+            loaded: true,
+            showCreditsTurnstile: showCredits,
+            apiSiteKey: sk,
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setCreditCaptchaConfig({
+            loaded: true,
+            showCreditsTurnstile: false,
+            apiSiteKey: null,
+          });
+        }
+      }
+    })();
+
+    return (): void => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    syncKhSafeAreaInsets();
+    const id = requestAnimationFrame(() => {
+      syncKhSafeAreaInsets();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open]);
 
   const { data: balance, isLoading: balanceLoading } = useQuery({
     queryKey: ['credits-balance'],
@@ -61,50 +159,96 @@ export default function PurchaseCreditsModal({
   const creditsLabel =
     availableCredits > 1 ? 'crédits disponibles' : 'crédit disponible';
 
-  // Step 1 : user picks a pack — we DON'T initiate the payment yet. The
-  // <PaymentModal> is mounted next, lets the user choose a method (mobile
-  // money / card) and only THEN does the backend route through the right
-  // gateway via `PaymentMethod::gateway()`.
+  const creditCaptchaConfigured =
+    creditCaptchaConfig.loaded &&
+    creditCaptchaConfig.showCreditsTurnstile &&
+    typeof turnstileWidgetSiteKey === 'string' &&
+    turnstileWidgetSiteKey !== '';
+
+  const gateReady =
+    Boolean(open) &&
+    creditCaptchaConfig.loaded &&
+    (!creditCaptchaConfig.showCreditsTurnstile ||
+      (Boolean(turnstileWidgetSiteKey) && isResolved));
+
+  // Step 1 : user picks a pack → PaymentFlow (captcha after payment method when enforced).
   const handlePurchase = (pkg: PointPackage) => {
     setPkgError('');
+    if (!gateReady) {
+      setPkgError('Chargement de la sécurité en cours, veuillez patienter.');
+      return;
+    }
+    if (
+      creditCaptchaConfig.showCreditsTurnstile &&
+      creditCaptchaConfig.loaded &&
+      !creditCaptchaConfigured
+    ) {
+      setPkgError(
+        'La vérification de sécurité est temporairement indisponible. Réessayez plus tard.'
+      );
+      return;
+    }
     setPendingPkg(pkg);
+    setPhase('payment');
   };
 
-  // Step 2 : the user closed the payment modal without paying. Drop the
-  // pending pack and stay on the catalogue so they can retry or pick another.
-  const handlePaymentModalClose = () => {
+  const handlePaymentModalClose = (): void => {
     setPendingPkg(null);
+    setPhase('packs');
   };
 
-  // Step 3 : payment confirmed (Stripe `confirmPayment` succeeded + the
-  // server-side verify call returned `is_paid=true`). We :
-  //  1. Refresh the cached balance so the header reflects the new credits.
-  //  2. Show the "Paiement confirmé" state for ~1.8 s so the user has
-  //     visual confirmation, then auto-close — matching the Flutterwave
-  //     callback experience (user lands back on the page with credits
-  //     already visible in the header pill).
-  //
-  // Flutterwave success is handled separately by the callback page after
-  // the user returns from the hosted checkout — this handler is Stripe-only
-  // in practice.
-  const handlePaymentSuccess = () => {
+  // Step 3a : payment verified on the server — refresh balance immediately.
+  // Closing the dialog is deferred to explicit "Continuer" on the success
+  // step (Stripe in-modal). No timer: avoids perceived "flash" close and
+  // races with manual dismiss. Flutterwave leaves the page; return flow uses
+  // the callback route, not this handler.
+  const handlePaymentSuccess = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
-    setTimeout(() => {
-      setPendingPkg(null);
-      onClose();
-    }, 1800);
-  };
+  }, [queryClient]);
+
+  const handleProceedAfterCreditsPayment = useCallback(() => {
+    setPendingPkg(null);
+    setPhase('packs');
+    onClose();
+  }, [onClose]);
 
   const handleClose = () => {
     setPkgError('');
     setPendingPkg(null);
+    setPhase('packs');
     onClose();
   };
+
+  // MUI fires `onClose(event, reason)` for every dismissal vector
+  // (`'backdropClick'`, `'escapeKeyDown'`, or programmatic). For a payment
+  // dialog we MUST only honour the explicit "Fermer" button click — a stray
+  // tap on the backdrop while Stripe is processing would tear down the
+  // PaymentIntent UI mid-confirmation, leaving the user with a debited card
+  // and no feedback. The IconButton calls `handleClose()` directly with no
+  // reason, so we only ignore the two automatic vectors here.
+  const handleDialogClose = useCallback(
+    (_event: object, reason: 'backdropClick' | 'escapeKeyDown' | undefined) => {
+      if (reason === 'backdropClick' || reason === 'escapeKeyDown') {
+        return;
+      }
+      handleClose();
+    },
+    // `handleClose` is stable enough (only depends on the parent `onClose`
+    // prop); inline ref-style is fine here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [onClose]
+  );
+
+  const checkoutPastPackSelection = pendingPkg !== null;
+  const headerAccentGlow = ownerShell
+    ? 'radial-gradient(circle, rgba(13,148,136,0.22) 0%, transparent 70%)'
+    : 'radial-gradient(circle, rgba(246,71,95,0.22) 0%, transparent 70%)';
 
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
+      onClose={handleDialogClose}
+      disableEscapeKeyDown
       maxWidth="md"
       fullWidth
       fullScreen={isMobile}
@@ -133,14 +277,21 @@ export default function PurchaseCreditsModal({
         sx={{
           position: 'relative',
           px: { xs: 2.5, sm: 4 },
-          pt: { xs: 3, sm: 4.5 },
-          pb: { xs: 2.5, sm: 4 },
-          // Deep navy gradient inspired by premium fintech apps (Revolut,
-          // Stripe, N26). The brand crimson is used sparingly as an accent
-          // further down, not as the dominant colour — more sober.
+          pt: checkoutPastPackSelection
+            ? {
+                xs: `calc(${khSafeAreaTopSx} + 1rem)`,
+                sm: `calc(${khSafeAreaTopSx} + 1rem)`,
+              }
+            : {
+                xs: `calc(${khSafeAreaTopSx} + 1.5rem)`,
+                sm: `calc(${khSafeAreaTopSx} + 2.25rem)`,
+              },
+          pb: checkoutPastPackSelection
+            ? { xs: 1.75, sm: 2 }
+            : { xs: 2.5, sm: 4 },
           background:
             'linear-gradient(135deg, #0A1628 0%, #132138 55%, #0D1F3C 100%)',
-          textAlign: 'center',
+          textAlign: checkoutPastPackSelection ? 'left' : 'center',
           overflow: 'hidden',
         }}
       >
@@ -154,8 +305,7 @@ export default function PurchaseCreditsModal({
             width: 220,
             height: 220,
             borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(246,71,95,0.22) 0%, transparent 70%)',
+            background: headerAccentGlow,
             pointerEvents: 'none',
           }}
         />
@@ -180,7 +330,10 @@ export default function PurchaseCreditsModal({
           size="small"
           sx={{
             position: 'absolute',
-            top: { xs: 8, sm: 12 },
+            top: {
+              xs: `calc(${khSafeAreaTopSx} + 0.5rem)`,
+              sm: `calc(${khSafeAreaTopSx} + 0.75rem)`,
+            },
             right: { xs: 8, sm: 12 },
             color: 'rgba(255,255,255,0.55)',
             bgcolor: 'rgba(255,255,255,0.04)',
@@ -195,14 +348,17 @@ export default function PurchaseCreditsModal({
           <Close sx={{ fontSize: 18 }} />
         </IconButton>
 
-        {pendingPkg && (
+        {checkoutPastPackSelection && (
           <IconButton
             aria-label="Retour aux packs"
             onClick={handlePaymentModalClose}
             size="small"
             sx={{
               position: 'absolute',
-              top: { xs: 8, sm: 12 },
+              top: {
+                xs: `calc(${khSafeAreaTopSx} + 0.5rem)`,
+                sm: `calc(${khSafeAreaTopSx} + 0.75rem)`,
+              },
               left: { xs: 8, sm: 12 },
               color: 'rgba(255,255,255,0.55)',
               bgcolor: 'rgba(255,255,255,0.04)',
@@ -218,108 +374,136 @@ export default function PurchaseCreditsModal({
           </IconButton>
         )}
 
-        {pendingPkg ? (
-          // ── Compact header for the payment step ─────────────────────
-          <Box sx={{ pt: { xs: 0.5, sm: 1 }, position: 'relative', zIndex: 1 }}>
-            {/* Crimson-tinted icon circle — ties to brand subtly. */}
-            <Box
-              sx={{
-                width: { xs: 44, sm: 52 },
-                height: { xs: 44, sm: 52 },
-                borderRadius: '50%',
-                bgcolor: 'rgba(246,71,95,0.14)',
-                border: '1px solid rgba(246,71,95,0.28)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mx: 'auto',
-                mb: 1.5,
-              }}
-            >
-              <CreditCard
-                sx={{
-                  color: '#F6475F',
-                  fontSize: { xs: 20, sm: 24 },
-                }}
-              />
-            </Box>
-
+        {pendingPkg && phase === 'payment' && (
+          <Box sx={{ position: 'relative', zIndex: 1, pr: { xs: 4, sm: 0 } }}>
             <Typography
               variant="overline"
               sx={{
                 display: 'block',
-                color: 'rgba(255,255,255,0.5)',
-                letterSpacing: 2,
-                fontSize: { xs: '0.6rem', sm: '0.65rem' },
+                textAlign: 'center',
+                color: 'rgba(255,255,255,0.55)',
+                letterSpacing: 1.5,
+                fontSize: '0.62rem',
                 fontWeight: 700,
-                mb: 0.75,
+                lineHeight: 1,
+                mb: 1,
+                px: { xs: 5, sm: 5 },
               }}
             >
               Étape 2 sur 2 · Paiement
             </Typography>
-            <Typography
-              sx={{
-                color: 'rgba(255,255,255,0.85)',
-                fontWeight: 600,
-                lineHeight: 1.25,
-                mb: 0.75,
-                fontSize: { xs: '0.95rem', sm: '1.05rem' },
-                letterSpacing: -0.2,
-              }}
-            >
-              {pendingPkg.name}
-            </Typography>
+
             <Box
-              component="div"
               sx={{
-                color: '#fff',
-                fontWeight: 800,
-                letterSpacing: -1.2,
-                fontSize: { xs: '1.75rem', sm: '2.1rem' },
-                lineHeight: 1.1,
-                fontFamily: 'inherit',
-                // Display the visitor's LOCAL currency (what Stripe will
-                // actually charge — e.g. 1.40 CHF / 1.52 EUR) in the hero
-                // position, with the XAF canonical value rendered as a
-                // small subtitle. The <Price primary="local" showOriginal>
-                // component injects the XAF line inside a nested <Box>
-                // styled `color: text.secondary` (dark grey, unreadable
-                // on our navy background) — we override every descendant
-                // so the XAF subtitle is visible and proportionate.
-                '& > span > span:first-of-type': {
-                  display: 'block',
-                  lineHeight: 1.05,
-                },
-                '& > span > .MuiBox-root, & > span > span + span': {
-                  color: 'rgba(255,255,255,0.55) !important',
-                  fontSize: '0.45em !important',
-                  fontWeight: 500,
-                  letterSpacing: 0,
-                  mt: '6px !important',
-                },
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'stretch', sm: 'center' },
+                justifyContent: 'space-between',
+                gap: { xs: 1.25, sm: 1.5 },
               }}
             >
-              <Price
-                amountXAF={pendingPkg.price}
-                primary="local"
-                showOriginal
-              />
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.25,
+                  minWidth: 0,
+                  flex: 1,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    bgcolor: ownerShell
+                      ? 'rgba(13,148,136,0.2)'
+                      : 'rgba(246,71,95,0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <CreditCard
+                    sx={{ color: shellPrimary, fontSize: 20 }}
+                    aria-hidden
+                  />
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={800}
+                    noWrap
+                    sx={{
+                      color: '#fff',
+                      letterSpacing: -0.2,
+                      lineHeight: 1.15,
+                      fontSize: { xs: '0.95rem', sm: '1rem' },
+                    }}
+                  >
+                    {pendingPkg.name}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    noWrap
+                    sx={{
+                      display: 'block',
+                      color: 'rgba(255,255,255,0.6)',
+                      fontSize: '0.72rem',
+                      lineHeight: 1.2,
+                      mt: 0.25,
+                    }}
+                  >
+                    {pendingPkg.points_awarded.toLocaleString('fr-FR')}{' '}
+                    {pendingPkg.points_awarded > 1 ? 'crédits' : 'crédit'}{' '}
+                    séront ajoutés à votre compte après le paiement
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Box
+                sx={{
+                  textAlign: { xs: 'left', sm: 'right' },
+                  flexShrink: 0,
+                  maxWidth: { xs: '100%', sm: '52%' },
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  component="div"
+                  sx={{
+                    color: '#fff',
+                    fontWeight: 800,
+                    letterSpacing: -1.2,
+                    fontSize: { xs: '1.75rem', sm: '2.1rem' },
+                    lineHeight: 1.1,
+                    fontFamily: 'inherit',
+                    '& > span > span:first-of-type': {
+                      display: 'block',
+                      lineHeight: 1.05,
+                    },
+                    '& > span > .MuiBox-root, & > span > span + span': {
+                      color: 'rgba(255,255,255,0.55) !important',
+                      fontSize: '0.45em !important',
+                      fontWeight: 500,
+                      letterSpacing: 0,
+                      mt: '6px !important',
+                    },
+                  }}
+                >
+                  <Price
+                    amountXAF={pendingPkg.price}
+                    primary="local"
+                    showOriginal
+                  />
+                </Typography>
+              </Box>
             </Box>
-            <Typography
-              sx={{
-                mt: 1.5,
-                color: 'rgba(255,255,255,0.6)',
-                fontSize: { xs: '0.7rem', sm: '0.78rem' },
-                fontWeight: 500,
-              }}
-            >
-              {pendingPkg.points_awarded.toLocaleString('fr-FR')}{' '}
-              {pendingPkg.points_awarded > 1 ? 'crédits' : 'crédit'} seront
-              ajoutés à votre compte
-            </Typography>
           </Box>
-        ) : (
-          // ── Landing header (pack catalogue) ─────────────────────────
+        )}
+
+        {phase === 'packs' && (
           <Box sx={{ position: 'relative', zIndex: 1 }}>
             {/* Overline label — sober, uppercase, letter-spaced. */}
             <Typography
@@ -414,19 +598,30 @@ export default function PurchaseCreditsModal({
           overflow: 'visible',
         }}
       >
-        {pendingPkg ? (
+        {pendingPkg && phase === 'payment' ? (
           <PaymentFlow
             amount={pendingPkg.price}
             type={PaymentType.CREDIT}
             planId={pendingPkg.id}
+            creditTurnstileVerificationRequired={
+              creditCaptchaConfig.showCreditsTurnstile &&
+              creditCaptchaConfig.loaded
+            }
+            creditTurnstileSiteKey={turnstileWidgetSiteKey}
             onSuccess={handlePaymentSuccess}
+            onProceedAfterSuccess={handleProceedAfterCreditsPayment}
             onBack={handlePaymentModalClose}
           />
-        ) : (
+        ) : null}
+
+        {phase === 'packs' ? (
           <>
             <Typography
               variant="overline"
               sx={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'center',
                 color: 'text.secondary',
                 letterSpacing: 1.5,
                 fontSize: '0.65rem',
@@ -447,7 +642,7 @@ export default function PurchaseCreditsModal({
             )}
 
             <AnimatePresence mode="wait">
-              {packagesLoading ? (
+              {packagesLoading || !creditCaptchaConfig.loaded ? (
                 <Grid key="loading" container spacing={2} sx={{ mt: 1.5 }}>
                   {[1, 2, 3].map((i) => (
                     <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
@@ -495,14 +690,18 @@ export default function PurchaseCreditsModal({
               )}
             </AnimatePresence>
           </>
-        )}
+        ) : null}
       </Box>
 
       {/* ── FOOTER ────────────────────────────────────────────── */}
       <Box
         sx={{
           px: 3,
-          py: 2,
+          pt: 2,
+          pb: {
+            xs: `calc(1rem + ${khSafeAreaBottomSx})`,
+            sm: 2,
+          },
           bgcolor: 'background.default',
           borderTop: '1px solid',
           borderColor: 'divider',
