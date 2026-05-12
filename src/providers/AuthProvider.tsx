@@ -17,11 +17,12 @@ import {
 } from '@/lib/auth-session';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
-import { syncChatE2eePublicKeyWithServer } from '@/lib/chat-e2ee-identity';
-import { rtrimPem } from '@/lib/chat-e2ee-crypto';
+// E2EE bootstrap intentionally not auto-run since mai 2026 — see
+// `chat-e2ee-identity.ts` and AGENTS.md (« Chat — désactivation E2EE par défaut »).
+// Re-import `syncChatE2eePublicKeyWithServer` here if/when E2EE is turned back on.
 import { useQueryClient } from '@tanstack/react-query';
 import { User, UserRole } from '@/types';
-import { useClerk, useAuth as useClerkAuth, useUser } from '@clerk/nextjs';
+import { useAuth as useClerkAuth, useUser } from '@clerk/nextjs';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   createContext,
@@ -88,7 +89,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn, getToken } = useClerkAuth();
   const { user: clerkUser } = useUser();
-  const { signOut } = useClerk();
   const pathname = usePathname();
   const [user, setUserState] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -100,40 +100,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const authRunRef = useRef(0);
   const pathnameRef = useRef<string | null>(null);
   const clerkExchangeDoneRef = useRef(false);
+  const clerkGetTokenRef = useRef(getToken);
+  clerkGetTokenRef.current = getToken;
 
   useLayoutEffect(() => {
     pathnameRef.current = pathname ?? null;
   }, [pathname]);
 
-  useEffect(() => {
-    if (!user?.id || typeof window === 'undefined' || !crypto.subtle) {
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      try {
-        const pem = await syncChatE2eePublicKeyWithServer(
-          user.chat_e2ee_public_key_pem ?? null,
-          user.id
-        );
-        if (cancelled || !pem) {
-          return;
-        }
-        if (rtrimPem(pem) !== rtrimPem(user.chat_e2ee_public_key_pem ?? '')) {
-          setUserState((prev) =>
-            prev && prev.id === user.id
-              ? { ...prev, chat_e2ee_public_key_pem: pem }
-              : prev
-          );
-        }
-      } catch {
-        /* E2EE bootstrap is optional — never block session */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, user?.chat_e2ee_public_key_pem]);
+  // E2EE bootstrap intentionally disabled since mai 2026 for cross-device
+  // portability — see AGENTS.md (« Chat — désactivation E2EE par défaut »).
+  // The hook below is preserved (commented) so re-enabling sealed messages is
+  // a single block of code: uncomment, re-import `syncChatE2eePublicKeyWithServer`
+  // / `rtrimPem` and flip `chat.client_sealed_enabled` to true server-side.
+  //
+  // useEffect(() => {
+  //   if (!user?.id || typeof window === 'undefined' || !crypto.subtle) {
+  //     return;
+  //   }
+  //   let cancelled = false;
+  //   void (async () => {
+  //     try {
+  //       const pem = await syncChatE2eePublicKeyWithServer(
+  //         user.chat_e2ee_public_key_pem ?? null,
+  //         user.id
+  //       );
+  //       if (cancelled || !pem) {
+  //         return;
+  //       }
+  //       if (rtrimPem(pem) !== rtrimPem(user.chat_e2ee_public_key_pem ?? '')) {
+  //         setUserState((prev) =>
+  //           prev && prev.id === user.id
+  //             ? { ...prev, chat_e2ee_public_key_pem: pem }
+  //             : prev
+  //         );
+  //       }
+  //     } catch {
+  //       /* E2EE bootstrap is optional — never block session */
+  //     }
+  //   })();
+  //   return () => {
+  //     cancelled = true;
+  //   };
+  // }, [user?.id, user?.chat_e2ee_public_key_pem]);
 
   /* ── Session helpers ──────────────────────────────────────────── */
 
@@ -321,7 +329,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void (async () => {
       let clerkToken: string | null = null;
       try {
-        clerkToken = await getToken();
+        clerkToken = await clerkGetTokenRef.current();
       } catch {
         setIsExchanging(false);
         setHasResolvedInitialAuth(true);
@@ -349,7 +357,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        registerTokenGetter(() => getToken());
+        registerTokenGetter(() => clerkGetTokenRef.current());
 
         try {
           const registrationIntent =
@@ -487,10 +495,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clerkUser?.id,
     pathname,
     clearSession,
-    persistSession,
     router,
-    signOut,
-    getToken,
     isLoggingOut,
   ]);
 
