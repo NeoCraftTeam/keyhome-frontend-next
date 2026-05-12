@@ -915,6 +915,10 @@ export function useChat(
       body: string,
       attachments?: MessageAttachment[],
       replyToId?: string,
+      // E2EE disabled by default (mai 2026) — kept in the public signature so
+      // the offline queue can still tag entries (`item.skipE2ee = true`) and
+      // so re-enabling the sealed branch is a no-op for callers.
+      // eslint-disable-next-line unused-imports/no-unused-vars
       skipE2ee?: boolean
     ) => {
       stopTypingRef.current();
@@ -947,15 +951,26 @@ export function useChat(
 
       const conv = conversationRef.current;
       const e2eeMeta = conv?.e2ee;
-      const wantsE2ee =
-        skipE2ee !== true &&
-        !attachments?.length &&
-        body.trim() !== '' &&
-        e2eeMeta?.both_keys_registered === true &&
-        Boolean(e2eeMeta.tenant_public_key_pem) &&
-        Boolean(e2eeMeta.landlord_public_key_pem) &&
-        typeof crypto !== 'undefined' &&
-        Boolean(crypto.subtle);
+      // E2EE désactivé par défaut — chiffrement serveur uniquement pour
+      // portabilité cross-device (Mai 2026). La logique sealed reste en place
+      // pour réactivation future si l'on adopte un flow de clé portable
+      // (RSA chiffrée serveur par passphrase utilisateur — pattern Signal Desktop).
+      //
+      // Pour réactiver : remplacer `const wantsE2ee = false;` par la condition
+      // d'origine conservée ci-dessous, et basculer `chat.client_sealed_enabled`
+      // à `true` côté backend.
+      //
+      //   const wantsE2ee =
+      //     skipE2ee !== true &&
+      //     !attachments?.length &&
+      //     body.trim() !== '' &&
+      //     e2eeMeta?.both_keys_registered === true &&
+      //     Boolean(e2eeMeta.tenant_public_key_pem) &&
+      //     Boolean(e2eeMeta.landlord_public_key_pem) &&
+      //     typeof crypto !== 'undefined' &&
+      //     Boolean(crypto.subtle);
+      void e2eeMeta;
+      const wantsE2ee = false as const;
 
       const replyToPayload = replyMsg
         ? {
@@ -963,7 +978,12 @@ export function useChat(
             body:
               replyMsg.decrypted_body ??
               replyMsg.body ??
-              (replyMsg.is_client_sealed ? '🔐 Message sécurisé' : null),
+              // Sealed reply parent we can't decrypt locally (legacy device).
+              // Server-side encryption is now the default — see the matching
+              // copy in MessageBubble's reply quote and ReplyPreview.
+              (replyMsg.is_client_sealed
+                ? 'Message d’un ancien appareil'
+                : null),
             sender_id: replyMsg.sender_id,
             is_client_sealed: replyMsg.is_client_sealed,
           }

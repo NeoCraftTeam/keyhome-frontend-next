@@ -27,9 +27,12 @@ export function ReplyPreview({
 
   let preview: string;
   if (message.is_client_sealed) {
+    // E2EE désactivé par défaut depuis mai 2026 — ce fallback couvre uniquement
+    // les anciens messages sealed ouverts depuis un nouvel appareil. Les nouveaux
+    // messages passent par le chiffrement serveur et sont lisibles partout.
     preview = message.decrypted_body
       ? message.decrypted_body.slice(0, 80)
-      : '🔐 Message sécurisé';
+      : 'Message d’un ancien appareil';
   } else if (message.body) {
     preview = message.body.slice(0, 80);
   } else if (message.attachments?.[0]) {

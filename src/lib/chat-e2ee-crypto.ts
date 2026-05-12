@@ -1,6 +1,15 @@
 /**
  * Client-side primitives for chat E2EE (RSA-OAEP-256 key wrap + AES-GCM).
  * Private key material never leaves the device (stored in localStorage — XSS caveat).
+ *
+ * ⚠️ INACTIVE BY DEFAULT — May 2026.
+ *
+ * The sealed-message path is disabled in production: `chat.client_sealed_enabled`
+ * defaults to `false` server-side, and the frontend's `useChat` sets `wantsE2ee = false`
+ * unconditionally. These primitives are preserved verbatim so a future portable-E2EE
+ * design (server-stored RSA private key encrypted with a user passphrase, à la
+ * Signal Desktop / ProtonMail) can reuse them — see AGENTS.md
+ * (« Chat — désactivation E2EE par défaut »).
  */
 
 /** Legacy single-bucket key (pre–per-user storage). Migrated on first read per account. */

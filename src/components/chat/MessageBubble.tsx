@@ -528,7 +528,10 @@ export function MessageBubble({
                     <span className="line-clamp-2 leading-snug">
                       {message.reply_to.body ??
                         (message.reply_to.is_client_sealed
-                          ? '🔐 Message sécurisé'
+                          ? // Historic sealed messages (pre-May 2026) — replaced
+                            // with a soft label since the new device cannot decrypt
+                            // them. New messages go through server-side encryption.
+                            'Message d’un ancien appareil'
                           : '📎 Pièce jointe')}
                     </span>
                   </div>
@@ -556,16 +559,24 @@ export function MessageBubble({
                   />
                 ) : message.is_client_sealed ? (
                   message.decryption_failed ? (
+                    // E2EE désactivé par défaut depuis mai 2026 — ce libellé n'est
+                    // affiché que pour les anciens messages sealed (historique)
+                    // ouverts depuis un appareil qui n'a pas la clé privée locale.
+                    // Tous les nouveaux messages sont chiffrés côté serveur et
+                    // lisibles depuis n'importe quel appareil.
                     <span
                       className="text-[13px] opacity-90 italic"
                       style={{
                         color: isOwn ? 'rgba(255,255,255,0.9)' : undefined,
                       }}
-                      title="Message chiffré envoyé depuis un autre appareil. Clé non disponible ici."
+                      title="Message envoyé depuis un ancien appareil avec un chiffrement local. Indisponible ici."
                     >
-                      🔒 Message chiffré (clé indisponible sur cet appareil)
+                      Message d&apos;un ancien appareil (non lisible ici)
                     </span>
                   ) : (
+                    // Transitional state for sealed messages still being decrypted
+                    // (rare with E2EE off, but kept for robustness during the
+                    // historic-message decryption pass).
                     <span
                       className="text-[13px] opacity-80 italic"
                       style={{

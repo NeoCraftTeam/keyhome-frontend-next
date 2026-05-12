@@ -222,7 +222,9 @@ export function ConversationItem({
     } else if (lastMsg.type === 'file') {
       rawPreview = '📎 Document';
     } else if (lastMsg.is_client_sealed === true) {
-      rawPreview = '🔐 Message sécurisé';
+      // Historic sealed messages from a device we no longer have the key for
+      // (E2EE off by default since mai 2026 — see AGENTS.md).
+      rawPreview = 'Message d’un ancien appareil';
     }
   }
   const preview = rawPreview ?? 'Démarrez la conversation';

@@ -257,8 +257,11 @@ export function ChatNotificationListener({
 
         const conv = convMap.get(uuid);
         const senderName = conv?.other_participant?.name ?? 'Nouveau message';
+        // E2EE off by default (mai 2026) — sealed previews are now only seen for
+        // legacy messages emitted from devices that still hold a private key.
+        // The matching copy lives in ConversationItem, ReplyPreview, MessageBubble.
         const preview = event.is_client_sealed
-          ? '🔐 Message sécurisé'
+          ? 'Message d’un ancien appareil'
           : event.body
             ? event.body.slice(0, 55)
             : event.type === 'image'

@@ -1,18 +1,23 @@
 /**
  * Auto-bootstrap of the per-device chat E2EE identity.
  *
- * This is what makes sealed messages actually decryptable end-to-end. Without
- * it, every device that has not previously generated a keypair sees received
- * sealed messages stuck on "🔐 Déchiffrement du message…" forever, because:
+ * ⚠️ INACTIVE BY DEFAULT — May 2026.
  *
- *   - `getChatE2eePrivateKey()` returns null
- *   - `aesGcmDecrypt()` is never called
- *   - The bubble's `decrypted_body` stays null → fallback string is shown
+ * The client-sealed (E2EE) chat path is disabled in production: the server
+ * config flag `chat.client_sealed_enabled` defaults to `false`, and the
+ * `AuthProvider` no longer calls `syncChatE2eePublicKeyWithServer` at startup
+ * (see AGENTS.md — « Chat — désactivation E2EE par défaut »). The module is
+ * kept intact so re-enabling E2EE only requires:
  *
- * The function is idempotent and safe to call on every auth state change. It
- * is wired in `AuthProvider` so that the moment the user is signed in, the
- * device's RSA identity is materialised and the public PEM is synced with
- * the backend so peers can wrap session AES keys for this device.
+ *   1. Set `CHAT_CLIENT_SEALED_ENABLED=true` in the backend `.env`.
+ *   2. Uncomment the `syncChatE2eePublicKeyWithServer` call in
+ *      `AuthProvider.tsx` (and re-import the helper + `rtrimPem`).
+ *   3. Set `wantsE2ee` back to its original condition in `useChat.ts`.
+ *
+ * Original purpose (kept for reference): when sealed messages are active,
+ * every device must own an RSA-OAEP keypair so peers can wrap a session AES
+ * key for it. Without this bootstrap, a fresh device would never decrypt
+ * incoming sealed messages.
  */
 
 import api from '@/lib/api';

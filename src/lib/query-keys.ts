@@ -62,8 +62,14 @@ export const creditsKeys = {
 } as const;
 
 export const paymentKeys = {
-  all: ['payment'] as const,
-  history: (page: number) => ['payment-history', page] as const,
+  /** Prefix for `invalidateQueries({ queryKey: paymentKeys.all })` after checkout. */
+  all: ['payments', 'history'] as const,
+  /**
+   * Paginated history — shared by `PaymentHistoryTable` and `PaymentHistoryTableModern`
+   * (identical `GET /payments/history` params) so cache dedupes across panels.
+   */
+  list: (perPage: number, page: number) =>
+    ['payments', 'history', 'list', perPage, page] as const,
 } as const;
 
 export const subscriptionKeys = {
