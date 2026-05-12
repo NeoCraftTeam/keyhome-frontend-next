@@ -12,7 +12,9 @@ import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label
 import { OWNER_LOGIN_HERO_SRC, OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { setRoleCookie } from '@/lib/auth-session';
 import { useAuth } from '@/providers/AuthProvider';
+import { brandAgent, neutral } from '@/theme/tokens';
 import { AxiosError } from 'axios';
+import { alpha } from '@mui/material/styles';
 import EmailIcon from '@mui/icons-material/Email';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -119,8 +121,7 @@ export default function OwnerLoginPage() {
           sx={{
             position: 'absolute',
             inset: 0,
-            background:
-              'linear-gradient(to bottom, rgba(13,148,136,0.2) 0%, rgba(13,148,136,0.55) 100%)',
+            background: `linear-gradient(to bottom, ${brandAgent.primaryAlpha20} 0%, ${brandAgent.primaryAlpha25} 100%)`,
           }}
         />
         <Box
@@ -143,7 +144,11 @@ export default function OwnerLoginPage() {
                 width={42}
                 height={42}
               />
-              <Typography variant="h4" fontWeight={700} color="#fff">
+              <Typography
+                variant="h4"
+                fontWeight={700}
+                sx={{ color: neutral.white }}
+              >
                 KeyHome
               </Typography>
             </Box>
@@ -151,9 +156,11 @@ export default function OwnerLoginPage() {
           <FadeIn delay={0.4} direction="up">
             <Typography
               variant="h5"
-              color="rgba(255,255,255,0.9)"
               fontWeight={400}
-              sx={{ maxWidth: 360 }}
+              sx={{
+                maxWidth: 360,
+                color: alpha(neutral.white, 0.9),
+              }}
             >
               Espace propriétaire — gérez vos annonces
             </Typography>
@@ -327,7 +334,10 @@ export default function OwnerLoginPage() {
                 }}
               >
                 {isSubmitting ? (
-                  <CircularProgress size={24} sx={{ color: '#fff' }} />
+                  <CircularProgress
+                    size={24}
+                    sx={{ color: 'primary.contrastText' }}
+                  />
                 ) : (
                   'Se connecter'
                 )}
