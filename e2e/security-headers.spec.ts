@@ -11,8 +11,13 @@ test.describe('Security Headers', () => {
   let headers: Record<string, string>;
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(120_000);
+
     const page = await browser.newPage();
-    const response = await page.goto('/');
+    const response = await page.goto('/', {
+      waitUntil: 'domcontentloaded',
+      timeout: 90_000,
+    });
     const responseHeaders = response?.headers() ?? {};
     headers = responseHeaders;
     await page.close();

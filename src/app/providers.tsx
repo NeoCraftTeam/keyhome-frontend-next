@@ -6,6 +6,7 @@ import { SafeAreaInsetBridge } from '@/components/pwa/SafeAreaInsetBridge';
 import { ConfirmDialogProvider } from '@/components/ui/ConfirmDialog';
 import SkipLink from '@/components/ui/SkipLink';
 import { UtmCaptureProvider } from '@/components/utm/UtmCaptureProvider';
+import type { SupportedCurrency } from '@/lib/currency';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { ComparatorProvider } from '@/providers/ComparatorProvider';
 import { CurrencyProvider } from '@/providers/CurrencyProvider';
@@ -22,9 +23,12 @@ import { ThemeProvider } from '@/providers/ThemeProvider';
 export function Providers({
   children,
   nonce = '',
+  initialCurrency,
 }: {
   children: React.ReactNode;
   nonce?: string;
+  /** SSR-seeded from the `kh_currency` cookie (set by `src/proxy.ts`). */
+  initialCurrency?: SupportedCurrency;
 }) {
   return (
     <QueryProvider>
@@ -38,7 +42,7 @@ export function Providers({
                   `kh_country` are set in `src/proxy.ts` from `CF-IPCountry`
                   (Cloudflare orange cloud) or `x-vercel-ip-country` (Vercel);
                   local dev defaults to CM → XAF when those headers are absent. */}
-              <CurrencyProvider>
+              <CurrencyProvider initialCurrency={initialCurrency}>
                 <FavoritesProvider>
                   <ComparatorProvider>
                     {/* Confirm dialogs (`useConfirm`) are used by both panels

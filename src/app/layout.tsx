@@ -1,28 +1,28 @@
-import type { Metadata } from 'next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
-import type { Viewport } from 'next';
-import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
-import { headers } from 'next/headers';
-import './globals.css';
-import { Providers } from './providers';
-import { ClerkProvider } from '@clerk/nextjs';
-import { frFR } from '@clerk/localizations';
-import JsonLd from '@/components/seo/JsonLd';
-import { WebVitals } from '@/components/seo/WebVitals';
-import { Analytics } from '@vercel/analytics/next';
+import NetworkStatus from '@/components/pwa/NetworkStatus';
+import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
 import ViewportInteractiveWidget from '@/components/pwa/ViewportInteractiveWidget';
-import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
-import NetworkStatus from '@/components/pwa/NetworkStatus';
+import JsonLd from '@/components/seo/JsonLd';
+import { WebVitals } from '@/components/seo/WebVitals';
+import { ThemeInitScript } from '@/components/ThemeInitScript';
 import CookieBanner from '@/components/ui/CookieBanner';
 import RouteProgressBar from '@/components/ui/RouteProgressBar';
-import { ThemeInitScript } from '@/components/ThemeInitScript';
-import { KH_SAFE_AREA_INIT_SCRIPT } from '@/lib/safe-area-init-inline';
-import { Suspense } from 'react';
+import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
 import { getClerkPreconnectOrigin } from '@/lib/clerk-frontend-origins';
-import { BRAND_TITLE_WITH_TAGLINE, BRAND_TAGLINE } from '@/lib/brand';
+import { CURRENCY_COOKIE, parseSupportedCurrencyCookie } from '@/lib/currency';
+import { KH_SAFE_AREA_INIT_SCRIPT } from '@/lib/safe-area-init-inline';
 import { buildSiteVerification } from '@/lib/seo-verification';
 import { getSiteOrigin } from '@/lib/site-url';
+import { frFR } from '@clerk/localizations';
+import { ClerkProvider } from '@clerk/nextjs';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import type { Metadata, Viewport } from 'next';
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
+import { cookies, headers } from 'next/headers';
+import { Suspense } from 'react';
+import './globals.css';
+import { Providers } from './providers';
 
 const SITE = getSiteOrigin();
 const siteVerification = buildSiteVerification();
@@ -166,6 +166,13 @@ export default async function RootLayout({
 }>) {
   const nonce = (await headers()).get('x-nonce') ?? '';
   const clerkOrigin = getClerkPreconnectOrigin();
+  // SSR seed the active currency from the cookie set by the edge proxy
+  // (`src/proxy.ts`). Avoids the FCFA → detected-currency flash on first
+  // paint by hydrating <CurrencyProvider> with the right value already.
+  const initialCurrency =
+    parseSupportedCurrencyCookie(
+      (await cookies()).get(CURRENCY_COOKIE)?.value
+    ) ?? undefined;
   return (
     <ClerkProvider
       localization={frFR}
@@ -198,7 +205,7 @@ export default async function RootLayout({
         </head>
         <body className={`${inter.variable} ${jakarta.variable} antialiased`}>
           <ViewportInteractiveWidget />
-          <Providers nonce={nonce}>
+          <Providers nonce={nonce} initialCurrency={initialCurrency}>
             <Suspense fallback={null}>
               <RouteProgressBar />
             </Suspense>

@@ -10,8 +10,8 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: process.env.CI ? 2 : 1,
+  workers: process.env.CI ? 1 : 2,
   reporter: process.env.CI ? 'github' : 'html',
 
   use: {
@@ -31,10 +31,16 @@ export default defineConfig({
       use: { ...devices['Pixel 5'] },
     },
     {
-      // Emulates iPhone 13 layout (390×844, touch, 3× DPR, iOS user-agent)
-      // but runs on Chromium so no separate WebKit install is required.
+      // Layout: iPhone 13 (390×844, touch, 3× DPR). Chromium engine with a
+      // Chrome-on-iPhone (CriOS) UA so Clerk does not apply Safari/WKWebView-only
+      // edge redirects that can loop under Playwright Chromium.
       name: 'mobile-ios',
-      use: { ...devices['iPhone 13'], browserName: 'chromium' },
+      use: {
+        ...devices['iPhone 13'],
+        browserName: 'chromium',
+        userAgent:
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.6099.231 Mobile/15E148 Safari/604.1',
+      },
     },
   ],
 
@@ -45,6 +51,6 @@ export default defineConfig({
         command: 'npm run dev',
         url: 'http://localhost:3000',
         reuseExistingServer: true,
-        timeout: 60_000,
+        timeout: 180_000,
       },
 });

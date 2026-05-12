@@ -24,6 +24,7 @@ export default function robots(): MetadataRoute.Robots {
         '/sso-callback',
         '/sso-callback/',
         '/payment-success',
+        '/payment/return',
         '/credits/',
         '/profile',
         '/payments',
