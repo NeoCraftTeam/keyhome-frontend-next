@@ -2,6 +2,7 @@
 
 import AdCard from '@/components/ads/AdCard';
 import PaymentHistoryTableModern from '@/components/payment/PaymentHistoryTableModern';
+import SavedCardsManager from '@/components/payment/SavedCardsManager';
 import FadeIn from '@/components/ui/FadeIn';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar';
@@ -678,13 +679,16 @@ export default function ProfilePage() {
 
       {/* Tab 3: Payment History */}
       <TabPanel value={tab} index={3}>
-        <Typography variant="h6" fontWeight={600} gutterBottom>
-          Historique des paiements
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Retrouvez ici toutes vos transactions de crédits.
-        </Typography>
-        <PaymentHistoryTableModern perPage={10} />
+        <SavedCardsManager />
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h6" fontWeight={600} gutterBottom>
+            Historique des paiements
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Retrouvez ici toutes vos transactions de crédits.
+          </Typography>
+          <PaymentHistoryTableModern />
+        </Box>
       </TabPanel>
 
       {/* Tab 4: Security (password) */}

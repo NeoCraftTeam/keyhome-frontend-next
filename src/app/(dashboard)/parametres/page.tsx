@@ -1,25 +1,25 @@
 'use client';
 
-import { useAuth } from '@/providers/AuthProvider';
-import { surveysService } from '@/services/surveys.service';
-import { Survey } from '@/types';
+import LinkedAccountsCard from '@/components/settings/LinkedAccountsCard';
+import FadeIn from '@/components/ui/FadeIn';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
-import Apple from '@mui/icons-material/Apple';
+import { SOUND_ENABLED_KEY, useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useAuth } from '@/providers/AuthProvider';
+import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
+import { surveysService } from '@/services/surveys.service';
+import { brand } from '@/theme/tokens';
+import { Survey } from '@/types';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowIcon from '@mui/icons-material/ArrowForwardIos';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import Facebook from '@mui/icons-material/Facebook';
-import Google from '@mui/icons-material/Google';
 import HelpIcon from '@mui/icons-material/HelpOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SoundIcon from '@mui/icons-material/MusicNote';
 import NotificationsIcon from '@mui/icons-material/NotificationsNone';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import {
-  Alert,
   Avatar,
   Box,
-  Button,
   Chip,
   Container,
   Grid,
@@ -31,14 +31,9 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { useSoundFeedback, SOUND_ENABLED_KEY } from '@/hooks/useSoundFeedback';
-import { useClerk } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import FadeIn from '@/components/ui/FadeIn';
-import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
-import { brand } from '@/theme/tokens';
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -150,11 +145,8 @@ function SettingsRow({
 export default function ParametresPage() {
   const { user, logout, isAuthenticated } = useAuth();
   const router = useRouter();
-  const { user: clerkUser } = useClerk();
   const { choice, setChoice } = useThemeMode();
 
-  const [linkedLoading, setLinkedLoading] = useState<string | null>(null);
-  const [linkedError, setLinkedError] = useState('');
   const { play } = useSoundFeedback();
   const [soundEnabled, setSoundEnabledState] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
@@ -184,71 +176,7 @@ export default function ParametresPage() {
 
   const surveyAnswered = surveyAnsweredData?.has_answered ?? false;
 
-  const socialProviders = [
-    {
-      key: 'google',
-      label: 'Google',
-      icon: <Google sx={{ fontSize: 18 }} />,
-      strategy: 'oauth_google' as const,
-    },
-    {
-      key: 'facebook',
-      label: 'Facebook',
-      icon: <Facebook sx={{ fontSize: 18 }} />,
-      strategy: 'oauth_facebook' as const,
-    },
-    {
-      key: 'apple',
-      label: 'Apple',
-      icon: <Apple sx={{ fontSize: 18 }} />,
-      strategy: 'oauth_apple' as const,
-    },
-  ];
-
-  const isProviderLinked = (strategy: string) =>
-    clerkUser?.externalAccounts?.some((acc) => acc.provider === strategy) ??
-    false;
-
-  const getLinkedEmail = (strategy: string): string | null =>
-    clerkUser?.externalAccounts?.find((a) => a.provider === strategy)
-      ?.emailAddress ?? null;
-
-  const handleConnect = async (
-    strategy: 'oauth_google' | 'oauth_facebook' | 'oauth_apple'
-  ) => {
-    if (!clerkUser) return;
-    setLinkedLoading(strategy);
-    setLinkedError('');
-    try {
-      await clerkUser.createExternalAccount({
-        strategy,
-        redirectUrl: '/parametres',
-      });
-    } catch {
-      setLinkedError(
-        "Connectez-vous d'abord avec un compte social pour lier les autres ici."
-      );
-    } finally {
-      setLinkedLoading(null);
-    }
-  };
-
-  const handleDisconnect = async (
-    strategy: 'oauth_google' | 'oauth_facebook' | 'oauth_apple'
-  ) => {
-    if (!clerkUser) return;
-    setLinkedLoading(strategy);
-    try {
-      const acc = clerkUser.externalAccounts?.find(
-        (a) => (a.provider as string) === strategy
-      );
-      if (acc) await acc.destroy();
-    } catch {
-      setLinkedError('Impossible de déconnecter ce compte.');
-    } finally {
-      setLinkedLoading(null);
-    }
-  };
+  // Linked-accounts UI is now fully encapsulated in <LinkedAccountsCard />.
 
   return (
     <Container
@@ -460,73 +388,10 @@ export default function ParametresPage() {
         {/* ── RIGHT col: Passkeys + Comptes liés + Votre avis + A propos ── */}
         <Grid size={{ xs: 12, lg: 7 }}>
           <Stack spacing={3}>
-            {/* Linked accounts */}
+            {/* Linked accounts (self-contained: handles Clerk linking,
+                redirect, error display) */}
             {isAuthenticated && (
-              <Box>
-                <SectionTitle>Comptes lies</SectionTitle>
-                <SettingsCard>
-                  {linkedError && (
-                    <Alert
-                      severity="info"
-                      sx={{ m: 1.5, borderRadius: 2, fontSize: '0.78rem' }}
-                    >
-                      {linkedError}
-                    </Alert>
-                  )}
-                  {socialProviders.map((provider) => {
-                    const linked = isProviderLinked(provider.strategy);
-                    const email = getLinkedEmail(provider.strategy);
-                    const loading = linkedLoading === provider.strategy;
-
-                    return (
-                      <SettingsRow
-                        key={provider.key}
-                        icon={provider.icon}
-                        iconBg={linked ? 'rgba(46,125,50,0.08)' : undefined}
-                        label={provider.label}
-                        sublabel={
-                          linked ? (email ?? 'Connecte') : 'Non connecte'
-                        }
-                        trailing={
-                          linked ? (
-                            <Button
-                              size="small"
-                              color="error"
-                              disabled={loading}
-                              onClick={() =>
-                                handleDisconnect(provider.strategy)
-                              }
-                              sx={{
-                                textTransform: 'none',
-                                fontWeight: 600,
-                                fontSize: '0.75rem',
-                                minWidth: 0,
-                              }}
-                            >
-                              {loading ? '...' : 'Retirer'}
-                            </Button>
-                          ) : (
-                            <Button
-                              size="small"
-                              disabled={loading}
-                              onClick={() => handleConnect(provider.strategy)}
-                              sx={{
-                                textTransform: 'none',
-                                fontWeight: 600,
-                                fontSize: '0.75rem',
-                                minWidth: 0,
-                                color: 'primary.main',
-                              }}
-                            >
-                              {loading ? '...' : 'Lier'}
-                            </Button>
-                          )
-                        }
-                      />
-                    );
-                  })}
-                </SettingsCard>
-              </Box>
+              <LinkedAccountsCard redirectPath="/parametres" />
             )}
 
             {/* Survey */}
