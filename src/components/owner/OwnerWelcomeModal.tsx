@@ -6,10 +6,11 @@ import Apartment from '@mui/icons-material/Apartment';
 import BarChart from '@mui/icons-material/BarChart';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import { Box, Button, Dialog, LinearProgress, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { APPTOUR_SHOWN_KEY } from '@/components/ui/AppTour';
-import { brandAgent } from '@/theme/tokens';
+import { brandAgent, neutral, shadow } from '@/theme/tokens';
 
 /** ms to wait after AppTour completion before opening this modal.
  * Short breathing-room so the tour close animation finishes before the wizard slides in. */
@@ -182,7 +183,7 @@ export default function OwnerWelcomeModal() {
         sx: {
           borderRadius: 4,
           overflow: 'hidden',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
+          boxShadow: `0 24px 64px ${alpha(neutral.black, 0.18)}`,
         },
       }}
     >
@@ -259,6 +260,7 @@ export default function OwnerWelcomeModal() {
               borderRadius: 3,
               bgcolor: brandAgent.primary,
               '&:hover': { bgcolor: brandAgent.primaryDark },
+              '&:focus-visible': { boxShadow: shadow.agentFocusRing },
             }}
           >
             {currentStep.cta}
@@ -271,6 +273,7 @@ export default function OwnerWelcomeModal() {
               fontWeight: 600,
               color: 'text.secondary',
               '&:hover': { bgcolor: 'action.hover' },
+              '&:focus-visible': { boxShadow: shadow.agentFocusRing },
             }}
           >
             {currentStep.skip}

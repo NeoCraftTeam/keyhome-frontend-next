@@ -14,10 +14,12 @@ import {
   Title as TitleIcon,
 } from '@mui/icons-material';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import LinkExtension from '@tiptap/extension-link';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useEffect, useRef, useState } from 'react';
+import { brandAgent, neutral, shadow } from '@/theme/tokens';
 
 interface PublicBioEditorProps {
   /** Markdown source — same shape as `markdownLightToHtml` consumes. */
@@ -64,11 +66,14 @@ function ToolbarButton({
           onClick={onAction}
           sx={{
             color: active ? 'primary.main' : 'text.secondary',
-            bgcolor: active ? 'rgba(13,148,136,0.10)' : 'transparent',
+            bgcolor: active ? alpha(brandAgent.primary, 0.1) : 'transparent',
             borderRadius: 1.25,
             '&:hover': {
-              bgcolor: active ? 'rgba(13,148,136,0.18)' : 'rgba(0,0,0,0.04)',
+              bgcolor: active
+                ? alpha(brandAgent.primary, 0.18)
+                : alpha(neutral.black, 0.04),
             },
+            '&:focus-visible': { boxShadow: shadow.agentFocusRing },
           }}
         >
           {children}
@@ -287,7 +292,7 @@ export default function PublicBioEditor({
           transition: 'border-color 0.15s, box-shadow 0.15s',
           '&:focus-within': {
             borderColor: 'primary.main',
-            boxShadow: '0 0 0 3px rgba(13,148,136,0.20)',
+            boxShadow: `0 0 0 3px ${alpha(brandAgent.primary, 0.2)}`,
           },
           '& .kh-bio-editor': {
             minHeight: 140,

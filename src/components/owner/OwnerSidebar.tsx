@@ -7,6 +7,7 @@ import {
   OWNER_SIDEBAR_LIST_ICON_MIN_WIDTH_PX,
 } from '@/lib/navVisualMetrics';
 import { ownerService } from '@/services/owner.service';
+import { brandAgent, neutral, shadow, transition } from '@/theme/tokens';
 import {
   AccountBalance as AccountBalanceIcon,
   AddCircleOutline as AddCircleOutlineIcon,
@@ -170,8 +171,11 @@ export default function OwnerSidebar({
 
   const { data: pendingViewings } = useQuery({
     queryKey: ['owner', 'viewings', 'pending-count'],
-    queryFn: () =>
-      ownerService.getViewingReservations({ page: 1, status: 'pending' }),
+    queryFn: ({ signal }) =>
+      ownerService.getViewingReservations(
+        { page: 1, status: 'pending' },
+        { signal }
+      ),
     select: (res) => res.meta?.total ?? 0,
     staleTime: 60_000,
   });
@@ -272,6 +276,10 @@ export default function OwnerSidebar({
               width: collapsed ? 28 : undefined,
               height: collapsed ? 28 : undefined,
               '&:hover': { bgcolor: 'action.hover' },
+              '&:focus-visible': {
+                outline: 'none',
+                boxShadow: shadow.agentFocusRing,
+              },
               '& .MuiSvgIcon-root': { fontSize: collapsed ? 18 : 20 },
             }}
           >
@@ -296,6 +304,10 @@ export default function OwnerSidebar({
               height: 28,
               flexShrink: 0,
               '&:hover': { bgcolor: 'action.hover' },
+              '&:focus-visible': {
+                outline: 'none',
+                boxShadow: shadow.agentFocusRing,
+              },
             }}
           >
             {collapsed ? (
@@ -359,10 +371,9 @@ export default function OwnerSidebar({
                           justifyContent: collapsed ? 'center' : 'flex-start',
                           px: collapsed ? 1 : 2,
                           bgcolor: isActive
-                            ? 'rgba(13, 148, 136, 0.1)'
+                            ? brandAgent.primaryAlpha10
                             : 'transparent',
                           color: isActive ? 'primary.main' : 'text.primary',
-                          // Left border active indicator
                           borderLeft: collapsed ? 'none' : '3px solid',
                           borderColor: collapsed
                             ? 'transparent'
@@ -370,12 +381,15 @@ export default function OwnerSidebar({
                               ? 'primary.main'
                               : 'transparent',
                           ml: collapsed ? 0 : '-1px',
-                          transition:
-                            'background-color 0.15s ease, border-color 0.15s ease',
+                          transition: `background-color 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s cubic-bezier(0.22, 1, 0.36, 1)`,
+                          '&:focus-visible': {
+                            outline: 'none',
+                            boxShadow: shadow.agentFocusRing,
+                          },
                           '&:hover': {
                             bgcolor: isActive
-                              ? 'rgba(13, 148, 136, 0.16)'
-                              : 'rgba(13, 148, 136, 0.05)',
+                              ? brandAgent.primaryAlpha16
+                              : brandAgent.primaryAlpha05,
                           },
                         }}
                       >
@@ -386,7 +400,7 @@ export default function OwnerSidebar({
                               ? 'auto'
                               : OWNER_SIDEBAR_LIST_ICON_MIN_WIDTH_PX,
                             justifyContent: 'center',
-                            transition: 'color 0.15s ease',
+                            transition: `color 0.22s cubic-bezier(0.22, 1, 0.36, 1)`,
                             '& .MuiSvgIcon-root': {
                               fontSize: NAV_LIST_ICON_GLYPH_PX,
                             },
@@ -415,8 +429,16 @@ export default function OwnerSidebar({
                             primaryTypographyProps={{
                               fontSize: '0.875rem',
                               fontWeight: isActive ? 700 : 400,
-                              sx: { transition: 'font-weight 0.15s ease' },
+                              noWrap: true,
+                              sx: {
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                minWidth: 0,
+                                transition:
+                                  'color 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
+                              },
                             }}
+                            sx={{ minWidth: 0 }}
                           />
                         )}
                       </ListItemButton>
@@ -480,12 +502,16 @@ export default function OwnerSidebar({
                 width: '100%',
                 borderRadius: 2,
                 bgcolor: 'primary.main',
-                color: '#fff',
-                transition: 'all 0.2s ease',
+                color: neutral.white,
+                transition: transition.polish,
                 '&:hover': {
                   bgcolor: 'primary.dark',
                   transform: 'translateY(-1px)',
-                  boxShadow: '0 6px 20px rgba(13,148,136,0.30)',
+                  boxShadow: shadow.ownerSidebarCtaHover,
+                },
+                '&:focus-visible': {
+                  outline: 'none',
+                  boxShadow: shadow.agentFocusRing,
                 },
               }}
             >
@@ -503,7 +529,7 @@ export default function OwnerSidebar({
               fontWeight: 700,
               textTransform: 'none',
               boxShadow: 'none',
-              transition: 'all 0.2s ease',
+              transition: transition.polish,
             }}
           >
             Nouvelle annonce

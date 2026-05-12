@@ -1,5 +1,7 @@
 import { ImageResponse } from 'next/og';
 
+import { brandAgent } from '@/theme/tokens';
+
 export const size = { width: 180, height: 180 };
 export const contentType = 'image/png';
 
@@ -10,7 +12,7 @@ export default function AppleIcon() {
         width: 180,
         height: 180,
         borderRadius: 36,
-        background: 'linear-gradient(135deg, #0D9488, #0F766E)',
+        background: `linear-gradient(135deg, ${brandAgent.primary}, ${brandAgent.primaryDark})`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

@@ -1,6 +1,7 @@
 'use client';
 
 import PaymentHistoryTable from '@/components/payment/PaymentHistoryTable';
+import SavedCardsManager from '@/components/payment/SavedCardsManager';
 import FadeIn from '@/components/ui/FadeIn';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import PhoneField from '@/components/ui/PhoneField';
@@ -22,6 +23,7 @@ import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar';
 import PublicBioEditor from '@/components/owner/PublicBioEditor';
 import QrCodeDialog from '@/components/owner/QrCodeDialog';
 import { markdownLightToHtml } from '@/lib/markdown-light';
+import { brandAgent, neutral, shadow, transition } from '@/theme/tokens';
 import {
   Assignment as AssignmentIcon,
   Cancel as CancelIcon,
@@ -55,6 +57,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -79,6 +82,11 @@ const ALLOWED_AVATAR_TYPES = [
 const primaryButtonSx = {
   textTransform: 'none' as const,
   fontWeight: 600,
+  transition: transition.polish,
+  '&:focus-visible': {
+    outline: 'none',
+    boxShadow: shadow.agentFocusRing,
+  },
 };
 
 export default function OwnerProfilePage() {
@@ -369,10 +377,15 @@ export default function OwnerProfilePage() {
                   bottom: -4,
                   right: -4,
                   bgcolor: 'primary.main',
-                  color: '#fff',
+                  color: neutral.white,
                   width: 28,
                   height: 28,
+                  transition: transition.polish,
                   '&:hover': { bgcolor: 'primary.dark' },
+                  '&:focus-visible': {
+                    outline: 'none',
+                    boxShadow: shadow.agentFocusRing,
+                  },
                 }}
               >
                 <PhotoCamera sx={{ fontSize: 14 }} />
@@ -609,15 +622,15 @@ export default function OwnerProfilePage() {
                     color: user.bio ? 'text.primary' : 'text.disabled',
                     bgcolor: 'background.default',
                     cursor: 'text',
-                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                    transition: transition.polish,
                     '&:hover': {
                       borderColor: 'primary.main',
-                      bgcolor: 'rgba(13,148,136,0.03)',
+                      bgcolor: alpha(brandAgent.primary, 0.03),
                     },
                     '&:focus-visible': {
                       outline: 'none',
                       borderColor: 'primary.main',
-                      boxShadow: '0 0 0 3px rgba(13,148,136,0.20)',
+                      boxShadow: shadow.agentFocusRing,
                     },
                     '& p': { my: 0.75 },
                     '& h3': { mt: 1, mb: 0.5, fontSize: '1rem' },
@@ -692,7 +705,7 @@ export default function OwnerProfilePage() {
               variant="contained"
               startIcon={
                 isSaving ? (
-                  <CircularProgress size={16} sx={{ color: '#fff' }} />
+                  <CircularProgress size={16} sx={{ color: neutral.white }} />
                 ) : (
                   <SaveIcon />
                 )
@@ -731,13 +744,19 @@ export default function OwnerProfilePage() {
       </TabPanel>
 
       <TabPanel value={tab} index={1}>
-        <Typography variant="h6" fontWeight={600} gutterBottom>
-          Historique des paiements
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Retrouvez ici toutes vos transactions de crédits.
-        </Typography>
-        <PaymentHistoryTable perPage={10} />
+        <SavedCardsManager
+          accent={brandAgent.primary}
+          accentHover={brandAgent.primaryDark}
+        />
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h6" fontWeight={600} gutterBottom>
+            Historique des paiements
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Retrouvez ici toutes vos transactions de crédits.
+          </Typography>
+          <PaymentHistoryTable />
+        </Box>
       </TabPanel>
 
       <TabPanel value={tab} index={2}>
@@ -852,7 +871,7 @@ export default function OwnerProfilePage() {
             sx={primaryButtonSx}
           >
             {isChangingPassword ? (
-              <CircularProgress size={20} sx={{ color: '#fff' }} />
+              <CircularProgress size={20} sx={{ color: neutral.white }} />
             ) : (
               'Modifier le mot de passe'
             )}

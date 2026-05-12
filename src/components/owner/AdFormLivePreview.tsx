@@ -28,12 +28,14 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import { AnimatePresence, motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { memo, useEffect, useMemo, useState } from 'react';
 
 import { formatPrice } from '@/lib/constants';
 import { useAuth } from '@/providers/AuthProvider';
+import { neutral, semantic, shadow, transition } from '@/theme/tokens';
 import type { AdImage, AdType, City, Quarter } from '@/types';
 import { UserRole } from '@/types';
 import {
@@ -113,6 +115,7 @@ function AdFormLivePreview({
   tourSceneCount,
 }: AdFormLivePreviewProps) {
   const { user } = useAuth();
+  const theme = useTheme();
   const [activeIdx, setActiveIdx] = useState(0);
 
   const allImages = useMemo<AdImage[]>(() => {
@@ -238,55 +241,78 @@ function AdFormLivePreview({
     values.latitude !== AD_FORM_MAP_DEFAULT_LAT ||
     values.longitude !== AD_FORM_MAP_DEFAULT_LNG;
 
-  const proximityItems = [
-    {
-      key: 'main_road',
-      icon: <NearMe sx={{ fontSize: 17, color: '#64748B' }} />,
-      iconBg: 'rgba(100,116,139,0.10)',
-      label: 'Route principale',
-      raw: values.distance_main_road_m,
-    },
-    {
-      key: 'shops',
-      icon: <Storefront sx={{ fontSize: 17, color: '#059669' }} />,
-      iconBg: 'rgba(5,150,105,0.10)',
-      label: 'Commerces',
-      raw: values.distance_shops_m,
-    },
-    {
-      key: 'transport',
-      icon: <DirectionsBus sx={{ fontSize: 17, color: '#3B82F6' }} />,
-      iconBg: 'rgba(59,130,246,0.10)',
-      label: 'Transport',
-      raw: values.distance_transport_m,
-    },
-    {
-      key: 'school',
-      icon: <School sx={{ fontSize: 17, color: '#8B5CF6' }} />,
-      iconBg: 'rgba(139,92,246,0.10)',
-      label: 'École / Université',
-      raw: values.distance_school_m,
-    },
-    {
-      key: 'hospital',
-      icon: <LocalHospital sx={{ fontSize: 17, color: '#EF4444' }} />,
-      iconBg: 'rgba(239,68,68,0.10)',
-      label: 'Hôpital / Clinique',
-      raw: values.distance_hospital_m,
-    },
-  ]
-    .map((item) => {
-      const m = parseFloat(item.raw);
-      if (!item.raw || Number.isNaN(m) || m <= 0) {
-        return null;
-      }
-      const distance =
-        m >= 1000
-          ? `${(m / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`
-          : `${m} m`;
-      return { ...item, distance };
-    })
-    .filter((item): item is NonNullable<typeof item> => item !== null);
+  const proximityItems = useMemo(() => {
+    const rows: {
+      key: string;
+      IconCmp: typeof NearMe;
+      accent: string;
+      label: string;
+      raw: string;
+    }[] = [
+      {
+        key: 'main_road',
+        IconCmp: NearMe,
+        accent: neutral.slate400,
+        label: 'Route principale',
+        raw: values.distance_main_road_m,
+      },
+      {
+        key: 'shops',
+        IconCmp: Storefront,
+        accent: semantic.successBright,
+        label: 'Commerces',
+        raw: values.distance_shops_m,
+      },
+      {
+        key: 'transport',
+        IconCmp: DirectionsBus,
+        accent: semantic.info,
+        label: 'Transport',
+        raw: values.distance_transport_m,
+      },
+      {
+        key: 'school',
+        IconCmp: School,
+        accent: semantic.purple,
+        label: 'École / Université',
+        raw: values.distance_school_m,
+      },
+      {
+        key: 'hospital',
+        IconCmp: LocalHospital,
+        accent: semantic.errorBright,
+        label: 'Hôpital / Clinique',
+        raw: values.distance_hospital_m,
+      },
+    ];
+
+    return rows
+      .map((item) => {
+        const m = parseFloat(item.raw);
+        if (!item.raw || Number.isNaN(m) || m <= 0) {
+          return null;
+        }
+        const distance =
+          m >= 1000
+            ? `${(m / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`
+            : `${m} m`;
+        const IconCmp = item.IconCmp;
+        return {
+          key: item.key,
+          icon: <IconCmp sx={{ fontSize: 17, color: item.accent }} />,
+          iconBg: alpha(item.accent, 0.1),
+          label: item.label,
+          distance,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  }, [
+    values.distance_hospital_m,
+    values.distance_main_road_m,
+    values.distance_school_m,
+    values.distance_shops_m,
+    values.distance_transport_m,
+  ]);
 
   const hasProximityData = proximityItems.length > 0;
   const mapLat =
@@ -323,7 +349,7 @@ function AdFormLivePreview({
         flexDirection: 'column',
         height: '100%',
         bgcolor: 'background.paper',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+        boxShadow: shadow.medium,
       }}
     >
       <Box
@@ -479,8 +505,8 @@ function AdFormLivePreview({
                       position: 'absolute',
                       bottom: 10,
                       right: 10,
-                      bgcolor: 'rgba(0,0,0,0.62)',
-                      color: '#fff',
+                      bgcolor: alpha(theme.palette.common.black, 0.62),
+                      color: neutral.white,
                       px: 1,
                       py: 0.35,
                       borderRadius: 1,
@@ -534,8 +560,11 @@ function AdFormLivePreview({
                         cursor: 'pointer',
                         bgcolor: 'grey.100',
                         opacity: idx === safeIdx ? 1 : 0.72,
-                        transition:
-                          'border-color 160ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms',
+                        transition: `${transition.polish}, opacity 160ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                        '&:focus-visible': {
+                          outline: 'none',
+                          boxShadow: shadow.agentFocusRing,
+                        },
                       }}
                     >
                       <Box

@@ -1,7 +1,13 @@
 'use client';
 
 import { Price } from '@/components/ui/Price';
-import { brandAgent } from '@/theme/tokens';
+import {
+  brandAgent,
+  neutral,
+  semantic,
+  shadow,
+  transition,
+} from '@/theme/tokens';
 import { Ad } from '@/types';
 import EditIcon from '@mui/icons-material/Edit';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
@@ -17,6 +23,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha, type Theme } from '@mui/material/styles';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -26,6 +33,12 @@ interface OwnerAdCardProps {
   isToggling?: boolean;
   onShowQrCode?: (ad: Ad) => void;
 }
+
+const ICON_SCRIM_SX = {
+  bgcolor: (t: Theme) =>
+    alpha(t.palette.mode === 'dark' ? t.palette.grey[900] : neutral.white, 0.9),
+  '&:hover': { bgcolor: 'background.paper' },
+};
 
 export default function OwnerAdCard({
   ad,
@@ -47,12 +60,17 @@ export default function OwnerAdCard({
         borderColor: 'divider',
         bgcolor: 'background.paper',
         cursor: 'pointer',
-        transition:
-          'box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease',
+        transition: transition.polish,
+        '@media (prefers-reduced-motion: reduce)': {
+          transition: 'none',
+          '&:hover': {
+            transform: 'none',
+          },
+        },
         '&:hover': {
-          boxShadow: '0 10px 32px rgba(13,148,136,0.14)',
+          boxShadow: shadow.ownerAdCardHover,
           transform: 'translateY(-3px)',
-          borderColor: 'rgba(13,148,136,0.25)',
+          borderColor: brandAgent.primaryAlpha25,
         },
       }}
     >
@@ -107,7 +125,9 @@ export default function OwnerAdCard({
           )}
           {ad.is_verified && (
             <Tooltip title="Propriétaire vérifié">
-              <VerifiedIcon sx={{ color: '#10B981', fontSize: 20, ml: 0.5 }} />
+              <VerifiedIcon
+                sx={{ color: semantic.successBright, fontSize: 20, ml: 0.5 }}
+              />
             </Tooltip>
           )}
         </Box>
@@ -130,13 +150,7 @@ export default function OwnerAdCard({
               onToggleVisibility?.(ad);
             }}
             disabled={isToggling}
-            sx={{
-              bgcolor: (t) =>
-                t.palette.mode === 'dark'
-                  ? 'rgba(19,19,26,0.9)'
-                  : 'rgba(255,255,255,0.9)',
-              '&:hover': { bgcolor: 'background.paper' },
-            }}
+            sx={{ ...ICON_SCRIM_SX }}
           >
             {ad.is_visible ? (
               <VisibleIcon fontSize="small" />
@@ -151,13 +165,7 @@ export default function OwnerAdCard({
               e.stopPropagation();
               router.push(`/owner/ads/${ad.id}`);
             }}
-            sx={{
-              bgcolor: (t) =>
-                t.palette.mode === 'dark'
-                  ? 'rgba(19,19,26,0.9)'
-                  : 'rgba(255,255,255,0.9)',
-              '&:hover': { bgcolor: 'background.paper' },
-            }}
+            sx={{ ...ICON_SCRIM_SX }}
           >
             <EditIcon fontSize="small" />
           </IconButton>
@@ -170,13 +178,7 @@ export default function OwnerAdCard({
                   e.stopPropagation();
                   onShowQrCode(ad);
                 }}
-                sx={{
-                  bgcolor: (t) =>
-                    t.palette.mode === 'dark'
-                      ? 'rgba(19,19,26,0.9)'
-                      : 'rgba(255,255,255,0.9)',
-                  '&:hover': { bgcolor: 'background.paper' },
-                }}
+                sx={{ ...ICON_SCRIM_SX }}
               >
                 <QrCode2Icon fontSize="small" />
               </IconButton>
@@ -213,7 +215,12 @@ export default function OwnerAdCard({
                 color: brandAgent.primary,
                 textTransform: 'none',
                 borderRadius: 1.5,
-                '&:hover': { bgcolor: 'rgba(13,148,136,0.08)' },
+                '&:hover': {
+                  bgcolor: brandAgent.primaryAlpha08,
+                  '@media (prefers-reduced-motion: reduce)': {
+                    transform: 'none',
+                  },
+                },
               }}
             >
               Booster

@@ -9,7 +9,9 @@ import { buildPsvKeyboardActions } from '@/lib/psvKeyboardActions';
 import { attachPartialPanoPitchClamp } from '@/lib/psvPitchClampForPartialEquirect';
 import type { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
 import { Box, CircularProgress, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { dark, neutral } from '@/theme/tokens';
 
 /**
  * Resolve the panorama URL for the viewer.
@@ -108,9 +110,11 @@ async function inferPanoDataFromImageDimensions(
 const HOTSPOT_NAV_MARKER_HTML =
   '<div class="psv-hotspot-nav" role="presentation" aria-hidden="true">' +
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">' +
-  '<circle cx="16" cy="16" r="13" fill="currentColor" stroke="#fff" stroke-width="2.5"/>' +
-  '<path d="M11 16h10M17 11l5 5-5 5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+  '<circle cx="16" cy="16" r="13" fill="currentColor" stroke="white" stroke-width="2.5"/>' +
+  '<path d="M11 16h10M17 11l5 5-5 5" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
   '</svg></div>';
+
+const HOTSPOT_NAV_DROP_SHADOW = `drop-shadow(0 2px 6px ${alpha(neutral.black, 0.45)})`;
 
 // ── Types ─────────────────────────────────────────────────────────────
 export interface PanoramaHotspot {
@@ -341,7 +345,7 @@ export default function PanoramaViewer({
           loading: 'Chargement…',
           loadError: 'Impossible de charger le panorama',
         },
-        canvasBackground: '#1a1a2e',
+        canvasBackground: dark.panoramaViewer,
         panoData,
         mousemove: !placingRef.current,
         keyboard: showNavbar && !placingRef.current ? 'always' : false,
@@ -580,7 +584,7 @@ export default function PanoramaViewer({
         height,
         borderRadius: 2,
         overflow: 'hidden',
-        bgcolor: '#1a1a2e',
+        bgcolor: dark.panoramaViewer,
         cursor: placingMode ? 'crosshair' : 'grab',
         border: placingMode ? '2px solid' : '1px solid',
         borderColor: placingMode ? 'primary.main' : 'divider',
@@ -598,7 +602,7 @@ export default function PanoramaViewer({
             justifyContent: 'center',
             lineHeight: 0,
             color: 'primary.main',
-            filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.45))',
+            filter: HOTSPOT_NAV_DROP_SHADOW,
             transition: 'transform 0.15s ease',
             cursor: 'pointer',
           },
@@ -617,7 +621,7 @@ export default function PanoramaViewer({
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            bgcolor: 'rgba(0,0,0,0.6)',
+            bgcolor: alpha(neutral.black, 0.6),
             zIndex: 10,
             pointerEvents: 'none',
           }}
@@ -637,7 +641,7 @@ export default function PanoramaViewer({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            bgcolor: 'rgba(0,0,0,0.7)',
+            bgcolor: alpha(neutral.black, 0.7),
             zIndex: 10,
           }}
         >
@@ -660,7 +664,7 @@ export default function PanoramaViewer({
             py: 0.5,
             borderRadius: 2,
             zIndex: 20,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            boxShadow: `0 2px 8px ${alpha(neutral.black, 0.3)}`,
           }}
         >
           <Typography variant="caption" fontWeight={700}>

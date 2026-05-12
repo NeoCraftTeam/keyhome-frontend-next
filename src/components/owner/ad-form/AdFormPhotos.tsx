@@ -12,8 +12,10 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useCallback, useRef, useState } from 'react';
 import type { AdImage } from '@/types';
+import { neutral, shadow } from '@/theme/tokens';
 import { sectionSx, sectionTitleSx } from './types';
 
 interface AdFormPhotosProps {
@@ -191,7 +193,7 @@ export default function AdFormPhotos({
                   position: 'absolute',
                   top: 2,
                   left: 2,
-                  bgcolor: 'rgba(0,0,0,0.45)',
+                  bgcolor: alpha(neutral.black, 0.45),
                   borderRadius: 0.5,
                   display: 'flex',
                   alignItems: 'center',
@@ -200,7 +202,9 @@ export default function AdFormPhotos({
                   pointerEvents: 'none',
                 }}
               >
-                <DragIndicatorIcon sx={{ fontSize: 12, color: '#fff' }} />
+                <DragIndicatorIcon
+                  sx={{ fontSize: 12, color: neutral.white }}
+                />
               </Box>
             )}
             {/* index badge */}
@@ -209,8 +213,8 @@ export default function AdFormPhotos({
                 position: 'absolute',
                 bottom: 2,
                 left: 4,
-                bgcolor: 'rgba(0,0,0,0.5)',
-                color: '#fff',
+                bgcolor: alpha(neutral.black, 0.5),
+                color: neutral.white,
                 fontSize: '0.6rem',
                 fontWeight: 700,
                 px: 0.5,
@@ -237,11 +241,12 @@ export default function AdFormPhotos({
                 position: 'absolute',
                 top: 2,
                 right: 2,
-                bgcolor: 'rgba(0,0,0,0.6)',
-                color: '#fff',
+                bgcolor: alpha(neutral.black, 0.6),
+                color: neutral.white,
                 width: 24,
                 height: 24,
                 '&:hover': { bgcolor: 'error.main' },
+                '&:focus-visible': { boxShadow: shadow.agentFocusRing },
               }}
             >
               <DeleteIcon sx={{ fontSize: 14 }} />
@@ -285,11 +290,12 @@ export default function AdFormPhotos({
                 position: 'absolute',
                 top: 2,
                 right: 2,
-                bgcolor: 'rgba(0,0,0,0.6)',
-                color: '#fff',
+                bgcolor: alpha(neutral.black, 0.6),
+                color: neutral.white,
                 width: 24,
                 height: 24,
                 '&:hover': { bgcolor: 'error.main' },
+                '&:focus-visible': { boxShadow: shadow.agentFocusRing },
               }}
             >
               <DeleteIcon sx={{ fontSize: 14 }} />

@@ -1,16 +1,13 @@
 'use client';
 
+import FadeIn from '@/components/ui/FadeIn';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import {
   ownerService,
-  type AvailabilitySchedule,
   type AvailabilityPayload,
+  type AvailabilitySchedule,
 } from '@/services/owner.service';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import { frFR } from '@mui/x-date-pickers/locales';
+import { Ad } from '@/types';
 import {
   Add as AddIcon,
   CalendarMonth as CalendarIcon,
@@ -42,12 +39,16 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { frFR } from '@mui/x-date-pickers/locales';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, isValid, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useState } from 'react';
-import FadeIn from '@/components/ui/FadeIn';
-import { Ad } from '@/types';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 function dateFromYyyyMmDd(value: string): Date {
   const parsed = parseISO(value);
@@ -92,7 +93,18 @@ const INITIAL_FORM: AvailabilityPayload = {
 
 export default function OwnerAvailabilityPage() {
   const queryClient = useQueryClient();
-  const [selectedAdId, setSelectedAdId] = useState<string>('');
+  const searchParams = useSearchParams();
+  const [selectedAdId, setSelectedAdId] = useState<string>(
+    searchParams.get('adId') ?? ''
+  );
+
+  // Sync URL param into state when navigating directly to this page with ?adId=
+  useEffect(() => {
+    const urlAdId = searchParams.get('adId');
+    if (urlAdId) {
+      setSelectedAdId(urlAdId);
+    }
+  }, [searchParams]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] =
     useState<AvailabilitySchedule | null>(null);

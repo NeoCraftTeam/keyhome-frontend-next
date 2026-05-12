@@ -3,12 +3,15 @@
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
+import { runAppRouterReplacement } from '@/lib/safe-app-router-push';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { KH_OWNER_POST_OTP_TOKEN_KEY } from '@/lib/owner-auth-flow';
 import { registerTokenGetter } from '@/lib/auth-token';
 import { persistInMemoryToken } from '@/lib/auth-session';
 import { authService } from '@/services/auth.service';
-import { brandAgent } from '@/theme/tokens';
+import { ownerAuthHeroScrim } from '@/lib/owner-auth-theme';
+import { brandAgent, neutral } from '@/theme/tokens';
+import { alpha } from '@mui/material/styles';
 import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
 import {
   Alert,
@@ -64,7 +67,7 @@ export default function OwnerVerifyOtpPage() {
 
       // Force owner context or redirect if not appropriate
       if (storedRole !== 'agent') {
-        router.replace('/verify-email');
+        runAppRouterReplacement(router, '/verify-email');
         return;
       }
 
@@ -93,8 +96,6 @@ export default function OwnerVerifyOtpPage() {
 
   const logoSrc = OWNER_LOGO_SRC;
   const heroSrc = '/images/owner/real-estate-teal.webp';
-  const heroOverlay =
-    'linear-gradient(to bottom, rgba(15,118,110,0.28) 0%, rgba(15,23,42,0.78) 100%)';
   const tagline = 'Plus qu’un pas pour gérer vos biens professionnellement';
   const stepperLabels = ['Inscription', 'Vérification', 'Dashboard'];
 
@@ -156,7 +157,11 @@ export default function OwnerVerifyOtpPage() {
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user_id');
 
-      router.replace('/owner/auth/complete-profile');
+      runAppRouterReplacement(router, '/owner/auth/complete-profile', () =>
+        setError(
+          'Redirection impossible. Ouvrez « Compléter le profil » depuis le menu bailleur.'
+        )
+      );
     } catch (err) {
       setError(
         getSafeErrorMessage(err, 'Code invalide ou expiré. Veuillez réessayer.')
@@ -233,7 +238,7 @@ export default function OwnerVerifyOtpPage() {
           sx={{
             position: 'absolute',
             inset: 0,
-            background: heroOverlay,
+            background: ownerAuthHeroScrim,
           }}
         />
         <Box
@@ -256,7 +261,11 @@ export default function OwnerVerifyOtpPage() {
                 width={42}
                 height={42}
               />
-              <Typography variant="h4" fontWeight={700} color="#fff">
+              <Typography
+                variant="h4"
+                fontWeight={700}
+                sx={{ color: neutral.white }}
+              >
                 KeyHome Business
               </Typography>
             </Box>
@@ -264,9 +273,11 @@ export default function OwnerVerifyOtpPage() {
           <FadeIn delay={0.4} direction="up">
             <Typography
               variant="h5"
-              color="rgba(255,255,255,0.9)"
               fontWeight={400}
-              sx={{ maxWidth: 360 }}
+              sx={{
+                maxWidth: 360,
+                color: alpha(neutral.white, 0.9),
+              }}
             >
               {tagline}
             </Typography>
@@ -292,7 +303,10 @@ export default function OwnerVerifyOtpPage() {
             aria-label="Retour"
             onClick={() => router.back()}
             size="medium"
-            sx={{ bgcolor: 'rgba(0,0,0,0.05)', borderRadius: 2 }}
+            sx={{
+              bgcolor: alpha(neutral.black, 0.05),
+              borderRadius: 2,
+            }}
           >
             <ArrowBack sx={{ fontSize: 20 }} />
           </IconButton>
@@ -448,14 +462,5 @@ export default function OwnerVerifyOtpPage() {
         </Box>
       </Box>
     </Box>
-  );
-}
-
-function alpha(color: string, opacity: number): string {
-  return (
-    color +
-    Math.round(opacity * 255)
-      .toString(16)
-      .padStart(2, '0')
   );
 }

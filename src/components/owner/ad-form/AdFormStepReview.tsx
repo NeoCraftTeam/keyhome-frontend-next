@@ -13,6 +13,7 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import ThreeSixtyIcon from '@mui/icons-material/ThreeSixty';
 import { Box, Chip, IconButton, Paper, Stack, Typography } from '@mui/material';
+import { neutral, shadow } from '@/theme/tokens';
 
 import {
   AdTypeCategory,
@@ -114,7 +115,8 @@ function Section({ icon, title, step, onGoToStep, children }: SectionProps) {
           aria-label={`Modifier ${title}`}
           sx={{
             color: 'primary.main',
-            '&:hover': { bgcolor: 'primary.light', color: '#fff' },
+            '&:hover': { bgcolor: 'primary.light', color: neutral.white },
+            '&:focus-visible': { boxShadow: shadow.agentFocusRing },
           }}
         >
           <EditIcon fontSize="small" />

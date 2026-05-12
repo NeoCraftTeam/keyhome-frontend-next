@@ -1,5 +1,6 @@
 // @ts-strict
 import type { AdFormValues } from './types';
+import { dark, semantic } from '@/theme/tokens';
 
 export enum AdTypeCategory {
   RESIDENTIAL = 'RESIDENTIAL',
@@ -78,7 +79,7 @@ export const AD_TYPE_CATEGORIES: AdTypeCategoryConfig[] = [
     label: 'Résidentiel',
     description: 'Appartements, studios, chambres, maisons',
     icon: 'Home',
-    color: '#4CAF50',
+    color: dark.successBright,
     subtypes: RESIDENTIAL_SUBTYPES,
     available: true,
     requiredFields: RESIDENTIAL_REQUIRED_FIELDS,
@@ -89,7 +90,7 @@ export const AD_TYPE_CATEGORIES: AdTypeCategoryConfig[] = [
     label: 'Terrain',
     description: 'Terrains à vendre ou à louer',
     icon: 'Landscape',
-    color: '#FF9800',
+    color: semantic.warning,
     subtypes: ['terrain'],
     available: true,
     requiredFields: [
@@ -120,7 +121,7 @@ export const AD_TYPE_CATEGORIES: AdTypeCategoryConfig[] = [
     label: 'Véhicule',
     description: 'Voitures, motos et utilitaires',
     icon: 'DirectionsCar',
-    color: '#2196F3',
+    color: semantic.info,
     subtypes: [],
     available: false,
     requiredFields: ['title', 'description', 'price'],
@@ -131,7 +132,7 @@ export const AD_TYPE_CATEGORIES: AdTypeCategoryConfig[] = [
     label: 'Commercial',
     description: 'Bureaux, boutiques, entrepôts',
     icon: 'Store',
-    color: '#9C27B0',
+    color: semantic.purple,
     subtypes: [],
     available: false,
     requiredFields: [

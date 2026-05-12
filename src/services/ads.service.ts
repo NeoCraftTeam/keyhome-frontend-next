@@ -67,8 +67,10 @@ export const adsService = {
     return data;
   },
 
-  async show(id: string): Promise<Ad> {
-    const { data } = await api.get(`/ads/${id}`);
+  async show(id: string, config?: { signal?: AbortSignal }): Promise<Ad> {
+    const options =
+      config?.signal !== undefined ? { signal: config.signal } : undefined;
+    const { data } = await api.get(`/ads/${id}`, options);
     return data.data ?? data;
   },
 
@@ -147,6 +149,35 @@ export const adsService = {
     fields: Partial<Record<string, string | number | boolean | string[] | null>>
   ): Promise<void> {
     await api.patch(`/ads/${id}/autosave`, fields);
+  },
+
+  /**
+   * Save (merge) form fields into the server-side pending-edit draft_payload
+   * of an existing live ad without touching its published fields.
+   */
+  async saveEditDraft(
+    id: string,
+    fields: Partial<Record<string, string | number | boolean | string[] | null>>
+  ): Promise<{ draft_payload: Record<string, unknown> }> {
+    const { data } = await api.patch<{
+      data?: { draft_payload: Record<string, unknown> };
+    }>(`/ads/${id}/edit-draft`, fields);
+    return data?.data ?? { draft_payload: {} };
+  },
+
+  /**
+   * Promote draft_payload to the live ad record.
+   * Returns the freshly-updated ad.
+   */
+  async applyEditDraft(id: string): Promise<Ad> {
+    const { data } = await api.post(`/ads/${id}/edit-draft/apply`);
+    const body = data?.data ?? data;
+    return body?.ad ?? body;
+  },
+
+  /** Discard the pending edit draft without modifying the live ad. */
+  async discardEditDraft(id: string): Promise<void> {
+    await api.delete(`/ads/${id}/edit-draft`);
   },
 
   /** Publish a draft ad (DRAFT → PENDING for admin review). */

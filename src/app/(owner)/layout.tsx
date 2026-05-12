@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { brandAgent } from '@/theme/tokens';
 import OwnerLayoutShell from './OwnerLayoutShell';
 
 /**
@@ -35,8 +36,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#0D9488' },
-    { media: '(prefers-color-scheme: dark)', color: '#134E4A' },
+    { media: '(prefers-color-scheme: light)', color: brandAgent.primary },
+    { media: '(prefers-color-scheme: dark)', color: brandAgent.pwaChromeDark },
   ],
   viewportFit: 'cover',
   // Keyboard resize for Chromium is handled in root `ViewportInteractiveWidget`

@@ -28,6 +28,7 @@ import { shouldShowOwnerQuickCreateFab } from '@/lib/owner-shell-fab';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { surveysService } from '@/services/surveys.service';
+import { brandAgent } from '@/theme/tokens';
 import { UserRole } from '@/types';
 import { Add as AddIcon } from '@mui/icons-material';
 import { Box, Drawer, Fab, useMediaQuery, useTheme } from '@mui/material';
@@ -157,7 +158,7 @@ export default function OwnerLayoutClient({
 
   const { data: activeSurvey, isError: activeSurveyError } = useQuery({
     queryKey: ['active-survey-owner', isAuthenticated],
-    queryFn: () => surveysService.getActive(),
+    queryFn: ({ signal }) => surveysService.getActive({ signal }),
     enabled: isAuthenticated && !publicRoute,
     staleTime: 5 * 60 * 1000,
     retry: false,
@@ -167,7 +168,8 @@ export default function OwnerLayoutClient({
 
   const { data: surveyAnsweredData } = useQuery({
     queryKey: ['survey-has-answered-owner', activeSurveyId, isAuthenticated],
-    queryFn: () => surveysService.hasAnswered(activeSurveyId!),
+    queryFn: ({ signal }) =>
+      surveysService.hasAnswered(activeSurveyId!, { signal }),
     enabled: isAuthenticated && !publicRoute && !!activeSurveyId,
     staleTime: 5 * 60 * 1000,
     retry: 1,
@@ -339,7 +341,7 @@ export default function OwnerLayoutClient({
       <FcmRegistrar />
       <ChatNotificationListener
         basePath="/owner/messages"
-        accentColor="#0D9488"
+        accentColor={brandAgent.primary}
       />
 
       {/* Sidebar — MUI Drawer permanent (desktop) / temporary (mobile via Navbar) */}
@@ -349,7 +351,7 @@ export default function OwnerLayoutClient({
           display: { xs: 'none', md: 'block' },
           width: sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
           flexShrink: 0,
-          transition: 'width 0.2s ease',
+          transition: 'width 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
           '& .MuiDrawer-paper': {
             width: sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
             boxSizing: 'border-box',
@@ -358,7 +360,7 @@ export default function OwnerLayoutClient({
             mt: 0,
             top: 0,
             height: '100vh',
-            transition: 'width 0.2s ease',
+            transition: 'width 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
             overflowX: 'hidden',
             // Fixed rail: extend under notch using env + measured top inset (viewport-fit=cover).
             padding: khLeftRailPaddingSx,

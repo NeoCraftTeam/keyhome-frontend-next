@@ -1,5 +1,7 @@
 import { ImageResponse } from 'next/og';
 
+import { brandAgent } from '@/theme/tokens';
+
 export const size = { width: 32, height: 32 };
 export const contentType = 'image/png';
 
@@ -10,7 +12,7 @@ export default function Icon() {
         width: 32,
         height: 32,
         borderRadius: 8,
-        background: 'linear-gradient(135deg, #0D9488, #0F766E)',
+        background: `linear-gradient(135deg, ${brandAgent.primary}, ${brandAgent.primaryDark})`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

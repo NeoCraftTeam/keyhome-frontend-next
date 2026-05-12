@@ -105,7 +105,8 @@ describe('adsService', () => {
       );
 
       expect(mockGet).toHaveBeenCalledWith(
-        '/ads/9e5f2a3b-1c4d-4e6f-8a7b-2d3e4f5a6b7c'
+        '/ads/9e5f2a3b-1c4d-4e6f-8a7b-2d3e4f5a6b7c',
+        undefined
       );
       expect(result.title).toBe('Appartement T3 meublé à Bastos');
     });

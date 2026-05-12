@@ -10,6 +10,7 @@ import {
   khSafeAreaTopSx,
 } from '@/lib/safe-area-insets';
 import { useAuth } from '@/providers/AuthProvider';
+import { brandAgent, shadow, transition } from '@/theme/tokens';
 import CloseIcon from '@mui/icons-material/Close';
 import LogoutIcon from '@mui/icons-material/Logout';
 import {
@@ -38,14 +39,20 @@ export default function OwnerNavbar() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const handleLogout = async () => {
+  const handleLogout = (): void => {
     setDrawerOpen(false);
-    await logout('/owner/login');
+    void logout('/owner/login').catch(() => {
+      window.location.assign('/owner/login');
+    });
   };
 
-  const go = (href: string) => {
+  const go = (href: string): void => {
     setDrawerOpen(false);
-    router.push(href);
+    try {
+      router.push(href);
+    } catch {
+      window.location.assign(href);
+    }
   };
 
   const isActive = (href: string) =>
@@ -87,7 +94,15 @@ export default function OwnerNavbar() {
           <IconButton
             aria-label="Menu navigation"
             onClick={() => setDrawerOpen(true)}
-            sx={{ width: 44, height: 44, flexShrink: 0 }}
+            sx={{
+              width: 44,
+              height: 44,
+              flexShrink: 0,
+              '&:focus-visible': {
+                outline: 'none',
+                boxShadow: shadow.agentFocusRing,
+              },
+            }}
           >
             <Avatar
               src={user?.avatar || undefined}
@@ -114,7 +129,7 @@ export default function OwnerNavbar() {
               gap: 0.75,
               cursor: 'pointer',
               userSelect: 'none',
-              transition: 'opacity 0.2s',
+              transition: `opacity 0.22s cubic-bezier(0.22, 1, 0.36, 1)`,
               '&:hover': { opacity: 0.8 },
             }}
           >
@@ -196,6 +211,12 @@ export default function OwnerNavbar() {
           <IconButton
             aria-label="Fermer le menu"
             onClick={() => setDrawerOpen(false)}
+            sx={{
+              '&:focus-visible': {
+                outline: 'none',
+                boxShadow: shadow.agentFocusRing,
+              },
+            }}
           >
             <CloseIcon />
           </IconButton>
@@ -205,18 +226,41 @@ export default function OwnerNavbar() {
         {/* User info */}
         {user && (
           <>
-            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                minWidth: 0,
+              }}
+            >
               <Avatar
                 src={user.avatar || undefined}
-                sx={{ width: 44, height: 44 }}
+                sx={{ width: 44, height: 44, flexShrink: 0 }}
               >
                 {user.firstname?.[0]}
               </Avatar>
-              <Box>
-                <Typography variant="subtitle2" fontWeight={600}>
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight={600}
+                  noWrap
+                  title={`${user.firstname ?? ''} ${user.lastname ?? ''}`.trim()}
+                >
                   {user.firstname} {user.lastname}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  noWrap
+                  display="block"
+                  title={user.email}
+                  sx={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
                   {user.email}
                 </Typography>
               </Box>
@@ -236,11 +280,16 @@ export default function OwnerNavbar() {
                   sx={{
                     borderRadius: 2,
                     mb: 0.25,
-                    bgcolor: active ? 'rgba(20,184,166,0.08)' : 'transparent',
+                    bgcolor: active ? brandAgent.primaryAlpha08 : 'transparent',
                     color: active ? 'primary.main' : 'text.primary',
+                    transition: `${transition.polish}`,
+                    '&:focus-visible': {
+                      outline: 'none',
+                      boxShadow: shadow.agentFocusRing,
+                    },
                     '&:hover': {
                       bgcolor: active
-                        ? 'rgba(20,184,166,0.12)'
+                        ? brandAgent.primaryAlpha12
                         : 'action.hover',
                     },
                   }}
@@ -258,12 +307,16 @@ export default function OwnerNavbar() {
                   </ListItemIcon>
                   <ListItemText
                     primary={item.label}
+                    sx={{ minWidth: 0 }}
                     slotProps={{
                       primary: {
                         sx: {
                           fontWeight: active ? 600 : 500,
                           fontSize: '0.875rem',
                           lineHeight: 1.35,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
                         },
                       },
                     }}
@@ -299,7 +352,14 @@ export default function OwnerNavbar() {
         <Box sx={{ px: 1, pt: 0.5, pb: `max(12px, ${khSafeAreaBottomSx})` }}>
           <ListItemButton
             onClick={handleLogout}
-            sx={{ borderRadius: 2, color: 'error.main' }}
+            sx={{
+              borderRadius: 2,
+              color: 'error.main',
+              '&:focus-visible': {
+                outline: 'none',
+                boxShadow: shadow.errorRing,
+              },
+            }}
           >
             <ListItemIcon
               sx={{

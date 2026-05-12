@@ -13,9 +13,11 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { brandAgent, neutral, shadow } from '@/theme/tokens';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 if (process.env.NODE_ENV === 'development') {
@@ -24,6 +26,8 @@ if (process.env.NODE_ENV === 'development') {
     writable: false,
   });
 }
+
+const MAP_MARKER_BOX_SHADOW = `0 3px 12px ${alpha(brandAgent.primary, 0.4)}`;
 
 interface MapPickerProps {
   latitude: number | null;
@@ -60,10 +64,10 @@ export default function MapPicker({
         el.innerHTML = `
           <div style="
             width: 40px; height: 40px;
-            background: #0d9488;
+            background: ${brandAgent.primary};
             border-radius: 50%;
-            border: 3px solid #fff;
-            box-shadow: 0 3px 12px rgba(13,148,136,0.4);
+            border: 3px solid ${neutral.white};
+            box-shadow: ${MAP_MARKER_BOX_SHADOW};
             display: flex;
             align-items: center;
             justify-content: center;
@@ -230,6 +234,9 @@ export default function MapPicker({
                     onClick={handleSearch}
                     disabled={searching}
                     aria-label="Rechercher l'adresse"
+                    sx={{
+                      '&:focus-visible': { boxShadow: shadow.agentFocusRing },
+                    }}
                   >
                     {searching ? (
                       <CircularProgress size={18} />
@@ -251,6 +258,7 @@ export default function MapPicker({
               border: '1px solid',
               borderColor: 'divider',
               borderRadius: 1.5,
+              '&:focus-visible': { boxShadow: shadow.agentFocusRing },
             }}
           >
             {geolocating ? (

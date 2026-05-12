@@ -10,6 +10,7 @@ import { Box, Chip, Paper, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { AnimatePresence, motion } from 'framer-motion';
 
+import { neutral } from '@/theme/tokens';
 import {
   AD_TYPE_CATEGORIES,
   AdTypeCategory,
@@ -151,7 +152,7 @@ export default function AdFormStepType({
                 border: '2px solid',
                 borderColor: selected ? 'primary.main' : 'divider',
                 bgcolor: selected ? 'primary.main' : 'background.paper',
-                color: selected ? '#fff' : 'text.primary',
+                color: selected ? neutral.white : 'text.primary',
                 boxShadow: 'none',
                 transition: 'border-color 0.2s, box-shadow 0.2s',
                 '&:hover': {
@@ -163,7 +164,7 @@ export default function AdFormStepType({
                 <Icon
                   sx={{
                     fontSize: 28,
-                    color: selected ? '#fff' : 'text.secondary',
+                    color: selected ? neutral.white : 'text.secondary',
                   }}
                 />
               )}
@@ -178,7 +179,7 @@ export default function AdFormStepType({
                   variant="caption"
                   sx={{
                     color: selected
-                      ? 'rgba(255,255,255,0.85)'
+                      ? alpha(neutral.white, 0.85)
                       : 'text.secondary',
                   }}
                 >
@@ -277,7 +278,7 @@ export default function AdFormStepType({
                     position: 'absolute',
                     top: 10,
                     right: 10,
-                    bgcolor: alpha('#000', 0.06),
+                    bgcolor: alpha(neutral.black, 0.06),
                     fontWeight: 600,
                     fontSize: '0.7rem',
                   }}
@@ -340,7 +341,7 @@ export default function AdFormStepType({
                       borderRadius: 2,
                       borderColor: isSelected ? catColor : 'divider',
                       bgcolor: isSelected ? catColor : 'transparent',
-                      color: isSelected ? '#fff' : 'text.primary',
+                      color: isSelected ? neutral.white : 'text.primary',
                       '&:hover': {
                         bgcolor: isSelected ? catColor : alpha(catColor, 0.1),
                       },

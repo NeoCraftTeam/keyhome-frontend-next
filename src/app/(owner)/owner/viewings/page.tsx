@@ -47,6 +47,58 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import FadeIn from '@/components/ui/FadeIn';
+import { shadow, transition } from '@/theme/tokens';
+
+const MOTION_POLYFILL_SX = {
+  transition: transition.polish,
+  '@media (prefers-reduced-motion: reduce)': {
+    transition: 'none',
+  },
+} as const;
+
+/** Token-backed primitives — aligns with normalized owner shell */
+const FILTER_PANEL_SX = {
+  mb: 3,
+  p: 2,
+  borderRadius: 2,
+  border: '1px solid',
+  borderColor: 'divider',
+  bgcolor: 'background.paper',
+} as const;
+
+const OUTLINED_CONTROL_FOCUS_VISIBLE_SX = {
+  '&:focus-visible': {
+    outline: 'none',
+    boxShadow: shadow.agentFocusRing,
+    outlineOffset: 0,
+  },
+} as const;
+
+const CONTACT_ICON_BTN_FOCUS_VISIBLE_SX = {
+  '&:focus-visible': {
+    outline: 'none',
+    boxShadow: shadow.agentFocusRing,
+  },
+} as const;
+
+const STATUS_FILTER_CHIP_SX = {
+  '&:focus-visible': {
+    outline: 'none',
+    boxShadow: shadow.agentFocusRing,
+  },
+} as const;
+
+function viewingReservationCardSx(isPendingReservation: boolean) {
+  return {
+    borderRadius: 3,
+    border: '1px solid',
+    borderColor: isPendingReservation ? 'warning.light' : 'divider',
+    ...MOTION_POLYFILL_SX,
+    '&:hover': {
+      boxShadow: shadow.ownerListCardHover,
+    },
+  };
+}
 
 function formatDateTime(dateStr: string, timeStr: string) {
   try {
@@ -130,13 +182,16 @@ export default function OwnerViewingsPage() {
 
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ['owner-viewing-reservations', page, statusFilter],
-    queryFn: () =>
-      ownerService.getViewingReservations({
-        page,
-        ...(statusFilter ? { status: statusFilter } : {}),
-      }),
+    queryFn: ({ signal }) =>
+      ownerService.getViewingReservations(
+        {
+          page,
+          ...(statusFilter ? { status: statusFilter } : {}),
+        },
+        { signal }
+      ),
   });
 
   const reservations = (data?.data ?? []) as OwnerViewingReservation[];
@@ -236,12 +291,16 @@ export default function OwnerViewingsPage() {
           alignItems={{ xs: 'stretch', sm: 'flex-start' }}
           sx={{ mb: 3 }}
         >
-          <Box sx={{ minWidth: 0 }}>
+          <Box sx={{ minWidth: 0, flex: '1 1 auto' }}>
             <Typography
               variant="h4"
               fontWeight={800}
               gutterBottom
-              sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+              sx={{
+                fontSize: { xs: '1.5rem', sm: '2rem' },
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word',
+              }}
             >
               Demandes de visite
             </Typography>
@@ -254,10 +313,15 @@ export default function OwnerViewingsPage() {
             variant="outlined"
             startIcon={<FilterIcon />}
             onClick={() => setShowFilters(!showFilters)}
+            aria-expanded={showFilters}
+            aria-controls="owner-viewings-filters"
             sx={{
+              flexShrink: 0,
               borderRadius: 2,
               textTransform: 'none',
               alignSelf: { xs: 'stretch', sm: 'flex-start' },
+              minHeight: 44,
+              ...OUTLINED_CONTROL_FOCUS_VISIBLE_SX,
             }}
           >
             Filtrer
@@ -267,16 +331,7 @@ export default function OwnerViewingsPage() {
 
       {/* Filters */}
       <Collapse in={showFilters}>
-        <Box
-          sx={{
-            mb: 3,
-            p: 2,
-            borderRadius: 2,
-            border: '1px solid',
-            borderColor: 'divider',
-            bgcolor: 'background.paper',
-          }}
-        >
+        <Box id="owner-viewings-filters" sx={FILTER_PANEL_SX}>
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>Statut</InputLabel>
             <Select
@@ -298,7 +353,7 @@ export default function OwnerViewingsPage() {
       </Collapse>
 
       {/* Filtres rapides par statut (les totaux viennent de l’API paginée — pas de compteur trompeur) */}
-      {!isLoading && reservations.length > 0 && (
+      {!isLoading && !isError && reservations.length > 0 && (
         <Box
           sx={{
             display: 'flex',
@@ -325,7 +380,11 @@ export default function OwnerViewingsPage() {
                 setStatusFilter(statusFilter === key ? '' : key);
                 setPage(1);
               }}
-              sx={{ fontWeight: 600, cursor: 'pointer' }}
+              sx={{
+                fontWeight: 600,
+                cursor: 'pointer',
+                ...STATUS_FILTER_CHIP_SX,
+              }}
             />
           ))}
         </Box>
@@ -333,16 +392,71 @@ export default function OwnerViewingsPage() {
 
       {/* Loading */}
       {isLoading ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box
+          sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+          role="status"
+          aria-busy="true"
+          aria-live="polite"
+        >
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton
+            <Box
               key={i}
-              variant="rectangular"
-              height={130}
-              sx={{ borderRadius: 3 }}
-            />
+              sx={{
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'divider',
+                p: { xs: 2, sm: 2.5 },
+              }}
+            >
+              <Skeleton variant="text" width="55%" height={28} sx={{ mb: 1 }} />
+              <Skeleton
+                variant="text"
+                width="40%"
+                height={20}
+                sx={{ mb: 0.5 }}
+              />
+              <Skeleton variant="text" width="70%" height={20} />
+              <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                <Skeleton
+                  variant="rounded"
+                  width={100}
+                  height={40}
+                  sx={{ borderRadius: 1.5 }}
+                />
+                <Skeleton
+                  variant="rounded"
+                  width={100}
+                  height={40}
+                  sx={{ borderRadius: 1.5 }}
+                />
+              </Stack>
+            </Box>
           ))}
         </Box>
+      ) : isError ? (
+        <Alert
+          severity="error"
+          sx={{ borderRadius: 2, py: 2 }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => void refetch()}
+              disabled={isFetching}
+              sx={{ minHeight: 44, textTransform: 'none', fontWeight: 600 }}
+            >
+              Réessayer
+            </Button>
+          }
+        >
+          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            Impossible de charger les demandes
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Vérifiez votre connexion, puis réessayez. Si le problème persiste,
+            contactez le support.
+          </Typography>
+        </Alert>
       ) : reservations.length === 0 ? (
         /* Empty state */
         <Card
@@ -356,18 +470,50 @@ export default function OwnerViewingsPage() {
         >
           <CalendarIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
           <Typography variant="h6" fontWeight={700} gutterBottom>
-            Aucune demande de visite
+            {statusFilter
+              ? 'Aucune demande pour ce filtre'
+              : 'Aucune demande de visite'}
           </Typography>
-          <Typography color="text.secondary" sx={{ maxWidth: 400, mx: 'auto' }}>
-            Les demandes de visite pour vos annonces apparaîtront ici.
-            Configurez les créneaux de disponibilité sur chaque annonce pour
-            recevoir des demandes.
+          <Typography
+            color="text.secondary"
+            sx={{ maxWidth: 400, mx: 'auto', mb: statusFilter ? 2 : 0 }}
+          >
+            {statusFilter
+              ? 'Aucune demande ne correspond au statut sélectionné. Essayez « Tous les statuts » ou un autre filtre.'
+              : 'Les demandes de visite pour vos annonces apparaîtront ici. Configurez les créneaux sur chaque annonce pour en recevoir.'}
           </Typography>
+          {statusFilter !== '' ? (
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setStatusFilter('');
+                setPage(1);
+              }}
+              sx={{
+                mt: 1,
+                textTransform: 'none',
+                borderRadius: 2,
+                minHeight: 44,
+              }}
+            >
+              Effacer le filtre
+            </Button>
+          ) : null}
         </Card>
       ) : (
         /* Reservation list */
         <>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box
+            component="ul"
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              listStyle: 'none',
+              m: 0,
+              p: 0,
+            }}
+          >
             {reservations.map((r) => {
               const statusCfg =
                 STATUS_CONFIG[r.status] || STATUS_CONFIG.expired;
@@ -375,14 +521,9 @@ export default function OwnerViewingsPage() {
 
               return (
                 <Card
+                  component="li"
                   key={r.id}
-                  sx={{
-                    borderRadius: 3,
-                    border: '1px solid',
-                    borderColor: isPending(r) ? 'warning.light' : 'divider',
-                    transition: 'all 0.2s',
-                    '&:hover': { boxShadow: '0 2px 12px rgba(0,0,0,0.06)' },
-                  }}
+                  sx={viewingReservationCardSx(isPending(r))}
                 >
                   <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
                     {/* Main row */}
@@ -415,9 +556,14 @@ export default function OwnerViewingsPage() {
                             }}
                           />
                           <Typography
+                            component="h2"
                             fontWeight={700}
-                            variant="body1"
-                            sx={{ wordBreak: 'break-word', minWidth: 0 }}
+                            variant="subtitle1"
+                            sx={{
+                              wordBreak: 'break-word',
+                              minWidth: 0,
+                              lineHeight: 1.35,
+                            }}
                           >
                             {r.ad?.title || 'Annonce'}
                           </Typography>
@@ -430,12 +576,31 @@ export default function OwnerViewingsPage() {
                             alignItems: 'center',
                             gap: 1,
                             mb: 0.5,
+                            flexWrap: 'wrap',
+                            minWidth: 0,
+                            width: '100%',
                           }}
                         >
                           <PersonIcon
                             sx={{ fontSize: 16, color: 'text.secondary' }}
                           />
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              lineHeight: 1.45,
+                              minWidth: 0,
+                              flex: '1 1 auto',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                            title={
+                              r.client
+                                ? `${r.client.firstname} ${r.client.lastname}`
+                                : undefined
+                            }
+                          >
                             {r.client
                               ? `${r.client.firstname} ${r.client.lastname}`
                               : 'Client inconnu'}
@@ -443,28 +608,34 @@ export default function OwnerViewingsPage() {
                           {r.client?.phone_number && (
                             <Tooltip title={r.client.phone_number} arrow>
                               <IconButton
-                                size="small"
-                                aria-label="Appeler le client"
+                                aria-label={`Appeler ${r.client.firstname || 'le client'}`}
                                 href={`tel:${r.client.phone_number}`}
-                                sx={{ p: 0.25 }}
+                                size="small"
+                                sx={{
+                                  minWidth: 44,
+                                  minHeight: 44,
+                                  color: 'text.secondary',
+                                  ...CONTACT_ICON_BTN_FOCUS_VISIBLE_SX,
+                                }}
                               >
-                                <PhoneIcon
-                                  sx={{ fontSize: 14, color: 'text.secondary' }}
-                                />
+                                <PhoneIcon sx={{ fontSize: 18 }} />
                               </IconButton>
                             </Tooltip>
                           )}
                           {r.client?.email && (
                             <Tooltip title={r.client.email} arrow>
                               <IconButton
-                                size="small"
-                                aria-label="Envoyer un email"
+                                aria-label="Envoyer un courriel au client"
                                 href={`mailto:${r.client.email}`}
-                                sx={{ p: 0.25 }}
+                                size="small"
+                                sx={{
+                                  minWidth: 44,
+                                  minHeight: 44,
+                                  color: 'text.secondary',
+                                  ...CONTACT_ICON_BTN_FOCUS_VISIBLE_SX,
+                                }}
                               >
-                                <EmailIcon
-                                  sx={{ fontSize: 14, color: 'text.secondary' }}
-                                />
+                                <EmailIcon sx={{ fontSize: 18 }} />
                               </IconButton>
                             </Tooltip>
                           )}
@@ -545,8 +716,15 @@ export default function OwnerViewingsPage() {
                           color={statusCfg.color}
                           sx={{ fontWeight: 600 }}
                         />
-                        <Typography variant="caption" color="text.disabled">
-                          {formatDateShort(r.created_at)}
+                        <Typography
+                          variant="caption"
+                          color="text.disabled"
+                          sx={{
+                            display: 'block',
+                            textAlign: { xs: 'left', sm: 'right' },
+                          }}
+                        >
+                          Demandé le {formatDateShort(r.created_at)}
                         </Typography>
                       </Box>
                     </Box>
@@ -569,7 +747,7 @@ export default function OwnerViewingsPage() {
                     >
                       {isPending(r) && (
                         <Button
-                          size="small"
+                          size="medium"
                           variant="contained"
                           color="success"
                           startIcon={<ConfirmIcon />}
@@ -578,7 +756,9 @@ export default function OwnerViewingsPage() {
                             borderRadius: 1.5,
                             textTransform: 'none',
                             fontWeight: 600,
-                            fontSize: '0.8rem',
+                            fontSize: '0.875rem',
+                            minHeight: 44,
+                            ...OUTLINED_CONTROL_FOCUS_VISIBLE_SX,
                           }}
                         >
                           Confirmer
@@ -586,7 +766,7 @@ export default function OwnerViewingsPage() {
                       )}
                       {isActive(r) && (
                         <Button
-                          size="small"
+                          size="medium"
                           variant="outlined"
                           color="error"
                           startIcon={<CancelIcon />}
@@ -595,14 +775,16 @@ export default function OwnerViewingsPage() {
                             borderRadius: 1.5,
                             textTransform: 'none',
                             fontWeight: 600,
-                            fontSize: '0.8rem',
+                            fontSize: '0.875rem',
+                            minHeight: 44,
+                            ...OUTLINED_CONTROL_FOCUS_VISIBLE_SX,
                           }}
                         >
                           Annuler
                         </Button>
                       )}
                       <Button
-                        size="small"
+                        size="medium"
                         variant="outlined"
                         color="inherit"
                         startIcon={<NotesIcon />}
@@ -614,39 +796,54 @@ export default function OwnerViewingsPage() {
                           borderRadius: 1.5,
                           textTransform: 'none',
                           fontWeight: 600,
-                          fontSize: '0.8rem',
+                          fontSize: '0.875rem',
+                          minHeight: 44,
+                          ...OUTLINED_CONTROL_FOCUS_VISIBLE_SX,
                         }}
                       >
                         {r.landlord_notes ? 'Modifier notes' : 'Ajouter notes'}
                       </Button>
                       <Button
-                        size="small"
+                        size="medium"
                         variant="text"
                         color="inherit"
+                        aria-expanded={isExpanded}
+                        aria-controls={`owner-viewing-details-${r.id}`}
                         onClick={() => setExpandedId(isExpanded ? null : r.id)}
                         endIcon={
                           <ExpandIcon
                             sx={{
                               transform: isExpanded ? 'rotate(180deg)' : 'none',
-                              transition: 'transform 0.2s',
+                              transition:
+                                'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
+                              '@media (prefers-reduced-motion: reduce)': {
+                                transition: 'none',
+                              },
                             }}
                           />
                         }
                         sx={{
                           borderRadius: 1.5,
                           textTransform: 'none',
-                          fontSize: '0.8rem',
+                          fontSize: '0.875rem',
+                          minHeight: 44,
                           gridColumn: { xs: '1 / -1', sm: 'auto' },
                           justifySelf: { xs: 'stretch', sm: 'end' },
+                          ...OUTLINED_CONTROL_FOCUS_VISIBLE_SX,
                         }}
                       >
-                        Détails
+                        {isExpanded
+                          ? 'Masquer les détails'
+                          : 'Voir les détails'}
                       </Button>
                     </Box>
 
                     {/* Expanded details */}
                     <Collapse in={isExpanded}>
                       <Box
+                        id={`owner-viewing-details-${r.id}`}
+                        role="region"
+                        aria-label="Détails de la demande de visite"
                         sx={{
                           mt: 2,
                           p: 2,
@@ -779,6 +976,7 @@ export default function OwnerViewingsPage() {
                 onChange={(_, p) => setPage(p)}
                 color="primary"
                 shape="rounded"
+                aria-label="Pagination des demandes de visite"
               />
             </Box>
           )}
@@ -788,7 +986,11 @@ export default function OwnerViewingsPage() {
       {/* ── Confirm Dialog ── */}
       <Dialog
         open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
+        onClose={() => {
+          if (!confirmMutation.isPending) {
+            setConfirmDialog(null);
+          }
+        }}
         maxWidth="xs"
         fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
@@ -816,7 +1018,12 @@ export default function OwnerViewingsPage() {
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button
             onClick={() => setConfirmDialog(null)}
-            sx={{ borderRadius: 1.5, textTransform: 'none' }}
+            disabled={confirmMutation.isPending}
+            sx={{
+              borderRadius: 1.5,
+              textTransform: 'none',
+              minHeight: 44,
+            }}
           >
             Annuler
           </Button>
@@ -827,7 +1034,12 @@ export default function OwnerViewingsPage() {
               confirmDialog && confirmMutation.mutate(confirmDialog.id)
             }
             disabled={confirmMutation.isPending}
-            sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}
+            sx={{
+              borderRadius: 1.5,
+              textTransform: 'none',
+              fontWeight: 600,
+              minHeight: 44,
+            }}
           >
             {confirmMutation.isPending
               ? 'Confirmation...'
@@ -840,21 +1052,24 @@ export default function OwnerViewingsPage() {
       <Dialog
         open={!!cancelDialog}
         onClose={() => {
-          setCancelDialog(null);
-          setCancelReason('');
+          if (!cancelMutation.isPending) {
+            setCancelDialog(null);
+            setCancelReason('');
+          }
         }}
         maxWidth="sm"
         fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
         <DialogTitle sx={{ fontWeight: 700, color: 'error.main' }}>
-          Annuler la visite
+          Annuler la visite ?
         </DialogTitle>
         <DialogContent>
           {cancelDialog && (
             <>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Annuler la visite du{' '}
+                Cette action est visible par le locataire. Confirmez
+                l&apos;annulation de la visite du{' '}
                 <strong>
                   {formatDateTime(
                     cancelDialog.slot_date,
@@ -865,8 +1080,8 @@ export default function OwnerViewingsPage() {
                 <strong>
                   {cancelDialog.client?.firstname}{' '}
                   {cancelDialog.client?.lastname}
-                </strong>{' '}
-                ? Le locataire sera notifié.
+                </strong>
+                .
               </Typography>
               <TextField
                 fullWidth
@@ -886,7 +1101,12 @@ export default function OwnerViewingsPage() {
               setCancelDialog(null);
               setCancelReason('');
             }}
-            sx={{ borderRadius: 1.5, textTransform: 'none' }}
+            disabled={cancelMutation.isPending}
+            sx={{
+              borderRadius: 1.5,
+              textTransform: 'none',
+              minHeight: 44,
+            }}
           >
             Retour
           </Button>
@@ -901,7 +1121,12 @@ export default function OwnerViewingsPage() {
               })
             }
             disabled={cancelMutation.isPending}
-            sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}
+            sx={{
+              borderRadius: 1.5,
+              textTransform: 'none',
+              fontWeight: 600,
+              minHeight: 44,
+            }}
           >
             {cancelMutation.isPending ? 'Annulation...' : 'Annuler la visite'}
           </Button>
@@ -912,8 +1137,10 @@ export default function OwnerViewingsPage() {
       <Dialog
         open={!!notesDialog}
         onClose={() => {
-          setNotesDialog(null);
-          setNotesValue('');
+          if (!notesMutation.isPending) {
+            setNotesDialog(null);
+            setNotesValue('');
+          }
         }}
         maxWidth="sm"
         fullWidth
@@ -941,7 +1168,12 @@ export default function OwnerViewingsPage() {
               setNotesDialog(null);
               setNotesValue('');
             }}
-            sx={{ borderRadius: 1.5, textTransform: 'none' }}
+            disabled={notesMutation.isPending}
+            sx={{
+              borderRadius: 1.5,
+              textTransform: 'none',
+              minHeight: 44,
+            }}
           >
             Annuler
           </Button>
@@ -952,7 +1184,12 @@ export default function OwnerViewingsPage() {
               notesMutation.mutate({ id: notesDialog.id, notes: notesValue })
             }
             disabled={notesMutation.isPending}
-            sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}
+            sx={{
+              borderRadius: 1.5,
+              textTransform: 'none',
+              fontWeight: 600,
+              minHeight: 44,
+            }}
           >
             {notesMutation.isPending ? 'Sauvegarde...' : 'Enregistrer'}
           </Button>

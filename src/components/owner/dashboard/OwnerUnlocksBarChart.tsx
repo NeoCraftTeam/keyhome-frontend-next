@@ -1,17 +1,18 @@
 'use client';
 
+import { brandAgent, neutral } from '@/theme/tokens';
 import { Box, Skeleton, useMediaQuery, useTheme } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
-  Cell,
 } from 'recharts';
-import { brand } from '@/theme/tokens';
 
 export type UnlockDatum = { label: string; unlocks: number };
 
@@ -26,9 +27,12 @@ export default function OwnerUnlocksBarChart({
   const isDark = theme.palette.mode === 'dark';
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const chartHeight = isXs ? 180 : 220;
-  const gridStroke = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
+  const gridStroke = alpha(
+    isDark ? neutral.white : theme.palette.common.black,
+    isDark ? 0.07 : 0.05
+  );
   const axisColor = theme.palette.text.secondary;
-  const tooltipBg = isDark ? theme.palette.grey[900] : '#fff';
+  const tooltipBg = theme.palette.background.paper;
   const tooltipBorder = theme.palette.divider;
 
   if (loading) {
@@ -89,7 +93,10 @@ export default function OwnerUnlocksBarChart({
             labelStyle={{ fontWeight: 700, marginBottom: 4 }}
             formatter={(value) => [value, 'Déverrouillages']}
             cursor={{
-              fill: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+              fill: alpha(
+                isDark ? neutral.white : theme.palette.common.black,
+                0.04
+              ),
             }}
           />
           <Bar dataKey="unlocks" radius={[6, 6, 0, 0]}>
@@ -98,10 +105,10 @@ export default function OwnerUnlocksBarChart({
                 key={`cell-${index}`}
                 fill={
                   entry.unlocks === maxVal
-                    ? brand.primary
+                    ? brandAgent.primary
                     : isDark
-                      ? 'rgba(246,71,95,0.45)'
-                      : 'rgba(246,71,95,0.55)'
+                      ? alpha(brandAgent.primary, 0.45)
+                      : alpha(brandAgent.primary, 0.55)
                 }
               />
             ))}

@@ -2,7 +2,16 @@
 
 import { createTheme } from '@mui/material/styles';
 import { baseTheme } from './theme';
-import { brandAgent, light, dark, neutral, semantic, gradient } from './tokens';
+import {
+  brandAgent,
+  light,
+  dark,
+  neutral,
+  semantic,
+  gradient,
+  shadow as designShadow,
+  transition,
+} from './tokens';
 
 /** Owner panel primary: Vibrant teal-to-sky gradient for modern look */
 export const ownerGradientPrimary = {
@@ -27,7 +36,7 @@ export const ownerLightTheme = createTheme({
       contrastText: neutral.white,
     },
     secondary: {
-      main: '#222222',
+      main: light.grey[600],
       light: light.grey[500],
       dark: neutral.black,
       contrastText: neutral.white,
@@ -66,10 +75,10 @@ export const ownerLightTheme = createTheme({
         containedPrimary: {
           backgroundColor: brandAgent.primary,
           boxShadow: 'none',
-          transition: 'all 0.2s ease',
+          transition: `${transition.polish}`,
           '&:hover': {
             backgroundColor: brandAgent.primaryDark,
-            boxShadow: '0 8px 24px rgba(13, 148, 136, 0.30)',
+            boxShadow: designShadow.ownerContainedHover,
             transform: 'translateY(-1px)',
           },
         },
@@ -82,7 +91,7 @@ export const ownerLightTheme = createTheme({
           backdropFilter: 'none',
           WebkitBackdropFilter: 'none',
           borderBottom: 'none',
-          boxShadow: '0 1px 8px rgba(13,148,136,0.18)',
+          boxShadow: designShadow.ownerAppBar,
         },
       },
     },
@@ -100,10 +109,10 @@ export const ownerDarkTheme = createTheme({
       contrastText: neutral.white,
     },
     secondary: {
-      main: '#E0E0E0',
-      light: '#F5F5F5',
-      dark: '#B0B0B0',
-      contrastText: '#000000',
+      main: dark.grey[500],
+      light: dark.grey[400],
+      dark: dark.grey[300],
+      contrastText: neutral.black,
     },
     background: {
       default: dark.bg,
@@ -130,8 +139,9 @@ export const ownerDarkTheme = createTheme({
         root: {
           ...baseTheme.components?.MuiCard?.styleOverrides?.root,
           borderColor: dark.divider,
+          transition: transition.polish,
           '&:hover': {
-            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            boxShadow: designShadow.cardHoverDark,
             transform: 'translateY(-3px)',
           },
         },
@@ -143,10 +153,10 @@ export const ownerDarkTheme = createTheme({
         containedPrimary: {
           backgroundColor: brandAgent.primary,
           boxShadow: 'none',
-          transition: 'all 0.2s ease',
+          transition: `${transition.polish}`,
           '&:hover': {
             backgroundColor: brandAgent.primaryDark,
-            boxShadow: '0 8px 24px rgba(13, 148, 136, 0.40)',
+            boxShadow: designShadow.ownerContainedHoverElevated,
             transform: 'translateY(-1px)',
           },
         },
@@ -159,7 +169,7 @@ export const ownerDarkTheme = createTheme({
           backdropFilter: 'none',
           WebkitBackdropFilter: 'none',
           borderBottom: 'none',
-          boxShadow: '0 1px 8px rgba(13,148,136,0.25)',
+          boxShadow: designShadow.ownerAppBarDark,
         },
       },
     },

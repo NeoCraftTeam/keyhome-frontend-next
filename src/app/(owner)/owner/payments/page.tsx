@@ -23,7 +23,7 @@ export default function OwnerPaymentsPage() {
         </Typography>
       </FadeIn>
       <FadeIn delay={0.1}>
-        <PaymentHistoryTable perPage={15} />
+        <PaymentHistoryTable />
       </FadeIn>
     </Container>
   );

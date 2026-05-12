@@ -8,10 +8,12 @@ import EmptyState from '@/components/ui/EmptyState';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
 import { getLaravelApiErrorMessage } from '@/lib/api-errors';
+import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
 import { formatPrice } from '@/lib/constants';
 import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { ownerService } from '@/services/owner.service';
+import { neutral } from '@/theme/tokens';
 import { Ad, AdStatus, AdType, City } from '@/types';
 import {
   Add as AddIcon,
@@ -29,6 +31,7 @@ import {
   Avatar,
   AvatarGroup,
   Box,
+  Button,
   Chip,
   Fab,
   FormControl,
@@ -94,7 +97,7 @@ export default function OwnerAdsPage() {
   } | null>(null);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: [
       'owner-ads',
       page + 1,
@@ -106,22 +109,25 @@ export default function OwnerAdsPage() {
       sort,
       order,
     ],
-    queryFn: () =>
-      ownerService.getMyAds({
-        page: page + 1,
-        per_page: rowsPerPage,
-        q: search || undefined,
-        status: statusFilter || undefined,
-        city_id: cityFilter || undefined,
-        type_id: typeFilter || undefined,
-        sort,
-        order,
-      }),
+    queryFn: ({ signal }) =>
+      ownerService.getMyAds(
+        {
+          page: page + 1,
+          per_page: rowsPerPage,
+          q: search || undefined,
+          status: statusFilter || undefined,
+          city_id: cityFilter || undefined,
+          type_id: typeFilter || undefined,
+          sort,
+          order,
+        },
+        { signal }
+      ),
   });
 
   const { data: citiesData } = useQuery({
     queryKey: ['cities-list'],
-    queryFn: () => citiesService.list({ per_page: 200 }),
+    queryFn: ({ signal }) => citiesService.list({ per_page: 200 }, { signal }),
   });
 
   useEffect(() => {
@@ -131,14 +137,17 @@ export default function OwnerAdsPage() {
 
   const { data: adTypesData } = useQuery({
     queryKey: ['ad-types'],
-    queryFn: () => adTypesService.list(),
+    queryFn: ({ signal }) => adTypesService.list({ signal }),
   });
 
   // Draft query — fetch up to 20 so we can render the pinned "Brouillons" section
   const { data: draftData } = useQuery({
     queryKey: ['owner-ads', 'drafts'],
-    queryFn: () =>
-      ownerService.getMyAds({ page: 1, per_page: 20, status: 'draft' }),
+    queryFn: ({ signal }) =>
+      ownerService.getMyAds(
+        { page: 1, per_page: 20, status: 'draft' },
+        { signal }
+      ),
   });
   const draftAds = (draftData?.data ?? []) as Ad[];
   const draftCount = draftData?.meta?.total ?? 0;
@@ -272,6 +281,14 @@ export default function OwnerAdsPage() {
       });
     },
   });
+
+  const adsRowActionPending =
+    toggleMutation.isPending ||
+    setStatusMutation.isPending ||
+    deleteMutation.isPending ||
+    publishDraftMutation.isPending ||
+    boostMutation.isPending ||
+    unboostMutation.isPending;
 
   const handleSort = useCallback(
     (field: string) => {
@@ -457,7 +474,9 @@ export default function OwnerAdsPage() {
                   />
                   <Box
                     component="button"
-                    onClick={() => router.push(`/owner/ads/${draft.id}`)}
+                    onClick={() =>
+                      runAppRouterNavigation(router, `/owner/ads/${draft.id}`)
+                    }
                     sx={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -469,7 +488,7 @@ export default function OwnerAdsPage() {
                       border: 'none',
                       cursor: 'pointer',
                       bgcolor: 'warning.600',
-                      color: '#fff',
+                      color: neutral.white,
                       '&:hover': { bgcolor: 'warning.700' },
                       transition: 'background-color 0.15s',
                     }}
@@ -615,6 +634,35 @@ export default function OwnerAdsPage() {
               </Box>
             )}
           </Box>
+        ) : isError ? (
+          <Box sx={{ p: 3 }}>
+            <Alert
+              severity="error"
+              sx={{ borderRadius: 2 }}
+              action={
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => void refetch()}
+                  disabled={isFetching}
+                  sx={{
+                    minHeight: 44,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                  }}
+                >
+                  Réessayer
+                </Button>
+              }
+            >
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                Impossible de charger vos annonces
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Vérifiez votre connexion réseau, puis réessayez.
+              </Typography>
+            </Alert>
+          </Box>
         ) : ads.length === 0 ? (
           <EmptyState
             variant="owner"
@@ -746,7 +794,10 @@ export default function OwnerAdsPage() {
                           cursor: 'pointer',
                           '&:hover': { bgcolor: 'action.hover' },
                         }}
-                        onClick={() => router.push(`/owner/ads/${ad.id}`)}
+                        onClick={() =>
+                          !adsRowActionPending &&
+                          runAppRouterNavigation(router, `/owner/ads/${ad.id}`)
+                        }
                       >
                         <TableCell sx={{ py: 1, width: 72 }}>
                           <AvatarGroup
@@ -779,12 +830,12 @@ export default function OwnerAdsPage() {
                             )}
                           </AvatarGroup>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ minWidth: 0, maxWidth: 200 }}>
                           <Typography
                             variant="body2"
                             fontWeight={600}
                             noWrap
-                            sx={{ maxWidth: 200 }}
+                            sx={{ minWidth: 0, maxWidth: 200 }}
                           >
                             {ad.title}
                           </Typography>
@@ -860,6 +911,7 @@ export default function OwnerAdsPage() {
                           <IconButton
                             size="small"
                             aria-label={`Actions pour ${ad.title}`}
+                            disabled={adsRowActionPending}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleMenuOpen(e, ad);
@@ -904,7 +956,7 @@ export default function OwnerAdsPage() {
           <>
             <MenuItem
               onClick={() => {
-                router.push(`/owner/ads/${selectedAd.id}`);
+                runAppRouterNavigation(router, `/owner/ads/${selectedAd.id}`);
                 handleMenuClose();
               }}
             >
@@ -988,7 +1040,7 @@ export default function OwnerAdsPage() {
               <MenuItem
                 onClick={() => {
                   handleMenuClose();
-                  router.push(`/owner/ads/${selectedAd.id}`);
+                  runAppRouterNavigation(router, `/owner/ads/${selectedAd.id}`);
                 }}
               >
                 <ContractIcon fontSize="small" sx={{ mr: 1 }} />
@@ -1085,7 +1137,7 @@ export default function OwnerAdsPage() {
         color="primary"
         variant={isMobile ? 'circular' : 'extended'}
         aria-label="Nouvelle annonce"
-        onClick={() => router.push('/owner/ads/new')}
+        onClick={() => runAppRouterNavigation(router, '/owner/ads/new')}
         sx={{
           position: 'fixed',
           bottom: { xs: 80, md: 24 },

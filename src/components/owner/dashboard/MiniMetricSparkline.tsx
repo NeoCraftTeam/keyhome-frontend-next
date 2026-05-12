@@ -37,6 +37,7 @@ export default function MiniMetricSparkline({
             </linearGradient>
           </defs>
           <YAxis hide domain={[0, max * 1.15]} />
+          {/* '#' in fill url(#…) references <defs> fragment id — not a hex literal */}
           <Area
             type="monotone"
             dataKey="value"

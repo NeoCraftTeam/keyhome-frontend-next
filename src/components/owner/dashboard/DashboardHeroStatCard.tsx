@@ -8,6 +8,7 @@ import {
   TrendingUp as UpIcon,
 } from '@mui/icons-material';
 import { Box, Card, CardContent, Chip, Typography } from '@mui/material';
+import { neutral } from '@/theme/tokens';
 
 /** Animated value display – uses count-up when `numericValue` is provided. */
 function AnimatedValue({
@@ -132,7 +133,7 @@ export default function DashboardHeroStatCard({
           height: { xs: 40, sm: 44 },
           borderRadius: 2.5,
           bgcolor: accentColor,
-          color: '#fff',
+          color: neutral.white,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

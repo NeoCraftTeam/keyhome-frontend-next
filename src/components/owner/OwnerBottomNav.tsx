@@ -5,8 +5,10 @@ import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { OWNER_BOTTOM_NAV_ITEMS } from '@/lib/nav-config';
 import { NAV_LIST_ICON_GLYPH_PX } from '@/lib/navVisualMetrics';
 import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
-import { brandAgent } from '@/theme/tokens';
+import { ownerService } from '@/services/owner.service';
+import { shadow } from '@/theme/tokens';
 import {
+  Badge,
   BottomNavigation,
   BottomNavigationAction,
   Box,
@@ -14,6 +16,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
 
 /** @deprecated Prefer {@link PWA_BOTTOM_NAV_INNER_HEIGHT_PX} — kept for owner layout FAB offset */
@@ -31,7 +34,8 @@ function OwnerBottomNavDashboardIcon({ selected }: { selected: boolean }) {
         height: NAV_LIST_ICON_GLYPH_PX,
         objectFit: 'contain',
         display: 'block',
-        transition: 'opacity 0.2s ease, filter 0.2s ease',
+        transition:
+          'opacity 0.22s cubic-bezier(0.22, 1, 0.36, 1), filter 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
         filter: selected ? 'none' : 'grayscale(1)',
         opacity: selected ? 1 : 0.42,
       }}
@@ -47,7 +51,21 @@ export default function OwnerBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (!isMobile || !isStandalone) {
+  const shellActive = isMobile && isStandalone;
+
+  const { data: pendingViewings } = useQuery({
+    queryKey: ['owner', 'viewings', 'pending-count'],
+    queryFn: ({ signal }) =>
+      ownerService.getViewingReservations(
+        { page: 1, status: 'pending' },
+        { signal }
+      ),
+    select: (res) => res.meta?.total ?? 0,
+    staleTime: 60_000,
+    enabled: shellActive,
+  });
+
+  if (!shellActive) {
     return null;
   }
 
@@ -55,14 +73,20 @@ export default function OwnerBottomNav() {
     (item) => pathname === item.href || pathname?.startsWith(item.href + '/')
   );
 
-  const handleNav = (index: number) => {
-    const item = OWNER_BOTTOM_NAV_ITEMS[index];
-    router.push(item.href);
+  const handleNav = (_: unknown, newValue: unknown) => {
+    if (typeof newValue !== 'number' || newValue < 0) return;
+    const item = OWNER_BOTTOM_NAV_ITEMS[newValue];
+    if (!item?.href) return;
+    try {
+      router.push(item.href);
+    } catch {
+      window.location.assign(item.href);
+    }
   };
 
   return (
     <Paper
-      elevation={8}
+      elevation={0}
       sx={{
         position: 'fixed',
         bottom: 0,
@@ -71,12 +95,13 @@ export default function OwnerBottomNav() {
         zIndex: (t) => t.zIndex.appBar + 1,
         borderTop: '1px solid',
         borderColor: 'divider',
+        boxShadow: shadow.ownerElevatedRail,
       }}
     >
       <BottomNavigation
         className="kh-bottom-tab-bar"
         value={activeIndex >= 0 ? activeIndex : false}
-        onChange={(_, newValue) => handleNav(newValue)}
+        onChange={handleNav}
         showLabels
         component="nav"
         aria-label="Navigation propriétaire"
@@ -93,21 +118,29 @@ export default function OwnerBottomNav() {
             icon={
               item.href === '/owner/dashboard' ? (
                 <OwnerBottomNavDashboardIcon selected={idx === activeIndex} />
+              ) : item.href === '/owner/viewings' ? (
+                <Badge
+                  badgeContent={
+                    (pendingViewings ?? 0) > 0 ? pendingViewings : undefined
+                  }
+                  color="primary"
+                  max={99}
+                  sx={{
+                    '& .MuiBadge-badge': {
+                      fontSize: '0.55rem',
+                      height: 14,
+                      minWidth: 14,
+                    },
+                  }}
+                >
+                  {item.icon}
+                </Badge>
               ) : (
                 item.icon
               )
             }
             aria-label={item.label}
             aria-current={idx === activeIndex ? 'page' : undefined}
-            sx={
-              item.href === '/owner/dashboard'
-                ? {
-                    '&.Mui-selected': {
-                      color: `${brandAgent.primary} !important`,
-                    },
-                  }
-                : undefined
-            }
           />
         ))}
       </BottomNavigation>

@@ -41,9 +41,12 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import FadeIn from '@/components/ui/FadeIn';
+import { brandAgent } from '@/theme/tokens';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 type BillingPeriod = 'monthly' | 'yearly';
 
@@ -116,6 +119,7 @@ interface CurrentSubscriptionCardProps {
   onToggleAutoRenew: (enabled: boolean) => void;
   isCancelling: boolean;
   isTogglingAutoRenew: boolean;
+  checkoutPending: boolean;
 }
 
 function CurrentSubscriptionCard({
@@ -124,6 +128,7 @@ function CurrentSubscriptionCard({
   onToggleAutoRenew,
   isCancelling,
   isTogglingAutoRenew,
+  checkoutPending,
 }: CurrentSubscriptionCardProps) {
   return (
     <Card
@@ -132,7 +137,7 @@ function CurrentSubscriptionCard({
         border: '2px solid',
         borderColor: 'primary.main',
         mb: 4,
-        bgcolor: 'rgba(13,148,136,0.04)',
+        bgcolor: alpha(brandAgent.primary, 0.04),
       }}
     >
       <CardContent sx={{ p: 3 }}>
@@ -146,8 +151,18 @@ function CurrentSubscriptionCard({
             mb: 2,
           }}
         >
-          <Box>
-            <Typography variant="h5" fontWeight={700} color="primary.main">
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="h5"
+              fontWeight={700}
+              color="primary.main"
+              noWrap
+              sx={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+              title={current.plan?.name ?? 'Abonnement'}
+            >
               {current.plan?.name ?? 'Abonnement'}
             </Typography>
             <Stack
@@ -236,7 +251,9 @@ function CurrentSubscriptionCard({
             <Switch
               checked={current.auto_renew}
               onChange={(e) => onToggleAutoRenew(e.target.checked)}
-              disabled={isTogglingAutoRenew || !!current.cancelled_at}
+              disabled={
+                checkoutPending || isTogglingAutoRenew || !!current.cancelled_at
+              }
               color="primary"
             />
             {!current.cancelled_at && (
@@ -246,7 +263,7 @@ function CurrentSubscriptionCard({
                 variant="outlined"
                 startIcon={<CancelIcon />}
                 onClick={onCancel}
-                disabled={isCancelling}
+                disabled={checkoutPending || isCancelling}
               >
                 Annuler
               </Button>
@@ -309,9 +326,22 @@ function PlanCard({
             justifyContent: 'space-between',
             alignItems: 'flex-start',
             mb: 1,
+            gap: 1,
+            minWidth: 0,
           }}
         >
-          <Typography variant="h6" fontWeight={700}>
+          <Typography
+            variant="h6"
+            fontWeight={700}
+            sx={{
+              flex: '1 1 auto',
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+            title={plan.name}
+          >
             {plan.name}
           </Typography>
           {plan.boost_score ? (
@@ -320,7 +350,7 @@ function PlanCard({
               color="primary"
               icon={<TrendingUpIcon />}
               label="Boost inclus"
-              sx={{ fontWeight: 600 }}
+              sx={{ fontWeight: 600, flexShrink: 0 }}
             />
           ) : null}
         </Box>
@@ -382,6 +412,7 @@ function PlanCard({
 
 export default function OwnerSubscriptionsPage() {
   const queryClient = useQueryClient();
+  const isOnline = useNetworkStatus();
   const [period, setPeriod] = useState<BillingPeriod>('monthly');
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -391,18 +422,42 @@ export default function OwnerSubscriptionsPage() {
   } | null>(null);
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
 
-  const { data: currentResponse, isLoading: isLoadingCurrent } = useQuery({
+  const {
+    data: currentResponse,
+    isLoading: isLoadingCurrent,
+    isError: currentQueryError,
+    isFetched: currentFetched,
+    refetch: refetchCurrent,
+    isFetching: isFetchingCurrent,
+  } = useQuery({
     queryKey: ['subscriptions-current'],
-    queryFn: () => subscriptionsService.getCurrent(),
+    queryFn: ({ signal }) => subscriptionsService.getCurrent({ signal }),
   });
 
   const current = currentResponse?.subscription ?? null;
   const hasActiveSubscription = Boolean(current && current.is_active);
 
-  const { data: plans = [], isLoading: isLoadingPlans } = useQuery({
+  const {
+    data: plans = [],
+    isLoading: isLoadingPlans,
+    isError: plansQueryError,
+    isFetched: plansFetched,
+    refetch: refetchPlans,
+    isFetching: isFetchingPlans,
+  } = useQuery({
     queryKey: ['subscriptions-plans'],
-    queryFn: () => subscriptionsService.getPlans(),
+    queryFn: ({ signal }) => subscriptionsService.getPlans({ signal }),
   });
+
+  const subscriptionsLoadFailed =
+    (currentFetched && currentQueryError) || (plansFetched && plansQueryError);
+
+  const refetchSubscriptions = (): void => {
+    void refetchCurrent();
+    void refetchPlans();
+  };
+
+  const subscriptionsRefetchBusy = isFetchingCurrent || isFetchingPlans;
 
   const subscribeMutation = useMutation({
     mutationFn: ({
@@ -493,6 +548,27 @@ export default function OwnerSubscriptionsPage() {
         </Box>
       </FadeIn>
 
+      {subscriptionsLoadFailed && (
+        <Alert
+          severity="error"
+          sx={{ mb: 3 }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              disabled={subscriptionsRefetchBusy || !isOnline}
+              onClick={() => refetchSubscriptions()}
+            >
+              Réessayer
+            </Button>
+          }
+        >
+          {!isOnline
+            ? 'Vous semblez hors ligne. Reconnectez-vous au réseau puis réessayez.'
+            : 'Impossible de charger vos abonnements pour le moment.'}
+        </Alert>
+      )}
+
       <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
         Votre abonnement actuel
       </Typography>
@@ -502,13 +578,14 @@ export default function OwnerSubscriptionsPage() {
           height={140}
           sx={{ borderRadius: 3, mb: 4 }}
         />
-      ) : current ? (
+      ) : currentQueryError ? null : current ? (
         <CurrentSubscriptionCard
           current={current}
           onCancel={() => setConfirmCancelOpen(true)}
           onToggleAutoRenew={(enabled) => autoRenewMutation.mutate(enabled)}
           isCancelling={cancelMutation.isPending}
           isTogglingAutoRenew={autoRenewMutation.isPending}
+          checkoutPending={subscribeMutation.isPending}
         />
       ) : (
         <Card
@@ -534,71 +611,76 @@ export default function OwnerSubscriptionsPage() {
         </Card>
       )}
 
-      {(isLoadingPlans || plans.length > 0) && (
-        <>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            justifyContent="space-between"
-            alignItems={{ xs: 'flex-start', sm: 'center' }}
-            spacing={2}
-            sx={{ mb: 2 }}
-          >
-            <Typography variant="h6" fontWeight={700}>
-              Nos offres
-            </Typography>
-            <ToggleButtonGroup
-              size="small"
-              exclusive
-              value={period}
-              onChange={(_, v) => v && setPeriod(v as BillingPeriod)}
-              aria-label="Période de facturation"
+      {(isLoadingPlans || plans.length > 0) &&
+        !(plansFetched && plansQueryError) && (
+          <>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              justifyContent="space-between"
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              spacing={2}
+              sx={{ mb: 2 }}
             >
-              <ToggleButton value="monthly" aria-label="Tarification mensuelle">
-                Mensuel
-              </ToggleButton>
-              <ToggleButton value="yearly" aria-label="Tarification annuelle">
-                Annuel
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Stack>
+              <Typography variant="h6" fontWeight={700}>
+                Nos offres
+              </Typography>
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={period}
+                onChange={(_, v) => v && setPeriod(v as BillingPeriod)}
+                aria-label="Période de facturation"
+              >
+                <ToggleButton
+                  value="monthly"
+                  aria-label="Tarification mensuelle"
+                >
+                  Mensuel
+                </ToggleButton>
+                <ToggleButton value="yearly" aria-label="Tarification annuelle">
+                  Annuel
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
 
-          {isLoadingPlans ? (
-            <Grid container spacing={2}>
-              {[1, 2, 3].map((i) => (
-                <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Skeleton
-                    variant="rectangular"
-                    height={320}
-                    sx={{ borderRadius: 3 }}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-          ) : (
-            <Grid container spacing={2}>
-              {plans.map((plan) => {
-                const isCurrent =
-                  current?.plan?.id === plan.id &&
-                  current.billing_period === period;
-                return (
-                  <Grid key={plan.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                    <PlanCard
-                      plan={plan}
-                      period={period}
-                      isCurrent={isCurrent}
-                      isProcessing={
-                        subscribeMutation.isPending && pendingPlanId === plan.id
-                      }
-                      hasActiveSubscription={hasActiveSubscription}
-                      onSelect={() => handleSelect(plan)}
+            {isLoadingPlans ? (
+              <Grid container spacing={2}>
+                {[1, 2, 3].map((i) => (
+                  <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <Skeleton
+                      variant="rectangular"
+                      height={320}
+                      sx={{ borderRadius: 3 }}
                     />
                   </Grid>
-                );
-              })}
-            </Grid>
-          )}
-        </>
-      )}
+                ))}
+              </Grid>
+            ) : (
+              <Grid container spacing={2}>
+                {plans.map((plan) => {
+                  const isCurrent =
+                    current?.plan?.id === plan.id &&
+                    current.billing_period === period;
+                  return (
+                    <Grid key={plan.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                      <PlanCard
+                        plan={plan}
+                        period={period}
+                        isCurrent={isCurrent}
+                        isProcessing={
+                          subscribeMutation.isPending &&
+                          pendingPlanId === plan.id
+                        }
+                        hasActiveSubscription={hasActiveSubscription}
+                        onSelect={() => handleSelect(plan)}
+                      />
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            )}
+          </>
+        )}
 
       {/* Cancel dialog */}
       <Dialog
@@ -629,7 +711,7 @@ export default function OwnerSubscriptionsPage() {
           <Button
             color="error"
             variant="contained"
-            disabled={cancelMutation.isPending}
+            disabled={cancelMutation.isPending || subscribeMutation.isPending}
             onClick={() => cancelMutation.mutate(cancelReason || undefined)}
           >
             Confirmer l&apos;annulation

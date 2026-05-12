@@ -308,35 +308,46 @@ export type PublicSignatureShowResponse = {
 
 export const ownerService = {
   async getAnalytics(
-    period: '7d' | '30d' | '90d' = '30d'
+    period: '7d' | '30d' | '90d' = '30d',
+    request?: { signal?: AbortSignal }
   ): Promise<OwnerAnalyticsOverview> {
     const { data } = await api.get<{ data: OwnerAnalyticsOverview }>(
       '/my/ads/analytics',
       {
         params: { period },
+        ...(request?.signal ? { signal: request.signal } : {}),
       }
     );
     return data.data ?? data;
   },
 
-  async getMyAds(params?: {
-    page?: number;
-    per_page?: number;
-    q?: string;
-    status?: string;
-    type_id?: string;
-    city_id?: string;
-    quarter_id?: string;
-    price_min?: number;
-    price_max?: number;
-    sort?: string;
-    order?: 'asc' | 'desc';
-  }) {
-    const { data } = await api.get('/my/ads', { params });
+  async getMyAds(
+    params?: {
+      page?: number;
+      per_page?: number;
+      q?: string;
+      status?: string;
+      type_id?: string;
+      city_id?: string;
+      quarter_id?: string;
+      price_min?: number;
+      price_max?: number;
+      sort?: string;
+      order?: 'asc' | 'desc';
+    },
+    request?: { signal?: AbortSignal }
+  ) {
+    const { data } = await api.get('/my/ads', {
+      params: params ?? {},
+      ...(request?.signal ? { signal: request.signal } : {}),
+    });
     return data;
   },
 
-  async getLeaseContracts(params?: { page?: number; per_page?: number }) {
+  async getLeaseContracts(
+    params?: { page?: number; per_page?: number },
+    request?: { signal?: AbortSignal }
+  ) {
     const { data } = await api.get<{
       data: LeaseContract[];
       meta: {
@@ -345,7 +356,10 @@ export const ownerService = {
         total: number;
         per_page: number;
       };
-    }>('/my/lease-contracts', { params });
+    }>('/my/lease-contracts', {
+      params: params ?? {},
+      ...(request?.signal ? { signal: request.signal } : {}),
+    });
     return data;
   },
 
@@ -359,9 +373,13 @@ export const ownerService = {
     return data.enhanced;
   },
 
-  async getLeaseContract(id: string): Promise<LeaseContract> {
+  async getLeaseContract(
+    id: string,
+    request?: { signal?: AbortSignal }
+  ): Promise<LeaseContract> {
     const { data } = await api.get<{ data: LeaseContract }>(
-      `/my/lease-contracts/${id}`
+      `/my/lease-contracts/${id}`,
+      request?.signal ? { signal: request.signal } : {}
     );
     return data.data ?? data;
   },
@@ -413,8 +431,14 @@ export const ownerService = {
     return data;
   },
 
-  async getMyReviews(params?: { page?: number; per_page?: number }) {
-    const { data } = await api.get('/my/reviews', { params });
+  async getMyReviews(
+    params?: { page?: number; per_page?: number },
+    request?: { signal?: AbortSignal }
+  ) {
+    const { data } = await api.get('/my/reviews', {
+      params: params ?? {},
+      ...(request?.signal ? { signal: request.signal } : {}),
+    });
     return data;
   },
 
@@ -432,11 +456,17 @@ export const ownerService = {
     return data;
   },
 
-  async getViewingReservations(params?: { page?: number; status?: string }) {
+  async getViewingReservations(
+    params?: { page?: number; status?: string },
+    request?: { signal?: AbortSignal }
+  ) {
     const { data } = await api.get<{
       data: OwnerViewingReservation[];
       meta: { current_page: number; last_page: number; total: number };
-    }>('/my/viewing-reservations', { params });
+    }>('/my/viewing-reservations', {
+      params: params ?? {},
+      ...(request?.signal ? { signal: request.signal } : {}),
+    });
     return data;
   },
 
@@ -483,16 +513,19 @@ export const ownerService = {
   /**
    * Get available boost plans for owners.
    */
-  async getBoostPlans() {
-    const { data } = await api.get('/my/boost-plans');
+  async getBoostPlans(request?: { signal?: AbortSignal }) {
+    const { data } = await api.get('/my/boost-plans', {
+      ...(request?.signal ? { signal: request.signal } : {}),
+    });
     return data;
   },
 
   // ─── Viewing Availability (Zap) ───
 
-  async getAvailabilities(adId: string) {
+  async getAvailabilities(adId: string, request?: { signal?: AbortSignal }) {
     const { data } = await api.get<{ data: AvailabilitySchedule[] }>(
-      `/ads/${adId}/availability`
+      `/ads/${adId}/availability`,
+      request?.signal ? { signal: request.signal } : {}
     );
     return data.data ?? data;
   },
@@ -521,18 +554,28 @@ export const ownerService = {
     return data;
   },
 
-  async getAvailabilityCalendar(adId: string, from: string, to: string) {
+  async getAvailabilityCalendar(
+    adId: string,
+    from: string,
+    to: string,
+    request?: { signal?: AbortSignal }
+  ) {
     const { data } = await api.get(`/ads/${adId}/availability/calendar`, {
       params: { from, to },
+      ...(request?.signal ? { signal: request.signal } : {}),
     });
     return data.data ?? data;
   },
 
   // ─── Boost (owner self-service) ───
 
-  async getBoostStatus(adId: string): Promise<BoostStatus> {
+  async getBoostStatus(
+    adId: string,
+    request?: { signal?: AbortSignal }
+  ): Promise<BoostStatus> {
     const { data } = await api.get<{ data: BoostStatus }>(
-      `/my/ads/${adId}/boost-status`
+      `/my/ads/${adId}/boost-status`,
+      request?.signal ? { signal: request.signal } : {}
     );
     return data.data ?? data;
   },
@@ -573,16 +616,28 @@ export const ownerService = {
 
   // ─── Tenants ───
 
-  async getTenants(params?: {
-    page?: number;
-    per_page?: number;
-  }): Promise<{ data: Tenant[]; meta: PaginatedMeta }> {
-    const { data } = await api.get('/my/tenants', { params });
+  async getTenants(
+    params?: {
+      page?: number;
+      per_page?: number;
+    },
+    request?: { signal?: AbortSignal }
+  ): Promise<{ data: Tenant[]; meta: PaginatedMeta }> {
+    const { data } = await api.get('/my/tenants', {
+      params: params ?? {},
+      ...(request?.signal ? { signal: request.signal } : {}),
+    });
     return data;
   },
 
-  async getTenant(id: string): Promise<Tenant> {
-    const { data } = await api.get<{ data: Tenant }>(`/my/tenants/${id}`);
+  async getTenant(
+    id: string,
+    request?: { signal?: AbortSignal }
+  ): Promise<Tenant> {
+    const { data } = await api.get<{ data: Tenant }>(
+      `/my/tenants/${id}`,
+      request?.signal ? { signal: request.signal } : {}
+    );
     return data.data ?? data;
   },
 
@@ -610,9 +665,13 @@ export const ownerService = {
 
   async getExpenses(
     adId: string,
-    params?: { page?: number }
+    params?: { page?: number },
+    request?: { signal?: AbortSignal }
   ): Promise<{ data: Expense[]; meta: PaginatedMeta }> {
-    const { data } = await api.get(`/my/ads/${adId}/expenses`, { params });
+    const { data } = await api.get(`/my/ads/${adId}/expenses`, {
+      params: params ?? {},
+      ...(request?.signal ? { signal: request.signal } : {}),
+    });
     return data;
   },
 
@@ -628,9 +687,13 @@ export const ownerService = {
     await api.delete(`/my/expenses/${expenseId}`);
   },
 
-  async getProfitLoss(adId: string): Promise<ProfitLoss> {
+  async getProfitLoss(
+    adId: string,
+    request?: { signal?: AbortSignal }
+  ): Promise<ProfitLoss> {
     const { data } = await api.get<{ data: ProfitLoss }>(
-      `/my/ads/${adId}/profit-loss`
+      `/my/ads/${adId}/profit-loss`,
+      request?.signal ? { signal: request.signal } : {}
     );
     return data.data ?? data;
   },
@@ -639,10 +702,12 @@ export const ownerService = {
 
   async getDocuments(
     adId: string,
-    type?: string
+    type?: string,
+    request?: { signal?: AbortSignal }
   ): Promise<{ data: OwnerDocument[] }> {
     const { data } = await api.get(`/my/ads/${adId}/documents`, {
       params: type ? { type } : undefined,
+      ...(request?.signal ? { signal: request.signal } : {}),
     });
     return data;
   },
@@ -678,9 +743,12 @@ export const ownerService = {
 
   // ─── Notification Preferences ───
 
-  async getNotificationPreferences(): Promise<NotificationPreferences> {
+  async getNotificationPreferences(request?: {
+    signal?: AbortSignal;
+  }): Promise<NotificationPreferences> {
     const { data } = await api.get<{ data: NotificationPreferences }>(
-      '/my/notification-preferences'
+      '/my/notification-preferences',
+      request?.signal ? { signal: request.signal } : {}
     );
     return data.data ?? data;
   },
@@ -698,9 +766,13 @@ export const ownerService = {
   // ─── Login History ───
 
   async getLoginHistory(
-    page = 1
+    page = 1,
+    request?: { signal?: AbortSignal }
   ): Promise<PaginatedResponse<LoginHistoryEntry>> {
-    const { data } = await api.get('/my/login-history', { params: { page } });
+    const { data } = await api.get('/my/login-history', {
+      params: { page },
+      ...(request?.signal ? { signal: request.signal } : {}),
+    });
     // Backend wraps a Laravel paginator under 'data': { data: [...], current_page, ... }
     const paginator = data?.data ?? data;
     return {
@@ -724,11 +796,13 @@ export const ownerService = {
 
   // ─── Team ───
 
-  async getTeam(): Promise<{
+  async getTeam(request?: { signal?: AbortSignal }): Promise<{
     members: TeamMember[];
     invitations: TeamInvitation[];
   }> {
-    const { data } = await api.get('/my/team');
+    const { data } = await api.get('/my/team', {
+      ...(request?.signal ? { signal: request.signal } : {}),
+    });
     return data.data ?? data;
   },
 
@@ -758,10 +832,12 @@ export const ownerService = {
   // ─── E-Signature ───
 
   async getSignatureRequests(
-    leaseContractId: string
+    leaseContractId: string,
+    request?: { signal?: AbortSignal }
   ): Promise<SignatureRequest[]> {
     const { data } = await api.get<{ data: SignatureRequest[] }>(
-      `/my/lease-contracts/${leaseContractId}/signatures`
+      `/my/lease-contracts/${leaseContractId}/signatures`,
+      request?.signal ? { signal: request.signal } : {}
     );
     return data.data ?? data;
   },
@@ -809,12 +885,15 @@ export const ownerService = {
     });
   },
 
-  async getRentEstimate(params: {
-    city_id: string;
-    type_id: string;
-    surface: number;
-    bedrooms?: number;
-  }): Promise<{
+  async getRentEstimate(
+    params: {
+      city_id: string;
+      type_id: string;
+      surface: number;
+      bedrooms?: number;
+    },
+    request?: { signal?: AbortSignal }
+  ): Promise<{
     estimated_min: number;
     estimated_median: number;
     estimated_max: number;
@@ -823,13 +902,19 @@ export const ownerService = {
     bedrooms_scope_matched?: boolean;
     error?: string;
   }> {
-    const { data } = await api.get('/rent-estimate', { params });
+    const { data } = await api.get('/rent-estimate', {
+      params,
+      ...(request?.signal ? { signal: request.signal } : {}),
+    });
     return data;
   },
 
   // ─── QR & printables (owner marketing) ───
 
-  async getAdQrCodeMeta(adId: string): Promise<{
+  async getAdQrCodeMeta(
+    adId: string,
+    config?: { signal?: AbortSignal }
+  ): Promise<{
     ad_url: string;
     profile_url: string | null;
     qr_data_uri: string;
@@ -840,7 +925,7 @@ export const ownerService = {
         profile_url: string | null;
         qr_data_uri: string;
       };
-    }>(`/my/ads/${adId}/qr-code`);
+    }>(`/my/ads/${adId}/qr-code`, config);
     return data.data;
   },
 
@@ -858,13 +943,13 @@ export const ownerService = {
     return data;
   },
 
-  async getProfileQrMeta(): Promise<{
+  async getProfileQrMeta(config?: { signal?: AbortSignal }): Promise<{
     profile_url: string;
     qr_data_uri: string;
   }> {
     const { data } = await api.get<{
       data: { profile_url: string; qr_data_uri: string };
-    }>('/my/profile/qr-code');
+    }>('/my/profile/qr-code', config);
     return data.data;
   },
 
@@ -887,12 +972,15 @@ export const ownerService = {
    * as the printable PDF — used as iframe `srcDoc` so the in-app preview is
    * a faithful 1:1 representation of what the user will download.
    */
-  async fetchBusinessCardPreviewHtml(): Promise<string> {
+  async fetchBusinessCardPreviewHtml(config?: {
+    signal?: AbortSignal;
+  }): Promise<string> {
     const { data } = await api.get<string>(
       '/my/profile/business-card/preview',
       {
         responseType: 'text',
         headers: { Accept: 'text/html' },
+        ...config,
       }
     );
     return data;

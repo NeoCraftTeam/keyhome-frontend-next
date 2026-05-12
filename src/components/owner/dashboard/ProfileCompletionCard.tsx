@@ -2,12 +2,26 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import {
+  brandAgent,
+  neutral,
+  semantic,
+  shadow,
+  transition,
+} from '@/theme/tokens';
+import {
   CheckCircle as CheckIcon,
   ChevronRight,
   RadioButtonUnchecked as UncheckedIcon,
   Rocket as RocketIcon,
 } from '@mui/icons-material';
-import { Box, Card, LinearProgress, Stack, Typography } from '@mui/material';
+import {
+  alpha,
+  Box,
+  Card,
+  LinearProgress,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { ownerService } from '@/services/owner.service';
@@ -18,6 +32,14 @@ interface Step {
   done: boolean;
   href: string;
 }
+
+const STEP_ROW_ANIMATION_REDUCED = {
+  '@media (prefers-reduced-motion: reduce)': {
+    animation: 'none',
+    transition: 'none',
+    '&:hover': { transform: 'none' },
+  },
+} as const;
 
 export default function ProfileCompletionCard() {
   const { user } = useAuth();
@@ -75,13 +97,18 @@ export default function ProfileCompletionCard() {
         borderColor: 'divider',
         mb: 3,
         overflow: 'hidden',
-        transition: 'box-shadow 0.2s ease',
+        transition: transition.polish,
+        '@media (prefers-reduced-motion: reduce)': {
+          transition: 'none',
+        },
         '&:hover': {
-          boxShadow: '0 8px 32px rgba(13,148,136,0.1)',
+          boxShadow: shadow.ownerTeaserHover,
+          '@media (prefers-reduced-motion: reduce)': {
+            boxShadow: 'none',
+          },
         },
       }}
     >
-      {/* Gradient header */}
       <Box
         sx={{
           px: 2.5,
@@ -97,14 +124,14 @@ export default function ProfileCompletionCard() {
             width: 34,
             height: 34,
             borderRadius: '50%',
-            bgcolor: 'rgba(255,255,255,0.18)',
+            bgcolor: alpha(neutral.white, 0.18),
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
           }}
         >
-          <RocketIcon sx={{ fontSize: 18, color: '#fff' }} />
+          <RocketIcon sx={{ fontSize: 18, color: neutral.white }} />
         </Box>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography
@@ -115,7 +142,10 @@ export default function ProfileCompletionCard() {
           >
             Activez votre profil
           </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+          <Typography
+            variant="caption"
+            sx={{ color: alpha(neutral.white, 0.8) }}
+          >
             {pendingSteps.length} étape{pendingSteps.length > 1 ? 's' : ''}{' '}
             restante{pendingSteps.length > 1 ? 's' : ''}
           </Typography>
@@ -124,7 +154,7 @@ export default function ProfileCompletionCard() {
           variant="h6"
           fontWeight={800}
           sx={{
-            color: 'rgba(255,255,255,0.95)',
+            color: alpha(neutral.white, 0.95),
             fontSize: '1.1rem',
             letterSpacing: '-0.5px',
           }}
@@ -133,22 +163,23 @@ export default function ProfileCompletionCard() {
         </Typography>
       </Box>
 
-      {/* Progress bar — flush under the header */}
       <LinearProgress
         variant="determinate"
         value={progress}
         sx={{
           height: 4,
           borderRadius: 0,
-          bgcolor: 'rgba(13,148,136,0.12)',
+          bgcolor: brandAgent.primaryAlpha12,
           '& .MuiLinearProgress-bar': {
             bgcolor: 'primary.main',
             transition: 'transform 0.8s cubic-bezier(0.22, 1, 0.36, 1)',
           },
+          '@media (prefers-reduced-motion: reduce)': {
+            '& .MuiLinearProgress-bar': { transition: 'none' },
+          },
         }}
       />
 
-      {/* Steps */}
       <Stack spacing={0} sx={{ p: { xs: 1.5, md: 2 } }}>
         {steps.map((step, idx) => (
           <Box
@@ -162,16 +193,16 @@ export default function ProfileCompletionCard() {
               px: 1,
               borderRadius: 2,
               cursor: step.done ? 'default' : 'pointer',
-              transition: 'background-color 0.15s, transform 0.15s',
+              transition: `background-color 0.22s cubic-bezier(0.22, 1, 0.36, 1), transform 0.22s cubic-bezier(0.22, 1, 0.36, 1)`,
               '&:hover': step.done
                 ? {}
                 : {
-                    bgcolor: 'rgba(13,148,136,0.06)',
+                    bgcolor: brandAgent.primaryAlpha08,
                     transform: 'translateX(2px)',
                   },
-              // Staggered fade-in via animation-delay
-              animation: 'fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) both',
+              animation: `fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) both`,
               animationDelay: `${idx * 0.06}s`,
+              ...STEP_ROW_ANIMATION_REDUCED,
             }}
           >
             <Box
@@ -184,9 +215,12 @@ export default function ProfileCompletionCard() {
                 borderRadius: '50%',
                 flexShrink: 0,
                 bgcolor: step.done
-                  ? 'rgba(34,197,94,0.1)'
-                  : 'rgba(13,148,136,0.08)',
-                transition: 'background-color 0.2s',
+                  ? alpha(semantic.successBright, 0.1)
+                  : brandAgent.primaryAlpha08,
+                transition: `${transition.polish}`,
+                '@media (prefers-reduced-motion: reduce)': {
+                  transition: 'none',
+                },
               }}
             >
               {step.done ? (

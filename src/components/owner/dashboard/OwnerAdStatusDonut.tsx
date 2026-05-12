@@ -1,17 +1,18 @@
 'use client';
 
+import { brandAgent, neutral, semantic } from '@/theme/tokens';
 import { Box, Skeleton, Typography, useTheme } from '@mui/material';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 export type AdStatusDatum = { label: string; value: number; color: string };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  available: { label: 'Disponible', color: '#14b8a6' },
-  pending: { label: 'En attente', color: '#f59e0b' },
-  reserved: { label: 'Réservé', color: '#6366f1' },
-  rented: { label: 'Loué', color: '#10b981' },
-  sold: { label: 'Vendu', color: '#3b82f6' },
-  archived: { label: 'Archivé', color: '#94a3b8' },
+  available: { label: 'Disponible', color: brandAgent.primaryLight },
+  pending: { label: 'En attente', color: semantic.warning },
+  reserved: { label: 'Réservé', color: semantic.indigo },
+  rented: { label: 'Loué', color: semantic.successBright },
+  sold: { label: 'Vendu', color: semantic.info },
+  archived: { label: 'Archivé', color: neutral.slate400 },
 };
 
 export function buildAdStatusData(ads: { status: string }[]): AdStatusDatum[] {
@@ -23,7 +24,7 @@ export function buildAdStatusData(ads: { status: string }[]): AdStatusDatum[] {
     .map(([status, value]) => ({
       label: STATUS_CONFIG[status]?.label ?? status,
       value,
-      color: STATUS_CONFIG[status]?.color ?? '#94a3b8',
+      color: STATUS_CONFIG[status]?.color ?? neutral.slate400,
     }))
     .sort((a, b) => b.value - a.value);
 }
@@ -38,8 +39,7 @@ export default function OwnerAdStatusDonut({
   loading?: boolean;
 }) {
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
-  const tooltipBg = isDark ? theme.palette.grey[900] : '#fff';
+  const tooltipBg = theme.palette.background.paper;
   const tooltipBorder = theme.palette.divider;
 
   if (loading) {

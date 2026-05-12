@@ -41,6 +41,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import FadeIn from '@/components/ui/FadeIn';
+import { brandAgent, neutral, semantic } from '@/theme/tokens';
 import {
   Cell,
   Pie,
@@ -60,12 +61,12 @@ const EXPENSE_CATEGORIES: { value: Expense['category']; label: string }[] = [
 ];
 
 const PIE_COLORS = [
-  '#0d9488',
-  '#f59e0b',
-  '#6366f1',
-  '#ec4899',
-  '#10b981',
-  '#64748b',
+  brandAgent.primary,
+  semantic.warning,
+  semantic.indigo,
+  semantic.pink,
+  semantic.successBright,
+  neutral.slate400,
 ];
 
 const EMPTY_FORM: ExpensePayload = {
@@ -93,20 +94,22 @@ export default function OwnerFinancialsPage() {
 
   const { data: adsData, isLoading: adsLoading } = useQuery({
     queryKey: ['owner-my-ads-select'],
-    queryFn: () => ownerService.getMyAds({ per_page: 100 }),
+    queryFn: ({ signal }) =>
+      ownerService.getMyAds({ per_page: 100 }, { signal }),
     select: (res) => (res?.data ?? []) as Array<{ id: string; title: string }>,
   });
 
   const { data: profitLoss, isLoading: profitLoading } = useQuery({
     queryKey: ['owner-profit-loss', selectedAdId],
-    queryFn: () => ownerService.getProfitLoss(selectedAdId),
+    queryFn: ({ signal }) =>
+      ownerService.getProfitLoss(selectedAdId, { signal }),
     enabled: Boolean(selectedAdId),
   });
 
   const { data: expensesData, isLoading: expensesLoading } = useQuery({
     queryKey: ['owner-expenses', selectedAdId, expensePage],
-    queryFn: () =>
-      ownerService.getExpenses(selectedAdId, { page: expensePage }),
+    queryFn: ({ signal }) =>
+      ownerService.getExpenses(selectedAdId, { page: expensePage }, { signal }),
     enabled: Boolean(selectedAdId),
   });
 
@@ -211,7 +214,15 @@ export default function OwnerFinancialsPage() {
               ) : (
                 (adsData ?? []).map((ad) => (
                   <MenuItem key={ad.id} value={ad.id}>
-                    {ad.title}
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      noWrap
+                      title={ad.title}
+                      sx={{ display: 'block', maxWidth: '100%' }}
+                    >
+                      {ad.title}
+                    </Typography>
                   </MenuItem>
                 ))
               )}
@@ -374,9 +385,13 @@ export default function OwnerFinancialsPage() {
             direction="row"
             alignItems="center"
             justifyContent="space-between"
-            sx={{ mb: 2 }}
+            sx={{ mb: 2, gap: 2, flexWrap: 'wrap', minWidth: 0 }}
           >
-            <Typography variant="h6" fontWeight={700}>
+            <Typography
+              variant="h6"
+              fontWeight={700}
+              sx={{ minWidth: 0, flex: '1 1 200px' }}
+            >
               Dépenses
             </Typography>
             <Button
@@ -387,7 +402,8 @@ export default function OwnerFinancialsPage() {
                 setForm(EMPTY_FORM);
                 setAddExpenseOpen(true);
               }}
-              sx={{ borderRadius: 2, textTransform: 'none' }}
+              disabled={createExpenseMutation.isPending}
+              sx={{ borderRadius: 2, textTransform: 'none', flexShrink: 0 }}
             >
               Ajouter
             </Button>
@@ -462,7 +478,15 @@ export default function OwnerFinancialsPage() {
                             <Typography
                               variant="body2"
                               color="text.secondary"
-                              noWrap
+                              sx={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                wordBreak: 'break-word',
+                                mt: 0.25,
+                              }}
+                              title={expense.description}
                             >
                               {expense.description}
                             </Typography>
@@ -480,10 +504,11 @@ export default function OwnerFinancialsPage() {
                         </Box>
                         <Tooltip title="Supprimer">
                           <IconButton
-                            aria-label="Exporter"
+                            aria-label="Supprimer cette dépense"
                             size="small"
                             color="error"
                             onClick={() => setDeleteTarget(expense)}
+                            disabled={deleteExpenseMutation.isPending}
                             sx={{ borderRadius: 1.5 }}
                           >
                             <DeleteIcon fontSize="small" />
@@ -517,7 +542,10 @@ export default function OwnerFinancialsPage() {
       {/* Add Expense Dialog */}
       <Dialog
         open={addExpenseOpen}
-        onClose={() => setAddExpenseOpen(false)}
+        onClose={() => {
+          if (createExpenseMutation.isPending) return;
+          setAddExpenseOpen(false);
+        }}
         fullWidth
         maxWidth="sm"
         PaperProps={{ sx: { borderRadius: 3 } }}
@@ -582,6 +610,7 @@ export default function OwnerFinancialsPage() {
           <Button
             onClick={() => setAddExpenseOpen(false)}
             variant="outlined"
+            disabled={createExpenseMutation.isPending}
             sx={{ borderRadius: 2 }}
           >
             Annuler
@@ -609,7 +638,10 @@ export default function OwnerFinancialsPage() {
       {/* Delete Expense Confirmation */}
       <Dialog
         open={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
+        onClose={() => {
+          if (deleteExpenseMutation.isPending) return;
+          setDeleteTarget(null);
+        }}
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
         <DialogTitle fontWeight={700}>Supprimer la dépense ?</DialogTitle>
@@ -626,6 +658,7 @@ export default function OwnerFinancialsPage() {
           <Button
             onClick={() => setDeleteTarget(null)}
             variant="outlined"
+            disabled={deleteExpenseMutation.isPending}
             sx={{ borderRadius: 2 }}
           >
             Annuler

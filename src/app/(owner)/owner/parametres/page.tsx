@@ -1,13 +1,15 @@
 'use client';
 
 import OwnerPushNotificationCard from '@/components/owner/OwnerPushNotificationCard';
+import LinkedAccountsCard from '@/components/settings/LinkedAccountsCard';
+import FadeIn from '@/components/ui/FadeIn';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import { useAuth } from '@/providers/AuthProvider';
+import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
 import {
   ownerService,
   type NotificationPreferences,
 } from '@/services/owner.service';
-import { useAuth } from '@/providers/AuthProvider';
-import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
 import {
   Logout as LogoutIcon,
   SettingsBrightness as SettingsBrightnessIcon,
@@ -38,7 +40,6 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import FadeIn from '@/components/ui/FadeIn';
 
 const NOTIFICATION_TOGGLES: {
   key: keyof NotificationPreferences;
@@ -212,9 +213,12 @@ export default function OwnerParametresPage() {
         </Grid>
         {/* end left col */}
 
-        {/* ── RIGHT col: Notification Prefs + Automations ── */}
+        {/* ── RIGHT col: Linked accounts + Notification Prefs + Automations ── */}
         <Grid size={{ xs: 12, lg: 7 }}>
           <Stack spacing={3}>
+            {/* Linked accounts (Google / Facebook / Apple via Clerk) */}
+            <LinkedAccountsCard redirectPath="/owner/parametres" />
+
             {/* Notification Preferences */}
             <Card
               sx={{

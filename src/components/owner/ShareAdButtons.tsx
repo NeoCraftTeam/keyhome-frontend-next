@@ -8,6 +8,7 @@ import {
 } from '@mui/icons-material';
 import { IconButton, Snackbar, Stack, Tooltip } from '@mui/material';
 import { useCallback, useMemo, useState } from 'react';
+import { semantic, shadow } from '@/theme/tokens';
 
 function buildFullShareUrl(adUrl: string): string {
   if (adUrl.startsWith('http://') || adUrl.startsWith('https://')) {
@@ -68,7 +69,10 @@ export default function ShareAdButtons({
             size={size}
             onClick={handleWhatsApp}
             aria-label="Partager sur WhatsApp"
-            sx={{ color: '#25D366' }}
+            sx={{
+              color: semantic.whatsapp, // brand third-party (Meta)
+              '&:focus-visible': { boxShadow: shadow.agentFocusRing },
+            }}
           >
             <WhatsAppIcon fontSize={size} />
           </IconButton>
@@ -78,7 +82,10 @@ export default function ShareAdButtons({
             size={size}
             onClick={handleFacebook}
             aria-label="Partager sur Facebook"
-            sx={{ color: '#1877F2' }}
+            sx={{
+              color: semantic.facebookBrand, // brand third-party (Meta)
+              '&:focus-visible': { boxShadow: shadow.agentFocusRing },
+            }}
           >
             <FacebookIcon fontSize={size} />
           </IconButton>
@@ -88,6 +95,7 @@ export default function ShareAdButtons({
             size={size}
             onClick={handleCopyLink}
             aria-label="Copier le lien"
+            sx={{ '&:focus-visible': { boxShadow: shadow.agentFocusRing } }}
           >
             <CopyIcon fontSize={size} />
           </IconButton>
@@ -98,6 +106,7 @@ export default function ShareAdButtons({
               size={size}
               onClick={handleNativeShare}
               aria-label="Partager"
+              sx={{ '&:focus-visible': { boxShadow: shadow.agentFocusRing } }}
             >
               <ShareIcon fontSize={size} />
             </IconButton>

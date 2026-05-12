@@ -1,14 +1,23 @@
 'use client';
 
+import AdFormWizard, {
+  type AdFormValues,
+  type TourScene,
+} from '@/components/owner/AdFormWizard';
 import FadeIn from '@/components/ui/FadeIn';
+import { getLaravelApiErrorMessage } from '@/lib/api-errors';
+import { adsService } from '@/services/ads.service';
+import { ownerService } from '@/services/owner.service';
+import { AdStatus } from '@/types';
 import BackIcon from '@mui/icons-material/ArrowBack';
 import AiIcon from '@mui/icons-material/AutoAwesome';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ContractIcon from '@mui/icons-material/Description';
+import CalendarIcon from '@mui/icons-material/EventAvailable';
 import OpenIcon from '@mui/icons-material/OpenInNew';
+import TourIcon from '@mui/icons-material/ViewInAr';
 import VisibleIcon from '@mui/icons-material/Visibility';
 import HiddenIcon from '@mui/icons-material/VisibilityOff';
-import TourIcon from '@mui/icons-material/ViewInAr';
 import {
   Alert,
   Box,
@@ -34,14 +43,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
-import AdFormWizard, {
-  type AdFormValues,
-  type TourScene,
-} from '@/components/owner/AdFormWizard';
-import { getLaravelApiErrorMessage } from '@/lib/api-errors';
-import { adsService } from '@/services/ads.service';
-import { ownerService } from '@/services/owner.service';
-import { AdStatus } from '@/types';
 
 export default function OwnerAdEditPage() {
   const params = useParams();
@@ -416,6 +417,63 @@ export default function OwnerAdEditPage() {
     },
   });
 
+  /** Save current form fields into draft_payload without touching the live ad. */
+  const saveEditDraftMutation = useMutation({
+    mutationFn: (fields: Record<string, unknown>) =>
+      adsService.saveEditDraft(
+        id,
+        fields as Partial<
+          Record<string, string | number | boolean | string[] | null>
+        >
+      ),
+    onError: (err: unknown) => {
+      setSnackbar({
+        message: getLaravelApiErrorMessage(
+          err,
+          'Erreur lors de la sauvegarde.'
+        ),
+        severity: 'error',
+      });
+    },
+  });
+
+  /** Promote draft_payload to the live ad. */
+  const applyEditDraftMutation = useMutation({
+    mutationFn: () => adsService.applyEditDraft(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ad', id] });
+      queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
+      setSnackbar({
+        message: 'Modifications appliquées avec succès.',
+        severity: 'success',
+      });
+    },
+    onError: (err: unknown) => {
+      setSnackbar({
+        message: getLaravelApiErrorMessage(
+          err,
+          "Erreur lors de l'application des modifications."
+        ),
+        severity: 'error',
+      });
+    },
+  });
+
+  /** Discard draft_payload without modifying the live ad. */
+  const discardEditDraftMutation = useMutation({
+    mutationFn: () => adsService.discardEditDraft(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ad', id] });
+      setSnackbar({ message: 'Modifications annulées.', severity: 'success' });
+    },
+    onError: (err: unknown) => {
+      setSnackbar({
+        message: getLaravelApiErrorMessage(err, "Erreur lors de l'annulation."),
+        severity: 'error',
+      });
+    },
+  });
+
   const contractMutation = useMutation({
     mutationFn: () =>
       ownerService.generateLeaseContract(id, {
@@ -501,32 +559,51 @@ export default function OwnerAdEditPage() {
 
   const initialData = useMemo((): Partial<AdFormValues> => {
     if (!ad) return {};
+    // For non-DRAFT ads: if a pending edit draft_payload exists, seed from it
+    // so the wizard reflects the owner's last saved-but-unapplied changes.
+    const draft =
+      ad.status !== AdStatus.DRAFT && ad.draft_payload
+        ? ad.draft_payload
+        : null;
+    const ds = (k: string) => draft?.[k] as string | undefined;
+    const dn = (k: string) => draft?.[k] as number | undefined;
+    const db = (k: string) => draft?.[k] as boolean | undefined;
     return {
-      title: ad.title,
-      description: ad.description,
-      adresse: ad.adresse,
-      price: ad.price != null ? String(ad.price) : '',
-      surface_area: String(ad.surface_area),
-      bedrooms: String(ad.bedrooms),
-      bathrooms: String(ad.bathrooms),
-      has_parking: ad.has_parking ?? false,
-      latitude: ad.location?.latitude ?? 4.0511,
-      longitude: ad.location?.longitude ?? 9.7679,
-      quarter_id: ad.quarter?.id ?? '',
-      type_id: ad.type?.id ?? '',
-      transaction_type: ad.transaction_type ?? 'location',
-      attributes: ad.attributes ?? [],
-      deposit_amount: ad.deposit_amount ?? '',
-      minimum_lease_duration: ad.minimum_lease_duration ?? '',
-      charges_forfaitaires: !!ad.charges_forfaitaires,
+      title: ds('title') ?? ad.title,
+      description: ds('description') ?? ad.description,
+      adresse: ds('adresse') ?? ad.adresse,
+      price: ds('price') ?? (ad.price != null ? String(ad.price) : ''),
+      surface_area: ds('surface_area') ?? String(ad.surface_area),
+      bedrooms: ds('bedrooms') ?? String(ad.bedrooms),
+      bathrooms: ds('bathrooms') ?? String(ad.bathrooms),
+      has_parking: db('has_parking') ?? ad.has_parking ?? false,
+      latitude: dn('latitude') ?? ad.location?.latitude ?? 4.0511,
+      longitude: dn('longitude') ?? ad.location?.longitude ?? 9.7679,
+      quarter_id: ds('quarter_id') ?? ad.quarter?.id ?? '',
+      type_id: ds('type_id') ?? ad.type?.id ?? '',
+      transaction_type:
+        (ds('transaction_type') as 'location' | 'vente' | undefined) ??
+        ad.transaction_type ??
+        'location',
+      attributes:
+        (draft?.attributes as string[] | undefined) ?? ad.attributes ?? [],
+      deposit_amount: ds('deposit_amount') ?? ad.deposit_amount ?? '',
+      minimum_lease_duration:
+        ds('minimum_lease_duration') ?? ad.minimum_lease_duration ?? '',
+      charges_forfaitaires:
+        db('charges_forfaitaires') ?? !!ad.charges_forfaitaires,
       charges_montant_forfait:
-        ad.charges_montant_forfait != null
+        ds('charges_montant_forfait') ??
+        (ad.charges_montant_forfait != null
           ? String(ad.charges_montant_forfait)
-          : '',
-      charges_eau: ad.charges_eau != null ? String(ad.charges_eau) : '',
+          : ''),
+      charges_eau:
+        ds('charges_eau') ??
+        (ad.charges_eau != null ? String(ad.charges_eau) : ''),
       charges_electricite:
-        ad.charges_electricite != null ? String(ad.charges_electricite) : '',
-      charges_autres: ad.charges_autres ?? '',
+        ds('charges_electricite') ??
+        (ad.charges_electricite != null ? String(ad.charges_electricite) : ''),
+      charges_autres: ds('charges_autres') ?? ad.charges_autres ?? '',
       charges_autres_items: (ad.charges_autres ?? '')
         .split('\n')
         .filter((line: string) => line.includes(':'))
@@ -548,15 +625,24 @@ export default function OwnerAdEditPage() {
           }) => item.label
         ),
       distance_main_road_m:
-        ad.distance_main_road_m != null ? String(ad.distance_main_road_m) : '',
+        ds('distance_main_road_m') ??
+        (ad.distance_main_road_m != null
+          ? String(ad.distance_main_road_m)
+          : ''),
       distance_shops_m:
-        ad.distance_shops_m != null ? String(ad.distance_shops_m) : '',
+        ds('distance_shops_m') ??
+        (ad.distance_shops_m != null ? String(ad.distance_shops_m) : ''),
       distance_transport_m:
-        ad.distance_transport_m != null ? String(ad.distance_transport_m) : '',
+        ds('distance_transport_m') ??
+        (ad.distance_transport_m != null
+          ? String(ad.distance_transport_m)
+          : ''),
       distance_school_m:
-        ad.distance_school_m != null ? String(ad.distance_school_m) : '',
+        ds('distance_school_m') ??
+        (ad.distance_school_m != null ? String(ad.distance_school_m) : ''),
       distance_hospital_m:
-        ad.distance_hospital_m != null ? String(ad.distance_hospital_m) : '',
+        ds('distance_hospital_m') ??
+        (ad.distance_hospital_m != null ? String(ad.distance_hospital_m) : ''),
     };
   }, [ad]);
 
@@ -797,6 +883,15 @@ export default function OwnerAdEditPage() {
               )}
               <Button
                 variant="outlined"
+                size="small"
+                startIcon={<CalendarIcon />}
+                onClick={() => router.push(`/owner/availability?adId=${id}`)}
+                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+              >
+                Créneaux de visite
+              </Button>
+              <Button
+                variant="outlined"
                 color="error"
                 size="small"
                 startIcon={<DeleteIcon />}
@@ -857,6 +952,45 @@ export default function OwnerAdEditPage() {
         </Alert>
       )}
 
+      {/* ═══ Pending-edit Banner (non-DRAFT ads with unsaved changes) ═══ */}
+      {!isDraft && ad.draft_payload && (
+        <Alert
+          severity="warning"
+          sx={{ borderRadius: 2, mb: 3 }}
+          action={
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => applyEditDraftMutation.mutate()}
+                disabled={
+                  applyEditDraftMutation.isPending ||
+                  discardEditDraftMutation.isPending
+                }
+                sx={{ fontWeight: 700 }}
+              >
+                Appliquer
+              </Button>
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => discardEditDraftMutation.mutate()}
+                disabled={
+                  applyEditDraftMutation.isPending ||
+                  discardEditDraftMutation.isPending
+                }
+              >
+                Annuler
+              </Button>
+            </Box>
+          }
+        >
+          Vous avez des <strong>modifications non publiées</strong>.
+          Appliquez-les pour les rendre visibles, ou annulez pour revenir à la
+          version actuelle.
+        </Alert>
+      )}
+
       {/* ═══ Form ═══ */}
       <AdFormWizard
         initialData={initialData}
@@ -873,6 +1007,19 @@ export default function OwnerAdEditPage() {
         }
         isSavingDraft={saveDraftMutation.isPending}
         onEnhanceDescription={handleEnhance}
+        editDraftMode={!isDraft}
+        onSaveEditDraft={async (fields) => {
+          await saveEditDraftMutation.mutateAsync(fields);
+        }}
+        onApplyEditDraft={async () => {
+          await applyEditDraftMutation.mutateAsync();
+        }}
+        onDiscardEditDraft={async () => {
+          await discardEditDraftMutation.mutateAsync();
+        }}
+        isApplyingEditDraft={
+          applyEditDraftMutation.isPending || discardEditDraftMutation.isPending
+        }
       />
 
       {/* ═══ Delete Confirmation Dialog ═══ */}

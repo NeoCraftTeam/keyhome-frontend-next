@@ -1,5 +1,25 @@
 'use client';
 
+import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
+import ImageLightbox from '@/components/ui/ImageLightbox';
+import { useServerAutoSave } from '@/hooks/useServerAutoSave';
+import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
+import { compressAdPhotos } from '@/lib/image-compression';
+import { adsService } from '@/services/ads.service';
+import {
+  adTypesService,
+  citiesService,
+  quartersService,
+} from '@/services/cities.service';
+import { propertyAttributesService } from '@/services/property-attributes.service';
+import type { Ad, AdImage, AdType, City, Quarter } from '@/types';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
+import CloseIcon from '@mui/icons-material/Close';
+import PublishIcon from '@mui/icons-material/Publish';
+import SaveOutlined from '@mui/icons-material/SaveOutlined';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Alert,
   Box,
@@ -13,50 +33,29 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CloseIcon from '@mui/icons-material/Close';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
-import PublishIcon from '@mui/icons-material/Publish';
-import SaveOutlined from '@mui/icons-material/SaveOutlined';
-import ImageLightbox from '@/components/ui/ImageLightbox';
-import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
-import { compressAdPhotos } from '@/lib/image-compression';
-import { useServerAutoSave } from '@/hooks/useServerAutoSave';
-import type { Ad, AdImage, AdType, City, Quarter } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  adTypesService,
-  citiesService,
-  quartersService,
-} from '@/services/cities.service';
-import { propertyAttributesService } from '@/services/property-attributes.service';
-import { adsService } from '@/services/ads.service';
-import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
-import {
   AdFormBasicInfo,
-  AdFormPhotos,
-  AdFormLocation,
-  AdFormFeatures,
+  AdFormBoost,
   AdFormEquipment,
+  AdFormFeatures,
+  AdFormLocation,
+  AdFormMapLocation,
+  AdFormPhotos,
   AdFormPremiumInfo,
   AdFormTour,
-  AdFormBoost,
-  AdFormMapLocation,
 } from './ad-form';
-import type { AttributeOption } from './ad-form/types';
-import { initialValues } from './ad-form/types';
-import type { AdFormValues, TourScene } from './ad-form/types';
-import AdFormPriceAdvisor from './ad-form/AdFormPriceAdvisor';
-import AdFormStepType from './ad-form/AdFormStepType';
-import AdFormStepReview from './ad-form/AdFormStepReview';
 import {
   AdTypeCategory,
-  getCategoryForAdType,
   getCategoryById,
+  getCategoryForAdType,
 } from './ad-form/ad-type-categories';
+import AdFormPriceAdvisor from './ad-form/AdFormPriceAdvisor';
+import AdFormStepReview from './ad-form/AdFormStepReview';
+import AdFormStepType from './ad-form/AdFormStepType';
+import type { AdFormValues, AttributeOption, TourScene } from './ad-form/types';
+import { initialValues } from './ad-form/types';
 import AdFormLivePreview from './AdFormLivePreview';
 
 export type { AdFormValues, TourScene } from './ad-form/types';
@@ -108,6 +107,20 @@ interface AdFormWizardProps {
   onEnhanceDescription?: (description: string) => Promise<string>;
   /** Called once when server-side auto-save creates a new draft (new-ad flow only). */
   onDraftCreated?: (id: string) => void;
+  /**
+   * Edit-draft mode — for modifying live (non-DRAFT) ads.
+   * Auto-save is disabled; each step shows explicit Save/Cancel buttons that
+   * write to `draft_payload` without touching the published ad.
+   */
+  editDraftMode?: boolean;
+  /** Called when the owner saves a step in editDraftMode. */
+  onSaveEditDraft?: (fields: Record<string, unknown>) => Promise<void>;
+  /** Called when the owner applies all pending edits. */
+  onApplyEditDraft?: () => Promise<void>;
+  /** Called when the owner discards all pending edits. */
+  onDiscardEditDraft?: () => Promise<void>;
+  /** Whether an apply/discard action is in progress. */
+  isApplyingEditDraft?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -127,7 +140,14 @@ function AdFormWizard({
   isSavingDraft = false,
   onEnhanceDescription,
   onDraftCreated,
+  editDraftMode = false,
+  onSaveEditDraft,
+  onApplyEditDraft,
+  onDiscardEditDraft,
+  isApplyingEditDraft = false,
 }: AdFormWizardProps) {
+  const [isSavingStep, setIsSavingStep] = useState(false);
+  const [stepSavedAt, setStepSavedAt] = useState<Date | null>(null);
   /* ── Step state ── */
   const [activeStep, setActiveStep] = useState(0);
 
@@ -263,7 +283,9 @@ function AdFormWizard({
     draftId: ad?.id ?? null,
     onCreateDraft: onCreateDraftCb,
     onUpdateDraft: onUpdateDraftCb,
-    enabled: !isSubmitting && !isSavingDraft,
+    // Auto-save is intentionally disabled in editDraftMode — the owner uses
+    // explicit per-step Save/Cancel buttons instead.
+    enabled: !editDraftMode && !isSubmitting && !isSavingDraft,
     debounceMs: 5000,
   });
 
@@ -353,33 +375,37 @@ function AdFormWizard({
   /* ── Data queries ── */
   const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
     queryKey: ['ad-form-cities', cityInput],
-    queryFn: () => citiesService.list({ q: cityInput, per_page: 50 }),
+    queryFn: ({ signal }) =>
+      citiesService.list({ q: cityInput, per_page: 50 }, { signal }),
     enabled: cityInput.length >= 1,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: quartersData, isFetching: isQuartersLoading } = useQuery({
     queryKey: ['ad-form-quarters', selectedCity?.id, quarterInput],
-    queryFn: () =>
-      quartersService.list({
-        city_id: selectedCity?.id,
-        q: quarterInput,
-        per_page: 50,
-      }),
+    queryFn: ({ signal }) =>
+      quartersService.list(
+        {
+          city_id: selectedCity?.id,
+          q: quarterInput,
+          per_page: 50,
+        },
+        { signal }
+      ),
     enabled: !!selectedCity?.id,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: adTypesData } = useQuery({
     queryKey: ['ad-types'],
-    queryFn: () => adTypesService.list(),
+    queryFn: ({ signal }) => adTypesService.list({ signal }),
     staleTime: Infinity,
     gcTime: 30 * 60 * 1000,
   });
 
   const { data: attrData } = useQuery({
     queryKey: ['property-attributes'],
-    queryFn: () => propertyAttributesService.list(),
+    queryFn: ({ signal }) => propertyAttributesService.list({ signal }),
     staleTime: Infinity,
     gcTime: 30 * 60 * 1000,
   });
@@ -790,6 +816,55 @@ function AdFormWizard({
     }
   };
 
+  /* ── Edit-draft: save current step fields to server draft_payload ── */
+  const handleSaveStep = useCallback(async () => {
+    if (!onSaveEditDraft || isSavingStep) return;
+    setIsSavingStep(true);
+    try {
+      // Build a plain-object snapshot of the current form values
+      const fields: Record<string, unknown> = {
+        title: values.title,
+        description: values.description,
+        adresse: values.adresse,
+        price: values.price,
+        surface_area: values.surface_area,
+        bedrooms: values.bedrooms,
+        bathrooms: values.bathrooms,
+        has_parking: values.has_parking,
+        deposit_amount: values.deposit_amount,
+        minimum_lease_duration: values.minimum_lease_duration,
+        charges_forfaitaires: values.charges_forfaitaires,
+        charges_montant_forfait: values.charges_montant_forfait,
+        charges_eau: values.charges_eau,
+        charges_electricite: values.charges_electricite,
+        charges_autres: values.charges_autres,
+        quarter_id: values.quarter_id,
+        type_id: values.type_id,
+        transaction_type: values.transaction_type,
+        latitude: values.latitude,
+        longitude: values.longitude,
+        distance_main_road_m: values.distance_main_road_m,
+        distance_shops_m: values.distance_shops_m,
+        distance_transport_m: values.distance_transport_m,
+        distance_school_m: values.distance_school_m,
+        distance_hospital_m: values.distance_hospital_m,
+        attributes: values.attributes,
+      };
+      await onSaveEditDraft(fields);
+      setStepSavedAt(new Date());
+    } catch {
+      // error surfaced by caller
+    } finally {
+      setIsSavingStep(false);
+    }
+  }, [onSaveEditDraft, isSavingStep, values]);
+
+  /* ── Edit-draft: cancel discards all pending changes ── */
+  const handleCancelEditDraft = useCallback(async () => {
+    if (!onDiscardEditDraft) return;
+    await onDiscardEditDraft();
+  }, [onDiscardEditDraft]);
+
   /* ── Submit ── */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1028,112 +1103,171 @@ function AdFormWizard({
                     alignItems: 'flex-start',
                   }}
                 >
-                  {onSaveDraft && (
-                    <Tooltip
-                      title={autoSaveError ? autoSaveError.message : ''}
-                      disableHoverListener={!autoSaveError}
-                      arrow
-                      enterDelay={400}
-                    >
-                      <span>
-                        <Button
-                          variant="text"
-                          size="small"
-                          onClick={
-                            isAutoSaving || isSavingDraft
-                              ? undefined
-                              : handleSaveDraft
-                          }
-                          disabled={isSubmitting || isSavingDraft}
-                          startIcon={
-                            isAutoSaving || isSavingDraft ? (
-                              <CircularProgress size={14} />
-                            ) : autoSaveError ? (
-                              <SaveOutlined
-                                sx={{ color: 'warning.main', fontSize: 16 }}
-                              />
-                            ) : savedAt ? (
-                              <CheckCircleOutlined
-                                sx={{ color: 'success.main', fontSize: 16 }}
-                              />
-                            ) : (
-                              <SaveOutlined sx={{ fontSize: 16 }} />
-                            )
-                          }
-                          sx={{
-                            borderRadius: 2,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            color: autoSaveError
-                              ? 'warning.main'
-                              : savedAt
-                                ? 'success.main'
-                                : 'text.secondary',
-                            '&:hover': {
-                              bgcolor: autoSaveError
-                                ? 'warning.50'
-                                : savedAt
-                                  ? 'success.50'
-                                  : undefined,
-                            },
-                          }}
-                        >
-                          {isAutoSaving
-                            ? 'Sauvegarde...'
-                            : isSavingDraft
-                              ? 'Sauvegarde...'
-                              : autoSaveError
-                                ? 'Brouillon · Sauvegarde auto en échec'
-                                : savedAt
-                                  ? `Brouillon · Enregistré le ${savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
-                                  : draftLabel}
-                        </Button>
-                      </span>
-                    </Tooltip>
-                  )}
-                  {onSaveDraft && (
+                  {editDraftMode ? (
+                    /* Edit-draft mode: explicit Save step + Cancel all buttons */
                     <Box
-                      component="span"
                       sx={{
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: 0.5,
-                        px: 1,
-                        maxWidth: 420,
+                        gap: 1,
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
                       }}
                     >
-                      <Box
-                        component="span"
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={handleSaveStep}
+                        disabled={isSavingStep || isApplyingEditDraft}
+                        startIcon={
+                          isSavingStep ? (
+                            <CircularProgress size={14} />
+                          ) : stepSavedAt ? (
+                            <CheckCircleOutlined
+                              sx={{ color: 'success.main', fontSize: 16 }}
+                            />
+                          ) : (
+                            <SaveOutlined sx={{ fontSize: 16 }} />
+                          )
+                        }
                         sx={{
-                          fontSize: '0.7rem',
-                          color: 'text.secondary',
-                          lineHeight: 1.3,
+                          borderRadius: 2,
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          borderColor: stepSavedAt ? 'success.main' : undefined,
+                          color: stepSavedAt ? 'success.main' : undefined,
                         }}
                       >
-                        Texte et infos enregistrés automatiquement. Photos,
-                        visite 360° et PDF : utilisez « Enregistrer le brouillon
-                        ».
-                      </Box>
-                      {autoSaveError && (
-                        <Typography
+                        {isSavingStep
+                          ? 'Sauvegarde...'
+                          : stepSavedAt
+                            ? `Enregistré ${stepSavedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+                            : 'Sauvegarder cette étape'}
+                      </Button>
+                      <Button
+                        variant="text"
+                        size="small"
+                        color="error"
+                        onClick={handleCancelEditDraft}
+                        disabled={isSavingStep || isApplyingEditDraft}
+                        sx={{
+                          borderRadius: 2,
+                          fontWeight: 600,
+                          textTransform: 'none',
+                        }}
+                      >
+                        Annuler les modifications
+                      </Button>
+                    </Box>
+                  ) : (
+                    <>
+                      {onSaveDraft && (
+                        <Tooltip
+                          title={autoSaveError ? autoSaveError.message : ''}
+                          disableHoverListener={!autoSaveError}
+                          arrow
+                          enterDelay={400}
+                        >
+                          <span>
+                            <Button
+                              variant="text"
+                              size="small"
+                              onClick={
+                                isAutoSaving || isSavingDraft
+                                  ? undefined
+                                  : handleSaveDraft
+                              }
+                              disabled={isSubmitting || isSavingDraft}
+                              startIcon={
+                                isAutoSaving || isSavingDraft ? (
+                                  <CircularProgress size={14} />
+                                ) : autoSaveError ? (
+                                  <SaveOutlined
+                                    sx={{ color: 'warning.main', fontSize: 16 }}
+                                  />
+                                ) : savedAt ? (
+                                  <CheckCircleOutlined
+                                    sx={{ color: 'success.main', fontSize: 16 }}
+                                  />
+                                ) : (
+                                  <SaveOutlined sx={{ fontSize: 16 }} />
+                                )
+                              }
+                              sx={{
+                                borderRadius: 2,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                color: autoSaveError
+                                  ? 'warning.main'
+                                  : savedAt
+                                    ? 'success.main'
+                                    : 'text.secondary',
+                                '&:hover': {
+                                  bgcolor: autoSaveError
+                                    ? 'warning.50'
+                                    : savedAt
+                                      ? 'success.50'
+                                      : undefined,
+                                },
+                              }}
+                            >
+                              {isAutoSaving
+                                ? 'Sauvegarde...'
+                                : isSavingDraft
+                                  ? 'Sauvegarde...'
+                                  : autoSaveError
+                                    ? 'Brouillon · Sauvegarde auto en échec'
+                                    : savedAt
+                                      ? `Brouillon · Enregistré le ${savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+                                      : draftLabel}
+                            </Button>
+                          </span>
+                        </Tooltip>
+                      )}
+                      {onSaveDraft && (
+                        <Box
                           component="span"
-                          variant="caption"
                           sx={{
-                            color: 'warning.main',
-                            lineHeight: 1.35,
-                            wordBreak: 'break-word',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 0.5,
+                            px: 1,
+                            maxWidth: 420,
                           }}
                         >
-                          {autoSaveError.message}
-                        </Typography>
+                          <Box
+                            component="span"
+                            sx={{
+                              fontSize: '0.7rem',
+                              color: 'text.secondary',
+                              lineHeight: 1.3,
+                            }}
+                          >
+                            Texte et infos enregistrés automatiquement. Photos,
+                            visite 360° et PDF : utilisez « Enregistrer le
+                            brouillon ».
+                          </Box>
+                          {autoSaveError && (
+                            <Typography
+                              component="span"
+                              variant="caption"
+                              sx={{
+                                color: 'warning.main',
+                                lineHeight: 1.35,
+                                wordBreak: 'break-word',
+                              }}
+                            >
+                              {autoSaveError.message}
+                            </Typography>
+                          )}
+                        </Box>
                       )}
-                    </Box>
+                    </>
                   )}
                 </Box>
 
                 {/* Right side */}
                 <Box sx={{ display: 'flex', gap: 1.5, ml: 'auto' }}>
-                  {onCancel && activeStep === 0 && (
+                  {onCancel && activeStep === 0 && !editDraftMode && (
                     <Button
                       onClick={onCancel}
                       disabled={isSubmitting || isSavingDraft}
@@ -1147,7 +1281,7 @@ function AdFormWizard({
                       variant="outlined"
                       startIcon={<ArrowBackIcon />}
                       onClick={handleBack}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || isApplyingEditDraft}
                       sx={{ borderRadius: 2, fontWeight: 600 }}
                     >
                       Précédent
@@ -1158,7 +1292,7 @@ function AdFormWizard({
                       variant="contained"
                       endIcon={<ArrowForwardIcon />}
                       onClick={handleNext}
-                      disabled={nextDisabled}
+                      disabled={nextDisabled || isApplyingEditDraft}
                       sx={{
                         borderRadius: 2,
                         fontWeight: 700,
@@ -1166,6 +1300,28 @@ function AdFormWizard({
                       }}
                     >
                       Suivant
+                    </Button>
+                  ) : editDraftMode ? (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      disabled={isApplyingEditDraft}
+                      onClick={onApplyEditDraft}
+                      startIcon={
+                        isApplyingEditDraft ? (
+                          <CircularProgress size={18} />
+                        ) : (
+                          <PublishIcon />
+                        )
+                      }
+                      sx={{
+                        borderRadius: 2,
+                        fontWeight: 700,
+                        px: 4,
+                        py: 1.25,
+                      }}
+                    >
+                      Appliquer les modifications
                     </Button>
                   ) : (
                     <Button

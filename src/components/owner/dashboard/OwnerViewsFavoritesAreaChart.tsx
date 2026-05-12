@@ -1,5 +1,7 @@
 'use client';
 
+import { brandAgent, neutral, semantic } from '@/theme/tokens';
+import { alpha } from '@mui/material/styles';
 import { Box, Skeleton, useMediaQuery, useTheme } from '@mui/material';
 import {
   Area,
@@ -19,8 +21,8 @@ export type ChartDatum = {
   favorites: number;
 };
 
-const VIEWS_COLOR = '#14b8a6';
-const FAVORITES_COLOR = '#3b82f6';
+const VIEWS_COLOR = brandAgent.primaryLight;
+const FAVORITES_COLOR = semantic.info;
 
 /** Interprète fullDate (YYYY-MM-DD) en date locale sans décalage UTC (corrige tooltip « un jour en moins »). */
 function formatChartTooltipDate(isoDate: string): string {
@@ -74,9 +76,12 @@ export default function OwnerViewsFavoritesAreaChart({
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const isMdDown = useMediaQuery(theme.breakpoints.down('md'));
   const chartHeight = isXs ? 220 : isMdDown ? 280 : 320;
-  const gridStroke = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  const gridStroke = alpha(
+    isDark ? neutral.white : theme.palette.common.black,
+    isDark ? 0.08 : 0.06
+  );
   const axisColor = theme.palette.text.secondary;
-  const tooltipBg = isDark ? theme.palette.grey[900] : '#fff';
+  const tooltipBg = theme.palette.background.paper;
   const tooltipBorder = theme.palette.divider;
 
   if (loading) {
@@ -161,6 +166,7 @@ export default function OwnerViewsFavoritesAreaChart({
             formatter={(value) => (value === 'views' ? 'Vues' : 'Favoris')}
             wrapperStyle={{ paddingTop: 8, fontSize: isXs ? 11 : 13 }}
           />
+          {/* '#' in fill url(#…) references <defs> fragment id — not a hex literal */}
           <Area
             name="views"
             type="monotone"

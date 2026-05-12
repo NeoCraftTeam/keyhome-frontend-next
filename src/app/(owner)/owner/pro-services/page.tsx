@@ -19,8 +19,10 @@ import {
   Chip,
 } from '@mui/material';
 import FadeIn from '@/components/ui/FadeIn';
+import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
 import { useRouter } from 'next/navigation';
-import { brand } from '@/theme/tokens';
+import { alpha } from '@mui/material/styles';
+import { brand, neutral, semantic } from '@/theme/tokens';
 
 const SERVICES = [
   {
@@ -41,7 +43,7 @@ const SERVICES = [
     title: "Vérification d'identité",
     description:
       'Gagnez la confiance des locataires avec le badge "Propriétaire Vérifié".',
-    icon: <VerifiedIcon sx={{ fontSize: 40, color: '#10B981' }} />,
+    icon: <VerifiedIcon sx={{ fontSize: 40, color: semantic.successBright }} />,
     price: '2 000 FCFA (Unique)',
     benefits: [
       'Confiance accrue',
@@ -55,7 +57,7 @@ const SERVICES = [
     title: 'Rédaction IA Premium',
     description:
       'Laissez notre IA rédiger une description irrésistible pour votre bien.',
-    icon: <AiIcon sx={{ fontSize: 40, color: '#7C3AED' }} />,
+    icon: <AiIcon sx={{ fontSize: 40, color: semantic.purple }} />,
     price: '500 FCFA / Annonce',
     benefits: ['Optimisé SEO', 'Style professionnel', 'Multi-langues'],
     cta: 'Améliorer mes annonces',
@@ -65,7 +67,7 @@ const SERVICES = [
     title: 'Photographie Pro',
     description:
       'Mise en relation avec un photographe partenaire pour des photos HD.',
-    icon: <PhotoIcon sx={{ fontSize: 40, color: '#3B82F6' }} />,
+    icon: <PhotoIcon sx={{ fontSize: 40, color: semantic.info }} />,
     price: 'Sur devis',
     benefits: ['Qualité magazine', 'Plus de clics', 'Vente plus rapide'],
     cta: 'Prendre rendez-vous',
@@ -157,7 +159,7 @@ export default function ProServicesPage() {
                 <Button
                   fullWidth
                   variant="contained"
-                  onClick={() => router.push(service.link)}
+                  onClick={() => runAppRouterNavigation(router, service.link)}
                   sx={{
                     borderRadius: 3,
                     py: 1.5,
@@ -199,9 +201,9 @@ export default function ProServicesPage() {
             fontWeight: 700,
             borderRadius: 3,
             px: 4,
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+            '&:hover': { bgcolor: alpha(neutral.white, 0.9) },
           }}
-          onClick={() => router.push('/owner/contact')}
+          onClick={() => runAppRouterNavigation(router, '/owner/contact')}
         >
           Contacter un conseiller
         </Button>

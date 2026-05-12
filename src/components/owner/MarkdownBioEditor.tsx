@@ -19,8 +19,10 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { neutral } from '@/theme/tokens';
 
 interface MarkdownBioEditorProps {
   value: string;
@@ -41,7 +43,7 @@ const CHEATSHEET = [
     label: 'Italique',
     icon: <FormatItalicIcon sx={{ fontSize: 16 }} />,
   },
-  { syntax: '# Titre', label: 'Titre', icon: null },
+  { syntax: '\u0023 Titre', label: 'Titre', icon: null },
   {
     syntax: '- élément',
     label: 'Liste',
@@ -151,7 +153,7 @@ export default function MarkdownBioEditor({
           borderBottom: '1px solid',
           borderColor: 'divider',
           bgcolor: (t) =>
-            t.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'grey.50',
+            t.palette.mode === 'dark' ? alpha(neutral.white, 0.03) : 'grey.50',
         }}
       >
         <Tabs
@@ -222,8 +224,8 @@ export default function MarkdownBioEditor({
             py: 1.5,
             bgcolor: (t) =>
               t.palette.mode === 'dark'
-                ? 'rgba(255,255,255,0.04)'
-                : 'rgba(0,0,0,0.02)',
+                ? alpha(neutral.white, 0.04)
+                : alpha(neutral.black, 0.02),
             borderBottom: '1px solid',
             borderColor: 'divider',
             display: 'flex',
@@ -338,8 +340,8 @@ export default function MarkdownBioEditor({
         }}
       >
         <Typography variant="caption" color="text.disabled">
-          Supporte le Markdown — <strong>**gras**</strong>, <em>*italique*</em>,
-          # Titres, - Listes
+          Supporte le Markdown — <strong>**gras**</strong>, <em>*italique*</em>,{' '}
+          {'\u0023'} Titres, - Listes
         </Typography>
       </Box>
     </Paper>

@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
+import { brandAgent } from '@/theme/tokens';
 
 const OWNER_MANIFEST = '/manifest-owner.json';
-const OWNER_THEME = '#0D9488';
-const OWNER_BG = '#134E4A';
+
+const OWNER_THEME = brandAgent.primary;
+const OWNER_BG = brandAgent.pwaChromeDark;
 
 /**
  * Swaps the global PWA manifest and theme-color to the teal owner branding

@@ -4,6 +4,7 @@ import FadeIn from '@/components/ui/FadeIn';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
+import { neutral } from '@/theme/tokens';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import {
   Alert,
@@ -117,7 +118,7 @@ export default function OwnerForgotPasswordPage() {
               }}
             >
               {isSubmitting ? (
-                <CircularProgress size={24} sx={{ color: '#fff' }} />
+                <CircularProgress size={24} sx={{ color: neutral.white }} />
               ) : (
                 'Envoyer le lien'
               )}

@@ -34,9 +34,12 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import FadeIn from '@/components/ui/FadeIn';
+import { brandAgent, neutral } from '@/theme/tokens';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 const REPLY_MAX = 1000;
 
@@ -75,9 +78,10 @@ function Stars({ rating, size = 18 }: { rating: number; size?: number }) {
 interface ReviewCardProps {
   review: OwnerReview;
   onReply: (review: OwnerReview) => void;
+  respondGloballyBusy: boolean;
 }
 
-function ReviewCard({ review, onReply }: ReviewCardProps) {
+function ReviewCard({ review, onReply, respondGloballyBusy }: ReviewCardProps) {
   return (
     <Card
       sx={{
@@ -122,7 +126,13 @@ function ReviewCard({ review, onReply }: ReviewCardProps) {
               <Typography
                 variant="body2"
                 color="text.secondary"
-                sx={{ mb: 0.5 }}
+                sx={{
+                  mb: 0.5,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+                title={review.ad.title}
               >
                 Sur : {review.ad.title}
               </Typography>
@@ -140,7 +150,7 @@ function ReviewCard({ review, onReply }: ReviewCardProps) {
                   pl: 2,
                   borderLeft: '3px solid',
                   borderColor: 'primary.main',
-                  bgcolor: 'rgba(13,148,136,0.04)',
+                  bgcolor: alpha(brandAgent.primary, 0.04),
                   py: 1,
                   pr: 1.5,
                   borderRadius: '0 8px 8px 0',
@@ -163,6 +173,7 @@ function ReviewCard({ review, onReply }: ReviewCardProps) {
                   variant="outlined"
                   startIcon={<ChatBubbleIcon fontSize="small" />}
                   onClick={() => onReply(review)}
+                  disabled={respondGloballyBusy}
                 >
                   Répondre
                 </Button>
@@ -239,7 +250,7 @@ function ReviewKpi({ reviews }: ReviewKpiProps) {
                         sx={{
                           height: 8,
                           borderRadius: 99,
-                          bgcolor: 'rgba(0,0,0,0.06)',
+                          bgcolor: alpha(neutral.black, 0.06),
                           '& .MuiLinearProgress-bar': { borderRadius: 99 },
                         }}
                       />
@@ -264,6 +275,7 @@ function ReviewKpi({ reviews }: ReviewKpiProps) {
 
 export default function OwnerReviewsPage() {
   const queryClient = useQueryClient();
+  const isOnline = useNetworkStatus();
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<'all' | 'unanswered' | 'answered'>(
     'all'
@@ -276,10 +288,15 @@ export default function OwnerReviewsPage() {
     severity: 'success' | 'error';
   } | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['owner-reviews', page],
-    queryFn: () => ownerService.getMyReviews({ page, per_page: 10 }),
-  });
+  const { data, isLoading, isError, isFetched, refetch, isFetching } = useQuery(
+    {
+      queryKey: ['owner-reviews', page],
+      queryFn: ({ signal }) =>
+        ownerService.getMyReviews({ page, per_page: 10 }, { signal }),
+    }
+  );
+
+  const listLoadFailed = isFetched && isError;
 
   const reviews = useMemo(
     () => (data?.data ?? []) as OwnerReview[],
@@ -344,10 +361,33 @@ export default function OwnerReviewsPage() {
         </Typography>
       </FadeIn>
 
-      {!isLoading && reviews.length > 0 && <ReviewKpi reviews={reviews} />}
+      {listLoadFailed && (
+        <Alert
+          severity="error"
+          sx={{ mb: 3 }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              disabled={isFetching || !isOnline}
+              onClick={() => void refetch()}
+            >
+              Réessayer
+            </Button>
+          }
+        >
+          {!isOnline
+            ? 'Vous semblez hors ligne. Reconnectez-vous puis réessayez.'
+            : 'Impossible de charger vos avis pour le moment.'}
+        </Alert>
+      )}
+
+      {!listLoadFailed && !isLoading && reviews.length > 0 && (
+        <ReviewKpi reviews={reviews} />
+      )}
 
       {/* Filters */}
-      {reviews.length > 0 && (
+      {!listLoadFailed && reviews.length > 0 && (
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={1.5}
@@ -396,7 +436,7 @@ export default function OwnerReviewsPage() {
             />
           ))}
         </Box>
-      ) : reviews.length === 0 ? (
+      ) : listLoadFailed ? null : reviews.length === 0 ? (
         <Card
           sx={{
             borderRadius: 3,
@@ -433,7 +473,12 @@ export default function OwnerReviewsPage() {
         <>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {filtered.map((r) => (
-              <ReviewCard key={r.id} review={r} onReply={setReplyTarget} />
+              <ReviewCard
+                key={r.id}
+                review={r}
+                onReply={setReplyTarget}
+                respondGloballyBusy={respondMutation.isPending}
+              />
             ))}
           </Box>
           {meta && meta.last_page > 1 && (

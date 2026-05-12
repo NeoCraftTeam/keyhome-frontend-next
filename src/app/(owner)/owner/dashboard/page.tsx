@@ -7,6 +7,7 @@ import ProfileCompletionCard from '@/components/owner/dashboard/ProfileCompletio
 import AppTour from '@/components/ui/AppTour';
 import EmptyState from '@/components/ui/EmptyState';
 import FadeIn from '@/components/ui/FadeIn';
+import SectionBoundary from '@/components/ui/SectionBoundary';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
 import StaggerList from '@/components/ui/StaggerList';
 import { useGreeting } from '@/hooks/useGreeting';
@@ -15,6 +16,7 @@ import {
   mergeViewsAndFavoritesSeries,
   periodParamToDays,
 } from '@/lib/owner-dashboard-analytics';
+import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   ownerService,
@@ -43,6 +45,7 @@ import {
   Card,
   CardContent,
   Chip,
+  Alert,
   Container,
   Grid,
   Tab,
@@ -56,9 +59,9 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
 /** Vibrant accent colors for dashboard cards */
-const TEAL = brandAgent.primary; // #0D9488 — primary teal
-const SKY = brandAgent.secondary; // #0EA5E9 — sky blue (complements gradient)
-const ROSE = semantic.pink; // #EC4899 — pink accent (token-driven)
+const TEAL = brandAgent.primary;
+const SKY = brandAgent.secondary;
+const ROSE = semantic.pink;
 type AnalyticsPeriod = '7d' | '30d' | '90d';
 const PREV_PERIOD: Record<AnalyticsPeriod, AnalyticsPeriod> = {
   '7d': '30d',
@@ -131,39 +134,53 @@ export default function OwnerDashboardPage() {
   const [period, setPeriod] = useState<AnalyticsPeriod>('30d');
   const [tab, setTab] = useState(0);
 
-  const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
+  const {
+    data: analyticsData,
+    isLoading: analyticsLoading,
+    isError: analyticsQueryError,
+    isFetching: analyticsFetching,
+    refetch: refetchAnalytics,
+  } = useQuery({
     queryKey: ['owner-analytics', period],
-    queryFn: () => ownerService.getAnalytics(period),
+    queryFn: ({ signal }) => ownerService.getAnalytics(period, { signal }),
   });
 
   const { data: prevAnalyticsData } = useQuery({
     queryKey: ['owner-analytics', PREV_PERIOD[period]],
-    queryFn: () => ownerService.getAnalytics(PREV_PERIOD[period]),
+    queryFn: ({ signal }) =>
+      ownerService.getAnalytics(PREV_PERIOD[period], { signal }),
     enabled: PREV_PERIOD[period] !== period && !analyticsLoading,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: adsCountData, isLoading: adsCountLoading } = useQuery({
     queryKey: ['owner-ads-total'],
-    queryFn: () => ownerService.getMyAds({ page: 1, per_page: 1 }),
+    queryFn: ({ signal }) =>
+      ownerService.getMyAds({ page: 1, per_page: 1 }, { signal }),
   });
 
   const { data: adsData, isLoading: adsLoading } = useQuery({
     queryKey: ['owner-ads-recent'],
-    queryFn: () =>
-      ownerService.getMyAds({
-        page: 1,
-        per_page: 5,
-        sort: 'created_at',
-        order: 'desc',
-      }),
+    queryFn: ({ signal }) =>
+      ownerService.getMyAds(
+        {
+          page: 1,
+          per_page: 5,
+          sort: 'created_at',
+          order: 'desc',
+        },
+        { signal }
+      ),
     staleTime: 2 * 60 * 1000,
   });
 
   const { data: viewingsData, isLoading: viewingsLoading } = useQuery({
     queryKey: ['owner-viewings-recent'],
-    queryFn: () =>
-      ownerService.getViewingReservations({ page: 1, status: 'pending' }),
+    queryFn: ({ signal }) =>
+      ownerService.getViewingReservations(
+        { page: 1, status: 'pending' },
+        { signal }
+      ),
     staleTime: 2 * 60 * 1000,
   });
 
@@ -484,7 +501,9 @@ export default function OwnerDashboardPage() {
                       <Button
                         size="small"
                         endIcon={<ArrowIcon />}
-                        onClick={() => router.push('/owner/viewings')}
+                        onClick={() =>
+                          runAppRouterNavigation(router, '/owner/viewings')
+                        }
                         sx={{ textTransform: 'none', fontSize: '0.75rem' }}
                       >
                         Tout voir
@@ -553,7 +572,9 @@ export default function OwnerDashboardPage() {
                                 ? String(v.id)
                                 : `pending-viewing-${vIdx}`
                             }
-                            onClick={() => router.push('/owner/viewings')}
+                            onClick={() =>
+                              runAppRouterNavigation(router, '/owner/viewings')
+                            }
                             sx={{
                               display: 'flex',
                               alignItems: 'center',
@@ -640,7 +661,9 @@ export default function OwnerDashboardPage() {
                       <Button
                         size="small"
                         endIcon={<ArrowIcon />}
-                        onClick={() => router.push('/owner/ads')}
+                        onClick={() =>
+                          runAppRouterNavigation(router, '/owner/ads')
+                        }
                         sx={{ textTransform: 'none', fontSize: '0.75rem' }}
                       >
                         Tout voir
@@ -695,7 +718,8 @@ export default function OwnerDashboardPage() {
                         description="Publiez votre première annonce pour commencer."
                         action={{
                           label: 'Créer une annonce',
-                          onClick: () => router.push('/owner/ads/new'),
+                          onClick: () =>
+                            runAppRouterNavigation(router, '/owner/ads/new'),
                         }}
                       />
                     ) : (
@@ -716,7 +740,12 @@ export default function OwnerDashboardPage() {
                                   ? String(ad.id)
                                   : `recent-ad-${adIdx}`
                               }
-                              onClick={() => router.push(`/owner/ads/${ad.id}`)}
+                              onClick={() =>
+                                runAppRouterNavigation(
+                                  router,
+                                  `/owner/ads/${ad.id}`
+                                )
+                              }
                               sx={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -812,7 +841,35 @@ export default function OwnerDashboardPage() {
 
         {/* ═══ Tab 1: Analytique ═══ */}
         {tab === 1 && (
-          <>
+          <SectionBoundary title="Analytique">
+            {analyticsQueryError ? (
+              <Alert
+                severity="error"
+                sx={{ mb: 3, borderRadius: 2 }}
+                action={
+                  <Button
+                    color="inherit"
+                    size="small"
+                    onClick={() => void refetchAnalytics()}
+                    disabled={analyticsFetching}
+                    sx={{
+                      minHeight: 44,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Réessayer
+                  </Button>
+                }
+              >
+                <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                  Impossible de charger les statistiques
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Vérifiez votre connexion internet, puis réessayez.
+                </Typography>
+              </Alert>
+            ) : null}
             {/* Area chart */}
             <Card
               elevation={0}
@@ -831,9 +888,15 @@ export default function OwnerDashboardPage() {
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     mb: 2,
+                    gap: 1.5,
+                    minWidth: 0,
                   }}
                 >
-                  <Typography variant="h6" fontWeight={800}>
+                  <Typography
+                    variant="h6"
+                    fontWeight={800}
+                    sx={{ minWidth: 0, flex: '1 1 auto' }}
+                  >
                     Vues sur mes annonces
                   </Typography>
                   <Button
@@ -841,7 +904,11 @@ export default function OwnerDashboardPage() {
                     startIcon={<DownloadIcon />}
                     onClick={handleExportCSV}
                     disabled={!analytics?.top_ads?.length}
-                    sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                    sx={{
+                      flexShrink: 0,
+                      textTransform: 'none',
+                      fontSize: '0.75rem',
+                    }}
                   >
                     CSV
                   </Button>
@@ -863,15 +930,17 @@ export default function OwnerDashboardPage() {
             </Card>
 
             {analytics?.top_ads && analytics.top_ads.length > 0 && (
-              <Box sx={{ mt: 3 }}>
+              <Box sx={{ mt: 3, minWidth: 0 }}>
                 <OwnerTopAdsTable
                   rows={analytics.top_ads}
                   periodLabel={periodLabelFr(period)}
-                  onRowClick={(adId) => router.push(`/owner/ads/${adId}`)}
+                  onRowClick={(adId) =>
+                    runAppRouterNavigation(router, `/owner/ads/${adId}`)
+                  }
                 />
               </Box>
             )}
-          </>
+          </SectionBoundary>
         )}
 
         {/* ═══ Tab 2: Activité ═══ */}
@@ -915,7 +984,9 @@ export default function OwnerDashboardPage() {
                   <Button
                     size="small"
                     endIcon={<ArrowIcon />}
-                    onClick={() => router.push('/owner/viewings')}
+                    onClick={() =>
+                      runAppRouterNavigation(router, '/owner/viewings')
+                    }
                     sx={{ textTransform: 'none', fontSize: '0.75rem' }}
                   >
                     Tout voir
@@ -967,7 +1038,9 @@ export default function OwnerDashboardPage() {
                             ? String(v.id)
                             : `pending-viewing-${vIdx}`
                         }
-                        onClick={() => router.push('/owner/viewings')}
+                        onClick={() =>
+                          runAppRouterNavigation(router, '/owner/viewings')
+                        }
                         sx={{
                           display: 'flex',
                           alignItems: 'center',
@@ -1092,7 +1165,12 @@ export default function OwnerDashboardPage() {
                       >
                         <Button
                           variant="contained"
-                          onClick={() => router.push('/owner/pro-services')}
+                          onClick={() =>
+                            runAppRouterNavigation(
+                              router,
+                              '/owner/pro-services'
+                            )
+                          }
                           sx={{
                             fontWeight: 700,
                             borderRadius: 3,

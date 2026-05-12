@@ -183,4 +183,6 @@ export interface Ad {
   distance_transport_m?: number | null;
   distance_school_m?: number | null;
   distance_hospital_m?: number | null;
+  /** Pending-edit draft — populated only for the ad owner. Non-null means unsaved changes exist. */
+  draft_payload?: Record<string, unknown> | null;
 }

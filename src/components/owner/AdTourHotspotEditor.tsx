@@ -21,9 +21,11 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import dynamic from 'next/dynamic';
 import { useCallback, useState } from 'react';
 import type { TourHotspot } from '@/types';
+import { brandAgent } from '@/theme/tokens';
 
 // Dynamically import PanoramaViewer (Photo Sphere Viewer) to avoid SSR issues
 const PanoramaViewer = dynamic(() => import('./PanoramaViewer'), {
@@ -242,7 +244,8 @@ export default function AdTourHotspotEditor({
                 Orientez la vue (hors mode placement), puis cliquez sur « Placer
                 ». En mode placement la rotation est désactivée : cliquez sur le
                 panorama pour positionner le hotspot &quot;
-                {scene.hotspots[placingIndex]?.label || `#${placingIndex + 1}`}
+                {scene.hotspots[placingIndex]?.label ||
+                  `${'\u0023'}${placingIndex + 1}`}
                 &quot;.
               </Typography>
             </Alert>
@@ -276,7 +279,7 @@ export default function AdTourHotspotEditor({
                     : 'divider',
                 bgcolor:
                   placingMode && placingIndex === idx
-                    ? 'rgba(13, 148, 136, 0.04)'
+                    ? alpha(brandAgent.primary, 0.04)
                     : 'action.hover',
                 transition: 'all 0.2s',
               }}

@@ -50,6 +50,8 @@ import AdFormWizard, { type TourScene } from '@/components/owner/AdFormWizard';
 import { getLaravelApiErrorMessage } from '@/lib/api-errors';
 import { adsService } from '@/services/ads.service';
 import { ownerService } from '@/services/owner.service';
+import { alpha } from '@mui/material/styles';
+import { neutral, semantic, shadow, transition } from '@/theme/tokens';
 
 const PROFILE_STEP_ICONS = {
   name: <Person sx={{ fontSize: 20 }} />,
@@ -469,7 +471,7 @@ export default function OwnerNewAdPage() {
           }}
         >
           <BookmarkAdded
-            sx={{ color: 'rgba(255,255,255,0.9)', fontSize: 24 }}
+            sx={{ color: alpha(neutral.white, 0.9), fontSize: 24 }}
           />
           <Box sx={{ flex: 1 }}>
             <Typography
@@ -482,7 +484,7 @@ export default function OwnerNewAdPage() {
             </Typography>
             <Typography
               variant="caption"
-              sx={{ color: 'rgba(255,255,255,0.78)' }}
+              sx={{ color: alpha(neutral.white, 0.78) }}
             >
               Brouillon sauvegardé — publiez après avoir complété ces infos.
             </Typography>
@@ -493,7 +495,12 @@ export default function OwnerNewAdPage() {
             size="small"
             sx={{
               color: 'white',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
+              transition: transition.polish,
+              '&:hover': { bgcolor: alpha(neutral.white, 0.12) },
+              '&:focus-visible': {
+                outline: 'none',
+                boxShadow: shadow.agentFocusRing,
+              },
             }}
           >
             <Close fontSize="small" />
@@ -512,7 +519,11 @@ export default function OwnerNewAdPage() {
             >
               Profil complété
             </Typography>
-            <Typography variant="caption" fontWeight={700} color="#0d9488">
+            <Typography
+              variant="caption"
+              fontWeight={700}
+              sx={{ color: 'primary.main' }}
+            >
               {progress}%
             </Typography>
           </Box>
@@ -522,7 +533,7 @@ export default function OwnerNewAdPage() {
             sx={{
               height: 7,
               borderRadius: 4,
-              '& .MuiLinearProgress-bar': { bgcolor: '#0d9488' },
+              '& .MuiLinearProgress-bar': { bgcolor: 'primary.main' },
             }}
           />
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1.25 }}>
@@ -729,18 +740,21 @@ export default function OwnerNewAdPage() {
               borderRadius: 2,
               mb: 2,
               bgcolor: (t) =>
-                t.palette.mode === 'dark'
-                  ? 'rgba(59,130,246,0.08)'
-                  : 'rgba(59,130,246,0.06)',
+                alpha(semantic.info, t.palette.mode === 'dark' ? 0.08 : 0.06),
               border: '1px solid',
-              borderColor: 'rgba(59,130,246,0.2)',
+              borderColor: alpha(semantic.info, 0.2),
               display: 'flex',
               gap: 1.5,
               alignItems: 'flex-start',
             }}
           >
             <CalendarMonth
-              sx={{ fontSize: 22, color: '#3B82F6', mt: 0.2, flexShrink: 0 }}
+              sx={{
+                fontSize: 22,
+                color: semantic.info,
+                mt: 0.2,
+                flexShrink: 0,
+              }}
             />
             <Box>
               <Typography variant="body2" fontWeight={700} sx={{ mb: 0.5 }}>
@@ -771,7 +785,16 @@ export default function OwnerNewAdPage() {
             size="small"
             endIcon={<ArrowForward />}
             onClick={() => router.push('/owner/availability')}
-            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              borderRadius: 2,
+              transition: transition.polish,
+              '&:focus-visible': {
+                outline: 'none',
+                boxShadow: shadow.agentFocusRing,
+              },
+            }}
           >
             Configurer les horaires
           </Button>

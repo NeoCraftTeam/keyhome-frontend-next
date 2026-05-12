@@ -6,6 +6,8 @@ import PhoneField from '@/components/ui/PhoneField';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
+import { runAppRouterReplacement } from '@/lib/safe-app-router-push';
+import { ownerAuthHeroScrim } from '@/lib/owner-auth-theme';
 import { KH_OWNER_POST_OTP_TOKEN_KEY } from '@/lib/owner-auth-flow';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { getInMemoryToken, persistInMemoryToken } from '@/lib/auth-session';
@@ -13,7 +15,8 @@ import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { usersService } from '@/services/users.service';
-import { brandAgent, shadow } from '@/theme/tokens';
+import { brandAgent, neutral, shadow } from '@/theme/tokens';
+import { alpha } from '@mui/material/styles';
 import { City, User, UserRole } from '@/types';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import {
@@ -115,13 +118,13 @@ export default function OwnerCompleteProfilePage() {
       authUser.role !== UserRole.AGENT &&
       authUser.role !== UserRole.ADMIN
     ) {
-      router.replace('/home');
+      runAppRouterReplacement(router, '/home');
     }
   }, [authUser, router, passwordFlowReady, isPasswordPostOtpFlow]);
 
   const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
     queryKey: ['owner-complete-profile-cities', cityInput],
-    queryFn: () => citiesService.list({ q: cityInput }),
+    queryFn: ({ signal }) => citiesService.list({ q: cityInput }, { signal }),
     enabled: cityInput.length >= 1,
     staleTime: 5 * 60 * 1000,
   });
@@ -253,7 +256,7 @@ export default function OwnerCompleteProfilePage() {
           <Button
             variant="contained"
             fullWidth
-            onClick={() => router.replace('/owner/login')}
+            onClick={() => runAppRouterReplacement(router, '/owner/login')}
           >
             Aller à la connexion bailleur
           </Button>
@@ -280,8 +283,7 @@ export default function OwnerCompleteProfilePage() {
           sx={{
             position: 'absolute',
             inset: 0,
-            background:
-              'linear-gradient(to bottom, rgba(15,118,110,0.28) 0%, rgba(15,23,42,0.78) 100%)',
+            background: ownerAuthHeroScrim,
           }}
         />
         <Box
@@ -304,7 +306,11 @@ export default function OwnerCompleteProfilePage() {
                 width={42}
                 height={42}
               />
-              <Typography variant="h4" fontWeight={700} color="#fff">
+              <Typography
+                variant="h4"
+                fontWeight={700}
+                sx={{ color: neutral.white }}
+              >
                 KeyHome Business
               </Typography>
             </Box>
@@ -312,9 +318,11 @@ export default function OwnerCompleteProfilePage() {
           <FadeIn delay={0.4} direction="up">
             <Typography
               variant="h5"
-              color="rgba(255,255,255,0.9)"
               fontWeight={400}
-              sx={{ maxWidth: 360 }}
+              sx={{
+                maxWidth: 360,
+                color: alpha(neutral.white, 0.9),
+              }}
             >
               Configurez votre outil de gestion immobilière.
             </Typography>
@@ -340,7 +348,10 @@ export default function OwnerCompleteProfilePage() {
             aria-label="Retour"
             onClick={() => router.back()}
             size="medium"
-            sx={{ bgcolor: 'rgba(0,0,0,0.05)', borderRadius: 2 }}
+            sx={{
+              bgcolor: alpha(neutral.black, 0.05),
+              borderRadius: 2,
+            }}
           >
             <ArrowBack sx={{ fontSize: 20 }} />
           </IconButton>
@@ -476,7 +487,7 @@ export default function OwnerCompleteProfilePage() {
                 }}
               >
                 {isSubmitting ? (
-                  <CircularProgress size={24} sx={{ color: '#fff' }} />
+                  <CircularProgress size={24} sx={{ color: neutral.white }} />
                 ) : (
                   'Activer mon espace professionnel'
                 )}
@@ -497,7 +508,7 @@ export default function OwnerCompleteProfilePage() {
                     textTransform: 'none',
                     '&:hover': {
                       color: brandAgent.primary,
-                      bgcolor: 'rgba(13,148,136,0.06)',
+                      bgcolor: alpha(brandAgent.primary, 0.06),
                     },
                   }}
                 >

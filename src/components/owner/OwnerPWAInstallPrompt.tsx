@@ -13,7 +13,8 @@ import {
 import Close from '@mui/icons-material/Close';
 import PhoneAndroid from '@mui/icons-material/PhoneAndroid';
 import SystemUpdate from '@mui/icons-material/SystemUpdate';
-import { brandAgent } from '@/theme/tokens';
+import { alpha } from '@mui/material/styles';
+import { brandAgent, neutral, shadow } from '@/theme/tokens';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -99,12 +100,15 @@ export default function OwnerPWAInstallPrompt() {
               color="inherit"
               size="small"
               onClick={handleUpdate}
-              sx={{ fontWeight: 600 }}
+              sx={{
+                fontWeight: 600,
+                '&:focus-visible': { boxShadow: shadow.agentFocusRing },
+              }}
             >
               Mettre à jour
             </Button>
           }
-          sx={{ borderRadius: 2, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+          sx={{ borderRadius: 2, boxShadow: shadow.modal }}
         >
           Une nouvelle version est disponible
         </Alert>
@@ -136,8 +140,7 @@ export default function OwnerPWAInstallPrompt() {
               bgcolor: 'background.paper',
               borderRadius: 3,
               p: { xs: 1.5, sm: 2 },
-              boxShadow:
-                '0 16px 48px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.06)',
+              boxShadow: `${shadow.dialog}, 0 0 0 1px ${alpha(neutral.white, 0.06)}`,
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
               border: '1px solid',
@@ -193,6 +196,7 @@ export default function OwnerPWAInstallPrompt() {
                 },
                 flexBasis: { xs: '100%', sm: 'auto' },
                 flexShrink: 0,
+                '&:focus-visible': { boxShadow: shadow.agentFocusRing },
               }}
             >
               Installer
@@ -205,6 +209,7 @@ export default function OwnerPWAInstallPrompt() {
                 color: 'text.secondary',
                 flexShrink: 0,
                 ml: { xs: 'auto', sm: -0.5 },
+                '&:focus-visible': { boxShadow: shadow.agentFocusRing },
               }}
             >
               <Close sx={{ fontSize: 18 }} />
