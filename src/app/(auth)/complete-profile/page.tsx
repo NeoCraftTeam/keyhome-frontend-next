@@ -39,10 +39,8 @@ function formatClerkSignUpError(err: unknown): string {
   if (m.includes('last name') || m.includes('last_name') || m.includes('nom')) {
     return 'Le nom est obligatoire pour finaliser la création du compte.';
   }
-  if (raw.length > 0) {
-    return raw;
-  }
-  return 'Une erreur est survenue. Veuillez réessayer.';
+
+  return 'Une erreur est survenue. Veuillez réessayer ou contacter le support KeyHome.';
 }
 
 /**
@@ -226,7 +224,7 @@ export default function CompleteProfilePage() {
         (signUp.missingFields?.length ?? 0) > 0
       ) {
         setError(
-          'Clerk exige encore un numéro : sur KeyHome, le téléphone est enregistré ici (PAS via Google). Désactivez le champ téléphone obligatoire dans le tableau Clerk, ou contactez le support.'
+          'Impossible de finaliser votre inscription pour le moment. Réessayez plus tard ou contactez le support KeyHome.'
         );
         setIsSubmitting(false);
         return;
@@ -474,13 +472,6 @@ export default function CompleteProfilePage() {
               onSubmit={handleSubmit}
               sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
             >
-              {!isOtpFlow && (
-                <Alert severity="info" sx={{ borderRadius: 2 }}>
-                  Le numéro saisi ci-dessous est stocké sur KeyHome uniquement
-                  (pas sur Google / Clerk).
-                </Alert>
-              )}
-
               {needsClerkLastName && (
                 <TextField
                   label="Nom"

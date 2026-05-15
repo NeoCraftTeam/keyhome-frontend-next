@@ -6,16 +6,16 @@ describe('getConfiguredOAuthProviders', () => {
     vi.unstubAllEnvs();
   });
 
-  it('excludes GitHub by default', () => {
-    expect(getConfiguredOAuthProviders()).toEqual(['google', 'facebook']);
-  });
-
-  it('includes GitHub when env is true', () => {
-    vi.stubEnv('NEXT_PUBLIC_OAUTH_GITHUB_ENABLED', 'true');
+  it('includes GitHub by default', () => {
     expect(getConfiguredOAuthProviders()).toEqual([
       'google',
       'facebook',
       'github',
     ]);
+  });
+
+  it('excludes GitHub when explicitly disabled', () => {
+    vi.stubEnv('NEXT_PUBLIC_OAUTH_GITHUB_ENABLED', 'false');
+    expect(getConfiguredOAuthProviders()).toEqual(['google', 'facebook']);
   });
 });

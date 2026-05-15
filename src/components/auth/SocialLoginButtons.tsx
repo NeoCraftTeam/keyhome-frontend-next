@@ -1,10 +1,6 @@
 'use client';
 
-/**
- * OAuth icon row: Google + Facebook always; GitHub only when
- * `NEXT_PUBLIC_OAUTH_GITHUB_ENABLED=true` (must match Clerk dashboard).
- * See `getConfiguredOAuthProviders()`.
- */
+/** OAuth icon row from `getConfiguredOAuthProviders()` (GitHub shown unless opted out via env). */
 import { getConfiguredOAuthProviders } from '@/lib/oauth-providers';
 import { useAuth } from '@/providers/AuthProvider';
 import { OAuthProvider } from '@/services/auth.service';

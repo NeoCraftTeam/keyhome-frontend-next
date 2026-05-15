@@ -375,17 +375,6 @@ export default function LoginPage() {
               onError={(err) => setError(err)}
               disabled={isSubmitting}
             />
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ mt: 1.5, display: 'block', textAlign: 'center', px: 1 }}
-            >
-              Google / réseaux sociaux : compte <strong>particulier</strong>.
-              Bailleur ?{' '}
-              <Link href="/owner/register" underline="hover" fontWeight={600}>
-                Inscription pro
-              </Link>
-            </Typography>
           </FadeIn>
 
           <FadeIn delay={0.35} direction="up">
