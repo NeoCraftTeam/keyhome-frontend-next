@@ -5,9 +5,11 @@ import PhoneField from '@/components/ui/PhoneField';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
+import { getRegisterThemeTokens } from '@/lib/register-theme';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
+import { gradient } from '@/theme/tokens';
 import { City, User } from '@/types';
 import { useSignUp } from '@clerk/nextjs';
 import ArrowBack from '@mui/icons-material/ArrowBack';
@@ -25,8 +27,6 @@ import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { gradient } from '@/theme/tokens';
-import { getRegisterThemeTokens } from '@/lib/register-theme';
 
 /**
  * Shown when a new OAuth user (Google, etc.) has missing required fields.
@@ -108,15 +108,27 @@ export default function CompleteProfilePage() {
     }
   }, []);
 
-  // ── OTP flow: skip (complete with empty payload) ─────────────────────────────────
+  // ── Skip: complete without phone (both OTP and Clerk native flows) ──────────────────
 
   const handleSkip = async () => {
     setError('');
     setIsSubmitting(true);
     try {
-      const result = await authService.completeClerkProfile({});
-      sessionStorage.removeItem('clerk_auth_prefill');
-      finalizeAuth(result.token, result.user, result.panel_sso_url);
+      if (isOtpFlow) {
+        const result = await authService.completeClerkProfile({});
+        sessionStorage.removeItem('clerk_auth_prefill');
+        finalizeAuth(result.token, result.user, result.panel_sso_url);
+      } else if (signUp) {
+        const result = await signUp.update({});
+        if (result.status === 'complete') {
+          await setActive!({ session: result.createdSessionId! });
+          const intentRaw =
+            typeof window !== 'undefined'
+              ? sessionStorage.getItem('kh_registration_intent')
+              : null;
+          router.replace(intentRaw === 'agent' ? '/owner/dashboard' : '/home');
+        }
+      }
     } catch (err) {
       setError(
         getSafeErrorMessage(err, 'Une erreur est survenue. Veuillez réessayer.')
@@ -165,13 +177,8 @@ export default function CompleteProfilePage() {
     setIsSubmitting(true);
 
     try {
-      // Always attempt to pass phone_number — Clerk will ignore it if not required
-      const updatePayload: Record<string, string> = {};
-      if (phoneNumber.trim().length >= 8) {
-        updatePayload.phoneNumber = phoneNumber;
-      }
-
-      const result = await signUp.update(updatePayload);
+      // Phone number is stored in our backend only — never pass it to Clerk
+      const result = await signUp.update({});
 
       if (result.status === 'complete') {
         await setActive!({ session: result.createdSessionId! });
@@ -181,7 +188,6 @@ export default function CompleteProfilePage() {
             : null;
         router.replace(intentRaw === 'agent' ? '/owner/dashboard' : '/home');
       } else {
-        // Log missing fields to help debug future issues
         const missing = result.missingFields?.join(', ') || 'inconnu';
         setError(
           `Champs manquants : ${missing}. Veuillez compléter toutes les informations requises.`
@@ -303,7 +309,7 @@ export default function CompleteProfilePage() {
         {/* Back button */}
         <Box sx={{ position: 'absolute', top: 24, left: 24 }}>
           <IconButton
-            onClick={() => router.back()}
+            onClick={() => router.replace('/login')}
             size="medium"
             aria-label="Retour"
             sx={{
@@ -470,7 +476,7 @@ export default function CompleteProfilePage() {
                 )}
               </Button>
 
-              {isOtpFlow && (
+              {(isOtpFlow || !!signUp) && (
                 <Button
                   type="button"
                   variant="text"

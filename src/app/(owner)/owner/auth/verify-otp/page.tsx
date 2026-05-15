@@ -2,16 +2,15 @@
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
+import { persistInMemoryToken } from '@/lib/auth-session';
+import { registerTokenGetter } from '@/lib/auth-token';
 import { getSafeErrorMessage } from '@/lib/error-messages';
-import { runAppRouterReplacement } from '@/lib/safe-app-router-push';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { KH_OWNER_POST_OTP_TOKEN_KEY } from '@/lib/owner-auth-flow';
-import { registerTokenGetter } from '@/lib/auth-token';
-import { persistInMemoryToken } from '@/lib/auth-session';
-import { authService } from '@/services/auth.service';
 import { ownerAuthHeroScrim } from '@/lib/owner-auth-theme';
+import { runAppRouterReplacement } from '@/lib/safe-app-router-push';
+import { authService } from '@/services/auth.service';
 import { brandAgent, neutral } from '@/theme/tokens';
-import { alpha } from '@mui/material/styles';
 import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
 import {
   Alert,
@@ -21,6 +20,7 @@ import {
   IconButton,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
@@ -301,7 +301,11 @@ export default function OwnerVerifyOtpPage() {
         <Box sx={{ position: 'absolute', top: 24, left: 24 }}>
           <IconButton
             aria-label="Retour"
-            onClick={() => router.back()}
+            onClick={() => {
+              sessionStorage.removeItem('kh_verify_email_owner');
+              sessionStorage.removeItem('kh_register_role');
+              router.replace('/owner/register');
+            }}
             size="medium"
             sx={{
               bgcolor: alpha(neutral.black, 0.05),

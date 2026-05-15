@@ -321,7 +321,11 @@ export default function VerifyEmailPage() {
         {/* Back button */}
         <Box sx={{ position: 'absolute', top: 24, left: 24 }}>
           <IconButton
-            onClick={() => router.back()}
+            onClick={() => {
+              sessionStorage.removeItem('kh_verify_email_client');
+              sessionStorage.removeItem('kh_register_role');
+              router.replace('/register');
+            }}
             size="medium"
             aria-label="Retour"
             sx={{
