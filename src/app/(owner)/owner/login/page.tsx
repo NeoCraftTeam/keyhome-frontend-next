@@ -7,14 +7,13 @@ import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/FadeIn';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
+import { setRoleCookie } from '@/lib/auth-session';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { OWNER_LOGIN_HERO_SRC, OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
-import { setRoleCookie } from '@/lib/auth-session';
 import { useAuth } from '@/providers/AuthProvider';
 import { brandAgent, neutral } from '@/theme/tokens';
-import { AxiosError } from 'axios';
-import { alpha } from '@mui/material/styles';
+import { UserRole } from '@/types';
 import EmailIcon from '@mui/icons-material/Email';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -30,10 +29,11 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { AxiosError } from 'axios';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { UserRole } from '@/types';
 
 export default function OwnerLoginPage() {
   const { loginOwner, user, isAuthenticated, isLoading } = useAuth();
@@ -350,7 +350,7 @@ export default function OwnerLoginPage() {
               registrationIntent="agent"
               onError={setError}
               showDivider
-              providers={['google', 'facebook', 'apple']}
+              providers={['google', 'facebook', 'github']}
             />
           </FadeIn>
 

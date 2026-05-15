@@ -2,8 +2,9 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { OAuthProvider } from '@/services/auth.service';
-import Apple from '@mui/icons-material/Apple';
+import { brand } from '@/theme/tokens';
 import Facebook from '@mui/icons-material/Facebook';
+import GitHub from '@mui/icons-material/GitHub';
 import Google from '@mui/icons-material/Google';
 import {
   Box,
@@ -14,7 +15,6 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import { brand } from '@/theme/tokens';
 
 interface SocialLoginButtonsProps {
   onError?: (error: string) => void;
@@ -37,9 +37,9 @@ const providerConfig: Record<
     label: 'Facebook',
     icon: <Facebook />,
   },
-  apple: {
-    label: 'Apple',
-    icon: <Apple />,
+  github: {
+    label: 'GitHub',
+    icon: <GitHub />,
   },
 };
 
@@ -47,7 +47,7 @@ export default function SocialLoginButtons({
   onError,
   disabled = false,
   showDivider = true,
-  providers = ['google', 'facebook', 'apple'],
+  providers = ['google', 'facebook', 'github'],
   registrationIntent,
 }: SocialLoginButtonsProps) {
   const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(

@@ -1,9 +1,9 @@
 'use client';
 
 import { useClerk } from '@clerk/nextjs';
-import Apple from '@mui/icons-material/Apple';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Facebook from '@mui/icons-material/Facebook';
+import GitHub from '@mui/icons-material/GitHub';
 import Google from '@mui/icons-material/Google';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import {
@@ -19,8 +19,8 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
-type OAuthStrategy = 'oauth_google' | 'oauth_facebook' | 'oauth_apple';
-type OAuthProviderName = 'google' | 'facebook' | 'apple';
+type OAuthStrategy = 'oauth_google' | 'oauth_facebook' | 'oauth_github';
+type OAuthProviderName = 'google' | 'facebook' | 'github';
 
 interface SocialProvider {
   /** Clerk's `ExternalAccount.provider` value, e.g. `google`. */
@@ -45,16 +45,16 @@ const SOCIAL_PROVIDERS: SocialProvider[] = [
     icon: <Facebook sx={{ fontSize: 20 }} />,
   },
   {
-    provider: 'apple',
-    strategy: 'oauth_apple',
-    label: 'Apple',
-    icon: <Apple sx={{ fontSize: 20 }} />,
+    provider: 'github',
+    strategy: 'oauth_github',
+    label: 'GitHub',
+    icon: <GitHub sx={{ fontSize: 20 }} />,
   },
 ];
 
 /**
  * Reusable "Comptes liés" card. Renders a list of OAuth providers (Google,
- * Facebook, Apple) with a Link / Unlink button per row, driven by Clerk's
+ * Facebook, GitHub) with a Link / Unlink button per row, driven by Clerk's
  * `user.createExternalAccount()` + `externalAccount.destroy()` APIs.
  *
  * Critical bug avoided here (was the cause of "le bouton ne fait rien") —

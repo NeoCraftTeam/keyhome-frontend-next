@@ -1,13 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { useClerk, useAuth as useClerkAuth, useSignIn } from '@clerk/nextjs';
-import { useQueryClient } from '@tanstack/react-query';
-import { flushSync } from 'react-dom';
 import api, { ensureCsrfCookie, resetCsrfState } from '@/lib/api';
-import { removeFcmToken } from '@/lib/chat-api';
-import { FCM_TOKEN_STORAGE_KEY } from '@/lib/fcm-token-key';
 import {
   clearAllInMemoryTokens,
   clearRoleCookie,
@@ -15,16 +8,23 @@ import {
   getClientInMemoryToken,
   getInMemoryToken,
   getOwnerInMemoryToken,
-  persistOwnerToken,
   persistClientToken,
+  persistOwnerToken,
   setRoleCookie,
   wipeBrowserStoragesForLogout,
 } from '@/lib/auth-session';
-import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
-import { disconnectEcho } from '@/lib/echo';
+import { removeFcmToken } from '@/lib/chat-api';
 import { resetChatE2eeBootstrap } from '@/lib/chat-e2ee-identity';
+import { disconnectEcho } from '@/lib/echo';
+import { FCM_TOKEN_STORAGE_KEY } from '@/lib/fcm-token-key';
+import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
+import { useClerk, useAuth as useClerkAuth, useSignIn } from '@clerk/nextjs';
+import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { useCallback } from 'react';
+import { flushSync } from 'react-dom';
 
 /** Minimum time the logout overlay stays visible (UX); extends if work takes longer. */
 const LOGOUT_OVERLAY_MIN_MS = 3500;
@@ -171,7 +171,7 @@ export function useAuthActions({
       const strategyMap = {
         google: 'oauth_google',
         facebook: 'oauth_facebook',
-        apple: 'oauth_apple',
+        github: 'oauth_github',
       } as const;
 
       if (typeof window !== 'undefined') {

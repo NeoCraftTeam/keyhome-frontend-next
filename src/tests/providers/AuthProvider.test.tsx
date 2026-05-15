@@ -1,8 +1,8 @@
-import React from 'react';
-import { render, screen, act, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { UserRole } from '@/types';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /* ── Hoisted mock variables (available inside vi.mock factories) ──── */
 
@@ -49,7 +49,7 @@ vi.mock('@clerk/nextjs', () => ({
 
 vi.mock('@/services/auth.service', () => ({
   authService: mockAuthService,
-  OAuthProvider: { google: 'google', facebook: 'facebook', apple: 'apple' },
+  OAuthProvider: { google: 'google', facebook: 'facebook', github: 'github' },
 }));
 
 vi.mock('@/lib/auth-token', () => ({
@@ -81,9 +81,9 @@ vi.mock('@/lib/trusted-redirect', () => ({
 // Import AFTER mocks are set up
 import { registerTokenGetter } from '@/lib/auth-token';
 import {
+  __resetModuleStateForTests,
   AuthProvider,
   useAuth,
-  __resetModuleStateForTests,
 } from '@/providers/AuthProvider';
 
 /* ── Helpers ───────────────────────────────────────────────────────── */

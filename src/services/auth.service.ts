@@ -33,7 +33,7 @@ interface OAuthRedirectResponse {
   redirect_url: string;
 }
 
-export type OAuthProvider = 'google' | 'facebook' | 'apple';
+export type OAuthProvider = 'google' | 'facebook' | 'github';
 
 export const authService = {
   async login(
