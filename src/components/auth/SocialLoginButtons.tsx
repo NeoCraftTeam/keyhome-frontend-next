@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * OAuth icon row: Google + Facebook always; GitHub only when
+ * `NEXT_PUBLIC_OAUTH_GITHUB_ENABLED=true` (must match Clerk dashboard).
+ * See `getConfiguredOAuthProviders()`.
+ */
+import { getConfiguredOAuthProviders } from '@/lib/oauth-providers';
 import { useAuth } from '@/providers/AuthProvider';
 import { OAuthProvider } from '@/services/auth.service';
 import { brand } from '@/theme/tokens';
@@ -47,7 +53,7 @@ export default function SocialLoginButtons({
   onError,
   disabled = false,
   showDivider = true,
-  providers = ['google', 'facebook', 'github'],
+  providers = getConfiguredOAuthProviders(),
   registrationIntent,
 }: SocialLoginButtonsProps) {
   const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(

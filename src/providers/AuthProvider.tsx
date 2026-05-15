@@ -400,8 +400,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             sessionStorage.removeItem('kh_registration_intent');
           }
 
-          const panelUrl =
-            laravelUser.role === UserRole.AGENT ? null : panel_sso_url;
+          const skipPanelSsoForIntegratedOwner =
+            laravelUser.role === UserRole.AGENT;
+          const panelUrl = skipPanelSsoForIntegratedOwner
+            ? null
+            : panel_sso_url;
 
           if (panelUrl) {
             if (!redirectToTrustedUrl(panelUrl)) {

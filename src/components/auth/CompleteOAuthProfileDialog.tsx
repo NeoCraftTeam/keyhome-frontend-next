@@ -4,7 +4,7 @@ import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
-import { User } from '@/types';
+import { User, UserRole } from '@/types';
 import PhoneIcon from '@mui/icons-material/Phone';
 import {
   Autocomplete,
@@ -89,10 +89,10 @@ export default function CompleteOAuthProfileDialog({
 
       const { token, user, panel_sso_url } = result;
 
-      // Agent / Admin → redirect to their Filament panel
-      if (panel_sso_url) {
+      // Filament SSO is for platform admins only; agents use the Next.js owner shell.
+      if (panel_sso_url && user.role === UserRole.ADMIN) {
         if (!redirectToTrustedUrl(panel_sso_url)) {
-          setError('Redirection refusee pour des raisons de securite.');
+          setError('Redirection refusée pour des raisons de sécurité.');
         }
         return;
       }

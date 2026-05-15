@@ -2,6 +2,7 @@
 
 import PasskeyLoginButton from '@/components/auth/PasskeyLoginButton';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
+import { getConfiguredOAuthProviders } from '@/lib/oauth-providers';
 import TurnstileConfigAlert from '@/components/auth/TurnstileConfigAlert';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/FadeIn';
@@ -350,7 +351,7 @@ export default function OwnerLoginPage() {
               registrationIntent="agent"
               onError={setError}
               showDivider
-              providers={['google', 'facebook', 'github']}
+              providers={getConfiguredOAuthProviders()}
             />
           </FadeIn>
 

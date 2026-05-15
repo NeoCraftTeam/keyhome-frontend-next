@@ -3,6 +3,7 @@
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
+import { buildClerkSignUpPatch } from '@/lib/clerk-signup-safe-update';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { getRegisterThemeTokens } from '@/lib/register-theme';
@@ -28,6 +29,22 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+function formatClerkSignUpError(err: unknown): string {
+  const raw =
+    err instanceof Error ? err.message : typeof err === 'string' ? err : '';
+  const m = raw.toLowerCase();
+  if (m.includes('legal') || m.includes('terms') || m.includes('conditions')) {
+    return "Vous devez accepter les conditions d'utilisation pour continuer.";
+  }
+  if (m.includes('last name') || m.includes('last_name') || m.includes('nom')) {
+    return 'Le nom est obligatoire pour finaliser la création du compte.';
+  }
+  if (raw.length > 0) {
+    return raw;
+  }
+  return 'Une erreur est survenue. Veuillez réessayer.';
+}
+
 /**
  * Shown when a new OAuth user (Google, etc.) has missing required fields.
  *
@@ -37,7 +54,7 @@ import { useEffect, useRef, useState } from 'react';
  * 2. Clerk native sign-up with missing fields: calls Clerk's `signUp.update()`.
  */
 export default function CompleteProfilePage() {
-  const { finalizeAuth } = useAuth();
+  const { finalizeAuth, getClerkToken } = useAuth();
   const {
     slotProps: citySlotProps,
     renderOption: renderCityOption,
@@ -47,6 +64,8 @@ export default function CompleteProfilePage() {
   const router = useRouter();
 
   const [phoneNumber, setPhoneNumber] = useState('');
+  /** Clerk may require last name; never sent from phone field — OAuth prefill or this input */
+  const [clerkLastName, setClerkLastName] = useState('');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [cityInput, setCityInput] = useState('');
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
@@ -83,7 +102,7 @@ export default function CompleteProfilePage() {
   const [isOtpFlow, setIsOtpFlow] = useState(false);
   const [prefill, setPrefill] = useState<{
     firstname: string;
-    lastname: string;
+    lastname?: string;
     email: string | null;
     avatar: string | null;
     registration_intent?: string;
@@ -119,19 +138,38 @@ export default function CompleteProfilePage() {
         sessionStorage.removeItem('clerk_auth_prefill');
         finalizeAuth(result.token, result.user, result.panel_sso_url);
       } else if (signUp) {
-        const result = await signUp.update({});
+        const { patch } = buildClerkSignUpPatch(signUp, { prefill });
+        const result = await signUp.update(
+          Object.keys(patch).length > 0 ? patch : {}
+        );
         if (result.status === 'complete') {
           await setActive!({ session: result.createdSessionId! });
-          const intentRaw =
-            typeof window !== 'undefined'
-              ? sessionStorage.getItem('kh_registration_intent')
-              : null;
-          router.replace(intentRaw === 'agent' ? '/owner/dashboard' : '/home');
+          const laravel = await authService.completeClerkProfile({});
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('kh_registration_intent');
+          }
+          finalizeAuth(
+            laravel.token,
+            laravel.user,
+            laravel.panel_sso_url ?? null
+          );
+        } else {
+          const missing = result.missingFields?.join(', ') || '';
+          setError(
+            missing.length > 0
+              ? `Cette étape ne peut pas être ignorée tant que ces champs sont requis : ${missing}.`
+              : 'Impossible de passer cette étape pour le moment. Réessayez.'
+          );
         }
       }
     } catch (err) {
       setError(
-        getSafeErrorMessage(err, 'Une erreur est survenue. Veuillez réessayer.')
+        getSafeErrorMessage(
+          err,
+          isOtpFlow
+            ? 'Une erreur est survenue. Veuillez réessayer.'
+            : formatClerkSignUpError(err)
+        )
       );
     } finally {
       setIsSubmitting(false);
@@ -177,32 +215,71 @@ export default function CompleteProfilePage() {
     setIsSubmitting(true);
 
     try {
-      // Phone number is stored in our backend only — never pass it to Clerk
-      const result = await signUp.update({});
+      const { patch, blockedByPhoneOnly } = buildClerkSignUpPatch(signUp, {
+        prefill,
+        extraLastName: clerkLastName,
+      });
+
+      if (
+        blockedByPhoneOnly &&
+        Object.keys(patch).length === 0 &&
+        (signUp.missingFields?.length ?? 0) > 0
+      ) {
+        setError(
+          'Clerk exige encore un numéro : sur KeyHome, le téléphone est enregistré ici (PAS via Google). Désactivez le champ téléphone obligatoire dans le tableau Clerk, ou contactez le support.'
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      const result = await signUp.update(
+        Object.keys(patch).length > 0 ? patch : {}
+      );
 
       if (result.status === 'complete') {
         await setActive!({ session: result.createdSessionId! });
-        const intentRaw =
-          typeof window !== 'undefined'
-            ? sessionStorage.getItem('kh_registration_intent')
-            : null;
-        router.replace(intentRaw === 'agent' ? '/owner/dashboard' : '/home');
+        const jwt = await getClerkToken();
+        if (!jwt) {
+          setError(
+            'Session interrompue après la validation. Rechargez la page et réessayez.'
+          );
+          setIsSubmitting(false);
+          return;
+        }
+
+        const laravel = await authService.completeClerkProfile({
+          ...(phoneNumber.trim().length >= 8
+            ? { phone_number: phoneNumber.trim() }
+            : {}),
+          ...(selectedCity ? { city_id: selectedCity.id } : {}),
+        });
+
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('kh_registration_intent');
+        }
+
+        finalizeAuth(
+          laravel.token,
+          laravel.user,
+          laravel.panel_sso_url ?? null
+        );
       } else {
         const missing = result.missingFields?.join(', ') || 'inconnu';
         setError(
-          `Champs manquants : ${missing}. Veuillez compléter toutes les informations requises.`
+          `Champs encore requis côté connexion : ${missing}. Complétez le formulaire ou acceptez les conditions si proposé.`
         );
       }
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : 'Une erreur est survenue. Veuillez réessayer.';
-      setError(msg);
+      setError(formatClerkSignUpError(err));
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const needsClerkLastName =
+    !isOtpFlow &&
+    !!signUp?.missingFields?.some((f) => /last[_]?name/i.test(String(f))) &&
+    !(prefill?.lastname?.trim() || signUp?.lastName?.trim());
 
   // Not in an OTP flow and not in a Clerk sign-up flow — redirect to login
   if (!isOtpFlow && !signUp) {
@@ -212,6 +289,11 @@ export default function CompleteProfilePage() {
 
   // Always show phone field — required by our backend for OTP flow, helpful for Clerk flow
   const showPhoneField = true;
+  const otpPhoneBlocked =
+    isOtpFlow && showPhoneField && phoneNumber.trim().length < 8;
+  const clerkLastNameBlocked =
+    !isOtpFlow && needsClerkLastName && clerkLastName.trim().length < 2;
+
   const handleSubmit = isOtpFlow ? handleOtpFlowSubmit : handleClerkFlowSubmit;
 
   if (showWelcome) {
@@ -392,12 +474,35 @@ export default function CompleteProfilePage() {
               onSubmit={handleSubmit}
               sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
             >
+              {!isOtpFlow && (
+                <Alert severity="info" sx={{ borderRadius: 2 }}>
+                  Le numéro saisi ci-dessous est stocké sur KeyHome uniquement
+                  (pas sur Google / Clerk).
+                </Alert>
+              )}
+
+              {needsClerkLastName && (
+                <TextField
+                  label="Nom"
+                  value={clerkLastName}
+                  onChange={(e) => setClerkLastName(e.target.value)}
+                  required
+                  autoComplete="family-name"
+                  inputProps={{ minLength: 2 }}
+                />
+              )}
+
               {showPhoneField && (
                 <PhoneField
                   value={phoneNumber}
                   onChange={(val) => setPhoneNumber(val)}
                   label="Numéro de téléphone"
-                  required
+                  required={isOtpFlow}
+                  helperText={
+                    isOtpFlow
+                      ? undefined
+                      : 'Optionnel à cette étape — recommandé pour vous contacter.'
+                  }
                 />
               )}
 
@@ -449,8 +554,7 @@ export default function CompleteProfilePage() {
                 size="large"
                 fullWidth
                 disabled={
-                  isSubmitting ||
-                  (showPhoneField && phoneNumber.trim().length < 8)
+                  isSubmitting || otpPhoneBlocked || clerkLastNameBlocked
                 }
                 sx={{
                   py: 1.5,

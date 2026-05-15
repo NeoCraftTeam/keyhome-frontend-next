@@ -59,7 +59,11 @@ export function useAuthActions({
 
   const finalizeAuth = useCallback(
     (sanctumToken: string, laravelUser: User, panelSsoUrl: string | null) => {
-      const panelUrl = laravelUser.role === UserRole.AGENT ? null : panelSsoUrl;
+      // Bailleurs (AGENT) stay in the integrated Next owner app. Platform ADMIN
+      // still receives `panel_sso_url` when the API returns it (Filament SSO).
+      const skipPanelSsoForIntegratedOwner =
+        laravelUser.role === UserRole.AGENT;
+      const panelUrl = skipPanelSsoForIntegratedOwner ? null : panelSsoUrl;
 
       if (panelUrl) {
         if (!redirectToTrustedUrl(panelUrl)) {
