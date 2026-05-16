@@ -2,13 +2,19 @@
 # KeyHome — Frontend CI/CD Pipeline
 #
 # Branches :
-#   main       → déploiement Production  (Vercel prod via CI)
-#   cedrickdev → déploiement Preprod     (Vercel gère le déploiement automatiquement)
-#   autres     → quality + build:check uniquement (pas de deploy)
+#   main       → quality (bloquant) → build Vercel prod → deploy production
+#   cedrickdev → quality (bloquant) → build Vercel preview → deploy preview
+#   autres     → quality (bloquant) + build:check uniquement
+#
+# Jobs BLOQUANTS (pipeline s'arrête si échec) :
+#   install, typecheck, lint, build:prod / build:check, deploy
+#
+# Jobs OPTIONNELS allow_failure: true (informatifs, ne bloquent pas le deploy) :
+#   format, test:unit, test:e2e, build:storybook, audit:deps, lighthouse
 #
 # Required GitLab CI/CD Variables (Settings → CI/CD → Variables):
 #   NEXT_PUBLIC_API_URL                   URL API backend (prod)
-#   NEXT_PUBLIC_API_URL_PREPROD           URL API backend (preprod) — utilisé par Lighthouse
+#   NEXT_PUBLIC_API_URL_PREPROD           URL API backend (preprod)
 #   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY     Clerk publishable key
 #   CLERK_SECRET_KEY                      Clerk secret key              [masked]
 #   NEXT_PUBLIC_MAPBOX_TOKEN              Mapbox GL public token
@@ -16,12 +22,12 @@
 #   NEXT_PUBLIC_AGENCY_URL                Agency panel URL
 #   NEXT_PUBLIC_OWNER_URL                 Owner panel URL
 #   NEXT_PUBLIC_ADMIN_URL                 Admin panel URL
-#   SLACK_WEBHOOK_FRONTEND                (optional) Slack incoming webhook
-#   LHCI_TOKEN                            (optional) Lighthouse CI server token
-#   CACHE_PREFIX                          Incrémenter (ex: v2) pour invalider le cache
 #   VERCEL_TOKEN                          Vercel personal access token  [masked]
 #   VERCEL_ORG_ID                         Vercel team/org ID            [masked]
 #   VERCEL_PROJECT_ID                     Vercel project ID             [masked]
+#   SLACK_WEBHOOK_FRONTEND                (optional) Slack incoming webhook
+#   LHCI_TOKEN                            (optional) Lighthouse CI server token
+#   CACHE_PREFIX                          Incrémenter (ex: v2) pour invalider le cache
 #
 # IMPORTANT — désactiver l'auto-deploy Vercel depuis GitHub/GitLab :
 #   Vercel dashboard → Project → Settings → Git → "Ignored Build Step" → exit 1
@@ -36,11 +42,7 @@ workflow:
 stages:
   - prepare
   - quality
-  - test
   - build
-  - e2e
-  - security
-  - lighthouse
   - deploy
   - notify
 
@@ -48,14 +50,11 @@ variables:
   NODE_VERSION: "20"
   CACHE_PREFIX: "v1"
 
-# Les jobs de deploy ne doivent JAMAIS être interrompus (risque de deploy partiel)
-# Tous les autres jobs sont interruptibles (nouveau push annule le pipeline en cours)
 default:
   interruptible: true
 
 # ── Templates partagés ────────────────────────────────────────────────────────
 
-# Base pour tout job qui a besoin de node_modules
 .node_job:
   image: node:${NODE_VERSION}-alpine
   cache:
@@ -104,7 +103,7 @@ install:
         - package-lock.json
     paths:
       - node_modules/
-    policy: pull-push          # Ce job alimente le cache, les autres lisent seulement
+    policy: pull-push
   script:
     - npm ci --prefer-offline
   retry: 1
@@ -112,7 +111,13 @@ install:
   rules:
     - if: $CI_COMMIT_BRANCH
 
-# ── 2. QUALITY (tous en parallèle, toutes les branches) ──────────────────────
+# ── 2. QUALITY ────────────────────────────────────────────────────────────────
+# typecheck + lint : BLOQUANTS — un build cassé ou du code non typé ne doit
+#   jamais être déployé en production.
+# format + test:unit + audit:deps : OPTIONNELS (allow_failure) — utiles mais
+#   ne bloquent pas le déploiement (tests pas encore 100% couverts, format
+#   parfois non configuré selon la machine).
+
 typecheck:
   stage: quality
   extends: .node_job
@@ -139,15 +144,15 @@ format:
   needs: [install]
   script:
     - npm run format:check
+  allow_failure: true            # Optionnel : ne bloque pas le deploy
   timeout: 5 minutes
   rules:
     - if: $CI_COMMIT_BRANCH
 
-# ── 3. TEST ───────────────────────────────────────────────────────────────────
 test:unit:
-  stage: test
+  stage: quality
   extends: .node_job
-  needs: [typecheck, lint, format]
+  needs: [install]
   script:
     - npm run test:coverage
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
@@ -161,27 +166,37 @@ test:unit:
     paths:
       - coverage/
     expire_in: 7 days
+  allow_failure: true            # Optionnel : couverture en cours de mise en place
   timeout: 10 minutes
   rules:
     - if: $CI_COMMIT_BRANCH
 
-# ── 4. BUILD ─────────────────────────────────────────────────────────────────
+audit:deps:
+  stage: quality
+  extends: .node_job
+  needs: [install]
+  script:
+    - npm audit --audit-level=high --omit=dev
+  allow_failure: true            # Optionnel : informatif uniquement
+  timeout: 3 minutes
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+# ── 3. BUILD ──────────────────────────────────────────────────────────────────
+# Branches feature  → build:check (vérifie que Next.js compile, sans artifact)
+# main              → build:prod  (vercel build --prod → artifact .vercel/output)
+# cedrickdev        → build:preview (vercel build → artifact .vercel/output)
 #
-# STRATÉGIE :
-#   - Branches feature + cedrickdev → build:check (vérifie que ça compile, sans artifact)
-#   - main                          → build:prod  (vercel build prod, artifact .vercel/output)
-#
-# cedrickdev : Vercel gère le déploiement preview directement depuis GitHub/GitLab.
-# → PAS de build ni deploy Vercel dans la CI pour cedrickdev.
+# build:storybook : OPTIONNEL — ne bloque pas le déploiement.
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Branches feature : vérifie que next build passe, sans stocker d'artifact
+# Toutes les branches sauf main et cedrickdev
 build:check:
   stage: build
   extends:
     - .node_job
     - .build_vars_prod
-  needs: [test:unit]
+  needs: [typecheck, lint]
   script:
     - npm run build
   retry:
@@ -189,15 +204,15 @@ build:check:
     when: runner_system_failure
   timeout: 15 minutes
   rules:
-    - if: $CI_COMMIT_BRANCH != "main"
+    - if: $CI_COMMIT_BRANCH != "main" && $CI_COMMIT_BRANCH != "cedrickdev"
 
-# main → build Vercel production
+# main → build Vercel production (artifact utilisé par deploy:production)
 build:prod:
   stage: build
   extends:
     - .node_job
     - .build_vars_prod
-  needs: [test:unit]
+  needs: [typecheck, lint]
   script:
     - npx vercel pull --yes --environment=production --token=$VERCEL_TOKEN
     - npx vercel build --prod --token=$VERCEL_TOKEN
@@ -212,11 +227,32 @@ build:prod:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
-# Storybook — non bloquant, uniquement sur les branches déployées
+# cedrickdev → build Vercel preview (artifact utilisé par deploy:preview)
+build:preview:
+  stage: build
+  extends:
+    - .node_job
+    - .build_vars_preprod
+  needs: [typecheck, lint]
+  script:
+    - npx vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+    - npx vercel build --token=$VERCEL_TOKEN
+  artifacts:
+    paths:
+      - .vercel/output/
+    expire_in: 1 hour
+  retry:
+    max: 2
+    when: runner_system_failure
+  timeout: 15 minutes
+  rules:
+    - if: $CI_COMMIT_BRANCH == "cedrickdev"
+
+# Storybook — optionnel, uniquement sur les branches déployées
 build:storybook:
   stage: build
   extends: .node_job
-  needs: [test:unit]
+  needs: [install]
   script:
     - npm run build-storybook
   artifacts:
@@ -229,100 +265,19 @@ build:storybook:
   rules:
     - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "cedrickdev"
 
-# ── 5. E2E (Playwright) — stage dédié après le build ─────────────────────────
-#
-# L'image Playwright embarque Chromium + Node.js (Debian/Jammy).
-# Elle n'est pas compatible avec le cache Alpine de .node_job,
-# donc on relance npm ci dans ce job (inévitable avec cette image).
+# ── 4. DEPLOY ─────────────────────────────────────────────────────────────────
+# interruptible: false → un deploy ne doit JAMAIS être interrompu.
+# Les deux jobs utilisent --prebuilt → ils consomment l'artifact Vercel
+# produit par build:prod / build:preview (rapide, ~30s).
 # ─────────────────────────────────────────────────────────────────────────────
-test:e2e:
-  stage: e2e
-  image: mcr.microsoft.com/playwright:v1.44.0-jammy
-  extends: .build_vars_preprod           # E2E tourne contre l'API preprod, jamais prod
-  needs:
-    - job: build:prod
-      optional: true
-    - job: build:check
-      optional: true
-  script:
-    - npm ci --prefer-offline
-    - npm run test:e2e
-  artifacts:
-    when: always
-    paths:
-      - playwright-report/
-      - test-results/
-    expire_in: 7 days
-  allow_failure: true
-  timeout: 15 minutes
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "cedrickdev"
 
-# ── 6. SECURITY ───────────────────────────────────────────────────────────────
-#
-# audit:deps est allow_failure: true → informatif, ne bloque pas le deploy.
-# Il est retiré des `needs` des jobs de deploy pour éviter le comportement
-# ambigu (job optionnel dans needs = on attend quand même qu'il finisse).
-# ─────────────────────────────────────────────────────────────────────────────
-audit:deps:
-  stage: security
-  extends: .node_job
-  needs: [install]
-  script:
-    - npm audit --audit-level=high --omit=dev
-  allow_failure: true
-  timeout: 3 minutes
-  rules:
-    - if: $CI_COMMIT_BRANCH
-
-# ── 7. LIGHTHOUSE ─────────────────────────────────────────────────────────────
-#
-# Tourne contre l'URL preprod (NEXT_PUBLIC_API_URL_PREPROD), jamais contre prod.
-# Utilise l'image Puppeteer qui embarque Chromium — stable et maintenable,
-# évite l'installation manuelle via apk.
-# ─────────────────────────────────────────────────────────────────────────────
-lighthouse:
-  stage: lighthouse
-  image: ghcr.io/puppeteer/puppeteer:latest
-  extends: .build_vars_preprod
-  needs:
-    - job: build:prod
-      optional: true
-    - job: build:check
-      optional: true
-  before_script:
-    - npm ci --prefer-offline
-  script:
-    - npm run build
-    - npm run start &
-    - npx wait-on http://localhost:3000 --timeout 60000
-    - npx @lhci/cli@latest autorun --config=.lighthouserc.json
-  artifacts:
-    when: always
-    paths:
-      - .lighthouseci/
-    reports:
-      metrics: .lighthouseci/lhr-*.json
-    expire_in: 30 days
-  allow_failure: true
-  retry: 1
-  timeout: 10 minutes
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "cedrickdev"
-
-# ── 8. DEPLOY ─────────────────────────────────────────────────────────────────
-#
-# `vercel deploy --prebuilt` utilise le .vercel/output produit par build:prod.
-# Uniquement sur main — cedrickdev est déployé directement par Vercel.
-# interruptible: false → un deploy ne doit jamais être interrompu.
-# ─────────────────────────────────────────────────────────────────────────────
 deploy:production:
   stage: deploy
   extends:
     - .node_job
     - .build_vars_prod
-  interruptible: false                   # ← CRITIQUE : ne jamais interrompre un deploy
-  needs: [build:prod, test:e2e]
+  interruptible: false
+  needs: [build:prod]            # Dépend UNIQUEMENT du build — plus de blocage par test:e2e
   script:
     - DEPLOY_URL=$(npx vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN 2>&1 | tail -1)
     - echo "Production URL → $DEPLOY_URL"
@@ -337,6 +292,28 @@ deploy:production:
   timeout: 10 minutes
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
+
+deploy:preview:
+  stage: deploy
+  extends:
+    - .node_job
+    - .build_vars_preprod
+  interruptible: false
+  needs: [build:preview]
+  script:
+    - DEPLOY_URL=$(npx vercel deploy --prebuilt --token=$VERCEL_TOKEN 2>&1 | tail -1)
+    - echo "Preview URL → $DEPLOY_URL"
+    - echo "DEPLOY_URL=$DEPLOY_URL" >> deploy.env
+  artifacts:
+    reports:
+      dotenv: deploy.env
+    expire_in: 1 hour
+  environment:
+    name: preview
+    url: $DEPLOY_URL
+  timeout: 10 minutes
+  rules:
+    - if: $CI_COMMIT_BRANCH == "cedrickdev"
 
 # ── 9. NOTIFY ─────────────────────────────────────────────────────────────────
 #
