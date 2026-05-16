@@ -1,6 +1,31 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { shouldUseBearerForBroadcastAuth } from '@/lib/echo';
+import {
+  isReverbRealtimeConfigured,
+  shouldUseBearerForBroadcastAuth,
+} from '@/lib/echo';
+
+describe('isReverbRealtimeConfigured', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('returns false when key or host is empty after trim', () => {
+    vi.stubEnv('NEXT_PUBLIC_REVERB_APP_KEY', '');
+    vi.stubEnv('NEXT_PUBLIC_REVERB_HOST', 'reverb.example.com');
+    expect(isReverbRealtimeConfigured()).toBe(false);
+
+    vi.stubEnv('NEXT_PUBLIC_REVERB_APP_KEY', 'k');
+    vi.stubEnv('NEXT_PUBLIC_REVERB_HOST', '  ');
+    expect(isReverbRealtimeConfigured()).toBe(false);
+  });
+
+  it('returns true when key and host are non-empty', () => {
+    vi.stubEnv('NEXT_PUBLIC_REVERB_APP_KEY', 'app-key');
+    vi.stubEnv('NEXT_PUBLIC_REVERB_HOST', 'reverb.example.com');
+    expect(isReverbRealtimeConfigured()).toBe(true);
+  });
+});
 
 describe('shouldUseBearerForBroadcastAuth', () => {
   it('returns false for null', () => {

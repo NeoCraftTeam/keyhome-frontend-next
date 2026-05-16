@@ -24,7 +24,11 @@ import { CHAT_E2EE_READY_EVENT } from '@/lib/chat-e2ee-identity';
 import { enrichReplyToQuotes } from '@/lib/chat-reply-enrich';
 import type { ConversationsListQueryData } from '@/lib/conversation-list-cache';
 import { applyConversationStatusToConversationsCache } from '@/lib/conversation-list-cache';
-import { getEcho, useEchoConnectionState } from '@/lib/echo';
+import {
+  getEcho,
+  isReverbRealtimeConfigured,
+  useEchoConnectionState,
+} from '@/lib/echo';
 import { chatKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/AuthProvider';
 import type {
@@ -601,6 +605,10 @@ export function useChat(
   // and useConversations on the same conversation channel.
 
   useEffect(() => {
+    if (!isReverbRealtimeConfigured()) {
+      return;
+    }
+
     const echo = getEcho();
     const echoChannel = echo.private(`conversation.${conversationUuid}`);
 

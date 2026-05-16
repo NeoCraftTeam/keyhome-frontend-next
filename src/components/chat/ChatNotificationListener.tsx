@@ -1,6 +1,6 @@
 'use client';
 
-import { getEcho } from '@/lib/echo';
+import { getEcho, isReverbRealtimeConfigured } from '@/lib/echo';
 import {
   applyMessageSentToConversationsCache,
   applyMessagesReadToConversationsCache,
@@ -93,6 +93,7 @@ export function ChatNotificationListener({
   // events. Invalidate all chat queries so TanStack refetches the latest data.
   useEffect(() => {
     if (!isAuthenticated) return;
+    if (!isReverbRealtimeConfigured()) return;
 
     const pusher = getEcho().connector.pusher;
     const handler = ({
@@ -165,6 +166,7 @@ export function ChatNotificationListener({
   // can silently miss message.sent events.
   useEffect(() => {
     if (!user || !convUuids) return;
+    if (!isReverbRealtimeConfigured()) return;
 
     const echo = getEcho();
     const uuids = convUuids.split(',').filter(Boolean);

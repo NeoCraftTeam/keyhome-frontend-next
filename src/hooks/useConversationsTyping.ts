@@ -1,6 +1,6 @@
 'use client';
 
-import { getEcho } from '@/lib/echo';
+import { getEcho, isReverbRealtimeConfigured } from '@/lib/echo';
 import { selectConversationsForBackgroundWs } from '@/lib/chat-subscriptions';
 import { useAuth } from '@/providers/AuthProvider';
 import type { Conversation, TypingEvent } from '@/types/chat';
@@ -40,14 +40,9 @@ export function useConversationsTyping(
 
   useEffect(() => {
     const uuids = uuidsKey ? uuidsKey.split(',') : [];
-    if (!uuids.length) return;
+    if (!uuids.length || !isReverbRealtimeConfigured()) return;
 
-    let echo: ReturnType<typeof getEcho>;
-    try {
-      echo = getEcho();
-    } catch {
-      return;
-    }
+    const echo = getEcho();
 
     type HandlerEntry = { uuid: string; handler: (e: TypingEvent) => void };
     const handlers: HandlerEntry[] = [];

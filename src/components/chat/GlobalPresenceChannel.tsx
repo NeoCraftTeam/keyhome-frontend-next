@@ -1,6 +1,6 @@
 'use client';
 
-import { getEcho } from '@/lib/echo';
+import { getEcho, isReverbRealtimeConfigured } from '@/lib/echo';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEffect } from 'react';
 
@@ -20,6 +20,7 @@ export function GlobalPresenceChannel() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
+    if (!isReverbRealtimeConfigured()) return;
 
     const echo = getEcho();
     echo.join('online-users');

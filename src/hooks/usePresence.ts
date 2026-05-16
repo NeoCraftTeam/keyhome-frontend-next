@@ -1,6 +1,6 @@
 'use client';
 
-import { getEcho } from '@/lib/echo';
+import { getEcho, isReverbRealtimeConfigured } from '@/lib/echo';
 import { useEffect, useState } from 'react';
 
 export type PresenceStatus = 'online' | 'offline' | 'unknown';
@@ -25,7 +25,7 @@ export function usePresence(userId: string): {
    * shows the correct state and there is no flickering "Vu à" frame.
    */
   const [status, setStatus] = useState<PresenceStatus>(() => {
-    if (!userId) return 'unknown';
+    if (!userId || !isReverbRealtimeConfigured()) return 'unknown';
     try {
       const echo = getEcho();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,7 +44,7 @@ export function usePresence(userId: string): {
     }
   });
   const [device, setDevice] = useState<DeviceType>(() => {
-    if (!userId) return null;
+    if (!userId || !isReverbRealtimeConfigured()) return null;
     try {
       const echo = getEcho();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,6 +71,7 @@ export function usePresence(userId: string): {
 
   useEffect(() => {
     if (!userId) return;
+    if (!isReverbRealtimeConfigured()) return;
 
     const echo = getEcho();
 

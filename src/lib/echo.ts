@@ -14,6 +14,20 @@ declare global {
 
 let echo: Echo<'reverb'> | null = null;
 
+let missingReverbClientEnvLogged = false;
+
+/**
+ * Laravel Echo/Reverb nécessite des variables **NEXT_PUBLIC_*** disponibles dans le bundle
+ * frontend (pas seulement le .env Laravel). Utilisée pour désactiver proprement le temps
+ * réel sur Vercel si elles ont été oubliées.
+ */
+export function isReverbRealtimeConfigured(): boolean {
+  const key = (process.env.NEXT_PUBLIC_REVERB_APP_KEY ?? '').trim();
+  const host = (process.env.NEXT_PUBLIC_REVERB_HOST ?? '').trim();
+
+  return key.length > 0 && host.length > 0;
+}
+
 /** Exposed for tests — Clerk session tokens are JWT-shaped; Sanctum PATs use `id|plaintext`. */
 export function shouldUseBearerForBroadcastAuth(token: string | null): boolean {
   if (!token) {
@@ -62,21 +76,18 @@ export function getEcho(): Echo<'reverb'> {
     return echo;
   }
 
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    const missing: string[] = [];
-    if (!process.env.NEXT_PUBLIC_REVERB_APP_KEY) {
-      missing.push('NEXT_PUBLIC_REVERB_APP_KEY');
-    }
-    if (!process.env.NEXT_PUBLIC_REVERB_HOST) {
-      missing.push('NEXT_PUBLIC_REVERB_HOST');
-    }
-    if (missing.length > 0) {
+  if (!isReverbRealtimeConfigured()) {
+    if (typeof window !== 'undefined' && !missingReverbClientEnvLogged) {
+      missingReverbClientEnvLogged = true;
       console.warn(
-        `[Echo] Real-time (Reverb) mal configuré — variables manquantes : ${missing.join(', ')}. ` +
-          'Backend : BROADCAST_CONNECTION=reverb, php artisan reverb:start (ou composer run dev). ' +
-          'Frontend local typique : NEXT_PUBLIC_REVERB_HOST=localhost, PORT=8080, SCHEME=http, APP_KEY identique à REVERB_APP_KEY.'
+        '[Echo] Reverb désactivé : définissez NEXT_PUBLIC_REVERB_APP_KEY et NEXT_PUBLIC_REVERB_HOST ' +
+          'sur Vercel (valeurs alignées avec REVERB_APP_KEY et le hostname WebSocket du serveur Reverb — ex. https). ' +
+          'Backend : docker compose avec service reverb, BROADCAST_CONNECTION=reverb.'
       );
     }
+    throw new Error(
+      'Reverb client not configured — supply NEXT_PUBLIC_REVERB_APP_KEY and NEXT_PUBLIC_REVERB_HOST for the frontend build.'
+    );
   }
 
   if (typeof window !== 'undefined') {
@@ -203,9 +214,16 @@ export type EchoConnectionState =
  * the current WebSocket connection state. Used to show a reconnecting banner.
  */
 export function useEchoConnectionState(): EchoConnectionState {
-  const [state, setState] = useState<EchoConnectionState>('connecting');
+  const [state, setState] = useState<EchoConnectionState>(() =>
+    isReverbRealtimeConfigured() ? 'connecting' : 'disconnected'
+  );
 
   useEffect(() => {
+    if (!isReverbRealtimeConfigured()) {
+      setState('disconnected');
+      return;
+    }
+
     const pusher = getEcho().connector.pusher;
     setState(pusher.connection.state as EchoConnectionState);
 
