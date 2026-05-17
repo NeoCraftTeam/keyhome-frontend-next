@@ -188,6 +188,8 @@ export function CurrencySelector({
         open={open}
         anchorEl={anchorEl}
         onClose={handleClose}
+        // Keep popover DOM under Drawer/Modal tree so axe does not flag focusable descendants of aria-hidden app root.
+        disablePortal={isDrawer}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{

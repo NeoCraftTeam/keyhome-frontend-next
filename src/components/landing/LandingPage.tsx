@@ -1,24 +1,24 @@
 'use client';
 
+import CTASection from '@/components/landing/CTASection';
+import FAQSection from '@/components/landing/FAQSection';
+import FeaturesSection from '@/components/landing/FeaturesSection';
+import HeroSection from '@/components/landing/HeroSection';
+import HowItWorksSection from '@/components/landing/HowItWorksSection';
+import LandingFooter from '@/components/landing/LandingFooter';
+import LandingNav from '@/components/landing/LandingNav';
 import {
   LandingThemeProvider,
   useLandingTheme,
 } from '@/components/landing/LandingThemeContext';
-import { PageTransitionOverlay } from '@/components/landing/PageTransition';
-import CTASection from '@/components/landing/CTASection';
-import NewsletterSection from '@/components/landing/NewsletterSection';
-import FeaturesSection from '@/components/landing/FeaturesSection';
-import HeroSection from '@/components/landing/HeroSection';
-import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import LandlordSection from '@/components/landing/LandlordSection';
+import NewsletterSection from '@/components/landing/NewsletterSection';
+import { PageTransitionOverlay } from '@/components/landing/PageTransition';
 import PricingSection from '@/components/landing/PricingSection';
-import LandingFooter from '@/components/landing/LandingFooter';
-import LandingNav from '@/components/landing/LandingNav';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
-import FAQSection from '@/components/landing/FAQSection';
+import { brand } from '@/theme/tokens';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { brand } from '@/theme/tokens';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
@@ -98,7 +98,7 @@ function LandingInner() {
       }}
     >
       <LandingNav />
-      <main>
+      <div>
         <HeroSection />
         <FeaturesSection />
         <HowItWorksSection />
@@ -108,7 +108,7 @@ function LandingInner() {
         <FAQSection />
         <CTASection />
         <NewsletterSection />
-      </main>
+      </div>
       <LandingFooter />
       <BackToTop />
       <PageTransitionOverlay />

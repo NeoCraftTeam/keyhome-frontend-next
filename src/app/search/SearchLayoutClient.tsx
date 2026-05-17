@@ -25,9 +25,6 @@ export default function SearchLayoutClient({
     >
       <Navbar />
       <Box
-        component="main"
-        id="main-content"
-        tabIndex={-1}
         sx={{
           flex: 1,
           overflow: 'hidden',

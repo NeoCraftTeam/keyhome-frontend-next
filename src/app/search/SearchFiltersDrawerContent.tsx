@@ -100,6 +100,7 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
       {/* City */}
       <Autocomplete
         size="small"
+        disablePortal
         options={cities}
         forcePopupIcon={false}
         getOptionLabel={(opt) => opt.name}
@@ -147,6 +148,7 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
       {/* Property type */}
       <Autocomplete
         size="small"
+        disablePortal
         options={adTypes || []}
         getOptionLabel={(opt) => opt.name}
         isOptionEqualToValue={(opt, val) => opt.id === val.id}

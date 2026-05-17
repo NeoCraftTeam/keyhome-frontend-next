@@ -214,7 +214,9 @@ export default async function RootLayout({
             <Suspense fallback={null}>
               <RouteProgressBar />
             </Suspense>
-            {children}
+            <main id="main-content" tabIndex={-1} className="w-full">
+              {children}
+            </main>
             <Analytics />
             <WebVitals />
             <ServiceWorkerRegistrar />

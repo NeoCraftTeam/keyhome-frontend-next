@@ -1,36 +1,36 @@
 'use client';
 
+import KeyHomeClarityIdentity from '@/components/analytics/KeyHomeClarityIdentity';
+import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
+import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import BottomNav, { BOTTOM_NAV_HEIGHT } from '@/components/layout/BottomNav';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
-import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
+import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
 import {
   getSurveyPostponed,
   setSurveyPostponed as persistSurveyPostponed,
 } from '@/components/surveys/SurveyBanner';
-import { authService } from '@/services/auth.service';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
 import AppLoader from '@/components/ui/AppLoader';
-import SkipLink from '@/components/ui/SkipLink';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
 import PushPrompt from '@/components/ui/PushPrompt';
+import SkipLink from '@/components/ui/SkipLink';
 import WelcomeModal from '@/components/ui/WelcomeModal';
-import ToastProvider from '@/providers/ToastProvider';
-import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
-import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
-import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
-import KeyHomeClarityIdentity from '@/components/analytics/KeyHomeClarityIdentity';
 import { useFcmToken } from '@/hooks/useFcmToken';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { isLikelyIosWebKit } from '@/lib/ios-environment';
 import { useAuth } from '@/providers/AuthProvider';
+import ToastProvider from '@/providers/ToastProvider';
+import { authService } from '@/services/auth.service';
 import { surveysService } from '@/services/surveys.service';
 import { UserRole } from '@/types';
-import { useUserLocation } from '@/hooks/useUserLocation';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
-import { isLikelyIosWebKit } from '@/lib/ios-environment';
 import { useCallback, useEffect, useState } from 'react';
 
 /** Silently warms up the geolocation cache on first visit so ad-detail maps are instant */
@@ -320,9 +320,6 @@ export default function DashboardLayout({
         {isAuthenticated && <ChatNotificationListener accentColor="#F6475F" />}
         {!hideNavForChat && <Navbar />}
         <Box
-          component="main"
-          id="main-content"
-          tabIndex={-1}
           sx={{
             flex: 1,
             minHeight: 0, // flex child trick: allow shrinking below content size

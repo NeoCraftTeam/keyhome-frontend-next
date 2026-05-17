@@ -112,8 +112,8 @@ export default function TermsOfUsePage() {
           ))}
         </nav>
 
-        {/* Main Content */}
-        <main className={styles.mainContent}>
+        {/* Main Content — div: single document <main> is in root layout (a11y) */}
+        <div className={styles.mainContent}>
           <div className={styles.card}>
             <p className={styles.intro}>
               Les présentes conditions régissent l&apos;utilisation de la
@@ -844,7 +844,7 @@ export default function TermsOfUsePage() {
               </p>
             </div>
           </footer>
-        </main>
+        </div>
       </div>
     </div>
   );

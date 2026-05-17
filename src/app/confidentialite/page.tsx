@@ -108,8 +108,8 @@ export default function PrivacyPolicyPage() {
           ))}
         </nav>
 
-        {/* Main Content */}
-        <main className={styles.mainContent}>
+        {/* Main Content — div: single document <main> is in root layout (a11y) */}
+        <div className={styles.mainContent}>
           <div className={styles.card}>
             <p className={styles.intro}>
               Chez <span className={styles.introHighlight}>KeyHome</span>, nous
@@ -744,7 +744,7 @@ export default function PrivacyPolicyPage() {
               </p>
             </div>
           </footer>
-        </main>
+        </div>
       </div>
     </div>
   );

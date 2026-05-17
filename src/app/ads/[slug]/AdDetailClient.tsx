@@ -572,7 +572,6 @@ function AdDetailContent() {
     <>
       <Box
         id="kh-ad-print-root"
-        component="main"
         sx={{ position: 'relative', overflowX: 'hidden' }}
       >
         {/* Mobile: full-bleed photo hero + floating back button */}

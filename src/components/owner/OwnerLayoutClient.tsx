@@ -1,31 +1,33 @@
 'use client';
 
-import OwnerBottomNav, {
-  OWNER_BOTTOM_NAV_HEIGHT,
-} from '@/components/owner/OwnerBottomNav';
-import OwnerNavbar from '@/components/owner/OwnerNavbar';
+import KeyHomeClarityIdentity from '@/components/analytics/KeyHomeClarityIdentity';
+import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
+import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
 import {
   SIDEBAR_COLLAPSED_WIDTH,
   SIDEBAR_WIDTH,
 } from '@/components/owner/owner-constants';
+import OwnerBottomNav, {
+  OWNER_BOTTOM_NAV_HEIGHT,
+} from '@/components/owner/OwnerBottomNav';
+import OwnerNavbar from '@/components/owner/OwnerNavbar';
 import OwnerSidebar from '@/components/owner/OwnerSidebar';
-import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
+import OwnerWelcomeModal from '@/components/owner/OwnerWelcomeModal';
+import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
 import {
   getSurveyPostponed,
   setSurveyPostponed as persistSurveyPostponed,
 } from '@/components/surveys/SurveyBanner';
-import KeyHomeClarityIdentity from '@/components/analytics/KeyHomeClarityIdentity';
-import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
-import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
-import { useFcmToken } from '@/hooks/useFcmToken';
-import { useIsStandalone } from '@/hooks/useIsStandalone';
+import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
 import PushPrompt from '@/components/ui/PushPrompt';
-import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
-import OwnerWelcomeModal from '@/components/owner/OwnerWelcomeModal';
+import { useFcmToken } from '@/hooks/useFcmToken';
+import { useIsStandalone } from '@/hooks/useIsStandalone';
+import { isLikelyIosWebKit } from '@/lib/ios-environment';
 import { shouldShowOwnerQuickCreateFab } from '@/lib/owner-shell-fab';
+import { khLeftRailPaddingSx } from '@/lib/safe-area-insets';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { surveysService } from '@/services/surveys.service';
@@ -35,8 +37,6 @@ import { Add as AddIcon } from '@mui/icons-material';
 import { Box, Drawer, Fab, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
-import { isLikelyIosWebKit } from '@/lib/ios-environment';
-import { khLeftRailPaddingSx } from '@/lib/safe-area-insets';
 import { useCallback, useEffect, useState } from 'react';
 
 function FcmRegistrar() {
@@ -380,9 +380,6 @@ export default function OwnerLayoutClient({
 
       {/* Main content area */}
       <Box
-        id="main-content"
-        component="main"
-        role="main"
         aria-label="Contenu principal"
         sx={{
           flexGrow: 1,
