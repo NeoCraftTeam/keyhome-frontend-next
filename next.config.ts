@@ -234,6 +234,14 @@ export default withSentryConfig(bundleAnalyzer(withNextIntl(nextConfig)), {
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
 
+  // Disable source-map upload when SENTRY_AUTH_TOKEN is absent (e.g. Vercel
+  // env var not yet set / token expired). Without this the build fails with
+  // HTTP 401 and blocks every deploy. Set SENTRY_AUTH_TOKEN in the Vercel
+  // project settings to re-enable uploads.
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
