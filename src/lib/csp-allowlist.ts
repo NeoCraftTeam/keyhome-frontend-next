@@ -2,7 +2,7 @@
  * Single source of truth for third-party Content-Security-Policy origins.
  *
  * Covers: local dev, *.keyhome.app, *.keyhome.cm, *.neocraft.dev, Firebase,
- * Vercel Analytics / Speed Insights, Sentry, Mapbox, Clerk, R2, Reverb.
+ * Vercel Analytics / Speed Insights, Microsoft Clarity, Sentry, Mapbox, Clerk, R2, Reverb.
  */
 
 export type CspConnectBuildContext = {
@@ -87,6 +87,9 @@ export function buildConnectSrcParts(ctx: CspConnectBuildContext): string[] {
     // Vercel (@vercel/analytics, @vercel/speed-insights)
     'https://vitals.vercel-insights.com',
     'https://*.vercel-insights.com',
+    // Microsoft Clarity (script + /collect + load-balanced subdomains; c.bing.com per MS CSP doc)
+    'https://*.clarity.ms',
+    'https://c.bing.com',
     // Sentry browser SDK (@sentry/nextjs)
     'https://*.sentry.io',
     'https://*.ingest.sentry.io',
@@ -127,7 +130,7 @@ export function buildConnectSrcParts(ctx: CspConnectBuildContext): string[] {
 
 /** Extra script-src hosts (nonce + 'self' are added in proxy.ts). */
 export const CSP_SCRIPT_HOSTS =
-  'https://api.mapbox.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://accounts.google.com https://www.gstatic.com https://*.googleapis.com https://js.stripe.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:';
+  'https://api.mapbox.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://accounts.google.com https://www.gstatic.com https://*.googleapis.com https://js.stripe.com https://*.clarity.ms https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:';
 
 export const CSP_STYLE_HOSTS =
   'https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://accounts.google.com https://www.gstatic.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev';

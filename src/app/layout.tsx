@@ -1,3 +1,4 @@
+import { MicrosoftClarity } from '@/components/analytics/MicrosoftClarity';
 import NetworkStatus from '@/components/pwa/NetworkStatus';
 import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
@@ -217,6 +218,7 @@ export default async function RootLayout({
             <NetworkStatus />
             <CookieBanner />
             <SpeedInsights />
+            <MicrosoftClarity />
           </Providers>
 
           {/* Cloudflare Web Analytics */}

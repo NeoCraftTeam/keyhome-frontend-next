@@ -14,6 +14,7 @@ import {
   getSurveyPostponed,
   setSurveyPostponed as persistSurveyPostponed,
 } from '@/components/surveys/SurveyBanner';
+import KeyHomeClarityIdentity from '@/components/analytics/KeyHomeClarityIdentity';
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
 import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
 import { useFcmToken } from '@/hooks/useFcmToken';
@@ -338,6 +339,7 @@ export default function OwnerLayoutClient({
           presence (online/last seen) and chat toast notifications.
           ChatNotificationListener uses the teal owner accent. */}
       <GlobalPresenceChannel />
+      <KeyHomeClarityIdentity />
       <FcmRegistrar />
       <ChatNotificationListener
         basePath="/owner/messages"

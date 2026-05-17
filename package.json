@@ -6,7 +6,7 @@
     "dev": "NODE_OPTIONS='--max-old-space-size=4096' node ./node_modules/next/dist/bin/next dev",
     "dev:clean": "rm -rf .next && NODE_OPTIONS='--max-old-space-size=4096' node ./node_modules/next/dist/bin/next dev",
     "dev:webpack": "node ./node_modules/next/dist/bin/next dev --webpack",
-    "build": "node ./node_modules/next/dist/bin/next build",
+    "build": "node ./node_modules/next/dist/bin/next build && pnpm sentry:sourcemaps",
     "start": "node ./node_modules/next/dist/bin/next start",
     "lint": "eslint",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
@@ -20,7 +20,8 @@
     "analyze": "ANALYZE=true node ./node_modules/next/dist/bin/next build",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org workgroup-h0 --project keyhome .next && sentry-cli sourcemaps upload --org workgroup-h0 --project keyhome .next"
   },
   "dependencies": {
     "@clerk/localizations": "^3.37.0",
@@ -36,7 +37,8 @@
     "@photo-sphere-viewer/gallery-plugin": "5.14.1",
     "@photo-sphere-viewer/markers-plugin": "^5.14.1",
     "@photo-sphere-viewer/virtual-tour-plugin": "^5.14.1",
-    "@sentry/nextjs": "^10.40.0",
+    "@sentry/cli": "^2.58.5",
+    "@sentry/nextjs": "^10",
     "@stripe/react-stripe-js": "^6.3.0",
     "@stripe/stripe-js": "^9.4.0",
     "@tanstack/react-query": "^5.90.21",

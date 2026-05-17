@@ -20,6 +20,7 @@ import ToastProvider from '@/providers/ToastProvider';
 import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
 import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
+import KeyHomeClarityIdentity from '@/components/analytics/KeyHomeClarityIdentity';
 import { useFcmToken } from '@/hooks/useFcmToken';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { useAuth } from '@/providers/AuthProvider';
@@ -313,6 +314,7 @@ export default function DashboardLayout({
         <SkipLink />
         <LocationPrimer />
         {isAuthenticated && <FcmRegistrar />}
+        {isAuthenticated && <KeyHomeClarityIdentity />}
         {isAuthenticated && <GlobalPresenceChannel />}
         {isAuthenticated && <ChatNotificationListener accentColor="#F6475F" />}
         {!hideNavForChat && <Navbar />}

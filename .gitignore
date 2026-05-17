@@ -50,3 +50,9 @@ data.mspackage-lock.json
 .pnpm-store/
 
 data.ms/*
+
+# Sentry Config File
+.env.sentry-build-plugin
+
+# Sentry Config File
+.sentryclirc
