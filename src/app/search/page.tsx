@@ -1,11 +1,11 @@
 'use client';
 
-import AdCard from '@/components/ads/AdCard';
-import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import SearchAlertButton from '@/components/ads/SearchAlertButton';
 import AppLoader from '@/components/ui/AppLoader';
 import { useAuth } from '@/providers/AuthProvider';
 import dynamic from 'next/dynamic';
+import SearchFiltersDrawerContent from './SearchFiltersDrawerContent';
+import SearchResultsList from './SearchResultsList';
 
 import { useSearchFilters } from '@/hooks/useSearchFilters';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
@@ -14,17 +14,14 @@ import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { DEFAULT_CENTER, MAPBOX_TOKEN } from '@/lib/constants';
 import { escapeHtml } from '@/lib/sanitize';
 import { formatVisitorPrice } from '@/providers/CurrencyProvider';
-import { gradient } from '@/theme/tokens';
 import CloseIcon from '@mui/icons-material/Close';
 import HistoryIcon from '@mui/icons-material/History';
 import ListIcon from '@mui/icons-material/List';
 import MapIcon from '@mui/icons-material/Map';
 import SearchIcon from '@mui/icons-material/Search';
-import SearchOffIcon from '@mui/icons-material/SearchOff';
 import TuneIcon from '@mui/icons-material/Tune';
 import ViewInArIcon from '@mui/icons-material/ViewInAr';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
-import WifiOffIcon from '@mui/icons-material/WifiOff';
 import {
   Autocomplete,
   Box,
@@ -33,14 +30,7 @@ import {
   CircularProgress,
   Divider,
   Drawer,
-  FormControlLabel,
-  Grid,
   IconButton,
-  Menu,
-  MenuItem,
-  Pagination,
-  Slider,
-  Switch,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -49,7 +39,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { motion, MotionConfig } from 'framer-motion';
+import { MotionConfig } from 'framer-motion';
 import type * as MapboxGL from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useRouter } from 'next/navigation';
@@ -564,600 +554,15 @@ function SearchContent() {
     }
   }, [showHeatmap, mapStyleUrl]);
 
-  const MoreFiltersDrawer = (
-    <Box sx={{ p: 3, width: isMobile ? '100%' : 380 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2.5,
-        }}
-      >
-        <Typography variant="h6" fontWeight={700}>
-          Tous les filtres
-        </Typography>
-        <IconButton
-          aria-label="Fermer"
-          onClick={() => setMoreFiltersOpen(false)}
-        >
-          <CloseIcon />
-        </IconButton>
-      </Box>
-
-      <Autocomplete
-        size="small"
-        options={cities}
-        forcePopupIcon={false}
-        getOptionLabel={(opt) => opt.name}
-        isOptionEqualToValue={(opt, val) => opt.id === val.id}
-        value={selectedCity}
-        onChange={(_, val) => {
-          setSelectedCity(val);
-          setCityInput(val?.name || '');
-          setPage(1);
-        }}
-        inputValue={cityInput}
-        onInputChange={(_, val, reason) => {
-          if (reason !== 'reset') {
-            setCityInput(val);
-          }
-        }}
-        filterOptions={(x) => x}
-        loading={isCitiesLoading}
-        noOptionsText={
-          cityInput.length < 1
-            ? 'Tapez pour rechercher…'
-            : 'Aucune ville trouvée'
-        }
-        slotProps={citySlotProps}
-        renderOption={(props, option) => renderCityOption(props, option)}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Ville"
-            placeholder="Rechercher une ville…"
-            sx={{ ...cityInputSx, mb: 2 }}
-            InputProps={{
-              ...params.InputProps,
-              endAdornment: (
-                <>
-                  {isCitiesLoading ? (
-                    <CircularProgress color="inherit" size={18} />
-                  ) : null}
-                  {params.InputProps.endAdornment}
-                </>
-              ),
-            }}
-          />
-        )}
-      />
-
-      <Autocomplete
-        size="small"
-        options={adTypes || []}
-        getOptionLabel={(opt) => opt.name}
-        isOptionEqualToValue={(opt, val) => opt.id === val.id}
-        renderOption={(props, opt) => {
-          const fc = facets?.types?.find(
-            (t) => t.name.toLowerCase() === opt.name.toLowerCase()
-          );
-          return (
-            <li {...props} key={opt.id}>
-              <span style={{ flex: 1 }}>{opt.name}</span>
-              {fc && (
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--mui-palette-text-secondary)',
-                    marginLeft: 8,
-                  }}
-                >
-                  {fc.count}
-                </span>
-              )}
-            </li>
-          );
-        }}
-        value={selectedType}
-        onChange={(_, val) => {
-          setSelectedType(val);
-          setPage(1);
-        }}
-        noOptionsText="Aucun type"
-        renderInput={(params) => (
-          <TextField {...params} label="Type de bien" sx={{ mb: 2 }} />
-        )}
-      />
-
-      <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-        Prix (FCFA)
-      </Typography>
-      <Slider
-        value={priceRange}
-        onChange={(_, val) => setPriceRange(val as [number, number])}
-        onChangeCommitted={() => setPage(1)}
-        min={0}
-        max={5000000}
-        step={50000}
-        valueLabelDisplay="auto"
-        valueLabelFormat={(val) => `${(val / 1000).toFixed(0)}k`}
-        sx={{ mb: 0.5 }}
-      />
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="caption" color="text.secondary">
-          0 FCFA
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          5 000 000 FCFA
-        </Typography>
-      </Box>
-
-      <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-        Chambres
-      </Typography>
-      <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 2.5 }}>
-        {[undefined, 1, 2, 3, 4, 5].map((val) => {
-          const fc =
-            val !== undefined
-              ? facets?.bedrooms?.find((b) => b.value === val)
-              : undefined;
-          const label =
-            val === undefined
-              ? 'Tous'
-              : fc
-                ? `${val}+ (${fc.count})`
-                : `${val}+`;
-          return (
-            <Chip
-              key={val ?? 'all'}
-              label={label}
-              size="small"
-              onClick={() => {
-                setBedrooms(val);
-                setPage(1);
-              }}
-              variant={bedrooms === val ? 'filled' : 'outlined'}
-              sx={
-                bedrooms === val
-                  ? { bgcolor: 'primary.main', color: '#fff' }
-                  : {}
-              }
-            />
-          );
-        })}
-      </Box>
-
-      <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-        Salles de bain
-      </Typography>
-      <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 2.5 }}>
-        {[undefined, 1, 2, 3, 4].map((val) => (
-          <Chip
-            key={val ?? 'all'}
-            label={val === undefined ? 'Tous' : `${val}+`}
-            size="small"
-            onClick={() => {
-              setBathrooms(val);
-              setPage(1);
-            }}
-            variant={bathrooms === val ? 'filled' : 'outlined'}
-            sx={
-              bathrooms === val
-                ? { bgcolor: 'primary.main', color: '#fff' }
-                : {}
-            }
-          />
-        ))}
-      </Box>
-
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-        Surface (m²)
-      </Typography>
-      <Slider
-        value={surfaceRange}
-        onChange={(_, val) => setSurfaceRange(val as [number, number])}
-        onChangeCommitted={() => setPage(1)}
-        min={0}
-        max={1000}
-        step={10}
-        valueLabelDisplay="auto"
-        sx={{ mb: 2.5 }}
-      />
-
-      <FormControlLabel
-        control={
-          <Switch
-            checked={hasParking}
-            onChange={(e) => {
-              setHasParking(e.target.checked);
-              setPage(1);
-            }}
-          />
-        }
-        label={
-          facets?.has_parking
-            ? `Parking inclus (${facets.has_parking.with_parking})`
-            : 'Parking inclus'
-        }
-        sx={{ mb: 1 }}
-      />
-
-      <FormControlLabel
-        control={
-          <Switch
-            checked={has3dTour}
-            onChange={(e) => {
-              setHas3dTour(e.target.checked);
-              setPage(1);
-            }}
-          />
-        }
-        label={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <ViewInArIcon sx={{ fontSize: 16, color: 'primary.main' }} />
-            Visite 3D disponible
-          </Box>
-        }
-        sx={{ mb: 2 }}
-      />
-
-      {propertyAttributes?.grouped && propertyAttributes.grouped.length > 0 && (
-        <>
-          <Divider sx={{ my: 2 }} />
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>
-            Équipements
-          </Typography>
-          {propertyAttributes.grouped.map((group) => (
-            <Box key={group.slug} sx={{ mb: 2 }}>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                  display: 'block',
-                  mb: 0.75,
-                }}
-              >
-                {group.name}
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-                {group.attributes.map((attr) => {
-                  const active = selectedAmenities.includes(attr.value);
-                  return (
-                    <Chip
-                      key={attr.value}
-                      label={attr.label}
-                      size="small"
-                      onClick={() => {
-                        setSelectedAmenities((prev) =>
-                          prev.includes(attr.value)
-                            ? prev.filter((v) => v !== attr.value)
-                            : [...prev, attr.value]
-                        );
-                        setPage(1);
-                      }}
-                      variant={active ? 'filled' : 'outlined'}
-                      sx={
-                        active
-                          ? {
-                              bgcolor: 'primary.main',
-                              color: '#fff',
-                              fontWeight: 600,
-                            }
-                          : {}
-                      }
-                    />
-                  );
-                })}
-              </Box>
-            </Box>
-          ))}
-        </>
-      )}
-
-      <Divider sx={{ my: 2 }} />
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        <Button fullWidth variant="outlined" onClick={clearFilters}>
-          Réinitialiser
-        </Button>
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={() => setMoreFiltersOpen(false)}
-          sx={{
-            background: (t) => t.palette.gradient?.primary ?? gradient.primary,
-          }}
-        >
-          Voir {total} résultats
-        </Button>
-      </Box>
-    </Box>
-  );
-
-  const ResultsList = (
-    <Box
-      sx={{
-        height: '100%',
-        overflowY: 'auto',
-        px: { xs: 2, md: 2.5 },
-        pt: 1.5,
-        pb: { xs: 4, md: 4 },
-        '&::-webkit-scrollbar': { width: 6 },
-        '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 3 },
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-          pt: 0.5,
-        }}
-      >
-        <Typography
-          variant="subtitle2"
-          color="text.secondary"
-          sx={{ fontSize: '0.85rem' }}
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {isFetching && !isLoading ? (
-            'Mise à jour…'
-          ) : (
-            <>
-              <strong style={{ color: 'inherit', fontWeight: 800 }}>
-                {total.toLocaleString('fr-FR')}
-              </strong>{' '}
-              annonce{total > 1 ? 's' : ''}
-            </>
-          )}
-        </Typography>
-
-        <Button
-          size="small"
-          endIcon={<span style={{ fontSize: 10 }}>▾</span>}
-          onClick={(e) => setSortAnchor(e.currentTarget)}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            fontSize: '0.8rem',
-            borderRadius: '20px',
-            border: '1px solid',
-            borderColor: 'divider',
-            color: 'text.primary',
-            px: 1.5,
-            py: 0.25,
-          }}
-        >
-          {sortLabel}
-        </Button>
-        <Menu
-          anchorEl={sortAnchor}
-          open={Boolean(sortAnchor)}
-          onClose={() => setSortAnchor(null)}
-        >
-          {[
-            { label: 'Pertinence', sb: 'boost_score', so: 'desc' },
-            { label: 'Plus récents', sb: 'created_at', so: 'desc' },
-            { label: 'Prix croissant', sb: 'price', so: 'asc' },
-            { label: 'Prix décroissant', sb: 'price', so: 'desc' },
-            { label: 'Surface croissante', sb: 'surface_area', so: 'asc' },
-            { label: 'Surface décroissante', sb: 'surface_area', so: 'desc' },
-            { label: 'Mieux notés', sb: 'reviews_avg_rating', so: 'desc' },
-            { label: 'Populaires', sb: 'views_count', so: 'desc' },
-            { label: 'Distance', sb: '_geoPoint', so: 'asc' },
-          ].map((opt) => (
-            <MenuItem
-              key={opt.label}
-              selected={sortBy === opt.sb && sortOrder === opt.so}
-              onClick={() => {
-                setSortBy(opt.sb);
-                setSortOrder(opt.so as 'asc' | 'desc');
-                setPage(1);
-                setSortAnchor(null);
-              }}
-            >
-              {opt.label}
-            </MenuItem>
-          ))}
-        </Menu>
-      </Box>
-
-      {isLoading ? (
-        <Grid container spacing={1.5}>
-          {Array.from({ length: 8 }).map((_, idx) => (
-            <Grid key={idx} size={{ xs: 6, lg: 4, xl: 3 }}>
-              <AdCardSkeleton />
-            </Grid>
-          ))}
-        </Grid>
-      ) : isError ? (
-        <Box sx={{ textAlign: 'center', py: { xs: 6, md: 10 }, px: 3 }}>
-          <WifiOffIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
-            Connexion interrompue
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mb: 3, maxWidth: 340, mx: 'auto', lineHeight: 1.6 }}
-          >
-            Nous n&apos;avons pas pu charger les annonces. Vérifiez votre
-            connexion et réessayez.
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={() => refetch()}
-            sx={{
-              textTransform: 'none',
-              borderRadius: 99,
-              fontWeight: 700,
-              px: 4,
-              background: (t) =>
-                t.palette.gradient?.primary ?? gradient.primary,
-            }}
-          >
-            Réessayer
-          </Button>
-        </Box>
-      ) : ads.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: { xs: 6, md: 10 }, px: 3 }}>
-          <SearchOffIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
-            Pas encore d&apos;annonces ici
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mb: 1, maxWidth: 340, mx: 'auto', lineHeight: 1.6 }}
-          >
-            Aucun bien ne correspond à ces critères pour le moment.
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mb: 3, maxWidth: 340, mx: 'auto', lineHeight: 1.6 }}
-          >
-            Créez une alerte et soyez notifié dès qu&apos;un bien est publié, ou
-            élargissez votre recherche.
-          </Typography>
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 1.5,
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            {isAuthenticated ? (
-              <SearchAlertButton
-                prefill={{ city_name: selectedCity?.name }}
-                variant="button"
-                sx={{
-                  textTransform: 'none',
-                  borderRadius: 99,
-                  fontWeight: 700,
-                  px: 3,
-                  background: (t) =>
-                    t.palette.gradient?.primary ?? gradient.primary,
-                  color: 'white',
-                  border: 'none',
-                  '&:hover': {
-                    background: (t) =>
-                      t.palette.gradient?.primaryHover ?? gradient.primaryHover,
-                    border: 'none',
-                  },
-                }}
-              />
-            ) : (
-              <Button
-                variant="contained"
-                onClick={() =>
-                  router.push(
-                    `/login?redirect=${encodeURIComponent(typeof window !== 'undefined' && window.location.search ? `/search${window.location.search}` : '/search')}`
-                  )
-                }
-                sx={{
-                  textTransform: 'none',
-                  borderRadius: 99,
-                  fontWeight: 700,
-                  px: 3,
-                  background: (t) =>
-                    t.palette.gradient?.primary ?? gradient.primary,
-                  '&:hover': {
-                    background: (t) =>
-                      t.palette.gradient?.primaryHover ?? gradient.primaryHover,
-                  },
-                }}
-              >
-                Se connecter pour créer une alerte
-              </Button>
-            )}
-            <Button
-              variant="contained"
-              onClick={clearFilters}
-              sx={{
-                textTransform: 'none',
-                borderRadius: 99,
-                fontWeight: 700,
-                px: 3,
-                background: (t) =>
-                  t.palette.gradient?.primary ?? gradient.primary,
-                '&:hover': {
-                  background: (t) =>
-                    t.palette.gradient?.primaryHover ?? gradient.primaryHover,
-                },
-              }}
-            >
-              Voir toutes les annonces
-            </Button>
-            {selectedCity && (
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setCityInput('');
-                  setSelectedCity(null);
-                  setPage(1);
-                }}
-                sx={{
-                  textTransform: 'none',
-                  borderRadius: 99,
-                  fontWeight: 600,
-                }}
-              >
-                Changer de ville
-              </Button>
-            )}
-          </Box>
-        </Box>
-      ) : (
-        <>
-          <Grid
-            container
-            spacing={1.5}
-            sx={{ '& .ad-card-title': { color: '#222 !important' } }}
-          >
-            {ads.map((ad, idx) => (
-              <Grid key={ad.id} size={{ xs: 6, lg: 4, xl: 3 }}>
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.2,
-                    delay: Math.min(idx * 0.04, 0.4),
-                  }}
-                >
-                  <AdCard ad={ad} />
-                </motion.div>
-              </Grid>
-            ))}
-          </Grid>
-
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={(_, val) => setPage(val)}
-                shape="rounded"
-                size="small"
-                sx={{
-                  '& .MuiPaginationItem-root.Mui-selected': {
-                    bgcolor: 'primary.main',
-                    color: '#fff',
-                    '&:hover': { bgcolor: 'primary.dark' },
-                  },
-                }}
-              />
-            </Box>
-          )}
-        </>
-      )}
-    </Box>
+  const filtersDrawerContent = (
+    <SearchFiltersDrawerContent
+      filters={filters}
+      isMobile={isMobile}
+      total={total}
+      onClose={() => setMoreFiltersOpen(false)}
+      citySlotProps={citySlotProps}
+      renderCityOption={renderCityOption}
+    />
   );
 
   return (
@@ -1787,7 +1192,31 @@ function SearchContent() {
           )}
 
           {(!isMobile || mobileViewMode === 'list') && (
-            <Box sx={{ flex: 1, overflow: 'auto' }}>{ResultsList}</Box>
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
+              <SearchResultsList
+                ads={ads}
+                total={total}
+                totalPages={totalPages}
+                page={page}
+                isLoading={isLoading}
+                isFetching={isFetching}
+                isError={isError}
+                refetch={refetch}
+                sortAnchor={sortAnchor}
+                setSortAnchor={setSortAnchor}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                sortOrder={sortOrder}
+                setSortOrder={setSortOrder}
+                sortLabel={sortLabel}
+                setPage={setPage}
+                isAuthenticated={isAuthenticated}
+                selectedCity={selectedCity}
+                setCityInput={setCityInput}
+                setSelectedCity={setSelectedCity}
+                clearFilters={clearFilters}
+              />
+            </Box>
           )}
         </Box>
 
@@ -1801,7 +1230,7 @@ function SearchContent() {
               : { width: 380 },
           }}
         >
-          {MoreFiltersDrawer}
+          {filtersDrawerContent}
         </Drawer>
       </Box>
     </MotionConfig>
