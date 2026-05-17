@@ -38,7 +38,9 @@ export default function SurveyPrompt({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const dismissed = sessionStorage.getItem(`survey_dismissed_${surveyId}`);
+    // RC-3: use localStorage (not sessionStorage) so the dismiss persists
+    // across tabs and browser restarts, matching SurveyBanner behaviour.
+    const dismissed = localStorage.getItem(`survey_dismissed_${surveyId}`);
     if (!dismissed) {
       const timer = setTimeout(() => setVisible(true), 2000);
       return () => clearTimeout(timer);
@@ -47,7 +49,8 @@ export default function SurveyPrompt({
 
   const handleDismiss = () => {
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem(`survey_dismissed_${surveyId}`, 'true');
+      // RC-3: persist in localStorage so dismissal survives new tabs / sessions.
+      localStorage.setItem(`survey_dismissed_${surveyId}`, 'true');
     }
     setVisible(false);
   };

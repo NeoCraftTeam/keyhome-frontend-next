@@ -45,9 +45,12 @@ export default function SurveyPage() {
     }) => surveysService.submitResponse(surveyId, answers, anonymous),
     onSuccess: () => {
       setSubmitted(true);
-      queryClient.invalidateQueries({
-        queryKey: ['survey-has-answered-global'],
+      // RC-4: immediately mark as answered in the shared cache so the layout
+      // banner is suppressed without waiting for staleTime to expire.
+      queryClient.setQueryData(['survey-has-answered', surveyId], {
+        has_answered: true,
       });
+      // Invalidate remaining variant keys used by other panels / pages.
       queryClient.invalidateQueries({
         queryKey: ['survey-has-answered-owner'],
       });

@@ -86,7 +86,7 @@ export default function DashboardLayout({
   const [tourDismissed, setTourDismissed] = useState(false);
 
   const { data: activeSurvey, isError: activeSurveyError } = useQuery({
-    queryKey: ['active-survey-global', isAuthenticated],
+    queryKey: ['active-survey'],
     queryFn: () => surveysService.getActive(),
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
@@ -116,12 +116,19 @@ export default function DashboardLayout({
   }, [activeSurveyId, user, refreshUser]);
 
   const { data: surveyAnsweredData } = useQuery({
-    queryKey: ['survey-has-answered-global', activeSurveyId, isAuthenticated],
+    queryKey: ['survey-has-answered', activeSurveyId],
     queryFn: () => surveysService.hasAnswered(activeSurveyId!),
     enabled: isAuthenticated && !!activeSurveyId,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
+
+  // RC-1 guard: treat the query as still loading when the data hasn't arrived
+  // yet for the current survey. Without this, `undefined?.has_answered === false`
+  // evaluates to `false` which is correct, but a re-render during the loading
+  // window can briefly allow the banner to flash before the answer is known.
+  const surveyAnsweredLoading =
+    surveyAnsweredData === undefined && !!activeSurveyId;
 
   useEffect(() => {
     setSurveyMounted(true);
@@ -367,6 +374,7 @@ export default function DashboardLayout({
           !isSurveyPage &&
           !activeSurveyError &&
           activeSurvey &&
+          !surveyAnsweredLoading &&
           surveyAnsweredData?.has_answered === false &&
           pushPromptReady &&
           tourDismissed && (

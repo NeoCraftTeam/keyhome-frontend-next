@@ -9,7 +9,7 @@ import { useAuth as useClerkAuth, useClerk } from '@clerk/nextjs';
 import { Box, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Custom OAuth SSO callback — zero Clerk hosted UI.
@@ -34,10 +34,16 @@ export default function SSOCallbackPage() {
    *  effect set it, so stale redirects never fire on the next page. */
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Read intent synchronously (sessionStorage is available on the client immediately).
-  const isAgentIntent =
-    typeof window !== 'undefined' &&
-    sessionStorage.getItem('kh_registration_intent') === 'agent';
+  // RC-7: Read sessionStorage in an effect, not at render time.
+  // Reading it synchronously during render causes hydration mismatches (SSR has
+  // no sessionStorage) and inconsistent values under React StrictMode's
+  // double-invoke. The effect runs once on mount, client-side only.
+  const [isAgentIntent, setIsAgentIntent] = useState(false);
+  useEffect(() => {
+    setIsAgentIntent(
+      sessionStorage.getItem('kh_registration_intent') === 'agent'
+    );
+  }, []);
 
   // ─── Global cleanup – cancel any pending redirect when the component unmounts
   useEffect(() => {

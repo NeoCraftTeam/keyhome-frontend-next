@@ -57,9 +57,26 @@ export default function LinkAccountCallbackPage() {
       return;
     }
 
-    // Reload refreshes the Clerk user object so the newly linked external
-    // account is visible immediately on the settings page we return to.
-    user.reload().then(finish).catch(finish);
+    // RC-9: user.reload() must be retried because Clerk may not have fully
+    // consumed the __clerk_ticket URL param by the time isLoaded=true fires.
+    // We try up to 3 times with a 500 ms gap; if the account is verified at
+    // any point (or all retries are exhausted) we navigate away.
+    const MAX_RETRIES = 3;
+    let attempts = 0;
+
+    const tryReload = async (): Promise<void> => {
+      await user.reload();
+      const stillUnverified = user.externalAccounts?.some(
+        (acc) => acc.verification?.status === 'unverified'
+      );
+      if (stillUnverified && attempts < MAX_RETRIES) {
+        attempts++;
+        await new Promise<void>((r) => setTimeout(r, 500));
+        return tryReload();
+      }
+    };
+
+    tryReload().then(finish).catch(finish);
   }, [isLoaded, user, router]);
 
   return (

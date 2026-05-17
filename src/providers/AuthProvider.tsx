@@ -156,6 +156,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /* ── Initial auth resolution ──────────────────────────────────── */
 
+  // RC-8 guard analysis:
+  // This effect depends on [isLoaded, isSignedIn, clerkUser?.id, pathname, ...].
+  // Every pathname change while isSignedIn=true re-runs it. The
+  // `clerkExchangeDoneRef.current` guard at the top of the isSignedIn branch
+  // bails immediately (setIsExchanging(false) + setHasResolvedInitialAuth(true))
+  // so no duplicate exchange ever fires on navigation.
+  //
+  // On unmount (e.g. layout swap) the ref is NOT reset here — it is only reset
+  // in the `!isSignedIn` branch below. This is intentional: if the component
+  // re-mounts while Clerk is still signed-in, clerkExchangeDoneRef remains true
+  // and the exchange is skipped. The `runId` counter prevents any stale async
+  // result from a previous run from updating state after a new run has started.
   useEffect(() => {
     if (!isLoaded) {
       return;
@@ -170,6 +182,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const runId = ++authRunRef.current;
 
     if (!isSignedIn) {
+      // Only reset the exchange guard when the user actually signs out. This
+      // ensures that if AuthProvider remounts while Clerk is still signed-in,
+      // the guard keeps the exchange from running twice.
       clerkExchangeDoneRef.current = false;
 
       // ── Synchronous verification-pending guard ──────────────────────────────

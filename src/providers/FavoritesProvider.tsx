@@ -75,9 +75,18 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isAuthenticated || hasSynced.current) return;
 
+    // RC-5: Set hasSynced BEFORE the async work so a fast unmount/remount
+    // (e.g. Clerk auth-state flip in StrictMode) doesn't reset the ref and
+    // trigger a duplicate sync. The AbortController handles the case where
+    // the fetch is already in-flight when the component unmounts.
+    hasSynced.current = true;
+    const controller = new AbortController();
+
     const syncFromApi = async () => {
       try {
-        const { data } = await api.get('/my/favorites');
+        const { data } = await api.get('/my/favorites', {
+          signal: controller.signal,
+        });
         const serverAds: Ad[] = data?.data ?? [];
 
         if (serverAds.length === 0) {
@@ -85,7 +94,11 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
           const local = readLocal();
           if (local.length > 0) {
             await Promise.allSettled(
-              local.map((ad) => api.post(`/ads/${ad.id}/favorite`))
+              local.map((ad) =>
+                api.post(`/ads/${ad.id}/favorite`, undefined, {
+                  signal: controller.signal,
+                })
+              )
             );
           }
         } else {
@@ -106,14 +119,17 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
           setFavorites(merged);
           persist(merged);
         }
-
-        hasSynced.current = true;
-      } catch {
-        // API unavailable — keep localStorage favorites
+      } catch (err) {
+        // If this component unmounted and aborted the request, don't reset the
+        // guard — the next mount will have a fresh ref (false) and retry.
+        if (err instanceof Error && err.name === 'AbortError') return;
+        // Real network/API error: reset so the user can retry on next auth.
+        hasSynced.current = false;
       }
     };
 
-    syncFromApi();
+    void syncFromApi();
+    return () => controller.abort();
   }, [isAuthenticated, readLocal, persist]);
 
   // Guest session: reset server sync and re-hydrate from localStorage so UI matches

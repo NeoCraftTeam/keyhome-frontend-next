@@ -190,7 +190,11 @@ export function useAuthActions({
       }
 
       if (isSignedIn) {
-        await signOut();
+        // RC-6: signOut() without a redirectUrl completes the async session
+        // teardown before we start the new OAuth flow. Using the current href
+        // prevents Clerk from navigating away on its own, so the subsequent
+        // authenticateWithRedirect call always starts from clean session state.
+        await signOut({ redirectUrl: window.location.href });
       }
 
       await signIn.authenticateWithRedirect({
