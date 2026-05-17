@@ -44,10 +44,8 @@ const KH_VERIFY_TOKEN_OWNER = 'kh_verify_token_owner';
 
 const PENDING_EMAIL_VERIFICATION_PATHS = new Set<string>([
   '/owner/auth/verify-otp',
-  '/owner/auth/complete-profile',
   '/verify-email',
   '/verify-otp',
-  '/complete-profile',
 ]);
 
 /** Paths where a registration just happened — verify token is in sessionStorage but
@@ -78,7 +76,7 @@ interface AuthContextType {
   setUser: (user: User) => void;
   refreshUser: () => Promise<void>;
   refreshSession: () => Promise<boolean>;
-  /** Called by /verify-email and /complete-profile after successful auth */
+  /** Called by /verify-email, /verify-otp, and WelcomeOverlay after successful auth */
   finalizeAuth: (token: string, user: User, panelSsoUrl: string | null) => void;
   /** Returns a fresh Clerk session JWT, or null if unavailable */
   getClerkToken: () => Promise<string | null>;
@@ -176,7 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // ── Synchronous verification-pending guard ──────────────────────────────
       // Runs BEFORE setIsExchanging(true) to eliminate the full-app loading flash
-      // that previously appeared on every navigation to an OTP / complete-profile
+      // that previously appeared on every navigation to an OTP / verify-email
       // page. sessionStorage reads are synchronous — zero async work needed here.
       if (typeof window !== 'undefined') {
         const syncPath = pathnameRef.current ?? '';
@@ -276,8 +274,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           const currentPath = pathnameRef.current ?? '';
           const isOwnerAuthRoute = currentPath.startsWith('/owner/auth/');
-          // Post-OTP complete-profile relies on the in-memory Sanctum token; clearing it
-          // here made /auth/me fail once and wiped the Bearer, breaking finalizeAuth.
+          // Post-OTP WelcomeOverlay/finalizeAuth relies on the in-memory Sanctum token;
+          // clearing it here made /auth/me fail once and wiped the Bearer, breaking finalizeAuth.
           if (isOwnerAuthRoute) {
             setUserState(null);
             clearRoleCookie();

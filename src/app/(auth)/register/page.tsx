@@ -132,6 +132,9 @@ export default function RegisterPage() {
     useTurnstileSiteKey();
   const turnstileEnabled = Boolean(turnstileSiteKey);
 
+  // Turnstile ne concerne que le formulaire email/password.
+  // Les boutons OAuth n’ont pas besoin de token Turnstile — ne jamais les bloquer.
+
   /**
    * Apply ?role= / ?intent= and/or ?lock= once, persist in sessionStorage, then strip the
    * query string so the account type is not visible or shareable via URL.
@@ -295,6 +298,9 @@ export default function RegisterPage() {
   }, [canProceedStep1, form.email]);
 
   const passwordStrength = getPasswordStrength(form.password);
+  // canSubmit = règles métier uniquement pour le formulaire email/password.
+  // turnstileConfigResolved bloque le submit tant que la clé est en cours de fetch,
+  // mais n’affecte jamais les boutons OAuth ci-dessous.
   const canSubmit =
     form.password.length >= 8 &&
     form.password === form.confirm_password &&
@@ -801,9 +807,10 @@ export default function RegisterPage() {
                       </Button>
                     </Box>
 
+                    {/* OAuth : jamais bloqué par Turnstile — flux indépendant */}
                     <SocialLoginButtons
                       onError={(err) => setError(err)}
-                      disabled={isSubmitting}
+                      disabled={false}
                       registrationIntent={
                         accountRole === 'agent' ? 'agent' : 'customer'
                       }

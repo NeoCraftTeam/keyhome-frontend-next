@@ -42,7 +42,7 @@ describe('SSOCallbackPage', () => {
 
     expect(arg.signInUrl).toBe('/owner/login');
     expect(arg.signUpUrl).toContain('role=agent');
-    expect(arg.continueSignUpUrl).toContain('/owner/auth/complete-profile');
+    expect(arg.continueSignUpUrl).toContain('/owner/dashboard');
     expect(arg.signInFallbackRedirectUrl).toContain('/home');
     expect(arg.signUpFallbackRedirectUrl).toContain('/home');
   });

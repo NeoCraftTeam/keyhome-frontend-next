@@ -46,13 +46,7 @@ function FcmRegistrar() {
 }
 
 /** Pages we never want to save as post-login redirect targets */
-const AUTH_PAGES = [
-  '/login',
-  '/register',
-  '/verify-otp',
-  '/verify-email',
-  '/complete-profile',
-];
+const AUTH_PAGES = ['/login', '/register', '/verify-otp', '/verify-email'];
 
 /**
  * Routes within the dashboard group that require the user to be authenticated.

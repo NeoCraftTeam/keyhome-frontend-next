@@ -14,11 +14,7 @@ const SPLASH_DURATION = 1400;
 const SPLASH_SEEN_KEY = 'kh_auth_splash_seen';
 
 /** Pages that must always render even when isAuthenticated is true (post-registration). */
-const VERIFICATION_PATHS = new Set([
-  '/verify-email',
-  '/verify-otp',
-  '/complete-profile',
-]);
+const VERIFICATION_PATHS = new Set(['/verify-email', '/verify-otp']);
 
 export default function AuthLayout({
   children,

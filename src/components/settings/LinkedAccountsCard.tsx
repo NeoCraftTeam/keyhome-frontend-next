@@ -15,6 +15,7 @@ import {
   CardContent,
   CircularProgress,
   Divider,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
@@ -53,25 +54,23 @@ const SOCIAL_PROVIDERS: SocialProvider[] = [
 ];
 
 /**
- * Reusable "Comptes liés" card. Renders a list of OAuth providers (Google,
- * Facebook, GitHub) with a Link / Unlink button per row, driven by Clerk's
- * `user.createExternalAccount()` + `externalAccount.destroy()` APIs.
+ * Card "Comptes liés" — lie / délie des comptes OAuth (Google, Facebook, GitHub)
+ * à un compte KeyHome existant via l'API Clerk.
  *
- * Critical bug avoided here (was the cause of "le bouton ne fait rien") —
- * `createExternalAccount` resolves with an `ExternalAccount` whose
- * `verification.externalVerificationRedirectURL` MUST be followed to
- * complete the OAuth handshake with the provider. Skipping that redirect
- * leaves the link in `unverified` state and the UI never updates.
+ * ## Flux de liaison
+ * 1. `handleConnect` appelle `user.createExternalAccount({ redirectUrl: /link-account-callback })`.
+ * 2. Clerk retourne un `externalVerificationRedirectURL` → on suit ce redirect vers le provider OAuth.
+ * 3. Après le consentement OAuth, Clerk redirige vers `/link-account-callback`.
+ * 4. Cette page appelle `user.reload()` et renvoie l'utilisateur ici.
+ * 5. La carte se rafraîchit automatiquement car `clerkUser` est réactif.
  *
- * The component is used by both the client (`/parametres`) and the owner
- * (`/owner/parametres`) settings pages so the linking flow stays
- * consistent across surfaces.
+ * ## Flux de déliage
+ * 1. `handleDisconnect` appelle `externalAccount.destroy()`.
+ * 2. `clerkUser.reload()` rafraîchit l'état local sans rechargement de page.
+ * 3. Une garde vérifie qu'il reste au moins un moyen d'authentification (email ou autre provider).
  *
- * @param redirectPath  Path to come back to after OAuth round-trip (e.g.
- *                      `/parametres` for clients, `/owner/parametres` for
- *                      owners). Always rebuilt as an absolute URL using
- *                      `window.location.origin` because Clerk validates
- *                      against the dashboard whitelist.
+ * @param redirectPath  Chemin de retour après le round-trip OAuth
+ *                      (`/parametres` pour les clients, `/owner/parametres` pour les owners).
  */
 export default function LinkedAccountsCard({
   redirectPath,
@@ -79,59 +78,119 @@ export default function LinkedAccountsCard({
   redirectPath: string;
 }) {
   const { user: clerkUser } = useClerk();
+
+  /** Strategy en cours de traitement (liaison ou déliage). */
   const [loading, setLoading] = useState<OAuthStrategy | null>(null);
   const [error, setError] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState<string>('');
 
+  /** Vérifie si un provider est déjà lié au compte Clerk. */
   const isLinked = (provider: OAuthProviderName): boolean =>
-    clerkUser?.externalAccounts?.some((acc) => acc.provider === provider) ??
-    false;
+    clerkUser?.externalAccounts?.some(
+      (acc) =>
+        acc.provider === provider && acc.verification?.status === 'verified'
+    ) ?? false;
 
+  /** Retourne l'email associé à un provider lié, ou null. */
   const linkedEmail = (provider: OAuthProviderName): string | null =>
-    clerkUser?.externalAccounts?.find((acc) => acc.provider === provider)
-      ?.emailAddress ?? null;
+    clerkUser?.externalAccounts?.find(
+      (acc) =>
+        acc.provider === provider && acc.verification?.status === 'verified'
+    )?.emailAddress ?? null;
 
+  /**
+   * Vérifie qu'il reste au moins une méthode d'authentification après déliage.
+   * Clerk refuse `destroy()` sur le dernier moyen d'auth — on l'anticipe pour
+   * afficher un message clair avant même l'appel API.
+   */
+  const hasOtherAuthMethod = (excludeProvider: OAuthProviderName): boolean => {
+    // L'utilisateur a un mot de passe → toujours ok
+    if (clerkUser?.passwordEnabled) return true;
+    // Il reste d'autres providers liés
+    const otherLinked = clerkUser?.externalAccounts?.filter(
+      (acc) =>
+        acc.provider !== excludeProvider &&
+        acc.verification?.status === 'verified'
+    );
+    return (otherLinked?.length ?? 0) > 0;
+  };
+
+  /** Lance le flux OAuth de liaison via Clerk. */
   const handleConnect = async (strategy: OAuthStrategy) => {
     if (!clerkUser) {
       setError('Session indisponible. Reconnectez-vous puis réessayez.');
       return;
     }
+
     setLoading(strategy);
     setError('');
+    setSuccessMessage('');
+
     try {
+      // Mémorise le chemin de retour pour `/link-account-callback`.
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('kh_link_return_path', redirectPath);
+      }
+
       const externalAccount = await clerkUser.createExternalAccount({
         strategy,
-        // MUST be absolute — Clerk rejects relative paths.
-        redirectUrl: `${window.location.origin}${redirectPath}`,
+        // URL dédiée au callback — la page settings n'est pas équipée pour
+        // consommer les params Clerk (__clerk_ticket, __clerk_status).
+        redirectUrl: `${window.location.origin}/link-account-callback`,
       });
 
-      const redirectUrl =
+      const oauthRedirectUrl =
         externalAccount.verification?.externalVerificationRedirectURL;
 
-      if (redirectUrl) {
-        window.location.assign(redirectUrl.toString());
+      if (oauthRedirectUrl) {
+        // Déclenche la redirection OAuth. Le spinner reste affiché pendant le
+        // round-trip — `setLoading(null)` n'est pas appelé ici intentionnellement
+        // car la page sera démontée avant le retour.
+        window.location.assign(oauthRedirectUrl.toString());
         return;
       }
 
-      // No redirect URL means the OAuth provider isn't configured in the
-      // Clerk dashboard. Surface the precise reason instead of a generic
-      // "try again later" copy.
+      // Pas de redirect URL = provider non configuré dans le dashboard Clerk.
       setError(
-        `Provider ${strategy.replace(
-          'oauth_',
-          ''
-        )} non configuré côté Clerk. Contactez le support.`
+        `Le provider ${strategy.replace('oauth_', '')} n'est pas configuré. Contactez le support.`
       );
     } catch (err) {
-      const message =
-        err instanceof Error && err.message
-          ? err.message
-          : 'Échec de la liaison du compte. Réessayez plus tard.';
+      // Clerk lance une `ClerkAPIResponseError` avec des codes spécifiques.
+      let message = 'Échec de la liaison du compte. Réessayez plus tard.';
+
+      if (err instanceof Error) {
+        const msg = err.message.toLowerCase();
+        if (
+          msg.includes('already') ||
+          msg.includes('exists') ||
+          msg.includes('taken')
+        ) {
+          message =
+            'Ce compte social est déjà associé à un autre utilisateur KeyHome.';
+        } else if (
+          msg.includes('not allowed') ||
+          msg.includes('unauthorized')
+        ) {
+          message =
+            "Cette action n'est pas autorisée. Vérifiez vos paramètres.";
+        } else if (msg.includes('verification') || msg.includes('unverified')) {
+          message =
+            'La vérification OAuth a échoué. Réessayez depuis le début.';
+        } else if (err.message.length < 200) {
+          // Affiche le message Clerk brut s'il est lisible.
+          message = err.message;
+        }
+      }
+
       setError(message);
     } finally {
-      setLoading(null);
+      // Remet à null seulement si on n'a PAS déclenché de redirect
+      // (si redirect en cours, la page est démontée de toute façon).
+      setLoading((prev) => (prev === strategy ? null : prev));
     }
   };
 
+  /** Délie un provider OAuth du compte Clerk. */
   const handleDisconnect = async (
     strategy: OAuthStrategy,
     provider: OAuthProviderName
@@ -140,25 +199,57 @@ export default function LinkedAccountsCard({
       setError('Session indisponible. Reconnectez-vous puis réessayez.');
       return;
     }
+
+    // Vérifie qu'il reste un autre moyen d'authentification avant d'appeler Clerk.
+    if (!hasOtherAuthMethod(provider)) {
+      setError(
+        `Impossible de délier ${SOCIAL_PROVIDERS.find((p) => p.provider === provider)?.label ?? provider} : ` +
+          "c'est votre seul moyen de connexion. Ajoutez un mot de passe ou liez un autre compte d'abord."
+      );
+      return;
+    }
+
     setLoading(strategy);
     setError('');
+    setSuccessMessage('');
+
     try {
       const account = clerkUser.externalAccounts?.find(
         (acc) => acc.provider === provider
       );
+
       if (!account) {
-        setError('Compte non lié.');
+        setError('Compte introuvable. Rafraîchissez la page et réessayez.');
         return;
       }
+
       await account.destroy();
-      // Refresh Clerk's local user state so the UI updates immediately
-      // without a full page reload.
+
+      // Rafraîchit l'objet Clerk en mémoire pour que la carte se mette à jour
+      // immédiatement sans rechargement de page.
       await clerkUser.reload();
+
+      const label =
+        SOCIAL_PROVIDERS.find((p) => p.provider === provider)?.label ??
+        provider;
+      setSuccessMessage(`${label} délié avec succès.`);
     } catch (err) {
-      const message =
-        err instanceof Error && err.message
-          ? err.message
-          : 'Impossible de délier ce compte. Réessayez plus tard.';
+      let message = 'Impossible de délier ce compte. Réessayez plus tard.';
+
+      if (err instanceof Error) {
+        const msg = err.message.toLowerCase();
+        if (
+          msg.includes('last') ||
+          msg.includes('only') ||
+          msg.includes('seul')
+        ) {
+          message =
+            "Impossible de délier : c'est votre dernier moyen de connexion.";
+        } else if (err.message.length < 200) {
+          message = err.message;
+        }
+      }
+
       setError(message);
     } finally {
       setLoading(null);
@@ -174,6 +265,7 @@ export default function LinkedAccountsCard({
       }}
     >
       <CardContent sx={{ p: 0 }}>
+        {/* ── En-tête ── */}
         <Box sx={{ px: 2, pt: 2, pb: 1 }}>
           <Typography
             variant="overline"
@@ -183,10 +275,11 @@ export default function LinkedAccountsCard({
             Comptes liés
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Connectez vos comptes pour vous identifier en un clic.
+            Connectez vos comptes sociaux pour vous identifier en un clic.
           </Typography>
         </Box>
 
+        {/* ── Messages de feedback ── */}
         {error && (
           <Alert
             severity="error"
@@ -196,14 +289,25 @@ export default function LinkedAccountsCard({
             {error}
           </Alert>
         )}
+        {successMessage && (
+          <Alert
+            severity="success"
+            onClose={() => setSuccessMessage('')}
+            sx={{ mx: 2, mb: 1, borderRadius: 2, fontSize: '0.78rem' }}
+          >
+            {successMessage}
+          </Alert>
+        )}
 
         <Divider />
 
+        {/* ── Liste des providers ── */}
         <Box sx={{ px: 2, py: 1 }}>
           {SOCIAL_PROVIDERS.map((entry, idx) => {
             const linked = isLinked(entry.provider);
             const email = linkedEmail(entry.provider);
-            const isLoading = loading === entry.strategy;
+            const isProcessing = loading === entry.strategy;
+            const canUnlink = linked && hasOtherAuthMethod(entry.provider);
 
             return (
               <Box
@@ -217,6 +321,7 @@ export default function LinkedAccountsCard({
                   borderColor: 'divider',
                 }}
               >
+                {/* Icône du provider */}
                 <Avatar
                   sx={{
                     width: 38,
@@ -229,6 +334,8 @@ export default function LinkedAccountsCard({
                 >
                   {entry.icon}
                 </Avatar>
+
+                {/* Nom + état */}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <Typography variant="body2" fontWeight={600} noWrap>
@@ -244,38 +351,52 @@ export default function LinkedAccountsCard({
                     {linked ? (email ?? 'Connecté') : 'Non connecté'}
                   </Typography>
                 </Box>
+
+                {/* Bouton Lier / Délier */}
                 {linked ? (
-                  <Button
-                    size="small"
-                    color="error"
-                    variant="outlined"
-                    disabled={isLoading}
-                    onClick={() =>
-                      handleDisconnect(entry.strategy, entry.provider)
+                  <Tooltip
+                    title={
+                      !canUnlink
+                        ? "Seul moyen de connexion — ajoutez un autre compte ou un mot de passe d'abord"
+                        : ''
                     }
-                    startIcon={
-                      isLoading ? (
-                        <CircularProgress size={14} color="inherit" />
-                      ) : (
-                        <LinkOffIcon sx={{ fontSize: 16 }} />
-                      )
-                    }
-                    sx={{
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                      borderRadius: 2,
-                      minWidth: 0,
-                    }}
+                    arrow
+                    disableHoverListener={canUnlink}
                   >
-                    {isLoading ? '...' : 'Délier'}
-                  </Button>
+                    <span>
+                      <Button
+                        size="small"
+                        color="error"
+                        variant="outlined"
+                        disabled={isProcessing || !canUnlink}
+                        onClick={() =>
+                          handleDisconnect(entry.strategy, entry.provider)
+                        }
+                        startIcon={
+                          isProcessing ? (
+                            <CircularProgress size={14} color="inherit" />
+                          ) : (
+                            <LinkOffIcon sx={{ fontSize: 16 }} />
+                          )
+                        }
+                        sx={{
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          borderRadius: 2,
+                          minWidth: 0,
+                        }}
+                      >
+                        {isProcessing ? '…' : 'Délier'}
+                      </Button>
+                    </span>
+                  </Tooltip>
                 ) : (
                   <Button
                     size="small"
                     variant="contained"
                     color="primary"
-                    disabled={isLoading}
+                    disabled={isProcessing || !!loading}
                     onClick={() => handleConnect(entry.strategy)}
                     sx={{
                       textTransform: 'none',
@@ -286,7 +407,7 @@ export default function LinkedAccountsCard({
                       boxShadow: 'none',
                     }}
                   >
-                    {isLoading ? (
+                    {isProcessing ? (
                       <CircularProgress size={14} color="inherit" />
                     ) : (
                       'Lier'

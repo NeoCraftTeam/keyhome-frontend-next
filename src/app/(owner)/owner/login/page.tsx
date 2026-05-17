@@ -69,6 +69,12 @@ export default function OwnerLoginPage() {
     useTurnstileSiteKey();
   const turnstileEnabled = Boolean(turnstileSiteKey);
 
+  // Le bouton email/password est bloqué tant que Turnstile n'est pas résolu
+  // ET que Turnstile est activé. Les boutons OAuth et passkey ne sont JAMAIS
+  // bloqués par Turnstile — ils ont leur propre flux sans token CSRF.
+  const emailPasswordReady =
+    turnstileConfigResolved && (!turnstileEnabled || Boolean(turnstileToken));
+
   const emailLabelShrink = useOutlinedInputLabelShrink(email.length > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -322,11 +328,7 @@ export default function OwnerLoginPage() {
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={
-                  isSubmitting ||
-                  !turnstileConfigResolved ||
-                  (turnstileEnabled && !turnstileToken)
-                }
+                disabled={isSubmitting || !emailPasswordReady}
                 sx={{
                   py: 1.5,
                   fontSize: '1rem',
@@ -346,11 +348,13 @@ export default function OwnerLoginPage() {
             </Box>
           </FadeIn>
 
+          {/* OAuth et passkey : jamais bloqués par Turnstile — flux indépendant */}
           <FadeIn delay={0.4} direction="up">
             <SocialLoginButtons
               registrationIntent="agent"
               onError={setError}
               showDivider
+              disabled={false}
               providers={getConfiguredOAuthProviders()}
             />
           </FadeIn>

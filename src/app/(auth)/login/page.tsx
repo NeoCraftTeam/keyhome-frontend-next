@@ -51,6 +51,12 @@ export default function LoginPage() {
     useTurnstileSiteKey();
   const turnstileEnabled = Boolean(turnstileSiteKey);
 
+  // Le bouton email/password est bloqué tant que Turnstile n'est pas résolu
+  // ET que Turnstile est activé. Les boutons OAuth et passkey ne sont JAMAIS
+  // bloqués par Turnstile — ils ont leur propre flux sans token CSRF.
+  const emailPasswordReady =
+    turnstileConfigResolved && (!turnstileEnabled || Boolean(turnstileToken));
+
   const emailLabelShrink = useOutlinedInputLabelShrink(email.length > 0);
 
   // Turnstile: env `NEXT_PUBLIC_TURNSTILE_SITE_KEY` *or* API `/config/turnstile` (see hook).
@@ -340,11 +346,7 @@ export default function LoginPage() {
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={
-                  isSubmitting ||
-                  !turnstileConfigResolved ||
-                  (turnstileEnabled && !turnstileToken)
-                }
+                disabled={isSubmitting || !emailPasswordReady}
                 sx={{
                   py: 1.5,
                   fontSize: '1rem',
@@ -370,10 +372,11 @@ export default function LoginPage() {
             </Box>
           </FadeIn>
 
+          {/* OAuth et passkey : jamais bloqués par Turnstile — flux indépendant */}
           <FadeIn delay={0.3} direction="up">
             <SocialLoginButtons
               onError={(err) => setError(err)}
-              disabled={isSubmitting}
+              disabled={false}
             />
           </FadeIn>
 

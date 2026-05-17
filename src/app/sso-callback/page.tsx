@@ -94,9 +94,10 @@ export default function SSOCallbackPage() {
       router.replace(errorPath);
     }, 10000);
 
-    const continueSignUpUrl = isAgentIntent
-      ? '/owner/auth/complete-profile'
-      : '/complete-profile';
+    // No complete-profile step — new OAuth users go directly to home/dashboard.
+    // The backend finalizes the profile via clerkExchange; profile completion
+    // happens inline on the dashboard via a banner component.
+    const continueSignUpUrl = isAgentIntent ? '/owner/dashboard' : '/home';
 
     handleRedirectCallback({
       signInUrl: isAgentIntent ? '/owner/login' : '/login',
