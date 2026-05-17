@@ -151,4 +151,4 @@ export const CSP_IMG_HOSTS_STATIC =
 export const CSP_MEDIA_HOSTS_STATIC = CSP_IMG_HOSTS_STATIC;
 
 export const CSP_FRAME_HOSTS_STATIC =
-  'https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://checkout.flutterwave.com https://js.stripe.com https://hooks.stripe.com https://vercel.live https://accounts.google.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev';
+  'https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://checkout.flutterwave.com https://js.stripe.com https://hooks.stripe.com https://vercel.live https://accounts.google.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev';

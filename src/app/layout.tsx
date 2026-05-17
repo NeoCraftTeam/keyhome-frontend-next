@@ -8,6 +8,7 @@ import { WebVitals } from '@/components/seo/WebVitals';
 import { ThemeInitScript } from '@/components/ThemeInitScript';
 import CookieBanner from '@/components/ui/CookieBanner';
 import RouteProgressBar from '@/components/ui/RouteProgressBar';
+import { getGoogleMarketingIds } from '@/lib/analytics/google-marketing-env';
 import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
 import { getClerkPreconnectOrigin } from '@/lib/clerk-frontend-origins';
 import { CURRENCY_COOKIE, parseSupportedCurrencyCookie } from '@/lib/currency';
@@ -178,6 +179,11 @@ export default async function RootLayout({
     parseSupportedCurrencyCookie(
       (await cookies()).get(CURRENCY_COOKIE)?.value
     ) ?? undefined;
+  const { gtmId } = getGoogleMarketingIds();
+  const gtmBootstrapSnippet =
+    gtmId !== undefined
+      ? `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmId}');`
+      : '';
   return (
     <ClerkProvider
       localization={frFR}
@@ -189,6 +195,13 @@ export default async function RootLayout({
     >
       <html lang="fr" suppressHydrationWarning data-scroll-behavior="smooth">
         <head>
+          {gtmId !== undefined ? (
+            <script
+              nonce={nonce}
+              dangerouslySetInnerHTML={{ __html: gtmBootstrapSnippet }}
+            />
+          ) : null}
+
           {/* ThemeInitScript uses useServerInsertedHTML — injected server-side only,
               never reconciled on the client, so React 19 never warns. */}
           <ThemeInitScript nonce={nonce} />
@@ -209,6 +222,18 @@ export default async function RootLayout({
           <JsonLd />
         </head>
         <body className={`${inter.variable} ${jakarta.variable} antialiased`}>
+          {gtmId !== undefined ? (
+            <noscript>
+              <iframe
+                title="Google Tag Manager"
+                src={`https://www.googletagmanager.com/ns.html?id=${encodeURIComponent(gtmId)}`}
+                height="0"
+                width="0"
+                style={{ display: 'none', visibility: 'hidden' }}
+              />
+            </noscript>
+          ) : null}
+
           <ViewportInteractiveWidget />
           <Providers nonce={nonce} initialCurrency={initialCurrency}>
             <Suspense fallback={null}>
