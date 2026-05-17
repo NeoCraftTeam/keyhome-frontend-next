@@ -143,9 +143,11 @@ export const CSP_STYLE_HOSTS =
 export const CSP_FONT_HOSTS =
   'https://fonts.gstatic.com https://ray.st https://www.gstatic.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev';
 
-/** img-src: 'self' blob: data: + hosts + api/backend (runtime). */
+/** img-src: 'self' blob: data: + hosts + api/backend (runtime).
+ *  GTM preview + measurement use image beacons to googletagmanager.com (/td, /a).
+ */
 export const CSP_IMG_HOSTS_STATIC =
-  'https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev https://*.r2.cloudflarestorage.com https://www.gstatic.com https://*.googleapis.com https://lh3.googleusercontent.com';
+  'https://*.mapbox.com https://*.tiles.mapbox.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev https://keyhome.test https://img.clerk.com https://*.r2.dev https://*.r2.cloudflarestorage.com https://www.gstatic.com https://*.googleapis.com https://lh3.googleusercontent.com https://www.googletagmanager.com https://*.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com';
 
 /** media-src: audio/video (voice notes, attachments). Falls back to default-src if omitted. */
 export const CSP_MEDIA_HOSTS_STATIC = CSP_IMG_HOSTS_STATIC;
