@@ -64,13 +64,12 @@ export default function CreditPurchaseReturnView(): ReactElement {
     void queryClient.invalidateQueries({ queryKey: creditsKeys.all });
   }, [queryClient]);
 
-  const { state, pointBalance, fastPollProgress, retry } =
-    usePaymentStatusPolling({
-      txRef,
-      variant: 'credit',
-      skip: skipPolling,
-      onSuccess,
-    });
+  const { state, pointBalance, retry } = usePaymentStatusPolling({
+    txRef,
+    variant: 'credit',
+    skip: skipPolling,
+    onSuccess,
+  });
 
   const effectiveState = useMemo(() => {
     if (isFlutterwaveRedirectCancelled(status)) return 'cancelled' as const;
@@ -85,9 +84,7 @@ export default function CreditPurchaseReturnView(): ReactElement {
   }, [effectiveState]);
 
   if (effectiveState === 'verifying') {
-    return (
-      <VerifyingView fastPollProgress={fastPollProgress} variant="credit" />
-    );
+    return <VerifyingView variant="credit" />;
   }
 
   return (

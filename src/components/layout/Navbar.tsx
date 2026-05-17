@@ -263,6 +263,15 @@ export default function Navbar() {
           {/* CENTER — Logo */}
           <Box
             onClick={() => router.push('/home')}
+            aria-label="KeyHome — Accueil"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                router.push('/home');
+              }
+            }}
             sx={{
               cursor: 'pointer',
               display: 'flex',
@@ -276,7 +285,7 @@ export default function Navbar() {
           >
             <Image
               src="/images/logo.png"
-              alt="KeyHome — Accueil"
+              alt=""
               width={isMobile ? 36 : 44}
               height={isMobile ? 36 : 44}
               priority
@@ -284,11 +293,16 @@ export default function Navbar() {
               style={{ objectFit: 'contain' }}
             />
             <Typography
-              variant="h1"
+              component="span"
+              variant="subtitle1"
               sx={{
                 color: 'primary.main',
                 fontSize: { xs: '1.05rem', md: '1.2rem' },
                 display: 'block',
+                fontFamily:
+                  '"Plus Jakarta Sans", "Inter", Helvetica Neue, Arial, sans-serif',
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
               }}
             >
               KeyHome

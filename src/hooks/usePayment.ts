@@ -27,6 +27,13 @@ interface UsePaymentState {
    * stays `pending` until the user confirms.
    */
   stripeInitialStatus: PaymentInitiateStatus | null;
+  /**
+   * Which Stripe SDK flow to mount for `stripeClientSecret`:
+   *  - `'checkout_session'` → `CheckoutElementsProvider` (new-card flow)
+   *  - `'payment_intent'`  → `<Elements>` (saved-card / off-session 3DS)
+   * `null` for non-Stripe gateways or before initiation.
+   */
+  stripeFlow: 'checkout_session' | 'payment_intent' | null;
 }
 
 interface UsePaymentReturn extends UsePaymentState {
@@ -59,6 +66,7 @@ export function usePayment(): UsePaymentReturn {
     response: null,
     stripeClientSecret: null,
     stripeInitialStatus: null,
+    stripeFlow: null,
   });
 
   const initiatePayment = useCallback(
@@ -71,6 +79,7 @@ export function usePayment(): UsePaymentReturn {
         response: null,
         stripeClientSecret: null,
         stripeInitialStatus: null,
+        stripeFlow: null,
       });
 
       try {
@@ -94,6 +103,7 @@ export function usePayment(): UsePaymentReturn {
             response: result,
             stripeClientSecret: result.payment_link,
             stripeInitialStatus: result.status,
+            stripeFlow: result.stripe_flow ?? 'payment_intent',
           });
           return result;
         }
@@ -130,6 +140,7 @@ export function usePayment(): UsePaymentReturn {
           response: null,
           stripeClientSecret: null,
           stripeInitialStatus: null,
+          stripeFlow: null,
         });
         return null;
       }
@@ -144,6 +155,7 @@ export function usePayment(): UsePaymentReturn {
       response: null,
       stripeClientSecret: null,
       stripeInitialStatus: null,
+      stripeFlow: null,
     });
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('kh_flw_tx_ref');

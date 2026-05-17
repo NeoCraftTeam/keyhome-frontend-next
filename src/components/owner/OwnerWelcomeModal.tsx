@@ -38,7 +38,7 @@ const OWNER_STEPS: StepConfig[] = [
   {
     Icon: Apartment,
     iconColor: brandAgent.primary,
-    title: 'Bienvenue sur KeyHome Pro !',
+    title: 'Bienvenue sur KeyHome',
     subtitle: 'Votre espace propriétaire',
     body: 'Gérez vos annonces, suivez vos performances et trouvez rapidement des locataires qualifiés pour vos biens.',
     cta: 'Suivant →',

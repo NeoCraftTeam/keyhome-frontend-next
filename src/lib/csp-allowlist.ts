@@ -87,7 +87,10 @@ export function buildConnectSrcParts(ctx: CspConnectBuildContext): string[] {
     // Vercel (@vercel/analytics, @vercel/speed-insights)
     'https://vitals.vercel-insights.com',
     'https://*.vercel-insights.com',
-    // Microsoft Clarity (script + /collect + load-balanced subdomains; c.bing.com per MS CSP doc)
+    // Microsoft Clarity (script + /collect + load-balanced subdomains; c.bing.com per MS CSP doc).
+    // Both apex (www.clarity.ms) and subdomains (*.clarity.ms) must be listed —
+    // the wildcard `*` does NOT cover the apex `www.clarity.ms` in CSP3.
+    'https://www.clarity.ms',
     'https://*.clarity.ms',
     'https://c.bing.com',
     // Sentry browser SDK (@sentry/nextjs)
@@ -129,8 +132,10 @@ export function buildConnectSrcParts(ctx: CspConnectBuildContext): string[] {
 }
 
 /** Extra script-src hosts (nonce + 'self' are added in proxy.ts). */
+// Note: both apex (https://www.clarity.ms) AND wildcard (https://*.clarity.ms) are required
+// for Clarity — the wildcard does not cover the apex domain in CSP3.
 export const CSP_SCRIPT_HOSTS =
-  'https://api.mapbox.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://accounts.google.com https://www.gstatic.com https://*.googleapis.com https://js.stripe.com https://*.clarity.ms https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:';
+  'https://api.mapbox.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://accounts.google.com https://www.gstatic.com https://*.googleapis.com https://js.stripe.com https://www.clarity.ms https://*.clarity.ms https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev blob:';
 
 export const CSP_STYLE_HOSTS =
   'https://api.mapbox.com https://ray.st https://cdn.jsdelivr.net https://accounts.google.com https://www.gstatic.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev';

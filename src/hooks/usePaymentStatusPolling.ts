@@ -59,17 +59,20 @@ interface UsePaymentStatusPollingOptions {
   /**
    * Minimum time the verifying UI is displayed before transitioning to a
    * terminal state. Stripe off-session charges resolve in ~150 ms, which
-   * makes the verification feel skipped — gating the transition to ~2.5 s
-   * gives the user a deliberate, calm "we are checking your payment"
-   * moment, matching the perceived flow of hosted checkouts. Side effects
-   * (`onSuccess`, balance refresh) fire IMMEDIATELY ; only the visible
-   * state transition is deferred.
+   * makes the verification feel skipped — gating the transition with a short
+   * dwell gives the user a deliberate "we are checking your payment" moment,
+   * matching hosted checkouts. Side effects (`onSuccess`, balance refresh)
+   * fire immediately; only the visible state transition is deferred.
    *
    * Set to `0` to disable.
-   * @default 2500
+   *
+   * @default DEFAULT_MINIMUM_VERIFYING_MS
    */
   minimumVerifyingMs?: number;
 }
+
+/** Default minimum dwell before terminal UI; `VerifyingView` documents the same. */
+export const DEFAULT_MINIMUM_VERIFYING_MS = 4000;
 
 interface UsePaymentStatusPollingResult {
   state: PaymentPollingState;
@@ -111,7 +114,7 @@ export function usePaymentStatusPolling({
   variant,
   skip = false,
   onSuccess,
-  minimumVerifyingMs = 2500,
+  minimumVerifyingMs = DEFAULT_MINIMUM_VERIFYING_MS,
 }: UsePaymentStatusPollingOptions): UsePaymentStatusPollingResult {
   const [state, setState] = useState<PaymentPollingState>('verifying');
   const [pointBalance, setPointBalance] = useState<number | null>(null);

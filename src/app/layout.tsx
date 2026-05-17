@@ -143,9 +143,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  /** PWA: disable pinch-zoom for native-app feel (Safari may still allow minimal zoom). */
-  maximumScale: 1,
-  userScalable: false,
+  /**
+   * WCAG / axe meta-viewport: allow pinch-zoom and scaling (avoid maximum-scale=1 +
+   * user-scalable=no). PWA standalone remains usable; slight pinch-zoom trade-off vs
+   * rigid app-shell UX is preferred for accessibility compliance.
+   */
+  maximumScale: 5,
+  userScalable: true,
   // Brand-aware status bar: pink on the customer panel (this root viewport),
   // teal on the owner panel (overridden at runtime by `OwnerManifestSwitch`).
   // Dark mode keeps the deep neutral background so the OS status bar blends
@@ -218,7 +222,7 @@ export default async function RootLayout({
             <NetworkStatus />
             <CookieBanner />
             <SpeedInsights />
-            <MicrosoftClarity />
+            <MicrosoftClarity nonce={nonce} />
           </Providers>
 
           {/* Cloudflare Web Analytics — production only (localhost is not a registered origin) */}

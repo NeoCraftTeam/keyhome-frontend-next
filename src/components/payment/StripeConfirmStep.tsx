@@ -18,6 +18,11 @@ import {
   useElements,
   useStripe,
 } from '@stripe/react-stripe-js';
+import {
+  CheckoutElementsProvider,
+  PaymentElement as CheckoutPaymentElement,
+  useCheckoutElements,
+} from '@stripe/react-stripe-js/checkout';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
@@ -90,6 +95,12 @@ interface StripeConfirmStepProps {
    * why the bank popup appeared.
    */
   autoConfirmOnMount?: boolean;
+  /**
+   * Which Stripe SDK flow `clientSecret` belongs to.
+   *  - `'checkout_session'` → mount `CheckoutElementsProvider` + `checkout.confirm()`
+   *  - `'payment_intent'` (default) → mount `<Elements>` + `stripe.confirmPayment()`
+   */
+  stripeFlow?: 'checkout_session' | 'payment_intent';
 }
 
 /**
@@ -111,6 +122,7 @@ export default function StripeConfirmStep({
   onSaveCheckboxChange,
   reuseSavedPaymentMethodId = null,
   autoConfirmOnMount = false,
+  stripeFlow = 'payment_intent',
 }: StripeConfirmStepProps): React.ReactElement {
   // `getStripePromise()` returns a memoised promise. We resolve it once on
   // mount so we can render a configuration error if the publishable key is
@@ -142,9 +154,46 @@ export default function StripeConfirmStep({
     return (
       <PaymentConfigError
         title="Paiement par carte indisponible"
-        message="La clé publique Stripe n'est pas configurée. Choisissez Mobile Money ou contactez le support."
+        message="La clé publique Stripe n’est pas configurée. Choisissez Mobile Money ou contactez le support."
         onBack={onBack}
       />
+    );
+  }
+
+  const appearance = {
+    theme: 'stripe' as const,
+    variables: {
+      colorPrimary: brand.primary,
+      colorBackground: '#ffffff',
+      colorText: '#0A1628',
+      borderRadius: '10px',
+      fontFamily:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    },
+  };
+
+  if (stripeFlow === 'checkout_session') {
+    return (
+      <CheckoutElementsProvider
+        stripe={stripePromise}
+        options={{
+          clientSecret,
+          elementsOptions: {
+            appearance,
+            loader: 'auto',
+          },
+        }}
+      >
+        <CheckoutConfirmInner
+          paymentConfirmReturnUrl={paymentConfirmReturnUrl}
+          onSuccess={onSuccess}
+          onBack={onBack}
+          amountLabel={amountLabel}
+          showSaveCheckbox={showSaveCheckbox}
+          defaultSaveCheckbox={defaultSaveCheckbox}
+          onSaveCheckboxChange={onSaveCheckboxChange}
+        />
+      </CheckoutElementsProvider>
     );
   }
 
@@ -157,17 +206,7 @@ export default function StripeConfirmStep({
         // Date d'expiration, etc.). Falls back to `auto` if the user's
         // browser language is set otherwise.
         locale: 'fr',
-        appearance: {
-          theme: 'stripe',
-          variables: {
-            colorPrimary: brand.primary,
-            colorBackground: '#ffffff',
-            colorText: '#0A1628',
-            borderRadius: '10px',
-            fontFamily:
-              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          },
-        },
+        appearance,
         loader: 'auto',
       }}
     >
@@ -185,6 +224,197 @@ export default function StripeConfirmStep({
         autoConfirmOnMount={autoConfirmOnMount}
       />
     </Elements>
+  );
+}
+
+interface CheckoutConfirmInnerProps {
+  paymentConfirmReturnUrl: string;
+  onSuccess: () => void;
+  onBack?: () => void;
+  amountLabel?: string;
+  showSaveCheckbox: boolean;
+  defaultSaveCheckbox: boolean;
+  onSaveCheckboxChange?: (next: boolean) => void;
+}
+
+/**
+ * Inner form for the Checkout Session (`ui_mode: 'custom'`) flow.
+ * Must be rendered inside `<CheckoutElementsProvider>`.
+ */
+function CheckoutConfirmInner({
+  paymentConfirmReturnUrl,
+  onSuccess,
+  onBack,
+  amountLabel,
+  showSaveCheckbox,
+  defaultSaveCheckbox,
+  onSaveCheckboxChange,
+}: CheckoutConfirmInnerProps): React.ReactElement {
+  const result = useCheckoutElements();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [elementReady, setElementReady] = useState(false);
+  const [saveChecked, setSaveChecked] = useState<boolean>(defaultSaveCheckbox);
+
+  const handleSubmit = useCallback(async () => {
+    if (result.type !== 'success') return;
+
+    setSubmitting(true);
+    setError(null);
+
+    const confirmResult = await result.checkout.confirm({
+      returnUrl: paymentConfirmReturnUrl,
+      redirect: 'if_required',
+    });
+
+    if (confirmResult.type === 'error') {
+      setError(
+        confirmResult.error.message ??
+          'Une erreur est survenue lors du paiement. Réessayez.'
+      );
+      setSubmitting(false);
+      return;
+    }
+
+    onSuccess();
+  }, [result, onSuccess, paymentConfirmReturnUrl]);
+
+  const handleSaveCheckboxChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const next = event.target.checked;
+      setSaveChecked(next);
+      onSaveCheckboxChange?.(next);
+    },
+    [onSaveCheckboxChange]
+  );
+
+  if (result.type === 'error') {
+    return (
+      <PaymentConfigError
+        title="Impossible de charger le formulaire"
+        message={result.error.message}
+        onBack={onBack}
+      />
+    );
+  }
+
+  const isLoading = result.type === 'loading';
+
+  return (
+    <Box>
+      {amountLabel && (
+        <Typography
+          variant="overline"
+          sx={{
+            display: 'block',
+            textAlign: 'center',
+            color: 'text.secondary',
+            letterSpacing: 1.5,
+            fontSize: '0.65rem',
+            fontWeight: 700,
+            mb: 1,
+          }}
+        >
+          {amountLabel}
+        </Typography>
+      )}
+
+      <Box sx={{ mb: 2, minHeight: 64 }}>
+        {(isLoading || !elementReady) && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              py: 2,
+            }}
+          >
+            <CircularProgress size={24} sx={{ color: brand.primary }} />
+          </Box>
+        )}
+        <CheckoutPaymentElement
+          options={{ layout: 'tabs' }}
+          onReady={() => setElementReady(true)}
+        />
+      </Box>
+
+      {showSaveCheckbox && (
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={saveChecked}
+              onChange={handleSaveCheckboxChange}
+              sx={{
+                color: 'text.secondary',
+                '&.Mui-checked': { color: brand.primary },
+              }}
+            />
+          }
+          label={
+            <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+              Sauvegarder pour mes prochains paiements
+            </Typography>
+          }
+          sx={{ mb: 1, mr: 0 }}
+        />
+      )}
+
+      {error && (
+        <Typography
+          variant="body2"
+          sx={{
+            color: '#D32F2F',
+            bgcolor: 'rgba(211,47,47,0.08)',
+            p: 1.25,
+            borderRadius: 2,
+            mb: 1.5,
+            fontSize: '0.85rem',
+          }}
+          role="alert"
+        >
+          {error}
+        </Typography>
+      )}
+
+      <Box sx={{ display: 'flex', gap: 1.5, mt: 1 }}>
+        {onBack && (
+          <Button
+            variant="outlined"
+            onClick={onBack}
+            disabled={submitting}
+            sx={{ flex: 1, py: 1.4, borderRadius: 3, fontWeight: 600 }}
+          >
+            Retour
+          </Button>
+        )}
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={isLoading || submitting || !elementReady}
+          sx={{
+            flex: 2,
+            py: 1.4,
+            borderRadius: 3,
+            fontWeight: 700,
+            bgcolor: brand.primary,
+            '&:hover': { bgcolor: brand.primaryDark },
+            '&:disabled': {
+              bgcolor: brand.primaryAlpha30,
+              color: 'rgba(255,255,255,0.5)',
+            },
+          }}
+        >
+          {submitting ? (
+            <CircularProgress
+              size={20}
+              sx={{ color: 'rgba(255,255,255,0.5)' }}
+            />
+          ) : (
+            'Payer maintenant'
+          )}
+        </Button>
+      </Box>
+    </Box>
   );
 }
 

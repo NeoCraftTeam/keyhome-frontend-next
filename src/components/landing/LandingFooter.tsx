@@ -82,6 +82,8 @@ export default function LandingFooter() {
                 alt={BRAND_TITLE_WITH_TAGLINE}
                 width={36}
                 height={36}
+                quality={85}
+                loading="lazy"
                 style={{ borderRadius: 8 }}
               />
               <span

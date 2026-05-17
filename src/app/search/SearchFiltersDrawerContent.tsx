@@ -89,7 +89,7 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
           mb: 2.5,
         }}
       >
-        <Typography variant="h6" fontWeight={700}>
+        <Typography variant="h6" component="h2" fontWeight={700}>
           Tous les filtres
         </Typography>
         <IconButton aria-label="Fermer" onClick={onClose}>

@@ -59,7 +59,7 @@ export default function UnlockPaymentReturnView(): ReactElement {
     void queryClient.invalidateQueries({ queryKey: paymentKeys.all });
   }, [adId, queryClient]);
 
-  const { state, fastPollProgress, retry } = usePaymentStatusPolling({
+  const { state, retry } = usePaymentStatusPolling({
     txRef,
     variant: 'unlock',
     skip: skipPolling,
@@ -97,9 +97,7 @@ export default function UnlockPaymentReturnView(): ReactElement {
   const fallbackPath = adId ? `/ads/${adId}` : '/home';
 
   if (effectiveState === 'verifying') {
-    return (
-      <VerifyingView fastPollProgress={fastPollProgress} variant="unlock" />
-    );
+    return <VerifyingView variant="unlock" />;
   }
 
   return (

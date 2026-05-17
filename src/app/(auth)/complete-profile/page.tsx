@@ -3,14 +3,12 @@
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
-import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { buildClerkSignUpPatch } from '@/lib/clerk-signup-safe-update';
+import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
-import { getRegisterThemeTokens } from '@/lib/register-theme';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
-import { gradient } from '@/theme/tokens';
 import { City, User } from '@/types';
 import { useSignUp } from '@clerk/nextjs';
 import ArrowBack from '@mui/icons-material/ArrowBack';

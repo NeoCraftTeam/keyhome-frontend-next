@@ -2,10 +2,12 @@
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
+import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { brandAgent, gradient } from '@/theme/tokens';
+import { User } from '@/types';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import {
@@ -35,6 +37,22 @@ export default function VerifyOtpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendMessage, setResendMessage] = useState('');
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [welcomeFirstName, setWelcomeFirstName] = useState<string | undefined>(
+    undefined
+  );
+  const welcomeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completeResultRef = useRef<{
+    token: string;
+    user: User;
+    panel_sso_url: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
+    };
+  }, []);
 
   const accentGradient = isAgent
     ? `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`
@@ -107,21 +125,25 @@ export default function VerifyOtpPage() {
     try {
       const result = await authService.verifyClerkOtp(otp);
       if (result.state === 'profile_required') {
-        sessionStorage.setItem(
-          'clerk_auth_prefill',
-          JSON.stringify(result.prefill)
-        );
-        const intent =
-          result.prefill.registration_intent ??
-          sessionStorage.getItem('kh_registration_intent');
-        if (intent) {
-          sessionStorage.setItem('kh_registration_intent', intent);
+        const firstName = result.prefill?.firstname;
+        setWelcomeFirstName(firstName);
+        try {
+          const r = await authService.completeClerkProfile({});
+          sessionStorage.removeItem('clerk_auth_prefill');
+          sessionStorage.removeItem('kh_registration_intent');
+          completeResultRef.current = r;
+          setShowWelcome(true);
+          welcomeTimerRef.current = setTimeout(() => {
+            finalizeAuth(r.token, r.user, r.panel_sso_url);
+          }, 3800);
+        } catch (profileErr) {
+          setError(
+            getSafeErrorMessage(
+              profileErr,
+              'Erreur lors de la création du compte. Veuillez réessayer.'
+            )
+          );
         }
-        router.replace(
-          intent === 'agent'
-            ? '/owner/auth/complete-profile'
-            : '/complete-profile'
-        );
         return;
       }
       finalizeAuth(result.token, result.user, result.panel_sso_url);
@@ -159,6 +181,20 @@ export default function VerifyOtpPage() {
       );
     }
   }, [resendCooldown, getClerkToken]);
+
+  if (showWelcome) {
+    return (
+      <WelcomeOverlay
+        firstName={welcomeFirstName}
+        isOwner={isAgent}
+        onSkip={() => {
+          if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
+          const r = completeResultRef.current;
+          if (r) finalizeAuth(r.token, r.user, r.panel_sso_url);
+        }}
+      />
+    );
+  }
 
   return (
     <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>

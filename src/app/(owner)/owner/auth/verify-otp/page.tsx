@@ -2,13 +2,13 @@
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
-import { persistInMemoryToken } from '@/lib/auth-session';
-import { registerTokenGetter } from '@/lib/auth-token';
+import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
+import { persistOwnerToken } from '@/lib/auth-session';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
-import { KH_OWNER_POST_OTP_TOKEN_KEY } from '@/lib/owner-auth-flow';
 import { ownerAuthHeroScrim } from '@/lib/owner-auth-theme';
 import { runAppRouterReplacement } from '@/lib/safe-app-router-push';
+import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { brandAgent, neutral } from '@/theme/tokens';
 import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
@@ -23,18 +23,14 @@ import {
 import { alpha } from '@mui/material/styles';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const RESEND_COOLDOWN = 60;
 
 export default function OwnerVerifyOtpPage() {
   const router = useRouter();
+
+  const { finalizeAuth } = useAuth();
 
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [email, setEmail] = useState('');
@@ -43,20 +39,16 @@ export default function OwnerVerifyOtpPage() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendMessage, setResendMessage] = useState('');
   const [isReady, setIsReady] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const welcomeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finalizeArgRef = useRef<Parameters<typeof finalizeAuth> | null>(null);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  useLayoutEffect(() => {
-    const stored = sessionStorage.getItem('kh_verify_token_owner');
-    if (stored) {
-      registerTokenGetter(() =>
-        Promise.resolve(
-          typeof window !== 'undefined'
-            ? sessionStorage.getItem('kh_verify_token_owner')
-            : null
-        )
-      );
-    }
+  useEffect(() => {
+    return () => {
+      if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -142,14 +134,7 @@ export default function OwnerVerifyOtpPage() {
     try {
       const result = await authService.verifyEmailOtp(email, otp);
 
-      // Same sequence as OAuth → Clerk: OTP → complete-profile (welcome) → finalize → dashboard + tours/surveys.
-      persistInMemoryToken(result.access_token);
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem(
-          KH_OWNER_POST_OTP_TOKEN_KEY,
-          result.access_token
-        );
-      }
+      persistOwnerToken(result.access_token);
 
       sessionStorage.removeItem('kh_verify_token_owner');
       sessionStorage.removeItem('kh_verify_email_owner');
@@ -157,11 +142,12 @@ export default function OwnerVerifyOtpPage() {
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user_id');
 
-      runAppRouterReplacement(router, '/owner/auth/complete-profile', () =>
-        setError(
-          'Redirection impossible. Ouvrez « Compléter le profil » depuis le menu bailleur.'
-        )
-      );
+      finalizeArgRef.current = [result.access_token, result.user, null];
+      setShowWelcome(true);
+      welcomeTimerRef.current = setTimeout(() => {
+        const args = finalizeArgRef.current;
+        if (args) finalizeAuth(...args);
+      }, 3800);
     } catch (err) {
       setError(
         getSafeErrorMessage(err, 'Code invalide ou expiré. Veuillez réessayer.')
@@ -201,6 +187,19 @@ export default function OwnerVerifyOtpPage() {
           start + '*'.repeat(Math.min(middle.length, 5)) + domain
       )
     : '';
+
+  if (showWelcome) {
+    return (
+      <WelcomeOverlay
+        isOwner
+        onSkip={() => {
+          if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
+          const args = finalizeArgRef.current;
+          if (args) finalizeAuth(...args);
+        }}
+      />
+    );
+  }
 
   // Show loading state while checking sessionStorage
   if (!isReady) {

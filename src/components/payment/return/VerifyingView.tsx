@@ -1,38 +1,30 @@
 'use client';
 
 import AppLoader from '@/components/ui/AppLoader';
-import { brand } from '@/theme/tokens';
+import { DEFAULT_MINIMUM_VERIFYING_MS } from '@/hooks/usePaymentStatusPolling';
 import LockIcon from '@mui/icons-material/Lock';
 import { Box, Typography } from '@mui/material';
-import Image from 'next/image';
 import type { ReactElement } from 'react';
 import { useEffect, useState } from 'react';
 
 /**
- * Polished, professional payment-verification interstitial.
+ * Payment verification interstitial while `usePaymentStatusPolling` is in
+ * `verifying`. Spinner matches the dashboard gate (`layout.tsx`): `AppLoader`
+ * brand bars. Terminal transitions remain gated by the hook's
+ * `minimumVerifyingMs` (default {@link DEFAULT_MINIMUM_VERIFYING_MS}).
  *
- * Shown while `usePaymentStatusPolling` is in the `verifying` state. The hook
- * enforces a minimum dwell time (~2.5 s) so even instant Stripe off-session
- * confirmations linger long enough for the user to register what's happening.
- *
- * Visual identity:
- *  - centred KeyHome logo + soft pulsing brand-primary halo,
- *  - rotating sub-title cycling through three reassuring micro-steps
- *    (« passerelle » → « banque » → « solde »), capped at the last one so it
- *    never loops backwards if the polling extends,
- *  - smooth determinate progress bar that fills as the fast-poll attempts
- *    accumulate, with a guaranteed minimum advancement so it never appears
- *    stuck on a slow connection,
- *  - subtle bottom security hint (« Connexion chiffrée · KeyHome ») and a
- *    discreet « Ne fermez pas cette fenêtre… » caption — same vocabulary as
- *    the Stripe and Flutterwave hosted-checkout flows.
+ * Rotating reassurance subtitles (« passerelle » → « banque » → outcome prep)
+ * cap at the last line so extended polling never loops backwards.
  */
 interface VerifyingViewProps {
-  /** `0..1` progress reported by `usePaymentStatusPolling`. */
-  fastPollProgress: number;
   /**
-   * Affects the wording of the rotating subtitle. `credit` mentions "votre
-   * solde", `unlock` mentions "vos coordonnées d'accès".
+   * Mirrors `minimumVerifyingMs` on `usePaymentStatusPolling`; the hook
+   * applies the dwell — this stays for API symmetry and callers that forward
+   * the same constant.
+   */
+  minimumVerifyingMs?: number;
+  /**
+   * Wording nuance for the rotating subtitle (`credit`: solde, `unlock`: accès).
    */
   variant: 'credit' | 'unlock';
 }
@@ -53,16 +45,17 @@ const SUBSTEPS_BY_VARIANT: Record<VerifyingViewProps['variant'], string[]> = {
 const SUBSTEP_INTERVAL_MS = 1100;
 
 export default function VerifyingView({
-  fastPollProgress,
+  minimumVerifyingMs = DEFAULT_MINIMUM_VERIFYING_MS,
   variant,
 }: VerifyingViewProps): ReactElement {
   const steps = SUBSTEPS_BY_VARIANT[variant];
   const [stepIdx, setStepIdx] = useState(0);
 
+  // Ensures JSX callers can mirror `minimumVerifyingMs`; dwell is enforced in the hook only.
+  void minimumVerifyingMs;
+
   useEffect(() => {
     if (stepIdx >= steps.length - 1) {
-      // Pin the last subtitle so the UI never feels like it's regressing
-      // when the polling takes longer than the rotation.
       return;
     }
     const timer = setTimeout(() => {
@@ -70,12 +63,6 @@ export default function VerifyingView({
     }, SUBSTEP_INTERVAL_MS);
     return () => clearTimeout(timer);
   }, [stepIdx, steps.length]);
-
-  // `fastPollProgress` is intentionally unused now — kept in the props
-  // signature for backwards compatibility with parent views. The branded
-  // AppLoader spinner provides indefinite-duration motion that doesn't
-  // mislead the user about how close they are to completion (a problem
-  // with the previous determinate progress bar that could appear stuck).
 
   return (
     <Box
@@ -100,52 +87,8 @@ export default function VerifyingView({
           gap: 2.5,
         }}
       >
-        {/* Logo with a soft pulsing halo behind it. */}
-        <Box
-          sx={{
-            position: 'relative',
-            width: 96,
-            height: 96,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Box
-            aria-hidden
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: '50%',
-              background: `radial-gradient(circle, ${brand.primaryAlpha12} 0%, transparent 70%)`,
-              animation: 'kh-verify-halo 1.8s ease-in-out infinite',
-              '@keyframes kh-verify-halo': {
-                '0%, 100%': { opacity: 0.55, transform: 'scale(0.9)' },
-                '50%': { opacity: 1, transform: 'scale(1.08)' },
-              },
-            }}
-          />
-          <Box
-            sx={{
-              position: 'relative',
-              width: 60,
-              height: 60,
-              borderRadius: '50%',
-              bgcolor: 'background.paper',
-              boxShadow: '0 6px 20px rgba(0,0,0,0.08)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Image
-              src="/images/logo.png"
-              alt="KeyHome"
-              width={36}
-              height={36}
-              priority
-            />
-          </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
+          <AppLoader size={64} />
         </Box>
 
         <Box>
@@ -157,9 +100,6 @@ export default function VerifyingView({
             Vérification du paiement
           </Typography>
 
-          {/* Rotating, reassuring subtitle. The keyed Box re-mounts on each
-              substep so the fade-in animation re-runs without us having to
-              manage CSS transitions manually. */}
           <Box
             key={stepIdx}
             sx={{
@@ -177,17 +117,6 @@ export default function VerifyingView({
           </Box>
         </Box>
 
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            py: 1,
-          }}
-        >
-          <AppLoader size={48} color={brand.primary} />
-        </Box>
-
         <Typography
           variant="caption"
           color="text.disabled"
@@ -201,11 +130,11 @@ export default function VerifyingView({
             display: 'flex',
             alignItems: 'center',
             gap: 0.75,
-            mt: 3,
+            mt: 2,
             color: 'text.disabled',
           }}
         >
-          <LockIcon sx={{ fontSize: 14 }} />
+          <LockIcon sx={{ fontSize: 14 }} aria-hidden />
           <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
             Connexion chiffrée · KeyHome
           </Typography>

@@ -240,18 +240,16 @@ export default function PaymentFlow({
     resetPayment,
     stripeClientSecret,
     stripeInitialStatus,
+    stripeFlow,
   } = usePayment();
 
-  const {
-    state: pollState,
-    pointBalance: polledBalance,
-    fastPollProgress,
-  } = usePaymentStatusPolling({
-    txRef,
-    variant: pollingVariant,
-    skip: step !== 'verifying',
-    onSuccess: handlePollSuccess,
-  });
+  const { state: pollState, pointBalance: polledBalance } =
+    usePaymentStatusPolling({
+      txRef,
+      variant: pollingVariant,
+      skip: step !== 'verifying',
+      onSuccess: handlePollSuccess,
+    });
 
   // Mirror the polled balance into local state so the success screen keeps
   // showing it after the polling hook is torn down (`skip` flips to true
@@ -916,6 +914,7 @@ export default function PaymentFlow({
           paymentConfirmReturnUrl={buildReturnUrlFor(txRef)}
           onSuccess={handleStripeSuccess}
           onBack={handleStripeCancel}
+          stripeFlow={stripeFlow ?? undefined}
           // The "save card" checkbox is only meaningful for new cards.
           // For saved-card reuse the card is already attached to the
           // Customer; hide the checkbox to avoid confusing UX.
@@ -939,14 +938,10 @@ export default function PaymentFlow({
   if (step === 'verifying') {
     return (
       <motion.div key="verifying" {...STEP_MOTION}>
-        {/* `VerifyingView` enforces a ~2.5 s minimum dwell time on the
-            polling side so the user never sees a sub-second blink between
-            Stripe confirm and the success screen. Same component the
-            standalone `/payment/return` page renders. */}
-        <VerifyingView
-          fastPollProgress={fastPollProgress}
-          variant={pollingVariant}
-        />
+        {/* `VerifyingView` + polling enforce ~4 s minimum dwell so the user
+            never sees a sub-second blink between Stripe confirm and success.
+            Same component as standalone `/payment/return`. */}
+        <VerifyingView variant={pollingVariant} />
       </motion.div>
     );
   }

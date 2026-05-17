@@ -575,6 +575,23 @@ function SearchContent() {
           overflow: 'hidden',
         }}
       >
+        <Typography
+          component="h1"
+          sx={{
+            position: 'absolute',
+            width: '1px',
+            height: '1px',
+            padding: 0,
+            margin: '-1px',
+            overflow: 'hidden',
+            clip: 'rect(0, 0, 0, 0)',
+            clipPath: 'inset(50%)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
+        >
+          Rechercher un logement — liste et carte interactive
+        </Typography>
         <style dangerouslySetInnerHTML={{ __html: MAP_POPUP_STYLES }} />
 
         {/* FILTER BAR */}

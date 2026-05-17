@@ -125,8 +125,11 @@ export type PaymentInitiateStatus =
  *
  * `payment_link` is overloaded by gateway :
  *  - `gateway === 'flutterwave'` → URL of the hosted checkout (redirect target)
- *  - `gateway === 'stripe'` → PaymentIntent client secret (`pi_xxx_secret_yyy`)
- *    consumed by `<Elements clientSecret>` on the frontend; NO redirect.
+ *  - `gateway === 'stripe'` + `stripe_flow === 'checkout_session'` → Checkout
+ *    Session client secret consumed by `CheckoutElementsProvider`; NO redirect.
+ *  - `gateway === 'stripe'` + `stripe_flow === 'payment_intent'` → PaymentIntent
+ *    client secret (`pi_xxx_secret_yyy`) for the saved-card / off-session 3DS
+ *    flow, consumed by `<Elements clientSecret>`; NO redirect.
  *
  * The naming was kept for backwards compatibility with the existing call
  * sites; the response shape is otherwise identical between gateways.
@@ -137,6 +140,13 @@ export interface FlutterwaveInitiateResponse {
   tx_ref: string;
   gateway: PaymentGateway;
   status: PaymentInitiateStatus;
+  /**
+   * Stripe-only. Identifies which SDK flow to mount for `payment_link`:
+   *  - `'checkout_session'` → new-card; use `CheckoutElementsProvider`
+   *  - `'payment_intent'`  → saved-card / off-session 3DS; use `<Elements>`
+   * `null` / absent for non-Stripe gateways.
+   */
+  stripe_flow?: 'checkout_session' | 'payment_intent' | null;
 }
 
 /**

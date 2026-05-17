@@ -32,9 +32,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  /** Match root: no pinch-zoom in installed PWA / mobile shell. */
-  maximumScale: 1,
-  userScalable: false,
+  /** WCAG / axe: allow zoom — aligned with root `layout.tsx`. */
+  maximumScale: 5,
+  userScalable: true,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: brandAgent.primary },
     { media: '(prefers-color-scheme: dark)', color: brandAgent.pwaChromeDark },

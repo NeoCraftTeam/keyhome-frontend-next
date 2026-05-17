@@ -190,7 +190,12 @@ const SearchResultsList = memo(function SearchResultsList({
       ) : isError ? (
         <Box sx={{ textAlign: 'center', py: { xs: 6, md: 10 }, px: 3 }}>
           <WifiOffIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+          <Typography
+            variant="h6"
+            component="h2"
+            fontWeight={700}
+            sx={{ mb: 1 }}
+          >
             Connexion interrompue
           </Typography>
           <Typography
@@ -219,7 +224,12 @@ const SearchResultsList = memo(function SearchResultsList({
       ) : ads.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: { xs: 6, md: 10 }, px: 3 }}>
           <SearchOffIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+          <Typography
+            variant="h6"
+            component="h2"
+            fontWeight={700}
+            sx={{ mb: 1 }}
+          >
             Pas encore d&apos;annonces ici
           </Typography>
           <Typography
