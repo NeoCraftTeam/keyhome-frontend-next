@@ -3,8 +3,8 @@
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
-import { buildClerkSignUpPatch } from '@/lib/clerk-signup-safe-update';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
+import { buildClerkSignUpPatch } from '@/lib/clerk-signup-safe-update';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { getRegisterThemeTokens } from '@/lib/register-theme';
 import { useAuth } from '@/providers/AuthProvider';
@@ -98,6 +98,10 @@ export default function CompleteProfilePage() {
   }, []);
 
   const [isOtpFlow, setIsOtpFlow] = useState(false);
+  /** True after the first client-side effect runs and sessionStorage has been
+   * checked. Keeps the redirect guard from firing on the very first render
+   * (before the effect has a chance to set isOtpFlow = true). */
+  const [mounted, setMounted] = useState(false);
   const [prefill, setPrefill] = useState<{
     firstname: string;
     lastname?: string;
@@ -123,6 +127,9 @@ export default function CompleteProfilePage() {
         // malformed — fall through to Clerk native flow
       }
     }
+    // Always set mounted after the sessionStorage check so the redirect guard
+    // below has accurate state on the very first render after mount.
+    setMounted(true);
   }, []);
 
   // ── Skip: complete without phone (both OTP and Clerk native flows) ──────────────────
@@ -278,6 +285,11 @@ export default function CompleteProfilePage() {
     !isOtpFlow &&
     !!signUp?.missingFields?.some((f) => /last[_]?name/i.test(String(f))) &&
     !(prefill?.lastname?.trim() || signUp?.lastName?.trim());
+
+  // Wait for the first effect to check sessionStorage before evaluating the
+  // guard. Without this, isOtpFlow is always false on the very first render,
+  // causing router.replace('/login') to race against the effect that sets it.
+  if (!mounted) return null;
 
   // Not in an OTP flow and not in a Clerk sign-up flow — redirect to login
   if (!isOtpFlow && !signUp) {

@@ -1,5 +1,7 @@
 'use client';
 
+import AssignmentOutlined from '@mui/icons-material/AssignmentOutlined';
+import Close from '@mui/icons-material/Close';
 import {
   Box,
   Button,
@@ -9,10 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import AssignmentOutlined from '@mui/icons-material/AssignmentOutlined';
-import Close from '@mui/icons-material/Close';
-import { useState, useEffect } from 'react';
-import { getSurveyPostponed } from './SurveyBanner';
+import { useEffect, useState } from 'react';
 
 interface SurveyPromptProps {
   surveyId: string;
@@ -38,7 +37,6 @@ export default function SurveyPrompt({
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!getSurveyPostponed(surveyId)) return;
     if (typeof window === 'undefined') return;
     const dismissed = sessionStorage.getItem(`survey_dismissed_${surveyId}`);
     if (!dismissed) {

@@ -280,6 +280,7 @@ export default function Navbar() {
               width={isMobile ? 36 : 44}
               height={isMobile ? 36 : 44}
               priority
+              loading="eager"
               style={{ objectFit: 'contain' }}
             />
             <Typography

@@ -2,15 +2,14 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
+import { brandAgent, neutral, shadow } from '@/theme/tokens';
 import Apartment from '@mui/icons-material/Apartment';
 import BarChart from '@mui/icons-material/BarChart';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import { Box, Button, Dialog, LinearProgress, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { APPTOUR_SHOWN_KEY } from '@/components/ui/AppTour';
-import { brandAgent, neutral, shadow } from '@/theme/tokens';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** ms to wait after AppTour completion before opening this modal.
  * Short breathing-room so the tour close animation finishes before the wizard slides in. */
@@ -19,6 +18,9 @@ const WELCOME_DELAY_MS = 1000;
 const PUSH_DELAY_MS = 3 * 1000; // 3 seconds
 /** localStorage key that stores the unix timestamp when the tour was completed. */
 const TOUR_TS_KEY = 'kh_owner_tour_completed_at';
+/** localStorage key set while the modal is open. Cleared by finalize() so a
+ * mid-onboarding page refresh reopens the modal immediately. */
+const WELCOME_OPEN_KEY = 'kh_owner_welcome_open';
 
 const TOTAL_STEPS = 3;
 
@@ -89,8 +91,10 @@ export default function OwnerWelcomeModal() {
   const finalize = useCallback((): void => {
     setOpen(false);
     setStep(0);
-    if (typeof window !== 'undefined')
-      localStorage.removeItem(APPTOUR_SHOWN_KEY);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(TOUR_TS_KEY);
+      localStorage.removeItem(WELCOME_OPEN_KEY);
+    }
     authService.completeOnboarding().catch(() => {});
     refreshUser().catch(() => {});
     setTimeout(() => {
@@ -129,11 +133,16 @@ export default function OwnerWelcomeModal() {
     timerRef.current = setTimeout(() => {
       if (hasShown.current) return;
       if (userRef.current?.onboarding_completed_at != null) {
-        if (typeof window !== 'undefined') localStorage.removeItem(TOUR_TS_KEY);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(TOUR_TS_KEY);
+          localStorage.removeItem(WELCOME_OPEN_KEY);
+        }
         return;
       }
       hasShown.current = true;
-      if (typeof window !== 'undefined') localStorage.removeItem(TOUR_TS_KEY);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(WELCOME_OPEN_KEY, '1');
+      }
       setOpen(true);
     }, delayMs);
   }, []);
@@ -150,13 +159,34 @@ export default function OwnerWelcomeModal() {
     };
   }, [scheduleOpen]);
 
+  // Reopen immediately if a page refresh happened while the modal was open.
+  useEffect(() => {
+    if (hasShown.current || typeof window === 'undefined') return;
+    if (!localStorage.getItem(WELCOME_OPEN_KEY)) return;
+    if (!user) return; // wait until auth resolves
+    if (user.onboarding_completed_at != null) {
+      localStorage.removeItem(WELCOME_OPEN_KEY);
+      localStorage.removeItem(TOUR_TS_KEY);
+      return;
+    }
+    hasShown.current = true;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setOpen(true);
+  }, [user]);
+
   useEffect(() => {
     if (user?.onboarding_completed_at == null) return;
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    if (typeof window !== 'undefined') localStorage.removeItem(TOUR_TS_KEY);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(TOUR_TS_KEY);
+      localStorage.removeItem(WELCOME_OPEN_KEY);
+    }
   }, [user?.onboarding_completed_at]);
 
   useEffect(() => {

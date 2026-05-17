@@ -1,6 +1,5 @@
 'use client';
 
-import { registerTokenGetter } from '@/lib/auth-token';
 import { useAuthActions } from '@/hooks/useAuthActions';
 import {
   clearAllInMemoryTokens,
@@ -9,20 +8,21 @@ import {
   getInMemoryToken,
   hasAnySanctumInMemory,
   migrateLegacyTokens,
-  persistOwnerToken,
   persistClientToken,
   persistInMemoryToken,
+  persistOwnerToken,
   registerInMemoryGetter,
   setRoleCookie,
 } from '@/lib/auth-session';
+import { registerTokenGetter } from '@/lib/auth-token';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
 // E2EE bootstrap intentionally not auto-run since mai 2026 — see
 // `chat-e2ee-identity.ts` and AGENTS.md (« Chat — désactivation E2EE par défaut »).
 // Re-import `syncChatE2eePublicKeyWithServer` here if/when E2EE is turned back on.
-import { useQueryClient } from '@tanstack/react-query';
 import { User, UserRole } from '@/types';
 import { useAuth as useClerkAuth, useUser } from '@clerk/nextjs';
+import { useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   createContext,
@@ -440,12 +440,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          if (!isOwnerRole && path.startsWith('/owner')) {
-            // Customer Clerk session on an owner tab — redirect to home.
+          if (
+            !isOwnerRole &&
+            (path.startsWith('/owner') || intentRaw === 'agent')
+          ) {
+            // Customer Clerk session in an owner context (owner tab or owner-intent
+            // OAuth from /owner/login that lands on /sso-callback). Send them back
+            // to the owner login so they can try with an owner/agent account.
             clearSanctumInMemoryOnly();
             setUserState(null);
             clearRoleCookie();
-            router.replace('/home');
+            router.replace('/owner/login');
             return;
           }
           // ─────────────────────────────────────────────────────────────────────
@@ -465,7 +470,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!path.startsWith('/owner')) {
               router.replace('/owner/dashboard');
             }
-          } else if (path.startsWith('/owner')) {
+          } else if (path.startsWith('/owner') || path === '/sso-callback') {
+            // Customer authenticated but still on an owner page or the OAuth
+            // callback — route to the customer home immediately instead of
+            // waiting for the sso-callback 8-second fallback timer.
             router.replace('/home');
           }
         } catch {

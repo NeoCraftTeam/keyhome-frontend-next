@@ -4,19 +4,18 @@ import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
+import { getInMemoryToken, persistInMemoryToken } from '@/lib/auth-session';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
-import { runAppRouterReplacement } from '@/lib/safe-app-router-push';
-import { ownerAuthHeroScrim } from '@/lib/owner-auth-theme';
-import { KH_OWNER_POST_OTP_TOKEN_KEY } from '@/lib/owner-auth-flow';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
-import { getInMemoryToken, persistInMemoryToken } from '@/lib/auth-session';
+import { KH_OWNER_POST_OTP_TOKEN_KEY } from '@/lib/owner-auth-flow';
+import { ownerAuthHeroScrim } from '@/lib/owner-auth-theme';
+import { runAppRouterReplacement } from '@/lib/safe-app-router-push';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { usersService } from '@/services/users.service';
 import { brandAgent, neutral, shadow } from '@/theme/tokens';
-import { alpha } from '@mui/material/styles';
 import { City, User, UserRole } from '@/types';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import {
@@ -29,6 +28,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -55,6 +55,9 @@ export default function OwnerCompleteProfilePage() {
   const [passwordFlowUser, setPasswordFlowUser] = useState<User | null>(null);
   const [passwordFlowReady, setPasswordFlowReady] = useState(false);
   const welcomeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Stores the finalizeAuth call so the WelcomeOverlay skip button can fire
+   * it immediately without waiting for the 3.8-second timer. */
+  const welcomeSkipFnRef = useRef<(() => void) | null>(null);
 
   // Cleanup timeout on unmount to prevent stale finalizeAuth calls
   useEffect(() => {
@@ -142,8 +145,7 @@ export default function OwnerCompleteProfilePage() {
           phone_number: phoneNumber,
           city_id: selectedCity?.id ?? null,
         });
-        setShowWelcome(true);
-        welcomeTimeoutRef.current = setTimeout(() => {
+        welcomeSkipFnRef.current = () => {
           const t = getInMemoryToken();
           sessionStorage.removeItem(KH_OWNER_POST_OTP_TOKEN_KEY);
           if (!t) {
@@ -151,7 +153,6 @@ export default function OwnerCompleteProfilePage() {
             setError(
               'Session expirée. Reconnectez-vous depuis la page bailleur.'
             );
-            setIsSubmitting(false);
             return;
           }
           finalizeAuth(
@@ -159,6 +160,10 @@ export default function OwnerCompleteProfilePage() {
             { ...updated, role: updated.role ?? UserRole.AGENT },
             null
           );
+        };
+        setShowWelcome(true);
+        welcomeTimeoutRef.current = setTimeout(() => {
+          welcomeSkipFnRef.current?.();
         }, 3800);
         return;
       }
@@ -168,13 +173,16 @@ export default function OwnerCompleteProfilePage() {
         ...(selectedCity ? { city_id: selectedCity.id } : {}),
       });
 
-      setShowWelcome(true);
-      welcomeTimeoutRef.current = setTimeout(() => {
+      welcomeSkipFnRef.current = () => {
         finalizeAuth(
           result.token,
           { ...result.user, role: result.user?.role ?? UserRole.AGENT },
           result.panel_sso_url
         );
+      };
+      setShowWelcome(true);
+      welcomeTimeoutRef.current = setTimeout(() => {
+        welcomeSkipFnRef.current?.();
       }, 3800);
     } catch (err) {
       setError(
@@ -214,6 +222,11 @@ export default function OwnerCompleteProfilePage() {
       <WelcomeOverlay
         firstName={passwordFlowUser?.firstname ?? authUser?.firstname}
         isOwner
+        onSkip={() => {
+          if (welcomeTimeoutRef.current)
+            clearTimeout(welcomeTimeoutRef.current);
+          welcomeSkipFnRef.current?.();
+        }}
       />
     );
   }

@@ -1,11 +1,12 @@
 'use client';
 
+import AppLoader from '@/components/ui/AppLoader';
 import { brand } from '@/theme/tokens';
 import LockIcon from '@mui/icons-material/Lock';
-import { Box, LinearProgress, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * Polished, professional payment-verification interstitial.
@@ -70,14 +71,11 @@ export default function VerifyingView({
     return () => clearTimeout(timer);
   }, [stepIdx, steps.length]);
 
-  // Mix the polling-based progress with a soft floor so the bar always
-  // moves forwards visibly during the first ~2.5 s minimum dwell. Cap at
-  // 92% — the final 8% is reserved for the success transition itself.
-  const minByTime = Math.min(0.5 + stepIdx * 0.18, 0.92);
-  const progressPct = Math.min(
-    92,
-    Math.max(12, Math.max(fastPollProgress, minByTime) * 100)
-  );
+  // `fastPollProgress` is intentionally unused now — kept in the props
+  // signature for backwards compatibility with parent views. The branded
+  // AppLoader spinner provides indefinite-duration motion that doesn't
+  // mislead the user about how close they are to completion (a problem
+  // with the previous determinate progress bar that could appear stuck).
 
   return (
     <Box
@@ -179,21 +177,15 @@ export default function VerifyingView({
           </Box>
         </Box>
 
-        <Box sx={{ width: '100%' }}>
-          <LinearProgress
-            variant="determinate"
-            value={progressPct}
-            sx={{
-              height: 6,
-              borderRadius: 3,
-              bgcolor: brand.primaryAlpha10,
-              '& .MuiLinearProgress-bar': {
-                bgcolor: brand.primary,
-                borderRadius: 3,
-                transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-              },
-            }}
-          />
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 1,
+          }}
+        >
+          <AppLoader size={48} color={brand.primary} />
         </Box>
 
         <Typography

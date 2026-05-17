@@ -1,8 +1,8 @@
 'use client';
 
+import AppLoader from '@/components/ui/AppLoader';
 import SplashTransition from '@/components/ui/SplashTransition';
 import { useAuth } from '@/providers/AuthProvider';
-import AppLoader from '@/components/ui/AppLoader';
 import { Box } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -25,7 +25,7 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -62,11 +62,20 @@ export default function AuthLayout({
       if (returnTo) {
         sessionStorage.removeItem('kh_redirect_after_login');
         router.replace(returnTo);
+      } else if (user?.role === 'agent' || user?.role === 'admin') {
+        router.replace('/owner/dashboard');
       } else {
         router.replace('/home');
       }
     }
-  }, [isAuthenticated, isLoading, showSplash, isVerificationPath, router]);
+  }, [
+    isAuthenticated,
+    isLoading,
+    showSplash,
+    isVerificationPath,
+    user,
+    router,
+  ]);
 
   const handleSplashComplete = useCallback(() => {
     sessionStorage.setItem(SPLASH_SEEN_KEY, '1');

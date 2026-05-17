@@ -16,6 +16,15 @@ const SENTINEL_ID = 'google-one-tap-sentinel';
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 /**
+ * Module-level sentinel: google.accounts.id.initialize() must be called only
+ * once per page load. A component-level ref resets on unmount/remount (e.g.
+ * when the auth-layout splash transition swaps subtrees), causing the
+ * "initialize() called multiple times" GSI warning. A module variable persists
+ * for the lifetime of the page regardless of React re-renders.
+ */
+let gsiPageInitialized = false;
+
+/**
  * Renders the Google One Tap prompt on the client-facing login page.
  *
  * Design decisions:
@@ -102,29 +111,32 @@ export function GoogleOneTap() {
 
     promptFiredRef.current = true;
 
+    // With use_fedcm_for_prompt the notification callback is not invoked for
+    // display/skipped moments (FedCM owns that UI). Only pass it in dev so the
+    // deprecation warning from the GSI script is not emitted in production.
     window.google.accounts.id.prompt(
-      (notification: PromptMomentNotification) => {
-        if (process.env.NODE_ENV === 'development') {
-          if (notification.isNotDisplayed()) {
-            console.warn(
-              '[GoogleOneTap] Not displayed:',
-              notification.getNotDisplayedReason()
-            );
-          } else if (notification.isSkippedMoment()) {
-            console.warn(
-              '[GoogleOneTap] Skipped:',
-              notification.getSkippedReason()
-            );
-          } else if (notification.isDismissedMoment()) {
-            console.info(
-              '[GoogleOneTap] Dismissed:',
-              notification.getDismissedReason()
-            );
-          } else {
-            console.info('[GoogleOneTap] Displayed ✓');
+      process.env.NODE_ENV === 'development'
+        ? (notification: PromptMomentNotification) => {
+            if (notification.isNotDisplayed()) {
+              console.warn(
+                '[GoogleOneTap] Not displayed:',
+                notification.getNotDisplayedReason()
+              );
+            } else if (notification.isSkippedMoment()) {
+              console.warn(
+                '[GoogleOneTap] Skipped:',
+                notification.getSkippedReason()
+              );
+            } else if (notification.isDismissedMoment()) {
+              console.info(
+                '[GoogleOneTap] Dismissed:',
+                notification.getDismissedReason()
+              );
+            } else {
+              console.info('[GoogleOneTap] Displayed ✓');
+            }
           }
-        }
-      }
+        : undefined
     );
   }, [isAuthenticated]);
 
@@ -136,11 +148,12 @@ export function GoogleOneTap() {
     if (
       !GOOGLE_CLIENT_ID ||
       isAuthenticated ||
-      initializedRef.current ||
+      gsiPageInitialized ||
       !window.google?.accounts?.id
     )
       return;
 
+    gsiPageInitialized = true;
     initializedRef.current = true;
 
     window.google.accounts.id.initialize({
@@ -149,6 +162,10 @@ export function GoogleOneTap() {
       auto_select: true,
       cancel_on_tap_outside: true,
       itp_support: true,
+      // Opt into FedCM to suppress deprecation warnings for display_moment /
+      // skipped_moment. When FedCM becomes mandatory this flag will already
+      // be set. The credential callback behaviour is unchanged.
+      use_fedcm_for_prompt: true,
     });
 
     /* Attempt to prompt immediately — will be a no-op if the sentinel is not

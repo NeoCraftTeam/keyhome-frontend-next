@@ -1,7 +1,7 @@
-import { withSentryConfig } from '@sentry/nextjs';
-import createNextIntlPlugin from 'next-intl/plugin';
-import type { NextConfig } from 'next';
 import withBundleAnalyzer from '@next/bundle-analyzer';
+import { withSentryConfig } from '@sentry/nextjs';
+import type { NextConfig } from 'next';
+import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 const bundleAnalyzer = withBundleAnalyzer({
@@ -36,6 +36,17 @@ const nextConfig: NextConfig = {
       {
         source: '/placeholder-house.jpg',
         destination: '/images/maison-blanche.webp',
+        permanent: false,
+      },
+      // iOS Safari and crawlers look for these at the root regardless of <link> tags.
+      {
+        source: '/apple-touch-icon.png',
+        destination: '/icons/icon-180x180.png',
+        permanent: false,
+      },
+      {
+        source: '/apple-touch-icon-precomposed.png',
+        destination: '/icons/icon-180x180.png',
         permanent: false,
       },
     ];

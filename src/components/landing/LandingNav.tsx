@@ -1,12 +1,12 @@
 'use client';
 
+import { brand, gradient } from '@/theme/tokens';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
-import { brand, gradient } from '@/theme/tokens';
 
 /**
  * Whether the bailleur panel is this Next app (`/owner/*`) vs Laravel Filament.
@@ -150,6 +150,8 @@ export default function LandingNav() {
               alt="KeyHome — Logo plateforme immobilière en Afrique"
               width={36}
               height={36}
+              priority
+              loading="eager"
               style={{ borderRadius: 8 }}
             />
             <span

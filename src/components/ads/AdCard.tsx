@@ -1,25 +1,25 @@
 'use client';
 
 import { Price } from '@/components/ui/Price';
+import { Typography } from '@/components/ui/Typography';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
-import { useFavorites } from '@/providers/FavoritesProvider';
 import { useComparator } from '@/providers/ComparatorProvider';
+import { useFavorites } from '@/providers/FavoritesProvider';
+import { neutral, semantic, shadow } from '@/theme/tokens';
 import { Ad } from '@/types';
 import BathtubOutlined from '@mui/icons-material/BathtubOutlined';
 import BedOutlined from '@mui/icons-material/BedOutlined';
-import ChevronLeft from '@mui/icons-material/ChevronLeft';
-import ChevronRight from '@mui/icons-material/ChevronRight';
 import Bookmark from '@mui/icons-material/Bookmark';
 import BookmarkBorder from '@mui/icons-material/BookmarkBorder';
+import ChevronLeft from '@mui/icons-material/ChevronLeft';
+import ChevronRight from '@mui/icons-material/ChevronRight';
 import CompareArrows from '@mui/icons-material/CompareArrows';
 import SquareFootOutlined from '@mui/icons-material/SquareFootOutlined';
 import StarIcon from '@mui/icons-material/Star';
 import { Box, Chip, IconButton, Tooltip } from '@mui/material';
-import { Typography } from '@/components/ui/Typography';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { shadow, neutral, semantic } from '@/theme/tokens';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 /** Tiny inline blur placeholder — avoids layout shift while image loads */
@@ -50,6 +50,7 @@ function AdCard({ ad, showDistance }: AdCardProps) {
     isSelected: isInComparator,
   } = useComparator();
   const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
   const [slideDirection, setSlideDirection] = useState<1 | -1>(1);
 
   const isFavorite = checkFav(ad.id);
@@ -149,6 +150,11 @@ function AdCard({ ad, showDistance }: AdCardProps) {
           textDecoration: 'none',
           color: 'inherit',
           display: 'block',
+          // Override framer-motion's internal `touch-action: none` that the
+          // press/whileTap gesture handler sets automatically. Without this,
+          // Android Chrome cannot detect the vertical pan gesture and the page
+          // becomes un-scrollable when the user starts a touch on a card.
+          touchAction: 'pan-y',
         }}
         role="link"
         aria-label={ad.title}
@@ -192,12 +198,23 @@ function AdCard({ ad, showDistance }: AdCardProps) {
             }}
             onTouchStart={(e) => {
               touchStartX.current = e.touches[0].clientX;
+              touchStartY.current = e.touches[0].clientY;
             }}
             onTouchEnd={(e) => {
               if (touchStartX.current === null || images.length <= 1) return;
-              const delta = e.changedTouches[0].clientX - touchStartX.current;
-              if (Math.abs(delta) > 40) {
-                if (delta < 0) {
+              const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+              const deltaY =
+                e.changedTouches[0].clientY - (touchStartY.current ?? 0);
+              touchStartX.current = null;
+              touchStartY.current = null;
+              // Only treat as horizontal image swipe when the gesture is
+              // predominantly horizontal — prevents triggering during diagonal
+              // scrolls, which is the main cause of missed vertical scrolls.
+              if (
+                Math.abs(deltaX) > 40 &&
+                Math.abs(deltaX) > Math.abs(deltaY)
+              ) {
+                if (deltaX < 0) {
                   setSlideDirection(1);
                   setCurrentImage((prev) => (prev + 1) % images.length);
                 } else {
@@ -207,7 +224,6 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                   );
                 }
               }
-              touchStartX.current = null;
             }}
             sx={{
               position: 'relative',
@@ -735,7 +751,7 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                   }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  style={{ display: 'flex' }}
+                  style={{ display: 'flex', touchAction: 'pan-y' }}
                 >
                   <Box
                     sx={{

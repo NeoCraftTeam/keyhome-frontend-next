@@ -2,15 +2,14 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
+import { brand, gradient, semantic } from '@/theme/tokens';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import NotificationsActive from '@mui/icons-material/NotificationsActive';
 import Search from '@mui/icons-material/Search';
 import Toll from '@mui/icons-material/Toll';
 import { Box, Button, Dialog, LinearProgress, Typography } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { APPTOUR_SHOWN_KEY } from './AppTour';
-import { brand, gradient, semantic } from '@/theme/tokens';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** ms to wait after AppTour completion before opening this modal. */
 const WELCOME_DELAY_MS = 3 * 60 * 1000; // 3 minutes
@@ -18,6 +17,9 @@ const WELCOME_DELAY_MS = 3 * 60 * 1000; // 3 minutes
 const PUSH_DELAY_MS = 3 * 1000; // 3 seconds
 /** localStorage key that stores the unix timestamp when the tour was completed. */
 const TOUR_TS_KEY = 'kh_tour_completed_at';
+/** localStorage key set while the modal is open. On refresh, the modal reopens immediately
+ * instead of losing the user mid-onboarding. Cleared by finalize(). */
+const WELCOME_OPEN_KEY = 'kh_welcome_open';
 
 const TOTAL_STEPS = 3;
 
@@ -91,8 +93,10 @@ export default function WelcomeModal() {
   const finalize = useCallback((): void => {
     setOpen(false);
     setStep(0);
-    if (typeof window !== 'undefined')
-      localStorage.removeItem(APPTOUR_SHOWN_KEY);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(TOUR_TS_KEY);
+      localStorage.removeItem(WELCOME_OPEN_KEY);
+    }
     authService.completeOnboarding().catch(() => {});
     refreshUser().catch(() => {});
     setTimeout(() => {
@@ -131,11 +135,16 @@ export default function WelcomeModal() {
     timerRef.current = setTimeout(() => {
       if (hasShown.current) return;
       if (userRef.current?.onboarding_completed_at != null) {
-        if (typeof window !== 'undefined') localStorage.removeItem(TOUR_TS_KEY);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(TOUR_TS_KEY);
+          localStorage.removeItem(WELCOME_OPEN_KEY);
+        }
         return;
       }
       hasShown.current = true;
-      if (typeof window !== 'undefined') localStorage.removeItem(TOUR_TS_KEY);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(WELCOME_OPEN_KEY, '1');
+      }
       setOpen(true);
     }, delayMs);
   }, []);
@@ -152,13 +161,35 @@ export default function WelcomeModal() {
     };
   }, [scheduleOpen]);
 
+  // Reopen immediately if a page refresh happened while the modal was open.
+  // WELCOME_OPEN_KEY is set when the modal opens and cleared only in finalize().
+  useEffect(() => {
+    if (hasShown.current || typeof window === 'undefined') return;
+    if (!localStorage.getItem(WELCOME_OPEN_KEY)) return;
+    if (!user) return; // wait until auth resolves
+    if (user.onboarding_completed_at != null) {
+      localStorage.removeItem(WELCOME_OPEN_KEY);
+      localStorage.removeItem(TOUR_TS_KEY);
+      return;
+    }
+    hasShown.current = true;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setOpen(true);
+  }, [user]);
+
   useEffect(() => {
     if (user?.onboarding_completed_at == null) return;
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    if (typeof window !== 'undefined') localStorage.removeItem(TOUR_TS_KEY);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(TOUR_TS_KEY);
+      localStorage.removeItem(WELCOME_OPEN_KEY);
+    }
   }, [user?.onboarding_completed_at]);
 
   useEffect(() => {

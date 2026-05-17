@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface UserLocation {
   latitude: number;
@@ -68,37 +68,67 @@ function writeDenied(): void {
   }
 }
 
-export function useUserLocation(): UseUserLocationReturn {
-  const [location, setLocation] = useState<UserLocation | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const requestedRef = useRef(false);
+// ─── Module-level singleton ────────────────────────────────────────────────
+// Ensures exactly ONE navigator.geolocation.getCurrentPosition call is made
+// regardless of how many components mount useUserLocation simultaneously.
+// All instances share the result through a pub/sub listener set.
 
-  const requestPosition = useCallback((forceRefresh = false) => {
-    if (typeof window === 'undefined' || !navigator.geolocation) {
-      setError('Géolocalisation non supportée par votre navigateur.');
-      setLoading(false);
-      return;
-    }
+interface SingletonState {
+  location: UserLocation | null;
+  error: string | null;
+  loading: boolean;
+  /** Whether a getCurrentPosition call is already in flight or has resolved. */
+  settled: boolean;
+}
 
-    // Don't re-ask if user previously denied (unless explicit refresh)
-    if (!forceRefresh && wasDenied()) {
-      setError('Vous avez refusé l\u2019accès à votre position.');
-      setLoading(false);
-      return;
-    }
+const _singleton: SingletonState = {
+  location: null,
+  error: null,
+  loading: false,
+  settled: false,
+};
 
-    const cached = !forceRefresh ? readCache() : null;
-    if (cached) {
-      setLocation(cached);
-      setError(null);
-      setLoading(false);
-      return;
-    }
+const _listeners = new Set<() => void>();
 
-    setError(null);
+function _notifyAll() {
+  _listeners.forEach((fn) => fn());
+}
 
-    const handleSuccess = (pos: GeolocationPosition) => {
+function _requestPositionOnce(forceRefresh = false): void {
+  if (typeof window === 'undefined' || !navigator.geolocation) {
+    _singleton.error = 'Géolocalisation non supportée par votre navigateur.';
+    _singleton.loading = false;
+    _singleton.settled = true;
+    _notifyAll();
+    return;
+  }
+
+  if (!forceRefresh && wasDenied()) {
+    _singleton.error = 'Vous avez refusé l\u2019accès à votre position.';
+    _singleton.loading = false;
+    _singleton.settled = true;
+    _notifyAll();
+    return;
+  }
+
+  const cached = !forceRefresh ? readCache() : null;
+  if (cached) {
+    _singleton.location = cached;
+    _singleton.error = null;
+    _singleton.loading = false;
+    _singleton.settled = true;
+    _notifyAll();
+    return;
+  }
+
+  if (_singleton.settled && !forceRefresh) return;
+
+  _singleton.loading = true;
+  _singleton.settled = true;
+  _notifyAll();
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
       const isApproximate = pos.coords.accuracy > ACCURACY_THRESHOLD_METERS;
       const loc: UserLocation = {
         latitude: pos.coords.latitude,
@@ -106,47 +136,63 @@ export function useUserLocation(): UseUserLocationReturn {
         accuracy: pos.coords.accuracy,
         isApproximate,
       };
-      setLocation(loc);
-      setError(null);
-      setLoading(false);
+      _singleton.location = loc;
+      _singleton.error = null;
+      _singleton.loading = false;
       writeCache(loc);
-    };
-
-    const handleError = (err: GeolocationPositionError) => {
-      setLoading(false);
+      _notifyAll();
+    },
+    (err) => {
+      _singleton.loading = false;
       switch (err.code) {
         case err.PERMISSION_DENIED:
-          setError('Vous avez refusé l\u2019accès à votre position.');
+          _singleton.error = 'Vous avez refusé l\u2019accès à votre position.';
           writeDenied();
           break;
         case err.POSITION_UNAVAILABLE:
-          setError('Position indisponible.');
+          _singleton.error = 'Position indisponible.';
           break;
         case err.TIMEOUT:
-          setError('Délai d\u2019attente dépassé.');
+          _singleton.error = 'Délai d\u2019attente dépassé.';
           break;
         default:
-          setError('Impossible d\u2019obtenir votre position.');
+          _singleton.error = 'Impossible d\u2019obtenir votre position.';
       }
-    };
+      _notifyAll();
+    },
+    { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 }
+  );
+}
 
-    navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
-      enableHighAccuracy: true,
-      timeout: 15_000,
-      maximumAge: 60_000,
-    });
-  }, []);
+// ─── Hook ─────────────────────────────────────────────────────────────────
+
+export function useUserLocation(): UseUserLocationReturn {
+  const [, rerender] = useState(0);
 
   useEffect(() => {
-    if (requestedRef.current) return;
-    requestedRef.current = true;
-    requestPosition();
-  }, [requestPosition]);
+    const update = () => rerender((n) => n + 1);
+    _listeners.add(update);
+
+    if (!_singleton.settled) {
+      _requestPositionOnce();
+    }
+
+    return () => {
+      _listeners.delete(update);
+    };
+  }, []);
+
+  const refresh = useCallback(() => {
+    _singleton.settled = false;
+    _singleton.location = null;
+    _singleton.error = null;
+    _requestPositionOnce(true);
+  }, []);
 
   return {
-    location,
-    loading,
-    error,
-    refresh: () => requestPosition(true),
+    location: _singleton.location,
+    loading: _singleton.loading,
+    error: _singleton.error,
+    refresh,
   };
 }

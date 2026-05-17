@@ -1,5 +1,5 @@
-import { ImageResponse } from 'next/og';
 import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
+import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 export const alt = BRAND_TITLE_WITH_TAGLINE;
@@ -42,7 +42,6 @@ export default async function OgImage() {
           flexDirection: 'column',
           alignItems: 'center',
           gap: 0,
-          zIndex: 1,
         }}
       >
         {/* Logo mark */}

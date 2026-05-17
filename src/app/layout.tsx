@@ -183,7 +183,7 @@ export default async function RootLayout({
       signUpFallbackRedirectUrl="/home"
       nonce={nonce}
     >
-      <html lang="fr" suppressHydrationWarning>
+      <html lang="fr" suppressHydrationWarning data-scroll-behavior="smooth">
         <head>
           {/* ThemeInitScript uses useServerInsertedHTML — injected server-side only,
               never reconciled on the client, so React 19 never warns. */}
@@ -221,13 +221,14 @@ export default async function RootLayout({
             <MicrosoftClarity />
           </Providers>
 
-          {/* Cloudflare Web Analytics */}
-          <script
-            defer
-            src="https://static.cloudflareinsights.com/beacon.min.js"
-            data-cf-beacon='{"token": "843502f324fe4d9c89c57bbc88c80fd7"}'
-          ></script>
-          {/* End Cloudflare Web Analytics */}
+          {/* Cloudflare Web Analytics — production only (localhost is not a registered origin) */}
+          {process.env.NODE_ENV === 'production' && (
+            <script
+              defer
+              src="https://static.cloudflareinsights.com/beacon.min.js"
+              data-cf-beacon='{"token": "843502f324fe4d9c89c57bbc88c80fd7"}'
+            />
+          )}
         </body>
       </html>
     </ClerkProvider>

@@ -1,27 +1,21 @@
 'use client';
 
+import AppLoader from '@/components/ui/AppLoader';
+import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import { consumePaymentReturnPath } from '@/lib/payment-return';
 import { paymentKeys } from '@/lib/query-keys';
-import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
+import { brand, gradient } from '@/theme/tokens';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import HomeIcon from '@mui/icons-material/Home';
 import HourglassIcon from '@mui/icons-material/HourglassEmpty';
 import LoginIcon from '@mui/icons-material/Login';
-import {
-  Alert,
-  Box,
-  Button,
-  LinearProgress,
-  Paper,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, Paper, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo } from 'react';
 import type { ReactElement } from 'react';
-import { brand, gradient } from '@/theme/tokens';
+import { useCallback, useMemo } from 'react';
 
 function isFlutterwaveTerminalFailure(status: string | null): boolean {
   if (!status) return false;
@@ -59,7 +53,7 @@ export default function OwnerFlowPaymentReturnView({
     void queryClient.invalidateQueries({ queryKey: paymentKeys.all });
   }, [queryClient]);
 
-  const { state, fastPollProgress, retry } = usePaymentStatusPolling({
+  const { state, retry } = usePaymentStatusPolling({
     txRef,
     variant: 'unlock',
     skip: skipPolling,
@@ -85,7 +79,6 @@ export default function OwnerFlowPaymentReturnView({
       : 'Votre paiement a été confirmé. Vos annonces seront mises à jour sous peu.';
 
   if (effectiveState === 'verifying') {
-    const progressPct = Math.max(8, fastPollProgress * 100);
     return (
       <Box
         sx={{
@@ -113,21 +106,7 @@ export default function OwnerFlowPaymentReturnView({
             Confirmation auprès de la passerelle, merci de patienter.
           </Typography>
         </Box>
-        <Box sx={{ width: '100%', maxWidth: 320 }}>
-          <LinearProgress
-            variant="determinate"
-            value={progressPct}
-            sx={{
-              height: 6,
-              borderRadius: 3,
-              bgcolor: 'grey.200',
-              '& .MuiLinearProgress-bar': {
-                bgcolor: brand.primary,
-                borderRadius: 3,
-              },
-            }}
-          />
-        </Box>
+        <AppLoader size={48} color={brand.primary} />
       </Box>
     );
   }
@@ -333,16 +312,8 @@ export default function OwnerFlowPaymentReturnView({
               Vérification automatique en cours — vous pouvez fermer cette page
               sans perdre votre paiement.
             </Typography>
-            <Box sx={{ width: '100%', mb: 3 }}>
-              <LinearProgress
-                variant="indeterminate"
-                sx={{
-                  height: 4,
-                  borderRadius: 2,
-                  bgcolor: brand.primaryAlpha12,
-                  '& .MuiLinearProgress-bar': { bgcolor: brand.primary },
-                }}
-              />
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+              <AppLoader size={40} color={brand.primary} />
             </Box>
             <Button variant="outlined" fullWidth onClick={retry} sx={{ mb: 1 }}>
               Vérifier maintenant
