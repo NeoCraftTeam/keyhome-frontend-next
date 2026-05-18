@@ -1,5 +1,6 @@
 'use client';
 
+import { API_URL } from '@/lib/api';
 import { brand, brandAgent, gradient } from '@/theme/tokens';
 import Close from '@mui/icons-material/Close';
 import CookieOutlined from '@mui/icons-material/CookieOutlined';
@@ -22,11 +23,14 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
 
 const COOKIE_KEY = 'keyhome_cookie_consent_v1';
+const POLICY_VERSION = 'v1';
 
 interface CookiePreferences {
   necessary: true;
   analytics: boolean;
   marketing: boolean;
+  consented_at?: string;
+  policy_version?: string;
 }
 
 const DEFAULT_PREFS: CookiePreferences = {
@@ -49,14 +53,32 @@ function loadPrefs(): CookiePreferences | null {
 
 function savePrefs(prefs: CookiePreferences): void {
   if (typeof window === 'undefined') return;
+  const enriched: CookiePreferences = {
+    ...prefs,
+    consented_at: new Date().toISOString(),
+    policy_version: POLICY_VERSION,
+  };
   try {
-    localStorage.setItem(COOKIE_KEY, JSON.stringify(prefs));
+    localStorage.setItem(COOKIE_KEY, JSON.stringify(enriched));
     window.dispatchEvent(
-      new CustomEvent('kh:cookie-consent', { detail: prefs })
+      new CustomEvent('kh:cookie-consent', { detail: enriched })
     );
   } catch {
     // localStorage may be full or disabled (private mode)
   }
+  // Fire-and-forget server-side log for CNIL proof of consent (Art. 5-1-a)
+  void fetch(`${API_URL}/consent/cookies`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      analytics: enriched.analytics,
+      marketing: enriched.marketing,
+      policy_version: POLICY_VERSION,
+    }),
+    credentials: 'include',
+  }).catch(() => {
+    // Non-fatal — consent is already saved in localStorage
+  });
 }
 
 interface CookieBannerProps {
@@ -101,6 +123,17 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
       const t = setTimeout(() => setVisible(true), 1200);
       return () => clearTimeout(t);
     }
+  }, []);
+
+  // Allow the footer "Cookies" link to re-open the banner at any time.
+  useEffect(() => {
+    const handler = () => {
+      setPrefs(loadPrefs() ?? DEFAULT_PREFS);
+      setCustomizeOpen(false);
+      setVisible(true);
+    };
+    window.addEventListener('kh:reopen-cookie-banner', handler);
+    return () => window.removeEventListener('kh:reopen-cookie-banner', handler);
   }, []);
 
   // Seed the dialog prefs from localStorage each time it opens so the user

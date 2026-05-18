@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny-ps" viewBox="0 0 512 512" width="512" height="512">
+  <title>KeyHome</title>
+  <rect width="512" height="512" fill="#FFFFFF"/>
+  <rect x="96" y="96" width="320" height="320" rx="72" fill="#F6475F"/>
+  <g transform="translate(256 268) scale(9.5) translate(-12 -12)">
+    <path
+      fill="#FFFFFF"
+      d="M3 9.5L12 3L21 9.5V20c0 .55-.45 1-1 1h-5v-6H9v6H4c-.55 0-1-.45-1-1V9.5z"
+    />
+  </g>
+</svg>

@@ -617,11 +617,31 @@ export default function PrivacyPolicyPage() {
                   retirer votre consentement au traitement de vos données à tout
                   moment
                 </li>
+                <li>
+                  <span className={styles.strong}>
+                    Droit à la limitation du traitement :
+                  </span>{' '}
+                  demander la suspension du traitement de vos données dans
+                  certains cas prévus par le RGPD (Art.&nbsp;18), par exemple
+                  pendant la vérification d&apos;une contestation
+                  d&apos;exactitude
+                </li>
+                <li>
+                  <span className={styles.strong}>
+                    Droit d&apos;opposition :
+                  </span>{' '}
+                  vous opposer à tout moment, pour des raisons tenant à votre
+                  situation particulière, au traitement de vos données fondé sur
+                  notre intérêt légitime (Art.&nbsp;21), notamment à des fins de
+                  prospection commerciale
+                </li>
               </ul>
               <div className={styles.note}>
                 Pour exercer vos droits, contactez-nous à{' '}
                 <span className={styles.strong}>privacy@keyhome.app</span>. Nous
-                répondrons dans un délai de 30 jours.
+                répondrons dans un délai d&apos;un mois conformément à
+                l&apos;Art.&nbsp;12 du RGPD (délai prorogeable de deux mois
+                supplémentaires en cas de demandes complexes ou nombreuses).
               </div>
             </section>
 

@@ -3,7 +3,7 @@
 import Facebook from '@mui/icons-material/Facebook';
 import Instagram from '@mui/icons-material/Instagram';
 import X from '@mui/icons-material/X';
-import { Box, Container, Link, Typography } from '@mui/material';
+import { Box, Button, Container, Link, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 
 const LEGAL_LINKS = [
@@ -109,6 +109,29 @@ export default function Footer() {
               </Link>
             </Box>
           ))}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <Typography variant="caption" color="text.disabled">
+              ·
+            </Typography>
+            <Button
+              size="small"
+              variant="text"
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent('kh:reopen-cookie-banner'))
+              }
+              sx={{
+                color: 'text.secondary',
+                fontSize: '0.78rem',
+                fontWeight: 400,
+                p: 0,
+                minWidth: 0,
+                textTransform: 'none',
+                '&:hover': { color: 'text.primary', bgcolor: 'transparent' },
+              }}
+            >
+              Cookies
+            </Button>
+          </Box>
         </Box>
 
         <Box
