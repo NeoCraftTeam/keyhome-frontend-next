@@ -1,3 +1,4 @@
+import { ConsentModeUpdater } from '@/components/analytics/ConsentModeUpdater';
 import { MicrosoftClarity } from '@/components/analytics/MicrosoftClarity';
 import NetworkStatus from '@/components/pwa/NetworkStatus';
 import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
@@ -248,6 +249,7 @@ export default async function RootLayout({
             <PWAInstallPrompt />
             <NetworkStatus />
             <CookieBanner />
+            <ConsentModeUpdater />
             <SpeedInsights />
             <MicrosoftClarity nonce={nonce} />
           </Providers>

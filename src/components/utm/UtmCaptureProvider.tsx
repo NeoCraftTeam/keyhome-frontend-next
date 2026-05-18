@@ -1,5 +1,6 @@
 'use client';
 
+import { pushAttributionToDataLayer } from '@/lib/analytics/data-layer-utm';
 import api from '@/lib/api';
 import {
   getAttributionBodyForApi,
@@ -21,6 +22,7 @@ function UtmCaptureEffects(): null {
   useEffect(() => {
     persistUtmFromSearchParams(new URLSearchParams(querySignature));
     const body = getAttributionBodyForApi();
+    pushAttributionToDataLayer(body);
     if (!body.session_id) {
       return;
     }
