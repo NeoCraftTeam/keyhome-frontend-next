@@ -27,6 +27,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useUserLocation } from '@/hooks/useUserLocation';
+import { trackViewAd } from '@/lib/analytics/track-events';
 import {
   CURRENCY_SYMBOL,
   formatDate,
@@ -255,6 +256,7 @@ function AdDetailContent() {
         price: ad.price ?? 0,
         has_3d_tour: ad.has_3d_tour ? 1 : 0,
       });
+      trackViewAd(ad.id, ad.price ?? 0);
       // Notify PWAInstallPrompt of a high-engagement moment
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('kh-ad-viewed'));

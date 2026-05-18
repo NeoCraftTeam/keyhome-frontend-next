@@ -3,6 +3,7 @@
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
+import { trackSignUp } from '@/lib/analytics/track-events';
 import { persistOwnerToken } from '@/lib/auth-session';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
@@ -143,6 +144,7 @@ export default function OwnerVerifyOtpPage() {
       sessionStorage.removeItem('user_id');
 
       finalizeArgRef.current = [result.access_token, result.user, null];
+      trackSignUp('email');
       setShowWelcome(true);
       welcomeTimerRef.current = setTimeout(() => {
         const args = finalizeArgRef.current;

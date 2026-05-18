@@ -3,6 +3,7 @@
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
+import { trackSignUp } from '@/lib/analytics/track-events';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { useAuth } from '@/providers/AuthProvider';
@@ -181,6 +182,7 @@ export default function VerifyEmailPage() {
       };
 
       // Show WelcomeOverlay for 3.8 s, then finalizeAuth routes to /home.
+      trackSignUp('email');
       setShowWelcome(true);
       welcomeTimerRef.current = setTimeout(() => {
         finalizeAuth(result.access_token, userWithRole, null);

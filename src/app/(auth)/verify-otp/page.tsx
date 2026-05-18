@@ -3,6 +3,7 @@
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import FadeIn from '@/components/ui/FadeIn';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
+import { trackSignUp } from '@/lib/analytics/track-events';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
@@ -132,6 +133,7 @@ export default function VerifyOtpPage() {
           sessionStorage.removeItem('clerk_auth_prefill');
           sessionStorage.removeItem('kh_registration_intent');
           completeResultRef.current = r;
+          trackSignUp('email');
           setShowWelcome(true);
           welcomeTimerRef.current = setTimeout(() => {
             finalizeAuth(r.token, r.user, r.panel_sso_url);

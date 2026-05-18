@@ -8,6 +8,10 @@ import StripeConfirmStep from '@/components/payment/StripeConfirmStep';
 import VerifyingView from '@/components/payment/return/VerifyingView';
 import { usePayment } from '@/hooks/usePayment';
 import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
+import {
+  trackInitiatePayment,
+  trackUnlockAd,
+} from '@/lib/analytics/track-events';
 import { creditsKeys, paymentKeys } from '@/lib/query-keys';
 import { buildStripeConfirmReturnUrl } from '@/lib/stripe-confirm-return';
 import { useAuth } from '@/providers/AuthProvider';
@@ -224,6 +228,9 @@ export default function PaymentFlow({
     type === PaymentType.CREDIT ? 'credit' : 'unlock';
 
   const handlePollSuccess = useCallback(() => {
+    if (type === PaymentType.UNLOCK && adId) {
+      trackUnlockAd(adId, _amount);
+    }
     onSuccess?.();
     // Force React Query to refetch the balance widget in the rest of the
     // app (CreditsWidget, header, etc.) so the user sees the new total
@@ -231,7 +238,7 @@ export default function PaymentFlow({
     void queryClient.invalidateQueries({ queryKey: creditsKeys.balance });
     void queryClient.invalidateQueries({ queryKey: creditsKeys.all });
     void queryClient.invalidateQueries({ queryKey: paymentKeys.all });
-  }, [onSuccess, queryClient]);
+  }, [onSuccess, queryClient, type, adId, _amount]);
 
   const {
     initiatePayment,
@@ -357,6 +364,7 @@ export default function PaymentFlow({
       }
 
       setTxRef(result.tx_ref);
+      trackInitiatePayment(adId ?? '', _amount);
 
       if (result.gateway === 'stripe') {
         // Saved-card off-session charges can short-circuit through Stripe
@@ -395,6 +403,7 @@ export default function PaymentFlow({
       period,
       initiatePayment,
       creditTurnstileToken,
+      _amount,
     ]
   );
 
