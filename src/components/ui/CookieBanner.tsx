@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { brand, brandAgent, gradient } from '@/theme/tokens';
+import Close from '@mui/icons-material/Close';
+import CookieOutlined from '@mui/icons-material/CookieOutlined';
+import Shield from '@mui/icons-material/Shield';
 import {
   Box,
   Button,
@@ -15,11 +17,9 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import Close from '@mui/icons-material/Close';
-import CookieOutlined from '@mui/icons-material/CookieOutlined';
-import Shield from '@mui/icons-material/Shield';
-import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
-import { brand, brandAgent, gradient } from '@/theme/tokens';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
+import { usePathname } from 'next/navigation';
+import { useEffect, useId, useState } from 'react';
 
 const COOKIE_KEY = 'keyhome_cookie_consent_v1';
 
@@ -72,8 +72,14 @@ interface CookieBannerProps {
 
 export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
   const pathname = usePathname();
+  const dialogTitleId = useId();
+
+  // Starts false on SSR — banner is never server-rendered (avoids hydration mismatch).
   const [visible, setVisible] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  // Dialog prefs are seeded from localStorage each time it opens so the user
+  // always sees their last-saved state — not stale in-memory state from a
+  // previous open-then-cancel sequence.
   const [prefs, setPrefs] = useState<CookiePreferences>(DEFAULT_PREFS);
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
@@ -89,12 +95,22 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
     ? `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`
     : gradient.primary;
 
+  // Show the banner once — only if the user has not yet saved preferences.
   useEffect(() => {
     if (loadPrefs() === null) {
       const t = setTimeout(() => setVisible(true), 1200);
       return () => clearTimeout(t);
     }
   }, []);
+
+  // Seed the dialog prefs from localStorage each time it opens so the user
+  // always sees their currently saved state (fixes stale-toggle bug when the
+  // dialog is opened, cancelled, then reopened in the same session).
+  useEffect(() => {
+    if (customizeOpen) {
+      setPrefs(loadPrefs() ?? DEFAULT_PREFS);
+    }
+  }, [customizeOpen]);
 
   const acceptAll = () => {
     savePrefs({ necessary: true, analytics: true, marketing: true });
@@ -109,166 +125,196 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
     setCustomizeOpen(false);
     setVisible(false);
   };
+  const openCustomize = () => setCustomizeOpen(true);
+  const closeCustomize = () => {
+    setCustomizeOpen(false);
+    // Reset dialog prefs to avoid stale state on next open.
+    setPrefs(loadPrefs() ?? DEFAULT_PREFS);
+  };
 
-  if (!visible) {
-    return null;
-  }
-
+  // Never return null early — AnimatePresence must own the mount/unmount
+  // of the motion.div so the exit animation can play when visible → false.
+  // Returning null here would bypass AnimatePresence entirely.
   return (
     <MotionConfig reducedMotion="user">
+      {/* Banner — exit animation plays correctly because AnimatePresence
+          detects the key removal while it is still in the tree. */}
       <AnimatePresence>
-        <motion.div
-          initial={{ y: 80, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 80, opacity: 0 }}
-          transition={{
-            type: 'spring',
-            stiffness: 300,
-            damping: 30,
-            delay: 0.1,
-          }}
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 1400,
-          }}
-        >
-          <Paper
-            elevation={0}
-            sx={{
-              mx: { xs: 0, sm: 2, md: 'auto' },
-              maxWidth: { md: 780 },
-              mb: { xs: 0, sm: 2 },
-              borderRadius: { xs: '12px 12px 0 0', sm: 3 },
-              border: '1px solid',
-              borderColor: 'divider',
-              boxShadow: '0 -2px 24px rgba(0,0,0,0.08)',
-              overflow: 'hidden',
+        {visible && (
+          <motion.div
+            key="cookie-banner"
+            role="region"
+            aria-label="Préférences de cookies"
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{
+              type: 'spring',
+              stiffness: 300,
+              damping: 30,
+              // Delay only on enter; exit should be immediate so it feels
+              // responsive when the user clicks accept/reject.
+            }}
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 1400,
             }}
           >
-            <Box sx={{ height: 3, background: accentBar }} />
-
-            <Box
+            <Paper
+              elevation={0}
               sx={{
-                px: { xs: 2, sm: 3 },
-                py: { xs: 1.75, sm: 2 },
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                alignItems: { sm: 'center' },
-                gap: { xs: 1.5, sm: 2.5 },
+                mx: { xs: 0, sm: 2, md: 'auto' },
+                maxWidth: { md: 780 },
+                mb: { xs: 0, sm: 2 },
+                borderRadius: { xs: '12px 12px 0 0', sm: 3 },
+                border: '1px solid',
+                borderColor: 'divider',
+                boxShadow: '0 -2px 24px rgba(0,0,0,0.08)',
+                overflow: 'hidden',
               }}
             >
-              {/* Icon + text — compact */}
+              <Box sx={{ height: 3, background: accentBar }} />
+
               <Box
                 sx={{
+                  px: { xs: 2, sm: 3 },
+                  py: { xs: 1.75, sm: 2 },
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  flex: 1,
-                  minWidth: 0,
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { sm: 'center' },
+                  gap: { xs: 1.5, sm: 2.5 },
                 }}
               >
-                <CookieOutlined
-                  sx={{ color: accentColor, fontSize: 20, flexShrink: 0 }}
-                />
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ lineHeight: 1.5 }}
+                {/* Icon + text */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    flex: 1,
+                    minWidth: 0,
+                  }}
                 >
+                  <CookieOutlined
+                    sx={{ color: accentColor, fontSize: 20, flexShrink: 0 }}
+                    aria-hidden
+                  />
                   <Typography
-                    component="span"
                     variant="body2"
-                    fontWeight={700}
-                    color="text.primary"
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.5 }}
                   >
-                    Cookies —{' '}
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      fontWeight={700}
+                      color="text.primary"
+                    >
+                      Cookies —{' '}
+                    </Typography>
+                    KeyHome utilise des cookies pour améliorer votre expérience.{' '}
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      sx={{
+                        color: accentColor,
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                        textUnderlineOffset: 2,
+                        whiteSpace: 'nowrap',
+                      }}
+                      onClick={openCustomize}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') openCustomize();
+                      }}
+                      aria-haspopup="dialog"
+                    >
+                      En savoir plus
+                    </Typography>
                   </Typography>
-                  KeyHome utilise des cookies pour améliorer votre expérience.{' '}
-                  <Typography
-                    component="span"
-                    variant="body2"
+                </Box>
+
+                {/* Actions */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 1,
+                    flexShrink: 0,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Button
+                    type="button"
+                    size="small"
+                    variant="text"
+                    onClick={rejectAll}
                     sx={{
-                      color: accentColor,
-                      cursor: 'pointer',
-                      textDecoration: 'underline',
-                      textUnderlineOffset: 2,
+                      textTransform: 'none',
+                      color: 'text.disabled',
+                      fontWeight: 500,
                       whiteSpace: 'nowrap',
                     }}
-                    onClick={() => setCustomizeOpen(true)}
                   >
-                    En savoir plus
-                  </Typography>
-                </Typography>
+                    Refuser
+                  </Button>
+                  <Button
+                    type="button"
+                    size="small"
+                    variant="outlined"
+                    onClick={openCustomize}
+                    aria-haspopup="dialog"
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      borderRadius: 2,
+                      borderColor: 'divider',
+                      color: 'text.primary',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Personnaliser
+                  </Button>
+                  <Button
+                    type="button"
+                    size="small"
+                    variant="contained"
+                    onClick={acceptAll}
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      borderRadius: 2,
+                      whiteSpace: 'nowrap',
+                      background: btnBg,
+                      '&:hover': {
+                        filter: 'brightness(0.9)',
+                        background: btnBg,
+                      },
+                    }}
+                  >
+                    Tout accepter
+                  </Button>
+                </Box>
               </Box>
-
-              {/* Actions — horizontal, compact */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 1,
-                  flexShrink: 0,
-                  alignItems: 'center',
-                }}
-              >
-                <Button
-                  size="small"
-                  variant="text"
-                  onClick={rejectAll}
-                  sx={{
-                    textTransform: 'none',
-                    color: 'text.disabled',
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Refuser
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => setCustomizeOpen(true)}
-                  sx={{
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    borderRadius: 2,
-                    borderColor: 'divider',
-                    color: 'text.primary',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Personnaliser
-                </Button>
-                <Button
-                  size="small"
-                  variant="contained"
-                  onClick={acceptAll}
-                  sx={{
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    borderRadius: 2,
-                    whiteSpace: 'nowrap',
-                    background: btnBg,
-                    '&:hover': { filter: 'brightness(0.9)', background: btnBg },
-                  }}
-                >
-                  Tout accepter
-                </Button>
-              </Box>
-            </Box>
-          </Paper>
-        </motion.div>
+            </Paper>
+          </motion.div>
+        )}
       </AnimatePresence>
 
-      {/* Customize Dialog */}
+      {/* Customize Dialog — rendered outside AnimatePresence and outside the
+          {visible} condition so it stays accessible during the banner exit
+          animation and doesn't vanish abruptly if opened while visible=false. */}
       <Dialog
         open={customizeOpen}
-        onClose={() => setCustomizeOpen(false)}
+        onClose={closeCustomize}
         maxWidth="xs"
         fullWidth
         fullScreen={isMobile}
+        aria-labelledby={dialogTitleId}
         PaperProps={{ sx: { borderRadius: isMobile ? 0 : 3 } }}
       >
         <Box
@@ -283,14 +329,15 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Shield sx={{ color: accentColor, fontSize: 18 }} />
-            <Typography fontWeight={700} fontSize={15}>
+            <Shield sx={{ color: accentColor, fontSize: 18 }} aria-hidden />
+            <Typography id={dialogTitleId} fontWeight={700} fontSize={15}>
               Préférences cookies
             </Typography>
           </Box>
           <IconButton
+            type="button"
             size="small"
-            onClick={() => setCustomizeOpen(false)}
+            onClick={closeCustomize}
             aria-label="Fermer les préférences cookies"
           >
             <Close fontSize="small" />
@@ -308,7 +355,7 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
             },
             {
               label: 'Analytiques',
-              desc: "Mesure d'audience anonyme (Vercel Analytics).",
+              desc: "Mesure d'audience anonyme (Vercel Analytics, Clarity).",
               checked: prefs.analytics,
               disabled: false,
               onChange: (v: boolean) =>
@@ -316,7 +363,7 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
             },
             {
               label: 'Marketing',
-              desc: 'Personnalisation et publicités ciblées.',
+              desc: 'Personnalisation et publicités ciblées (Meta, TikTok, etc.).',
               checked: prefs.marketing,
               disabled: false,
               onChange: (v: boolean) =>
@@ -344,7 +391,9 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
                   checked={checked}
                   disabled={disabled}
                   size="small"
-                  color={disabled ? 'success' : isOwner ? 'primary' : 'primary'}
+                  inputProps={{
+                    'aria-label': `Cookies ${label.toLowerCase()}${disabled ? ' (obligatoires)' : ''}`,
+                  }}
                   onChange={
                     onChange ? (e) => onChange(e.target.checked) : undefined
                   }
@@ -356,8 +405,9 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
 
           <Box sx={{ display: 'flex', gap: 1.5, mt: 2.5 }}>
             <Button
+              type="button"
               variant="outlined"
-              onClick={() => setCustomizeOpen(false)}
+              onClick={closeCustomize}
               sx={{
                 textTransform: 'none',
                 borderRadius: 2,
@@ -369,6 +419,7 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
               Annuler
             </Button>
             <Button
+              type="button"
               variant="contained"
               onClick={saveCustom}
               sx={{
