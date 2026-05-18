@@ -8,7 +8,11 @@
 }
 
 html {
-  overflow-x: hidden;
+  /* clip ≠ hidden: does NOT create a new scroll container, so Android Chrome
+   * correctly routes single-finger touch events to the viewport scroll instead
+   * of waiting for JS to confirm preventDefault() — fixes 2-finger-only scroll
+   * in standalone PWA mode. */
+  overflow-x: clip;
   scroll-behavior: smooth;
   /* Fills the strip behind the status bar in standalone PWA before body paints */
   background-color: #f6475f;
@@ -85,6 +89,9 @@ html:has(body[style*='overflow:hidden']) {
   body {
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: contain;
+    /* Fix Android "two-finger-only scroll": explicitly declare vertical pan intent
+     * so Chrome doesn't wait for JS preventDefault() confirmation on touch events. */
+    touch-action: pan-y;
   }
 }
 
@@ -196,6 +203,8 @@ body {
   width: 100%;
   max-width: 100vw;
   position: relative;
+  /* Allow single-finger vertical scroll through Framer Motion's wrapper div */
+  touch-action: pan-y;
 }
 
 /* All section inner containers */

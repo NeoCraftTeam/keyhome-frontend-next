@@ -8,11 +8,7 @@ import BottomNav, { BOTTOM_NAV_HEIGHT } from '@/components/layout/BottomNav';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
-import {
-  getSurveyPostponed,
-  setSurveyPostponed as persistSurveyPostponed,
-} from '@/components/surveys/SurveyBanner';
-import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
+import SurveyLoginModal from '@/components/surveys/SurveyLoginModal';
 import AppLoader from '@/components/ui/AppLoader';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
@@ -25,13 +21,12 @@ import { useUserLocation } from '@/hooks/useUserLocation';
 import { isLikelyIosWebKit } from '@/lib/ios-environment';
 import { useAuth } from '@/providers/AuthProvider';
 import ToastProvider from '@/providers/ToastProvider';
-import { authService } from '@/services/auth.service';
 import { surveysService } from '@/services/surveys.service';
 import { UserRole } from '@/types';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /** Silently warms up the geolocation cache on first visit so ad-detail maps are instant */
 function LocationPrimer() {
@@ -68,17 +63,15 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isLoading, isLoggingOut, user, refreshUser } =
-    useAuth();
+  const { isAuthenticated, isLoading, isLoggingOut, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isStandalone = useIsStandalone();
-  const [surveyPostponed, setSurveyPostponed] = useState<
-    Record<string, boolean>
-  >({});
-  const [surveyMounted, setSurveyMounted] = useState(false);
+  // Dismissed only for this login session — resets to false when isAuthenticated
+  // transitions true so the modal re-appears on every new login.
+  const [surveyDismissed, setSurveyDismissed] = useState(false);
   // Survey is gated until PushPrompt step resolves (accepted, dismissed, or not applicable).
   // For returning users (onboarding already completed) it's immediately ready.
   const [pushPromptReady, setPushPromptReady] = useState(false);
@@ -95,26 +88,6 @@ export default function DashboardLayout({
 
   const activeSurveyId = activeSurvey?.id ?? null;
 
-  const handleSurveyPostponed = useCallback(async () => {
-    if (!activeSurveyId) return;
-    setSurveyPostponed((p) => ({ ...p, [activeSurveyId]: true }));
-    if (user) {
-      const ids = user.preferences?.survey_postponed_ids ?? [];
-      if (!ids.includes(activeSurveyId)) {
-        try {
-          await authService.updatePreferences({
-            survey_postponed_ids: [...ids, activeSurveyId],
-          });
-          await refreshUser();
-        } catch {
-          /* ignore */
-        }
-      }
-    } else {
-      persistSurveyPostponed(activeSurveyId);
-    }
-  }, [activeSurveyId, user, refreshUser]);
-
   const { data: surveyAnsweredData } = useQuery({
     queryKey: ['survey-has-answered', activeSurveyId],
     queryFn: () => surveysService.hasAnswered(activeSurveyId!),
@@ -123,16 +96,12 @@ export default function DashboardLayout({
     retry: 1,
   });
 
-  // RC-1 guard: treat the query as still loading when the data hasn't arrived
-  // yet for the current survey. Without this, `undefined?.has_answered === false`
-  // evaluates to `false` which is correct, but a re-render during the loading
-  // window can briefly allow the banner to flash before the answer is known.
-  const surveyAnsweredLoading =
-    surveyAnsweredData === undefined && !!activeSurveyId;
-
+  // Reset dismissed flag on every new login so the modal re-appears.
   useEffect(() => {
-    setSurveyMounted(true);
-  }, []);
+    if (isAuthenticated) {
+      setSurveyDismissed(false);
+    }
+  }, [isAuthenticated]);
 
   // Tour-dismissed gate: same logic as owner side.
   useEffect(() => {
@@ -159,16 +128,6 @@ export default function DashboardLayout({
     window.addEventListener('kh:push-prompt-done', handler);
     return () => window.removeEventListener('kh:push-prompt-done', handler);
   }, []);
-
-  useEffect(() => {
-    if (
-      activeSurvey?.id &&
-      surveyMounted &&
-      getSurveyPostponed(activeSurvey.id, user)
-    ) {
-      setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
-    }
-  }, [activeSurvey?.id, surveyMounted, user]);
 
   const isPrivatePage = PRIVATE_PATHS.some((p) => pathname?.startsWith(p));
   const isSurveyPage =
@@ -366,35 +325,26 @@ export default function DashboardLayout({
         </Box>
         {!isMobile && !isMessagesPage && <Footer />}
         {!hideNavForChat && <BottomNav />}
-        {surveyMounted &&
-          isAuthenticated &&
-          !isSurveyPage &&
-          !activeSurveyError &&
-          activeSurvey &&
-          !surveyAnsweredLoading &&
-          surveyAnsweredData?.has_answered === false &&
-          pushPromptReady &&
-          tourDismissed && (
-            <SurveyPromptOrBanner
-              surveyId={activeSurvey.id}
-              surveySlug={activeSurvey.slug}
-              title="Votre avis compte !"
-              description={
-                activeSurvey.description ??
-                'Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience.'
-              }
-              onPostponed={handleSurveyPostponed}
-              isPostponed={
-                surveyPostponed[activeSurvey.id] ??
-                getSurveyPostponed(activeSurvey.id, user)
-              }
-              bottomOffset={
-                !hideNavForChat && isMobile && isStandalone
-                  ? BOTTOM_NAV_HEIGHT
-                  : undefined
-              }
-            />
-          )}
+        <SurveyLoginModal
+          open={
+            isAuthenticated &&
+            !isSurveyPage &&
+            !activeSurveyError &&
+            !!activeSurvey &&
+            surveyAnsweredData?.has_answered === false &&
+            pushPromptReady &&
+            tourDismissed &&
+            !surveyDismissed
+          }
+          surveyId={activeSurvey?.id ?? ''}
+          surveySlug={activeSurvey?.slug}
+          title="Votre avis compte !"
+          description={
+            activeSurvey?.description ??
+            'Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience.'
+          }
+          onDismiss={() => setSurveyDismissed(true)}
+        />
         <PushPrompt />
         <WelcomeModal />
         <LogoutOverlay />

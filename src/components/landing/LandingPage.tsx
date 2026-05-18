@@ -95,6 +95,7 @@ function LandingInner() {
         background: bg,
         transition: 'background 0.4s ease',
         overflowX: 'hidden',
+        touchAction: 'pan-y',
       }}
     >
       <LandingNav />

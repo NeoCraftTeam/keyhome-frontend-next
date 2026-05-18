@@ -14,11 +14,7 @@ import OwnerNavbar from '@/components/owner/OwnerNavbar';
 import OwnerSidebar from '@/components/owner/OwnerSidebar';
 import OwnerWelcomeModal from '@/components/owner/OwnerWelcomeModal';
 import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
-import {
-  getSurveyPostponed,
-  setSurveyPostponed as persistSurveyPostponed,
-} from '@/components/surveys/SurveyBanner';
-import SurveyPromptOrBanner from '@/components/surveys/SurveyPromptOrBanner';
+import SurveyLoginModal from '@/components/surveys/SurveyLoginModal';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import LogoutOverlay from '@/components/ui/LogoutOverlay';
 import PageTransition from '@/components/ui/PageTransition';
@@ -29,7 +25,6 @@ import { isLikelyIosWebKit } from '@/lib/ios-environment';
 import { shouldShowOwnerQuickCreateFab } from '@/lib/owner-shell-fab';
 import { khLeftRailPaddingSx } from '@/lib/safe-area-insets';
 import { useAuth } from '@/providers/AuthProvider';
-import { authService } from '@/services/auth.service';
 import { surveysService } from '@/services/surveys.service';
 import { brandAgent } from '@/theme/tokens';
 import { UserRole } from '@/types';
@@ -63,17 +58,15 @@ export default function OwnerLayoutClient({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isAuthenticated, isLoading, isLoggingOut, refreshUser } =
-    useAuth();
+  const { user, isAuthenticated, isLoading, isLoggingOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isStandalone = useIsStandalone();
-  const [surveyPostponed, setSurveyPostponed] = useState<
-    Record<string, boolean>
-  >({});
-  const [surveyMounted, setSurveyMounted] = useState(false);
+  // Dismissed only for this login session — resets to false when isAuthenticated
+  // transitions true so the modal re-appears on every new login.
+  const [surveyDismissed, setSurveyDismissed] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   // Survey is gated until PushPrompt step resolves (accepted, dismissed, or not applicable).
   // For returning users (onboarding already completed) it's immediately ready.
@@ -176,9 +169,12 @@ export default function OwnerLayoutClient({
     retry: 1,
   });
 
+  // Reset dismissed flag on every new login so the modal re-appears.
   useEffect(() => {
-    setSurveyMounted(true);
-  }, []);
+    if (isAuthenticated) {
+      setSurveyDismissed(false);
+    }
+  }, [isAuthenticated]);
 
   // Tour-dismissed gate: returning users are ready immediately; new users wait
   // for kh:welcome-dismissed (fired 3 s after OwnerWelcomeModal closes).
@@ -201,39 +197,6 @@ export default function OwnerLayoutClient({
     window.addEventListener('kh:push-prompt-done', handler);
     return () => window.removeEventListener('kh:push-prompt-done', handler);
   }, []);
-
-  useEffect(() => {
-    if (
-      activeSurvey?.id &&
-      surveyMounted &&
-      getSurveyPostponed(activeSurvey.id, user)
-    ) {
-      setSurveyPostponed((p) => ({ ...p, [activeSurvey.id]: true }));
-    }
-  }, [activeSurvey?.id, surveyMounted, user]);
-
-  const handleSurveyPostponed = useCallback(async () => {
-    const survey = activeSurvey;
-    if (!survey) {
-      return;
-    }
-    setSurveyPostponed((p) => ({ ...p, [survey.id]: true }));
-    if (user) {
-      const ids = user.preferences?.survey_postponed_ids ?? [];
-      if (!ids.includes(survey.id)) {
-        try {
-          await authService.updatePreferences({
-            survey_postponed_ids: [...ids, survey.id],
-          });
-          await refreshUser();
-        } catch {
-          /* ignore */
-        }
-      }
-    } else {
-      persistSurveyPostponed(survey.id);
-    }
-  }, [activeSurvey, refreshUser, user]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -459,33 +422,27 @@ export default function OwnerLayoutClient({
         </Fab>
       )}
 
-      {surveyMounted &&
-        isAuthenticated &&
-        !publicRoute &&
-        !isSurveyPage &&
-        !activeSurveyError &&
-        activeSurvey &&
-        surveyAnsweredData?.has_answered === false &&
-        pushPromptReady &&
-        tourDismissed && (
-          <SurveyPromptOrBanner
-            surveyId={activeSurvey.id}
-            surveySlug={activeSurvey.slug}
-            title="Votre avis compte !"
-            description={
-              activeSurvey.description ??
-              'Aidez-nous à améliorer KeyHome pour les bailleurs en répondant à quelques questions.'
-            }
-            onPostponed={handleSurveyPostponed}
-            isPostponed={
-              surveyPostponed[activeSurvey.id] ??
-              getSurveyPostponed(activeSurvey.id, user)
-            }
-            bottomOffset={
-              isMobile && isStandalone ? OWNER_BOTTOM_NAV_HEIGHT : undefined
-            }
-          />
-        )}
+      <SurveyLoginModal
+        open={
+          isAuthenticated &&
+          !publicRoute &&
+          !isSurveyPage &&
+          !activeSurveyError &&
+          !!activeSurvey &&
+          surveyAnsweredData?.has_answered === false &&
+          pushPromptReady &&
+          tourDismissed &&
+          !surveyDismissed
+        }
+        surveyId={activeSurvey?.id ?? ''}
+        surveySlug={activeSurvey?.slug}
+        title="Votre avis compte !"
+        description={
+          activeSurvey?.description ??
+          'Aidez-nous à améliorer KeyHome pour les bailleurs en répondant à quelques questions.'
+        }
+        onDismiss={() => setSurveyDismissed(true)}
+      />
 
       {/* Onboarding flow: WelcomeModal → PushPrompt → Survey */}
       <PushPrompt />

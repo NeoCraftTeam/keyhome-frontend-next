@@ -1,18 +1,17 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { brand, gradient, semantic } from '@/theme/tokens';
 import ArrowForward from '@mui/icons-material/ArrowForward';
-import PhoneIphoneOutlined from '@mui/icons-material/PhoneIphoneOutlined';
 import CheckRounded from '@mui/icons-material/CheckRounded';
+import PhoneIphoneOutlined from '@mui/icons-material/PhoneIphoneOutlined';
+import { motion } from 'framer-motion';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
-import { brand, gradient, semantic } from '@/theme/tokens';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
 export default function CTASection() {
-  const { bgAlt, text, textSub, surface, surfaceHover, border } =
-    useLandingTheme();
+  const { bgAlt, text, textSub } = useLandingTheme();
   return (
     <section
       className="landing-section-pad"
@@ -164,7 +163,10 @@ export default function CTASection() {
               style={{ textDecoration: 'none' }}
             >
               <motion.button
-                whileHover={{ scale: 1.03, background: surfaceHover }}
+                whileHover={{
+                  scale: 1.03,
+                  boxShadow: `0 8px 40px ${brand.primaryAlpha40}`,
+                }}
                 whileTap={{ scale: 0.97 }}
                 style={{
                   display: 'flex',
@@ -172,14 +174,15 @@ export default function CTASection() {
                   gap: 10,
                   padding: '16px 32px',
                   borderRadius: 14,
-                  background: surface,
-                  color: text,
+                  background: brand.primary,
+                  color: '#fff',
                   fontSize: 17,
                   fontWeight: 600,
-                  border: `1px solid ${border}`,
+                  border: 'none',
                   cursor: 'pointer',
                   letterSpacing: '-0.3px',
                   minHeight: 44,
+                  boxShadow: `0 4px 30px ${brand.primaryAlpha30}`,
                 }}
               >
                 Publier une annonce

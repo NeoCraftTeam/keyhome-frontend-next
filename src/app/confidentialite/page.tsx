@@ -13,6 +13,7 @@ const sections = [
   { id: 'securite', title: 'Sécurité et conservation' },
   { id: 'droits', title: 'Vos droits' },
   { id: 'cookies', title: 'Cookies' },
+  { id: 'sondages-newsletter', title: 'Sondages et newsletter' },
   { id: 'contact', title: 'Contact' },
 ];
 
@@ -175,6 +176,17 @@ export default function PrivacyPolicyPage() {
                   sécurisés (Flutterwave). Nous ne stockons jamais vos données
                   bancaires
                 </li>
+                <li>
+                  <span className={styles.strong}>Réponses aux sondages :</span>{' '}
+                  réponses que vous soumettez aux sondages de satisfaction
+                  affichés sur la plateforme, associées à votre compte ou
+                  stockées de manière anonymisée (voir §&nbsp;10)
+                </li>
+                <li>
+                  <span className={styles.strong}>Newsletter :</span> adresse
+                  e-mail, prénom (optionnel) et préférence de langue si vous
+                  vous abonnez à notre newsletter
+                </li>
               </ul>
             </section>
 
@@ -221,6 +233,15 @@ export default function PrivacyPolicyPage() {
                 </li>
                 <li>
                   Assurer la sécurité de la plateforme et prévenir les fraudes
+                </li>
+                <li>
+                  Analyser vos retours via les sondages de satisfaction pour
+                  améliorer continuellement nos fonctionnalités et
+                  l&apos;expérience utilisateur
+                </li>
+                <li>
+                  Vous envoyer les campagnes newsletter auxquelles vous avez
+                  explicitement souscrit
                 </li>
               </ul>
               <div className={styles.note}>
@@ -654,9 +675,98 @@ export default function PrivacyPolicyPage() {
               </p>
             </section>
 
+            {/* §10 — Sondages et newsletter */}
+            <section id="sondages-newsletter" className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.iconBox}>
+                  <svg
+                    aria-hidden="true"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                    <rect x="9" y="3" width="6" height="4" rx="1" />
+                    <path d="M9 12h6M9 16h4" />
+                  </svg>
+                </div>
+                <h2 className={styles.sectionTitle}>
+                  10. Sondages et newsletter
+                </h2>
+              </div>
+
+              <p>
+                <span className={styles.strong}>Sondages de satisfaction.</span>{' '}
+                Nous affichons ponctuellement des sondages aux utilisateurs
+                authentifiés afin de recueillir vos retours sur la plateforme.
+              </p>
+              <ul className={styles.list}>
+                <li>
+                  <span className={styles.strong}>Données collectées :</span>{' '}
+                  vos réponses aux questions du sondage, associées à votre
+                  identifiant utilisateur lorsque vous êtes connecté, ou
+                  anonymisées via un identifiant de session haché lorsque vous
+                  choisissez de répondre de façon anonyme
+                </li>
+                <li>
+                  <span className={styles.strong}>Finalité :</span> amélioration
+                  du produit, analyse des tendances d&apos;usage et priorisation
+                  de la feuille de route
+                </li>
+                <li>
+                  <span className={styles.strong}>Affichage :</span> un sondage
+                  est affiché une fois par connexion tant qu&apos;il n&apos;a
+                  pas été répondu. Si vous cliquez «&nbsp;Plus tard&nbsp;», la
+                  fenêtre se ferme pour la session en cours et réapparaît à la
+                  prochaine connexion. Une fois le sondage complété, il ne
+                  s&apos;affiche plus
+                </li>
+                <li>
+                  <span className={styles.strong}>Conservation :</span> les
+                  réponses sont conservées aussi longtemps que le compte est
+                  actif ou le sondage archivé, puis supprimées dans un délai
+                  maximum de&nbsp;90&nbsp;jours
+                </li>
+              </ul>
+
+              <p>
+                <span className={styles.strong}>Newsletter.</span> Vous pouvez
+                vous abonner à notre newsletter pour recevoir nos actualités,
+                conseils et offres exclusives.
+              </p>
+              <ul className={styles.list}>
+                <li>
+                  <span className={styles.strong}>Données collectées :</span>{' '}
+                  adresse e-mail, prénom (optionnel), préférence de langue et
+                  source d&apos;inscription
+                </li>
+                <li>
+                  <span className={styles.strong}>Consentement :</span>{' '}
+                  l&apos;abonnement est toujours volontaire (opt-in). Un lien de
+                  désabonnement est présent dans chaque e-mail envoyé
+                </li>
+                <li>
+                  <span className={styles.strong}>Désabonnement :</span> à tout
+                  moment via le lien en bas de chaque e-mail ou en contactant{' '}
+                  <span className={styles.strong}>privacy@keyhome.app</span>. La
+                  prise en compte est effective sous&nbsp;72&nbsp;heures
+                </li>
+                <li>
+                  <span className={styles.strong}>Conservation :</span> vos
+                  coordonnées sont conservées jusqu&apos;au désabonnement, puis
+                  supprimées dans les&nbsp;30&nbsp;jours
+                </li>
+              </ul>
+            </section>
+
             <hr className={styles.divider} />
 
-            {/* §10 — Contact */}
+            {/* §11 — Contact */}
             <section id="contact" className={styles.section}>
               <div className={styles.sectionHeader}>
                 <div className={styles.iconBox}>
@@ -675,7 +785,7 @@ export default function PrivacyPolicyPage() {
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
                 </div>
-                <h2 className={styles.sectionTitle}>10. Contact</h2>
+                <h2 className={styles.sectionTitle}>11. Contact</h2>
               </div>
               <p>
                 Pour toute question relative à vos données personnelles ou à

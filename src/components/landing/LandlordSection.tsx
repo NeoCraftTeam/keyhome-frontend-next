@@ -1,13 +1,13 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { brand, brandAgent, gradient, semantic } from '@/theme/tokens';
+import ArrowForward from '@mui/icons-material/ArrowForward';
 import Dashboard from '@mui/icons-material/Dashboard';
 import PeopleOutline from '@mui/icons-material/PeopleOutline';
 import VerifiedUser from '@mui/icons-material/VerifiedUser';
-import ArrowForward from '@mui/icons-material/ArrowForward';
+import { motion } from 'framer-motion';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
-import { brandAgent, gradient, semantic } from '@/theme/tokens';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
@@ -172,14 +172,17 @@ export default function LandlordSection() {
             style={{ textDecoration: 'none', display: 'inline-block' }}
           >
             <motion.button
-              whileHover={{ y: -2 }}
+              whileHover={{
+                y: -2,
+                boxShadow: `0 8px 28px ${brand.primaryAlpha40}`,
+              }}
               whileTap={{ scale: 0.98 }}
               transition={{ duration: 0.2, ease: EASE }}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 8,
-                background: gradient.agent,
+                background: gradient.primary135,
                 color: '#fff',
                 border: 'none',
                 borderRadius: 12,
@@ -187,7 +190,7 @@ export default function LandlordSection() {
                 fontSize: 15,
                 fontWeight: 600,
                 cursor: 'pointer',
-                boxShadow: `0 4px 16px ${brandAgent.primaryAlpha20}`,
+                boxShadow: `0 4px 20px ${brand.primaryAlpha30}`,
                 minHeight: 44,
               }}
             >
