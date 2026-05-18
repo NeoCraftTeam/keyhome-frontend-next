@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /* ── Session helpers ──────────────────────────────────────────── */
 
-  const persistSession = useCallback((sanctumToken: string) => {
+  const _persistSession = useCallback((sanctumToken: string) => {
     persistInMemoryToken(sanctumToken);
     setToken(sanctumToken);
   }, []);
@@ -323,6 +323,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (clerkExchangeDoneRef.current) {
       setIsExchanging(false);
       setHasResolvedInitialAuth(true);
+      // If the exchange already completed (e.g. cached Clerk session on
+      // re-mount) but the router hasn't navigated away from /sso-callback yet,
+      // perform routing here so the user is never left on the callback page.
+      // We read the role from the kh_role cookie (written by setRoleCookie
+      // during the exchange) and the intent from sessionStorage so we don't
+      // depend on the `user` state, which may not yet be populated in this
+      // synchronous early-return path.
+      const currentPath = pathnameRef.current ?? '';
+      if (currentPath === '/sso-callback') {
+        const intentRaw =
+          typeof window !== 'undefined'
+            ? sessionStorage.getItem('kh_registration_intent')
+            : null;
+        const roleCookie =
+          typeof document !== 'undefined'
+            ? document.cookie
+                .split('; ')
+                .find((r) => r.startsWith('kh_role='))
+                ?.split('=')[1]
+            : null;
+        const isOwner =
+          roleCookie === 'agent' ||
+          roleCookie === 'admin' ||
+          intentRaw === 'agent';
+        router.replace(isOwner ? '/owner/dashboard' : '/home');
+      }
       return;
     }
 

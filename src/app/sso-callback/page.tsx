@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import AppLoader from '@/components/ui/AppLoader';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { brandAgent } from '@/theme/tokens';
-import { useAuth as useClerkAuth, useClerk } from '@clerk/nextjs';
+import { useClerk, useAuth as useClerkAuth } from '@clerk/nextjs';
 import { Box, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -34,15 +34,29 @@ export default function SSOCallbackPage() {
    *  effect set it, so stale redirects never fire on the next page. */
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // RC-7: Read sessionStorage in an effect, not at render time.
-  // Reading it synchronously during render causes hydration mismatches (SSR has
-  // no sessionStorage) and inconsistent values under React StrictMode's
-  // double-invoke. The effect runs once on mount, client-side only.
-  const [isAgentIntent, setIsAgentIntent] = useState(false);
-  useEffect(() => {
-    setIsAgentIntent(
+  // RC-8: Read sessionStorage synchronously via a ref initialised at mount.
+  // sso-callback is 'use client' + 'force-dynamic' — never server-rendered —
+  // so window/sessionStorage are always available when the module executes.
+  // A ref avoids the one-render lag that a useState+useEffect pair introduces:
+  // with that pattern the first render sees `false`, and any effect that also
+  // runs on that first render (e.g. handleRedirectCallback) captures the stale
+  // value before the state update from the second effect can flush.
+  const isAgentIntentRef = useRef(
+    typeof window !== 'undefined' &&
       sessionStorage.getItem('kh_registration_intent') === 'agent'
-    );
+  );
+  // Derived state — used ONLY for UI rendering (logo, colour, label).
+  // All routing/logic must use isAgentIntentRef.current.
+  const [isAgentIntent, setIsAgentIntent] = useState(
+    typeof window !== 'undefined' &&
+      sessionStorage.getItem('kh_registration_intent') === 'agent'
+  );
+  // Keep derived state in sync in case the ref value changes (e.g. StrictMode
+  // double-invoke with different storage contents between invocations).
+  useEffect(() => {
+    const stored = sessionStorage.getItem('kh_registration_intent') === 'agent';
+    isAgentIntentRef.current = stored;
+    setIsAgentIntent(stored);
   }, []);
 
   // ─── Global cleanup – cancel any pending redirect when the component unmounts
@@ -57,10 +71,14 @@ export default function SSOCallbackPage() {
 
   // ─── Second visit: isSignedIn=true — AuthProvider is handling clerkExchange.
   // Add an 8 s fallback so the user is never stuck on the spinner indefinitely.
+  // Use isAgentIntentRef.current (synchronous) so the correct path is captured
+  // even if the derived `isAgentIntent` state hasn't flushed yet.
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
 
-    const fallbackPath = isAgentIntent ? '/owner/dashboard' : '/home';
+    const fallbackPath = isAgentIntentRef.current
+      ? '/owner/dashboard'
+      : '/home';
     timeoutRef.current = setTimeout(() => {
       console.warn(
         '[sso-callback] AuthProvider routing timed out — forcing fallback'
@@ -74,7 +92,7 @@ export default function SSOCallbackPage() {
         timeoutRef.current = null;
       }
     };
-  }, [isLoaded, isSignedIn, isAgentIntent, router]);
+  }, [isLoaded, isSignedIn, router]);
 
   // ─── First visit: isSignedIn=false — process the OAuth callback.
   useEffect(() => {
@@ -85,11 +103,16 @@ export default function SSOCallbackPage() {
 
     handled.current = true;
 
+    // Read the intent from the ref — synchronously set at mount, so this value
+    // is always correct even on the very first effect run (unlike a state value
+    // that lags one render behind when set inside a useEffect).
+    const agentIntent = isAgentIntentRef.current;
+
     const origin = window.location.origin;
     // Fallback when Clerk has no stored redirectUrlComplete.
     const fallbackUrl = `${origin}/home`;
     // On hard errors (timeout / exception), redirect to context-appropriate login.
-    const errorPath = isAgentIntent ? '/owner/login' : '/login';
+    const errorPath = agentIntent ? '/owner/login' : '/login';
 
     // Safety timeout — if Clerk hangs (e.g. Turnstile challenge), redirect after 10 s.
     // NOTE: we deliberately do NOT clear this in .then(). If handleRedirectCallback
@@ -103,11 +126,11 @@ export default function SSOCallbackPage() {
     // No complete-profile step — new OAuth users go directly to home/dashboard.
     // The backend finalizes the profile via clerkExchange; profile completion
     // happens inline on the dashboard via a banner component.
-    const continueSignUpUrl = isAgentIntent ? '/owner/dashboard' : '/home';
+    const continueSignUpUrl = agentIntent ? '/owner/dashboard' : '/home';
 
     handleRedirectCallback({
-      signInUrl: isAgentIntent ? '/owner/login' : '/login',
-      signUpUrl: isAgentIntent ? '/register?role=agent' : '/register',
+      signInUrl: agentIntent ? '/owner/login' : '/login',
+      signUpUrl: agentIntent ? '/register?role=agent' : '/register',
       signInFallbackRedirectUrl: fallbackUrl,
       signUpFallbackRedirectUrl: fallbackUrl,
       continueSignUpUrl,
@@ -120,7 +143,7 @@ export default function SSOCallbackPage() {
       console.error('[sso-callback] handleRedirectCallback error:', err);
       router.replace(errorPath);
     });
-  }, [handleRedirectCallback, router, isLoaded, isSignedIn, isAgentIntent]);
+  }, [handleRedirectCallback, router, isLoaded, isSignedIn]);
 
   return (
     <Box
