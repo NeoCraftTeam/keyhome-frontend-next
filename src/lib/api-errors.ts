@@ -67,6 +67,13 @@ export function getLaravelNestedApiErrorCode(err: unknown): string | null {
   return n?.code && n.code.length > 0 ? n.code : null;
 }
 
+/** Laravel ModelNotFoundException text — never show to end users. */
+const LARAVEL_INTERNAL_MESSAGE = /^No query results for model \[[^\]]+\]/i;
+
+function isInternalLaravelApiMessage(message: string): boolean {
+  return LARAVEL_INTERNAL_MESSAGE.test(message.trim());
+}
+
 function flattenLaravelErrors(errors: LaravelValidationErrors): string[] {
   const out: string[] = [];
 
@@ -130,7 +137,7 @@ function getMessageFromAxiosError(err: AxiosError, fallback: string): string {
 
   if (typeof d.message === 'string' && d.message.trim()) {
     const top = d.message.trim();
-    if (!segments.includes(top)) {
+    if (!isInternalLaravelApiMessage(top) && !segments.includes(top)) {
       segments.push(top);
     }
   }
@@ -154,9 +161,15 @@ function getMessageFromAxiosError(err: AxiosError, fallback: string): string {
     d.debug && typeof d.debug.message === 'string' && d.debug.message.trim()
       ? d.debug.message.trim()
       : '';
-  if (dbg && !segments.some((s) => s === dbg || s.includes(dbg))) {
+  if (
+    dbg &&
+    !isInternalLaravelApiMessage(dbg) &&
+    !segments.some((s) => s === dbg || s.includes(dbg))
+  ) {
     segments.push(dbg);
   }
 
-  return segments.length > 0 ? segments.join(' · ') : fallback;
+  const joined = segments.length > 0 ? segments.join(' · ') : fallback;
+
+  return isInternalLaravelApiMessage(joined) ? fallback : joined;
 }

@@ -74,4 +74,23 @@ describe('getLaravelApiErrorMessage', () => {
   it('returns non-axios Error message when not generic', () => {
     expect(getLaravelApiErrorMessage(new Error('réseau'), 'fb')).toBe('réseau');
   });
+
+  it('hides Laravel ModelNotFoundException text from API message', () => {
+    const err = new AxiosError('Request failed with status code 404');
+    err.response = {
+      data: {
+        message:
+          'No query results for model [App\\Models\\Ad] 019e4198-287b-713c-a536-6071afde0104',
+        code: 'NOT_FOUND',
+      },
+      status: 404,
+      statusText: 'Not Found',
+      headers: {},
+      config: dummyConfig,
+    };
+
+    expect(getLaravelApiErrorMessage(err, 'Annonce introuvable.')).toBe(
+      'Annonce introuvable.'
+    );
+  });
 });
