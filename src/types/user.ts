@@ -1,3 +1,5 @@
+import { TrustScorePublic } from './trust-score';
+
 export enum UserRole {
   ADMIN = 'admin',
   AGENT = 'agent',
@@ -34,4 +36,5 @@ export interface User {
   preferences?: { survey_postponed_ids?: string[] };
   /** RSA public key (PEM) for chat E2EE — private key stays in browser storage. */
   chat_e2ee_public_key_pem?: string | null;
+  trust_score?: TrustScorePublic | null;
 }

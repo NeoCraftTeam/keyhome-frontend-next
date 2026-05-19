@@ -11,9 +11,9 @@
 
 import { useSearchStaticData } from '@/hooks/search/useSearchStaticData';
 import { useSearchUrlSync } from '@/hooks/search/useSearchUrlSync';
+import type { propertyAttributesService } from '@/services/property-attributes.service';
 import type { AdType, City, FacetsResponse, SearchParams } from '@/types';
 import { useCallback, useMemo, useState } from 'react';
-import type { propertyAttributesService } from '@/services/property-attributes.service';
 
 /* ── Types ─────────────────────────────────────────────────────── */
 
@@ -166,6 +166,7 @@ export function useSearchFilters(): SearchFiltersReturn {
       surface_max: surfaceRange[1] < 1000 ? surfaceRange[1] : undefined,
       has_parking: hasParking || undefined,
       transaction_type: transactionType || undefined,
+      price_period: pricePeriod || undefined,
       has_3d_tour: has3dTour || undefined,
       attributes: selectedAmenities.length > 0 ? selectedAmenities : undefined,
       latitude:
@@ -189,6 +190,7 @@ export function useSearchFilters(): SearchFiltersReturn {
       surfaceRange,
       hasParking,
       transactionType,
+      pricePeriod,
       has3dTour,
       selectedAmenities,
       sortBy,

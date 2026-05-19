@@ -86,6 +86,8 @@ export interface FlutterwaveInitiateResponse {
   tx_ref: string;
   gateway: PaymentGateway | 'stripe';
   status: PaymentInitiateStatus;
+  stripe_flow?: 'payment_intent' | 'checkout_session';
+  client_secret?: string | null;
 }
 
 /**
@@ -123,6 +125,9 @@ export interface FlutterwaveVerifyResponse {
   ad_id: string | null;
   tx_ref: string;
   gateway: PaymentGateway;
+  payment_method?: string | null;
+  payment_method_label?: string | null;
+  payment_method_detail?: string | null;
 }
 
 export interface PaymentHistoryItem {

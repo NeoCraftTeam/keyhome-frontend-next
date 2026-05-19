@@ -26,6 +26,7 @@ export interface SearchParams {
   surface_max?: number;
   has_parking?: boolean;
   transaction_type?: string;
+  price_period?: 'mois' | 'jour';
   has_3d_tour?: boolean;
   is_verified?: boolean;
   attributes?: string[];

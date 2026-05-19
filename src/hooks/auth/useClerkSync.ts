@@ -232,13 +232,22 @@ export function useClerkSync(
     setIsExchanging(true);
 
     void (async () => {
+      // Clerk can take a moment to issue the JWT after isSignedIn=true.
+      // Retry up to 5 times (2.5 s total) before giving up.
       let clerkToken: string | null = null;
-      try {
-        clerkToken = await clerkGetTokenRef.current();
-      } catch {
-        setIsExchanging(false);
-        setHasResolvedInitialAuth(true);
-        return;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          clerkToken = await clerkGetTokenRef.current();
+        } catch {
+          setIsExchanging(false);
+          setHasResolvedInitialAuth(true);
+          return;
+        }
+        if (clerkToken) break;
+        if (attempt < 4) {
+          await new Promise((r) => setTimeout(r, 500));
+          if (runId !== authRunRef.current) return;
+        }
       }
 
       try {
@@ -250,6 +259,9 @@ export function useClerkSync(
             : null;
 
         if (!clerkToken) {
+          console.error(
+            '[useClerkSync] getToken() returned null after retries — Clerk session unavailable'
+          );
           const currentPath = pathnameRef.current ?? '';
           const isOwnerCtx =
             currentPath.startsWith('/owner') || intentRaw === 'agent';
@@ -350,7 +362,8 @@ export function useClerkSync(
           } else if (path.startsWith('/owner') || path === '/sso-callback') {
             router.replace('/home');
           }
-        } catch {
+        } catch (err) {
+          console.error('[useClerkSync] clerkExchange failed:', err);
           if (runId !== authRunRef.current) return;
           clearSession();
           setUserState(null);

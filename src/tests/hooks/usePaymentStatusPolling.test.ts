@@ -7,10 +7,10 @@
  *   3. Failure     → terminal failed status surfaces immediately.
  *   4. Cancellation→ unmount cancels timers (no stale state writes).
  */
+import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import axios from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 
 // Mock the two services used inside the hook so we can drive their behaviour
 // from each test without touching the real Axios client.
@@ -177,6 +177,7 @@ describe('usePaymentStatusPolling — unlock variant', () => {
     mockedPayments.verify.mockResolvedValueOnce({
       status: 'success',
       is_paid: true,
+      is_unlocked: true,
       reference: 'pay-id',
       ad_id: 'ad-id',
       tx_ref: 'KH-UNLK000001',
@@ -203,6 +204,7 @@ describe('usePaymentStatusPolling — unlock variant', () => {
     mockedPayments.verify.mockResolvedValueOnce({
       status: 'cancelled',
       is_paid: false,
+      is_unlocked: false,
       reference: 'pay-id',
       ad_id: 'ad-id',
       tx_ref: 'KH-UNLK000002',

@@ -160,6 +160,7 @@ export interface Ad {
   quarter: Quarter | null;
   type: AdType | null;
   transaction_type?: 'location' | 'vente' | null;
+  price_period?: 'mois' | 'jour' | null;
   images: AdImage[];
   reviews?: Review[];
   distance?: number;
