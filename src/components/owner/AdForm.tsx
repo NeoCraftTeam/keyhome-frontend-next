@@ -28,7 +28,11 @@ import {
   AdFormMapLocation,
 } from './ad-form';
 import type { AttributeOption } from './ad-form/types';
-import { initialValues, isAdFormTextEmpty } from './ad-form/types';
+import {
+  coerceAdFormFieldValue,
+  isAdFormTextEmpty,
+  normalizeAdFormValues,
+} from './ad-form/types';
 
 export type { AdFormValues, TourScene } from './ad-form/types';
 import type { AdFormValues, TourScene } from './ad-form/types';
@@ -80,10 +84,9 @@ function AdForm({
   isSavingDraft = false,
   onEnhanceDescription,
 }: AdFormProps) {
-  const [values, setValues] = useState<AdFormValues>(() => ({
-    ...initialValues,
-    ...initialData,
-  }));
+  const [values, setValues] = useState<AdFormValues>(() =>
+    normalizeAdFormValues(initialData)
+  );
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
@@ -251,7 +254,10 @@ function AdForm({
     field: keyof AdFormValues,
     value: AdFormValues[keyof AdFormValues]
   ) => {
-    setValues((prev) => ({ ...prev, [field]: value }));
+    setValues((prev) => ({
+      ...prev,
+      [field]: coerceAdFormFieldValue(field, value),
+    }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
@@ -284,7 +290,7 @@ function AdForm({
   };
 
   const handleEnhance = async () => {
-    if (!values.description.trim() || !onEnhanceDescription) return;
+    if (isAdFormTextEmpty(values.description) || !onEnhanceDescription) return;
     setEnhancing(true);
     try {
       const enhanced = await onEnhanceDescription(values.description);

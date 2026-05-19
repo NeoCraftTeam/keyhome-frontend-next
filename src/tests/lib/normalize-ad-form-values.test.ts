@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import { AdStatus, type Ad } from '@/types';
+
 import {
   adFormText,
   initialValues,
   isAdFormTextEmpty,
+  mapAdToFormValues,
   normalizeAdFormValues,
 } from '@/components/owner/ad-form/types';
 
@@ -68,5 +71,39 @@ describe('adFormText', () => {
     expect(adFormText(null)).toBe('');
     expect(adFormText(undefined)).toBe('');
     expect(adFormText('hello').trim()).toBe('hello');
+  });
+});
+
+describe('mapAdToFormValues', () => {
+  const baseAd = {
+    id: 'ad-1',
+    title: 'Titre API',
+    slug: 'titre-api',
+    description: null,
+    adresse: null,
+    price: null,
+    surface_area: null,
+    bedrooms: null,
+    bathrooms: null,
+    has_parking: false,
+    location: null,
+    status: AdStatus.DRAFT,
+    expires_at: null,
+    created_at: '',
+    updated_at: '',
+    user: null,
+    agency: null,
+    published_by: '',
+    quarter: null,
+    type: null,
+    images: [],
+  } as unknown as Ad;
+
+  it('maps null API adresse to an empty form string', () => {
+    const form = mapAdToFormValues(baseAd);
+
+    expect(form.adresse).toBe('');
+    expect(() => form.adresse.trim()).not.toThrow();
+    expect(isAdFormTextEmpty(form.adresse)).toBe(true);
   });
 });

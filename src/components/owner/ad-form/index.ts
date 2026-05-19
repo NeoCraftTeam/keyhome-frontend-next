@@ -15,4 +15,13 @@ export type {
   AttributeOption,
   UpdateFn,
 } from './types';
-export { initialValues, sectionSx, sectionTitleSx } from './types';
+export {
+  initialValues,
+  mapAdToFormValues,
+  normalizeAdFormValues,
+  adFormText,
+  isAdFormTextEmpty,
+  coerceAdFormFieldValue,
+  sectionSx,
+  sectionTitleSx,
+} from './types';

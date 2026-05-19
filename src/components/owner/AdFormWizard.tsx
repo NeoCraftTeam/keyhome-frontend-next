@@ -159,6 +159,16 @@ function AdFormWizard({
   const [values, setValues] = useState<AdFormValues>(() =>
     normalizeAdFormValues(initialData)
   );
+
+  const seededFromInitialDataRef = useRef<string | null>(null);
+  useEffect(() => {
+    const seedKey = ad?.id ?? 'new-ad';
+    if (seededFromInitialDataRef.current === seedKey) {
+      return;
+    }
+    seededFromInitialDataRef.current = seedKey;
+    setValues(normalizeAdFormValues(initialData));
+  }, [ad?.id, initialData]);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
@@ -289,7 +299,11 @@ function AdFormWizard({
     onUpdateDraft: onUpdateDraftCb,
     // Auto-save is intentionally disabled in editDraftMode — the owner uses
     // explicit per-step Save/Cancel buttons instead.
-    enabled: !editDraftMode && !isSubmitting && !isSavingDraft,
+    enabled:
+      !editDraftMode &&
+      !isSubmitting &&
+      !isSavingDraft &&
+      !isAdFormTextEmpty(values.title),
     debounceMs: 5000,
   });
 

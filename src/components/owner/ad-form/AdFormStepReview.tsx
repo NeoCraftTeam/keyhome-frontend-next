@@ -21,7 +21,7 @@ import {
   getCategoryById,
 } from './ad-type-categories';
 import type { AdFormValues } from './types';
-import { sectionSx, sectionTitleSx } from './types';
+import { isAdFormTextEmpty, sectionSx, sectionTitleSx } from './types';
 
 /* ------------------------------------------------------------------ */
 /*  Props                                                              */
@@ -49,8 +49,7 @@ const formatPrice = (raw: string): string => {
   return new Intl.NumberFormat('fr-FR').format(num) + ' FCFA';
 };
 
-const empty = (v: string | undefined | null): boolean =>
-  v === undefined || v === null || v.trim() === '';
+const empty = (v: string | undefined | null): boolean => isAdFormTextEmpty(v);
 
 const ValueChip = ({ label }: { label: string }) => (
   <Chip

@@ -1,4 +1,4 @@
-import type { TourHotspot } from '@/types';
+import { AdStatus, type Ad, type TourHotspot } from '@/types';
 
 /** Defaults for map picker / preview — keep in sync with `AdFormMapLocation` */
 export const AD_FORM_MAP_DEFAULT_LAT = 4.0511;
@@ -212,4 +212,112 @@ export function normalizeAdFormValues(
     latitude: lat,
     longitude: lng,
   };
+}
+
+/**
+ * Map an API {@link Ad} (and optional pending `draft_payload`) into wizard form values.
+ * Always runs through {@link normalizeAdFormValues} so null API strings never reach `.trim()`.
+ */
+export function mapAdToFormValues(ad: Ad): AdFormValues {
+  const draft =
+    ad.status !== AdStatus.DRAFT && ad.draft_payload != null
+      ? ad.draft_payload
+      : null;
+  const ds = (key: string): string | null | undefined => {
+    const value = draft?.[key];
+    if (value === null) {
+      return null;
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    return undefined;
+  };
+  const dn = (key: string): number | undefined => {
+    const value = draft?.[key];
+    return typeof value === 'number' ? value : undefined;
+  };
+  const db = (key: string): boolean | undefined => {
+    const value = draft?.[key];
+    return typeof value === 'boolean' ? value : undefined;
+  };
+
+  return normalizeAdFormValues({
+    title: adFormText(ds('title') ?? ad.title),
+    description: adFormText(ds('description') ?? ad.description),
+    adresse: adFormText(ds('adresse') ?? ad.adresse),
+    price: ds('price') ?? (ad.price != null ? String(ad.price) : ''),
+    price_period:
+      (ds('price_period') as 'mois' | 'jour' | undefined) ??
+      ad.price_period ??
+      'mois',
+    surface_area:
+      ds('surface_area') ??
+      (ad.surface_area != null ? String(ad.surface_area) : ''),
+    bedrooms:
+      ds('bedrooms') ?? (ad.bedrooms != null ? String(ad.bedrooms) : ''),
+    bathrooms:
+      ds('bathrooms') ?? (ad.bathrooms != null ? String(ad.bathrooms) : ''),
+    has_parking: db('has_parking') ?? ad.has_parking ?? false,
+    latitude:
+      dn('latitude') ?? ad.location?.latitude ?? AD_FORM_MAP_DEFAULT_LAT,
+    longitude:
+      dn('longitude') ?? ad.location?.longitude ?? AD_FORM_MAP_DEFAULT_LNG,
+    quarter_id: ds('quarter_id') ?? ad.quarter?.id ?? '',
+    type_id: ds('type_id') ?? ad.type?.id ?? '',
+    transaction_type:
+      (ds('transaction_type') as 'location' | 'vente' | undefined) ??
+      ad.transaction_type ??
+      'location',
+    attributes:
+      (draft?.attributes as string[] | undefined) ?? ad.attributes ?? [],
+    deposit_amount: ds('deposit_amount') ?? ad.deposit_amount ?? '',
+    minimum_lease_duration:
+      ds('minimum_lease_duration') ?? ad.minimum_lease_duration ?? '',
+    charges_forfaitaires:
+      db('charges_forfaitaires') ?? !!ad.charges_forfaitaires,
+    charges_montant_forfait:
+      ds('charges_montant_forfait') ??
+      (ad.charges_montant_forfait != null
+        ? String(ad.charges_montant_forfait)
+        : ''),
+    charges_eau:
+      ds('charges_eau') ??
+      (ad.charges_eau != null ? String(ad.charges_eau) : ''),
+    charges_electricite:
+      ds('charges_electricite') ??
+      (ad.charges_electricite != null ? String(ad.charges_electricite) : ''),
+    charges_autres: ds('charges_autres') ?? ad.charges_autres ?? '',
+    charges_autres_items: (ad.charges_autres ?? '')
+      .split('\n')
+      .filter((line: string) => line.includes(':'))
+      .map((line: string) => {
+        const [label, rest] = line.split(':').map((s: string) => s.trim());
+        const amountMatch = rest?.match(/^([\d.]+)/);
+        const isYearly = rest?.includes('/an');
+
+        return {
+          label: label ?? '',
+          amount: amountMatch?.[1] ?? '',
+          period: (isYearly ? 'yearly' : 'monthly') as 'monthly' | 'yearly',
+        };
+      })
+      .filter((item) => item.label),
+    distance_main_road_m:
+      ds('distance_main_road_m') ??
+      (ad.distance_main_road_m != null ? String(ad.distance_main_road_m) : ''),
+    distance_shops_m:
+      ds('distance_shops_m') ??
+      (ad.distance_shops_m != null ? String(ad.distance_shops_m) : ''),
+    distance_transport_m:
+      ds('distance_transport_m') ??
+      (ad.distance_transport_m != null ? String(ad.distance_transport_m) : ''),
+    distance_school_m:
+      ds('distance_school_m') ??
+      (ad.distance_school_m != null ? String(ad.distance_school_m) : ''),
+    distance_hospital_m:
+      ds('distance_hospital_m') ??
+      (ad.distance_hospital_m != null ? String(ad.distance_hospital_m) : ''),
+  });
 }

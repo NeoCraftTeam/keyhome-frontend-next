@@ -126,7 +126,7 @@ export interface Ad {
   title: string;
   slug: string;
   description: string;
-  adresse: string;
+  adresse: string | null;
   price: number | null;
   surface_area: number;
   bedrooms: number;
