@@ -1,28 +1,34 @@
 'use client';
 
+import SurveyForm from '@/components/surveys/SurveyForm';
+import FadeIn from '@/components/ui/FadeIn';
+import { useAuth } from '@/providers/AuthProvider';
 import { surveysService } from '@/services/surveys.service';
-import { SurveyAnswerPayload } from '@/types';
+import { brandAgent } from '@/theme/tokens';
+import { SurveyAnswerPayload, UserRole } from '@/types';
+import ArrowBack from '@mui/icons-material/ArrowBack';
+import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
 import {
   Box,
   Button,
   CircularProgress,
   Container,
-  Typography,
   Paper,
+  Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import SurveyForm from '@/components/surveys/SurveyForm';
-import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
-import ArrowBack from '@mui/icons-material/ArrowBack';
-import FadeIn from '@/components/ui/FadeIn';
 
 export default function SurveyPage() {
   const params = useParams();
   const surveyId = params.id as string;
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isOwner =
+    user?.role === UserRole.AGENT || user?.role === UserRole.ADMIN;
+  const accentColor = isOwner ? brandAgent.primary : undefined;
   const [submitted, setSubmitted] = useState(false);
 
   const {
@@ -136,29 +142,11 @@ export default function SurveyPage() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: { xs: 4, md: 8 } }}>
-      <FadeIn direction="up">
-        <Button
-          variant="text"
-          startIcon={<ArrowBack />}
-          onClick={() => router.back()}
-          sx={{
-            mb: 3,
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 600,
-          }}
-        >
-          Retour
-        </Button>
-        <SurveyForm
-          survey={survey}
-          onSubmit={(answers, anonymous) =>
-            mutation.mutate({ answers, anonymous })
-          }
-          isSubmitting={mutation.isPending}
-        />
-      </FadeIn>
-    </Container>
+    <SurveyForm
+      survey={survey}
+      onSubmit={(answers, anonymous) => mutation.mutate({ answers, anonymous })}
+      isSubmitting={mutation.isPending}
+      accentColor={accentColor}
+    />
   );
 }
