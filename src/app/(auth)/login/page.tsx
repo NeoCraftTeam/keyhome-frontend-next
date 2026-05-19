@@ -31,12 +31,19 @@ import {
 import { AxiosError } from 'axios';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const { authStats } = useLandingStats();
   const router = useRouter();
+
+  // Legacy Clerk org-task hash on client signInUrl — route to dedicated task page.
+  useEffect(() => {
+    if (window.location.hash.includes('choose-organization')) {
+      router.replace('/choose-organization');
+    }
+  }, [router]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

@@ -8,6 +8,8 @@ interface SplashTransitionProps {
   /** Duration in milliseconds. Default: 1400ms */
   duration?: number;
   onComplete: () => void;
+  /** Accent colour for the brand text and progress bar. Defaults to MUI primary.main. */
+  accentColor?: string;
 }
 
 /**
@@ -19,6 +21,7 @@ interface SplashTransitionProps {
 export default function SplashTransition({
   duration = 1400,
   onComplete,
+  accentColor,
 }: SplashTransitionProps) {
   const [progress, setProgress] = useState(0);
   const [fading, setFading] = useState(false);
@@ -103,7 +106,7 @@ export default function SplashTransition({
           fontSize: '1.375rem',
           fontWeight: 900,
           letterSpacing: '-0.5px',
-          color: 'primary.main',
+          color: accentColor ?? 'primary.main',
           animation: 'kh-fade-up 0.45s ease 0.2s both',
           '@keyframes kh-fade-up': {
             '0%': { opacity: 0, transform: 'translateY(8px)' },
@@ -134,7 +137,7 @@ export default function SplashTransition({
             borderRadius: 0,
             backgroundColor: 'transparent',
             '& .MuiLinearProgress-bar': {
-              backgroundColor: 'primary.main',
+              backgroundColor: accentColor ?? 'primary.main',
               transition: 'none', // driven by RAF, no CSS transition needed
             },
           }}

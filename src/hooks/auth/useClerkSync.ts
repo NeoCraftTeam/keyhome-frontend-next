@@ -31,6 +31,7 @@ import { authService } from '@/services/auth.service';
 import type { User } from '@/types';
 import { UserRole } from '@/types';
 import { useAuth as useClerkAuth, useUser } from '@clerk/nextjs';
+import { isAxiosError } from 'axios';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 
@@ -52,6 +53,7 @@ interface ClerkSyncSetters {
   setIsExchanging: (v: boolean) => void;
   setHasResolvedInitialAuth: (v: boolean) => void;
   clearSession: () => void;
+  userRef: React.MutableRefObject<User | null>;
 }
 
 export function useClerkSync(
@@ -68,6 +70,7 @@ export function useClerkSync(
     setIsExchanging,
     setHasResolvedInitialAuth,
     clearSession,
+    userRef,
   } = setters;
 
   const authRunRef = useRef(0);
@@ -197,32 +200,40 @@ export function useClerkSync(
     }
 
     // ── Path B: Clerk signed-in ──────────────────────────────────────────────
+    const currentPathForClerk = pathnameRef.current ?? '';
+    const isOAuthCallback = currentPathForClerk === '/sso-callback';
+
     if (clerkExchangeDoneRef.current) {
-      setIsExchanging(false);
-      setHasResolvedInitialAuth(true);
-      const currentPath = pathnameRef.current ?? '';
-      if (currentPath === '/sso-callback') {
-        const intentRaw =
-          typeof window !== 'undefined'
-            ? sessionStorage.getItem('kh_registration_intent')
-            : null;
-        const roleCookie =
-          typeof document !== 'undefined'
-            ? document.cookie
-                .split('; ')
-                .find((r) => r.startsWith('kh_role='))
-                ?.split('=')[1]
-            : null;
-        const isOwner =
-          roleCookie === 'agent' ||
-          roleCookie === 'admin' ||
-          intentRaw === 'agent';
-        router.replace(isOwner ? '/owner/dashboard' : '/home');
+      const hasLaravelUser = userRef.current != null;
+
+      if (isOAuthCallback && !hasLaravelUser) {
+        clerkExchangeDoneRef.current = false;
+      } else {
+        setIsExchanging(false);
+        setHasResolvedInitialAuth(true);
+        if (isOAuthCallback && hasLaravelUser) {
+          const intentRaw =
+            typeof window !== 'undefined'
+              ? sessionStorage.getItem('kh_registration_intent')
+              : null;
+          const roleCookie =
+            typeof document !== 'undefined'
+              ? document.cookie
+                  .split('; ')
+                  .find((r) => r.startsWith('kh_role='))
+                  ?.split('=')[1]
+              : null;
+          const isOwner =
+            roleCookie === 'agent' ||
+            roleCookie === 'admin' ||
+            intentRaw === 'agent';
+          router.replace(isOwner ? '/owner/dashboard' : '/home');
+        }
+        return;
       }
-      return;
     }
 
-    if (hasAnySanctumInMemory()) {
+    if (hasAnySanctumInMemory() && !isOAuthCallback) {
       clerkExchangeDoneRef.current = true;
       setIsExchanging(false);
       setHasResolvedInitialAuth(true);
@@ -365,6 +376,39 @@ export function useClerkSync(
         } catch (err) {
           console.error('[useClerkSync] clerkExchange failed:', err);
           if (runId !== authRunRef.current) return;
+
+          if (isAxiosError(err) && err.response?.status === 403) {
+            const data = err.response.data as {
+              email_verification_required?: boolean;
+              email?: string;
+              role?: string;
+            };
+            if (data?.email_verification_required) {
+              clerkExchangeDoneRef.current = true;
+              clearSession();
+              setUserState(null);
+              if (typeof window !== 'undefined') {
+                sessionStorage.removeItem('kh_registration_intent');
+              }
+              const verifiedEmail = data.email ?? '';
+              const role = data.role ?? 'customer';
+              const isOwnerRole =
+                role === 'agent' || role === 'admin' || intentRaw === 'agent';
+              const emailKey = isOwnerRole
+                ? 'kh_verify_email_owner'
+                : 'kh_verify_email_client';
+              sessionStorage.setItem(emailKey, verifiedEmail);
+              sessionStorage.setItem(
+                'kh_register_role',
+                isOwnerRole ? 'agent' : 'customer'
+              );
+              router.replace(
+                isOwnerRole ? '/owner/auth/verify-otp' : '/verify-email'
+              );
+              return;
+            }
+          }
+
           clearSession();
           setUserState(null);
           if (typeof window !== 'undefined') {
@@ -393,5 +437,6 @@ export function useClerkSync(
     setToken,
     setIsExchanging,
     setHasResolvedInitialAuth,
+    userRef,
   ]);
 }

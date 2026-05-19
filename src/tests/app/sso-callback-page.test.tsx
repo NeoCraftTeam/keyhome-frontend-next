@@ -8,6 +8,7 @@ const mockReplace = vi.fn();
 vi.mock('@clerk/nextjs', () => ({
   useClerk: () => ({ handleRedirectCallback: mockHandleRedirectCallback }),
   useAuth: () => ({ isLoaded: true, isSignedIn: false }),
+  useSignUp: () => ({ signUp: null, isLoaded: true }),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -42,9 +43,9 @@ describe('SSOCallbackPage', () => {
 
     expect(arg.signInUrl).toBe('/owner/login');
     expect(arg.signUpUrl).toContain('role=agent');
-    expect(arg.continueSignUpUrl).toContain('/owner/dashboard');
-    expect(arg.signInFallbackRedirectUrl).toContain('/home');
-    expect(arg.signUpFallbackRedirectUrl).toContain('/home');
+    expect(arg.continueSignUpUrl).toContain('/sso-callback');
+    expect(arg.signInFallbackRedirectUrl).toContain('/owner/dashboard');
+    expect(arg.signUpFallbackRedirectUrl).toContain('/owner/dashboard');
   });
 
   it('passes customer fallbacks when intent is not agent', async () => {

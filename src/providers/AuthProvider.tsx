@@ -25,6 +25,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -79,6 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [hasResolvedInitialAuth, setHasResolvedInitialAuth] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const authRunRef = useRef(0);
+  const userRef = useRef<User | null>(null);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   const clearSession = useCallback(() => {
     queryClient.clear();
@@ -93,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsExchanging,
     setHasResolvedInitialAuth,
     clearSession,
+    userRef,
   });
 
   use401Listener(user, setToken, setUserState);

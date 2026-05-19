@@ -3,6 +3,7 @@
 import AppLoader from '@/components/ui/AppLoader';
 import SplashTransition from '@/components/ui/SplashTransition';
 import { useAuth } from '@/providers/AuthProvider';
+import { brandAgent } from '@/theme/tokens';
 import { Box } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -37,6 +38,7 @@ export default function AuthLayout({
    * update the value inside useEffect (client-only, post-hydration).
    */
   const [showSplash, setShowSplash] = useState(false);
+  const [isAgentSplash, setIsAgentSplash] = useState(false);
   const mountedRef = useRef(false);
 
   const isVerificationPath = VERIFICATION_PATHS.has(pathname ?? '');
@@ -46,6 +48,9 @@ export default function AuthLayout({
     if (!alreadySeen) {
       setShowSplash(true);
     }
+    setIsAgentSplash(
+      sessionStorage.getItem('kh_registration_intent') === 'agent'
+    );
     // Run once after hydration to decide whether to show the splash
   }, []);
 
@@ -86,6 +91,7 @@ export default function AuthLayout({
         <SplashTransition
           duration={SPLASH_DURATION}
           onComplete={handleSplashComplete}
+          accentColor={isAgentSplash ? brandAgent.primary : undefined}
         />
         {/* Keep auth subtree mounted in background so it boots during splash */}
         <Box
@@ -113,7 +119,10 @@ export default function AuthLayout({
           justifyContent: 'center',
         }}
       >
-        <AppLoader size={48} />
+        <AppLoader
+          size={48}
+          color={isAgentSplash ? brandAgent.primary : undefined}
+        />
       </Box>
     );
   }

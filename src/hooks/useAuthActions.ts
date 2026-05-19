@@ -18,6 +18,11 @@ import { resetChatE2eeBootstrap } from '@/lib/chat-e2ee-identity';
 import { disconnectEcho } from '@/lib/echo';
 import { FCM_TOKEN_STORAGE_KEY } from '@/lib/fcm-token-key';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
+import {
+  getOAuthCallbackUrl,
+  KH_REGISTRATION_INTENT_KEY,
+  oauthPanelContextFromIntent,
+} from '@/lib/oauth-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
 import { useClerk, useAuth as useClerkAuth, useSignIn } from '@clerk/nextjs';
@@ -178,14 +183,20 @@ export function useAuthActions({
         github: 'oauth_github',
       } as const;
 
+      const panelContext = oauthPanelContextFromIntent(
+        options?.registrationIntent
+      );
+
       if (typeof window !== 'undefined') {
         if (options?.registrationIntent != null) {
           sessionStorage.setItem(
-            'kh_registration_intent',
+            KH_REGISTRATION_INTENT_KEY,
             options.registrationIntent
           );
+        } else if (panelContext === 'owner') {
+          sessionStorage.setItem(KH_REGISTRATION_INTENT_KEY, 'agent');
         } else {
-          sessionStorage.removeItem('kh_registration_intent');
+          sessionStorage.removeItem(KH_REGISTRATION_INTENT_KEY);
         }
       }
 
@@ -197,10 +208,12 @@ export function useAuthActions({
         await signOut({ redirectUrl: window.location.href });
       }
 
+      const callbackUrl = getOAuthCallbackUrl(window.location.origin);
+
       await signIn.authenticateWithRedirect({
         strategy: strategyMap[provider],
-        redirectUrl: `${window.location.origin}/sso-callback`,
-        redirectUrlComplete: `${window.location.origin}/sso-callback`,
+        redirectUrl: callbackUrl,
+        redirectUrlComplete: callbackUrl,
       });
     },
     [signIn, isSignedIn, signOut]

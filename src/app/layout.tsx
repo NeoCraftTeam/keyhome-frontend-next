@@ -192,6 +192,7 @@ export default async function RootLayout({
       signUpUrl="/register"
       signInFallbackRedirectUrl="/home"
       signUpFallbackRedirectUrl="/home"
+      taskUrls={{ 'choose-organization': '/choose-organization' }}
       nonce={nonce}
     >
       <html lang="fr" suppressHydrationWarning data-scroll-behavior="smooth">

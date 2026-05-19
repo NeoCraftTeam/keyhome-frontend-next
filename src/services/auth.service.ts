@@ -217,6 +217,34 @@ export const authService = {
     };
   },
 
+  /**
+   * Redeem a short-lived code from Laravel Socialite web OAuth callback
+   * (GET /auth/oauth/exchange-token?exchange_code=…).
+   */
+  async redeemOAuthExchangeCode(exchangeCode: string): Promise<{
+    token: string;
+    is_new_user: boolean;
+  }> {
+    const { data } = await api.get<{
+      token: string;
+      is_new_user: boolean;
+    }>('/auth/oauth/exchange-token', {
+      params: { exchange_code: exchangeCode },
+    });
+
+    return data;
+  },
+
+  async completeOAuthExchange(exchangeCode: string): Promise<AuthResponse> {
+    const { token } = await this.redeemOAuthExchangeCode(exchangeCode);
+    const userResponse = await api.get('/auth/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const user = userResponse.data.data ?? userResponse.data;
+
+    return { token, user, expires_at: '' };
+  },
+
   async refreshToken(): Promise<{
     access_token: string;
     expires_at: string;

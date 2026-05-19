@@ -327,6 +327,7 @@ export default function VerifyOtpPage() {
             <AuthFlowStepper
               labels={['Connexion', 'Vérification', 'Terminé']}
               activeStep={1}
+              accentColor={isAgent ? brandAgent.primary : undefined}
             />
           </FadeIn>
 

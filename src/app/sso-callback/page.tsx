@@ -3,6 +3,13 @@
 export const dynamic = 'force-dynamic';
 
 import AppLoader from '@/components/ui/AppLoader';
+import {
+  getOAuthCallbackUrl,
+  getOAuthFallbackUrl,
+  getOAuthSignInPath,
+  getOAuthSignUpPath,
+  isAgentRegistrationIntent,
+} from '@/lib/oauth-redirect';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { brandAgent } from '@/theme/tokens';
 import { useClerk, useAuth as useClerkAuth, useSignUp } from '@clerk/nextjs';
@@ -30,7 +37,6 @@ export default function SSOCallbackPage() {
   const { isLoaded, isSignedIn } = useClerkAuth();
   const { signUp, isLoaded: isSignUpLoaded } = useSignUp();
   const router = useRouter();
-  const handled = useRef(false);
   const legalHandled = useRef(false);
   /** Single shared timeout ref — cleaned up on unmount regardless of which
    *  effect set it, so stale redirects never fire on the next page. */
@@ -44,19 +50,17 @@ export default function SSOCallbackPage() {
   // runs on that first render (e.g. handleRedirectCallback) captures the stale
   // value before the state update from the second effect can flush.
   const isAgentIntentRef = useRef(
-    typeof window !== 'undefined' &&
-      sessionStorage.getItem('kh_registration_intent') === 'agent'
+    typeof window !== 'undefined' && isAgentRegistrationIntent()
   );
   // Derived state — used ONLY for UI rendering (logo, colour, label).
   // All routing/logic must use isAgentIntentRef.current.
   const [isAgentIntent, setIsAgentIntent] = useState(
-    typeof window !== 'undefined' &&
-      sessionStorage.getItem('kh_registration_intent') === 'agent'
+    typeof window !== 'undefined' && isAgentRegistrationIntent()
   );
   // Keep derived state in sync in case the ref value changes (e.g. StrictMode
   // double-invoke with different storage contents between invocations).
   useEffect(() => {
-    const stored = sessionStorage.getItem('kh_registration_intent') === 'agent';
+    const stored = isAgentRegistrationIntent();
     isAgentIntentRef.current = stored;
     setIsAgentIntent(stored);
   }, []);
@@ -101,9 +105,8 @@ export default function SSOCallbackPage() {
     if (!isLoaded) return;
     // Post-callback re-entry: session already created — let AuthProvider route.
     if (isSignedIn) return;
-    if (handled.current) return;
 
-    handled.current = true;
+    let cancelled = false;
 
     // Read the intent from the ref — synchronously set at mount, so this value
     // is always correct even on the very first effect run (unlike a state value
@@ -111,39 +114,57 @@ export default function SSOCallbackPage() {
     const agentIntent = isAgentIntentRef.current;
 
     const origin = window.location.origin;
+    const panelContext = agentIntent ? 'owner' : 'client';
     // Fallback when Clerk has no stored redirectUrlComplete.
-    const fallbackUrl = `${origin}/home`;
+    const fallbackUrl = getOAuthFallbackUrl(origin, panelContext);
     // On hard errors (timeout / exception), redirect to context-appropriate login.
-    const errorPath = agentIntent ? '/owner/login' : '/login';
+    const errorPath = getOAuthSignInPath(panelContext);
 
     // Safety timeout — if Clerk hangs (e.g. Turnstile challenge), redirect after 10 s.
-    // NOTE: we deliberately do NOT clear this in .then(). If handleRedirectCallback
-    // navigates away the component unmounts and the cleanup above clears it. If it
-    // resolves WITHOUT navigating (unusual), we want the timeout to fire as a net.
-    timeoutRef.current = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
+      if (cancelled) {
+        return;
+      }
       console.warn('[sso-callback] Timed out waiting for Clerk redirect');
       router.replace(errorPath);
     }, 10000);
+    timeoutRef.current = timeoutId;
 
     // Redirect back to /sso-callback so we can handle missing_requirements
     // (e.g. legal_accepted) before navigating to the final destination.
-    const continueSignUpUrl = `${origin}/sso-callback`;
+    const continueSignUpUrl = getOAuthCallbackUrl(origin);
 
-    handleRedirectCallback({
-      signInUrl: agentIntent ? '/owner/login' : '/login',
-      signUpUrl: agentIntent ? '/register?role=agent' : '/register',
+    void handleRedirectCallback({
+      signInUrl: getOAuthSignInPath(panelContext),
+      signUpUrl: getOAuthSignUpPath(panelContext),
       signInFallbackRedirectUrl: fallbackUrl,
       signUpFallbackRedirectUrl: fallbackUrl,
       continueSignUpUrl,
-    }).catch((err: unknown) => {
-      // On error, cancel the timeout immediately (we're redirecting right now).
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+    })
+      .then(() => {
+        if (cancelled) {
+          return;
+        }
+        clearTimeout(timeoutId);
+        timeoutRef.current = null;
+      })
+      .catch((err: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        clearTimeout(timeoutId);
+        timeoutRef.current = null;
+        console.error('[sso-callback] handleRedirectCallback error:', err);
+        router.replace(errorPath);
+      });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+      if (timeoutRef.current === timeoutId) {
         timeoutRef.current = null;
       }
-      console.error('[sso-callback] handleRedirectCallback error:', err);
-      router.replace(errorPath);
-    });
+    };
   }, [handleRedirectCallback, router, isLoaded, isSignedIn]);
 
   // ─── Handle missing legal_accepted — Clerk blocks sign-up if ToS acceptance
@@ -160,7 +181,7 @@ export default function SSOCallbackPage() {
     legalHandled.current = true;
 
     const agentIntent = isAgentIntentRef.current;
-    const errorPath = agentIntent ? '/owner/login' : '/login';
+    const errorPath = getOAuthSignInPath(agentIntent ? 'owner' : 'client');
 
     signUp.update({ legalAccepted: true }).catch((err: unknown) => {
       console.error('[sso-callback] legal_accepted update failed:', err);
