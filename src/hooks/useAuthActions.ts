@@ -25,9 +25,10 @@ import {
 } from '@/lib/oauth-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import {
-  ADMIN_USE_ADMIN_PANEL_MESSAGE,
-  mayAccessOwnerPanel,
-} from '@/lib/owner-panel-access';
+  AUTH_LOGIN_FAILURE_MESSAGE,
+  AUTH_PANEL_UNAVAILABLE_MESSAGE,
+} from '@/lib/auth-api-errors';
+import { mayAccessOwnerPanel } from '@/lib/owner-panel-access';
 import { User, UserRole } from '@/types';
 import { useClerk, useAuth as useClerkAuth, useSignIn } from '@clerk/nextjs';
 import { useQueryClient } from '@tanstack/react-query';
@@ -117,9 +118,7 @@ export function useAuthActions({
         await authService.login(email, password, 'client', turnstileToken);
 
       if (laravelUser.role !== UserRole.CUSTOMER) {
-        throw new Error(
-          'Accès réservé aux clients. Utilisez le panneau propriétaire.'
-        );
+        throw new Error(AUTH_LOGIN_FAILURE_MESSAGE);
       }
 
       persistClientToken(sanctumToken);
@@ -142,14 +141,8 @@ export function useAuthActions({
       const { token: sanctumToken, user: laravelUser } =
         await authService.login(email, password, 'owner', turnstileToken);
 
-      if (laravelUser.role === UserRole.ADMIN) {
-        throw new Error(ADMIN_USE_ADMIN_PANEL_MESSAGE);
-      }
-
-      if (laravelUser.role !== UserRole.AGENT) {
-        throw new Error(
-          'Accès réservé aux propriétaires et agences. Créez un compte bailleur.'
-        );
+      if (!mayAccessOwnerPanel(laravelUser.role)) {
+        throw new Error(AUTH_PANEL_UNAVAILABLE_MESSAGE);
       }
 
       persistOwnerToken(sanctumToken);

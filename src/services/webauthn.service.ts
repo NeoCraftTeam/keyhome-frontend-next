@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { getAuthApiErrorMessage } from '@/lib/auth-api-errors';
 import { User } from '@/types';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -204,13 +205,14 @@ export const webAuthnService = {
       const axErr = err as {
         response?: { status?: number; data?: { code?: string } };
       };
+      const authCode = axErr.response?.data?.code;
       if (
-        axErr.response?.status === 403 &&
-        axErr.response?.data?.code === 'ROLE_CONTEXT_MISMATCH'
+        (axErr.response?.status === 401 || axErr.response?.status === 403) &&
+        (authCode === 'PANEL_ACCESS_DENIED' ||
+          authCode === 'ROLE_CONTEXT_MISMATCH' ||
+          authCode === 'INVALID_CREDENTIALS')
       ) {
-        throw new Error(
-          'Ce passkey est associé à un type de compte différent. Veuillez utiliser le bon portail de connexion.'
-        );
+        throw new Error(getAuthApiErrorMessage(err, 'login'));
       }
       throw err;
     }

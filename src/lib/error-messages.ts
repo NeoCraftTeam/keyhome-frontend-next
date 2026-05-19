@@ -1,5 +1,10 @@
 import { AxiosError } from 'axios';
 
+import {
+  extractAuthErrorCode,
+  getAuthApiErrorMessage,
+  isLeakyAuthMessage,
+} from '@/lib/auth-api-errors';
 import { parseLaravelNestedApiErrorPayload } from '@/lib/api-errors';
 
 const DEFAULT_ERROR = 'Une erreur est survenue. Veuillez réessayer.';
@@ -104,7 +109,8 @@ function isAxiosNetworkOrTimeout(error: unknown): boolean {
  */
 export function getSafeErrorMessage(
   error: unknown,
-  fallback: string = DEFAULT_ERROR
+  fallback: string = DEFAULT_ERROR,
+  options?: { authContext?: 'login' | 'panel' }
 ): string {
   if (isAxiosNetworkOrTimeout(error)) {
     return NETWORK_TIMEOUT_FR;
@@ -112,15 +118,31 @@ export function getSafeErrorMessage(
 
   if (!(error instanceof AxiosError) || !error.response) {
     if (error instanceof Error && error.message) {
-      return isUnsafeBackendMessage(error.message) ? fallback : error.message;
+      if (
+        isLeakyAuthMessage(error.message) ||
+        isUnsafeBackendMessage(error.message)
+      ) {
+        return options?.authContext
+          ? getAuthApiErrorMessage(error, options.authContext, fallback)
+          : fallback;
+      }
+
+      return error.message;
     }
     return fallback;
   }
 
   const status = error.response.status;
   const data = error.response.data as
-    | { message?: string; errors?: Record<string, string[]> }
+    | { message?: string; errors?: Record<string, string[]>; code?: string }
     | undefined;
+
+  if (options?.authContext && (status === 401 || status === 403)) {
+    const authCode = extractAuthErrorCode(data);
+    if (authCode || (data?.message && isLeakyAuthMessage(data.message))) {
+      return getAuthApiErrorMessage(error, options.authContext, fallback);
+    }
+  }
 
   // Validation errors: surface field-level messages (already translated by backend).
   if (status === 422) {
@@ -145,7 +167,11 @@ export function getSafeErrorMessage(
   }
 
   // Trust backend `message` only if it's already user-facing French copy.
-  if (data?.message && !isUnsafeBackendMessage(data.message)) {
+  if (
+    data?.message &&
+    !isUnsafeBackendMessage(data.message) &&
+    !isLeakyAuthMessage(data.message)
+  ) {
     return data.message;
   }
 

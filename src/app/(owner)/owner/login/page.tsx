@@ -9,7 +9,7 @@ import FadeIn from '@/components/ui/FadeIn';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
 import { setRoleCookie } from '@/lib/auth-session';
-import { getSafeErrorMessage } from '@/lib/error-messages';
+import { getAuthApiErrorMessage } from '@/lib/auth-api-errors';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { ADMIN_USE_ADMIN_PANEL_MESSAGE } from '@/lib/owner-panel-access';
 import { OWNER_LOGIN_HERO_SRC, OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
@@ -105,12 +105,7 @@ export default function OwnerLoginPage() {
           return;
         }
       }
-      setError(
-        getSafeErrorMessage(
-          err,
-          'Identifiants incorrects. Veuillez réessayer ou créez un compte bailleur.'
-        )
-      );
+      setError(getAuthApiErrorMessage(err, 'login'));
     } finally {
       setIsSubmitting(false);
     }

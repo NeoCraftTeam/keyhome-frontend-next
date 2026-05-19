@@ -12,7 +12,10 @@ describe('owner-panel-access', () => {
     expect(mayAccessOwnerPanel(UserRole.CUSTOMER)).toBe(false);
   });
 
-  it('exposes the admin panel message', () => {
-    expect(ADMIN_USE_ADMIN_PANEL_MESSAGE).toContain('panneau administrateur');
+  it('exposes a generic panel denial message', () => {
+    expect(ADMIN_USE_ADMIN_PANEL_MESSAGE).toBe(
+      "Cette interface n'est pas disponible pour ce compte."
+    );
+    expect(ADMIN_USE_ADMIN_PANEL_MESSAGE).not.toMatch(/administrateur/i);
   });
 });

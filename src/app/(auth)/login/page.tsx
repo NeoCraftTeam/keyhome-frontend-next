@@ -9,7 +9,7 @@ import FadeIn from '@/components/ui/FadeIn';
 import { useLandingStats } from '@/hooks/useLandingStats';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
-import { getSafeErrorMessage } from '@/lib/error-messages';
+import { getAuthApiErrorMessage } from '@/lib/auth-api-errors';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { useAuth } from '@/providers/AuthProvider';
 import { gradient } from '@/theme/tokens';
@@ -104,9 +104,7 @@ export default function LoginPage() {
           return;
         }
       }
-      setError(
-        getSafeErrorMessage(err, 'Identifiants incorrects. Veuillez réessayer.')
-      );
+      setError(getAuthApiErrorMessage(err, 'login'));
     } finally {
       setIsSubmitting(false);
     }
