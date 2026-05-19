@@ -110,7 +110,7 @@ export default function AdFormEquipment({
         options={autocompleteOptions}
         groupBy={(option) => option.group}
         getOptionLabel={(option) => option.label}
-        value={values.attributes
+        value={(values.attributes ?? [])
           .map((v) => autocompleteOptions.find((a) => a.value === v))
           .filter((a): a is AttributeOption => !!a)}
         onChange={(_, newValue) => {

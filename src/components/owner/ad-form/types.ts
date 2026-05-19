@@ -108,3 +108,61 @@ export const initialValues: AdFormValues = {
   distance_school_m: '',
   distance_hospital_m: '',
 };
+
+/** Coerce nullable API / draft fields to safe form strings. */
+export function adFormText(value: string | null | undefined): string {
+  return value ?? '';
+}
+
+/**
+ * Merge partial ad form state with defaults and coerce nullish API values.
+ * Prevents runtime crashes (e.g. `.trim()` on null) in preview & validation.
+ */
+export function normalizeAdFormValues(
+  partial?: Partial<AdFormValues> | null
+): AdFormValues {
+  const merged = { ...initialValues, ...(partial ?? {}) };
+
+  const lat =
+    typeof merged.latitude === 'number' && !Number.isNaN(merged.latitude)
+      ? merged.latitude
+      : AD_FORM_MAP_DEFAULT_LAT;
+  const lng =
+    typeof merged.longitude === 'number' && !Number.isNaN(merged.longitude)
+      ? merged.longitude
+      : AD_FORM_MAP_DEFAULT_LNG;
+
+  return {
+    ...merged,
+    title: adFormText(merged.title),
+    description: adFormText(merged.description),
+    adresse: adFormText(merged.adresse),
+    price: adFormText(merged.price),
+    surface_area: adFormText(merged.surface_area),
+    bedrooms: adFormText(merged.bedrooms) || '0',
+    bathrooms: adFormText(merged.bathrooms) || '0',
+    quarter_id: adFormText(merged.quarter_id),
+    type_id: adFormText(merged.type_id),
+    transaction_type: adFormText(merged.transaction_type) || 'location',
+    price_period: merged.price_period === 'jour' ? 'jour' : 'mois',
+    attributes: Array.isArray(merged.attributes) ? merged.attributes : [],
+    deposit_amount: adFormText(merged.deposit_amount),
+    minimum_lease_duration: adFormText(merged.minimum_lease_duration),
+    charges_montant_forfait: adFormText(merged.charges_montant_forfait),
+    charges_eau: adFormText(merged.charges_eau),
+    charges_electricite: adFormText(merged.charges_electricite),
+    charges_autres: adFormText(merged.charges_autres),
+    charges_autres_items: Array.isArray(merged.charges_autres_items)
+      ? merged.charges_autres_items
+      : [],
+    distance_main_road_m: adFormText(merged.distance_main_road_m),
+    distance_shops_m: adFormText(merged.distance_shops_m),
+    distance_transport_m: adFormText(merged.distance_transport_m),
+    distance_school_m: adFormText(merged.distance_school_m),
+    distance_hospital_m: adFormText(merged.distance_hospital_m),
+    has_parking: Boolean(merged.has_parking),
+    charges_forfaitaires: Boolean(merged.charges_forfaitaires),
+    latitude: lat,
+    longitude: lng,
+  };
+}

@@ -42,7 +42,11 @@ import {
   AD_FORM_MAP_DEFAULT_LAT,
   AD_FORM_MAP_DEFAULT_LNG,
 } from './ad-form/types';
-import type { AdFormValues, AttributeOption } from './ad-form/types';
+import {
+  adFormText,
+  type AdFormValues,
+  type AttributeOption,
+} from './ad-form/types';
 
 const EASE_OUT_QUINT = [0.22, 1, 0.36, 1] as const;
 
@@ -66,8 +70,10 @@ const AdLocationMap = dynamic(() => import('@/components/ads/AdLocationMap'), {
   ),
 });
 
-function formatOptionalCfaAmount(raw: string): string | null {
-  const t = raw.trim();
+function formatOptionalCfaAmount(
+  raw: string | null | undefined
+): string | null {
+  const t = adFormText(raw).trim();
   if (!t) {
     return null;
   }
@@ -78,8 +84,8 @@ function formatOptionalCfaAmount(raw: string): string | null {
   return formatPrice(Math.round(n));
 }
 
-function leaseDurationLabel(raw: string): string {
-  const t = raw.trim();
+function leaseDurationLabel(raw: string | null | undefined): string {
+  const t = adFormText(raw).trim();
   if (!t) {
     return '';
   }
@@ -187,7 +193,7 @@ function AdFormLivePreview({
 
   const resolvedAttributes = useMemo(
     () =>
-      values.attributes.map(
+      (values.attributes ?? []).map(
         (v) => attributeOptions.find((o) => o.value === v)?.label ?? v
       ),
     [values.attributes, attributeOptions]
@@ -223,11 +229,11 @@ function AdFormLivePreview({
     !!chargesForfaitAmount ||
     !!chargesEau ||
     !!chargesElec ||
-    !!(values.charges_autres && values.charges_autres.trim());
+    !!adFormText(values.charges_autres).trim();
 
   const showAboutSection =
     !!depositDisplay ||
-    !!values.minimum_lease_duration.trim() ||
+    !!adFormText(values.minimum_lease_duration).trim() ||
     hasChargesSection;
 
   const avatarInitials = user
@@ -325,12 +331,12 @@ function AdFormLivePreview({
 
   const hasStarted =
     !!values.type_id ||
-    !!values.title.trim() ||
+    !!adFormText(values.title).trim() ||
     allImages.length > 0 ||
     !!values.quarter_id ||
-    !!values.description.trim() ||
-    !!values.price.trim() ||
-    !!values.adresse.trim() ||
+    !!adFormText(values.description).trim() ||
+    !!adFormText(values.price).trim() ||
+    !!adFormText(values.adresse).trim() ||
     (values.attributes?.length ?? 0) > 0 ||
     tourSceneCount > 0 ||
     !!values.is_boost_requested ||
@@ -702,7 +708,9 @@ function AdFormLivePreview({
                 </Box>
               )}
 
-              {(values.adresse.trim() || selectedQuarter || selectedCity) && (
+              {(adFormText(values.adresse).trim() ||
+                selectedQuarter ||
+                selectedCity) && (
                 <Box
                   sx={{
                     display: 'flex',
@@ -724,9 +732,9 @@ function AdFormLivePreview({
                     color="text.secondary"
                     sx={{ lineHeight: 1.45 }}
                   >
-                    {values.adresse.trim() && (
+                    {adFormText(values.adresse).trim() && (
                       <Box component="span" sx={{ display: 'block' }}>
-                        {values.adresse.trim()}
+                        {adFormText(values.adresse).trim()}
                       </Box>
                     )}
                     {(selectedQuarter || selectedCity) && (
@@ -768,7 +776,7 @@ function AdFormLivePreview({
               <Typography variant="subtitle2" fontWeight={700} mb={0.75}>
                 Description
               </Typography>
-              {values.description.trim() ? (
+              {adFormText(values.description).trim() ? (
                 <>
                   <Typography
                     variant="body2"
@@ -838,7 +846,7 @@ function AdFormLivePreview({
                         </Typography>
                       </Box>
                     )}
-                    {!!values.minimum_lease_duration.trim() && (
+                    {!!adFormText(values.minimum_lease_duration).trim() && (
                       <Box
                         sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                       >
@@ -956,7 +964,7 @@ function AdFormLivePreview({
                             </Typography>
                           </Box>
                         )}
-                        {values.charges_autres.trim() && (
+                        {adFormText(values.charges_autres).trim() && (
                           <Typography variant="body2" color="text.secondary">
                             Autres charges :{' '}
                             <Box
@@ -964,7 +972,7 @@ function AdFormLivePreview({
                               fontWeight={600}
                               color="text.primary"
                             >
-                              {values.charges_autres.trim()}
+                              {adFormText(values.charges_autres).trim()}
                             </Box>
                           </Typography>
                         )}

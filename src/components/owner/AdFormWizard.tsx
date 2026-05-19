@@ -55,7 +55,7 @@ import AdFormPriceAdvisor from './ad-form/AdFormPriceAdvisor';
 import AdFormStepReview from './ad-form/AdFormStepReview';
 import AdFormStepType from './ad-form/AdFormStepType';
 import type { AdFormValues, AttributeOption, TourScene } from './ad-form/types';
-import { initialValues } from './ad-form/types';
+import { normalizeAdFormValues } from './ad-form/types';
 import AdFormLivePreview from './AdFormLivePreview';
 
 export type { AdFormValues, TourScene } from './ad-form/types';
@@ -152,10 +152,9 @@ function AdFormWizard({
   const [activeStep, setActiveStep] = useState(0);
 
   /* ── Form data ── */
-  const [values, setValues] = useState<AdFormValues>(() => ({
-    ...initialValues,
-    ...initialData,
-  }));
+  const [values, setValues] = useState<AdFormValues>(() =>
+    normalizeAdFormValues(initialData)
+  );
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);

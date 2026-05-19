@@ -4,6 +4,7 @@ import AdFormWizard, {
   type AdFormValues,
   type TourScene,
 } from '@/components/owner/AdFormWizard';
+import { normalizeAdFormValues } from '@/components/owner/ad-form/types';
 import FadeIn from '@/components/ui/FadeIn';
 import { getLaravelApiErrorMessage } from '@/lib/api-errors';
 import { adsService } from '@/services/ads.service';
@@ -561,8 +562,10 @@ export default function OwnerAdEditPage() {
     return enhanced;
   }, []);
 
-  const initialData = useMemo((): Partial<AdFormValues> => {
-    if (!ad) return {};
+  const initialData = useMemo((): AdFormValues => {
+    if (!ad) {
+      return normalizeAdFormValues();
+    }
     // For non-DRAFT ads: if a pending edit draft_payload exists, seed from it
     // so the wizard reflects the owner's last saved-but-unapplied changes.
     const draft =
@@ -572,7 +575,7 @@ export default function OwnerAdEditPage() {
     const ds = (k: string) => draft?.[k] as string | undefined;
     const dn = (k: string) => draft?.[k] as number | undefined;
     const db = (k: string) => draft?.[k] as boolean | undefined;
-    return {
+    return normalizeAdFormValues({
       title: ds('title') ?? ad.title,
       description: ds('description') ?? ad.description,
       adresse: ds('adresse') ?? ad.adresse,
@@ -651,7 +654,7 @@ export default function OwnerAdEditPage() {
       distance_hospital_m:
         ds('distance_hospital_m') ??
         (ad.distance_hospital_m != null ? String(ad.distance_hospital_m) : ''),
-    };
+    });
   }, [ad]);
 
   /* ─── Loading ─── */
