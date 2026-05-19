@@ -1,6 +1,7 @@
 'use client';
 
 import { COUNTRY_COOKIE } from '@/lib/currency';
+import { readCheckoutSessionTotalAmount } from '@/lib/stripe-checkout-total';
 import { getStripePromise } from '@/lib/stripe';
 import { brand } from '@/theme/tokens';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -256,27 +257,46 @@ function CheckoutConfirmInner({
   const [elementReady, setElementReady] = useState(false);
   const [saveChecked, setSaveChecked] = useState<boolean>(defaultSaveCheckbox);
 
+  const checkoutTotalAmount =
+    result.type === 'success'
+      ? readCheckoutSessionTotalAmount(result.checkout)
+      : null;
+  const canConfirm =
+    result.type === 'success' ? result.checkout.canConfirm : false;
+
   const handleSubmit = useCallback(async () => {
-    if (result.type !== 'success') return;
+    if (result.type !== 'success') {
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
 
-    const confirmResult = await result.checkout.confirm({
-      returnUrl: paymentConfirmReturnUrl,
-      redirect: 'if_required',
-    });
+    try {
+      const confirmResult = await result.checkout.confirm({
+        returnUrl: paymentConfirmReturnUrl,
+        redirect: 'if_required',
+      });
 
-    if (confirmResult.type === 'error') {
-      setError(
-        confirmResult.error.message ??
-          'Une erreur est survenue lors du paiement. Réessayez.'
-      );
+      if (confirmResult.type === 'error') {
+        setError(
+          confirmResult.error.message ??
+            'Une erreur est survenue lors du paiement. Réessayez.'
+        );
+
+        return;
+      }
+
+      onSuccess();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Une erreur est survenue lors du paiement. Réessayez.';
+      setError(message);
+    } finally {
       setSubmitting(false);
-      return;
     }
-
-    onSuccess();
   }, [result, onSuccess, paymentConfirmReturnUrl]);
 
   const handleSaveCheckboxChange = useCallback(
@@ -299,10 +319,11 @@ function CheckoutConfirmInner({
   }
 
   const isLoading = result.type === 'loading';
+  const displayedTotal = checkoutTotalAmount ?? amountLabel ?? null;
 
   return (
     <Box>
-      {amountLabel && (
+      {displayedTotal && (
         <Typography
           variant="overline"
           sx={{
@@ -315,7 +336,9 @@ function CheckoutConfirmInner({
             mb: 1,
           }}
         >
-          {amountLabel}
+          {checkoutTotalAmount !== null
+            ? `Total à payer : ${checkoutTotalAmount}`
+            : amountLabel}
         </Typography>
       )}
 
@@ -390,7 +413,7 @@ function CheckoutConfirmInner({
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={isLoading || submitting || !elementReady}
+          disabled={isLoading || submitting || !elementReady || !canConfirm}
           sx={{
             flex: 2,
             py: 1.4,
@@ -409,6 +432,8 @@ function CheckoutConfirmInner({
               size={20}
               sx={{ color: 'rgba(255,255,255,0.5)' }}
             />
+          ) : checkoutTotalAmount !== null ? (
+            `Payer ${checkoutTotalAmount}`
           ) : (
             'Payer maintenant'
           )}
@@ -523,78 +548,100 @@ function StripeConfirmInner({
     setSubmitting(true);
     setError(null);
 
-    // Branch A — Reusing a saved card. The PaymentIntent was already
-    // created server-side with `payment_method = pm_xxx`, `confirm =
-    // true`, `off_session = true`. If the bank accepted, Stripe returned
-    // status `succeeded` and we're not here. If the bank requires 3DS,
-    // status is `requires_action` and we drive the challenge through
-    // `confirmCardPayment` on the same intent.
-    if (isReusing) {
-      const result = await stripe.confirmCardPayment(clientSecret, {
-        return_url: paymentConfirmReturnUrl,
+    try {
+      // Branch A — Reusing a saved card. The PaymentIntent was already
+      // created server-side with `payment_method = pm_xxx`, `confirm =
+      // true`, `off_session = true`. If the bank accepted, Stripe returned
+      // status `succeeded` and we're not here. If the bank requires 3DS,
+      // status is `requires_action` and we drive the challenge through
+      // `confirmCardPayment` on the same intent.
+      if (isReusing) {
+        const result = await stripe.confirmCardPayment(clientSecret, {
+          return_url: paymentConfirmReturnUrl,
+        });
+        if (result.error) {
+          setError(
+            result.error.message ??
+              'Une erreur est survenue lors du paiement. Réessayez.'
+          );
+
+          return;
+        }
+        if (
+          result.paymentIntent &&
+          (result.paymentIntent.status === 'succeeded' ||
+            result.paymentIntent.status === 'processing')
+        ) {
+          onSuccess();
+
+          return;
+        }
+        setError(
+          "Le paiement n'a pas été finalisé. Vérifiez votre carte ou réessayez."
+        );
+
+        return;
+      }
+
+      // Branch B — New card via the PaymentElement form (legacy PaymentIntent).
+      if (!elements) {
+        setError(
+          "Le formulaire de paiement n'est pas prêt. Patientez un instant puis réessayez."
+        );
+
+        return;
+      }
+
+      const submitResult = await elements.submit();
+      if (submitResult.error) {
+        setError(
+          submitResult.error.message ??
+            'Vérifiez les informations de paiement saisies.'
+        );
+
+        return;
+      }
+
+      const result = await stripe.confirmPayment({
+        elements,
+        clientSecret,
+        redirect: 'if_required',
+        confirmParams: {
+          return_url: paymentConfirmReturnUrl,
+        },
       });
+
       if (result.error) {
         setError(
           result.error.message ??
             'Une erreur est survenue lors du paiement. Réessayez.'
         );
-        setSubmitting(false);
+
         return;
       }
+
       if (
         result.paymentIntent &&
         (result.paymentIntent.status === 'succeeded' ||
           result.paymentIntent.status === 'processing')
       ) {
         onSuccess();
+
         return;
       }
+
       setError(
         "Le paiement n'a pas été finalisé. Vérifiez votre carte ou réessayez."
       );
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Une erreur est survenue lors du paiement. Réessayez.';
+      setError(message);
+    } finally {
       setSubmitting(false);
-      return;
     }
-
-    // Branch B — New card via the PaymentElement form.
-    if (!elements) {
-      return;
-    }
-    // `confirmPayment` resolves with either an error OR a PaymentIntent.
-    // Setting `redirect: 'if_required'` keeps the user on KeyHome unless a
-    // 3DS challenge mandates a redirect (then Stripe handles it).
-    const result = await stripe.confirmPayment({
-      elements,
-      redirect: 'if_required',
-      confirmParams: {
-        return_url: paymentConfirmReturnUrl,
-      },
-    });
-
-    if (result.error) {
-      setError(
-        result.error.message ??
-          'Une erreur est survenue lors du paiement. Réessayez.'
-      );
-      setSubmitting(false);
-      return;
-    }
-
-    if (
-      result.paymentIntent &&
-      (result.paymentIntent.status === 'succeeded' ||
-        result.paymentIntent.status === 'processing')
-    ) {
-      onSuccess();
-      return;
-    }
-
-    // Fallback : Stripe accepted but the intent is in a weird state. Show
-    // a generic message and let the user retry.
-    setError(
-      "Le paiement n'a pas été finalisé. Vérifiez votre carte ou réessayez."
-    );
-    setSubmitting(false);
   }, [
     stripe,
     elements,
