@@ -13,8 +13,11 @@
  * in refactor-tasks.md §3.2.
  */
 
-import type { AdFormValues } from '@/components/owner/ad-form/types';
-import type { TourScene } from '@/components/owner/ad-form/types';
+import {
+  type AdFormValues,
+  isAdFormTextEmpty,
+  type TourScene,
+} from '@/components/owner/ad-form/types';
 import type { Ad } from '@/types';
 import { useCallback, useState } from 'react';
 
@@ -57,8 +60,9 @@ export function useAdFormStepper(
           break;
         }
         case 1: {
-          if (!values.title.trim()) e.title = 'Le titre est obligatoire.';
-          if (!values.description.trim())
+          if (isAdFormTextEmpty(values.title))
+            e.title = 'Le titre est obligatoire.';
+          if (isAdFormTextEmpty(values.description))
             e.description = 'La description est obligatoire.';
           const existingCount =
             ad?.images?.filter((img) => !imagesToDelete.includes(img.id))
@@ -69,7 +73,7 @@ export function useAdFormStepper(
           break;
         }
         case 2: {
-          if (!hiddenFields.has('adresse') && !values.adresse.trim())
+          if (!hiddenFields.has('adresse') && isAdFormTextEmpty(values.adresse))
             e.adresse = "L'adresse est obligatoire.";
           if (!values.price || parseFloat(values.price) < 0)
             e.price = 'Le prix est obligatoire.';
@@ -137,14 +141,14 @@ export function useAdFormStepper(
           break;
         }
         case 1: {
-          if (!values.title.trim())
+          if (isAdFormTextEmpty(values.title))
             stepErrors.title = 'Le titre est obligatoire.';
-          if (!values.description.trim())
+          if (isAdFormTextEmpty(values.description))
             stepErrors.description = 'La description est obligatoire.';
           break;
         }
         case 2: {
-          if (!hiddenFields.has('adresse') && !values.adresse.trim())
+          if (!hiddenFields.has('adresse') && isAdFormTextEmpty(values.adresse))
             stepErrors.adresse = "L'adresse est obligatoire.";
           if (!values.price || parseFloat(values.price) < 0)
             stepErrors.price = 'Le prix est obligatoire.';

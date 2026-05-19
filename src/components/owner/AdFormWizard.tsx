@@ -55,7 +55,11 @@ import AdFormPriceAdvisor from './ad-form/AdFormPriceAdvisor';
 import AdFormStepReview from './ad-form/AdFormStepReview';
 import AdFormStepType from './ad-form/AdFormStepType';
 import type { AdFormValues, AttributeOption, TourScene } from './ad-form/types';
-import { normalizeAdFormValues } from './ad-form/types';
+import {
+  coerceAdFormFieldValue,
+  isAdFormTextEmpty,
+  normalizeAdFormValues,
+} from './ad-form/types';
 import AdFormLivePreview from './AdFormLivePreview';
 
 export type { AdFormValues, TourScene } from './ad-form/types';
@@ -510,7 +514,10 @@ function AdFormWizard({
     field: keyof AdFormValues,
     value: AdFormValues[keyof AdFormValues]
   ) => {
-    setValues((prev) => ({ ...prev, [field]: value }));
+    setValues((prev) => ({
+      ...prev,
+      [field]: coerceAdFormFieldValue(field, value),
+    }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
@@ -564,7 +571,7 @@ function AdFormWizard({
 
   /* ── AI enhance ── */
   const handleEnhance = async () => {
-    if (!values.description.trim() || !onEnhanceDescription) return;
+    if (isAdFormTextEmpty(values.description) || !onEnhanceDescription) return;
     setEnhancing(true);
     try {
       const enhanced = await onEnhanceDescription(values.description);
@@ -649,8 +656,9 @@ function AdFormWizard({
       }
       case 1: {
         // Basic info + photos
-        if (!values.title.trim()) e.title = 'Le titre est obligatoire.';
-        if (!values.description.trim())
+        if (isAdFormTextEmpty(values.title))
+          e.title = 'Le titre est obligatoire.';
+        if (isAdFormTextEmpty(values.description))
           e.description = 'La description est obligatoire.';
         // Require at least 4 images
         const existingCount =
@@ -663,7 +671,7 @@ function AdFormWizard({
       }
       case 2: {
         // Details — type-specific
-        if (!hiddenFields.has('adresse') && !values.adresse.trim())
+        if (!hiddenFields.has('adresse') && isAdFormTextEmpty(values.adresse))
           e.adresse = "L'adresse est obligatoire.";
         if (!values.price || parseFloat(values.price) < 0)
           e.price = 'Le prix est obligatoire.';
@@ -722,14 +730,14 @@ function AdFormWizard({
           break;
         }
         case 1: {
-          if (!values.title.trim())
+          if (isAdFormTextEmpty(values.title))
             stepErrors.title = 'Le titre est obligatoire.';
-          if (!values.description.trim())
+          if (isAdFormTextEmpty(values.description))
             stepErrors.description = 'La description est obligatoire.';
           break;
         }
         case 2: {
-          if (!hiddenFields.has('adresse') && !values.adresse.trim())
+          if (!hiddenFields.has('adresse') && isAdFormTextEmpty(values.adresse))
             stepErrors.adresse = "L'adresse est obligatoire.";
           if (!values.price || parseFloat(values.price) < 0)
             stepErrors.price = 'Le prix est obligatoire.';
@@ -797,7 +805,7 @@ function AdFormWizard({
   /* ── Draft save ── */
   const handleSaveDraft = async () => {
     if (isSavingDraft || isSubmitting) return;
-    if (!values.title.trim()) {
+    if (isAdFormTextEmpty(values.title)) {
       setErrors({
         title: 'Le titre est obligatoire pour enregistrer un brouillon.',
       });

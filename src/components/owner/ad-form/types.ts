@@ -114,6 +114,53 @@ export function adFormText(value: string | null | undefined): string {
   return value ?? '';
 }
 
+/** String fields on {@link AdFormValues} that may be null in API / draft payloads. */
+export const AD_FORM_STRING_FIELD_KEYS = [
+  'title',
+  'description',
+  'adresse',
+  'price',
+  'surface_area',
+  'bedrooms',
+  'bathrooms',
+  'quarter_id',
+  'type_id',
+  'transaction_type',
+  'deposit_amount',
+  'minimum_lease_duration',
+  'charges_montant_forfait',
+  'charges_eau',
+  'charges_electricite',
+  'charges_autres',
+  'distance_main_road_m',
+  'distance_shops_m',
+  'distance_transport_m',
+  'distance_school_m',
+  'distance_hospital_m',
+] as const satisfies readonly (keyof AdFormValues)[];
+
+const adFormStringFieldSet = new Set<string>(AD_FORM_STRING_FIELD_KEYS);
+
+/** True when the coerced form text is empty after trim. */
+export function isAdFormTextEmpty(value: string | null | undefined): boolean {
+  return adFormText(value).trim().length === 0;
+}
+
+/** Coerce a single field update so string fields never become null at runtime. */
+export function coerceAdFormFieldValue<K extends keyof AdFormValues>(
+  field: K,
+  value: AdFormValues[K]
+): AdFormValues[K] {
+  if (
+    adFormStringFieldSet.has(field) &&
+    (typeof value === 'string' || value === null || value === undefined)
+  ) {
+    return adFormText(value as string | null | undefined) as AdFormValues[K];
+  }
+
+  return value;
+}
+
 /**
  * Merge partial ad form state with defaults and coerce nullish API values.
  * Prevents runtime crashes (e.g. `.trim()` on null) in preview & validation.

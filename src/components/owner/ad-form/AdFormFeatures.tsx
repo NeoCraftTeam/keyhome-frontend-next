@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 
 import type { AdFormValues, UpdateFn } from './types';
-import { sectionSx, sectionTitleSx } from './types';
+import { adFormText, sectionSx, sectionTitleSx } from './types';
 
 interface AdFormFeaturesProps {
   values: AdFormValues;
@@ -37,7 +37,7 @@ export default function AdFormFeatures({
             size="medium"
             label="Adresse"
             placeholder="Ex: Rue de la Liberté, Bonanjo"
-            value={values.adresse}
+            value={adFormText(values.adresse)}
             onChange={(e) => update('adresse', e.target.value)}
             error={!!errors.adresse}
             helperText={errors.adresse}

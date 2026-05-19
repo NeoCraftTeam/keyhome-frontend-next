@@ -7,7 +7,10 @@
  * All functions are side-effect free and independently testable.
  */
 
-import type { AdFormValues } from '@/components/owner/ad-form/types';
+import {
+  type AdFormValues,
+  isAdFormTextEmpty,
+} from '@/components/owner/ad-form/types';
 
 /** Fields that certain ad type categories hide (e.g. terrain has no bedrooms). */
 export type HiddenFields = ReadonlySet<string>;
@@ -73,10 +76,10 @@ export function validateAdFormStep(
 
     case 1: {
       // Basic info + photos
-      if (!values.title.trim()) {
+      if (isAdFormTextEmpty(values.title)) {
         e.title = 'Le titre est obligatoire.';
       }
-      if (!values.description.trim()) {
+      if (isAdFormTextEmpty(values.description)) {
         e.description = 'La description est obligatoire.';
       }
       const existingKept = existingImagesCount - imagesToDelete.length;
@@ -89,7 +92,7 @@ export function validateAdFormStep(
 
     case 2: {
       // Details — type-specific
-      if (!hiddenFields.has('adresse') && !values.adresse.trim()) {
+      if (!hiddenFields.has('adresse') && isAdFormTextEmpty(values.adresse)) {
         e.adresse = "L'adresse est obligatoire.";
       }
       if (!values.price || parseFloat(values.price) < 0) {

@@ -28,7 +28,7 @@ import {
   AdFormMapLocation,
 } from './ad-form';
 import type { AttributeOption } from './ad-form/types';
-import { initialValues } from './ad-form/types';
+import { initialValues, isAdFormTextEmpty } from './ad-form/types';
 
 export type { AdFormValues, TourScene } from './ad-form/types';
 import type { AdFormValues, TourScene } from './ad-form/types';
@@ -341,10 +341,11 @@ function AdForm({
 
   const validate = (): boolean => {
     const e: Record<string, string> = {};
-    if (!values.title.trim()) e.title = 'Le titre est obligatoire.';
-    if (!values.description.trim())
+    if (isAdFormTextEmpty(values.title)) e.title = 'Le titre est obligatoire.';
+    if (isAdFormTextEmpty(values.description))
       e.description = 'La description est obligatoire.';
-    if (!values.adresse.trim()) e.adresse = "L'adresse est obligatoire.";
+    if (isAdFormTextEmpty(values.adresse))
+      e.adresse = "L'adresse est obligatoire.";
     if (!values.price || parseFloat(values.price) < 0)
       e.price = 'Le prix est obligatoire.';
     if (!values.surface_area || parseFloat(values.surface_area) <= 0)
