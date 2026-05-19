@@ -25,6 +25,17 @@ const OWNER_PUBLIC_PATHS = [
   '/owner/auth',
 ];
 
+/**
+ * Returns true when the request comes from the owner subdomain
+ * (default: owner.keyhome.app, overridable via NEXT_PUBLIC_OWNER_HOSTNAME).
+ */
+function isOwnerSubdomainHost(req: NextRequest): boolean {
+  const ownerHostname =
+    process.env.NEXT_PUBLIC_OWNER_HOSTNAME || 'owner.keyhome.app';
+  const host = (req.headers.get('host') ?? req.nextUrl.hostname).split(':')[0];
+  return host === ownerHostname;
+}
+
 function isOwnerPublicPath(pathname: string): boolean {
   return OWNER_PUBLIC_PATHS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)
@@ -246,14 +257,39 @@ export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
   const { pathname } = req.nextUrl;
 
+  // ── Owner subdomain routing ─────────────────────────────────────────────────
+  // owner.keyhome.app/X  →  internally served from /owner/X
+  // Paths already starting with /owner pass through unchanged so that
+  // client-side <Link href="/owner/..."> navigation keeps working.
+  const isOwnerSub = isOwnerSubdomainHost(req);
+  const effectivePathname =
+    isOwnerSub && !pathname.startsWith('/owner')
+      ? '/owner' + (pathname === '/' ? '' : pathname)
+      : pathname;
+  const needsRewrite = effectivePathname !== pathname;
+
+  /** Wrap a pass-through response with a URL rewrite when on the owner subdomain. */
+  function withRewrite(res: NextResponse): NextResponse {
+    if (!needsRewrite) return res;
+    const dest = req.nextUrl.clone();
+    dest.pathname = effectivePathname;
+    const rewritten = NextResponse.rewrite(dest, {
+      request: { headers: res.headers },
+    });
+    // Copy response headers (CSP, cookies, etc.) onto the rewrite response.
+    res.headers.forEach((v, k) => rewritten.headers.set(k, v));
+    return rewritten;
+  }
+
   // Owner panel edge guard: block customers and unauthenticated users
-  if (isOwnerProtectedPath(pathname)) {
+  if (isOwnerProtectedPath(effectivePathname)) {
     const role = req.cookies.get('kh_role')?.value;
     if (!role) {
-      return applyGeoCookies(
-        req,
-        NextResponse.redirect(new URL('/owner/login', req.url))
-      );
+      // On the subdomain use the clean URL (/login), otherwise the full path.
+      const loginUrl = isOwnerSub
+        ? new URL('/login', req.url)
+        : new URL('/owner/login', req.url);
+      return applyGeoCookies(req, NextResponse.redirect(loginUrl));
     }
     if (role === 'customer') {
       return applyGeoCookies(
@@ -264,13 +300,13 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // Customer-private pages: redirect authenticated owners back to their dashboard
-  if (isCustomerPrivatePath(pathname)) {
+  if (isCustomerPrivatePath(effectivePathname)) {
     const role = req.cookies.get('kh_role')?.value;
     if (role === 'agent' || role === 'admin') {
-      return applyGeoCookies(
-        req,
-        NextResponse.redirect(new URL('/owner/dashboard', req.url))
-      );
+      const dashUrl = isOwnerSub
+        ? new URL('/dashboard', req.url)
+        : new URL('/owner/dashboard', req.url);
+      return applyGeoCookies(req, NextResponse.redirect(dashUrl));
     }
   }
 
@@ -283,12 +319,12 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // Match old middleware: do not attach CSP / nonce for prefetch navigations
-  if (isNextPrefetch(req.headers) && shouldApplyCsp(pathname)) {
-    return applyGeoCookies(req, NextResponse.next());
+  if (isNextPrefetch(req.headers) && shouldApplyCsp(effectivePathname)) {
+    return applyGeoCookies(req, withRewrite(NextResponse.next()));
   }
 
-  if (!shouldApplyCsp(pathname)) {
-    return applyGeoCookies(req, NextResponse.next());
+  if (!shouldApplyCsp(effectivePathname)) {
+    return applyGeoCookies(req, withRewrite(NextResponse.next()));
   }
 
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
@@ -300,7 +336,7 @@ export default clerkMiddleware(async (auth, req) => {
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set('Content-Security-Policy', csp);
 
-  return applyGeoCookies(req, response);
+  return applyGeoCookies(req, withRewrite(response));
 });
 
 export const config = {
