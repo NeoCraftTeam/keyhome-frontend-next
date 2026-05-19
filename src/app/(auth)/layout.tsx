@@ -63,7 +63,7 @@ export default function AuthLayout({
       if (returnTo) {
         sessionStorage.removeItem('kh_redirect_after_login');
         router.replace(returnTo);
-      } else if (user?.role === 'agent' || user?.role === 'admin') {
+      } else if (user?.role === 'agent') {
         router.replace('/owner/dashboard');
       } else {
         router.replace('/home');

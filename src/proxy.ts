@@ -302,7 +302,7 @@ export default clerkMiddleware(async (auth, req) => {
   // Customer-private pages: redirect authenticated owners back to their dashboard
   if (isCustomerPrivatePath(effectivePathname)) {
     const role = req.cookies.get('kh_role')?.value;
-    if (role === 'agent' || role === 'admin') {
+    if (role === 'agent') {
       const dashUrl = isOwnerSub
         ? new URL('/dashboard', req.url)
         : new URL('/owner/dashboard', req.url);

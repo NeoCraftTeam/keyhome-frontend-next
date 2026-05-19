@@ -11,6 +11,7 @@ import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
 import { setRoleCookie } from '@/lib/auth-session';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
+import { ADMIN_USE_ADMIN_PANEL_MESSAGE } from '@/lib/owner-panel-access';
 import { OWNER_LOGIN_HERO_SRC, OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { useAuth } from '@/providers/AuthProvider';
 import { brandAgent, neutral } from '@/theme/tokens';
@@ -40,14 +41,18 @@ export default function OwnerLoginPage() {
   const { loginOwner, user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
-  // Redirect already-authenticated owners away from the login page
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (sessionStorage.getItem('kh_owner_admin_panel_hint') === '1') {
+      sessionStorage.removeItem('kh_owner_admin_panel_hint');
+      setError(ADMIN_USE_ADMIN_PANEL_MESSAGE);
+    }
+  }, []);
+
+  // Redirect already-authenticated agents away from the login page
   useEffect(() => {
     if (isLoading) return;
-    if (
-      isAuthenticated &&
-      user &&
-      (user.role === UserRole.AGENT || user.role === UserRole.ADMIN)
-    ) {
+    if (isAuthenticated && user?.role === UserRole.AGENT) {
       setRoleCookie(user.role);
       const redirect =
         sessionStorage.getItem('kh_owner_redirect') || '/owner/dashboard';

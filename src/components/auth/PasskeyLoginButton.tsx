@@ -6,6 +6,10 @@ import {
   persistClientToken,
   setRoleCookie,
 } from '@/lib/auth-session';
+import {
+  ADMIN_USE_ADMIN_PANEL_MESSAGE,
+  mayAccessOwnerPanel,
+} from '@/lib/owner-panel-access';
 import { useAuth } from '@/providers/AuthProvider';
 import { UserRole } from '@/types';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
@@ -53,9 +57,12 @@ export default function PasskeyLoginButton({
     const { token, user } = result;
 
     if (loginContext === 'owner') {
-      const isOwnerRole =
-        user.role === UserRole.AGENT || user.role === UserRole.ADMIN;
-      if (!isOwnerRole) {
+      if (user.role === UserRole.ADMIN) {
+        clearError();
+        setError(ADMIN_USE_ADMIN_PANEL_MESSAGE);
+        return;
+      }
+      if (!mayAccessOwnerPanel(user.role)) {
         sessionStorage.removeItem('kh_owner_redirect');
         router.replace('/owner/login');
         return;
@@ -69,7 +76,7 @@ export default function PasskeyLoginButton({
       }
     }
 
-    if (user.role === UserRole.AGENT || user.role === UserRole.ADMIN) {
+    if (mayAccessOwnerPanel(user.role)) {
       persistOwnerToken(token);
       setRoleCookie(user.role ?? UserRole.AGENT);
     } else {

@@ -126,9 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshSession = useCallback(async (): Promise<boolean> => {
     try {
       const { access_token } = await authService.refreshToken();
-      const isOwnerRole =
-        user?.role === UserRole.AGENT || user?.role === UserRole.ADMIN;
-      if (isOwnerRole) {
+      if (user?.role === UserRole.AGENT) {
         persistOwnerToken(access_token);
       } else {
         persistClientToken(access_token);

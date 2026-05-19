@@ -217,9 +217,13 @@ export default function OwnerLayoutClient({
       return;
     }
 
-    // Only agents and admins may access the owner panel
-    const OWNER_ALLOWED_ROLES = [UserRole.AGENT, UserRole.ADMIN];
-    if (!user.role || !OWNER_ALLOWED_ROLES.includes(user.role)) {
+    if (user.role === UserRole.ADMIN) {
+      sessionStorage.setItem('kh_owner_admin_panel_hint', '1');
+      router.replace('/owner/login');
+      return;
+    }
+
+    if (!user.role || user.role !== UserRole.AGENT) {
       router.replace('/home');
     }
   }, [
@@ -281,8 +285,7 @@ export default function OwnerLayoutClient({
     return null;
   }
 
-  const OWNER_ALLOWED_ROLES = [UserRole.AGENT, UserRole.ADMIN];
-  if (!user.role || !OWNER_ALLOWED_ROLES.includes(user.role)) {
+  if (!user.role || user.role !== UserRole.AGENT) {
     return null;
   }
 

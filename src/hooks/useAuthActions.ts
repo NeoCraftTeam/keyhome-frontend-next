@@ -24,6 +24,10 @@ import {
   oauthPanelContextFromIntent,
 } from '@/lib/oauth-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
+import {
+  ADMIN_USE_ADMIN_PANEL_MESSAGE,
+  mayAccessOwnerPanel,
+} from '@/lib/owner-panel-access';
 import { User, UserRole } from '@/types';
 import { useClerk, useAuth as useClerkAuth, useSignIn } from '@clerk/nextjs';
 import { useQueryClient } from '@tanstack/react-query';
@@ -80,18 +84,13 @@ export function useAuthActions({
       }
 
       const returnTo = sessionStorage.getItem('kh_redirect_after_login');
-      const clearContext =
-        laravelUser.role === UserRole.AGENT ||
-        laravelUser.role === UserRole.ADMIN
-          ? ('owner' as const)
-          : ('client' as const);
+      const clearContext = mayAccessOwnerPanel(laravelUser.role)
+        ? ('owner' as const)
+        : ('client' as const);
       clearSessionStorage(clearContext);
 
       flushSync(() => {
-        if (
-          laravelUser.role === UserRole.AGENT ||
-          laravelUser.role === UserRole.ADMIN
-        ) {
+        if (mayAccessOwnerPanel(laravelUser.role)) {
           persistOwnerToken(sanctumToken);
         } else {
           persistClientToken(sanctumToken);
@@ -103,10 +102,7 @@ export function useAuthActions({
 
       if (returnTo) {
         router.replace(returnTo);
-      } else if (
-        laravelUser.role === UserRole.AGENT ||
-        laravelUser.role === UserRole.ADMIN
-      ) {
+      } else if (mayAccessOwnerPanel(laravelUser.role)) {
         router.replace('/owner/dashboard');
       } else {
         router.replace('/home');
@@ -146,10 +142,11 @@ export function useAuthActions({
       const { token: sanctumToken, user: laravelUser } =
         await authService.login(email, password, 'owner', turnstileToken);
 
-      if (
-        laravelUser.role !== UserRole.AGENT &&
-        laravelUser.role !== UserRole.ADMIN
-      ) {
+      if (laravelUser.role === UserRole.ADMIN) {
+        throw new Error(ADMIN_USE_ADMIN_PANEL_MESSAGE);
+      }
+
+      if (laravelUser.role !== UserRole.AGENT) {
         throw new Error(
           'Accès réservé aux propriétaires et agences. Créez un compte bailleur.'
         );

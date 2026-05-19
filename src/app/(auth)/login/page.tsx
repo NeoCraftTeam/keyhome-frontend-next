@@ -88,7 +88,7 @@ export default function LoginPage() {
         if (data?.email_verification_required) {
           const verifiedEmail = data.email ?? email;
           const role = data.role ?? 'customer';
-          const isOwner = role === 'agent' || role === 'admin';
+          const isOwner = role === 'agent';
 
           // Store session keys the OTP page expects.
           const emailKey = isOwner

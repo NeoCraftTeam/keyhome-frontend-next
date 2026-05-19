@@ -211,13 +211,11 @@ export default function DashboardLayout({
 
     // Cross-panel guard: owners/agents must not use client-private paths.
     // Redirect them to the owner dashboard instead.
-    const OWNER_ROLES = [UserRole.AGENT, UserRole.ADMIN];
     if (
       isPrivatePage &&
       !isLoading &&
       isAuthenticated &&
-      user?.role &&
-      OWNER_ROLES.includes(user.role)
+      user?.role === UserRole.AGENT
     ) {
       router.replace('/owner/dashboard');
     }

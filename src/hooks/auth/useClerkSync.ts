@@ -335,9 +335,7 @@ export function useClerkSync(
           const path = pathnameRef.current ?? '';
           const expectedOwnerContext =
             path.startsWith('/owner') || intentRaw === 'agent';
-          const isOwnerRole =
-            laravelUser.role === UserRole.AGENT ||
-            laravelUser.role === UserRole.ADMIN;
+          const isOwnerRole = laravelUser.role === UserRole.AGENT;
 
           if (isOwnerRole && !expectedOwnerContext) {
             persistOwnerToken(sanctumToken);
@@ -392,8 +390,7 @@ export function useClerkSync(
               }
               const verifiedEmail = data.email ?? '';
               const role = data.role ?? 'customer';
-              const isOwnerRole =
-                role === 'agent' || role === 'admin' || intentRaw === 'agent';
+              const isOwnerRole = role === 'agent' || intentRaw === 'agent';
               const emailKey = isOwnerRole
                 ? 'kh_verify_email_owner'
                 : 'kh_verify_email_client';

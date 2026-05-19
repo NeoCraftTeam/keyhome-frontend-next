@@ -128,7 +128,7 @@ export function setRoleCookie(role: string): void {
   if (typeof document === 'undefined') {
     return;
   }
-  const isOwner = role === UserRole.AGENT || role === UserRole.ADMIN;
+  const isOwner = role === UserRole.AGENT;
   const secure = secureAttr();
 
   // Strict path scoping for role cookies.
@@ -193,7 +193,7 @@ export async function migrateLegacyTokens(): Promise<void> {
   try {
     const user = await authService.me();
     // Place legacy token in the correct slot based on user role
-    if (user.role === UserRole.AGENT || user.role === UserRole.ADMIN) {
+    if (user.role === UserRole.AGENT) {
       ownerInMemoryToken = legacy;
     } else {
       clientInMemoryToken = legacy;

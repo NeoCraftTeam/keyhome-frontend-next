@@ -36,8 +36,7 @@ export default function SessionTimeoutGuard() {
   const [refreshError, setRefreshError] = useState(false);
   const isRefreshingRef = useRef(false);
 
-  const isOwner =
-    user?.role === UserRole.AGENT || user?.role === UserRole.ADMIN;
+  const isOwner = user?.role === UserRole.AGENT;
   const logoutTarget = isOwner ? '/owner/login' : '/home';
 
   const handleTimeout = useCallback(() => {
