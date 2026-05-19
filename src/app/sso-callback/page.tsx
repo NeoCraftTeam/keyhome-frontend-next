@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import AppLoader from '@/components/ui/AppLoader';
 import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { brandAgent } from '@/theme/tokens';
-import { useClerk, useAuth as useClerkAuth } from '@clerk/nextjs';
+import { useClerk, useAuth as useClerkAuth, useSignUp } from '@clerk/nextjs';
 import { Box, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -28,8 +28,10 @@ import { useEffect, useRef, useState } from 'react';
 export default function SSOCallbackPage() {
   const { handleRedirectCallback } = useClerk();
   const { isLoaded, isSignedIn } = useClerkAuth();
+  const { signUp, isLoaded: isSignUpLoaded } = useSignUp();
   const router = useRouter();
   const handled = useRef(false);
+  const legalHandled = useRef(false);
   /** Single shared timeout ref — cleaned up on unmount regardless of which
    *  effect set it, so stale redirects never fire on the next page. */
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -123,10 +125,9 @@ export default function SSOCallbackPage() {
       router.replace(errorPath);
     }, 10000);
 
-    // No complete-profile step — new OAuth users go directly to home/dashboard.
-    // The backend finalizes the profile via clerkExchange; profile completion
-    // happens inline on the dashboard via a banner component.
-    const continueSignUpUrl = agentIntent ? '/owner/dashboard' : '/home';
+    // Redirect back to /sso-callback so we can handle missing_requirements
+    // (e.g. legal_accepted) before navigating to the final destination.
+    const continueSignUpUrl = `${origin}/sso-callback`;
 
     handleRedirectCallback({
       signInUrl: agentIntent ? '/owner/login' : '/login',
@@ -144,6 +145,28 @@ export default function SSOCallbackPage() {
       router.replace(errorPath);
     });
   }, [handleRedirectCallback, router, isLoaded, isSignedIn]);
+
+  // ─── Handle missing legal_accepted — Clerk blocks sign-up if ToS acceptance
+  // is required. After handleRedirectCallback navigates back here via
+  // continueSignUpUrl=/sso-callback, signUp.status becomes 'missing_requirements'.
+  // We accept programmatically (user clicked OAuth = implicit ToS agreement) so
+  // Clerk can complete the sign-up and create the session.
+  useEffect(() => {
+    if (!isSignUpLoaded || !signUp) return;
+    if (signUp.status !== 'missing_requirements') return;
+    if (!signUp.missingFields?.includes('legal_accepted')) return;
+    if (legalHandled.current) return;
+
+    legalHandled.current = true;
+
+    const agentIntent = isAgentIntentRef.current;
+    const errorPath = agentIntent ? '/owner/login' : '/login';
+
+    signUp.update({ legalAccepted: true }).catch((err: unknown) => {
+      console.error('[sso-callback] legal_accepted update failed:', err);
+      router.replace(errorPath);
+    });
+  }, [isSignUpLoaded, signUp, signUp?.status, router]);
 
   return (
     <Box
