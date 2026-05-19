@@ -339,6 +339,7 @@ export interface Ad {
   description: string;
   adresse: string;
   price: number | null;
+  price_period?: 'mois' | 'jour' | null;
   surface_area: number;
   bedrooms: number;
   bathrooms: number;
@@ -606,6 +607,7 @@ export interface SearchParams {
   surface_max?: number;
   has_parking?: boolean;
   transaction_type?: string;
+  price_period?: 'mois' | 'jour';
   has_3d_tour?: boolean;
   is_verified?: boolean;
   type_id?: string;

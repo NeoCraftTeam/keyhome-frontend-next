@@ -724,12 +724,25 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                   color: 'text.primary',
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: 0.25,
                 }}
               >
                 {ad.price != null ? (
                   <Price amountXAF={ad.price} compact />
                 ) : (
                   '—'
+                )}
+                {ad.price != null && ad.transaction_type === 'location' && (
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    color="text.secondary"
+                    fontWeight={500}
+                  >
+                    /{ad.price_period === 'jour' ? 'j' : 'mois'}
+                  </Typography>
                 )}
               </Typography>
               <Tooltip

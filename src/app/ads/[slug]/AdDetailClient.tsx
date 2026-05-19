@@ -2220,9 +2220,25 @@ function AdDetailContent() {
                       <Typography
                         variant="h5"
                         fontWeight={700}
-                        sx={{ mb: 0.5 }}
+                        sx={{
+                          mb: 0.5,
+                          display: 'flex',
+                          alignItems: 'baseline',
+                          gap: 0.5,
+                          justifyContent: 'center',
+                        }}
                       >
                         <Price amountXAF={ad.price} />
+                        {ad.transaction_type === 'location' && (
+                          <Typography
+                            component="span"
+                            variant="body2"
+                            color="text.secondary"
+                            fontWeight={500}
+                          >
+                            /{ad.price_period === 'jour' ? 'jour' : 'mois'}
+                          </Typography>
+                        )}
                       </Typography>
                       {ad.type && (
                         <Typography
@@ -2815,8 +2831,22 @@ function AdDetailContent() {
                     boxShadow: '0 6px 20px rgba(0,0,0,0.08)',
                   }}
                 >
-                  <Typography variant="h4" fontWeight={700}>
+                  <Typography
+                    variant="h4"
+                    fontWeight={700}
+                    sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}
+                  >
                     <Price amountXAF={ad.price} />
+                    {ad.transaction_type === 'location' && (
+                      <Typography
+                        component="span"
+                        variant="body1"
+                        color="text.secondary"
+                        fontWeight={500}
+                      >
+                        /{ad.price_period === 'jour' ? 'jour' : 'mois'}
+                      </Typography>
+                    )}
                   </Typography>
                   {ad.type && (
                     <Typography

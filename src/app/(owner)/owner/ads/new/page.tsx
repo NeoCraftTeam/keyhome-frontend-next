@@ -1,16 +1,32 @@
 'use client';
 
-import { useAuth } from '@/providers/AuthProvider';
 import type { AdFormValues } from '@/components/owner/AdFormWizard';
+import AdFormWizard, { type TourScene } from '@/components/owner/AdFormWizard';
 import MarkdownBioEditor from '@/components/owner/MarkdownBioEditor';
+import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
-import { usersService } from '@/services/users.service';
-import { citiesService } from '@/services/cities.service';
+import { getLaravelApiErrorMessage } from '@/lib/api-errors';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import {
   normalizePhoneLikeBackend,
   shouldSendPhoneNumberForUserUpdate,
 } from '@/lib/profile-phone';
+import { useAuth } from '@/providers/AuthProvider';
+import { adsService } from '@/services/ads.service';
+import { citiesService } from '@/services/cities.service';
+import { ownerService } from '@/services/owner.service';
+import { usersService } from '@/services/users.service';
+import { neutral, semantic, shadow, transition } from '@/theme/tokens';
+import ArrowBack from '@mui/icons-material/ArrowBack';
+import ArrowForward from '@mui/icons-material/ArrowForward';
+import BookmarkAdded from '@mui/icons-material/BookmarkAdded';
+import CalendarMonth from '@mui/icons-material/CalendarMonth';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import Close from '@mui/icons-material/Close';
+import Description from '@mui/icons-material/Description';
+import LocationOn from '@mui/icons-material/LocationOn';
+import Person from '@mui/icons-material/Person';
+import Phone from '@mui/icons-material/Phone';
 import {
   Alert,
   Autocomplete,
@@ -22,36 +38,20 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  DialogTitle,
   Divider,
   Drawer,
-  LinearProgress,
-  DialogTitle,
   Grid,
   IconButton,
+  LinearProgress,
   Snackbar,
   TextField,
   Typography,
 } from '@mui/material';
-import FadeIn from '@/components/ui/FadeIn';
-import ArrowBack from '@mui/icons-material/ArrowBack';
-import ArrowForward from '@mui/icons-material/ArrowForward';
-import BookmarkAdded from '@mui/icons-material/BookmarkAdded';
-import CalendarMonth from '@mui/icons-material/CalendarMonth';
-import CheckCircle from '@mui/icons-material/CheckCircle';
-import Close from '@mui/icons-material/Close';
-import Description from '@mui/icons-material/Description';
-import LocationOn from '@mui/icons-material/LocationOn';
-import Person from '@mui/icons-material/Person';
-import Phone from '@mui/icons-material/Phone';
+import { alpha } from '@mui/material/styles';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import AdFormWizard, { type TourScene } from '@/components/owner/AdFormWizard';
-import { getLaravelApiErrorMessage } from '@/lib/api-errors';
-import { adsService } from '@/services/ads.service';
-import { ownerService } from '@/services/owner.service';
-import { alpha } from '@mui/material/styles';
-import { neutral, semantic, shadow, transition } from '@/theme/tokens';
 
 const PROFILE_STEP_ICONS = {
   name: <Person sx={{ fontSize: 20 }} />,
@@ -115,6 +115,8 @@ function buildAdFormData(
   if (values.description) formData.append('description', values.description);
   if (values.adresse) formData.append('adresse', values.adresse);
   if (values.price) formData.append('price', values.price);
+  if (values.transaction_type === 'location')
+    formData.append('price_period', values.price_period);
   if (values.surface_area) formData.append('surface_area', values.surface_area);
   if (values.bedrooms) formData.append('bedrooms', values.bedrooms);
   if (values.bathrooms) formData.append('bathrooms', values.bathrooms);

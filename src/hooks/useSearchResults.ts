@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { adsService } from '@/services/ads.service';
 import type { SearchParams } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 interface UseSearchResultsOptions {
   buildParams: () => SearchParams;
@@ -33,6 +33,7 @@ export function useSearchResults({
       params.surface_max,
       params.has_parking,
       params.transaction_type,
+      params.price_period,
       params.has_3d_tour,
       params.is_verified,
       params.attributes,
@@ -54,6 +55,7 @@ export function useSearchResults({
       params.type_id,
       params.quarter,
       params.transaction_type,
+      params.price_period,
       params.bedrooms,
       params.bathrooms,
       params.price_min,

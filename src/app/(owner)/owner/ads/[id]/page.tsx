@@ -100,6 +100,8 @@ export default function OwnerAdEditPage() {
       formData.append('description', values.description);
       formData.append('adresse', values.adresse);
       formData.append('price', values.price);
+      if (values.transaction_type === 'location')
+        formData.append('price_period', values.price_period);
       formData.append('surface_area', values.surface_area);
       formData.append('bedrooms', values.bedrooms);
       formData.append('bathrooms', values.bathrooms);
@@ -334,6 +336,8 @@ export default function OwnerAdEditPage() {
         formData.append('description', values.description);
       if (values.adresse) formData.append('adresse', values.adresse);
       if (values.price) formData.append('price', values.price);
+      if (values.transaction_type === 'location')
+        formData.append('price_period', values.price_period);
       if (values.surface_area)
         formData.append('surface_area', values.surface_area);
       if (values.bedrooms) formData.append('bedrooms', values.bedrooms);
@@ -573,6 +577,10 @@ export default function OwnerAdEditPage() {
       description: ds('description') ?? ad.description,
       adresse: ds('adresse') ?? ad.adresse,
       price: ds('price') ?? (ad.price != null ? String(ad.price) : ''),
+      price_period:
+        (ds('price_period') as 'mois' | 'jour' | undefined) ??
+        ad.price_period ??
+        'mois',
       surface_area: ds('surface_area') ?? String(ad.surface_area),
       bedrooms: ds('bedrooms') ?? String(ad.bedrooms),
       bathrooms: ds('bathrooms') ?? String(ad.bathrooms),

@@ -1,3 +1,4 @@
+import { CURRENCY_SYMBOL } from '@/lib/constants';
 import {
   FormControlLabel,
   Grid,
@@ -5,9 +6,10 @@ import {
   Paper,
   Switch,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { CURRENCY_SYMBOL } from '@/lib/constants';
 
 import type { AdFormValues, UpdateFn } from './types';
 import { sectionSx, sectionTitleSx } from './types';
@@ -41,7 +43,13 @@ export default function AdFormFeatures({
             helperText={errors.adresse}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: values.transaction_type === 'location' ? 2 : 3,
+          }}
+        >
           <TextField
             fullWidth
             size="medium"
@@ -61,6 +69,34 @@ export default function AdFormFeatures({
             }}
           />
         </Grid>
+        {values.transaction_type === 'location' && (
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: 'block', mb: 0.5, fontWeight: 600 }}
+            >
+              Période
+            </Typography>
+            <ToggleButtonGroup
+              value={values.price_period}
+              exclusive
+              onChange={(_e, val) => {
+                if (val !== null) update('price_period', val);
+              }}
+              size="small"
+              fullWidth
+              color="primary"
+            >
+              <ToggleButton value="mois" aria-label="par mois">
+                /mois
+              </ToggleButton>
+              <ToggleButton value="jour" aria-label="par jour">
+                /jour
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Grid>
+        )}
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <TextField
             fullWidth

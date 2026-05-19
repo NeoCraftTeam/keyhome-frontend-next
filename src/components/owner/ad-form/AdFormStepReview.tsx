@@ -1,5 +1,6 @@
 'use client';
 
+import { neutral, shadow } from '@/theme/tokens';
 import CategoryIcon from '@mui/icons-material/Category';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -13,7 +14,6 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import ThreeSixtyIcon from '@mui/icons-material/ThreeSixty';
 import { Box, Chip, IconButton, Paper, Stack, Typography } from '@mui/material';
-import { neutral, shadow } from '@/theme/tokens';
 
 import {
   AdTypeCategory,
@@ -310,6 +310,16 @@ export default function AdFormStepReview({
               sx={{ fontWeight: 600, color: 'primary.main' }}
             >
               {formatPrice(values.price)}
+              {values.transaction_type === 'location' && (
+                <Typography
+                  component="span"
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ ml: 0.5 }}
+                >
+                  /{values.price_period === 'jour' ? 'jour' : 'mois'}
+                </Typography>
+              )}
             </Typography>
           </KVItem>
           <KVItem label="Surface">

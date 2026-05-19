@@ -37,6 +37,8 @@ export interface SearchFiltersState {
   setHasParking: (v: boolean) => void;
   transactionType: 'location' | 'vente' | null;
   setTransactionType: (v: 'location' | 'vente' | null) => void;
+  pricePeriod: 'mois' | 'jour' | null;
+  setPricePeriod: (v: 'mois' | 'jour' | null) => void;
   has3dTour: boolean;
   setHas3dTour: (v: boolean) => void;
   selectedAmenities: string[];
@@ -94,6 +96,7 @@ export function useSearchFilters(): SearchFiltersReturn {
   const [transactionType, setTransactionType] = useState<
     'location' | 'vente' | null
   >(null);
+  const [pricePeriod, setPricePeriod] = useState<'mois' | 'jour' | null>(null);
   const [has3dTour, setHas3dTour] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [mapStyle, setMapStyle] = useState<'streets' | 'satellite' | 'dark'>(
@@ -174,6 +177,11 @@ export function useSearchFilters(): SearchFiltersReturn {
     const urlTxType = searchParams.get('transaction_type');
     if (urlTxType === 'location' || urlTxType === 'vente') {
       setTransactionType(urlTxType);
+    }
+
+    const urlPricePeriod = searchParams.get('price_period');
+    if (urlPricePeriod === 'mois' || urlPricePeriod === 'jour') {
+      setPricePeriod(urlPricePeriod);
     }
 
     if (searchParams.get('furnished') === '1') {
@@ -259,6 +267,7 @@ export function useSearchFilters(): SearchFiltersReturn {
       surface_max: surfaceRange[1] < 1000 ? surfaceRange[1] : undefined,
       has_parking: hasParking || undefined,
       transaction_type: transactionType || undefined,
+      price_period: pricePeriod || undefined,
       has_3d_tour: has3dTour || undefined,
       attributes: selectedAmenities.length > 0 ? selectedAmenities : undefined,
       latitude:
@@ -282,6 +291,7 @@ export function useSearchFilters(): SearchFiltersReturn {
       surfaceRange,
       hasParking,
       transactionType,
+      pricePeriod,
       has3dTour,
       selectedAmenities,
       sortBy,
@@ -303,6 +313,7 @@ export function useSearchFilters(): SearchFiltersReturn {
     setSurfaceRange([0, 1000]);
     setHasParking(false);
     setTransactionType(null);
+    setPricePeriod(null);
     setHas3dTour(false);
     setBathrooms(undefined);
     setSelectedAmenities([]);
@@ -325,6 +336,7 @@ export function useSearchFilters(): SearchFiltersReturn {
         surfaceRange[1] < 1000,
         hasParking,
         transactionType,
+        pricePeriod,
         has3dTour,
         ...selectedAmenities,
       ].filter(Boolean).length,
@@ -338,6 +350,7 @@ export function useSearchFilters(): SearchFiltersReturn {
       surfaceRange,
       hasParking,
       transactionType,
+      pricePeriod,
       has3dTour,
       selectedAmenities,
     ]
@@ -395,6 +408,8 @@ export function useSearchFilters(): SearchFiltersReturn {
     setHasParking,
     transactionType,
     setTransactionType,
+    pricePeriod,
+    setPricePeriod,
     has3dTour,
     setHas3dTour,
     selectedAmenities,

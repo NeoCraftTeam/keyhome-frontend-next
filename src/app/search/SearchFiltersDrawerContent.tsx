@@ -16,6 +16,8 @@ import {
   Slider,
   Switch,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import { memo } from 'react';
@@ -70,6 +72,9 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
     setSurfaceRange,
     hasParking,
     setHasParking,
+    transactionType,
+    pricePeriod,
+    setPricePeriod,
     has3dTour,
     setHas3dTour,
     propertyAttributes,
@@ -199,7 +204,13 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
         valueLabelFormat={(val) => `${(val / 1000).toFixed(0)}k`}
         sx={{ mb: 0.5 }}
       />
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          mb: transactionType === 'location' ? 1.5 : 2,
+        }}
+      >
         <Typography variant="caption" color="text.secondary">
           0 FCFA
         </Typography>
@@ -207,6 +218,32 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
           5 000 000 FCFA
         </Typography>
       </Box>
+
+      {/* Price period — only relevant for rentals */}
+      {transactionType === 'location' && (
+        <Box sx={{ mb: 2 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: 'block', mb: 0.75, fontWeight: 600 }}
+          >
+            Période de facturation
+          </Typography>
+          <ToggleButtonGroup
+            value={pricePeriod}
+            exclusive
+            onChange={(_, val: 'mois' | 'jour' | null) => {
+              setPricePeriod(val);
+              setPage(1);
+            }}
+            size="small"
+            color="primary"
+          >
+            <ToggleButton value="mois">Par mois</ToggleButton>
+            <ToggleButton value="jour">Par jour</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+      )}
 
       {/* Bedrooms */}
       <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>

@@ -181,6 +181,8 @@ function SearchContent() {
     setHasParking,
     transactionType,
     setTransactionType,
+    pricePeriod,
+    setPricePeriod,
     has3dTour,
     setHas3dTour,
     selectedAmenities,
@@ -1016,6 +1018,14 @@ function SearchContent() {
                   transactionType === 'location' ? '🏠 Location' : '🏷️ Vente'
                 }
                 onDelete={() => setTransactionType(null)}
+                size="small"
+                variant="outlined"
+              />
+            )}
+            {pricePeriod && (
+              <Chip
+                label={pricePeriod === 'mois' ? '📅 Par mois' : '☀️ Par jour'}
+                onDelete={() => setPricePeriod(null)}
                 size="small"
                 variant="outlined"
               />

@@ -197,6 +197,7 @@ function AdFormWizard({
       description: values.description,
       adresse: values.adresse,
       price: values.price,
+      price_period: values.price_period,
       surface_area: values.surface_area,
       bedrooms: values.bedrooms,
       bathrooms: values.bathrooms,

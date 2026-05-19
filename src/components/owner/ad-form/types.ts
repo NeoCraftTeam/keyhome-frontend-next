@@ -24,6 +24,7 @@ export interface AdFormValues {
   quarter_id: string;
   type_id: string;
   transaction_type: string;
+  price_period: 'mois' | 'jour';
   attributes: string[];
   deposit_amount: string;
   minimum_lease_duration: string;
@@ -91,6 +92,7 @@ export const initialValues: AdFormValues = {
   quarter_id: '',
   type_id: '',
   transaction_type: 'location',
+  price_period: 'mois',
   attributes: [],
   deposit_amount: '',
   minimum_lease_duration: '',
