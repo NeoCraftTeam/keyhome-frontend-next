@@ -1,14 +1,21 @@
 'use client';
 
-import { adsService } from '@/services/ads.service';
-import { adTypesService, citiesService } from '@/services/cities.service';
-import { propertyAttributesService } from '@/services/property-attributes.service';
-import type { AdType, City, FacetsResponse, SearchParams } from '@/types';
-import { useQuery } from '@tanstack/react-query';
-import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+/**
+ * useSearchFilters — composer for the full search filter state.
+ *
+ * State ownership stays here so all sub-hooks share the same values.
+ * Delegates side-effects to:
+ *  - useSearchUrlSync  → URL param hydration + geolocation trigger
+ *  - useSearchStaticData → TanStack queries + auto-select effects
+ */
 
-/* ── Types ───────────────────────────────────────────────────── */
+import { useSearchStaticData } from '@/hooks/search/useSearchStaticData';
+import { useSearchUrlSync } from '@/hooks/search/useSearchUrlSync';
+import type { AdType, City, FacetsResponse, SearchParams } from '@/types';
+import { useCallback, useMemo, useState } from 'react';
+import type { propertyAttributesService } from '@/services/property-attributes.service';
+
+/* ── Types ─────────────────────────────────────────────────────── */
 
 export interface SearchFiltersState {
   query: string;
@@ -56,7 +63,6 @@ export interface SearchFiltersState {
 }
 
 export interface SearchFiltersReturn extends SearchFiltersState {
-  /* ── Derived data ──────────────────────────────────────────── */
   cities: City[];
   isCitiesLoading: boolean;
   adTypes: AdType[] | undefined;
@@ -70,28 +76,21 @@ export interface SearchFiltersReturn extends SearchFiltersState {
   buildParams: () => SearchParams;
 }
 
-/* ── Hook ────────────────────────────────────────────────────── */
+/* ── Hook ──────────────────────────────────────────────────────── */
 
 export function useSearchFilters(): SearchFiltersReturn {
-  const searchParams = useSearchParams();
-
-  /* ── Local state ───────────────────────────────────────────── */
-  const [query, setQuery] = useState(searchParams.get('q') || '');
+  // ── State ────────────────────────────────────────────────────
+  const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [cityInput, setCityInput] = useState(searchParams.get('city') || '');
-  const [debouncedCityInput, setDebouncedCityInput] = useState(
-    searchParams.get('city') || ''
-  );
+  const [cityInput, setCityInput] = useState('');
   const [selectedType, setSelectedType] = useState<AdType | null>(null);
-  const [selectedQuarter, setSelectedQuarter] = useState(
-    searchParams.get('quarter') || ''
-  );
+  const [selectedQuarter, setSelectedQuarter] = useState('');
   const [bedrooms, setBedrooms] = useState<number | undefined>();
+  const [bathrooms, setBathrooms] = useState<number | undefined>();
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]);
   const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 1000]);
-  const [bathrooms, setBathrooms] = useState<number | undefined>();
   const [hasParking, setHasParking] = useState(false);
   const [transactionType, setTransactionType] = useState<
     'location' | 'vente' | null
@@ -110,148 +109,48 @@ export function useSearchFilters(): SearchFiltersReturn {
   const [page, setPage] = useState(1);
   const [sortAnchor, setSortAnchor] = useState<null | HTMLElement>(null);
 
-  /* ── City input debounce ───────────────────────────────────── */
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedCityInput(cityInput), 300);
-    return () => clearTimeout(timer);
-  }, [cityInput]);
-
-  /* ── Geolocation for distance sort ─────────────────────────── */
-  useEffect(() => {
-    if (
-      sortBy === '_geoPoint' &&
-      !userLocation &&
-      typeof navigator !== 'undefined' &&
-      navigator.geolocation
-    ) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) =>
-          setUserLocation({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          }),
-        () => {
-          setSortBy('created_at');
-          setSortOrder('desc');
-        },
-        { enableHighAccuracy: false, timeout: 8000 }
-      );
+  // ── URL sync + geolocation ───────────────────────────────────
+  useSearchUrlSync(
+    {
+      query,
+      selectedCity,
+      selectedType,
+      selectedQuarter,
+      bedrooms,
+      sortBy,
+      userLocation,
+      surfaceRange,
+    },
+    {
+      setQuery,
+      setPage,
+      setCityInput,
+      setBedrooms,
+      setPriceRange,
+      setSelectedQuarter,
+      setHasParking,
+      setTransactionType,
+      setPricePeriod,
+      setSelectedAmenities,
+      setSurfaceRange,
+      setUserLocation,
+      setSortBy,
+      setSortOrder,
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortBy]);
+  );
 
-  /* ── URL → state sync ──────────────────────────────────────── */
-  useEffect(() => {
-    const urlQ = searchParams.get('q') || '';
-    if (urlQ !== query) {
-      setQuery(urlQ);
-      setPage(1);
-    }
+  // ── Remote data + auto-select ────────────────────────────────
+  const { cities, isCitiesLoading, adTypes, propertyAttributes, facets } =
+    useSearchStaticData(
+      cityInput,
+      selectedCity,
+      selectedType,
+      setSelectedCity,
+      setCityInput,
+      setSelectedType
+    );
 
-    const urlCity = searchParams.get('city') || '';
-    if (urlCity && !selectedCity) {
-      setCityInput(urlCity);
-    }
-
-    const urlBedrooms = searchParams.get('bedrooms');
-    if (urlBedrooms && !bedrooms) {
-      setBedrooms(Number(urlBedrooms));
-    }
-
-    const urlPriceMin = searchParams.get('price_min');
-    const urlPriceMax = searchParams.get('price_max');
-    if (urlPriceMin || urlPriceMax) {
-      setPriceRange([
-        urlPriceMin ? Number(urlPriceMin) : 0,
-        urlPriceMax ? Number(urlPriceMax) : 5000000,
-      ]);
-    }
-
-    const urlQuarter = searchParams.get('quarter') || '';
-    if (urlQuarter !== selectedQuarter) setSelectedQuarter(urlQuarter);
-
-    if (searchParams.get('parking') === '1') {
-      setHasParking(true);
-    }
-
-    const urlTxType = searchParams.get('transaction_type');
-    if (urlTxType === 'location' || urlTxType === 'vente') {
-      setTransactionType(urlTxType);
-    }
-
-    const urlPricePeriod = searchParams.get('price_period');
-    if (urlPricePeriod === 'mois' || urlPricePeriod === 'jour') {
-      setPricePeriod(urlPricePeriod);
-    }
-
-    if (searchParams.get('furnished') === '1') {
-      setSelectedAmenities((prev) =>
-        prev.includes('furnished') ? prev : [...prev, 'furnished']
-      );
-    }
-
-    const urlSurfaceMin = searchParams.get('surface_min');
-    if (urlSurfaceMin) {
-      const min = Number(urlSurfaceMin);
-      setSurfaceRange((prev) => [min, prev[1]]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  /* ── Remote data ───────────────────────────────────────────── */
-  const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
-    queryKey: ['cities', debouncedCityInput],
-    queryFn: () => citiesService.list({ q: debouncedCityInput, per_page: 20 }),
-    enabled: debouncedCityInput.length >= 1,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: adTypes } = useQuery({
-    queryKey: ['adTypes'],
-    queryFn: () => adTypesService.list(),
-    staleTime: 10 * 60 * 1000,
-  });
-
-  const { data: propertyAttributes } = useQuery({
-    queryKey: ['property-attributes-grouped'],
-    queryFn: () => propertyAttributesService.list(),
-    staleTime: 30 * 60 * 1000,
-  });
-
-  const { data: facets } = useQuery<FacetsResponse>({
-    queryKey: ['facets'],
-    queryFn: () => adsService.facets(),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  /* ── Auto-select city from URL ─────────────────────────────── */
-  useEffect(() => {
-    const urlCity = searchParams.get('city') || '';
-    if (urlCity && !selectedCity && citiesData?.data?.length) {
-      const match = citiesData.data.find(
-        (c) => c.name.toLowerCase() === urlCity.toLowerCase()
-      );
-      if (match) {
-        setSelectedCity(match);
-        setCityInput(match.name);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [citiesData]);
-
-  /* ── Auto-select type from URL ─────────────────────────────── */
-  useEffect(() => {
-    if (!adTypes?.length || selectedType) return;
-    const urlTypeId = searchParams.get('type_id');
-    const urlType = searchParams.get('type') || '';
-    const match = urlTypeId
-      ? adTypes.find((t) => String(t.id) === urlTypeId)
-      : adTypes.find((t) => t.name.toLowerCase() === urlType.toLowerCase());
-    if (match) setSelectedType(match);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adTypes]);
-
-  /* ── Build search params ───────────────────────────────────── */
+  // ── buildParams ──────────────────────────────────────────────
   const buildParams = useCallback(
     (): SearchParams => ({
       q: query || undefined,
@@ -267,7 +166,6 @@ export function useSearchFilters(): SearchFiltersReturn {
       surface_max: surfaceRange[1] < 1000 ? surfaceRange[1] : undefined,
       has_parking: hasParking || undefined,
       transaction_type: transactionType || undefined,
-      price_period: pricePeriod || undefined,
       has_3d_tour: has3dTour || undefined,
       attributes: selectedAmenities.length > 0 ? selectedAmenities : undefined,
       latitude:
@@ -291,7 +189,6 @@ export function useSearchFilters(): SearchFiltersReturn {
       surfaceRange,
       hasParking,
       transactionType,
-      pricePeriod,
       has3dTour,
       selectedAmenities,
       sortBy,
@@ -301,7 +198,7 @@ export function useSearchFilters(): SearchFiltersReturn {
     ]
   );
 
-  /* ── Derived ───────────────────────────────────────────────── */
+  // ── Derived ──────────────────────────────────────────────────
   const clearFilters = useCallback(() => {
     setQuery('');
     setSelectedCity(null);
@@ -378,10 +275,7 @@ export function useSearchFilters(): SearchFiltersReturn {
     [sortBy, sortOrder]
   );
 
-  const cities = citiesData?.data || [];
-
   return {
-    // State + setters
     query,
     setQuery,
     sortBy,
@@ -424,13 +318,11 @@ export function useSearchFilters(): SearchFiltersReturn {
     setUserLocation,
     sortAnchor,
     setSortAnchor,
-    // Remote data
     cities,
     isCitiesLoading,
     adTypes,
     propertyAttributes,
     facets,
-    // Derived
     activeFilterCount,
     sortLabel,
     clearFilters,

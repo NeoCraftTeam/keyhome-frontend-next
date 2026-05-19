@@ -272,3 +272,84 @@ export async function aesGcmDecrypt(
 }
 
 export { rtrimPem };
+
+// ─── Sealed-message payload helpers ──────────────────────────────────────────
+// Moved here from useChat.ts so they can be imported by useChatSend and
+// tested independently without mounting a React component.
+
+import type { SendMessageInput } from '@/lib/chat-api';
+import type { Conversation } from '@/types/chat';
+
+/**
+ * Cache key for the per-conversation AES session key.
+ * Format: `{userId}:{conversationUuid}`
+ */
+export function convSessionAesMapKey(
+  userId: string,
+  conversationUuid: string
+): string {
+  return `${userId}:${conversationUuid}`;
+}
+
+/**
+ * Build the `SendMessageInput` payload for a client-sealed (E2EE) message.
+ *
+ * 1. If an AES session key is already cached for this conversation → encrypt directly.
+ * 2. If the server has a wrapped conversation key → unwrap with local RSA private key, cache, encrypt.
+ * 3. Otherwise → generate a new AES key, wrap it for both participants, encrypt.
+ *
+ * Throws if E2EE keys are missing or the local private key is not available.
+ */
+export async function buildSealedMessagePayload(
+  conv: Conversation,
+  conversationUuid: string,
+  plaintext: string,
+  convAesKeyRef: { current: Map<string, CryptoKey> },
+  userId: string
+): Promise<SendMessageInput> {
+  const e2ee = conv.e2ee;
+  if (!e2ee?.tenant_public_key_pem || !e2ee.landlord_public_key_pem) {
+    throw new Error('E2EE keys missing');
+  }
+
+  const sessionKey = convSessionAesMapKey(userId, conversationUuid);
+  const cachedAes = convAesKeyRef.current.get(sessionKey) ?? null;
+  if (cachedAes) {
+    const { ciphertextB64, ivB64 } = await aesGcmEncrypt(cachedAes, plaintext);
+    return {
+      is_client_sealed: true,
+      e2ee_ciphertext_b64: ciphertextB64,
+      e2ee_iv_b64: ivB64,
+    };
+  }
+
+  if (e2ee.session_ready && e2ee.wrapped_conversation_key_b64) {
+    const priv = await getChatE2eePrivateKey(userId);
+    if (!priv) throw new Error('No local E2EE private key');
+    const aesKey = await rsaOaepUnwrap(priv, e2ee.wrapped_conversation_key_b64);
+    convAesKeyRef.current.set(sessionKey, aesKey);
+    const { ciphertextB64, ivB64 } = await aesGcmEncrypt(aesKey, plaintext);
+    return {
+      is_client_sealed: true,
+      e2ee_ciphertext_b64: ciphertextB64,
+      e2ee_iv_b64: ivB64,
+    };
+  }
+
+  const aesKey = await createConversationAesKey();
+  convAesKeyRef.current.set(sessionKey, aesKey);
+  const raw = await exportAesRawKey(aesKey);
+  const tenantPub = await importRsaPublicKeyFromPem(e2ee.tenant_public_key_pem);
+  const landlordPub = await importRsaPublicKeyFromPem(
+    e2ee.landlord_public_key_pem
+  );
+  const wrappedTenant = await rsaOaepWrap(tenantPub, raw);
+  const wrappedLandlord = await rsaOaepWrap(landlordPub, raw);
+  const enc = await aesGcmEncrypt(aesKey, plaintext);
+  return {
+    is_client_sealed: true,
+    e2ee_ciphertext_b64: enc.ciphertextB64,
+    e2ee_iv_b64: enc.ivB64,
+    e2ee_wrapped_keys: { tenant: wrappedTenant, landlord: wrappedLandlord },
+  };
+}

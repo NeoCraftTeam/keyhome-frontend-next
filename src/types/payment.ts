@@ -21,6 +21,17 @@ export enum PaymentMethod {
 
 export type PaymentGateway = 'flutterwave' | 'stripe';
 
+/**
+ * Catalogue entry returned by `GET /api/v1/payments/methods`
+ * (PaymentMethodGateService::describeAvailable / describeAll).
+ */
+export interface PaymentMethodInfo {
+  value: string;
+  label: string;
+  gateway: PaymentGateway;
+  enabled: boolean;
+}
+
 export interface FlutterwaveInitiatePayload {
   type: 'unlock' | 'subscription' | 'credit';
   payment_method?: 'mobile_money' | 'orange_money' | 'flutterwave' | 'card';
