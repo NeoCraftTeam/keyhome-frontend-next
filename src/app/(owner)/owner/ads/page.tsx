@@ -20,6 +20,7 @@ import {
   Description as ContractIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  HomeOutlined as HomeOutlinedIcon,
   VisibilityOff as HiddenIcon,
   MoreVert as MoreIcon,
   QrCode2 as QrCodeIcon,
@@ -824,9 +825,11 @@ export default function OwnerAdsPage() {
                             ) : (
                               <Avatar
                                 variant="rounded"
-                                src="/images/placeholder-ad.jpg"
                                 alt={ad.title}
-                              />
+                                sx={{ bgcolor: 'grey.200', color: 'grey.500' }}
+                              >
+                                <HomeOutlinedIcon fontSize="small" />
+                              </Avatar>
                             )}
                           </AvatarGroup>
                         </TableCell>
@@ -1132,25 +1135,27 @@ export default function OwnerAdsPage() {
           </Alert>
         ) : undefined}
       </Snackbar>
-      {/* Responsive FAB — fixed bottom-right, replaces the 3 inline create buttons */}
-      <Fab
-        color="primary"
-        variant={isMobile ? 'circular' : 'extended'}
-        aria-label="Nouvelle annonce"
-        onClick={() => runAppRouterNavigation(router, '/owner/ads/new')}
-        sx={{
-          position: 'fixed',
-          bottom: { xs: 80, md: 24 },
-          right: 24,
-          zIndex: (t) => t.zIndex.appBar,
-          boxShadow: 4,
-          textTransform: 'none',
-          fontWeight: 700,
-        }}
-      >
-        <AddIcon sx={{ mr: isMobile ? 0 : 1 }} />
-        {!isMobile && 'Nouvelle annonce'}
-      </Fab>
+      {/* Desktop FAB — mobile uses OwnerLayoutClient shell FAB (shouldShowOwnerQuickCreateFab) */}
+      {!isMobile && (
+        <Fab
+          color="primary"
+          variant="extended"
+          aria-label="Nouvelle annonce"
+          onClick={() => runAppRouterNavigation(router, '/owner/ads/new')}
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: (t) => t.zIndex.appBar,
+            boxShadow: 4,
+            textTransform: 'none',
+            fontWeight: 700,
+          }}
+        >
+          <AddIcon sx={{ mr: 1 }} />
+          Nouvelle annonce
+        </Fab>
+      )}
     </Box>
   );
 }

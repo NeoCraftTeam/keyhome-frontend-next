@@ -10,6 +10,7 @@ import {
 } from '@/theme/tokens';
 import { Ad } from '@/types';
 import EditIcon from '@mui/icons-material/Edit';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
 import BoostIcon from '@mui/icons-material/RocketLaunch';
 import VerifiedIcon from '@mui/icons-material/Verified';
@@ -48,7 +49,7 @@ export default function OwnerAdCard({
 }: OwnerAdCardProps) {
   const router = useRouter();
   const image = ad.images?.[0];
-  const imageUrl = image?.url || image?.thumb || '/images/placeholder-ad.jpg';
+  const imageUrl = image?.url || image?.thumb;
 
   return (
     <Box
@@ -77,13 +78,28 @@ export default function OwnerAdCard({
       <Box
         sx={{ position: 'relative', aspectRatio: '16/10', bgcolor: 'grey.200' }}
       >
-        <Image
-          src={imageUrl}
-          alt={ad.title}
-          fill
-          sizes="(max-width: 600px) 100vw, 400px"
-          style={{ objectFit: 'cover' }}
-        />
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={ad.title}
+            fill
+            sizes="(max-width: 600px) 100vw, 400px"
+            style={{ objectFit: 'cover' }}
+          />
+        ) : (
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'grey.400',
+            }}
+          >
+            <HomeOutlinedIcon sx={{ fontSize: 48 }} />
+          </Box>
+        )}
         <Box
           sx={{
             position: 'absolute',
