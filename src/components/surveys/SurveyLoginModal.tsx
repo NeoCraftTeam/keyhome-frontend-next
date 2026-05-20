@@ -18,6 +18,11 @@ interface SurveyLoginModalProps {
    * the modal reappears on the next login/page load until the survey is answered.
    */
   onDismiss: () => void;
+  /**
+   * Optional destination path for "Répondre au sondage".
+   * Defaults to /surveys/{surveySlug ?? surveyId} when not provided.
+   */
+  destPath?: string;
 }
 
 /**
@@ -38,13 +43,14 @@ export default function SurveyLoginModal({
   title,
   description,
   onDismiss,
+  destPath,
 }: SurveyLoginModalProps) {
   const router = useRouter();
   const theme = useTheme();
 
   const handleParticiper = () => {
     onDismiss();
-    router.push(`/surveys/${surveySlug ?? surveyId}`);
+    router.push(destPath ?? `/surveys/${surveySlug ?? surveyId}`);
   };
 
   return (

@@ -29,6 +29,7 @@ export default function SurveyPage() {
   const isOwner =
     user?.role === UserRole.AGENT || user?.role === UserRole.ADMIN;
   const accentColor = isOwner ? brandAgent.primary : undefined;
+  const returnPath = isOwner ? '/owner/dashboard' : '/home';
   const [submitted, setSubmitted] = useState(false);
 
   const {
@@ -91,10 +92,10 @@ export default function SurveyPage() {
         <Button
           variant="outlined"
           startIcon={<ArrowBack />}
-          onClick={() => router.push('/home')}
+          onClick={() => router.push(returnPath)}
           sx={{ borderRadius: 3, px: 4 }}
         >
-          Retour à l&apos;accueil
+          Retour
         </Button>
       </Container>
     );
@@ -130,10 +131,24 @@ export default function SurveyPage() {
             </Typography>
             <Button
               variant="contained"
-              onClick={() => router.push('/home')}
-              sx={{ borderRadius: 3, px: 6, py: 1.5, fontWeight: 700 }}
+              onClick={() => router.push(returnPath)}
+              sx={{
+                borderRadius: 3,
+                px: 6,
+                py: 1.5,
+                fontWeight: 700,
+                ...(accentColor
+                  ? {
+                      bgcolor: accentColor,
+                      '&:hover': {
+                        bgcolor: accentColor,
+                        filter: 'brightness(0.9)',
+                      },
+                    }
+                  : {}),
+              }}
             >
-              Retour à l&apos;accueil
+              Retour au tableau de bord
             </Button>
           </Paper>
         </FadeIn>
@@ -147,6 +162,7 @@ export default function SurveyPage() {
       onSubmit={(answers, anonymous) => mutation.mutate({ answers, anonymous })}
       isSubmitting={mutation.isPending}
       accentColor={accentColor}
+      returnPath={returnPath}
     />
   );
 }

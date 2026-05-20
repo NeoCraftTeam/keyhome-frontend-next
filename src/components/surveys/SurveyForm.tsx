@@ -3,6 +3,7 @@
 import { Survey, SurveyAnswerPayload } from '@/types';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
@@ -10,11 +11,13 @@ import {
   Button,
   CircularProgress,
   FormControlLabel,
+  IconButton,
   LinearProgress,
   Switch,
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import QuestionRenderer from './QuestionRenderer';
 
@@ -24,6 +27,8 @@ interface SurveyFormProps {
   isSubmitting: boolean;
   /** Accent colour for buttons and progress bar (owner = teal, client = theme primary). */
   accentColor?: string;
+  /** Where to navigate when the user closes / exits the survey early or after submission. */
+  returnPath?: string;
 }
 
 export default function SurveyForm({
@@ -31,7 +36,9 @@ export default function SurveyForm({
   onSubmit,
   isSubmitting,
   accentColor,
+  returnPath,
 }: SurveyFormProps) {
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<
     Record<string, string | number | string[]>
@@ -86,7 +93,7 @@ export default function SurveyForm({
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100dvh',
+        flex: 1,
         overflow: 'hidden',
         bgcolor: 'background.default',
       }}
@@ -107,26 +114,48 @@ export default function SurveyForm({
       />
 
       {/* ── Header ── */}
-      <Box sx={{ px: { xs: 3, md: 8 }, pt: 3, pb: 1, flexShrink: 0 }}>
-        <Typography
-          variant="caption"
-          fontWeight={600}
-          sx={{ color: accentColor ?? 'primary.main', letterSpacing: 1 }}
-        >
-          QUESTION {step + 1} / {total}
-        </Typography>
-        <Typography variant="h5" fontWeight={800} sx={{ mt: 0.5 }}>
-          {survey.title}
-        </Typography>
-        {survey.description && step === 0 && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 0.5, lineHeight: 1.5 }}
+      <Box
+        sx={{
+          px: { xs: 3, md: 8 },
+          pt: 3,
+          pb: 1,
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 1,
+        }}
+      >
+        {returnPath && (
+          <IconButton
+            onClick={() => router.push(returnPath)}
+            size="small"
+            aria-label="Quitter le sondage"
+            sx={{ mt: 0.25, color: 'text.secondary', flexShrink: 0 }}
           >
-            {survey.description}
-          </Typography>
+            <CloseIcon fontSize="small" />
+          </IconButton>
         )}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            variant="caption"
+            fontWeight={600}
+            sx={{ color: accentColor ?? 'primary.main', letterSpacing: 1 }}
+          >
+            QUESTION {step + 1} / {total}
+          </Typography>
+          <Typography variant="h5" fontWeight={800} sx={{ mt: 0.5 }}>
+            {survey.title}
+          </Typography>
+          {survey.description && step === 0 && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 0.5, lineHeight: 1.5 }}
+            >
+              {survey.description}
+            </Typography>
+          )}
+        </Box>
       </Box>
 
       {/* ── Question area (fills remaining height) ── */}

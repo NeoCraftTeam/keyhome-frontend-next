@@ -439,6 +439,7 @@ export default function OwnerLayoutClient({
         }
         surveyId={activeSurvey?.id ?? ''}
         surveySlug={activeSurvey?.slug}
+        destPath={activeSurvey?.id ? `/sondage/${activeSurvey.id}` : undefined}
         title="Votre avis compte !"
         description={
           activeSurvey?.description ??

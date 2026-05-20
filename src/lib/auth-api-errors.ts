@@ -14,8 +14,7 @@ export const AUTH_ERROR_CODES = {
 export type AuthErrorCode =
   (typeof AUTH_ERROR_CODES)[keyof typeof AUTH_ERROR_CODES];
 
-export const AUTH_LOGIN_FAILURE_MESSAGE =
-  'Identifiants incorrects ou accès non autorisé pour cette interface.';
+export const AUTH_LOGIN_FAILURE_MESSAGE = 'Identifiants incorrects ';
 
 export const AUTH_PANEL_UNAVAILABLE_MESSAGE =
   "Cette interface n'est pas disponible pour ce compte.";
