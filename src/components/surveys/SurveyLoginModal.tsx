@@ -5,7 +5,6 @@ import AssignmentOutlined from '@mui/icons-material/AssignmentOutlined';
 import { Box, Button, Dialog, DialogContent, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useRouter } from 'next/navigation';
-import { gradient } from '@/theme/tokens';
 
 interface SurveyLoginModalProps {
   open: boolean;
@@ -42,9 +41,6 @@ export default function SurveyLoginModal({
 }: SurveyLoginModalProps) {
   const router = useRouter();
   const theme = useTheme();
-  const accentGradient = theme.palette.gradient?.primary ?? gradient.primary;
-  const accentGradientHover =
-    theme.palette.gradient?.primaryHover ?? gradient.primaryHover;
 
   const handleParticiper = () => {
     onDismiss();
@@ -64,7 +60,7 @@ export default function SurveyLoginModal({
         },
       }}
     >
-      <Box sx={{ height: 4, background: accentGradient }} />
+      <Box sx={{ height: 4, bgcolor: 'primary.main' }} />
       <DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
         <Box
           sx={{
@@ -127,11 +123,6 @@ export default function SurveyLoginModal({
                 fontWeight: 700,
                 borderRadius: 2,
                 py: 1.25,
-                background: accentGradient,
-                '&:hover': {
-                  filter: 'brightness(0.9)',
-                  background: accentGradientHover,
-                },
               }}
             >
               Répondre au sondage

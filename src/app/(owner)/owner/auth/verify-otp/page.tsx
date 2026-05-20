@@ -84,8 +84,6 @@ export default function OwnerVerifyOtpPage() {
   const isComplete = otp.length === 6 && digits.every((d) => d !== '');
 
   const accentColor = brandAgent.primary;
-  const buttonGradient = `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`;
-  const buttonGradientHover = `linear-gradient(to right, ${brandAgent.primary}, ${brandAgent.primaryDark})`;
 
   const logoSrc = OWNER_LOGO_SRC;
   const heroSrc = '/images/owner/real-estate-teal.webp';
@@ -428,13 +426,18 @@ export default function OwnerVerifyOtpPage() {
               fullWidth
               size="large"
               variant="contained"
+              color="primary"
               disabled={!isComplete || isSubmitting}
               onClick={handleSubmit}
               sx={{
                 py: 1.8,
                 borderRadius: '14px',
-                background: buttonGradient,
-                '&:hover': { background: buttonGradientHover },
+                bgcolor: 'primary.main',
+                backgroundImage: 'none',
+                '&:hover': {
+                  bgcolor: 'primary.dark',
+                  backgroundImage: 'none',
+                },
                 boxShadow: `0 8px 20px ${alpha(accentColor, 0.25)}`,
                 textTransform: 'none',
                 fontWeight: 700,

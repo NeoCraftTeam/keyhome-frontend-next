@@ -679,7 +679,10 @@ export default function OwnerAdsPage() {
                 ? 'Modifiez vos filtres ou créez une nouvelle annonce.'
                 : 'Créez votre première annonce pour commencer à louer vos biens.'
             }
-            action={undefined}
+            action={{
+              label: 'Ajouter une annonce',
+              href: '/owner/ads/new',
+            }}
           />
         ) : isMobile ? (
           <Box sx={{ pb: 2 }}>

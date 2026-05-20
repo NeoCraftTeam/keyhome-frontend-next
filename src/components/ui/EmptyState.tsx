@@ -3,7 +3,7 @@
 import { Inbox as InboxIcon } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import NextLink from 'next/link';
-import { brand, gradient, shadow as shadowTokens } from '@/theme/tokens';
+import { brand, brandAgent, shadow as shadowTokens } from '@/theme/tokens';
 
 export interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -38,7 +38,7 @@ const VARIANT_STYLES = {
     shadow: 'none',
   },
   owner: {
-    background: gradient.agent,
+    background: brandAgent.primary,
     color: '#fff',
     float: true,
     shadow: shadowTokens.agentGlow,
@@ -142,18 +142,13 @@ export function EmptyState({
             component={NextLink}
             href={action.href}
             variant="contained"
+            color={variant === 'owner' ? 'primary' : undefined}
             sx={{
               borderRadius: 2,
               fontWeight: 700,
               textTransform: 'none',
               mt: 0.5,
-              ...(variant === 'owner' && {
-                background: 'linear-gradient(to right, #0d9488, #0f766e)',
-                '&:hover': {
-                  background: 'linear-gradient(to right, #0f766e, #115e59)',
-                },
-                boxShadow: 'none',
-              }),
+              ...(variant === 'owner' && { boxShadow: 'none' }),
             }}
           >
             {action.label}
@@ -161,19 +156,14 @@ export function EmptyState({
         ) : (
           <Button
             variant="contained"
+            color={variant === 'owner' ? 'primary' : undefined}
             onClick={action.onClick}
             sx={{
               borderRadius: 2,
               fontWeight: 700,
               textTransform: 'none',
               mt: 0.5,
-              ...(variant === 'owner' && {
-                background: 'linear-gradient(to right, #0d9488, #0f766e)',
-                '&:hover': {
-                  background: 'linear-gradient(to right, #0f766e, #115e59)',
-                },
-                boxShadow: 'none',
-              }),
+              ...(variant === 'owner' && { boxShadow: 'none' }),
             }}
           >
             {action.label}

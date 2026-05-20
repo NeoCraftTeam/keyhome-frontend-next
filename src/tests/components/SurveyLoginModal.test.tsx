@@ -29,5 +29,9 @@ describe('SurveyLoginModal', () => {
 
     const cta = screen.getByRole('button', { name: /répondre au sondage/i });
     expect(cta.className).toMatch(/MuiButton-containedPrimary/);
+    expect(ownerLightTheme.palette.gradient?.primary).toBe(brandAgent.primary);
+    expect(ownerLightTheme.palette.gradient?.primary).not.toContain(
+      'linear-gradient'
+    );
   });
 });

@@ -8,21 +8,17 @@ import {
   dark,
   neutral,
   semantic,
-  gradient,
   shadow as designShadow,
   transition,
 } from './tokens';
 
-/** Owner panel primary: Vibrant teal-to-sky gradient for modern look */
+/** Owner panel CTAs — flat teal (#0D9488), no teal→blue gradients on buttons */
 export const ownerGradientPrimary = {
-  /** Hero gradient — teal to sky blue (modern, vibrant) */
-  primary: gradient.agent,
-  primaryHover: gradient.agentHover,
-  primary135: gradient.agent,
-  /** Horizontal variant for buttons */
-  horizontal: gradient.agentHorizontal,
-  /** Premium gold variant for special CTAs */
-  gold: gradient.agentGold,
+  primary: brandAgent.primary,
+  primaryHover: brandAgent.primaryDark,
+  primary135: brandAgent.primary,
+  horizontal: brandAgent.primary,
+  gold: brandAgent.accent,
 };
 
 export const ownerLightTheme = createTheme({
@@ -74,10 +70,12 @@ export const ownerLightTheme = createTheme({
         ...baseTheme.components?.MuiButton?.styleOverrides,
         containedPrimary: {
           backgroundColor: brandAgent.primary,
+          backgroundImage: 'none',
           boxShadow: 'none',
           transition: `${transition.polish}`,
           '&:hover': {
             backgroundColor: brandAgent.primaryDark,
+            backgroundImage: 'none',
             boxShadow: designShadow.ownerContainedHover,
             transform: 'translateY(-1px)',
           },
@@ -152,10 +150,12 @@ export const ownerDarkTheme = createTheme({
         ...baseTheme.components?.MuiButton?.styleOverrides,
         containedPrimary: {
           backgroundColor: brandAgent.primary,
+          backgroundImage: 'none',
           boxShadow: 'none',
           transition: `${transition.polish}`,
           '&:hover': {
             backgroundColor: brandAgent.primaryDark,
+            backgroundImage: 'none',
             boxShadow: designShadow.ownerContainedHoverElevated,
             transform: 'translateY(-1px)',
           },
