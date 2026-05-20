@@ -124,6 +124,7 @@ export function usePasskeyLogin(loginContext: 'owner' | 'client' = 'client') {
     unsupportedReason,
     isLoading,
     error,
+    setError,
     loginWithPasskey,
     clearError: () => setError(null),
   };

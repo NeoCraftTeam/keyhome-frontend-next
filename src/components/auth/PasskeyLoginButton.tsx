@@ -43,6 +43,7 @@ export default function PasskeyLoginButton({
     unsupportedReason,
     isLoading,
     error,
+    setError,
     loginWithPasskey,
     clearError,
   } = usePasskeyLogin(loginContext);
