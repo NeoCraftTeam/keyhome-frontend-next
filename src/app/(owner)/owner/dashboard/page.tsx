@@ -23,7 +23,7 @@ import {
   type OwnerAnalyticsOverview,
   type OwnerViewingReservation,
 } from '@/services/owner.service';
-import { brandAgent, semantic } from '@/theme/tokens';
+import { brandAgent } from '@/theme/tokens';
 import { Ad } from '@/types';
 import {
   ArrowForward as ArrowIcon,
@@ -58,10 +58,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
-/** Vibrant accent colors for dashboard cards */
+/** Vibrant accent colors for dashboard cards (owner palette only) */
 const TEAL = brandAgent.primary;
 const SKY = brandAgent.secondary;
-const ROSE = semantic.pink;
+const GOLD = brandAgent.accent;
 type AnalyticsPeriod = '7d' | '30d' | '90d';
 const PREV_PERIOD: Record<AnalyticsPeriod, AnalyticsPeriod> = {
   '7d': '30d',
@@ -408,7 +408,7 @@ export default function OwnerDashboardPage() {
             numericValue={analytics?.totals?.favorites ?? 0}
             subtitle={periodLabelFr(period)}
             icon={<FavoriteIcon sx={{ fontSize: { xs: 20, sm: 22 } }} />}
-            accentColor={ROSE}
+            accentColor={GOLD}
             sparklineData={
               favoritesSpark.length ? favoritesSpark : Array(chartDays).fill(0)
             }

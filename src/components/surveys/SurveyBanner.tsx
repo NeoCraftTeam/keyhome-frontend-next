@@ -1,6 +1,7 @@
 'use client';
 
 import { Box, Button, Paper, Stack, Typography } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import { useRouter } from 'next/navigation';
 import AssignmentOutlined from '@mui/icons-material/AssignmentOutlined';
 import { useState } from 'react';
@@ -42,6 +43,7 @@ export default function SurveyBanner({
   bottomOffset = 64,
 }: SurveyBannerProps) {
   const router = useRouter();
+  const theme = useTheme();
   const [visible, setVisible] = useState(true);
 
   const handlePlusTard = () => {
@@ -86,7 +88,7 @@ export default function SurveyBanner({
               width: 44,
               height: 44,
               borderRadius: 2,
-              bgcolor: 'rgba(246, 71, 95, 0.1)',
+              bgcolor: alpha(theme.palette.primary.main, 0.1),
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

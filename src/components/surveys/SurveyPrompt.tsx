@@ -10,6 +10,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -34,6 +35,7 @@ export default function SurveyPrompt({
   bottomOffset = 64,
 }: SurveyPromptProps) {
   const router = useRouter();
+  const theme = useTheme();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -101,7 +103,7 @@ export default function SurveyPrompt({
                 width: 44,
                 height: 44,
                 borderRadius: 2,
-                bgcolor: 'rgba(246, 71, 95, 0.1)',
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

@@ -1,7 +1,7 @@
 import BoostIcon from '@mui/icons-material/RocketLaunch';
 import { Box, Paper, Switch, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { brand } from '@/theme/tokens';
+import { brandAgent } from '@/theme/tokens';
 import type { AdFormValues, UpdateFn } from './types';
 import { sectionSx } from './types';
 
@@ -17,13 +17,13 @@ export default function AdFormBoost({ values, update }: AdFormBoostProps) {
       sx={{
         ...sectionSx,
         border: '2px solid',
-        borderColor: alpha(brand.primary, 0.2),
-        bgcolor: alpha(brand.primary, 0.02),
+        borderColor: alpha(brandAgent.primary, 0.2),
+        bgcolor: alpha(brandAgent.primary, 0.02),
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-        <BoostIcon sx={{ color: brand.primary }} />
-        <Typography variant="subtitle1" fontWeight={800} color={brand.primary}>
+        <BoostIcon sx={{ color: 'primary.main' }} />
+        <Typography variant="subtitle1" fontWeight={800} color="primary.main">
           Booster cette annonce (Recommandé)
         </Typography>
       </Box>

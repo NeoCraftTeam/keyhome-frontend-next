@@ -22,14 +22,14 @@ import FadeIn from '@/components/ui/FadeIn';
 import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
 import { useRouter } from 'next/navigation';
 import { alpha } from '@mui/material/styles';
-import { brand, neutral, semantic } from '@/theme/tokens';
+import { brandAgent, neutral, semantic } from '@/theme/tokens';
 
 const SERVICES = [
   {
     title: 'Boost de visibilité',
     description:
       'Remontez votre annonce en tête de liste et multipliez vos contacts par 3.',
-    icon: <BoostIcon sx={{ fontSize: 40, color: brand.primary }} />,
+    icon: <BoostIcon sx={{ fontSize: 40, color: brandAgent.primary }} />,
     price: 'À partir de 1 500 FCFA',
     benefits: [
       'Position prioritaire',

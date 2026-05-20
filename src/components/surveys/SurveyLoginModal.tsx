@@ -3,6 +3,7 @@
 import AccessTimeOutlined from '@mui/icons-material/AccessTimeOutlined';
 import AssignmentOutlined from '@mui/icons-material/AssignmentOutlined';
 import { Box, Button, Dialog, DialogContent, Typography } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import { useRouter } from 'next/navigation';
 import { gradient } from '@/theme/tokens';
 
@@ -40,6 +41,10 @@ export default function SurveyLoginModal({
   onDismiss,
 }: SurveyLoginModalProps) {
   const router = useRouter();
+  const theme = useTheme();
+  const accentGradient = theme.palette.gradient?.primary ?? gradient.primary;
+  const accentGradientHover =
+    theme.palette.gradient?.primaryHover ?? gradient.primaryHover;
 
   const handleParticiper = () => {
     onDismiss();
@@ -59,7 +64,7 @@ export default function SurveyLoginModal({
         },
       }}
     >
-      <Box sx={{ height: 4, background: gradient.primary }} />
+      <Box sx={{ height: 4, background: accentGradient }} />
       <DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
         <Box
           sx={{
@@ -75,7 +80,7 @@ export default function SurveyLoginModal({
               width: 56,
               height: 56,
               borderRadius: 3,
-              bgcolor: 'rgba(246, 71, 95, 0.1)',
+              bgcolor: alpha(theme.palette.primary.main, 0.1),
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -114,6 +119,7 @@ export default function SurveyLoginModal({
             <Button
               type="button"
               variant="contained"
+              color="primary"
               fullWidth
               onClick={handleParticiper}
               sx={{
@@ -121,10 +127,10 @@ export default function SurveyLoginModal({
                 fontWeight: 700,
                 borderRadius: 2,
                 py: 1.25,
-                background: gradient.primary,
+                background: accentGradient,
                 '&:hover': {
                   filter: 'brightness(0.9)',
-                  background: gradient.primary,
+                  background: accentGradientHover,
                 },
               }}
             >

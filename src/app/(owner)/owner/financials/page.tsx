@@ -64,7 +64,7 @@ const PIE_COLORS = [
   brandAgent.primary,
   semantic.warning,
   semantic.indigo,
-  semantic.pink,
+  brandAgent.accent,
   semantic.successBright,
   neutral.slate400,
 ];
