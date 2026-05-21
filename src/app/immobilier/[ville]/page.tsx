@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { brand, gradient } from '@/theme/tokens';
 import { BRAND_TAGLINE } from '@/lib/brand';
 import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+import { brand, gradient } from '@/theme/tokens';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -13,6 +13,7 @@ const CITIES: Record<
   {
     display: string;
     country: string;
+    hreflang: string;
     description: string;
     geo?: { lat: number; lng: number };
   }
@@ -20,6 +21,7 @@ const CITIES: Record<
   douala: {
     display: 'Douala',
     country: 'Cameroun',
+    hreflang: 'fr-CM',
     description:
       'capitale économique du Cameroun, avec ses quartiers prisés comme Bonamoussadi, Akwa et Bonapriso',
     geo: { lat: 4.0511, lng: 9.7679 },
@@ -27,6 +29,7 @@ const CITIES: Record<
   yaounde: {
     display: 'Yaoundé',
     country: 'Cameroun',
+    hreflang: 'fr-CM',
     description:
       'capitale politique du Cameroun, réputée pour ses quartiers résidentiels comme Bastos et Omnisport',
     geo: { lat: 3.848, lng: 11.5021 },
@@ -34,6 +37,7 @@ const CITIES: Record<
   bafoussam: {
     display: 'Bafoussam',
     country: 'Cameroun',
+    hreflang: 'fr-CM',
     description:
       "chef-lieu de la région de l'Ouest, ville dynamique au cœur du pays Bamiléké",
     geo: { lat: 5.4779, lng: 10.4176 },
@@ -41,6 +45,7 @@ const CITIES: Record<
   abidjan: {
     display: 'Abidjan',
     country: "Côte d'Ivoire",
+    hreflang: 'fr-CI',
     description:
       "poumon économique de l'Afrique de l'Ouest, avec Cocody, Marcory et Plateau",
     geo: { lat: 5.36, lng: -4.0083 },
@@ -48,6 +53,7 @@ const CITIES: Record<
   cotonou: {
     display: 'Cotonou',
     country: 'Bénin',
+    hreflang: 'fr-BJ',
     description:
       'capitale économique du Bénin, ville portuaire en pleine expansion',
     geo: { lat: 6.3654, lng: 2.4183 },
@@ -55,12 +61,14 @@ const CITIES: Record<
   lome: {
     display: 'Lomé',
     country: 'Togo',
+    hreflang: 'fr-TG',
     description: "capitale togolaise bordée par l'océan Atlantique",
     geo: { lat: 6.1375, lng: 1.2123 },
   },
   accra: {
     display: 'Accra',
     country: 'Ghana',
+    hreflang: 'fr-GH',
     description:
       "capitale ghanéenne, hub technologique et immobilier d'Afrique de l'Ouest",
     geo: { lat: 5.6037, lng: -0.187 },
@@ -68,6 +76,7 @@ const CITIES: Record<
   dakar: {
     display: 'Dakar',
     country: 'Sénégal',
+    hreflang: 'fr-SN',
     description:
       "capitale sénégalaise, entre modernité et tradition, sur la presqu'île du Cap-Vert",
     geo: { lat: 14.7167, lng: -17.4677 },
@@ -75,6 +84,7 @@ const CITIES: Record<
   bamako: {
     display: 'Bamako',
     country: 'Mali',
+    hreflang: 'fr-ML',
     description:
       'capitale malienne en bord du fleuve Niger, marché immobilier en croissance',
     geo: { lat: 12.6392, lng: -8.0029 },
@@ -103,6 +113,9 @@ export async function generateMetadata({
       canonical: absoluteUrl(path),
       languages: {
         'fr-FR': absoluteUrl(path),
+        ...(city?.hreflang && city.hreflang !== 'fr-FR'
+          ? { [city.hreflang]: absoluteUrl(path) }
+          : {}),
         'x-default': absoluteUrl(path),
       },
     },

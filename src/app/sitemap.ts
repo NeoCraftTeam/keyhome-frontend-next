@@ -1,6 +1,6 @@
+import { getSiteOrigin } from '@/lib/site-url';
 import type { MetadataRoute } from 'next';
 import { BLOG_POSTS } from './blog/posts';
-import { getSiteOrigin } from '@/lib/site-url';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -128,13 +128,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/blog`,
       lastModified: now,
       changeFrequency: 'weekly' as const,
-      priority: 0.7,
+      priority: 0.8,
     },
     ...BLOG_POSTS.map((post) => ({
       url: `${baseUrl}/blog/${post.slug}`,
-      lastModified: now,
-      changeFrequency: 'monthly' as const,
-      priority: 0.6,
+      lastModified: post.date || now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.75,
     })),
   ];
 
@@ -151,8 +151,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       adPages = ads.map((ad) => ({
         url: `${baseUrl}/ads/${ad.slug || ad.id}`,
         lastModified: ad.updated_at || now,
-        changeFrequency: 'weekly' as const,
-        priority: 0.7,
+        changeFrequency: 'daily' as const,
+        priority: 0.8,
       }));
     }
   } catch {
@@ -180,6 +180,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Fail silently
   }
 
+  // ── Bailleur (landlord) public profile pages ──────────────────────
+  let landlordPages: MetadataRoute.Sitemap = [];
+  try {
+    const res = await fetch(
+      `${API_URL}/users?role=agent&per_page=500&public=true`,
+      { next: { revalidate: 3600 } }
+    );
+    if (res.ok) {
+      const json = await res.json();
+      const users: Array<{
+        username?: string;
+        id: string;
+        updated_at?: string;
+      }> = json.data ?? [];
+      landlordPages = users
+        .filter((u) => u.username)
+        .map((u) => ({
+          url: `${baseUrl}/bailleurs/${u.username}`,
+          lastModified: u.updated_at || now,
+          changeFrequency: 'weekly' as const,
+          priority: 0.55,
+        }));
+    }
+  } catch {
+    // Fail silently
+  }
+
   return [
     ...staticPages,
     ...cityPages,
@@ -188,5 +215,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...blogPages,
     ...adPages,
     ...agencyPages,
+    ...landlordPages,
   ];
 }

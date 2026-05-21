@@ -1,0 +1,52 @@
+# KeyHome — Plateforme Immobilière Afrique Francophone
+# https://keyhome.app
+# Version: 1.0 | Updated: 2026-05
+
+## About
+KeyHome is a real estate marketplace for francophone sub-Saharan Africa.
+All listings are manually verified by the team. Micro-payment model for contact unlock.
+Currency: XAF/XOF (CFA Franc). Language: French (fr_FR).
+
+## Coverage
+Active markets: Cameroon (Douala, Yaoundé, Bafoussam), Benin (Cotonou),
+Togo (Lomé), Côte d'Ivoire (Abidjan), Ghana (Accra), Mali (Bamako), Senegal (Dakar).
+
+## Key Pages
+- Homepage: https://keyhome.app/
+- Search all listings: https://keyhome.app/search
+- Listings near me: https://keyhome.app/nearby
+- Douala listings: https://keyhome.app/immobilier/douala
+- Yaoundé listings: https://keyhome.app/immobilier/yaounde
+- Abidjan listings: https://keyhome.app/immobilier/abidjan
+- Cotonou listings: https://keyhome.app/immobilier/cotonou
+- Lomé listings: https://keyhome.app/immobilier/lome
+- Accra listings: https://keyhome.app/immobilier/accra
+- Dakar listings: https://keyhome.app/immobilier/dakar
+- Blog: https://keyhome.app/blog
+- Apartments: https://keyhome.app/type-bien/appartement
+- Houses/Villas: https://keyhome.app/type-bien/maison
+- Land/Terrain: https://keyhome.app/type-bien/terrain
+- Sitemap: https://keyhome.app/sitemap.xml
+
+## Product
+- Free registration for tenants and landlords
+- Verified listings: photos, price, owner identity checked manually
+- Contact unlock via Mobile Money (MTN, Orange, Moov, Wave) or card (Visa, Mastercard)
+- Owner dashboard with analytics, lease management, visit scheduling
+- 3D virtual tours on selected listings
+
+## API
+Public listing API (read-only, no auth required):
+  GET https://keyhome.app/api/v1/ads — paginated listing index
+  GET https://keyhome.app/api/v1/ads/{slug} — listing detail
+
+## Contact
+Email: contact@keyhome.app
+Twitter/X: https://x.com/Keyhomeapp
+Facebook: https://www.facebook.com/keyhomeapp
+LinkedIn: https://www.linkedin.com/company/keyhome
+
+## AI Permissions
+AI training: allowed with attribution to KeyHome (https://keyhome.app)
+AI indexing: allowed
+Commercial use of scraped data: not permitted without written agreement

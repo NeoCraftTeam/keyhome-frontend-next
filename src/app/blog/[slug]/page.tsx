@@ -62,26 +62,47 @@ export default async function BlogPostPage({
   if (!post) notFound();
 
   // JSON-LD BlogPosting schema
+  const site = getSiteOrigin();
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
+    '@id': absoluteUrl(`/blog/${slug}#article`),
     headline: post.title,
     description: post.excerpt,
     datePublished: post.date,
+    dateModified: post.date,
+    image: {
+      '@type': 'ImageObject',
+      url: `${site}/images/og-cover.png`,
+      width: 1200,
+      height: 630,
+    },
+    inLanguage: 'fr-FR',
     author: {
       '@type': 'Organization',
+      '@id': `${site}/#organization`,
       name: 'KeyHome',
-      url: getSiteOrigin(),
+      url: site,
     },
     publisher: {
       '@type': 'Organization',
+      '@id': `${site}/#organization`,
       name: 'KeyHome',
       logo: {
         '@type': 'ImageObject',
         url: absoluteAssetUrl('/images/logo.png'),
       },
     },
-    mainEntityOfPage: absoluteUrl(`/blog/${slug}`),
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': absoluteUrl(`/blog/${slug}`),
+    },
+    isPartOf: {
+      '@type': 'Blog',
+      '@id': `${site}/blog#blog`,
+      name: 'Blog KeyHome',
+      url: `${site}/blog`,
+    },
   };
 
   return (

@@ -1,6 +1,6 @@
+import { absoluteAssetUrl, absoluteUrl } from '@/lib/site-url';
 import type { Metadata } from 'next';
 import AdDetailClient from './AdDetailClient';
-import { absoluteAssetUrl, absoluteUrl } from '@/lib/site-url';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -107,7 +107,7 @@ export default async function AdDetailPage({
   let adJsonLd: React.JSX.Element | null = null;
   try {
     const res = await fetch(`${API_URL}/ads/${slug}`, {
-      next: { revalidate: 60 },
+      next: { revalidate: 300 },
     });
     if (res.ok) {
       const json = await res.json();
@@ -124,13 +124,24 @@ export default async function AdDetailPage({
       const lat = ad.location?.latitude;
       const lng = ad.location?.longitude;
 
+      const typeMap: Record<string, string> = {
+        Appartement: 'Apartment',
+        Studio: 'Apartment',
+        Maison: 'SingleFamilyResidence',
+        Villa: 'SingleFamilyResidence',
+        Duplex: 'SingleFamilyResidence',
+      };
+      const subType = ad.type ? typeMap[ad.type] : undefined;
+
       const schema: Record<string, unknown> = {
         '@context': 'https://schema.org',
-        '@type': 'RealEstateListing',
+        '@type': subType ? ['RealEstateListing', subType] : 'RealEstateListing',
+        '@id': absoluteUrl(`/ads/${slug}#listing`),
         name: ad.title,
         description: ad.description?.slice(0, 300),
         url: absoluteUrl(`/ads/${slug}`),
         datePosted: ad.created_at,
+        dateModified: ad.updated_at || ad.created_at,
         image: images,
         address: {
           '@type': 'PostalAddress',
@@ -139,6 +150,11 @@ export default async function AdDetailPage({
           addressCountry: country,
         },
       };
+
+      if (ad.transaction_type) {
+        schema.propertyType =
+          ad.transaction_type === 'rent' ? 'Rental' : 'ForSale';
+      }
 
       if (
         typeof lat === 'number' &&
@@ -172,6 +188,10 @@ export default async function AdDetailPage({
 
       if (ad.bedrooms) {
         schema.numberOfRooms = ad.bedrooms;
+      }
+
+      if (ad.bathrooms) {
+        schema.numberOfBathroomsTotal = ad.bathrooms;
       }
 
       if (ad.rating != null && (ad.reviews_count ?? 0) > 0) {

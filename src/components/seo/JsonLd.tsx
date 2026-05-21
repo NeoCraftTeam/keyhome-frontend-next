@@ -22,6 +22,7 @@ const BASE_URL = getSiteOrigin();
 const websiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
+  '@id': `${BASE_URL}/#website`,
   name: 'KeyHome',
   alternateName: BRAND_TITLE_WITH_TAGLINE,
   url: BASE_URL,
@@ -46,6 +47,7 @@ const websiteSchema = {
 const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
+  '@id': `${BASE_URL}/#organization`,
   name: 'KeyHome',
   legalName: 'KeyHome by NeoCraftTeam',
   url: BASE_URL,
@@ -64,6 +66,7 @@ const organizationSchema = {
     'https://www.facebook.com/keyhomeapp',
     'https://www.linkedin.com/company/keyhome',
     'https://www.instagram.com/keyhome.app',
+    'https://www.crunchbase.com/organization/keyhome',
   ],
   contactPoint: {
     '@type': 'ContactPoint',
@@ -90,6 +93,7 @@ const organizationSchema = {
 const realEstateAgentSchema = {
   '@context': 'https://schema.org',
   '@type': 'RealEstateAgent',
+  '@id': `${BASE_URL}/#realestateagent`,
   name: 'KeyHome',
   url: BASE_URL,
   logo: `${BASE_URL}/images/logo.png`,
@@ -126,6 +130,7 @@ const realEstateAgentSchema = {
 const softwareApplicationSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
+  '@id': `${BASE_URL}/#softwareapplication`,
   name: 'KeyHome',
   applicationCategory: 'LifestyleApplication',
   operatingSystem: 'Web, Android, iOS',
