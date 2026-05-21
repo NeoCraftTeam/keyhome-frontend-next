@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+  process.env.NEXT_PUBLIC_API_URL || 'http://api.keyhome.app/api/v1';
 
 /** Approximate city centers (WGS84) for GEO / Local SEO structured data */
 const CITIES: Record<
@@ -91,8 +91,56 @@ const CITIES: Record<
   },
 };
 
+/** Country-level landing pages — intercept high-volume "immobilier Cameroun" queries */
+const COUNTRIES: Record<
+  string,
+  {
+    display: string;
+    hreflang: string;
+    cities: string[];
+    description: string;
+  }
+> = {
+  cameroun: {
+    display: 'Cameroun',
+    hreflang: 'fr-CM',
+    cities: ['douala', 'yaounde', 'bafoussam'],
+    description:
+      'capitale économique et politique, marché immobilier en forte croissance avec des villes comme Douala, Yaoundé et Bafoussam',
+  },
+  'cote-divoire': {
+    display: "Côte d'Ivoire",
+    hreflang: 'fr-CI',
+    cities: ['abidjan'],
+    description:
+      "hub économique d'Afrique de l'Ouest avec Abidjan, Cocody et le Grand Bassam",
+  },
+  benin: {
+    display: 'Bénin',
+    hreflang: 'fr-BJ',
+    cities: ['cotonou'],
+    description: 'pays côtier dynamique avec Cotonou et Porto-Novo',
+  },
+  togo: {
+    display: 'Togo',
+    hreflang: 'fr-TG',
+    cities: ['lome'],
+    description: 'pays en plein essor avec Lomé, sa capitale portuaire',
+  },
+  senegal: {
+    display: 'Sénégal',
+    hreflang: 'fr-SN',
+    cities: ['dakar'],
+    description:
+      "porte de l'Afrique de l'Ouest avec Dakar, Saly et Saint-Louis",
+  },
+};
+
 export function generateStaticParams() {
-  return Object.keys(CITIES).map((ville) => ({ ville }));
+  return [
+    ...Object.keys(CITIES).map((ville) => ({ ville })),
+    ...Object.keys(COUNTRIES).map((pays) => ({ ville: pays })),
+  ];
 }
 
 export async function generateMetadata({
@@ -101,32 +149,65 @@ export async function generateMetadata({
   params: Promise<{ ville: string }>;
 }): Promise<Metadata> {
   const { ville } = await params;
-  const city = CITIES[ville.toLowerCase()];
-  const name = city?.display || ville;
+  const key = ville.toLowerCase();
+  const city = CITIES[key];
+  const country = COUNTRIES[key];
   const site = getSiteOrigin();
-  const path = `/immobilier/${ville.toLowerCase()}`;
+  const path = `/immobilier/${key}`;
+  const url = absoluteUrl(path);
+
+  if (country) {
+    return {
+      title: `Immobilier ${country.display} — Location & Vente | KeyHome`,
+      description: `${BRAND_TAGLINE}. Découvrez les meilleures annonces immobilières au ${country.display}. Appartements, maisons, terrains et villas vérifiés. Contact direct propriétaire.`,
+      alternates: {
+        canonical: url,
+        languages: {
+          'fr-FR': url,
+          [country.hreflang]: url,
+          'x-default': url,
+        },
+      },
+      openGraph: {
+        title: `Immobilier ${country.display} | KeyHome`,
+        description: `${BRAND_TAGLINE}. Annonces vérifiées au ${country.display} — trouvez votre bien idéal.`,
+        url,
+        siteName: 'KeyHome',
+        images: [
+          {
+            url: `${site}/og?title=${encodeURIComponent(`Immobilier ${country.display}`)}&subtitle=${encodeURIComponent(country.description)}&type=country`,
+            width: 1200,
+            height: 630,
+            alt: `Immobilier ${country.display} — KeyHome`,
+          },
+        ],
+      },
+    };
+  }
+
+  const name = city?.display || ville;
 
   return {
     title: `Immobilier à ${name} — Location & Vente`,
     description: `${BRAND_TAGLINE}. Trouvez votre logement à ${name}${city ? `, ${city.country}` : ''}. Annonces vérifiées : appartements, maisons, terrains et villas. Contact direct propriétaire sur KeyHome.`,
     alternates: {
-      canonical: absoluteUrl(path),
+      canonical: url,
       languages: {
-        'fr-FR': absoluteUrl(path),
+        'fr-FR': url,
         ...(city?.hreflang && city.hreflang !== 'fr-FR'
-          ? { [city.hreflang]: absoluteUrl(path) }
+          ? { [city.hreflang]: url }
           : {}),
-        'x-default': absoluteUrl(path),
+        'x-default': url,
       },
     },
     openGraph: {
       title: `Immobilier à ${name} | KeyHome`,
       description: `${BRAND_TAGLINE}. Annonces immobilières vérifiées à ${name}. Trouvez votre bien idéal.`,
-      url: absoluteUrl(path),
+      url,
       siteName: 'KeyHome',
       images: [
         {
-          url: `${site}/opengraph-image`,
+          url: `${site}/og?title=${encodeURIComponent(`Immobilier à ${name}`)}&subtitle=${encodeURIComponent(city?.description ?? 'Annonces vérifiées — KeyHome')}&type=city`,
           width: 1200,
           height: 630,
           alt: `Immobilier à ${name} — KeyHome`,
@@ -151,8 +232,222 @@ export default async function CityPage({
   const { ville } = await params;
   const cityKey = ville.toLowerCase();
   const city = CITIES[cityKey];
-  const name = city?.display || ville.charAt(0).toUpperCase() + ville.slice(1);
+  const country = COUNTRIES[cityKey];
+  const name =
+    city?.display ??
+    country?.display ??
+    ville.charAt(0).toUpperCase() + ville.slice(1);
   const site = getSiteOrigin();
+
+  // ── Country landing page ─────────────────────────────────────────────
+  if (country) {
+    const countryJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'RealEstateAgent',
+      '@id': absoluteUrl(`/immobilier/${cityKey}#realestate`),
+      name: `KeyHome ${country.display}`,
+      url: absoluteUrl(`/immobilier/${cityKey}`),
+      areaServed: { '@type': 'Country', name: country.display },
+      description: `${BRAND_TAGLINE}. Annonces immobilières vérifiées au ${country.display}.`,
+    };
+    const breadcrumb = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Accueil', item: site },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: `Immobilier ${country.display}`,
+          item: absoluteUrl(`/immobilier/${cityKey}`),
+        },
+      ],
+    };
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(countryJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
+        />
+        <div
+          style={{
+            maxWidth: 1100,
+            margin: '0 auto',
+            padding: '48px 20px 80px',
+          }}
+        >
+          <nav
+            style={{
+              fontSize: 14,
+              color: 'var(--kh-text-muted)',
+              marginBottom: 32,
+            }}
+          >
+            <Link
+              href="/"
+              style={{ color: 'var(--kh-text-muted)', textDecoration: 'none' }}
+            >
+              Accueil
+            </Link>
+            {' › '}
+            <span style={{ color: 'var(--kh-text-accent)' }}>
+              Immobilier {country.display}
+            </span>
+          </nav>
+          <h1
+            style={{
+              fontSize: 'clamp(28px, 5vw, 48px)',
+              fontWeight: 800,
+              margin: '0 0 16px',
+              lineHeight: 1.15,
+            }}
+          >
+            Immobilier au{' '}
+            <span style={{ color: brand.primary }}>{country.display}</span>
+          </h1>
+          <p
+            style={{
+              fontSize: 18,
+              color: 'var(--kh-text-secondary)',
+              lineHeight: 1.7,
+              maxWidth: 700,
+              margin: '0 0 40px',
+            }}
+          >
+            Découvrez les meilleures annonces immobilières au {country.display}{' '}
+            — {country.description}. Appartements, maisons, terrains et villas
+            vérifiés sur KeyHome.
+          </p>
+          <div
+            style={{
+              display: 'flex',
+              gap: 12,
+              flexWrap: 'wrap',
+              marginBottom: 56,
+            }}
+          >
+            <Link
+              href={`/search?country=${encodeURIComponent(country.display)}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: gradient.primary135,
+                color: '#fff',
+                padding: '14px 28px',
+                borderRadius: 12,
+                fontWeight: 600,
+                fontSize: 15,
+                textDecoration: 'none',
+                boxShadow: '0 4px 16px rgba(246,71,95,0.3)',
+              }}
+            >
+              🔍 Voir toutes les annonces au {country.display}
+            </Link>
+          </div>
+          <section style={{ marginTop: 16 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>
+              Villes disponibles au {country.display}
+            </h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+              {country.cities.map((c) => {
+                const cityData = CITIES[c];
+                return (
+                  <Link
+                    key={c}
+                    href={`/immobilier/${c}`}
+                    style={{
+                      padding: '10px 22px',
+                      borderRadius: 100,
+                      border: `1px solid ${brand.primary}`,
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: brand.primary,
+                      textDecoration: 'none',
+                      background: 'var(--kh-bg-surface)',
+                    }}
+                  >
+                    {cityData?.display ?? c}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+          <section
+            style={{
+              marginTop: 48,
+              lineHeight: 1.8,
+              color: 'var(--kh-text-secondary)',
+              fontSize: 15,
+            }}
+          >
+            <h2
+              style={{
+                fontSize: 22,
+                fontWeight: 700,
+                color: 'var(--kh-text-primary)',
+                marginBottom: 16,
+              }}
+            >
+              Pourquoi chercher un logement au {country.display} avec KeyHome ?
+            </h2>
+            <p>
+              KeyHome est la plateforme immobilière de référence pour le marché
+              du {country.display}. Chaque annonce est{' '}
+              <strong>vérifiée manuellement</strong> : photos authentiques, prix
+              cohérents et propriétaires identifiés.
+            </p>
+            <p>
+              Utilisez notre{' '}
+              <Link href="/search" style={{ color: brand.primary }}>
+                moteur de recherche
+              </Link>{' '}
+              pour filtrer par ville, budget et type de bien, et contactez les
+              propriétaires en direct grâce au paiement Mobile Money sécurisé.
+            </p>
+          </section>
+          <section style={{ marginTop: 56 }}>
+            <h2
+              style={{
+                fontSize: 20,
+                fontWeight: 700,
+                color: 'var(--kh-text-primary)',
+                marginBottom: 16,
+              }}
+            >
+              Explorer d&apos;autres pays
+            </h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {Object.entries(COUNTRIES)
+                .filter(([k]) => k !== cityKey)
+                .map(([k, co]) => (
+                  <Link
+                    key={k}
+                    href={`/immobilier/${k}`}
+                    style={{
+                      padding: '8px 18px',
+                      borderRadius: 100,
+                      border: '1px solid var(--kh-border)',
+                      fontSize: 14,
+                      color: 'var(--kh-text-accent)',
+                      textDecoration: 'none',
+                      background: 'var(--kh-bg-surface)',
+                    }}
+                  >
+                    {co.display}
+                  </Link>
+                ))}
+            </div>
+          </section>
+        </div>
+      </>
+    );
+  }
+  // ── /Country landing page ────────────────────────────────────────────
 
   // Fetch ads for this city from the API
   let ads: Array<{

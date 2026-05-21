@@ -20,7 +20,7 @@ export async function generateMetadata({
 
   try {
     const res = await fetch(`${API_URL}/ads/${slug}`, {
-      next: { revalidate: 60 }, // cache for 60s
+      next: { revalidate: 300 },
     });
 
     if (!res.ok) {
@@ -37,9 +37,14 @@ export async function generateMetadata({
     const price = ad.price
       ? `${Number(ad.price).toLocaleString('fr-FR')} FCFA`
       : '';
-    const description =
-      ad.description?.slice(0, 160) ||
+
+    const rawDesc: string =
+      ad.description ||
       `${title}${location ? ` à ${location}` : ''}${price ? ` — ${price}` : ''}. Annonce vérifiée sur KeyHome.`;
+    const description =
+      rawDesc.length > 157
+        ? rawDesc.slice(0, 157).replace(/\s+\S*$/, '') + '…'
+        : rawDesc;
 
     const primaryImage =
       ad.images?.find((img: { is_primary?: boolean }) => img.is_primary) ||
@@ -57,9 +62,11 @@ export async function generateMetadata({
         images: [
           {
             url: ogImage,
+            secureUrl: ogImage,
             width: 1200,
             height: 630,
             alt: title,
+            type: 'image/jpeg',
           },
         ],
         siteName: 'KeyHome',

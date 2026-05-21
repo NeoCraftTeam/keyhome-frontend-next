@@ -221,6 +221,23 @@ export default async function RootLayout({
               <link rel="dns-prefetch" href={clerkOrigin} />
             </>
           ) : null}
+          {/* API / image CDN — preconnect so first ad image loads faster (LCP) */}
+          {process.env.NEXT_PUBLIC_API_URL
+            ? (() => {
+                try {
+                  const apiOrigin = new URL(process.env.NEXT_PUBLIC_API_URL!)
+                    .origin;
+                  return (
+                    <>
+                      <link rel="preconnect" href={apiOrigin} />
+                      <link rel="dns-prefetch" href={apiOrigin} />
+                    </>
+                  );
+                } catch {
+                  return null;
+                }
+              })()
+            : null}
           <link rel="dns-prefetch" href="https://api.mapbox.com" />
           <JsonLd />
         </head>

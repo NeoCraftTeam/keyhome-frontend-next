@@ -64,6 +64,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
+    {
+      url: `${baseUrl}/indices-loyers`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
   ];
 
   // ── Programmatic city pages ───────────────────────────────────
@@ -83,6 +89,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: now,
     changeFrequency: 'daily' as const,
     priority: 0.8,
+  }));
+
+  const countryPages: MetadataRoute.Sitemap = [
+    'cameroun',
+    'cote-divoire',
+    'benin',
+    'togo',
+    'senegal',
+  ].map((slug) => ({
+    url: `${baseUrl}/immobilier/${slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as const,
+    priority: 0.9,
   }));
 
   // ── Property-type pages ──────────────────────────────────────
@@ -209,6 +228,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...staticPages,
+    ...countryPages,
     ...cityPages,
     ...typePages,
     ...comparisonPages,

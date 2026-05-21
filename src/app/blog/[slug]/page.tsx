@@ -78,12 +78,22 @@ export default async function BlogPostPage({
       height: 630,
     },
     inLanguage: 'fr-FR',
-    author: {
-      '@type': 'Organization',
-      '@id': `${site}/#organization`,
-      name: 'KeyHome',
-      url: site,
-    },
+    author: post.author
+      ? {
+          '@type': 'Person',
+          name: post.author,
+          worksFor: {
+            '@type': 'Organization',
+            '@id': `${site}/#organization`,
+            name: 'KeyHome',
+          },
+        }
+      : {
+          '@type': 'Organization',
+          '@id': `${site}/#organization`,
+          name: 'KeyHome',
+          url: site,
+        },
     publisher: {
       '@type': 'Organization',
       '@id': `${site}/#organization`,
@@ -174,6 +184,19 @@ export default async function BlogPostPage({
             })}
           </span>
           <span>· {post.readTime} de lecture</span>
+          {post.author && (
+            <span>
+              ·{' '}
+              <span
+                style={{ fontWeight: 600 }}
+                itemProp="author"
+                itemScope
+                itemType="https://schema.org/Person"
+              >
+                <span itemProp="name">{post.author}</span>
+              </span>
+            </span>
+          )}
         </div>
 
         <h1

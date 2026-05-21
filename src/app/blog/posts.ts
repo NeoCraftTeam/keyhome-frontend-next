@@ -9,6 +9,7 @@ export interface BlogPost {
   date: string;
   readTime: string;
   category: string;
+  author?: string;
   content?: string;
 }
 
@@ -21,6 +22,7 @@ export const BLOG_POSTS: BlogPost[] = [
     date: '2026-04-01',
     readTime: '8 min',
     category: 'Guide',
+    author: 'Équipe KeyHome',
     content: `
 # Comment éviter les arnaques immobilières au Cameroun : Guide 2026
 
@@ -71,6 +73,7 @@ Des photos de luxe pour un bien ordinaire. Faites une recherche inversée d'imag
     date: '2026-05-01',
     readTime: '6 min',
     category: 'Marché',
+    author: 'Équipe KeyHome',
     content: `
 # Prix des loyers à Douala en 2026
 
@@ -133,6 +136,7 @@ Quartier populaire avec des prix très accessibles. Forte communauté locale.
     date: '2026-06-01',
     readTime: '7 min',
     category: 'Guide',
+    author: 'Équipe KeyHome',
     content: `
 # Location appartement à Abidjan : guide complet
 
@@ -183,6 +187,7 @@ Rapport qualité-prix excellent. Quartiers en développement, transports en comm
     date: '2026-07-01',
     readTime: '9 min',
     category: 'Investissement',
+    author: 'Équipe KeyHome',
   },
   {
     slug: 'droit-bail-cameroun-locataire',
@@ -192,6 +197,7 @@ Rapport qualité-prix excellent. Quartiers en développement, transports en comm
     date: '2026-08-01',
     readTime: '10 min',
     category: 'Juridique',
+    author: 'Équipe KeyHome',
   },
   {
     slug: 'vendre-bien-immobilier-cameras-etapes',
@@ -201,5 +207,6 @@ Rapport qualité-prix excellent. Quartiers en développement, transports en comm
     date: '2026-09-01',
     readTime: '8 min',
     category: 'Vente',
+    author: 'Équipe KeyHome',
   },
 ];

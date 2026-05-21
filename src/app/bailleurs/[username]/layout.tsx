@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
 import { BRAND_TAGLINE } from '@/lib/brand';
-import { absoluteAssetUrl, absoluteUrl } from '@/lib/site-url';
+import { absoluteAssetUrl, absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+import type { Metadata } from 'next';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -60,10 +60,87 @@ export async function generateMetadata({
   };
 }
 
-export default function BailleurLayout({
+export default async function BailleurLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ username: string }>;
 }) {
-  return <>{children}</>;
+  const { username } = await params;
+  const site = getSiteOrigin();
+  let jsonLd: Record<string, unknown> | null = null;
+
+  try {
+    const res = await fetch(`${API_URL}/users/${username}/public-profile`, {
+      next: { revalidate: 3600 },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const user = json.data ?? json;
+      const displayName: string =
+        user.display_name ??
+        (`${user.firstname ?? ''} ${user.lastname ?? ''}`.trim() ||
+          'Propriétaire');
+      const path = `/bailleurs/${username}`;
+
+      jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        '@id': absoluteUrl(`${path}#person`),
+        name: displayName,
+        url: absoluteUrl(path),
+        jobTitle: 'Propriétaire immobilier',
+        description: `Propriétaire immobilier vérifié sur KeyHome.${user.bio ? ' ' + String(user.bio).slice(0, 200) : ''}`,
+        memberOf: {
+          '@type': 'Organization',
+          '@id': `${site}/#organization`,
+          name: 'KeyHome',
+          url: site,
+        },
+      };
+
+      if (user.avatar) {
+        jsonLd.image = {
+          '@type': 'ImageObject',
+          url: absoluteAssetUrl(user.avatar as string),
+          width: 400,
+          height: 400,
+        };
+      }
+
+      if (user.city_name) {
+        jsonLd.address = {
+          '@type': 'PostalAddress',
+          addressLocality: user.city_name,
+        };
+      }
+
+      const avgRating = user.review_stats?.avg_rating;
+      const totalReviews = user.review_stats?.total_reviews;
+      if (avgRating && totalReviews > 0) {
+        jsonLd.aggregateRating = {
+          '@type': 'AggregateRating',
+          ratingValue: Number(avgRating).toFixed(1),
+          reviewCount: totalReviews,
+          bestRating: '5',
+          worstRating: '1',
+        };
+      }
+    }
+  } catch {
+    // Fail silently
+  }
+
+  return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      {children}
+    </>
+  );
 }
