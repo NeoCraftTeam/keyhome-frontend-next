@@ -47,6 +47,7 @@ export default function VerifyOtpPage() {
     token: string;
     user: User;
     panel_sso_url: string | null;
+    expires_at: string | null;
   } | null>(null);
 
   useEffect(() => {
