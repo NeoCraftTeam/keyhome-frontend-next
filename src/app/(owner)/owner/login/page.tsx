@@ -2,16 +2,18 @@
 
 import PasskeyLoginButton from '@/components/auth/PasskeyLoginButton';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
-import { getConfiguredOAuthProviders } from '@/lib/oauth-providers';
 import TurnstileConfigAlert from '@/components/auth/TurnstileConfigAlert';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/FadeIn';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
+import {
+  AUTH_PANEL_UNAVAILABLE_MESSAGE,
+  getAuthApiErrorMessage,
+} from '@/lib/auth-api-errors';
 import { setRoleCookie } from '@/lib/auth-session';
-import { getAuthApiErrorMessage } from '@/lib/auth-api-errors';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
-import { ADMIN_USE_ADMIN_PANEL_MESSAGE } from '@/lib/owner-panel-access';
+import { getConfiguredOAuthProviders } from '@/lib/oauth-providers';
 import { OWNER_LOGIN_HERO_SRC, OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
 import { useAuth } from '@/providers/AuthProvider';
 import { brandAgent, neutral } from '@/theme/tokens';
@@ -45,7 +47,7 @@ export default function OwnerLoginPage() {
     if (typeof window === 'undefined') return;
     if (sessionStorage.getItem('kh_owner_admin_panel_hint') === '1') {
       sessionStorage.removeItem('kh_owner_admin_panel_hint');
-      setError(ADMIN_USE_ADMIN_PANEL_MESSAGE);
+      setError(AUTH_PANEL_UNAVAILABLE_MESSAGE);
     }
   }, []);
 

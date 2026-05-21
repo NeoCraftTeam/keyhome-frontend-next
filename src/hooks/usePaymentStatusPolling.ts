@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  isGatewayRedirectSuccess,
+  shouldDeferVerifyFailure,
+} from '@/lib/payment-gateway-return';
 import { creditsService } from '@/services/credits.service';
 import { paymentsService } from '@/services/payments.service';
 import axios from 'axios';
@@ -44,6 +48,10 @@ export type PaymentPollingState =
 interface UsePaymentStatusPollingOptions {
   /** `tx_ref` returned by `purchase()` / `initiate()`. */
   txRef: string | null;
+  /** GeniusPay `reference` (MTX-* / SANDBOX_*) when the redirect omits `tx_ref`. */
+  gatewayReference?: string | null;
+  /** `status` query param from the hosted checkout redirect (`completed`, …). */
+  gatewayRedirectStatus?: string | null;
   /**
    * Variant: 'credit' uses `/credits/verify-purchase` (returns balance),
    * 'unlock' uses `/payments/verify_payment` (returns `is_paid` + ad_id).
@@ -111,6 +119,8 @@ const SLOW_POLL_MS = 5000;
  */
 export function usePaymentStatusPolling({
   txRef,
+  gatewayReference = null,
+  gatewayRedirectStatus = null,
   variant,
   skip = false,
   onSuccess,
@@ -203,14 +213,18 @@ export function usePaymentStatusPolling({
   // Single poll iteration. Returns `true` when the loop should stop
   // (terminal status reached or polling was cancelled externally).
   const pollOnce = useCallback(async (): Promise<boolean> => {
-    if (cancelledRef.current || !txRef) {
+    if (cancelledRef.current || (!txRef && !gatewayReference)) {
       return true;
     }
 
     if (!authLostRef.current) {
       try {
         if (variant === 'credit') {
-          const result = await creditsService.verifyPurchase(txRef);
+          const result = await creditsService.verifyPurchase(
+            txRef,
+            gatewayReference,
+            gatewayRedirectStatus
+          );
           setPointBalance(result.point_balance ?? null);
 
           if (result.status === 'completed') {
@@ -218,6 +232,9 @@ export function usePaymentStatusPolling({
             return true;
           }
           if (result.status === 'failed') {
+            if (shouldDeferVerifyFailure(result, gatewayRedirectStatus)) {
+              return false;
+            }
             commitTerminal('failed');
             return true;
           }
@@ -228,13 +245,16 @@ export function usePaymentStatusPolling({
           return false;
         }
 
-        const verify = await paymentsService.verify(txRef);
+        const verify = await paymentsService.verify(txRef, gatewayReference);
         if (verify.is_paid) {
           commitTerminal('success', fireSuccessOnce);
           return true;
         }
         const s = verify.status?.toLowerCase();
         if (s === 'failed' || s === 'declined' || s === 'error') {
+          if (shouldDeferVerifyFailure(verify, gatewayRedirectStatus)) {
+            return false;
+          }
           commitTerminal('failed');
           return true;
         }
@@ -262,7 +282,11 @@ export function usePaymentStatusPolling({
 
     // Public status fallback — works without auth, returns only the status.
     try {
-      const { status } = await paymentsService.publicStatus(txRef);
+      const publicKey = txRef ?? gatewayReference;
+      if (!publicKey) {
+        return false;
+      }
+      const { status } = await paymentsService.publicStatus(publicKey);
       if (status === 'success') {
         commitTerminal(
           authLostRef.current ? 'auth_lost' : 'success',
@@ -271,6 +295,9 @@ export function usePaymentStatusPolling({
         return true;
       }
       if (status === 'failed' || status === 'refunded') {
+        if (shouldDeferVerifyFailure({ status }, gatewayRedirectStatus)) {
+          return false;
+        }
         commitTerminal('failed');
         return true;
       }
@@ -283,7 +310,14 @@ export function usePaymentStatusPolling({
     } catch {
       return false;
     }
-  }, [txRef, variant, fireSuccessOnce, commitTerminal]);
+  }, [
+    txRef,
+    gatewayReference,
+    gatewayRedirectStatus,
+    variant,
+    fireSuccessOnce,
+    commitTerminal,
+  ]);
 
   // Refs avoid the cyclic deps between fast and slow loops while keeping
   // a single source of truth for the current iteration logic.
@@ -301,6 +335,10 @@ export function usePaymentStatusPolling({
       void pollOnceRef.current().then((done) => {
         if (done || cancelledRef.current) return;
         if (attempt + 1 >= SLOW_MAX_RETRIES) {
+          if (isGatewayRedirectSuccess(gatewayRedirectStatus)) {
+            commitTerminal('success', fireSuccessOnce);
+            return;
+          }
           setState((prev) =>
             prev === 'success' || prev === 'failed' || prev === 'cancelled'
               ? prev
@@ -350,7 +388,7 @@ export function usePaymentStatusPolling({
   useEffect(() => {
     cancelledRef.current = false;
     startTsRef.current = Date.now();
-    if (skip || !txRef) {
+    if (skip || (!txRef && !gatewayReference)) {
       return () => {
         cancelledRef.current = true;
         clearTimer();
@@ -361,7 +399,7 @@ export function usePaymentStatusPolling({
       cancelledRef.current = true;
       clearTimer();
     };
-  }, [skip, txRef, variant, clearTimer]);
+  }, [skip, txRef, gatewayReference, variant, clearTimer]);
 
   const fastPollProgress = Math.min(fastAttempt / FAST_MAX_RETRIES, 1);
 

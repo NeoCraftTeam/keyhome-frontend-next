@@ -2,6 +2,10 @@
 
 import api, { ensureCsrfCookie, resetCsrfState } from '@/lib/api';
 import {
+  AUTH_LOGIN_FAILURE_MESSAGE,
+  AUTH_PANEL_UNAVAILABLE_MESSAGE,
+} from '@/lib/auth-api-errors';
+import {
   clearAllInMemoryTokens,
   clearRoleCookie,
   clearSessionStorage,
@@ -17,18 +21,14 @@ import { removeFcmToken } from '@/lib/chat-api';
 import { resetChatE2eeBootstrap } from '@/lib/chat-e2ee-identity';
 import { disconnectEcho } from '@/lib/echo';
 import { FCM_TOKEN_STORAGE_KEY } from '@/lib/fcm-token-key';
-import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import {
   getOAuthCallbackUrl,
   KH_REGISTRATION_INTENT_KEY,
   oauthPanelContextFromIntent,
 } from '@/lib/oauth-redirect';
-import { authService, OAuthProvider } from '@/services/auth.service';
-import {
-  AUTH_LOGIN_FAILURE_MESSAGE,
-  AUTH_PANEL_UNAVAILABLE_MESSAGE,
-} from '@/lib/auth-api-errors';
 import { mayAccessOwnerPanel } from '@/lib/owner-panel-access';
+import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
+import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
 import { useClerk, useAuth as useClerkAuth, useSignIn } from '@clerk/nextjs';
 import { useQueryClient } from '@tanstack/react-query';
@@ -68,7 +68,12 @@ export function useAuthActions({
   );
 
   const finalizeAuth = useCallback(
-    (sanctumToken: string, laravelUser: User, panelSsoUrl: string | null) => {
+    (
+      sanctumToken: string,
+      laravelUser: User,
+      panelSsoUrl: string | null,
+      expiresAtMs?: number
+    ) => {
       // Bailleurs (AGENT) stay in the integrated Next owner app. Platform ADMIN
       // still receives `panel_sso_url` when the API returns it (Filament SSO).
       const skipPanelSsoForIntegratedOwner =
@@ -92,9 +97,9 @@ export function useAuthActions({
 
       flushSync(() => {
         if (mayAccessOwnerPanel(laravelUser.role)) {
-          persistOwnerToken(sanctumToken);
+          persistOwnerToken(sanctumToken, expiresAtMs);
         } else {
-          persistClientToken(sanctumToken);
+          persistClientToken(sanctumToken, expiresAtMs);
         }
         setToken(sanctumToken);
         setUserState(laravelUser);
@@ -114,14 +119,20 @@ export function useAuthActions({
 
   const login = useCallback(
     async (email: string, password: string, turnstileToken?: string | null) => {
-      const { token: sanctumToken, user: laravelUser } =
-        await authService.login(email, password, 'client', turnstileToken);
+      const {
+        token: sanctumToken,
+        user: laravelUser,
+        expires_at,
+      } = await authService.login(email, password, 'client', turnstileToken);
 
       if (laravelUser.role !== UserRole.CUSTOMER) {
         throw new Error(AUTH_LOGIN_FAILURE_MESSAGE);
       }
 
-      persistClientToken(sanctumToken);
+      const expiresAtMs = expires_at
+        ? new Date(expires_at).getTime()
+        : undefined;
+      persistClientToken(sanctumToken, expiresAtMs);
       setUserState(laravelUser);
       setRoleCookie(UserRole.CUSTOMER);
 
@@ -138,14 +149,20 @@ export function useAuthActions({
 
   const loginOwner = useCallback(
     async (email: string, password: string, turnstileToken?: string | null) => {
-      const { token: sanctumToken, user: laravelUser } =
-        await authService.login(email, password, 'owner', turnstileToken);
+      const {
+        token: sanctumToken,
+        user: laravelUser,
+        expires_at,
+      } = await authService.login(email, password, 'owner', turnstileToken);
 
       if (!mayAccessOwnerPanel(laravelUser.role)) {
         throw new Error(AUTH_PANEL_UNAVAILABLE_MESSAGE);
       }
 
-      persistOwnerToken(sanctumToken);
+      const expiresAtMs = expires_at
+        ? new Date(expires_at).getTime()
+        : undefined;
+      persistOwnerToken(sanctumToken, expiresAtMs);
       setUserState(laravelUser);
       setRoleCookie(laravelUser.role ?? UserRole.AGENT);
 

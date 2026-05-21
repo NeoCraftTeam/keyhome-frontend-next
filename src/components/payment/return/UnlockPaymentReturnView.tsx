@@ -2,6 +2,13 @@
 
 import VerifyingView from '@/components/payment/return/VerifyingView';
 import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
+import {
+  hasPaymentReturnReference,
+  isGatewayRedirectCancelled,
+  isGatewayRedirectFailed,
+  isGatewayRedirectSuccess,
+  parsePaymentReturnParams,
+} from '@/lib/payment-gateway-return';
 import { consumePaymentReturnPath } from '@/lib/payment-return';
 import { creditsKeys, paymentKeys } from '@/lib/query-keys';
 import { brand, gradient } from '@/theme/tokens';
@@ -24,14 +31,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-function isFlutterwaveTerminalFailure(status: string | null): boolean {
-  if (!status) return false;
-  const s = status.toLowerCase();
-  return (
-    s === 'declined' || s === 'cancelled' || s === 'failed' || s === 'error'
-  );
-}
-
 /**
  * Post-checkout UI for ad unlock payments.
  * Rendered on `/payment-success` (legacy) and `/payment/return?flow=unlock`.
@@ -43,12 +42,19 @@ export default function UnlockPaymentReturnView(): ReactElement {
   const [countdown, setCountdown] = useState(5);
 
   const adId = searchParams.get('ad_id');
-  const txRef = searchParams.get('tx_ref');
-  const gwStatus = searchParams.get('status');
+  const returnParams = useMemo(
+    () => parsePaymentReturnParams(searchParams),
+    [searchParams]
+  );
+  const { txRef, gatewayReference, status: gwStatus } = returnParams;
 
   const skipPolling = useMemo(
-    () => !adId || !txRef || isFlutterwaveTerminalFailure(gwStatus),
-    [adId, txRef, gwStatus]
+    () =>
+      !adId ||
+      !hasPaymentReturnReference(returnParams) ||
+      isGatewayRedirectCancelled(gwStatus) ||
+      isGatewayRedirectFailed(gwStatus),
+    [adId, returnParams, gwStatus]
   );
 
   const onSuccess = useCallback(() => {
@@ -61,16 +67,29 @@ export default function UnlockPaymentReturnView(): ReactElement {
 
   const { state, retry } = usePaymentStatusPolling({
     txRef,
+    gatewayReference,
+    gatewayRedirectStatus: gwStatus,
     variant: 'unlock',
     skip: skipPolling,
     onSuccess,
   });
 
   const effectiveState = useMemo(() => {
-    if (isFlutterwaveTerminalFailure(gwStatus)) {
-      return gwStatus?.toLowerCase() === 'cancelled'
-        ? ('cancelled' as const)
-        : ('failed' as const);
+    if (isGatewayRedirectCancelled(gwStatus)) {
+      return 'cancelled' as const;
+    }
+    if (isGatewayRedirectFailed(gwStatus)) {
+      return 'failed' as const;
+    }
+    if (isGatewayRedirectSuccess(gwStatus)) {
+      if (
+        state === 'verifying' ||
+        state === 'processing' ||
+        state === 'not_found' ||
+        state === 'failed'
+      ) {
+        return 'success' as const;
+      }
     }
     return state;
   }, [state, gwStatus]);

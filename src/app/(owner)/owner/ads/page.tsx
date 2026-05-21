@@ -1,5 +1,6 @@
 'use client';
 
+import BoostPurchaseDialog from '@/components/owner/BoostPurchaseDialog';
 import OwnerAdCard from '@/components/owner/OwnerAdCard';
 import QrCodeDialog from '@/components/owner/QrCodeDialog';
 import ShareAdButtons from '@/components/owner/ShareAdButtons';
@@ -8,8 +9,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
 import { getLaravelApiErrorMessage } from '@/lib/api-errors';
-import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
 import { formatPrice } from '@/lib/constants';
+import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
 import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { ownerService } from '@/services/owner.service';
@@ -20,8 +21,8 @@ import {
   Description as ContractIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  HomeOutlined as HomeOutlinedIcon,
   VisibilityOff as HiddenIcon,
+  HomeOutlined as HomeOutlinedIcon,
   MoreVert as MoreIcon,
   QrCode2 as QrCodeIcon,
   RocketLaunch as RocketLaunchIcon,
@@ -97,6 +98,7 @@ export default function OwnerAdsPage() {
     severity: 'success' | 'error';
   } | null>(null);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [boostDialogAd, setBoostDialogAd] = useState<Ad | null>(null);
 
   const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: [
@@ -234,31 +236,6 @@ export default function OwnerAdsPage() {
     },
   });
 
-  const boostMutation = useMutation({
-    mutationFn: (adId: string) => adsService.boost(adId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
-      setAnchorEl(null);
-      setSelectedAd(null);
-      setBoostFeedback({
-        message:
-          'Annonce boostée — elle remontera en tête des résultats de recherche.',
-        severity: 'success',
-      });
-    },
-    onError: (err: unknown) => {
-      setAnchorEl(null);
-      setSelectedAd(null);
-      setBoostFeedback({
-        message: getLaravelApiErrorMessage(
-          err,
-          'Boost impossible. Vérifiez votre abonnement actif.'
-        ),
-        severity: 'error',
-      });
-    },
-  });
-
   const unboostMutation = useMutation({
     mutationFn: (adId: string) => adsService.unboost(adId),
     onSuccess: () => {
@@ -288,7 +265,6 @@ export default function OwnerAdsPage() {
     setStatusMutation.isPending ||
     deleteMutation.isPending ||
     publishDraftMutation.isPending ||
-    boostMutation.isPending ||
     unboostMutation.isPending;
 
   const handleSort = useCallback(
@@ -507,9 +483,12 @@ export default function OwnerAdsPage() {
         <Box
           sx={{
             p: 2,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 2,
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'minmax(200px, 1fr) repeat(3, auto)',
+            },
+            gap: 1.5,
             alignItems: 'center',
           }}
         >
@@ -521,7 +500,6 @@ export default function OwnerAdsPage() {
               setSearchInput(e.target.value);
               setPage(0);
             }}
-            sx={{ minWidth: 220 }}
             slotProps={{
               input: {
                 startAdornment: (
@@ -530,7 +508,7 @@ export default function OwnerAdsPage() {
               },
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 160 }}>
+          <FormControl size="small" sx={{ minWidth: { sm: 160 } }}>
             <InputLabel>Statut</InputLabel>
             <Select
               value={statusFilter}
@@ -548,7 +526,7 @@ export default function OwnerAdsPage() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 180 }}>
+          <FormControl size="small" sx={{ minWidth: { sm: 160 } }}>
             <InputLabel>Ville</InputLabel>
             <Select
               value={cityFilter}
@@ -566,7 +544,7 @@ export default function OwnerAdsPage() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 180 }}>
+          <FormControl size="small" sx={{ minWidth: { sm: 160 } }}>
             <InputLabel>Type</InputLabel>
             <Select
               value={typeFilter}
@@ -1064,8 +1042,10 @@ export default function OwnerAdsPage() {
                 </MenuItem>
               ) : (
                 <MenuItem
-                  onClick={() => boostMutation.mutate(selectedAd.id)}
-                  disabled={boostMutation.isPending}
+                  onClick={() => {
+                    handleMenuClose();
+                    setBoostDialogAd(selectedAd);
+                  }}
                   sx={{ color: 'primary.main', fontWeight: 600 }}
                 >
                   <RocketLaunchIcon fontSize="small" sx={{ mr: 1 }} />
@@ -1138,6 +1118,22 @@ export default function OwnerAdsPage() {
           </Alert>
         ) : undefined}
       </Snackbar>
+      {boostDialogAd && (
+        <BoostPurchaseDialog
+          open={!!boostDialogAd}
+          onClose={() => setBoostDialogAd(null)}
+          adId={boostDialogAd.id}
+          adTitle={boostDialogAd.title ?? 'Annonce'}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
+            setBoostFeedback({
+              message:
+                'Annonce boostée ! Elle remonte maintenant en tête des résultats.',
+              severity: 'success',
+            });
+          }}
+        />
+      )}
       {/* Desktop FAB — mobile uses OwnerLayoutClient shell FAB (shouldShowOwnerQuickCreateFab) */}
       {!isMobile && (
         <Fab

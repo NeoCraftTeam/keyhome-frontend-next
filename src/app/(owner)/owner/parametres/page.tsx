@@ -5,7 +5,10 @@ import LinkedAccountsCard from '@/components/settings/LinkedAccountsCard';
 import FadeIn from '@/components/ui/FadeIn';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { useAuth } from '@/providers/AuthProvider';
-import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';
+import {
+  useOwnerTheme,
+  type OwnerThemeChoice,
+} from '@/providers/OwnerThemeProvider';
 import {
   ownerService,
   type NotificationPreferences,
@@ -63,7 +66,7 @@ const CHANNEL_TOGGLES: { key: keyof NotificationPreferences; label: string }[] =
 
 export default function OwnerParametresPage() {
   const { logout } = useAuth();
-  const { choice, setChoice } = useThemeMode();
+  const { choice, setChoice } = useOwnerTheme();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const queryClient = useQueryClient();
   const [prefSnackbar, setPrefSnackbar] = useState<{
@@ -170,7 +173,7 @@ export default function OwnerParametresPage() {
                     <ToggleButtonGroup
                       value={choice}
                       exclusive
-                      onChange={(_e, v: ThemeChoice | null) => {
+                      onChange={(_e, v: OwnerThemeChoice | null) => {
                         if (v != null) {
                           setChoice(v);
                         }

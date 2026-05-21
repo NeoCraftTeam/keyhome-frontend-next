@@ -14,11 +14,12 @@ import { useClerkSync } from '@/hooks/auth/useClerkSync';
 import { useAuthActions } from '@/hooks/useAuthActions';
 import {
   clearAllInMemoryTokens,
+  getActiveExpiresAt,
   persistClientToken,
   persistOwnerToken,
 } from '@/lib/auth-session';
-import { authService } from '@/services/auth.service';
-import { OAuthProvider } from '@/services/auth.service';
+import { syncChatE2eePublicKeyWithServer } from '@/lib/chat-e2ee-identity';
+import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -61,7 +62,12 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   refreshSession: () => Promise<boolean>;
   /** Called by /verify-email, /verify-otp, and WelcomeOverlay after successful auth */
-  finalizeAuth: (token: string, user: User, panelSsoUrl: string | null) => void;
+  finalizeAuth: (
+    token: string,
+    user: User,
+    panelSsoUrl: string | null,
+    expiresAtMs?: number
+  ) => void;
   /** Returns a fresh Clerk session JWT, or null if unavailable */
   getClerkToken: () => Promise<string | null>;
 }
@@ -125,11 +131,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ── Refresh session (token rotation) ─────────────────────────
   const refreshSession = useCallback(async (): Promise<boolean> => {
     try {
-      const { access_token } = await authService.refreshToken();
+      const { access_token, expires_at } = await authService.refreshToken();
+      const expiresAtMs = expires_at
+        ? new Date(expires_at).getTime()
+        : undefined;
       if (user?.role === UserRole.AGENT) {
-        persistOwnerToken(access_token);
+        persistOwnerToken(access_token, expiresAtMs);
       } else {
-        persistClientToken(access_token);
+        persistClientToken(access_token, expiresAtMs);
       }
       setToken(access_token);
       return true;
@@ -137,6 +146,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
   }, [user]);
+
+  // ── Proactive token refresh (AUTH-1) ──────────────────────────
+  // Schedule a silent refresh 5 minutes before the stored token expires.
+  // Fires only when a user is authenticated and an expiry timestamp is known.
+  useEffect(() => {
+    if (!user) return;
+    const expiresAt = getActiveExpiresAt();
+    if (!expiresAt) return;
+
+    const msUntilRefresh = expiresAt - Date.now() - 5 * 60 * 1000;
+    if (msUntilRefresh <= 0) {
+      refreshSession().catch(() => {});
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      refreshSession().catch(() => {});
+    }, msUntilRefresh);
+
+    return () => clearTimeout(timer);
+  }, [user, token, refreshSession]);
+
+  // ── Chat E2EE bootstrap (E2EE-1) ────────────────────────────────
+  // Ensures the device has an RSA-OAEP keypair registered with the server
+  // so peers can wrap a session AES key for this device. Non-blocking — chat
+  // falls back to server-encrypted messages if bootstrap fails.
+  useEffect(() => {
+    if (!user) return;
+    void syncChatE2eePublicKeyWithServer(null, user.id);
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Derived ───────────────────────────────────────────────────
   const isAuthenticated = !!user;

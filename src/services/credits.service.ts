@@ -57,11 +57,26 @@ export const creditsService = {
    * could race with concurrent purchases or stale rows). Omitting it falls
    * back to "latest credit purchase" for backward compatibility.
    */
-  async verifyPurchase(txRef?: string | null): Promise<CreditVerifyResponse> {
-    const { data } = await api.post(
-      '/credits/verify-purchase',
-      txRef ? { tx_ref: txRef } : {}
-    );
+  async verifyPurchase(
+    txRef?: string | null,
+    gatewayReference?: string | null,
+    gatewayRedirectStatus?: string | null
+  ): Promise<CreditVerifyResponse> {
+    const body: {
+      tx_ref?: string;
+      reference?: string;
+      gateway_redirect_status?: string;
+    } = {};
+    if (txRef) {
+      body.tx_ref = txRef;
+    }
+    if (gatewayReference) {
+      body.reference = gatewayReference;
+    }
+    if (gatewayRedirectStatus) {
+      body.gateway_redirect_status = gatewayRedirectStatus;
+    }
+    const { data } = await api.post('/credits/verify-purchase', body);
     return data;
   },
 };

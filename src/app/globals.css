@@ -1255,3 +1255,17 @@ img[data-nimg] {
     scroll-behavior: auto !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   STRIPE DEVTOOLS OVERLAY
+   The Stripe.js DevTools badge is injected automatically when using
+   test keys (pk_test_*). It is never present in production. We hide
+   it here so it doesn't clutter the dev UI.
+══════════════════════════════════════════════════════════════════ */
+#stripe-badge-iframe-root,
+iframe[name^='__stripe_badge'],
+iframe[src*='js.stripe.com'][src*='badge'],
+iframe[src*='js.stripe.com'][src*='devtools'],
+iframe[src*='js.stripe.com'][src*='developer'] {
+  display: none !important;
+}

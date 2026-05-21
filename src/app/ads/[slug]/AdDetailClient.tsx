@@ -487,7 +487,7 @@ function AdDetailContent() {
     ad?.charges_montant_forfait
   );
 
-  const formatDistance = (m: number | null | undefined): string | null => {
+  const formatProximityM = (m: number | null | undefined): string | null => {
     if (m == null || m <= 0) return null;
     return m >= 1000
       ? `${(m / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`
@@ -500,35 +500,35 @@ function AdDetailContent() {
       icon: <NearMe sx={{ fontSize: 17, color: '#64748B' }} />,
       iconBg: 'rgba(100,116,139,0.10)',
       label: 'Route principale',
-      distance: formatDistance(ad.distance_main_road_m),
+      distance: formatProximityM(ad.distance_main_road_m),
     },
     {
       key: 'shops',
       icon: <Storefront sx={{ fontSize: 17, color: '#059669' }} />,
       iconBg: 'rgba(5,150,105,0.10)',
       label: 'Commerces',
-      distance: formatDistance(ad.distance_shops_m),
+      distance: formatProximityM(ad.distance_shops_m),
     },
     {
       key: 'transport',
       icon: <DirectionsBus sx={{ fontSize: 17, color: '#3B82F6' }} />,
       iconBg: 'rgba(59,130,246,0.10)',
       label: 'Transport',
-      distance: formatDistance(ad.distance_transport_m),
+      distance: formatProximityM(ad.distance_transport_m),
     },
     {
       key: 'school',
       icon: <School sx={{ fontSize: 17, color: '#8B5CF6' }} />,
       iconBg: 'rgba(139,92,246,0.10)',
       label: 'École / Université',
-      distance: formatDistance(ad.distance_school_m),
+      distance: formatProximityM(ad.distance_school_m),
     },
     {
       key: 'hospital',
       icon: <LocalHospital sx={{ fontSize: 17, color: '#EF4444' }} />,
       iconBg: 'rgba(239,68,68,0.10)',
       label: 'Hôpital / Clinique',
-      distance: formatDistance(ad.distance_hospital_m),
+      distance: formatProximityM(ad.distance_hospital_m),
     },
   ].filter((item) => item.distance !== null);
 

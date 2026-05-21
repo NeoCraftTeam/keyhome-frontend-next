@@ -72,6 +72,32 @@ export default function OwnerVerifyOtpPage() {
     return () => clearTimeout(timer);
   }, [router]);
 
+  // Web OTP API (Android Chrome) — progressive enhancement, not supported on iOS.
+  useEffect(() => {
+    if (!('OTPCredential' in window)) return;
+
+    const ac = new AbortController();
+
+    navigator.credentials
+      .get({
+        otp: { transport: ['sms'] },
+        signal: ac.signal,
+      } as CredentialRequestOptions)
+      .then((cred) => {
+        const otpCred = cred as { code?: string };
+        if (!otpCred?.code) return;
+        const code = otpCred.code.replace(/\D/g, '').slice(0, 6);
+        const newDigits = code.split('').slice(0, 6);
+        setDigits([
+          ...newDigits,
+          ...Array<string>(Math.max(0, 6 - newDigits.length)).fill(''),
+        ]);
+      })
+      .catch(() => {});
+
+    return () => ac.abort();
+  }, []);
+
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setInterval(() => {
@@ -390,6 +416,7 @@ export default function OwnerVerifyOtpPage() {
                   onPaste={handlePaste}
                   maxLength={1}
                   inputMode="numeric"
+                  autoComplete="one-time-code"
                   sx={{
                     width: '100%',
                     height: 56,

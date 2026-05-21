@@ -15,6 +15,7 @@ import {
 import { creditsKeys, paymentKeys } from '@/lib/query-keys';
 import { buildStripeConfirmReturnUrl } from '@/lib/stripe-confirm-return';
 import { useAuth } from '@/providers/AuthProvider';
+import { useCurrency } from '@/providers/CurrencyProvider';
 import { paymentsService } from '@/services/payments.service';
 import { brand } from '@/theme/tokens';
 import {
@@ -156,7 +157,12 @@ export default function PaymentFlow({
   creditTurnstileSiteKey = null,
 }: PaymentFlowProps): React.ReactElement {
   const { user } = useAuth();
+  const { format: formatAmount } = useCurrency();
   const profilePhone = extractCamPhoneDigits(user?.phone_number);
+
+  // Formatted in the user's display currency (CHF, EUR, XAF…) — passed to
+  // StripeConfirmStep so the button never shows the backend-converted EUR total.
+  const amountLabel = formatAmount(_amount);
 
   const [step, setStep] = useState<Step>('select-method');
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(
@@ -924,6 +930,7 @@ export default function PaymentFlow({
           onSuccess={handleStripeSuccess}
           onBack={handleStripeCancel}
           stripeFlow={stripeFlow ?? undefined}
+          amountLabel={amountLabel}
           // The "save card" checkbox is only meaningful for new cards.
           // For saved-card reuse the card is already attached to the
           // Customer; hide the checkbox to avoid confusing UX.

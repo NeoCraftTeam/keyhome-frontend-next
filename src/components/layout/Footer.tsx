@@ -18,10 +18,10 @@ const SOCIAL_LINKS = [
     href: 'https://www.facebook.com/keyhomeapp',
     icon: Facebook,
   },
-  { label: 'X', href: 'https://twitter.com/keyhome_app', icon: X },
+  { label: 'X', href: 'https://x.com/Keyhomeapp', icon: X },
   {
     label: 'Instagram',
-    href: 'https://www.instagram.com/keyhome_app',
+    href: 'https://www.instagram.com/keyhome.app',
     icon: Instagram,
   },
 ];

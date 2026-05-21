@@ -200,6 +200,7 @@ export default async function RootLayout({
           {gtmId !== undefined ? (
             <script
               nonce={nonce}
+              suppressHydrationWarning
               dangerouslySetInnerHTML={{ __html: gtmBootstrapSnippet }}
             />
           ) : null}

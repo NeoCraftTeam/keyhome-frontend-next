@@ -347,66 +347,6 @@ export function ChatHeader({
         </div>
       </div>
 
-      {/* ── Ad context card (desktop / tablet only) ── */}
-      {ad && adHref && (
-        <div className="hidden md:block">
-          <Link
-            href={adHref}
-            className="flex items-center gap-3 px-4 py-2.5 transition-colors group"
-            style={{
-              borderTop: `1px solid ${theme.glassBorder}`,
-              background: `linear-gradient(to right, ${theme.accentLighter}, transparent 80%)`,
-            }}
-            title={`Voir l'annonce : ${ad.title}`}
-          >
-            <div
-              className="shrink-0 h-10 w-14 rounded-lg overflow-hidden"
-              style={{
-                boxShadow: `0 1px 4px rgba(0,0,0,0.10)`,
-                border: `1px solid ${theme.glassBorder}`,
-              }}
-            >
-              {ad.cover_image ? (
-                <Image
-                  src={ad.cover_image}
-                  alt={ad.title}
-                  width={56}
-                  height={40}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div
-                  className="h-full w-full flex items-center justify-center"
-                  style={{ backgroundColor: theme.accentLight }}
-                >
-                  <Home className="h-4 w-4" style={{ color: theme.accent }} />
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <p
-                className="text-[11px] font-medium uppercase tracking-wide mb-0.5"
-                style={{ color: theme.accent, opacity: 0.65 }}
-              >
-                Annonce liée
-              </p>
-              <p
-                className="text-[13px] font-semibold truncate leading-tight group-hover:underline decoration-1 underline-offset-2"
-                style={{ color: theme.textPrimary }}
-              >
-                {ad.title}
-              </p>
-            </div>
-
-            <ExternalLink
-              className="shrink-0 h-4 w-4 transition-transform group-hover:translate-x-0.5"
-              style={{ color: theme.accent, opacity: 0.6 }}
-            />
-          </Link>
-        </div>
-      )}
-
       {/* Mobile bottom sheet: portaled to body so navbar/AppBar never steals taps from the backdrop. */}
       {typeof document !== 'undefined' &&
         ad &&

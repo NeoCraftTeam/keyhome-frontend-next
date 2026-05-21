@@ -2,6 +2,13 @@
 
 import AppLoader from '@/components/ui/AppLoader';
 import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
+import {
+  hasPaymentReturnReference,
+  isGatewayRedirectCancelled,
+  isGatewayRedirectFailed,
+  isGatewayRedirectSuccess,
+  parsePaymentReturnParams,
+} from '@/lib/payment-gateway-return';
 import { consumePaymentReturnPath } from '@/lib/payment-return';
 import { paymentKeys } from '@/lib/query-keys';
 import { brand, gradient } from '@/theme/tokens';
@@ -16,14 +23,6 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { useCallback, useMemo } from 'react';
-
-function isFlutterwaveTerminalFailure(status: string | null): boolean {
-  if (!status) return false;
-  const s = status.toLowerCase();
-  return (
-    s === 'declined' || s === 'cancelled' || s === 'failed' || s === 'error'
-  );
-}
 
 type OwnerReturnFlow = 'subscription' | 'boost';
 
@@ -41,12 +40,18 @@ export default function OwnerFlowPaymentReturnView({
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const txRef = searchParams.get('tx_ref');
-  const gwStatus = searchParams.get('status');
+  const returnParams = useMemo(
+    () => parsePaymentReturnParams(searchParams),
+    [searchParams]
+  );
+  const { txRef, gatewayReference, status: gwStatus } = returnParams;
 
   const skipPolling = useMemo(
-    () => !txRef || isFlutterwaveTerminalFailure(gwStatus),
-    [txRef, gwStatus]
+    () =>
+      !hasPaymentReturnReference(returnParams) ||
+      isGatewayRedirectCancelled(gwStatus) ||
+      isGatewayRedirectFailed(gwStatus),
+    [returnParams, gwStatus]
   );
 
   const onSuccess = useCallback(() => {
@@ -55,16 +60,29 @@ export default function OwnerFlowPaymentReturnView({
 
   const { state, retry } = usePaymentStatusPolling({
     txRef,
+    gatewayReference,
+    gatewayRedirectStatus: gwStatus,
     variant: 'unlock',
     skip: skipPolling,
     onSuccess,
   });
 
   const effectiveState = useMemo(() => {
-    if (isFlutterwaveTerminalFailure(gwStatus)) {
-      return gwStatus?.toLowerCase() === 'cancelled'
-        ? ('cancelled' as const)
-        : ('failed' as const);
+    if (isGatewayRedirectCancelled(gwStatus)) {
+      return 'cancelled' as const;
+    }
+    if (isGatewayRedirectFailed(gwStatus)) {
+      return 'failed' as const;
+    }
+    if (isGatewayRedirectSuccess(gwStatus)) {
+      if (
+        state === 'verifying' ||
+        state === 'processing' ||
+        state === 'not_found' ||
+        state === 'failed'
+      ) {
+        return 'success' as const;
+      }
     }
     return state;
   }, [state, gwStatus]);

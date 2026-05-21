@@ -31,6 +31,7 @@ export default function AdFormFeatures({
         Caractéristiques
       </Typography>
       <Grid container spacing={2.5}>
+        {/* Adresse — full width */}
         <Grid size={{ xs: 12 }}>
           <TextField
             fullWidth
@@ -43,13 +44,9 @@ export default function AdFormFeatures({
             helperText={errors.adresse}
           />
         </Grid>
-        <Grid
-          size={{
-            xs: 12,
-            sm: 6,
-            md: values.transaction_type === 'location' ? 2 : 3,
-          }}
-        >
+
+        {/* Prix — always full width */}
+        <Grid size={{ xs: 12 }}>
           <TextField
             fullWidth
             size="medium"
@@ -69,39 +66,13 @@ export default function AdFormFeatures({
             }}
           />
         </Grid>
-        {values.transaction_type === 'location' && (
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ display: 'block', mb: 0.5, fontWeight: 600 }}
-            >
-              Période
-            </Typography>
-            <ToggleButtonGroup
-              value={values.price_period}
-              exclusive
-              onChange={(_e, val) => {
-                if (val !== null) update('price_period', val);
-              }}
-              size="small"
-              fullWidth
-              color="primary"
-            >
-              <ToggleButton value="mois" aria-label="par mois">
-                /mois
-              </ToggleButton>
-              <ToggleButton value="jour" aria-label="par jour">
-                /jour
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Grid>
-        )}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+
+        {/* Surface / Chambres / Salles de bain */}
+        <Grid size={{ xs: 12, sm: 4 }}>
           <TextField
             fullWidth
             size="medium"
-            label="Surface"
+            label="Surface (m²)"
             type="number"
             inputProps={{ min: 1, inputMode: 'numeric' }}
             value={values.surface_area}
@@ -113,7 +84,7 @@ export default function AdFormFeatures({
             }}
           />
         </Grid>
-        <Grid size={{ xs: 6, sm: 6, md: 2 }}>
+        <Grid size={{ xs: 6, sm: 4 }}>
           <TextField
             fullWidth
             size="medium"
@@ -123,21 +94,25 @@ export default function AdFormFeatures({
             value={values.bedrooms}
             onChange={(e) => update('bedrooms', e.target.value)}
             error={!!errors.bedrooms}
+            helperText={errors.bedrooms}
           />
         </Grid>
-        <Grid size={{ xs: 6, sm: 6, md: 2 }}>
+        <Grid size={{ xs: 6, sm: 4 }}>
           <TextField
             fullWidth
             size="medium"
-            label="SDB"
+            label="Salles de bain"
             type="number"
             inputProps={{ min: 0, inputMode: 'numeric' }}
             value={values.bathrooms}
             onChange={(e) => update('bathrooms', e.target.value)}
             error={!!errors.bathrooms}
+            helperText={errors.bathrooms}
           />
         </Grid>
-        <Grid size={{ xs: 12, md: 2 }}>
+
+        {/* Parking */}
+        <Grid size={{ xs: 12 }}>
           <FormControlLabel
             control={
               <Switch
@@ -147,9 +122,37 @@ export default function AdFormFeatures({
               />
             }
             label="Parking"
-            sx={{ pt: 1 }}
           />
         </Grid>
+
+        {/* Période — below Parking, only for location */}
+        {values.transaction_type === 'location' && (
+          <Grid size={{ xs: 12 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: 1, fontWeight: 600 }}
+            >
+              Période de facturation
+            </Typography>
+            <ToggleButtonGroup
+              value={values.price_period}
+              exclusive
+              onChange={(_e, val) => {
+                if (val !== null) update('price_period', val);
+              }}
+              size="medium"
+              color="primary"
+            >
+              <ToggleButton value="mois" aria-label="par mois" sx={{ px: 4 }}>
+                / mois
+              </ToggleButton>
+              <ToggleButton value="jour" aria-label="par jour" sx={{ px: 4 }}>
+                / jour
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Grid>
+        )}
       </Grid>
 
       {/* ═══ Proximité & Accessibilité ═══ */}

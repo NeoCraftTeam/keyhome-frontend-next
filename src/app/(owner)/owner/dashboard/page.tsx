@@ -39,13 +39,13 @@ import {
   WavingHand as WavingHandIcon,
 } from '@mui/icons-material';
 import {
+  Alert,
   Avatar,
   Box,
   Button,
   Card,
   CardContent,
   Chip,
-  Alert,
   Container,
   Grid,
   Tab,
@@ -174,6 +174,16 @@ export default function OwnerDashboardPage() {
     staleTime: 2 * 60 * 1000,
   });
 
+  const { data: boostedAdsData, isLoading: boostedLoading } = useQuery({
+    queryKey: ['owner-ads-boosted'],
+    queryFn: ({ signal }) =>
+      ownerService.getMyAds(
+        { page: 1, per_page: 10, is_boosted: true },
+        { signal }
+      ),
+    staleTime: 2 * 60 * 1000,
+  });
+
   const { data: viewingsData, isLoading: viewingsLoading } = useQuery({
     queryKey: ['owner-viewings-recent'],
     queryFn: ({ signal }) =>
@@ -186,6 +196,10 @@ export default function OwnerDashboardPage() {
 
   const analytics = analyticsData as OwnerAnalyticsOverview | undefined;
   const recentAds = ((adsData as { data?: Ad[] })?.data ?? []) as Ad[];
+  const boostedAds = ((boostedAdsData as { data?: Ad[] })?.data ?? []) as Ad[];
+  const boostedCount =
+    (boostedAdsData as { meta?: { total?: number } })?.meta?.total ??
+    boostedAds.length;
   const pendingViewings = ((
     viewingsData as { data?: OwnerViewingReservation[] }
   )?.data ?? []) as OwnerViewingReservation[];
@@ -428,6 +442,16 @@ export default function OwnerDashboardPage() {
             }
             loading={analyticsLoading}
             change={engagementChange}
+          />
+          <DashboardHeroStatCard
+            title="Boosts actifs"
+            value={boostedLoading ? '—' : boostedCount.toLocaleString('fr-FR')}
+            numericValue={boostedLoading ? undefined : boostedCount}
+            subtitle="Annonces en tête de liste"
+            icon={<BoostIcon sx={{ fontSize: { xs: 20, sm: 22 } }} />}
+            accentColor={GOLD}
+            sparklineData={Array(chartDays).fill(boostedCount > 0 ? 1 : 0)}
+            loading={boostedLoading}
           />
         </StaggerList>
 
@@ -940,6 +964,150 @@ export default function OwnerDashboardPage() {
                 />
               </Box>
             )}
+
+            {/* ─── Boost actif ─── */}
+            <Card
+              elevation={0}
+              sx={{
+                mt: 3,
+                borderRadius: 3,
+                border: '2px solid',
+                borderColor: boostedCount > 0 ? GOLD : 'divider',
+                overflow: 'hidden',
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 2,
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <BoostIcon sx={{ color: GOLD, fontSize: 20 }} />
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      Annonces boostées
+                    </Typography>
+                    {boostedCount > 0 && (
+                      <Chip
+                        label={boostedCount}
+                        size="small"
+                        sx={{
+                          bgcolor: GOLD,
+                          color: '#fff',
+                          height: 20,
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                        }}
+                      />
+                    )}
+                  </Box>
+                  <Button
+                    size="small"
+                    startIcon={<BoostIcon />}
+                    onClick={() => runAppRouterNavigation(router, '/owner/ads')}
+                    sx={{
+                      textTransform: 'none',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Gérer les boosts
+                  </Button>
+                </Box>
+
+                {boostedLoading ? (
+                  <Box
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
+                  >
+                    {[1, 2].map((i) => (
+                      <ShimmerBox
+                        key={i}
+                        width="100%"
+                        height={52}
+                        borderRadius={8}
+                      />
+                    ))}
+                  </Box>
+                ) : boostedAds.length === 0 ? (
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                      py: 3,
+                      color: 'text.secondary',
+                    }}
+                  >
+                    <BoostIcon sx={{ fontSize: 36, mb: 1, opacity: 0.3 }} />
+                    <Typography variant="body2">
+                      Aucune annonce boostée actuellement.
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      sx={{ mt: 1.5, borderRadius: 2, fontWeight: 600 }}
+                      onClick={() =>
+                        runAppRouterNavigation(router, '/owner/ads')
+                      }
+                    >
+                      Booster une annonce
+                    </Button>
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
+                  >
+                    {boostedAds.map((ad) => (
+                      <Box
+                        key={ad.id}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 1.5,
+                          p: 1.5,
+                          borderRadius: 2,
+                          bgcolor: 'action.hover',
+                          cursor: 'pointer',
+                          '&:hover': { bgcolor: 'action.selected' },
+                        }}
+                        onClick={() =>
+                          runAppRouterNavigation(router, `/owner/ads/${ad.id}`)
+                        }
+                      >
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography variant="body2" fontWeight={600} noWrap>
+                            {ad.title}
+                          </Typography>
+                          {ad.boost_expires_at && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              Expire le {formatDate(ad.boost_expires_at)}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Chip
+                          label="Boostée"
+                          size="small"
+                          icon={<BoostIcon style={{ fontSize: 12 }} />}
+                          sx={{
+                            bgcolor: GOLD,
+                            color: '#fff',
+                            fontWeight: 700,
+                            fontSize: '0.65rem',
+                            height: 22,
+                            '& .MuiChip-icon': { color: '#fff' },
+                          }}
+                        />
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
           </SectionBoundary>
         )}
 

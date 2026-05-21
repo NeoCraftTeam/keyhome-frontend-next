@@ -1,8 +1,8 @@
 'use client';
 
 import { COUNTRY_COOKIE } from '@/lib/currency';
-import { readCheckoutSessionTotalAmount } from '@/lib/stripe-checkout-total';
 import { getStripePromise } from '@/lib/stripe';
+import { readCheckoutSessionTotalAmount } from '@/lib/stripe-checkout-total';
 import { brand } from '@/theme/tokens';
 import ErrorIcon from '@mui/icons-material/Error';
 import {
@@ -273,8 +273,11 @@ function CheckoutConfirmInner({
     setError(null);
 
     try {
+      // `return_url` is already set server-side when the Checkout Session is
+      // created. Passing `returnUrl` here again would throw:
+      //   "You cannot provide returnUrl to confirm() when return_url was
+      //    already provided when creating the Checkout Session."
       const confirmResult = await result.checkout.confirm({
-        returnUrl: paymentConfirmReturnUrl,
         redirect: 'if_required',
       });
 
@@ -297,7 +300,7 @@ function CheckoutConfirmInner({
     } finally {
       setSubmitting(false);
     }
-  }, [result, onSuccess, paymentConfirmReturnUrl]);
+  }, [result, onSuccess]);
 
   const handleSaveCheckboxChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -319,7 +322,9 @@ function CheckoutConfirmInner({
   }
 
   const isLoading = result.type === 'loading';
-  const displayedTotal = checkoutTotalAmount ?? amountLabel ?? null;
+  // Prefer the local amountLabel (XAF/FCFA) over Stripe's EUR total.
+  // The backend converts XAF→EUR for Stripe; showing EUR to a CHF/XAF user is misleading.
+  const displayedTotal = amountLabel ?? checkoutTotalAmount ?? null;
 
   return (
     <Box>
@@ -336,9 +341,10 @@ function CheckoutConfirmInner({
             mb: 1,
           }}
         >
-          {checkoutTotalAmount !== null
-            ? `Total à payer : ${checkoutTotalAmount}`
-            : amountLabel}
+          {amountLabel ??
+            (checkoutTotalAmount !== null
+              ? `Total à payer : ${checkoutTotalAmount}`
+              : null)}
         </Typography>
       )}
 
@@ -403,9 +409,21 @@ function CheckoutConfirmInner({
         {onBack && (
           <Button
             variant="outlined"
+            color="inherit"
             onClick={onBack}
             disabled={submitting}
-            sx={{ flex: 1, py: 1.4, borderRadius: 3, fontWeight: 600 }}
+            sx={{
+              flex: 1,
+              py: 1.4,
+              borderRadius: 3,
+              fontWeight: 600,
+              color: 'text.secondary',
+              borderColor: 'divider',
+              '&:hover': {
+                borderColor: 'text.primary',
+                bgcolor: 'action.hover',
+              },
+            }}
           >
             Retour
           </Button>
@@ -432,6 +450,8 @@ function CheckoutConfirmInner({
               size={20}
               sx={{ color: 'rgba(255,255,255,0.5)' }}
             />
+          ) : amountLabel ? (
+            `Payer ${amountLabel}`
           ) : checkoutTotalAmount !== null ? (
             `Payer ${checkoutTotalAmount}`
           ) : (
@@ -835,9 +855,21 @@ function StripeConfirmInner({
         {onBack && (
           <Button
             variant="outlined"
+            color="inherit"
             onClick={onBack}
             disabled={submitting}
-            sx={{ flex: 1, py: 1.4, borderRadius: 3, fontWeight: 600 }}
+            sx={{
+              flex: 1,
+              py: 1.4,
+              borderRadius: 3,
+              fontWeight: 600,
+              color: 'text.secondary',
+              borderColor: 'divider',
+              '&:hover': {
+                borderColor: 'text.primary',
+                bgcolor: 'action.hover',
+              },
+            }}
           >
             Retour
           </Button>

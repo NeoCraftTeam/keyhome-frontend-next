@@ -17,12 +17,10 @@ import {
 } from '@/lib/safe-area-insets';
 import { useAuth } from '@/providers/AuthProvider';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import ExploreIcon from '@mui/icons-material/Explore';
 import MenuIcon from '@mui/icons-material/Menu';
-import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
 import {
   AppBar,
@@ -35,15 +33,6 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-
-const ROOT_PATHS = [
-  '/home',
-  '/search',
-  '/nearby',
-  '/comparaisons',
-  '/prix-marche',
-  '/messages',
-];
 
 const NAV_LINKS = [
   { label: 'Rechercher', href: '/search', icon: <SearchIcon /> },
@@ -59,10 +48,6 @@ export default function Navbar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isStandalone = useIsStandalone();
-  const isRootPage = ROOT_PATHS.some((p) => pathname === p);
-  /** PWA installée : avatar à gauche (drawer), solde à droite, style app native */
-  const isClientPwaShell = isMobile && isStandalone && Boolean(isAuthenticated);
-
   const {
     anchorEl,
     mobileOpen,
@@ -141,32 +126,43 @@ export default function Navbar() {
             alignItems: 'center',
           }}
         >
-          {/* LEFT — desktop nav / mobile retour + (PWA) avatar drawer */}
+          {/* LEFT — mobile: avatar (drawer) | Se connecter — desktop: nav links */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            {isMobile && !isRootPage && (
-              <IconButton
-                size="small"
-                onClick={() => router.back()}
-                aria-label="Retour"
-                sx={{ color: 'text.primary' }}
-              >
-                <ArrowBackIcon sx={{ fontSize: 22 }} />
-              </IconButton>
-            )}
-            {isClientPwaShell && (
-              <IconButton
-                aria-label="Menu compte"
-                onClick={openDrawer}
-                sx={{ width: 44, height: 44, ml: !isRootPage ? 0 : -0.5 }}
-              >
-                <Avatar
-                  src={user?.avatar || undefined}
-                  sx={{ width: 32, height: 32, bgcolor: 'text.secondary' }}
+            {isMobile ? (
+              isAuthenticated ? (
+                <IconButton
+                  aria-label="Menu compte"
+                  onClick={openDrawer}
+                  sx={{ width: 44, height: 44, ml: -0.5 }}
                 >
-                  {user?.firstname?.[0] || 'U'}
-                </Avatar>
-              </IconButton>
-            )}
+                  <Avatar
+                    src={user?.avatar || undefined}
+                    sx={{ width: 32, height: 32, bgcolor: 'text.secondary' }}
+                  >
+                    {user?.firstname?.[0] || 'U'}
+                  </Avatar>
+                </IconButton>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  onClick={() => router.push('/login')}
+                  sx={{
+                    borderRadius: '20px',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '0.78rem',
+                    py: 0.5,
+                    px: 1.5,
+                    ml: -0.5,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Se connecter
+                </Button>
+              )
+            ) : null}
             {!isMobile &&
               NAV_LINKS.map((link) => (
                 <Button
@@ -336,10 +332,9 @@ export default function Navbar() {
                       Publier
                     </Button>
                   )}
-                {(!isMobile || isClientPwaShell) && <CreditsWidget />}
+                <CreditsWidget />
 
-                {/* Messages : masqué en PWA (onglet BottomNav). */}
-                {!(isMobile && isStandalone) && (
+                {!isMobile && (
                   <IconButton
                     aria-label="Messagerie"
                     onClick={() => router.push('/messages')}
@@ -349,26 +344,7 @@ export default function Navbar() {
                   </IconButton>
                 )}
 
-                {isMobile ? (
-                  isClientPwaShell ? null : (
-                    <IconButton
-                      aria-label="Menu compte"
-                      onClick={openDrawer}
-                      sx={{ ml: 0.5, width: 44, height: 44 }}
-                    >
-                      <Avatar
-                        src={user?.avatar || undefined}
-                        sx={{
-                          width: 30,
-                          height: 30,
-                          bgcolor: 'text.secondary',
-                        }}
-                      >
-                        {user?.firstname?.[0] || 'U'}
-                      </Avatar>
-                    </IconButton>
-                  )
-                ) : (
+                {!isMobile && (
                   <>
                     <Box
                       onClick={openDesktopMenu}
@@ -421,41 +397,22 @@ export default function Navbar() {
                 )}
               </>
             ) : (
-              <>
-                {isMobile ? (
-                  <IconButton
-                    onClick={() => router.push('/login')}
-                    aria-label="Se connecter"
-                    sx={{
-                      bgcolor: 'primary.main',
-                      color: 'primary.contrastText',
-                      borderRadius: '50%',
-                      width: 44,
-                      height: 44,
-                      '&:hover': {
-                        bgcolor: 'primary.dark',
-                      },
-                    }}
-                  >
-                    <PersonIcon sx={{ fontSize: 18 }} />
-                  </IconButton>
-                ) : (
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    onClick={() => router.push('/login')}
-                    sx={{
-                      borderRadius: '20px',
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Se connecter
-                  </Button>
-                )}
-              </>
+              !isMobile && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  onClick={() => router.push('/login')}
+                  sx={{
+                    borderRadius: '20px',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Se connecter
+                </Button>
+              )
             )}
           </Box>
         </Toolbar>

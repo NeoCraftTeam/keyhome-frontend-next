@@ -1,5 +1,6 @@
 'use client';
 
+import { isImplicitDialogDismissReason } from '@/lib/dialog-dismiss';
 import { getStripePromise } from '@/lib/stripe';
 import { paymentsService } from '@/services/payments.service';
 import { brand } from '@/theme/tokens';
@@ -24,7 +25,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { isImplicitDialogDismissReason } from '@/lib/dialog-dismiss';
 import {
   Elements,
   PaymentElement,
@@ -146,6 +146,9 @@ export default function SavedCardsManager({
     setSetupOpen(false);
     void queryClient.invalidateQueries({
       queryKey: STRIPE_SAVED_CARDS_QUERY_KEY,
+    });
+    void paymentsService.notifyCardAdded().catch((err: unknown) => {
+      console.warn('Card-added notification failed (non-blocking)', err);
     });
   }, [queryClient]);
 

@@ -2,6 +2,12 @@
 
 import VerifyingView from '@/components/payment/return/VerifyingView';
 import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
+import {
+  isGatewayRedirectCancelled,
+  isGatewayRedirectFailed,
+  isGatewayRedirectSuccess,
+  parsePaymentReturnParams,
+} from '@/lib/payment-gateway-return';
 import { consumePaymentReturnPath } from '@/lib/payment-return';
 import { creditsKeys } from '@/lib/query-keys';
 import { brand, gradient } from '@/theme/tokens';
@@ -25,21 +31,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { useCallback, useEffect, useMemo } from 'react';
 
-function isFlutterwaveRedirectCancelled(status: string | null): boolean {
-  if (!status) {
-    return false;
-  }
-  return status.toLowerCase() === 'cancelled';
-}
-
-function isFlutterwaveRedirectFailed(status: string | null): boolean {
-  if (!status) {
-    return false;
-  }
-  const s = status.toLowerCase();
-  return s === 'declined' || s === 'failed' || s === 'error';
-}
-
 /**
  * Post-checkout UI for credit purchases (Flutterwave redirect + Stripe return URL).
  * Rendered on `/credits/callback` (legacy) and `/payment/return?flow=credit`.
@@ -50,12 +41,15 @@ export default function CreditPurchaseReturnView(): ReactElement {
   const queryClient = useQueryClient();
 
   const adId = searchParams.get('ad_id');
-  const status = searchParams.get('status');
-  const txRef = searchParams.get('tx_ref');
+  const returnParams = useMemo(
+    () => parsePaymentReturnParams(searchParams),
+    [searchParams]
+  );
+  const { txRef, gatewayReference, status } = returnParams;
 
   const skipPolling = useMemo(() => {
-    if (isFlutterwaveRedirectCancelled(status)) return true;
-    if (isFlutterwaveRedirectFailed(status)) return true;
+    if (isGatewayRedirectCancelled(status)) return true;
+    if (isGatewayRedirectFailed(status)) return true;
     return false;
   }, [status]);
 
@@ -66,14 +60,26 @@ export default function CreditPurchaseReturnView(): ReactElement {
 
   const { state, pointBalance, retry } = usePaymentStatusPolling({
     txRef,
+    gatewayReference,
+    gatewayRedirectStatus: status,
     variant: 'credit',
     skip: skipPolling,
     onSuccess,
   });
 
   const effectiveState = useMemo(() => {
-    if (isFlutterwaveRedirectCancelled(status)) return 'cancelled' as const;
-    if (isFlutterwaveRedirectFailed(status)) return 'failed' as const;
+    if (isGatewayRedirectCancelled(status)) return 'cancelled' as const;
+    if (isGatewayRedirectFailed(status)) return 'failed' as const;
+
+    // When redirect says completed but the backend explicitly marks failed
+    // (webhook never arrived, retries exhausted) → treat as success so the
+    // user isn't left on a false "failed" screen after a real payment.
+    // verifying / processing / not_found are left as-is so the loading
+    // screen renders while the backend actually processes the credit.
+    if (isGatewayRedirectSuccess(status) && state === 'failed') {
+      return 'success' as const;
+    }
+
     return state;
   }, [state, status]);
 

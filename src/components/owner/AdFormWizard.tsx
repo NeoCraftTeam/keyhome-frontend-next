@@ -1108,9 +1108,9 @@ function AdFormWizard({
               <Box
                 sx={{
                   display: 'flex',
-                  gap: 2,
+                  flexDirection: { xs: 'column-reverse', sm: 'row' },
+                  gap: { xs: 1.5, sm: 2 },
                   justifyContent: 'space-between',
-                  flexWrap: 'wrap',
                   pt: 1,
                   borderTop: '1px solid',
                   borderColor: 'divider',
@@ -1288,7 +1288,14 @@ function AdFormWizard({
                 </Box>
 
                 {/* Right side */}
-                <Box sx={{ display: 'flex', gap: 1.5, ml: 'auto' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 1.5,
+                    ml: { sm: 'auto' },
+                    justifyContent: { xs: 'flex-end', sm: 'unset' },
+                  }}
+                >
                   {onCancel && activeStep === 0 && !editDraftMode && (
                     <Button
                       onClick={onCancel}
@@ -1301,6 +1308,7 @@ function AdFormWizard({
                   {activeStep > 0 && (
                     <Button
                       variant="outlined"
+                      size="small"
                       startIcon={<ArrowBackIcon />}
                       onClick={handleBack}
                       disabled={isSubmitting || isApplyingEditDraft}
@@ -1312,13 +1320,14 @@ function AdFormWizard({
                   {!isReviewStep ? (
                     <Button
                       variant="contained"
+                      size="small"
                       endIcon={<ArrowForwardIcon />}
                       onClick={handleNext}
                       disabled={nextDisabled || isApplyingEditDraft}
                       sx={{
                         borderRadius: 2,
                         fontWeight: 700,
-                        px: 3,
+                        px: 2.5,
                       }}
                     >
                       Suivant
@@ -1326,12 +1335,13 @@ function AdFormWizard({
                   ) : editDraftMode ? (
                     <Button
                       variant="contained"
+                      size="small"
                       color="primary"
                       disabled={isApplyingEditDraft}
                       onClick={onApplyEditDraft}
                       startIcon={
                         isApplyingEditDraft ? (
-                          <CircularProgress size={18} />
+                          <CircularProgress size={16} />
                         ) : (
                           <PublishIcon />
                         )
@@ -1339,8 +1349,7 @@ function AdFormWizard({
                       sx={{
                         borderRadius: 2,
                         fontWeight: 700,
-                        px: 4,
-                        py: 1.25,
+                        px: 3,
                       }}
                     >
                       Appliquer les modifications
@@ -1348,11 +1357,12 @@ function AdFormWizard({
                   ) : (
                     <Button
                       type="submit"
+                      size="small"
                       variant="contained"
                       disabled={isSubmitting || isSavingDraft}
                       startIcon={
                         isSubmitting ? (
-                          <CircularProgress size={18} />
+                          <CircularProgress size={16} />
                         ) : (
                           <PublishIcon />
                         )
@@ -1360,8 +1370,7 @@ function AdFormWizard({
                       sx={{
                         borderRadius: 2,
                         fontWeight: 700,
-                        px: 4,
-                        py: 1.25,
+                        px: 3,
                       }}
                     >
                       {submitLabel}

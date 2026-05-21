@@ -61,12 +61,12 @@ const SOCIAL_LINKS = [
   },
   {
     icon: <XIcon sx={{ fontSize: 16 }} />,
-    href: 'https://twitter.com/keyhome_app',
+    href: 'https://x.com/Keyhomeapp',
     label: 'X',
   },
   {
     icon: <InstagramIcon sx={{ fontSize: 16 }} />,
-    href: 'https://www.instagram.com/keyhome_app',
+    href: 'https://www.instagram.com/keyhome.app',
     label: 'Instagram',
   },
 ];

@@ -10,20 +10,19 @@ import Check from '@mui/icons-material/Check';
 import Close from '@mui/icons-material/Close';
 import OpenInNew from '@mui/icons-material/OpenInNew';
 import SquareFoot from '@mui/icons-material/SquareFoot';
-import {
-  Box,
-  Button,
-  Chip,
-  IconButton,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
+import { Box, Button, Chip, IconButton, Typography } from '@mui/material';
 import { format, isValid, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 
-const CRITERIA = [
+interface Criterion {
+  label: string;
+  render: (ad: Ad) => React.ReactNode;
+  bestAdId?: (ads: Ad[]) => string | null;
+  highlightColor?: string;
+}
+
+const CRITERIA: Criterion[] = [
   {
     label: 'Prix / mois',
     render: (ad: Ad) => (
@@ -36,6 +35,12 @@ const CRITERIA = [
         {ad.price ? <Price amountXAF={ad.price} /> : '—'}
       </Typography>
     ),
+    bestAdId: (ads) => {
+      const valid = ads.filter((a) => a.price != null);
+      if (!valid.length) return null;
+      return valid.reduce((best, a) => (a.price! < best.price! ? a : best)).id;
+    },
+    highlightColor: '#dcfce7',
   },
   {
     label: 'Transaction',
@@ -59,6 +64,14 @@ const CRITERIA = [
         </Typography>
       </Box>
     ),
+    bestAdId: (ads) => {
+      const valid = ads.filter((a) => a.surface_area != null);
+      if (!valid.length) return null;
+      return valid.reduce((best, a) =>
+        a.surface_area! > best.surface_area! ? a : best
+      ).id;
+    },
+    highlightColor: '#dbeafe',
   },
   {
     label: 'Chambres',
@@ -68,6 +81,14 @@ const CRITERIA = [
         <Typography variant="body2">{ad.bedrooms ?? '—'}</Typography>
       </Box>
     ),
+    bestAdId: (ads) => {
+      const valid = ads.filter((a) => a.bedrooms != null);
+      if (!valid.length) return null;
+      return valid.reduce((best, a) =>
+        a.bedrooms! > best.bedrooms! ? a : best
+      ).id;
+    },
+    highlightColor: '#dbeafe',
   },
   {
     label: 'Salles de bain',
@@ -96,6 +117,16 @@ const CRITERIA = [
           : '—'}
       </Typography>
     ),
+    bestAdId: (ads) => {
+      const valid = ads.filter(
+        (a) => a.price != null && a.surface_area != null
+      );
+      if (!valid.length) return null;
+      return valid.reduce((best, a) =>
+        a.price! / a.surface_area! < best.price! / best.surface_area! ? a : best
+      ).id;
+    },
+    highlightColor: '#dcfce7',
   },
   {
     label: 'Disponible à partir du',
@@ -193,18 +224,14 @@ const CRITERIA = [
 interface ComparisonTableProps {
   items: Ad[];
   onRemove: (id: string) => void;
-  onClear?: () => void;
   showActions?: boolean;
 }
 
 export default function ComparisonTable({
   items,
   onRemove,
-  onClear: _onClear,
   showActions = true,
 }: ComparisonTableProps) {
-  const theme = useTheme();
-  const _isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const router = useRouter();
   const comparatorAttributeSlugs = getComparatorAttributeSlugsForAds(items);
 
@@ -321,7 +348,7 @@ export default function ComparisonTable({
 
       {[
         ...CRITERIA,
-        ...comparatorAttributeSlugs.map((attrSlug) => ({
+        ...(comparatorAttributeSlugs.map((attrSlug) => ({
           label: getAttributeLabel(attrSlug),
           render: (ad: Ad) => {
             const attrs = (ad.attributes ?? []).map((a) => a.toLowerCase());
@@ -334,60 +361,72 @@ export default function ComparisonTable({
               </Typography>
             );
           },
-        })),
-      ].map(({ label, render }, idx) => (
-        <Box
-          key={label}
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: `100px repeat(${items.length}, minmax(140px, 1fr))`,
-              sm: `180px repeat(${items.length}, 1fr)`,
-            },
-            minWidth: { xs: `${100 + items.length * 140}px`, sm: 'auto' },
-            bgcolor: idx % 2 === 0 ? 'background.paper' : 'grey.100',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            '&:last-child': { borderBottom: 'none' },
-          }}
-        >
+        })) as Criterion[]),
+      ].map(({ label, render, bestAdId, highlightColor }, idx) => {
+        const bestId = bestAdId ? bestAdId(items) : null;
+        return (
           <Box
+            key={label}
             sx={{
-              px: { xs: 1.5, sm: 2.5 },
-              py: { xs: 1.25, sm: 1.75 },
-              display: 'flex',
-              alignItems: 'center',
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: `100px repeat(${items.length}, minmax(140px, 1fr))`,
+                sm: `180px repeat(${items.length}, 1fr)`,
+              },
+              minWidth: { xs: `${100 + items.length * 140}px`, sm: 'auto' },
+              bgcolor: idx % 2 === 0 ? 'background.paper' : 'grey.100',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              '&:last-child': { borderBottom: 'none' },
             }}
           >
-            <Typography
-              variant="body2"
-              fontWeight={600}
-              color="text.secondary"
-              fontSize={{ xs: 11, sm: 13 }}
-            >
-              {label}
-            </Typography>
-          </Box>
-
-          {items.map((ad) => (
             <Box
-              key={ad.id}
               sx={{
-                px: { xs: 1, sm: 2 },
+                px: { xs: 1.5, sm: 2.5 },
                 py: { xs: 1.25, sm: 1.75 },
-                borderLeft: '1px solid',
-                borderColor: 'divider',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                textAlign: 'center',
               }}
             >
-              {render(ad)}
+              <Typography
+                variant="body2"
+                fontWeight={600}
+                color="text.secondary"
+                fontSize={{ xs: 11, sm: 13 }}
+              >
+                {label}
+              </Typography>
             </Box>
-          ))}
-        </Box>
-      ))}
+
+            {items.map((ad) => {
+              const isHighlighted = bestId !== null && ad.id === bestId;
+              return (
+                <Box
+                  key={ad.id}
+                  sx={{
+                    px: { xs: 1, sm: 2 },
+                    py: { xs: 1.25, sm: 1.75 },
+                    borderLeft: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    bgcolor:
+                      isHighlighted && highlightColor
+                        ? highlightColor
+                        : undefined,
+                    borderRadius: isHighlighted ? 0.5 : 0,
+                    position: 'relative',
+                  }}
+                >
+                  {render(ad)}
+                </Box>
+              );
+            })}
+          </Box>
+        );
+      })}
     </Box>
   );
 }

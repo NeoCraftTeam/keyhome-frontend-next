@@ -2,6 +2,7 @@
 
 import EmptyState from '@/components/ui/EmptyState';
 import FadeIn from '@/components/ui/FadeIn';
+import KhSnackbar from '@/components/ui/KhSnackbar';
 import { usePasskeyManager } from '@/hooks/usePasskey';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { formatWebAuthnClientError } from '@/lib/passkey-support';
@@ -26,7 +27,6 @@ import {
   DialogTitle,
   IconButton,
   Skeleton,
-  Snackbar,
   Stack,
   TextField,
   Tooltip,
@@ -478,20 +478,12 @@ export default function PasskeyManager({
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <KhSnackbar
         open={Boolean(snackbar)}
-        autoHideDuration={4000}
+        message={snackbar?.message ?? null}
+        severity={snackbar?.severity ?? 'info'}
         onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbar(null)}
-          severity={snackbar?.severity}
-          sx={{ borderRadius: 2 }}
-        >
-          {snackbar?.message}
-        </Alert>
-      </Snackbar>
+      />
     </>
   );
 }

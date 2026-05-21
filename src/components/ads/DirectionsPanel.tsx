@@ -1,16 +1,17 @@
 'use client';
 
+import { useUserLocation } from '@/hooks/useUserLocation';
 import {
   geoService,
   type DirectionsResult,
   type OrsProfile,
 } from '@/services/geo.service';
-import { useUserLocation } from '@/hooks/useUserLocation';
 import Accessible from '@mui/icons-material/Accessible';
 import DirectionsBike from '@mui/icons-material/DirectionsBike';
 import DirectionsCar from '@mui/icons-material/DirectionsCar';
 import DirectionsWalk from '@mui/icons-material/DirectionsWalk';
 import NavigationOutlined from '@mui/icons-material/NavigationOutlined';
+import OpenInNew from '@mui/icons-material/OpenInNew';
 import Schedule from '@mui/icons-material/Schedule';
 import Straighten from '@mui/icons-material/Straighten';
 import {
@@ -24,7 +25,7 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 // ─── Profile config ───────────────────────────────────────────────────────────
 
@@ -393,10 +394,38 @@ export default function DirectionsPanel({
             </Typography>
           )}
 
+          <Box
+            component="a"
+            href={`https://www.google.com/maps/dir/?api=1&destination=${adLat},${adLng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.5,
+              mt: 1,
+              py: 0.5,
+              px: 1,
+              bgcolor: (t) =>
+                t.palette.mode === 'dark'
+                  ? 'rgba(255,255,255,0.05)'
+                  : 'rgba(0,0,0,0.04)',
+              borderRadius: 1.5,
+              textDecoration: 'none',
+              color: 'text.secondary',
+              fontSize: 11,
+              fontWeight: 600,
+              '&:hover': { color: 'primary.main' },
+              transition: 'color 0.15s',
+            }}
+          >
+            <OpenInNew sx={{ fontSize: 12 }} />
+            Ouvrir dans Google Maps
+          </Box>
           <Typography
             variant="caption"
             color="text.disabled"
-            sx={{ display: 'block', mt: 1, fontSize: 9 }}
+            sx={{ display: 'block', mt: 0.75, fontSize: 9 }}
           >
             Itinéraires calculés via OpenRouteService · depuis votre position
             GPS

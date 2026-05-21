@@ -10,6 +10,15 @@ export interface BoostStatus {
   boosted_at: string | null;
 }
 
+export interface BoostPlan {
+  id: string;
+  name: string;
+  price: number;
+  boost_score: number;
+  boost_duration_days: number;
+  description: string | null;
+}
+
 export const ownerAdsService = {
   async getMyAds(
     params?: {
@@ -24,6 +33,7 @@ export const ownerAdsService = {
       price_max?: number;
       sort?: string;
       order?: 'asc' | 'desc';
+      is_boosted?: boolean;
     },
     request?: { signal?: AbortSignal }
   ) {
@@ -32,6 +42,11 @@ export const ownerAdsService = {
       ...(request?.signal ? { signal: request.signal } : {}),
     });
     return data;
+  },
+
+  async getBoostPlans(): Promise<BoostPlan[]> {
+    const { data } = await api.get<{ data: BoostPlan[] }>('/my/boost-plans');
+    return data.data ?? data;
   },
 
   async boostAd(adId: string, planId: string, callbackUrl?: string) {

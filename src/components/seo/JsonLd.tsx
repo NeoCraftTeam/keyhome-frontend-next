@@ -60,10 +60,10 @@ const organizationSchema = {
   slogan: BRAND_TAGLINE,
   foundingDate: '2024',
   sameAs: [
-    'https://twitter.com/keyhome_app',
+    'https://x.com/Keyhomeapp',
     'https://www.facebook.com/keyhomeapp',
     'https://www.linkedin.com/company/keyhome',
-    'https://www.instagram.com/keyhome_app',
+    'https://www.instagram.com/keyhome.app',
   ],
   contactPoint: {
     '@type': 'ContactPoint',

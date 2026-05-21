@@ -1,7 +1,9 @@
 'use client';
 
 import type { SearchFiltersReturn } from '@/hooks/useSearchFilters';
+import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { gradient } from '@/theme/tokens';
+import type { City } from '@/types';
 import CloseIcon from '@mui/icons-material/Close';
 import ViewInArIcon from '@mui/icons-material/ViewInAr';
 import {
@@ -31,10 +33,11 @@ interface Props {
   onClose: () => void;
   // Props from useCityAutocompleteConfig() that cannot live inside the hook call here
   // (hook must be called at SearchContent level for shared state).
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  citySlotProps: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  renderCityOption: (props: any, option: any) => React.ReactNode;
+  citySlotProps: ReturnType<typeof useCityAutocompleteConfig>['slotProps'];
+  renderCityOption: (
+    props: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key },
+    option: City
+  ) => React.ReactNode;
 }
 
 /**

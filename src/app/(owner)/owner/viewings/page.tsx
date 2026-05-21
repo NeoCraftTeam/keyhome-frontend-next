@@ -1,22 +1,24 @@
 'use client';
 
+import FadeIn from '@/components/ui/FadeIn';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import {
   ownerService,
   type OwnerViewingReservation,
 } from '@/services/owner.service';
+import { shadow, transition } from '@/theme/tokens';
 import {
+  Home as AdIcon,
   CalendarMonth as CalendarIcon,
-  CheckCircleOutline as ConfirmIcon,
   CancelOutlined as CancelIcon,
-  EditNote as NotesIcon,
-  Phone as PhoneIcon,
+  CheckCircleOutline as ConfirmIcon,
   Email as EmailIcon,
   ExpandMore as ExpandIcon,
   FilterList as FilterIcon,
-  AccessTime as TimeIcon,
+  EditNote as NotesIcon,
   Person as PersonIcon,
-  Home as AdIcon,
+  Phone as PhoneIcon,
+  AccessTime as TimeIcon,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -46,8 +48,6 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
-import FadeIn from '@/components/ui/FadeIn';
-import { shadow, transition } from '@/theme/tokens';
 
 const MOTION_POLYFILL_SX = {
   transition: transition.polish,
@@ -213,12 +213,13 @@ export default function OwnerViewingsPage() {
       setConfirmDialog(null);
       invalidateReservations();
     },
-    onError: () => {
-      setSnackbar({
-        open: true,
-        message: 'Erreur lors de la confirmation.',
-        severity: 'error',
-      });
+    onError: (error: unknown) => {
+      const msg =
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message ?? 'Erreur lors de la confirmation.';
+      setSnackbar({ open: true, message: msg, severity: 'error' });
+      setConfirmDialog(null);
+      invalidateReservations();
     },
   });
 

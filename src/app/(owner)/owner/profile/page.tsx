@@ -1,12 +1,19 @@
 'use client';
 
+import PublicBioEditor from '@/components/owner/PublicBioEditor';
+import QrCodeDialog from '@/components/owner/QrCodeDialog';
 import PaymentHistoryTable from '@/components/payment/PaymentHistoryTable';
 import SavedCardsManager from '@/components/payment/SavedCardsManager';
+import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
+import PasskeyManager from '@/components/security/PasskeyManager';
 import FadeIn from '@/components/ui/FadeIn';
+import KhSnackbar from '@/components/ui/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar';
 import PhoneField from '@/components/ui/PhoneField';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
+import { markdownLightToHtml } from '@/lib/markdown-light';
 import {
   normalizePhoneLikeBackend,
   shouldSendPhoneNumberForUserUpdate,
@@ -16,14 +23,8 @@ import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { surveysService } from '@/services/surveys.service';
 import { usersService } from '@/services/users.service';
-import { City } from '@/types';
-import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
-import PasskeyManager from '@/components/security/PasskeyManager';
-import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar';
-import PublicBioEditor from '@/components/owner/PublicBioEditor';
-import QrCodeDialog from '@/components/owner/QrCodeDialog';
-import { markdownLightToHtml } from '@/lib/markdown-light';
 import { brandAgent, neutral, shadow, transition } from '@/theme/tokens';
+import { City } from '@/types';
 import {
   Assignment as AssignmentIcon,
   Cancel as CancelIcon,
@@ -51,7 +52,6 @@ import {
   IconButton,
   InputAdornment,
   Paper,
-  Snackbar,
   Tab,
   Tabs,
   TextField,
@@ -59,8 +59,14 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+const AvatarCropDialog = dynamic(
+  () => import('@/components/ui/AvatarCropDialog'),
+  { ssr: false }
+);
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -112,6 +118,8 @@ export default function OwnerProfilePage() {
     severity: 'success' | 'error';
   } | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
   const [passwordForm, setPasswordForm] = useState({
     current_password: '',
@@ -168,7 +176,7 @@ export default function OwnerProfilePage() {
     }
   }, [user?.id, user?.city_id, user?.city_name, isEditing]);
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) {
       return;
@@ -192,8 +200,22 @@ export default function OwnerProfilePage() {
       return;
     }
 
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropImageSrc(reader.result as string);
+      setCropDialogOpen(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleCropConfirm = async (blob: Blob) => {
+    if (!user) return;
+    setCropDialogOpen(false);
+    setCropImageSrc(null);
+
     const formData = new FormData();
-    formData.append('avatar', file);
+    formData.append('avatar', blob, `avatar-${Date.now()}.jpg`);
 
     try {
       const updated = await usersService.update(user.id, formData);
@@ -212,8 +234,6 @@ export default function OwnerProfilePage() {
         ),
         severity: 'error',
       });
-    } finally {
-      e.target.value = '';
     }
   };
 
@@ -988,29 +1008,30 @@ export default function OwnerProfilePage() {
         )}
       </TabPanel>
 
+      {cropImageSrc && (
+        <AvatarCropDialog
+          open={cropDialogOpen}
+          imageSrc={cropImageSrc}
+          onClose={() => {
+            setCropDialogOpen(false);
+            setCropImageSrc(null);
+          }}
+          onConfirm={handleCropConfirm}
+        />
+      )}
+
       <QrCodeDialog
         open={profileQrOpen}
         onClose={() => setProfileQrOpen(false)}
         variant="profile"
       />
 
-      <Snackbar
+      <KhSnackbar
         open={!!snackbar}
-        autoHideDuration={3500}
+        message={snackbar?.message ?? null}
+        severity={snackbar?.severity ?? 'info'}
         onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {snackbar ? (
-          <Alert
-            onClose={() => setSnackbar(null)}
-            severity={snackbar.severity}
-            variant="filled"
-            sx={{ width: '100%', borderRadius: 2 }}
-          >
-            {snackbar.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      />
     </Container>
   );
 }

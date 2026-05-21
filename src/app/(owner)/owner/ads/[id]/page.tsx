@@ -305,10 +305,7 @@ export default function OwnerAdEditPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ad', id] });
       queryClient.invalidateQueries({ queryKey: ['owner-ads'] });
-      setSnackbar({
-        message: 'Annonce soumise pour validation !',
-        severity: 'success',
-      });
+      router.push('/owner/ads');
     },
     onError: (err: unknown) => {
       setSnackbar({

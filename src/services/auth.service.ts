@@ -115,7 +115,12 @@ export const authService = {
     options?: { registration_intent?: 'customer' | 'agent' }
   ): Promise<
     | { state: 'otp_required'; email_hint: string | null }
-    | { token: string; user: User; panel_sso_url: string | null }
+    | {
+        token: string;
+        user: User;
+        panel_sso_url: string | null;
+        expires_at: string | null;
+      }
   > {
     const config = bearerToken
       ? { headers: { Authorization: `Bearer ${bearerToken}` } }
@@ -127,7 +132,12 @@ export const authService = {
     );
     const { data } = await api.post<
       | { state: 'otp_required'; email_hint: string | null }
-      | { access_token: string; user: User; panel_sso_url: string | null }
+      | {
+          access_token: string;
+          expires_at: string | null;
+          user: User;
+          panel_sso_url: string | null;
+        }
     >('/auth/clerk/exchange', body, config);
 
     if ('state' in data && data.state === 'otp_required') {
@@ -136,11 +146,13 @@ export const authService = {
 
     const d = data as {
       access_token: string;
+      expires_at: string | null;
       user: User;
       panel_sso_url: string | null;
     };
     return {
       token: d.access_token,
+      expires_at: d.expires_at ?? null,
       user: d.user,
       panel_sso_url: d.panel_sso_url,
     };
@@ -159,6 +171,7 @@ export const authService = {
     | {
         state: 'authenticated';
         token: string;
+        expires_at: string | null;
         user: User;
         panel_sso_url: string | null;
       }
@@ -177,6 +190,7 @@ export const authService = {
       | {
           state: 'authenticated';
           access_token: string;
+          expires_at: string | null;
           user: User;
           panel_sso_url: string | null;
         }
@@ -189,12 +203,14 @@ export const authService = {
     const d = data as {
       state: 'authenticated';
       access_token: string;
+      expires_at: string | null;
       user: User;
       panel_sso_url: string | null;
     };
     return {
       state: 'authenticated',
       token: d.access_token,
+      expires_at: d.expires_at ?? null,
       user: d.user,
       panel_sso_url: d.panel_sso_url,
     };
@@ -203,15 +219,22 @@ export const authService = {
   async completeClerkProfile(profile: {
     phone_number?: string;
     city_id?: string | null;
-  }): Promise<{ token: string; user: User; panel_sso_url: string | null }> {
+  }): Promise<{
+    token: string;
+    user: User;
+    panel_sso_url: string | null;
+    expires_at: string | null;
+  }> {
     const { data } = await api.post<{
       access_token: string;
+      expires_at: string | null;
       user: User;
       panel_sso_url: string | null;
     }>('/auth/clerk/complete-profile', mergeAttribution({ ...profile }));
     clearUtmParamsAfterRegistration();
     return {
       token: data.access_token,
+      expires_at: data.expires_at ?? null,
       user: data.user,
       panel_sso_url: data.panel_sso_url,
     };

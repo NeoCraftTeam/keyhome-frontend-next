@@ -3,7 +3,8 @@
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import SearchAlertButton from '@/components/ads/SearchAlertButton';
-import type { City } from '@/types';
+import { gradient } from '@/theme/tokens';
+import type { Ad, City } from '@/types';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
 import {
@@ -18,7 +19,6 @@ import {
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { memo } from 'react';
-import { gradient } from '@/theme/tokens';
 
 /** Sort option descriptor. */
 interface SortOption {
@@ -40,8 +40,7 @@ const SORT_OPTIONS: SortOption[] = [
 ];
 
 interface Props {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ads: any[];
+  ads: Ad[];
   total: number;
   totalPages: number;
   page: number;

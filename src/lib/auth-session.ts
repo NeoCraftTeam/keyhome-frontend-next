@@ -14,10 +14,16 @@ import { UserRole } from '@/types';
 let ownerInMemoryToken: string | null = null;
 let clientInMemoryToken: string | null = null;
 
+/** Unix-ms timestamps for proactive refresh scheduling (null = unknown/no expiry). */
+let ownerExpiresAt: number | null = null;
+let clientExpiresAt: number | null = null;
+
 /** @internal — Reset module state between tests. Not for production use. */
 export function __resetModuleStateForTests(): void {
   ownerInMemoryToken = null;
   clientInMemoryToken = null;
+  ownerExpiresAt = null;
+  clientExpiresAt = null;
 }
 
 /** Returns whichever token matches the current route context. */
@@ -25,6 +31,13 @@ export function getActiveToken(pathname?: string): string | null {
   const path =
     pathname ?? (typeof window !== 'undefined' ? window.location.pathname : '');
   return path.startsWith('/owner') ? ownerInMemoryToken : clientInMemoryToken;
+}
+
+/** Returns the expiry timestamp (ms) for the active token slot, or null. */
+export function getActiveExpiresAt(pathname?: string): number | null {
+  const path =
+    pathname ?? (typeof window !== 'undefined' ? window.location.pathname : '');
+  return path.startsWith('/owner') ? ownerExpiresAt : clientExpiresAt;
 }
 
 export function getInMemoryToken(): string | null {
@@ -52,14 +65,22 @@ export function clearSanctumInMemoryOnly(): void {
 /* ── Session persistence ─────────────────────────────────────────── */
 
 /** Store a Sanctum token in the owner slot (never localStorage). */
-export function persistOwnerToken(sanctumToken: string): void {
+export function persistOwnerToken(
+  sanctumToken: string,
+  expiresAtMs?: number
+): void {
   ownerInMemoryToken = sanctumToken;
+  ownerExpiresAt = expiresAtMs ?? null;
   registerTokenGetter(async () => getActiveToken());
 }
 
 /** Store a Sanctum token in the client slot (never localStorage). */
-export function persistClientToken(sanctumToken: string): void {
+export function persistClientToken(
+  sanctumToken: string,
+  expiresAtMs?: number
+): void {
   clientInMemoryToken = sanctumToken;
+  clientExpiresAt = expiresAtMs ?? null;
   registerTokenGetter(async () => getActiveToken());
 }
 
@@ -78,11 +99,13 @@ export function persistInMemoryToken(sanctumToken: string): void {
 
 export function clearOwnerToken(): void {
   ownerInMemoryToken = null;
+  ownerExpiresAt = null;
   registerTokenGetter(async () => getActiveToken());
 }
 
 export function clearClientToken(): void {
   clientInMemoryToken = null;
+  clientExpiresAt = null;
   registerTokenGetter(async () => getActiveToken());
 }
 
@@ -98,6 +121,8 @@ export function clearInMemoryToken(): void {
 export function clearAllInMemoryTokens(): void {
   ownerInMemoryToken = null;
   clientInMemoryToken = null;
+  ownerExpiresAt = null;
+  clientExpiresAt = null;
   registerTokenGetter(() => Promise.resolve(null));
 }
 

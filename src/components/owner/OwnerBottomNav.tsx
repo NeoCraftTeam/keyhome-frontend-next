@@ -4,7 +4,6 @@ import { bottomNavigationPwaShellSx } from '@/components/layout/bottomNavigation
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { OWNER_BOTTOM_NAV_ITEMS } from '@/lib/nav-config';
 import { NAV_LIST_ICON_GLYPH_PX } from '@/lib/navVisualMetrics';
-import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
 import { ownerService } from '@/services/owner.service';
 import { shadow } from '@/theme/tokens';
 import {
@@ -18,9 +17,6 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
-
-/** @deprecated Prefer {@link PWA_BOTTOM_NAV_INNER_HEIGHT_PX} — kept for owner layout FAB offset */
-export const OWNER_BOTTOM_NAV_HEIGHT = PWA_BOTTOM_NAV_INNER_HEIGHT_PX;
 
 function OwnerBottomNavDashboardIcon({ selected }: { selected: boolean }) {
   return (

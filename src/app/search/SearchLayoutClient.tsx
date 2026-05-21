@@ -1,8 +1,9 @@
 'use client';
 
-import BottomNav, { BOTTOM_NAV_HEIGHT } from '@/components/layout/BottomNav';
+import BottomNav from '@/components/layout/BottomNav';
 import Navbar from '@/components/layout/Navbar';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
+import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 
 export default function SearchLayoutClient({
@@ -28,7 +29,10 @@ export default function SearchLayoutClient({
         sx={{
           flex: 1,
           overflow: 'hidden',
-          pb: isMobile && isStandalone ? `${BOTTOM_NAV_HEIGHT}px` : 0,
+          pb:
+            isMobile && isStandalone
+              ? `${PWA_BOTTOM_NAV_INNER_HEIGHT_PX}px`
+              : 0,
         }}
       >
         {children}

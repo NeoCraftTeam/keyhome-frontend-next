@@ -3,7 +3,10 @@
 import AdCard from '@/components/ads/AdCard';
 import PaymentHistoryTableModern from '@/components/payment/PaymentHistoryTableModern';
 import SavedCardsManager from '@/components/payment/SavedCardsManager';
+import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
+import PasskeyManager from '@/components/security/PasskeyManager';
 import FadeIn from '@/components/ui/FadeIn';
+import KhSnackbar from '@/components/ui/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar';
 import PhoneField from '@/components/ui/PhoneField';
@@ -15,14 +18,12 @@ import {
 } from '@/lib/profile-phone';
 import { useAuth } from '@/providers/AuthProvider';
 import { useFavorites } from '@/providers/FavoritesProvider';
-import { gradient } from '@/theme/tokens';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { surveysService } from '@/services/surveys.service';
 import { unlockedAdsService, usersService } from '@/services/users.service';
+import { gradient } from '@/theme/tokens';
 import { City } from '@/types';
-import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
-import PasskeyManager from '@/components/security/PasskeyManager';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
@@ -50,15 +51,20 @@ import {
   IconButton,
   InputAdornment,
   Paper,
-  Snackbar,
   Tab,
   Tabs,
   TextField,
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+
+const AvatarCropDialog = dynamic(
+  () => import('@/components/ui/AvatarCropDialog'),
+  { ssr: false }
+);
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -90,6 +96,8 @@ export default function ProfilePage() {
     severity: 'success' | 'error';
   } | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
   // Password change
   const [passwordForm, setPasswordForm] = useState({
@@ -147,7 +155,7 @@ export default function ProfilePage() {
     'image/gif',
   ];
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) {
       return;
@@ -171,8 +179,22 @@ export default function ProfilePage() {
       return;
     }
 
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropImageSrc(reader.result as string);
+      setCropDialogOpen(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleCropConfirm = async (blob: Blob) => {
+    if (!user) return;
+    setCropDialogOpen(false);
+    setCropImageSrc(null);
+
     const formData = new FormData();
-    formData.append('avatar', file);
+    formData.append('avatar', blob, `avatar-${Date.now()}.jpg`);
 
     try {
       const updated = await usersService.update(user.id, formData);
@@ -184,8 +206,6 @@ export default function ProfilePage() {
         message: "Erreur lors de la mise à jour de l'avatar",
         severity: 'error',
       });
-    } finally {
-      e.target.value = '';
     }
   };
 
@@ -932,23 +952,24 @@ export default function ProfilePage() {
         )}
       </TabPanel>
 
-      <Snackbar
+      {cropImageSrc && (
+        <AvatarCropDialog
+          open={cropDialogOpen}
+          imageSrc={cropImageSrc}
+          onClose={() => {
+            setCropDialogOpen(false);
+            setCropImageSrc(null);
+          }}
+          onConfirm={handleCropConfirm}
+        />
+      )}
+
+      <KhSnackbar
         open={!!snackbar}
-        autoHideDuration={3500}
+        message={snackbar?.message ?? null}
+        severity={snackbar?.severity ?? 'info'}
         onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {snackbar ? (
-          <Alert
-            onClose={() => setSnackbar(null)}
-            severity={snackbar.severity}
-            variant="filled"
-            sx={{ width: '100%', borderRadius: 2 }}
-          >
-            {snackbar.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      />
     </Container>
   );
 }

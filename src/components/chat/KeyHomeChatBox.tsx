@@ -1,23 +1,23 @@
 'use client';
 
-import { ConversationList } from './ConversationList';
-import { ChatWindow } from './ChatWindow';
+import type { ChatTheme } from '@/components/chat/chat-theme';
+import {
+  CLIENT_DARK_THEME,
+  CLIENT_THEME,
+  OWNER_DARK_THEME,
+  OWNER_THEME,
+} from '@/components/chat/chat-theme';
 import { useConversations } from '@/hooks/useConversations';
 import { fetchConversation } from '@/lib/chat-api';
-import {
-  CLIENT_THEME,
-  CLIENT_DARK_THEME,
-  OWNER_THEME,
-  OWNER_DARK_THEME,
-} from '@/components/chat/chat-theme';
+import { useOwnerTheme } from '@/providers/OwnerThemeProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
-import type { ChatTheme } from '@/components/chat/chat-theme';
-import { CircularProgress } from '@mui/material';
-import { useMediaQuery, useTheme } from '@mui/material';
+import { CircularProgress, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
 import { MessageSquare } from 'lucide-react';
 import Image from 'next/image';
+import { useMemo } from 'react';
+import { ChatWindow } from './ChatWindow';
+import { ConversationList } from './ConversationList';
 
 /** Sidebar width on desktop (px). */
 const SIDEBAR_W = 320;
@@ -247,7 +247,7 @@ export function OwnerChatBox({
 }: {
   initialActiveConversationId?: string;
 }) {
-  const { mode } = useThemeMode();
+  const { mode } = useOwnerTheme();
   const ownerTheme = mode === 'dark' ? OWNER_DARK_THEME : OWNER_THEME;
   return (
     <KeyHomeChatBox

@@ -4,7 +4,7 @@ import KeyHomeClarityIdentity from '@/components/analytics/KeyHomeClarityIdentit
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
 import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import BottomNav, { BOTTOM_NAV_HEIGHT } from '@/components/layout/BottomNav';
+import BottomNav from '@/components/layout/BottomNav';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import SessionTimeoutGuard from '@/components/session/SessionTimeoutGuard';
@@ -19,6 +19,7 @@ import { useFcmToken } from '@/hooks/useFcmToken';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { isLikelyIosWebKit } from '@/lib/ios-environment';
+import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
 import { useAuth } from '@/providers/AuthProvider';
 import ToastProvider from '@/providers/ToastProvider';
 import { surveysService } from '@/services/surveys.service';
@@ -26,7 +27,7 @@ import { UserRole } from '@/types';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 /** Silently warms up the geolocation cache on first visit so ad-detail maps are instant */
 function LocationPrimer() {
@@ -69,9 +70,9 @@ export default function DashboardLayout({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isStandalone = useIsStandalone();
-  // Dismissed only for this login session — resets to false when isAuthenticated
-  // transitions true so the modal re-appears on every new login.
-  const [surveyDismissed, setSurveyDismissed] = useState(false);
+  // Tracks the "Plus tard" click for this render cycle (instantly closes the modal).
+  // The persistent store is sessionStorage keyed by surveyId (see surveyDismissed below).
+  const [localDismissed, setLocalDismissed] = useState(false);
   // Survey is gated until PushPrompt step resolves (accepted, dismissed, or not applicable).
   // For returning users (onboarding already completed) it's immediately ready.
   const [pushPromptReady, setPushPromptReady] = useState(false);
@@ -96,12 +97,28 @@ export default function DashboardLayout({
     retry: 1,
   });
 
-  // Reset dismissed flag on every new login so the modal re-appears.
+  // Computed synchronously so there is no first-render flash:
+  // sessionStorage is read on every render while activeSurveyId / localDismissed
+  // are stable. A useEffect sync would leave a window where activeSurvey is
+  // already in the React Query cache but surveyDismissed is still false.
+  const surveyDismissed = useMemo(
+    () =>
+      localDismissed ||
+      (activeSurveyId !== null &&
+        typeof window !== 'undefined' &&
+        sessionStorage.getItem(`kh_survey_dismissed_${activeSurveyId}`) ===
+          '1'),
+    [localDismissed, activeSurveyId]
+  );
+
+  // Clear stored dismissal when the user logs out so the modal re-appears
+  // on the next login. A new survey (different id) is also unaffected.
   useEffect(() => {
-    if (isAuthenticated) {
-      setSurveyDismissed(false);
+    if (!isAuthenticated && activeSurveyId) {
+      sessionStorage.removeItem(`kh_survey_dismissed_${activeSurveyId}`);
+      setLocalDismissed(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, activeSurveyId]);
 
   // Tour-dismissed gate: same logic as owner side.
   useEffect(() => {
@@ -293,7 +310,7 @@ export default function DashboardLayout({
                 }),
             pb:
               !hideNavForChat && isMobile && isStandalone
-                ? `${BOTTOM_NAV_HEIGHT}px`
+                ? `${PWA_BOTTOM_NAV_INNER_HEIGHT_PX}px`
                 : 0,
           }}
         >
@@ -344,7 +361,15 @@ export default function DashboardLayout({
             activeSurvey?.description ??
             'Aidez-nous à améliorer KeyHome en répondant à quelques questions sur votre expérience.'
           }
-          onDismiss={() => setSurveyDismissed(true)}
+          onDismiss={() => {
+            if (activeSurveyId) {
+              sessionStorage.setItem(
+                `kh_survey_dismissed_${activeSurveyId}`,
+                '1'
+              );
+            }
+            setLocalDismissed(true);
+          }}
         />
         <PushPrompt />
         <WelcomeModal />

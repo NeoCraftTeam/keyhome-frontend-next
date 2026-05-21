@@ -1,7 +1,5 @@
-import {
-  ADMIN_USE_ADMIN_PANEL_MESSAGE,
-  mayAccessOwnerPanel,
-} from '@/lib/owner-panel-access';
+import { AUTH_PANEL_UNAVAILABLE_MESSAGE } from '@/lib/auth-api-errors';
+import { mayAccessOwnerPanel } from '@/lib/owner-panel-access';
 import { UserRole } from '@/types';
 import { describe, expect, it } from 'vitest';
 
@@ -13,9 +11,9 @@ describe('owner-panel-access', () => {
   });
 
   it('exposes a generic panel denial message', () => {
-    expect(ADMIN_USE_ADMIN_PANEL_MESSAGE).toBe(
+    expect(AUTH_PANEL_UNAVAILABLE_MESSAGE).toBe(
       "Cette interface n'est pas disponible pour ce compte."
     );
-    expect(ADMIN_USE_ADMIN_PANEL_MESSAGE).not.toMatch(/administrateur/i);
+    expect(AUTH_PANEL_UNAVAILABLE_MESSAGE).not.toMatch(/administrateur/i);
   });
 });

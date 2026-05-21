@@ -29,15 +29,6 @@ export interface OwnerAnalyticsOverview {
   }>;
 }
 
-export interface BoostPlan {
-  id: string;
-  name: string;
-  price: number;
-  boost_score: number;
-  boost_duration_days: number;
-  description: string | null;
-}
-
 export const ownerAnalyticsService = {
   async getAnalytics(
     period: '7d' | '30d' | '90d' = '30d',

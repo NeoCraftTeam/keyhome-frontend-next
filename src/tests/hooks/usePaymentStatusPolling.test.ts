@@ -83,7 +83,8 @@ describe('usePaymentStatusPolling — credit variant', () => {
     expect(result.current.pointBalance).toBe(75);
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(mockedCredits.verifyPurchase).toHaveBeenCalledWith(
-      'KH-AAAAAA000001'
+      'KH-AAAAAA000001',
+      null
     );
     // Public status must NOT be hit when the auth endpoint succeeded.
     expect(mockedPayments.publicStatus).not.toHaveBeenCalled();
@@ -110,8 +111,8 @@ describe('usePaymentStatusPolling — credit variant', () => {
     expect(mockedPayments.publicStatus).toHaveBeenCalledWith('KH-BBBBBB000002');
   });
 
-  it('surfaces terminal failure immediately', async () => {
-    mockedCredits.verifyPurchase.mockResolvedValueOnce({
+  it('surfaces terminal failure immediately when redirect status is failed', async () => {
+    mockedCredits.verifyPurchase.mockResolvedValue({
       status: 'failed',
       message: 'Échec',
       point_balance: 0,
@@ -121,6 +122,7 @@ describe('usePaymentStatusPolling — credit variant', () => {
     const { result } = renderHook(() =>
       usePaymentStatusPolling({
         txRef: 'KH-CCCCCC000003',
+        gatewayRedirectStatus: 'failed',
         variant: 'credit',
         onSuccess,
         minimumVerifyingMs: 0,
@@ -128,6 +130,33 @@ describe('usePaymentStatusPolling — credit variant', () => {
     );
 
     await waitFor(() => expect(result.current.state).toBe('failed'));
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it('keeps polling when verify returns failed but redirect status is completed', async () => {
+    mockedCredits.verifyPurchase.mockResolvedValue({
+      status: 'failed',
+      message: 'Échec',
+      point_balance: 0,
+    });
+    mockedPayments.publicStatus.mockResolvedValue({ status: 'pending' });
+    const onSuccess = vi.fn();
+
+    const { result } = renderHook(() =>
+      usePaymentStatusPolling({
+        txRef: 'KH-3X2HK4FMW3VR',
+        gatewayReference: 'SANDBOX_R2YUJPRMF62CQXYI',
+        gatewayRedirectStatus: 'completed',
+        variant: 'credit',
+        onSuccess,
+        minimumVerifyingMs: 0,
+      })
+    );
+
+    await waitFor(() =>
+      expect(mockedCredits.verifyPurchase).toHaveBeenCalled()
+    );
+    expect(result.current.state).not.toBe('failed');
     expect(onSuccess).not.toHaveBeenCalled();
   });
 
@@ -222,6 +251,43 @@ describe('usePaymentStatusPolling — unlock variant', () => {
     );
 
     await waitFor(() => expect(result.current.state).toBe('cancelled'));
+  });
+
+  it('keeps polling when verify reports failed but gateway redirect says completed', async () => {
+    mockedPayments.verify.mockResolvedValue({
+      status: 'failed',
+      is_paid: false,
+      is_unlocked: false,
+      reference: 'pay-id',
+      ad_id: 'ad-id',
+      tx_ref: 'KH-UNLK000003',
+      gateway: 'geniuspay',
+      payment_method: null,
+      payment_method_label: null,
+    });
+    mockedPayments.publicStatus.mockResolvedValue({ status: 'pending' });
+
+    const { result } = renderHook(() =>
+      usePaymentStatusPolling({
+        txRef: 'KH-UNLK000003',
+        gatewayRedirectStatus: 'completed',
+        variant: 'unlock',
+        minimumVerifyingMs: 0,
+      })
+    );
+
+    await waitFor(
+      () => {
+        expect(result.current.state).not.toBe('failed');
+        expect(mockedPayments.verify.mock.calls.length).toBeGreaterThan(0);
+      },
+      { timeout: 3000 }
+    );
+
+    await waitFor(
+      () => expect(mockedPayments.verify.mock.calls.length).toBeGreaterThan(1),
+      { timeout: 3000 }
+    );
   });
 });
 

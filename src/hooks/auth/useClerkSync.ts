@@ -307,11 +307,16 @@ export function useClerkSync(
             token: sanctumToken,
             user: laravelUser,
             panel_sso_url,
+            expires_at,
           } = result as {
             token: string;
             user: User;
             panel_sso_url: string | null;
+            expires_at: string | null;
           };
+          const expiresAtMs = expires_at
+            ? new Date(expires_at).getTime()
+            : undefined;
 
           clerkExchangeDoneRef.current = true;
 
@@ -338,7 +343,7 @@ export function useClerkSync(
           const isOwnerRole = laravelUser.role === UserRole.AGENT;
 
           if (isOwnerRole && !expectedOwnerContext) {
-            persistOwnerToken(sanctumToken);
+            persistOwnerToken(sanctumToken, expiresAtMs);
             setToken(sanctumToken);
             setUserState(laravelUser);
             setRoleCookie(laravelUser.role ?? UserRole.AGENT);
@@ -358,9 +363,9 @@ export function useClerkSync(
           }
 
           if (isOwnerRole) {
-            persistOwnerToken(sanctumToken);
+            persistOwnerToken(sanctumToken, expiresAtMs);
           } else {
-            persistClientToken(sanctumToken);
+            persistClientToken(sanctumToken, expiresAtMs);
           }
           setToken(sanctumToken);
           setUserState(laravelUser);

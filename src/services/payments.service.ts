@@ -10,6 +10,7 @@ import {
   StripePaymentMethod,
   StripeSetupIntent,
   UnlockResponse,
+  UserRefund,
 } from '@/types';
 
 export const paymentsService = {
@@ -79,10 +80,18 @@ export const paymentsService = {
    *  - by the Stripe flow after `confirmPayment` succeeds, to fast-track
    *    the optimistic UI without waiting for the webhook
    */
-  async verify(txRef: string): Promise<FlutterwaveVerifyResponse> {
-    const { data } = await api.post('/payments/verify_payment', {
-      tx_ref: txRef,
-    });
+  async verify(
+    txRef?: string | null,
+    gatewayReference?: string | null
+  ): Promise<FlutterwaveVerifyResponse> {
+    const body: { tx_ref?: string; reference?: string } = {};
+    if (txRef) {
+      body.tx_ref = txRef;
+    }
+    if (gatewayReference) {
+      body.reference = gatewayReference;
+    }
+    const { data } = await api.post('/payments/verify_payment', body);
     return data as FlutterwaveVerifyResponse;
   },
 
@@ -107,7 +116,7 @@ export const paymentsService = {
    * is ever exposed. The endpoint returns `{ status: 'unknown' }` (not 404)
    * for missing/invalid references so callers can poll uniformly.
    */
-  async publicStatus(txRef: string): Promise<{
+  async publicStatus(txRefOrReference: string): Promise<{
     status:
       | 'pending'
       | 'success'
@@ -117,7 +126,25 @@ export const paymentsService = {
       | 'unknown';
   }> {
     const { data } = await api.get(
-      `/payments/${encodeURIComponent(txRef)}/public-status`
+      `/payments/${encodeURIComponent(txRefOrReference)}/public-status`
+    );
+    return data;
+  },
+
+  async requestRefund(
+    paymentId: string,
+    reason: string
+  ): Promise<{ message: string; refund_id: string }> {
+    const { data } = await api.post(`/payments/${paymentId}/refund-request`, {
+      reason,
+    });
+    return data;
+  },
+
+  async fetchRefunds(page = 1): Promise<PaginatedResponse<UserRefund>> {
+    const { data } = await api.get<PaginatedResponse<UserRefund>>(
+      '/payments/refunds',
+      { params: { page } }
     );
     return data;
   },
@@ -130,8 +157,11 @@ export const paymentsService = {
   ): Promise<FlutterwaveInitiateResponse> {
     return this.initiate(payload);
   },
-  flutterwaveVerify(txRef: string): Promise<FlutterwaveVerifyResponse> {
-    return this.verify(txRef);
+  flutterwaveVerify(
+    txRef?: string | null,
+    gatewayReference?: string | null
+  ): Promise<FlutterwaveVerifyResponse> {
+    return this.verify(txRef, gatewayReference);
   },
   flutterwaveCancel(
     txRef: string
@@ -317,5 +347,9 @@ export const paymentsService = {
       '/payments/stripe/setup-intent'
     );
     return data.data;
+  },
+
+  async notifyCardAdded(): Promise<void> {
+    await api.post('/payments/stripe/payment-methods/notify-added');
   },
 };

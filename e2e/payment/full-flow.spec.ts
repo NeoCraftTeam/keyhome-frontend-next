@@ -59,7 +59,7 @@ async function mockPaymentInitiate(
         reference: 'PAY-MOCK-001',
         payment_link: `http://localhost:3000${callbackUrl}`,
         tx_ref: txRef,
-        gateway: 'flutterwave',
+        gateway: 'geniuspay',
         status: 'pending',
       }),
     });
@@ -78,7 +78,7 @@ async function mockPaymentVerify(
       is_unlocked: isPaid,
       reference: 'PAY-MOCK-001',
       tx_ref: 'KH-E2E-TEST123',
-      gateway: 'flutterwave',
+      gateway: 'geniuspay',
     });
   });
 }
@@ -132,7 +132,7 @@ test.describe('Payment Callback Page', () => {
           is_unlocked: true,
           reference: 'PAY-MOCK-001',
           tx_ref: 'KH-CB-001',
-          gateway: 'flutterwave',
+          gateway: 'geniuspay',
         }),
       });
     });
@@ -246,7 +246,7 @@ test.describe('Payment Modal — MTN Mobile Money', () => {
     await mockPaymentVerify(page);
 
     // Intercept any external navigation to Flutterwave
-    await page.route('**/checkout.flutterwave.com/**', async (route) => {
+    await page.route('**/pay.genius.ci/**', async (route) => {
       // Redirect back to callback page instead of Flutterwave
       await route.fulfill({
         status: 302,
@@ -356,7 +356,7 @@ test.describe('Gateway Error Handling', () => {
             is_unlocked: true,
             reference: 'PAY-RETRY-OK',
             tx_ref: 'KH-RETRY-OK',
-            gateway: 'flutterwave',
+            gateway: 'geniuspay',
           }),
         });
       }

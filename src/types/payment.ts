@@ -19,7 +19,7 @@ export enum PaymentMethod {
   FLUTTERWAVE = 'flutterwave',
 }
 
-export type PaymentGateway = 'flutterwave' | 'stripe';
+export type PaymentGateway = 'geniuspay' | 'flutterwave' | 'stripe';
 
 /**
  * Catalogue entry returned by `GET /api/v1/payments/methods`
@@ -84,7 +84,7 @@ export interface FlutterwaveInitiateResponse {
   reference: string;
   payment_link: string;
   tx_ref: string;
-  gateway: PaymentGateway | 'stripe';
+  gateway: PaymentGateway;
   status: PaymentInitiateStatus;
   stripe_flow?: 'payment_intent' | 'checkout_session';
   client_secret?: string | null;
@@ -154,6 +154,25 @@ export interface Payment {
   id: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserRefund {
+  id: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  is_partial: boolean;
+  reason: string;
+  gateway_refund_id: string | null;
+  side_effects_reversed: boolean;
+  created_at: string;
+  payment: {
+    id: string;
+    type: string;
+    amount: number;
+    currency: string;
+    created_at: string;
+  } | null;
 }
 
 export interface UnlockedAd {

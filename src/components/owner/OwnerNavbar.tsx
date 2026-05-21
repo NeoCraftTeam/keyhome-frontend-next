@@ -1,5 +1,6 @@
 'use client';
 
+import CreditsWidget from '@/components/layout/CreditsWidget';
 import { CurrencySelector } from '@/components/layout/CurrencySelector';
 import { SIDEBAR_WIDTH } from '@/components/owner/owner-constants';
 import { OWNER_NAV_ITEMS } from '@/lib/nav-config';
@@ -155,8 +156,17 @@ export default function OwnerNavbar() {
             </Typography>
           </Box>
 
-          {/* Right: spacer keeps logo perfectly centered */}
-          <Box sx={{ width: 44, height: 44, flexShrink: 0 }} />
+          {/* Right: credit balance */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              minWidth: 44,
+            }}
+          >
+            <CreditsWidget />
+          </Box>
         </Toolbar>
       </AppBar>
 

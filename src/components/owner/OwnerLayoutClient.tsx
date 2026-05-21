@@ -7,9 +7,7 @@ import {
   SIDEBAR_COLLAPSED_WIDTH,
   SIDEBAR_WIDTH,
 } from '@/components/owner/owner-constants';
-import OwnerBottomNav, {
-  OWNER_BOTTOM_NAV_HEIGHT,
-} from '@/components/owner/OwnerBottomNav';
+import OwnerBottomNav from '@/components/owner/OwnerBottomNav';
 import OwnerNavbar from '@/components/owner/OwnerNavbar';
 import OwnerSidebar from '@/components/owner/OwnerSidebar';
 import OwnerWelcomeModal from '@/components/owner/OwnerWelcomeModal';
@@ -23,6 +21,7 @@ import { useFcmToken } from '@/hooks/useFcmToken';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { isLikelyIosWebKit } from '@/lib/ios-environment';
 import { shouldShowOwnerQuickCreateFab } from '@/lib/owner-shell-fab';
+import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
 import { khLeftRailPaddingSx } from '@/lib/safe-area-insets';
 import { useAuth } from '@/providers/AuthProvider';
 import { surveysService } from '@/services/surveys.service';
@@ -32,7 +31,7 @@ import { Add as AddIcon } from '@mui/icons-material';
 import { Box, Drawer, Fab, useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 function FcmRegistrar() {
   useFcmToken();
@@ -64,9 +63,9 @@ export default function OwnerLayoutClient({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isStandalone = useIsStandalone();
-  // Dismissed only for this login session — resets to false when isAuthenticated
-  // transitions true so the modal re-appears on every new login.
-  const [surveyDismissed, setSurveyDismissed] = useState(false);
+  // Tracks the "Plus tard" click for this render cycle (instantly closes the modal).
+  // The persistent store is sessionStorage keyed by surveyId (see surveyDismissed below).
+  const [localDismissed, setLocalDismissed] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   // Survey is gated until PushPrompt step resolves (accepted, dismissed, or not applicable).
   // For returning users (onboarding already completed) it's immediately ready.
@@ -169,12 +168,25 @@ export default function OwnerLayoutClient({
     retry: 1,
   });
 
-  // Reset dismissed flag on every new login so the modal re-appears.
+  // Computed synchronously — no first-render flash (same approach as dashboard layout).
+  const surveyDismissed = useMemo(
+    () =>
+      localDismissed ||
+      (activeSurveyId !== null &&
+        typeof window !== 'undefined' &&
+        sessionStorage.getItem(`kh_survey_dismissed_${activeSurveyId}`) ===
+          '1'),
+    [localDismissed, activeSurveyId]
+  );
+
+  // Clear stored dismissal when the user logs out so the modal re-appears
+  // on the next login.
   useEffect(() => {
-    if (isAuthenticated) {
-      setSurveyDismissed(false);
+    if (!isAuthenticated && activeSurveyId) {
+      sessionStorage.removeItem(`kh_survey_dismissed_${activeSurveyId}`);
+      setLocalDismissed(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, activeSurveyId]);
 
   // Tour-dismissed gate: returning users are ready immediately; new users wait
   // for kh:welcome-dismissed (fired 3 s after OwnerWelcomeModal closes).
@@ -374,7 +386,7 @@ export default function OwnerLayoutClient({
                   display: 'block',
                   pb:
                     isMobile && isStandalone
-                      ? `${OWNER_BOTTOM_NAV_HEIGHT}px`
+                      ? `${PWA_BOTTOM_NAV_INNER_HEIGHT_PX}px`
                       : 3,
                   px: { xs: 2, md: 3 },
                 }),
@@ -415,7 +427,7 @@ export default function OwnerLayoutClient({
           onClick={() => router.push('/owner/ads/new')}
           sx={{
             position: 'fixed',
-            bottom: isStandalone ? OWNER_BOTTOM_NAV_HEIGHT + 16 : 24,
+            bottom: isStandalone ? PWA_BOTTOM_NAV_INNER_HEIGHT_PX + 16 : 24,
             right: 16,
             zIndex: (t) => t.zIndex.appBar,
             boxShadow: 4,
@@ -445,7 +457,15 @@ export default function OwnerLayoutClient({
           activeSurvey?.description ??
           'Aidez-nous à améliorer KeyHome pour les bailleurs en répondant à quelques questions.'
         }
-        onDismiss={() => setSurveyDismissed(true)}
+        onDismiss={() => {
+          if (activeSurveyId) {
+            sessionStorage.setItem(
+              `kh_survey_dismissed_${activeSurveyId}`,
+              '1'
+            );
+          }
+          setLocalDismissed(true);
+        }}
       />
 
       {/* Onboarding flow: WelcomeModal → PushPrompt → Survey */}

@@ -136,7 +136,10 @@ export default function VerifyOtpPage() {
           trackSignUp('email');
           setShowWelcome(true);
           welcomeTimerRef.current = setTimeout(() => {
-            finalizeAuth(r.token, r.user, r.panel_sso_url);
+            const expMs = r.expires_at
+              ? new Date(r.expires_at).getTime()
+              : undefined;
+            finalizeAuth(r.token, r.user, r.panel_sso_url, expMs);
           }, 3800);
         } catch (profileErr) {
           setError(
@@ -148,7 +151,10 @@ export default function VerifyOtpPage() {
         }
         return;
       }
-      finalizeAuth(result.token, result.user, result.panel_sso_url);
+      const expMs = result.expires_at
+        ? new Date(result.expires_at).getTime()
+        : undefined;
+      finalizeAuth(result.token, result.user, result.panel_sso_url, expMs);
     } catch (err) {
       setError(
         getSafeErrorMessage(err, 'Code invalide ou expiré. Veuillez réessayer.')
@@ -192,7 +198,12 @@ export default function VerifyOtpPage() {
         onSkip={() => {
           if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
           const r = completeResultRef.current;
-          if (r) finalizeAuth(r.token, r.user, r.panel_sso_url);
+          if (r) {
+            const expMs = r.expires_at
+              ? new Date(r.expires_at).getTime()
+              : undefined;
+            finalizeAuth(r.token, r.user, r.panel_sso_url, expMs);
+          }
         }}
       />
     );

@@ -4,7 +4,6 @@ import { bottomNavigationPwaShellSx } from '@/components/layout/bottomNavigation
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { BOTTOM_NAV_ITEMS } from '@/lib/nav-config';
 import { NAV_LIST_ICON_GLYPH_PX } from '@/lib/navVisualMetrics';
-import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
 import { brand } from '@/theme/tokens';
 import {
   BottomNavigation,
@@ -15,9 +14,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
-
-/** @deprecated Prefer {@link PWA_BOTTOM_NAV_INNER_HEIGHT_PX} — kept for layout imports */
-export const BOTTOM_NAV_HEIGHT = PWA_BOTTOM_NAV_INNER_HEIGHT_PX;
 
 function ClientBottomNavHomeIcon({ selected }: { selected: boolean }) {
   return (

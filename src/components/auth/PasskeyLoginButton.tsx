@@ -1,15 +1,13 @@
 'use client';
 
 import { usePasskeyLogin } from '@/hooks/usePasskey';
+import { AUTH_PANEL_UNAVAILABLE_MESSAGE } from '@/lib/auth-api-errors';
 import {
-  persistOwnerToken,
   persistClientToken,
+  persistOwnerToken,
   setRoleCookie,
 } from '@/lib/auth-session';
-import {
-  ADMIN_USE_ADMIN_PANEL_MESSAGE,
-  mayAccessOwnerPanel,
-} from '@/lib/owner-panel-access';
+import { mayAccessOwnerPanel } from '@/lib/owner-panel-access';
 import { useAuth } from '@/providers/AuthProvider';
 import { UserRole } from '@/types';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
@@ -60,7 +58,7 @@ export default function PasskeyLoginButton({
     if (loginContext === 'owner') {
       if (user.role === UserRole.ADMIN) {
         clearError();
-        setError(ADMIN_USE_ADMIN_PANEL_MESSAGE);
+        setError(AUTH_PANEL_UNAVAILABLE_MESSAGE);
         return;
       }
       if (!mayAccessOwnerPanel(user.role)) {

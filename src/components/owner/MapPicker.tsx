@@ -1,6 +1,7 @@
 'use client';
 
 import { MAPBOX_TOKEN } from '@/lib/constants';
+import { brandAgent, neutral, shadow } from '@/theme/tokens';
 import GpsIcon from '@mui/icons-material/MyLocation';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -17,7 +18,6 @@ import { alpha } from '@mui/material/styles';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { brandAgent, neutral, shadow } from '@/theme/tokens';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 if (process.env.NODE_ENV === 'development') {
@@ -182,6 +182,16 @@ export default function MapPicker({
       setSearching(false);
     }
   }, [searchQuery, updateMarker, onLocationChange]);
+
+  // Auto-search: trigger geocoding 600ms after the user stops typing (>= 3 chars)
+  useEffect(() => {
+    if (searchQuery.trim().length < 3) return;
+    const timer = setTimeout(() => {
+      void handleSearch();
+    }, 600);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
   // Geolocate user
   const handleGeolocate = useCallback(() => {

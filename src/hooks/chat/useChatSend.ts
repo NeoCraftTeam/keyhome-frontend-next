@@ -14,6 +14,8 @@
  * E2EE sealed path is preserved but disabled by default (wantsE2ee = false).
  */
 
+import type { MessagesCache } from '@/hooks/chat/useChatMessages';
+import { OPTIMISTIC_PREFIX } from '@/hooks/chat/useChatMessages';
 import {
   deleteMessage,
   sendMessage,
@@ -25,8 +27,6 @@ import {
   convSessionAesMapKey,
 } from '@/lib/chat-e2ee-crypto';
 import { chatKeys } from '@/lib/query-keys';
-import type { MessagesCache } from '@/hooks/chat/useChatMessages';
-import { OPTIMISTIC_PREFIX } from '@/hooks/chat/useChatMessages';
 import type { Conversation, Message, MessageAttachment } from '@/types/chat';
 import type { User } from '@/types/user';
 import { useQueryClient } from '@tanstack/react-query';
@@ -148,9 +148,7 @@ export function useChatSend(
           }
         : null;
 
-      // E2EE disabled by default — server encryption only (May 2026).
-      // To re-enable: replace `const wantsE2ee = false` with the commented condition.
-      const wantsE2ee = false as const;
+      const wantsE2ee = !!conversationRef.current?.e2ee?.session_ready;
 
       const optimistic: Message = {
         uuid: optimisticId,

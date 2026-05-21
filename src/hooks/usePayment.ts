@@ -55,7 +55,7 @@ interface UsePaymentReturn extends UsePaymentState {
  * Hook for initiating a payment.
  *
  * Behaviour by gateway :
- *  - `flutterwave` → automatic redirect to the hosted checkout (legacy flow).
+ *  - `geniuspay` / `flutterwave` → automatic redirect to the hosted checkout.
  *  - `stripe` → no redirect; exposes `stripeClientSecret` so the caller can
  *    mount `<Elements>` + `<PaymentElement>` and confirm in-page.
  */
@@ -108,10 +108,9 @@ export function usePayment(): UsePaymentReturn {
           return result;
         }
 
-        // Flutterwave : send the browser to hosted checkout immediately.
+        // GeniusPay / legacy Flutterwave : redirect to hosted checkout immediately.
         // Avoid setting React state first — that paints a one-frame KeyHome
-        // "redirection…" step before the Flutterwave UI, which feels like
-        // our page stole focus from the gateway.
+        // "redirection…" step before the gateway UI.
         if (typeof window !== 'undefined') {
           window.location.assign(result.payment_link);
         }
