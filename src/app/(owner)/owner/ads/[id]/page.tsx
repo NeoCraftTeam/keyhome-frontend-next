@@ -959,6 +959,15 @@ export default function OwnerAdEditPage() {
         subtitle="Ne quittez pas cette page — votre annonce est en cours de soumission."
       />
 
+      {/* ═══ Deletion overlay ═══ */}
+      <PublishingOverlay
+        open={deleteMutation.isPending}
+        title="Suppression en cours…"
+        subtitle="Ne quittez pas cette page — votre annonce est en cours de suppression."
+        Icon={DeleteIcon}
+        accentColor="#d32f2f"
+      />
+
       {/* ═══ Delete Confirmation Dialog ═══ */}
       <Dialog
         open={deleteOpen}

@@ -2,6 +2,7 @@
 
 import BoostPurchaseDialog from '@/components/owner/BoostPurchaseDialog';
 import OwnerAdCard from '@/components/owner/OwnerAdCard';
+import PublishingOverlay from '@/components/owner/PublishingOverlay';
 import QrCodeDialog from '@/components/owner/QrCodeDialog';
 import ShareAdButtons from '@/components/owner/ShareAdButtons';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
@@ -1155,6 +1156,14 @@ export default function OwnerAdsPage() {
           Nouvelle annonce
         </Fab>
       )}
+      {/* ═══ Deletion overlay ═══ */}
+      <PublishingOverlay
+        open={deleteMutation.isPending}
+        title="Suppression en cours…"
+        subtitle="Ne quittez pas cette page — votre annonce est en cours de suppression."
+        Icon={DeleteIcon}
+        accentColor="#d32f2f"
+      />
     </Box>
   );
 }

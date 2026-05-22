@@ -1,5 +1,6 @@
 'use client';
 
+import type { SvgIconComponent } from '@mui/icons-material';
 import CloudUploadOutlined from '@mui/icons-material/CloudUploadOutlined';
 import Box from '@mui/material/Box';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -11,15 +12,30 @@ interface PublishingOverlayProps {
   open: boolean;
   title?: string;
   subtitle?: string;
+  /** MUI SvgIcon component to display. Defaults to CloudUploadOutlined. */
+  Icon?: SvgIconComponent;
+  /** Accent colour for icon background, progress bar and icon. Defaults to #F6475F. */
+  accentColor?: string;
 }
 
 export default function PublishingOverlay({
   open,
   title = 'En cours de publication…',
   subtitle = 'Ne quittez pas cette page — votre annonce est en cours de soumission.',
+  Icon = CloudUploadOutlined,
+  accentColor = '#F6475F',
 }: PublishingOverlayProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+
+  // Convert hex to rgba for backgrounds with opacity
+  const bgAlpha = (opacity: number) => {
+    const hex = accentColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgba(${r},${g},${b},${opacity})`;
+  };
 
   if (!open) return null;
 
@@ -67,16 +83,16 @@ export default function PublishingOverlay({
               width: 64,
               height: 64,
               borderRadius: '50%',
-              bgcolor: 'rgba(246,71,95,0.1)',
+              bgcolor: bgAlpha(0.1),
               mb: 2.5,
-              animation: 'publishPulse 1.8s ease-in-out infinite',
-              '@keyframes publishPulse': {
+              animation: 'overlayPulse 1.8s ease-in-out infinite',
+              '@keyframes overlayPulse': {
                 '0%, 100%': { transform: 'scale(1)', opacity: 1 },
                 '50%': { transform: 'scale(1.08)', opacity: 0.8 },
               },
             }}
           >
-            <CloudUploadOutlined sx={{ fontSize: 32, color: '#F6475F' }} />
+            <Icon sx={{ fontSize: 32, color: accentColor }} />
           </Box>
 
           {/* Title */}
@@ -94,9 +110,9 @@ export default function PublishingOverlay({
               my: 2.5,
               borderRadius: 2,
               height: 5,
-              bgcolor: isDark ? 'rgba(246,71,95,0.12)' : 'rgba(246,71,95,0.1)',
+              bgcolor: bgAlpha(isDark ? 0.12 : 0.1),
               '& .MuiLinearProgress-bar': {
-                bgcolor: '#F6475F',
+                bgcolor: accentColor,
               },
             }}
           />
