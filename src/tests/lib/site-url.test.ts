@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import { absoluteAssetUrl, absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 describe('getSiteOrigin', () => {
   afterEach(() => {
@@ -21,6 +21,7 @@ describe('getSiteOrigin', () => {
   it('uses VERCEL_URL when no explicit site URL', () => {
     vi.stubEnv('NEXT_PUBLIC_SITE_URL', '');
     vi.stubEnv('NEXT_PUBLIC_APP_URL', '');
+    vi.stubEnv('VERCEL_ENV', 'preview');
     vi.stubEnv('VERCEL_URL', 'my-app.vercel.app');
     expect(getSiteOrigin()).toBe('https://my-app.vercel.app');
   });

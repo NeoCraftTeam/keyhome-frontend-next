@@ -308,7 +308,7 @@ describe('AuthProvider', () => {
 
       await expect(
         getContext().login('agent@keyhome.app', 'pass')
-      ).rejects.toThrow(/réservé aux clients/i);
+      ).rejects.toThrow(/Identifiants incorrects/i);
     });
   });
 
@@ -343,7 +343,7 @@ describe('AuthProvider', () => {
 
       await expect(
         getContext().loginOwner('customer@keyhome.app', 'pass')
-      ).rejects.toThrow(/réservé aux propriétaires/i);
+      ).rejects.toThrow(/Cette interface n'est pas disponible/i);
     });
   });
 

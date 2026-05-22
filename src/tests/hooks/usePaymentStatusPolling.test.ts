@@ -84,6 +84,7 @@ describe('usePaymentStatusPolling — credit variant', () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(mockedCredits.verifyPurchase).toHaveBeenCalledWith(
       'KH-AAAAAA000001',
+      null,
       null
     );
     // Public status must NOT be hit when the auth endpoint succeeded.
