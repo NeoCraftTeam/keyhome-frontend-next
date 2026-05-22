@@ -1,11 +1,11 @@
 'use client';
 
+import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
+import { brand } from '@/theme/tokens';
 import Code from '@mui/icons-material/Code';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLandingTheme } from './LandingThemeContext';
-import { brand } from '@/theme/tokens';
-import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
 
 const links = {
   Plateforme: [
@@ -179,6 +179,99 @@ export default function LandingFooter() {
                   </svg>
                 </a>
               ))}
+            </div>
+
+            {/* App store badges */}
+            <div
+              style={{
+                display: 'flex',
+                gap: 10,
+                marginTop: 20,
+                flexWrap: 'wrap',
+              }}
+            >
+              <a
+                href="https://play.google.com/store/apps/details?id=app.keyhome"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Télécharger KeyHome sur Google Play"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 14px',
+                  borderRadius: 10,
+                  background: surface,
+                  border: `1px solid ${border}`,
+                  color: text,
+                  textDecoration: 'none',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor =
+                    brand.primaryAlpha30;
+                  (e.currentTarget as HTMLElement).style.color = brand.primary;
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = border;
+                  (e.currentTarget as HTMLElement).style.color = text;
+                }}
+              >
+                <svg
+                  aria-hidden
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M3.18 23.76c.3.18.65.19.96.04l11.34-6.35-2.7-2.7-9.6 9.01zm-1.63-20.4C1.22 3.7 1 4.15 1 4.7v14.6c0 .55.22 1 .55 1.34l.07.07 8.18-8.18v-.19L1.62 3.29l-.07.07zm18.18 7.72l-2.32-1.3-3.03 3.03 3.03 3.04 2.34-1.31c.67-.37.67-1.08 0-1.46zm-16.55 9.84l9.6-9.01-3.03-3.03L.18 18.5c0 .01 3 2.42 3 2.42z" />
+                </svg>
+                Google Play
+              </a>
+              <a
+                href="https://apps.apple.com/app/keyhome/id6446910075"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Télécharger KeyHome sur l'App Store"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 14px',
+                  borderRadius: 10,
+                  background: surface,
+                  border: `1px solid ${border}`,
+                  color: text,
+                  textDecoration: 'none',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor =
+                    brand.primaryAlpha30;
+                  (e.currentTarget as HTMLElement).style.color = brand.primary;
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = border;
+                  (e.currentTarget as HTMLElement).style.color = text;
+                }}
+              >
+                <svg
+                  aria-hidden
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98l-.09.06c-.22.15-2.18 1.27-2.16 3.79.02 2.99 2.63 3.99 2.65 4-.03.07-.41 1.4-1.34 2.78M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                </svg>
+                App Store
+              </a>
             </div>
           </div>
 

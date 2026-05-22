@@ -1,7 +1,7 @@
-import type { Metadata } from 'next';
 import LandingPage from '@/components/landing/LandingPage';
 import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
 import { getSiteOrigin } from '@/lib/site-url';
+import type { Metadata } from 'next';
 
 const SITE = getSiteOrigin();
 
@@ -29,11 +29,20 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'fr_FR',
     siteName: 'KeyHome',
+    images: [
+      {
+        url: `${SITE}/og`,
+        width: 1200,
+        height: 630,
+        alt: BRAND_TITLE_WITH_TAGLINE,
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: BRAND_TITLE_WITH_TAGLINE,
     description: `${BRAND_TAGLINE}. Des milliers d'annonces vérifiées — accès coordonnées sécurisé.`,
+    images: [`${SITE}/og`],
   },
   alternates: {
     canonical: `${SITE}/`,

@@ -7,6 +7,7 @@ import { PointPackage } from '@/types';
 import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
 import CreditCard from '@mui/icons-material/CreditCard';
 import HelpOutline from '@mui/icons-material/HelpOutline';
+import HomeWorkOutlined from '@mui/icons-material/HomeWorkOutlined';
 import LocalFireDepartment from '@mui/icons-material/LocalFireDepartment';
 import Toll from '@mui/icons-material/Toll';
 import { Tooltip } from '@mui/material';
@@ -443,6 +444,130 @@ export default function PricingSection() {
               </Tooltip>
             </div>
           </div>
+        </motion.div>
+
+        {/* Bailleur block */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
+          style={{
+            marginTop: 48,
+            borderRadius: 24,
+            border: `1.5px solid ${brand.primaryAlpha25}`,
+            background: brand.primaryAlpha10,
+            padding: '40px 32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 32,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20 }}>
+            <div
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 14,
+                background: brand.primaryAlpha15,
+                border: `1px solid ${brand.primaryAlpha30}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: brand.primary,
+                flexShrink: 0,
+              }}
+            >
+              <HomeWorkOutlined style={{ fontSize: 26 }} />
+            </div>
+            <div>
+              <h3
+                style={{
+                  fontSize: 20,
+                  fontWeight: 800,
+                  color: brand.primary,
+                  margin: '0 0 8px',
+                  letterSpacing: '-0.5px',
+                }}
+              >
+                Vous êtes bailleur ou agence ?
+              </h3>
+              <p
+                style={{
+                  fontSize: 15,
+                  color: textSub,
+                  margin: 0,
+                  lineHeight: 1.6,
+                  maxWidth: 520,
+                }}
+              >
+                Publiez vos annonces gratuitement et recevez des contacts
+                sérieux directement depuis votre tableau de bord. Sans
+                commission, sans intermédiaire.
+              </p>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 16,
+                  marginTop: 16,
+                  flexWrap: 'wrap',
+                }}
+              >
+                {[
+                  'Publication gratuite',
+                  'Tableau de bord bailleur',
+                  'Contacts vérifiés',
+                  'Boost de visibilité',
+                ].map((item) => (
+                  <div
+                    key={item}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      fontSize: 13,
+                      color: textSub,
+                    }}
+                  >
+                    <CheckCircleRounded
+                      style={{ fontSize: 15, color: semantic.successBright }}
+                    />
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <PageTransitionLink
+            href="/owner/login"
+            style={{ textDecoration: 'none', flexShrink: 0 }}
+          >
+            <motion.button
+              whileHover={{
+                scale: 1.03,
+                boxShadow: `0 8px 30px ${brand.primaryAlpha40}`,
+              }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                padding: '14px 28px',
+                borderRadius: 14,
+                background: brand.primary,
+                color: '#fff',
+                fontSize: 15,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                minHeight: 44,
+                boxShadow: `0 4px 20px ${brand.primaryAlpha30}`,
+                letterSpacing: '-0.3px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Publier une annonce →
+            </motion.button>
+          </PageTransitionLink>
         </motion.div>
       </div>
     </section>

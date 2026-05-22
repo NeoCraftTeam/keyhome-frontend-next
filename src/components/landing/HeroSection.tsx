@@ -710,21 +710,46 @@ export default function HeroSection() {
             className="hero-stats"
             style={{ marginTop: 56 }}
           >
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                style={{
-                  opacity: !statsLoading ? 1 : 0.4,
-                  transition: 'opacity 0.5s ease',
-                }}
-              >
-                <AnimatedStatNumber
-                  stat={stat}
-                  textColor={text}
-                  mutedColor={textMuted}
-                />
-              </div>
-            ))}
+            {statsLoading
+              ? [64, 48, 56].map((w, i) => (
+                  <div key={i} style={{ textAlign: 'center' }}>
+                    <div
+                      className={
+                        isDark
+                          ? 'hero-stat-skeleton'
+                          : 'hero-stat-skeleton-light'
+                      }
+                      style={{
+                        width: w,
+                        height: 32,
+                        marginBottom: 6,
+                        display: 'inline-block',
+                      }}
+                      aria-hidden
+                    />
+                    <div
+                      className={
+                        isDark
+                          ? 'hero-stat-skeleton'
+                          : 'hero-stat-skeleton-light'
+                      }
+                      style={{
+                        width: w - 8,
+                        height: 14,
+                        display: 'inline-block',
+                      }}
+                      aria-hidden
+                    />
+                  </div>
+                ))
+              : stats.map((stat) => (
+                  <AnimatedStatNumber
+                    key={stat.label}
+                    stat={stat}
+                    textColor={text}
+                    mutedColor={textMuted}
+                  />
+                ))}
           </motion.div>
 
           {/* Mobile CTA buttons — visible only on small screens */}

@@ -1,15 +1,17 @@
 'use client';
 
 import { brand, semantic } from '@/theme/tokens';
+import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
+import FavoriteBorderOutlined from '@mui/icons-material/FavoriteBorderOutlined';
+import LocationOnOutlined from '@mui/icons-material/LocationOnOutlined';
+import LockOpenOutlined from '@mui/icons-material/LockOpenOutlined';
+import PhoneEnabledOutlined from '@mui/icons-material/PhoneEnabledOutlined';
+import SearchOutlined from '@mui/icons-material/SearchOutlined';
+import ThreeSixtyOutlined from '@mui/icons-material/ThreeSixtyOutlined';
+import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
 import { motion } from 'framer-motion';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
-import SearchOutlined from '@mui/icons-material/SearchOutlined';
-import LockOpenOutlined from '@mui/icons-material/LockOpenOutlined';
-import PhoneEnabledOutlined from '@mui/icons-material/PhoneEnabledOutlined';
-import FavoriteBorderOutlined from '@mui/icons-material/FavoriteBorderOutlined';
-import LocationOnOutlined from '@mui/icons-material/LocationOnOutlined';
-import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
 
 /** Returns matching alpha overlay tones for a brand/semantic accent. */
 function tones(color: string): { bg: string; border: string; bgHover: string } {
@@ -68,6 +70,22 @@ const features = [
     description:
       'Toutes les annonces sont modérées par notre équipe. Photos authentiques, prix cohérents et propriétaires vérifiés.',
     href: '/search',
+  },
+  {
+    icon: <ThreeSixtyOutlined style={{ fontSize: 28 }} />,
+    color: semantic.purple,
+    title: 'Visites virtuelles 3D',
+    description:
+      'Explorez les biens depuis chez vous grâce aux visites immersives 360°. Gagnez du temps avant chaque déplacement sur le terrain.',
+    href: '/search',
+  },
+  {
+    icon: <DescriptionOutlined style={{ fontSize: 28 }} />,
+    color: semantic.successBright,
+    title: 'Contrats de location',
+    description:
+      "Signez vos baux en ligne directement depuis la plateforme. Modèles légaux prêts à l'emploi, signés et archivés en toute sécurité.",
+    href: '/owner/login',
   },
 ];
 
