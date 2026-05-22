@@ -1,7 +1,7 @@
 'use client';
 
 import { COUNTRY_COOKIE } from '@/lib/currency';
-import { getStripePromise } from '@/lib/stripe';
+import { getStripePromise, isStripeModeMismatch } from '@/lib/stripe';
 import { readCheckoutSessionTotalAmount } from '@/lib/stripe-checkout-total';
 import { brand } from '@/theme/tokens';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -156,6 +156,16 @@ export default function StripeConfirmStep({
       <PaymentConfigError
         title="Paiement par carte indisponible"
         message="La clé publique Stripe n’est pas configurée. Choisissez Mobile Money ou contactez le support."
+        onBack={onBack}
+      />
+    );
+  }
+
+  if (isStripeModeMismatch(clientSecret)) {
+    return (
+      <PaymentConfigError
+        title="Erreur de configuration Stripe"
+        message="La clé publique (test/live) ne correspond pas à la session serveur. Vérifiez NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY sur Vercel."
         onBack={onBack}
       />
     );

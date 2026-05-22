@@ -4,13 +4,13 @@ import PaymentFlow from '@/components/payment/PaymentFlow';
 import PackageCard from '@/components/ui/PackageCard';
 import { Price } from '@/components/ui/Price';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
+import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
 import { API_URL } from '@/lib/api';
 import {
   khSafeAreaBottomSx,
   khSafeAreaTopSx,
   syncKhSafeAreaInsets,
 } from '@/lib/safe-area-insets';
-import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
 import { creditsService } from '@/services/credits.service';
 import { brand, brandAgent } from '@/theme/tokens';
 import { PaymentType, type PointPackage } from '@/types';
@@ -261,7 +261,8 @@ export default function PurchaseCreditsModal({
           // "les cards des packs et le formulaire stripe doivent être
           // fix et non scrollable" — the cards/form never scroll inside.
           overflow: 'auto',
-          maxHeight: isMobile ? '100vh' : '95vh',
+          maxHeight: isMobile ? '100dvh' : '95vh',
+          ...(isMobile && { height: '100dvh' }),
           background: 'transparent',
           boxShadow: isMobile ? 'none' : '0 32px 80px rgba(0,0,0,0.28)',
           // Hide the scrollbar for a clean look (accessibility : keyboard

@@ -89,8 +89,18 @@ html:has(body[style*='overflow:hidden']) {
   body {
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: contain;
-    /* Fix Android "two-finger-only scroll": explicitly declare vertical pan intent
-     * so Chrome doesn't wait for JS preventDefault() confirmation on touch events. */
+    /* Allow both axes so horizontal carousels can scroll while the main page
+     * scrolls vertically. pan-y alone would block touch-swipe in carousels
+     * because touch-action intersects up the ancestor chain. */
+    touch-action: pan-x pan-y;
+  }
+
+  /* When a MUI modal is open in standalone, the body already blocks scroll
+   * via overflow:hidden. Restore pan-y so modal content can itself scroll
+   * vertically (touch-action:none set by the general rule above would
+   * otherwise block single-finger scroll inside the modal paper). */
+  body[style*='overflow: hidden'],
+  body[style*='overflow:hidden'] {
     touch-action: pan-y;
   }
 }

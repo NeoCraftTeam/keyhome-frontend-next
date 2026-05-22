@@ -660,6 +660,7 @@ export default function HomePage() {
                       '&::-webkit-scrollbar': { display: 'none' },
                       mx: { xs: -2, sm: 0 },
                       px: { xs: 2, sm: 0 },
+                      touchAction: 'pan-x pan-y',
                     }}
                   >
                     {recommendations.slice(0, 8).map((ad) => (
@@ -711,6 +712,7 @@ export default function HomePage() {
                       '&::-webkit-scrollbar': { display: 'none' },
                       mx: { xs: -2, sm: 0 },
                       px: { xs: 2, sm: 0 },
+                      touchAction: 'pan-x pan-y',
                     }}
                   >
                     {recentlyViewed.slice(0, 8).map((ad) => (
@@ -753,6 +755,7 @@ export default function HomePage() {
                       '&::-webkit-scrollbar': { display: 'none' },
                       mx: { xs: -2, sm: 0 },
                       px: { xs: 2, sm: 0 },
+                      touchAction: 'pan-x pan-y',
                     }}
                   >
                     {recommendations.slice(0, 8).map((ad) => (
@@ -804,6 +807,7 @@ export default function HomePage() {
                       '&::-webkit-scrollbar': { display: 'none' },
                       mx: { xs: -2, sm: 0 },
                       px: { xs: 2, sm: 0 },
+                      touchAction: 'pan-x pan-y',
                     }}
                   >
                     {recentlyViewed.slice(0, 8).map((ad) => (

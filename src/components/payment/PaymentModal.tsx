@@ -2,6 +2,11 @@
 
 import PaymentFlow from '@/components/payment/PaymentFlow';
 import { Price } from '@/components/ui/Price';
+import {
+  khSafeAreaBottomSx,
+  khSafeAreaTopSx,
+  syncKhSafeAreaInsets,
+} from '@/lib/safe-area-insets';
 import { brand } from '@/theme/tokens';
 import { PaymentType } from '@/types';
 import Close from '@mui/icons-material/Close';
@@ -15,11 +20,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import {
-  khSafeAreaBottomSx,
-  khSafeAreaTopSx,
-  syncKhSafeAreaInsets,
-} from '@/lib/safe-area-insets';
 import Image from 'next/image';
 import { useEffect } from 'react';
 
@@ -105,9 +105,11 @@ export default function PaymentModal({
       PaperProps={{
         sx: {
           borderRadius: isMobile ? 0 : 5,
-          overflow: 'hidden',
+          overflow: isMobile ? 'auto' : 'hidden',
           background: 'transparent',
           boxShadow: isMobile ? 'none' : '0 32px 80px rgba(0,0,0,0.28)',
+          // dvh accounts for collapsible browser chrome and PWA safe areas
+          ...(isMobile && { maxHeight: '100dvh', height: '100dvh' }),
         },
       }}
     >

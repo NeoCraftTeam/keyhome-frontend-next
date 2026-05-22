@@ -10,7 +10,15 @@ import Check from '@mui/icons-material/Check';
 import Close from '@mui/icons-material/Close';
 import OpenInNew from '@mui/icons-material/OpenInNew';
 import SquareFoot from '@mui/icons-material/SquareFoot';
-import { Box, Button, Chip, IconButton, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Chip,
+  IconButton,
+  Typography,
+  useTheme,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { format, isValid, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
@@ -19,7 +27,8 @@ interface Criterion {
   label: string;
   render: (ad: Ad) => React.ReactNode;
   bestAdId?: (ads: Ad[]) => string | null;
-  highlightColor?: string;
+  /** Semantic highlight key — resolved to a theme-aware colour at render time. */
+  highlight?: 'success' | 'primary';
 }
 
 const CRITERIA: Criterion[] = [
@@ -40,7 +49,7 @@ const CRITERIA: Criterion[] = [
       if (!valid.length) return null;
       return valid.reduce((best, a) => (a.price! < best.price! ? a : best)).id;
     },
-    highlightColor: '#dcfce7',
+    highlight: 'success',
   },
   {
     label: 'Transaction',
@@ -71,7 +80,7 @@ const CRITERIA: Criterion[] = [
         a.surface_area! > best.surface_area! ? a : best
       ).id;
     },
-    highlightColor: '#dbeafe',
+    highlight: 'primary',
   },
   {
     label: 'Chambres',
@@ -88,7 +97,7 @@ const CRITERIA: Criterion[] = [
         a.bedrooms! > best.bedrooms! ? a : best
       ).id;
     },
-    highlightColor: '#dbeafe',
+    highlight: 'primary',
   },
   {
     label: 'Salles de bain',
@@ -126,7 +135,7 @@ const CRITERIA: Criterion[] = [
         a.price! / a.surface_area! < best.price! / best.surface_area! ? a : best
       ).id;
     },
-    highlightColor: '#dcfce7',
+    highlight: 'success',
   },
   {
     label: 'Disponible à partir du',
@@ -233,6 +242,8 @@ export default function ComparisonTable({
   showActions = true,
 }: ComparisonTableProps) {
   const router = useRouter();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const comparatorAttributeSlugs = getComparatorAttributeSlugsForAds(items);
 
   const handleViewAd = (ad: Ad) => {
@@ -251,7 +262,7 @@ export default function ComparisonTable({
           gap: 0,
           borderBottom: '2px solid',
           borderColor: 'divider',
-          bgcolor: 'grey.50',
+          bgcolor: isDark ? 'grey.900' : 'grey.50',
           minWidth: { xs: `${100 + items.length * 140}px`, sm: 'auto' },
         }}
       >
@@ -277,7 +288,7 @@ export default function ComparisonTable({
                   aspectRatio: '16/9',
                   borderRadius: 2,
                   overflow: 'hidden',
-                  bgcolor: 'grey.200',
+                  bgcolor: 'action.hover',
                   position: 'relative',
                 }}
               >
@@ -362,7 +373,7 @@ export default function ComparisonTable({
             );
           },
         })) as Criterion[]),
-      ].map(({ label, render, bestAdId, highlightColor }, idx) => {
+      ].map(({ label, render, bestAdId, highlight }, idx) => {
         const bestId = bestAdId ? bestAdId(items) : null;
         return (
           <Box
@@ -374,7 +385,7 @@ export default function ComparisonTable({
                 sm: `180px repeat(${items.length}, 1fr)`,
               },
               minWidth: { xs: `${100 + items.length * 140}px`, sm: 'auto' },
-              bgcolor: idx % 2 === 0 ? 'background.paper' : 'grey.100',
+              bgcolor: idx % 2 === 0 ? 'background.paper' : 'action.hover',
               borderBottom: '1px solid',
               borderColor: 'divider',
               '&:last-child': { borderBottom: 'none' },
@@ -413,8 +424,13 @@ export default function ComparisonTable({
                     justifyContent: 'center',
                     textAlign: 'center',
                     bgcolor:
-                      isHighlighted && highlightColor
-                        ? highlightColor
+                      isHighlighted && highlight
+                        ? alpha(
+                            highlight === 'success'
+                              ? theme.palette.success.main
+                              : theme.palette.primary.main,
+                            isDark ? 0.28 : 0.12
+                          )
                         : undefined,
                     borderRadius: isHighlighted ? 0.5 : 0,
                     position: 'relative',
