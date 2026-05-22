@@ -4,6 +4,7 @@ import AdFormWizard, {
   type AdFormValues,
   type TourScene,
 } from '@/components/owner/AdFormWizard';
+import PublishingOverlay from '@/components/owner/PublishingOverlay';
 import {
   mapAdToFormValues,
   normalizeAdFormValues,
@@ -927,7 +928,9 @@ export default function OwnerAdEditPage() {
         }
         draftLabel="Mettre à jour le brouillon"
         isSubmitting={
-          isDraft ? publishDraftMutation.isPending : updateMutation.isPending
+          isDraft
+            ? updateMutation.isPending || publishDraftMutation.isPending
+            : updateMutation.isPending
         }
         isSavingDraft={saveDraftMutation.isPending}
         onEnhanceDescription={handleEnhance}
@@ -944,6 +947,16 @@ export default function OwnerAdEditPage() {
         isApplyingEditDraft={
           applyEditDraftMutation.isPending || discardEditDraftMutation.isPending
         }
+      />
+
+      {/* ═══ Publishing overlay ═══ */}
+      <PublishingOverlay
+        open={
+          isDraft &&
+          (updateMutation.isPending || publishDraftMutation.isPending)
+        }
+        title="En cours de publication…"
+        subtitle="Ne quittez pas cette page — votre annonce est en cours de soumission."
       />
 
       {/* ═══ Delete Confirmation Dialog ═══ */}

@@ -3,6 +3,7 @@
 import type { AdFormValues } from '@/components/owner/AdFormWizard';
 import AdFormWizard, { type TourScene } from '@/components/owner/AdFormWizard';
 import MarkdownBioEditor from '@/components/owner/MarkdownBioEditor';
+import PublishingOverlay from '@/components/owner/PublishingOverlay';
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
 import { getLaravelApiErrorMessage } from '@/lib/api-errors';
@@ -446,6 +447,13 @@ export default function OwnerNewAdPage() {
           onDraftCreated={handleDraftCreated}
         />
       </Container>
+
+      {/* ── Publishing overlay ── */}
+      <PublishingOverlay
+        open={createMutation.isPending}
+        title="En cours de publication…"
+        subtitle="Ne quittez pas cette page — votre annonce est en cours de soumission."
+      />
 
       {/* ── Profile completion — right-side Drawer (form stays mounted behind it) ── */}
       <Drawer

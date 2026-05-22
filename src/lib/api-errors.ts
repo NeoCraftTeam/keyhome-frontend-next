@@ -114,6 +114,21 @@ export function getLaravelApiErrorMessage(
 }
 
 function getMessageFromAxiosError(err: AxiosError, fallback: string): string {
+  // Axios timeout (client-side)
+  if (err.code === 'ECONNABORTED') {
+    return "La requête a expiré. Vérifiez vos annonces — la publication peut avoir abouti malgré l'erreur.";
+  }
+
+  // No response received — includes CORS-stripped proxy errors (504, etc.)
+  if (!err.response) {
+    return 'Erreur de connexion au serveur. Vérifiez vos annonces — la publication peut avoir abouti malgré cette erreur. Vérifiez aussi votre connexion.';
+  }
+
+  // Explicit 504 from proxy (rare if CORS headers are set on the proxy)
+  if (err.response.status === 504) {
+    return 'Le serveur met trop de temps à répondre (504). Vérifiez vos annonces — la publication peut avoir réussi.';
+  }
+
   const raw = err.response?.data;
 
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
