@@ -11,7 +11,7 @@ import {
 import { Ad } from '@/types';
 import EditIcon from '@mui/icons-material/Edit';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
-import QrCode2Icon from '@mui/icons-material/QrCode2';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import BoostIcon from '@mui/icons-material/RocketLaunch';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import VisibleIcon from '@mui/icons-material/Visibility';
@@ -32,7 +32,7 @@ interface OwnerAdCardProps {
   ad: Ad;
   onToggleVisibility?: (ad: Ad) => void;
   isToggling?: boolean;
-  onShowQrCode?: (ad: Ad) => void;
+  onOpenActionsMenu?: (event: React.MouseEvent<HTMLElement>, ad: Ad) => void;
 }
 
 const ICON_SCRIM_SX = {
@@ -45,7 +45,7 @@ export default function OwnerAdCard({
   ad,
   onToggleVisibility,
   isToggling,
-  onShowQrCode,
+  onOpenActionsMenu,
 }: OwnerAdCardProps) {
   const router = useRouter();
   const image = ad.images?.[0];
@@ -79,13 +79,15 @@ export default function OwnerAdCard({
         sx={{ position: 'relative', aspectRatio: '16/10', bgcolor: 'grey.200' }}
       >
         {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={ad.title}
-            fill
-            sizes="(max-width: 600px) 100vw, 400px"
-            style={{ objectFit: 'cover' }}
-          />
+          <Box sx={{ position: 'absolute', inset: 0 }}>
+            <Image
+              src={imageUrl}
+              alt={ad.title}
+              fill
+              sizes="(max-width: 600px) 100vw, 400px"
+              style={{ objectFit: 'cover' }}
+            />
+          </Box>
         ) : (
           <Box
             sx={{
@@ -156,6 +158,19 @@ export default function OwnerAdCard({
             gap: 0.5,
           }}
         >
+          {onOpenActionsMenu && (
+            <IconButton
+              size="small"
+              aria-label="Plus d'actions"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenActionsMenu(e, ad);
+              }}
+              sx={{ ...ICON_SCRIM_SX }}
+            >
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+          )}
           <IconButton
             size="small"
             aria-label={
@@ -185,21 +200,6 @@ export default function OwnerAdCard({
           >
             <EditIcon fontSize="small" />
           </IconButton>
-          {onShowQrCode && (
-            <Tooltip title="QR code & pancarte">
-              <IconButton
-                size="small"
-                aria-label="QR code et pancarte"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onShowQrCode(ad);
-                }}
-                sx={{ ...ICON_SCRIM_SX }}
-              >
-                <QrCode2Icon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
         </Box>
       </Box>
       <Box sx={{ p: 2 }}>

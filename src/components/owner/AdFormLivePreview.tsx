@@ -16,7 +16,6 @@ import {
   School,
   SquareFoot,
   Storefront,
-  TrendingUp,
   WaterDrop,
 } from '@mui/icons-material';
 import {
@@ -339,7 +338,6 @@ function AdFormLivePreview({
     !!adFormText(values.adresse).trim() ||
     (values.attributes?.length ?? 0) > 0 ||
     tourSceneCount > 0 ||
-    !!values.is_boost_requested ||
     hasProximityData ||
     hasMap;
 
@@ -642,15 +640,6 @@ function AdFormLivePreview({
                     variant="outlined"
                     color="secondary"
                     sx={{ fontSize: '0.7rem' }}
-                  />
-                )}
-                {values.is_boost_requested && (
-                  <Chip
-                    icon={<TrendingUp sx={{ fontSize: '16px !important' }} />}
-                    label="Boost souhaité"
-                    size="small"
-                    color="warning"
-                    sx={{ fontSize: '0.7rem', fontWeight: 600 }}
                   />
                 )}
                 {tourSceneCount > 0 && (

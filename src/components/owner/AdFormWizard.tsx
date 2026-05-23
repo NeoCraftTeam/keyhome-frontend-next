@@ -1094,7 +1094,7 @@ function AdFormWizard({
                     values={values}
                     cityId={selectedCity?.id}
                   />
-                  <AdFormBoost values={values} update={update} />
+                  <AdFormBoost />
                   <AdFormMapLocation values={values} update={update} />
                 </Box>
               </Collapse>

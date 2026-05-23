@@ -1,16 +1,10 @@
 import BoostIcon from '@mui/icons-material/RocketLaunch';
-import { Box, Paper, Switch, Typography } from '@mui/material';
+import { Alert, Box, Paper, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { brandAgent } from '@/theme/tokens';
-import type { AdFormValues, UpdateFn } from './types';
 import { sectionSx } from './types';
 
-interface AdFormBoostProps {
-  values: AdFormValues;
-  update: UpdateFn;
-}
-
-export default function AdFormBoost({ values, update }: AdFormBoostProps) {
+export default function AdFormBoost() {
   return (
     <Paper
       elevation={0}
@@ -24,40 +18,20 @@ export default function AdFormBoost({ values, update }: AdFormBoostProps) {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
         <BoostIcon sx={{ color: 'primary.main' }} />
         <Typography variant="subtitle1" fontWeight={800} color="primary.main">
-          Booster cette annonce (Recommandé)
+          Booster cette annonce (optionnel)
         </Typography>
       </Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Positionnez votre annonce en tête des résultats dès sa publication pour
-        attirer 3x plus de locataires.
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Le boost se paie directement après la publication de votre annonce —
+        Mobile Money, carte bancaire ou Orange Money. Aucun pack de crédits
+        n&apos;est nécessaire côté bailleur.
       </Typography>
 
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          p: 2,
-          borderRadius: 2,
-          bgcolor: 'background.paper',
-          border: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <Box>
-          <Typography variant="body1" fontWeight={700}>
-            Activer le Boost Standard
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Remontée quotidienne pendant 3 jours · 1 500 FCFA
-          </Typography>
-        </Box>
-        <Switch
-          color="primary"
-          checked={values.is_boost_requested || false}
-          onChange={(e) => update('is_boost_requested', e.target.checked)}
-        />
-      </Box>
+      <Alert severity="info" sx={{ borderRadius: 2 }}>
+        Une fois l&apos;annonce publiée, ouvrez <strong>Mes annonces</strong>,
+        menu <strong>⋮</strong>, puis <strong>Booster cette annonce</strong>.
+        Vous choisissez un plan et payez directement.
+      </Alert>
     </Paper>
   );
 }

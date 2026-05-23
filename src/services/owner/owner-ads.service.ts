@@ -136,7 +136,14 @@ export const ownerAdsService = {
     const { data } = await api.get(`/my/ads/${adId}/placarde`, {
       responseType: 'blob',
     });
-    return data;
+    return new Blob([data], { type: 'application/pdf' });
+  },
+
+  async fetchAdPlacardePreview(adId: string): Promise<Blob> {
+    const { data } = await api.get(`/my/ads/${adId}/placarde/preview`, {
+      responseType: 'blob',
+    });
+    return new Blob([data], { type: 'application/pdf' });
   },
 
   async getProfileQrMeta(config?: {
@@ -157,6 +164,13 @@ export const ownerAdsService = {
 
   async downloadBusinessCard(): Promise<Blob> {
     const { data } = await api.get('/my/profile/business-card', {
+      responseType: 'blob',
+    });
+    return data;
+  },
+
+  async downloadProfilePlacarde(): Promise<Blob> {
+    const { data } = await api.get('/my/profile/placarde', {
       responseType: 'blob',
     });
     return data;

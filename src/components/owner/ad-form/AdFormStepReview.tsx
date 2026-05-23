@@ -11,7 +11,6 @@ import InfoIcon from '@mui/icons-material/Info';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MapIcon from '@mui/icons-material/Map';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import ThreeSixtyIcon from '@mui/icons-material/ThreeSixty';
 import { Box, Chip, IconButton, Paper, Stack, Typography } from '@mui/material';
 
@@ -411,21 +410,6 @@ export default function AdFormStepReview({
               </Typography>
             ) : (
               <Placeholder />
-            )}
-          </KVItem>
-          <KVItem label="Boost">
-            {values.is_boost_requested ? (
-              <Chip
-                icon={<RocketLaunchIcon sx={{ fontSize: 16 }} />}
-                label="Boost activé"
-                size="small"
-                color="primary"
-                sx={{ fontWeight: 600 }}
-              />
-            ) : (
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Non
-              </Typography>
             )}
           </KVItem>
         </KVGrid>

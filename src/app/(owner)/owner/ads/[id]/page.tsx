@@ -177,10 +177,6 @@ export default function OwnerAdEditPage() {
         formData.append('property_condition', propertyConditionPdf);
       }
 
-      if (values.is_boost_requested) {
-        formData.append('is_boost_requested', '1');
-      }
-
       const updatedAd = await adsService.update(id, formData);
 
       // Upload tour scenes if any new ones
@@ -401,7 +397,6 @@ export default function OwnerAdEditPage() {
         formData.append('distance_school_m', values.distance_school_m);
       if (values.distance_hospital_m)
         formData.append('distance_hospital_m', values.distance_hospital_m);
-      if (values.is_boost_requested) formData.append('is_boost_requested', '1');
       return adsService.update(id, formData);
     },
     onSuccess: () => {

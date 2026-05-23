@@ -1,6 +1,7 @@
 'use client';
 
 import { getLaravelApiErrorMessage } from '@/lib/api-errors';
+import { openAdPlacardePreview } from '@/lib/owner-placarde-preview';
 import { ownerService } from '@/services/owner.service';
 import { brandAgent, neutral, shadow, transition } from '@/theme/tokens';
 import {
@@ -43,14 +44,21 @@ type SnackState = null | {
   severity: 'success' | 'error';
 };
 
-function triggerDownload(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.rel = 'noopener';
-  a.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+function openPdfPreview(blob: Blob, filename: string): void {
+  const typed =
+    blob.type === 'application/pdf'
+      ? blob
+      : new Blob([blob], { type: 'application/pdf' });
+  const url = URL.createObjectURL(typed);
+  const child = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!child) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    a.click();
+  }
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 const BUTTON_MIN_H = 44;
@@ -129,29 +137,19 @@ export default function QrCodeDialog({
     []
   );
 
-  const handlePlacarde = useCallback(async () => {
+  const handlePlacarde = useCallback(() => {
     if (!ad?.id) {
       return;
     }
-    setBusy('pdf');
-    try {
-      const blob = await ownerService.downloadAdPlacarde(ad.id);
-      triggerDownload(blob, 'placarde-keyhome.pdf');
-    } catch (err) {
-      notify(
-        getLaravelApiErrorMessage(err, 'Impossible de générer le PDF.'),
-        'error'
-      );
-    } finally {
-      setBusy(null);
-    }
-  }, [ad?.id, notify]);
+    onClose();
+    openAdPlacardePreview(ad.id);
+  }, [ad?.id, onClose]);
 
   const handleBusinessCard = useCallback(async () => {
     setBusy('card');
     try {
       const blob = await ownerService.downloadBusinessCard();
-      triggerDownload(blob, 'carte-visite-keyhome.pdf');
+      openPdfPreview(blob, 'carte-visite-keyhome.pdf');
     } catch (err) {
       notify(
         getLaravelApiErrorMessage(err, 'Impossible de générer le PDF.'),
@@ -313,7 +311,7 @@ export default function QrCodeDialog({
                   variant="rounded"
                   width="52%"
                   sx={{
-                    aspectRatio: '1000 / 1200',
+                    aspectRatio: '1100 / 1520',
                     borderRadius: 3,
                     boxShadow: `0 8px 24px ${alpha(brandAgent.primary, 0.12)}`,
                   }}
@@ -369,10 +367,10 @@ export default function QrCodeDialog({
                 >
                   <Box
                     sx={{
-                      width: { xs: '58%', sm: '50%' },
-                      maxWidth: 220,
+                      width: { xs: '78%', sm: '68%' },
+                      maxWidth: 320,
                       borderRadius: 3,
-                      overflow: 'hidden',
+                      overflow: 'visible',
                       boxShadow: `0 20px 56px -14px ${alpha(brandAgent.primary, 0.42)}, 0 4px 16px ${alpha('#000', 0.09)}`,
                       transition: prefersReducedMotion
                         ? 'none'
@@ -428,20 +426,9 @@ export default function QrCodeDialog({
                     <Button
                       variant="contained"
                       fullWidth
-                      startIcon={
-                        busy === 'pdf' ? (
-                          <CircularProgress
-                            size={16}
-                            sx={{ color: 'primary.contrastText' }}
-                            aria-hidden
-                          />
-                        ) : (
-                          <PdfIcon fontSize="small" aria-hidden />
-                        )
-                      }
+                      startIcon={<PdfIcon fontSize="small" aria-hidden />}
                       onClick={handlePlacarde}
                       disabled={busy !== null}
-                      aria-busy={busy === 'pdf'}
                       sx={{
                         ...actionButtonSx,
                         fontWeight: 700,
@@ -459,7 +446,7 @@ export default function QrCodeDialog({
                         },
                       }}
                     >
-                      Pancarte vitrine (PDF&nbsp;A5)
+                      Aperçu pancarte (PDF&nbsp;A5)
                     </Button>
                   )}
                   <Button

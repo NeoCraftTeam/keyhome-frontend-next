@@ -164,9 +164,6 @@ function buildAdFormData(
     formData.append('distance_school_m', values.distance_school_m);
   if (values.distance_hospital_m)
     formData.append('distance_hospital_m', values.distance_hospital_m);
-  if (values.is_boost_requested) {
-    formData.append('is_boost_requested', '1');
-  }
   return formData;
 }
 

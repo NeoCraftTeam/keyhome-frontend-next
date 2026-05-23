@@ -125,6 +125,7 @@ function buildCsp(nonce: string): string {
 
     `connect-src ${connectSources}`,
     `frame-src ${CSP_FRAME_HOSTS_STATIC}${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''}`,
+    "object-src 'self' blob:",
     "frame-ancestors 'none'",
   ];
 

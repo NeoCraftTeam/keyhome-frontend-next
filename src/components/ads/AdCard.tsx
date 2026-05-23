@@ -340,7 +340,11 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                 <motion.div
                   variants={IMAGE_VARIANTS}
                   transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                  style={{ width: '100%', height: '100%' }}
+                  style={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '100%',
+                  }}
                 >
                   <Image
                     src={images[currentImage].thumb || images[currentImage].url}

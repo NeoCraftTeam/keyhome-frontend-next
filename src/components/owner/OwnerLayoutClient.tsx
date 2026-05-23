@@ -20,6 +20,7 @@ import PushPrompt from '@/components/ui/PushPrompt';
 import { useFcmToken } from '@/hooks/useFcmToken';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { isLikelyIosWebKit } from '@/lib/ios-environment';
+import { isOwnerPlacardePreviewPath } from '@/lib/owner-placarde-preview';
 import { shouldShowOwnerQuickCreateFab } from '@/lib/owner-shell-fab';
 import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
 import { khLeftRailPaddingSx } from '@/lib/safe-area-insets';
@@ -90,6 +91,7 @@ export default function OwnerLayoutClient({
   }, []);
 
   const publicRoute = isPublicPath(pathname);
+  const chromelessRoute = isOwnerPlacardePreviewPath(pathname);
   const isSurveyPage =
     pathname?.startsWith('/surveys') || pathname?.startsWith('/sondage');
 
@@ -255,6 +257,59 @@ export default function OwnerLayoutClient({
           minHeight: '100vh',
           width: '100%',
           display: 'flex',
+          bgcolor: 'background.default',
+        }}
+      >
+        {children}
+      </Box>
+    );
+  }
+
+  if (chromelessRoute) {
+    if (!pathname || isLoading) {
+      return (
+        <Box
+          sx={{
+            height: '100dvh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'background.default',
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/loading-teal.svg"
+            alt="Chargement…"
+            width={48}
+            height={48}
+          />
+        </Box>
+      );
+    }
+
+    if (!isAuthenticated || !user) {
+      if (isLoggingOut) {
+        return (
+          <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default' }}>
+            <LogoutOverlay />
+          </Box>
+        );
+      }
+      return null;
+    }
+
+    if (!user.role || user.role !== UserRole.AGENT) {
+      return null;
+    }
+
+    return (
+      <Box
+        sx={{
+          minHeight: '100dvh',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
           bgcolor: 'background.default',
         }}
       >

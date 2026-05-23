@@ -21,7 +21,7 @@ import {
 } from '@/lib/register-intent';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
-import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
+import { useTurnstileEmailSubmitReady } from '@/hooks/useTurnstileEmailSubmitReady';
 import {
   mergeOutlinedStartIconInputLabelProps,
   outlinedStartIconInputLabelProps,
@@ -128,9 +128,11 @@ export default function RegisterPage() {
     null
   );
 
-  const { siteKey: turnstileSiteKey, isResolved: turnstileConfigResolved } =
-    useTurnstileSiteKey();
-  const turnstileEnabled = Boolean(turnstileSiteKey);
+  const {
+    siteKey: turnstileSiteKey,
+    turnstileEnabled,
+    emailPasswordReady: turnstileSubmitReady,
+  } = useTurnstileEmailSubmitReady(turnstileToken);
 
   // Turnstile ne concerne que le formulaire email/password.
   // Les boutons OAuth n’ont pas besoin de token Turnstile — ne jamais les bloquer.
@@ -299,15 +301,14 @@ export default function RegisterPage() {
 
   const passwordStrength = getPasswordStrength(form.password);
   // canSubmit = règles métier uniquement pour le formulaire email/password.
-  // turnstileConfigResolved bloque le submit tant que la clé est en cours de fetch,
+  // turnstileSubmitReady bloque le submit tant que Turnstile n'est pas prêt,
   // mais n’affecte jamais les boutons OAuth ci-dessous.
   const canSubmit =
     form.password.length >= 8 &&
     form.password === form.confirm_password &&
     passwordStrength.score >= 50 &&
     acceptedTerms &&
-    turnstileConfigResolved &&
-    (!turnstileEnabled || !!turnstileToken);
+    turnstileSubmitReady;
 
   const handleSubmit = async () => {
     setError('');

@@ -3,7 +3,6 @@
 import BoostPurchaseDialog from '@/components/owner/BoostPurchaseDialog';
 import OwnerAdCard from '@/components/owner/OwnerAdCard';
 import PublishingOverlay from '@/components/owner/PublishingOverlay';
-import QrCodeDialog from '@/components/owner/QrCodeDialog';
 import ShareAdButtons from '@/components/owner/ShareAdButtons';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -11,6 +10,7 @@ import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
 import { getLaravelApiErrorMessage } from '@/lib/api-errors';
 import { formatPrice } from '@/lib/constants';
+import { openAdPlacardePreview } from '@/lib/owner-placarde-preview';
 import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
 import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
@@ -25,7 +25,7 @@ import {
   VisibilityOff as HiddenIcon,
   HomeOutlined as HomeOutlinedIcon,
   MoreVert as MoreIcon,
-  QrCode2 as QrCodeIcon,
+  PictureAsPdf as PdfIcon,
   RocketLaunch as RocketLaunchIcon,
   Visibility as VisibleIcon,
 } from '@mui/icons-material';
@@ -36,6 +36,7 @@ import {
   Box,
   Button,
   Chip,
+  Divider,
   Fab,
   FormControl,
   Grid,
@@ -98,7 +99,6 @@ export default function OwnerAdsPage() {
     message: string;
     severity: 'success' | 'error';
   } | null>(null);
-  const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [boostDialogAd, setBoostDialogAd] = useState<Ad | null>(null);
 
   const { data, isLoading, isError, isFetching, refetch } = useQuery({
@@ -296,7 +296,13 @@ export default function OwnerAdsPage() {
   const adTypes = (adTypesData ?? []) as AdType[];
 
   return (
-    <Box sx={{ py: { xs: 2, md: 4 } }}>
+    <Box
+      sx={{
+        py: { xs: 2, md: 4 },
+        maxWidth: '100%',
+        overflowX: 'hidden',
+      }}
+    >
       <PageBreadcrumbs
         items={[
           { label: 'Tableau de bord', href: '/owner/dashboard' },
@@ -313,7 +319,11 @@ export default function OwnerAdsPage() {
           mb: 4,
         }}
       >
-        <Typography variant="h4" fontWeight={700}>
+        <Typography
+          variant="h4"
+          fontWeight={700}
+          sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+        >
           Mes{' '}
           <Box component="span" sx={{ color: 'primary.main' }}>
             Annonces
@@ -347,14 +357,15 @@ export default function OwnerAdsPage() {
         >
           <Box
             sx={{
-              px: 2.5,
+              px: { xs: 2, sm: 2.5 },
               py: 1.5,
               bgcolor: 'warning.50',
               borderBottom: '1px solid',
               borderColor: 'warning.200',
               display: 'flex',
+              flexWrap: 'wrap',
               alignItems: 'center',
-              gap: 1.5,
+              gap: 1,
             }}
           >
             <EditIcon sx={{ color: 'warning.700', fontSize: 20 }} />
@@ -365,7 +376,11 @@ export default function OwnerAdsPage() {
             >
               {draftCount} brouillon{draftCount > 1 ? 's' : ''} en cours
             </Typography>
-            <Typography variant="caption" color="warning.600" sx={{ ml: 0.5 }}>
+            <Typography
+              variant="caption"
+              color="warning.600"
+              sx={{ display: { xs: 'none', sm: 'inline' } }}
+            >
               — Cliquez sur &quot;Continuer&quot; pour reprendre la rédaction
             </Typography>
           </Box>
@@ -375,9 +390,10 @@ export default function OwnerAdsPage() {
                 key={draft.id}
                 sx={{
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  px: 2.5,
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'stretch', sm: 'center' },
+                  gap: { xs: 1.5, sm: 2 },
+                  px: { xs: 2, sm: 2.5 },
                   py: 1.5,
                   borderBottom:
                     idx < draftAds.length - 1 ? '1px solid' : 'none',
@@ -439,7 +455,15 @@ export default function OwnerAdsPage() {
                   </Typography>
                 </Box>
                 {/* Actions */}
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 1,
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    justifyContent: { xs: 'flex-end', sm: 'flex-start' },
+                  }}
+                >
                   <Chip
                     label="Brouillon"
                     size="small"
@@ -480,26 +504,46 @@ export default function OwnerAdsPage() {
         </Paper>
       )}
 
-      <Paper sx={{ overflow: 'hidden', mb: 4 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          overflow: 'hidden',
+          mb: 4,
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
         <Box
           sx={{
-            p: 2,
+            px: { xs: 2, sm: 2.5 },
+            py: { xs: 2, sm: 2 },
             display: 'grid',
             gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'minmax(200px, 1fr) repeat(3, auto)',
+              xs: 'repeat(2, minmax(0, 1fr))',
+              md: 'minmax(200px, 1.4fr) repeat(3, minmax(0, 1fr))',
             },
-            gap: 1.5,
-            alignItems: 'center',
+            gap: { xs: 1.25, sm: 1.5 },
+            alignItems: 'start',
           }}
         >
           <TextField
             size="small"
-            placeholder="Rechercher titre, adresse…"
+            placeholder={
+              isMobile ? 'Rechercher…' : 'Rechercher titre, adresse…'
+            }
             value={searchInput}
             onChange={(e) => {
               setSearchInput(e.target.value);
               setPage(0);
+            }}
+            sx={{
+              minWidth: 0,
+              gridColumn: { xs: '1 / -1', md: 'auto' },
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                bgcolor: 'background.default',
+              },
             }}
             slotProps={{
               input: {
@@ -509,7 +553,14 @@ export default function OwnerAdsPage() {
               },
             }}
           />
-          <FormControl size="small" sx={{ minWidth: { sm: 160 } }}>
+          <FormControl
+            size="small"
+            sx={{
+              minWidth: 0,
+              width: '100%',
+              '& .MuiOutlinedInput-root': { borderRadius: 2 },
+            }}
+          >
             <InputLabel>Statut</InputLabel>
             <Select
               value={statusFilter}
@@ -527,7 +578,14 @@ export default function OwnerAdsPage() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: { sm: 160 } }}>
+          <FormControl
+            size="small"
+            sx={{
+              minWidth: 0,
+              width: '100%',
+              '& .MuiOutlinedInput-root': { borderRadius: 2 },
+            }}
+          >
             <InputLabel>Ville</InputLabel>
             <Select
               value={cityFilter}
@@ -545,7 +603,14 @@ export default function OwnerAdsPage() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: { sm: 160 } }}>
+          <FormControl
+            size="small"
+            sx={{
+              minWidth: 0,
+              width: '100%',
+              '& .MuiOutlinedInput-root': { borderRadius: 2 },
+            }}
+          >
             <InputLabel>Type</InputLabel>
             <Select
               value={typeFilter}
@@ -564,18 +629,19 @@ export default function OwnerAdsPage() {
             </Select>
           </FormControl>
         </Box>
+        <Divider />
 
         {isLoading ? (
           <Box sx={{ p: 2.5 }}>
             {/* Shimmer skeleton rows for both mobile and desktop */}
             {isMobile ? (
               <Grid container spacing={2}>
-                {[1, 2, 4, 5, 6].map((i) => (
-                  <Grid key={i} size={{ xs: 6 }}>
+                {[1, 2, 3, 4].map((i) => (
+                  <Grid key={i} size={{ xs: 12, sm: 6 }}>
                     <ShimmerBox
                       height={0}
                       sx={{
-                        paddingTop: '100%',
+                        paddingTop: '56%',
                         height: 'auto',
                         borderRadius: '12px',
                       }}
@@ -664,42 +730,23 @@ export default function OwnerAdsPage() {
             }}
           />
         ) : isMobile ? (
-          <Box sx={{ pb: 2 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                overflowX: 'auto',
-                scrollSnapType: 'x mandatory',
-                WebkitOverflowScrolling: 'touch',
-                gap: 2,
-                px: 2,
-                py: 1,
-                /* hide scrollbar but keep scroll */
-                scrollbarWidth: 'none',
-                '&::-webkit-scrollbar': { display: 'none' },
-              }}
+          <Box>
+            <Grid
+              container
+              spacing={2}
+              sx={{ px: { xs: 2, sm: 2.5 }, pt: 2, pb: { xs: 10, sm: 2 } }}
             >
               {ads.map((ad) => (
-                <Box
-                  key={ad.id}
-                  sx={{
-                    flex: '0 0 72%',
-                    maxWidth: 280,
-                    scrollSnapAlign: 'start',
-                  }}
-                >
+                <Grid key={ad.id} size={{ xs: 12, sm: 6 }}>
                   <OwnerAdCard
                     ad={ad}
                     onToggleVisibility={(a) => toggleMutation.mutate(a.id)}
                     isToggling={toggleMutation.isPending}
-                    onShowQrCode={(a) => {
-                      setSelectedAd(a);
-                      setQrDialogOpen(true);
-                    }}
+                    onOpenActionsMenu={handleMenuOpen}
                   />
-                </Box>
+                </Grid>
               ))}
-            </Box>
+            </Grid>
             {meta && meta.last_page > 1 && (
               <TablePagination
                 component="div"
@@ -713,6 +760,18 @@ export default function OwnerAdsPage() {
                 }}
                 rowsPerPageOptions={[5, 10, 25, 50]}
                 labelRowsPerPage="Lignes par page"
+                sx={{
+                  px: { xs: 0.5, sm: 2 },
+                  pb: { xs: 10, sm: 2 },
+                  '.MuiTablePagination-toolbar': {
+                    flexWrap: 'wrap',
+                    gap: 1,
+                  },
+                  '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows':
+                    {
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    },
+                }}
               />
             )}
           </Box>
@@ -936,172 +995,182 @@ export default function OwnerAdsPage() {
         onClose={handleMenuClose}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        slotProps={{
+          paper: {
+            sx: {
+              minWidth: 240,
+              maxWidth: 'calc(100vw - 32px)',
+              maxHeight: 'min(70vh, 520px)',
+            },
+          },
+        }}
       >
-        {selectedAd && (
-          <>
-            <MenuItem
-              onClick={() => {
-                runAppRouterNavigation(router, `/owner/ads/${selectedAd.id}`);
-                handleMenuClose();
-              }}
-            >
-              <EditIcon fontSize="small" sx={{ mr: 1 }} />
-              {selectedAd.status === AdStatus.DRAFT
-                ? "Continuer l'édition"
-                : 'Modifier'}
-            </MenuItem>
-            {selectedAd.status === AdStatus.DRAFT && (
+        {selectedAd
+          ? [
               <MenuItem
+                key="edit"
                 onClick={() => {
-                  publishDraftMutation.mutate(selectedAd.id);
-                }}
-                disabled={publishDraftMutation.isPending}
-                sx={{ color: 'primary.main', fontWeight: 600 }}
-              >
-                <VisibleIcon fontSize="small" sx={{ mr: 1 }} />
-                Publier l&apos;annonce
-              </MenuItem>
-            )}
-            <MenuItem
-              onClick={() => {
-                toggleMutation.mutate(selectedAd.id);
-              }}
-              disabled={toggleMutation.isPending}
-            >
-              {selectedAd.is_visible !== false ? (
-                <>
-                  <HiddenIcon fontSize="small" sx={{ mr: 1 }} />
-                  Masquer
-                </>
-              ) : (
-                <>
-                  <VisibleIcon fontSize="small" sx={{ mr: 1 }} />
-                  Afficher
-                </>
-              )}
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                setAnchorEl(null);
-                setQrDialogOpen(true);
-              }}
-            >
-              <QrCodeIcon fontSize="small" sx={{ mr: 1 }} />
-              QR code & pancarte
-            </MenuItem>
-            {selectedAd.status !== AdStatus.PENDING &&
-              selectedAd.status !== AdStatus.DECLINED && (
-                <>
-                  {selectedAd.status !== AdStatus.RESERVED && (
-                    <MenuItem
-                      onClick={() => {
-                        setStatusMutation.mutate({
-                          adId: selectedAd.id,
-                          status: AdStatus.RESERVED,
-                        });
-                      }}
-                      disabled={setStatusMutation.isPending}
-                    >
-                      Marquer réservé
-                    </MenuItem>
-                  )}
-                  {selectedAd.status !== AdStatus.AVAILABLE && (
-                    <MenuItem
-                      onClick={() => {
-                        setStatusMutation.mutate({
-                          adId: selectedAd.id,
-                          status: AdStatus.AVAILABLE,
-                        });
-                      }}
-                      disabled={setStatusMutation.isPending}
-                    >
-                      Marquer disponible
-                    </MenuItem>
-                  )}
-                </>
-              )}
-            {(selectedAd.status === AdStatus.AVAILABLE ||
-              selectedAd.status === AdStatus.RESERVED) && (
-              <MenuItem
-                onClick={() => {
-                  handleMenuClose();
                   runAppRouterNavigation(router, `/owner/ads/${selectedAd.id}`);
+                  handleMenuClose();
                 }}
               >
-                <ContractIcon fontSize="small" sx={{ mr: 1 }} />
-                Générer un contrat
-              </MenuItem>
-            )}
-            {selectedAd.status === AdStatus.AVAILABLE &&
-              (selectedAd.is_boosted ? (
+                <EditIcon fontSize="small" sx={{ mr: 1 }} />
+                {selectedAd.status === AdStatus.DRAFT
+                  ? "Continuer l'édition"
+                  : 'Modifier'}
+              </MenuItem>,
+              selectedAd.status === AdStatus.DRAFT ? (
                 <MenuItem
-                  onClick={() => unboostMutation.mutate(selectedAd.id)}
-                  disabled={unboostMutation.isPending}
-                >
-                  <RocketLaunchIcon fontSize="small" sx={{ mr: 1 }} />
-                  Retirer le boost
-                </MenuItem>
-              ) : (
-                <MenuItem
+                  key="publish"
                   onClick={() => {
-                    handleMenuClose();
-                    setBoostDialogAd(selectedAd);
+                    publishDraftMutation.mutate(selectedAd.id);
                   }}
+                  disabled={publishDraftMutation.isPending}
                   sx={{ color: 'primary.main', fontWeight: 600 }}
                 >
-                  <RocketLaunchIcon fontSize="small" sx={{ mr: 1 }} />
-                  Booster cette annonce
+                  <VisibleIcon fontSize="small" sx={{ mr: 1 }} />
+                  Publier l&apos;annonce
                 </MenuItem>
-              ))}
-            <MenuItem
-              onClick={async () => {
-                handleMenuClose();
-                const ok = await confirm({
-                  title: 'Supprimer cette annonce ?',
-                  message:
-                    'Cette action est irréversible. L’annonce et toutes ses photos seront définitivement supprimées.',
-                  confirmLabel: 'Supprimer',
-                  variant: 'danger',
-                });
-                if (ok) {
-                  deleteMutation.mutate(selectedAd.id);
-                }
-              }}
-              disabled={deleteMutation.isPending}
-              sx={{ color: 'error.main' }}
-            >
-              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-              Supprimer
-            </MenuItem>
-            <Box
-              sx={{
-                px: 2,
-                py: 1,
-                borderTop: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <ShareAdButtons
-                adTitle={selectedAd.title}
-                adUrl={`/ads/${selectedAd.slug || selectedAd.id}`}
-              />
-            </Box>
-          </>
-        )}
+              ) : null,
+              <MenuItem
+                key="visibility"
+                onClick={() => {
+                  toggleMutation.mutate(selectedAd.id);
+                }}
+                disabled={toggleMutation.isPending}
+              >
+                {selectedAd.is_visible !== false ? (
+                  <>
+                    <HiddenIcon fontSize="small" sx={{ mr: 1 }} />
+                    Masquer
+                  </>
+                ) : (
+                  <>
+                    <VisibleIcon fontSize="small" sx={{ mr: 1 }} />
+                    Afficher
+                  </>
+                )}
+              </MenuItem>,
+              <MenuItem
+                key="placarde"
+                onClick={() => {
+                  setAnchorEl(null);
+                  openAdPlacardePreview(selectedAd.id);
+                }}
+              >
+                <PdfIcon fontSize="small" sx={{ mr: 1 }} />
+                Aperçu pancarte A5
+              </MenuItem>,
+              selectedAd.status !== AdStatus.PENDING &&
+              selectedAd.status !== AdStatus.DECLINED &&
+              selectedAd.status !== AdStatus.RESERVED ? (
+                <MenuItem
+                  key="reserved"
+                  onClick={() => {
+                    setStatusMutation.mutate({
+                      adId: selectedAd.id,
+                      status: AdStatus.RESERVED,
+                    });
+                  }}
+                  disabled={setStatusMutation.isPending}
+                >
+                  Marquer réservé
+                </MenuItem>
+              ) : null,
+              selectedAd.status !== AdStatus.PENDING &&
+              selectedAd.status !== AdStatus.DECLINED &&
+              selectedAd.status !== AdStatus.AVAILABLE ? (
+                <MenuItem
+                  key="available"
+                  onClick={() => {
+                    setStatusMutation.mutate({
+                      adId: selectedAd.id,
+                      status: AdStatus.AVAILABLE,
+                    });
+                  }}
+                  disabled={setStatusMutation.isPending}
+                >
+                  Marquer disponible
+                </MenuItem>
+              ) : null,
+              selectedAd.status === AdStatus.AVAILABLE ||
+              selectedAd.status === AdStatus.RESERVED ? (
+                <MenuItem
+                  key="contract"
+                  onClick={() => {
+                    handleMenuClose();
+                    runAppRouterNavigation(
+                      router,
+                      `/owner/ads/${selectedAd.id}`
+                    );
+                  }}
+                >
+                  <ContractIcon fontSize="small" sx={{ mr: 1 }} />
+                  Générer un contrat
+                </MenuItem>
+              ) : null,
+              selectedAd.status === AdStatus.AVAILABLE ? (
+                selectedAd.is_boosted ? (
+                  <MenuItem
+                    key="unboost"
+                    onClick={() => unboostMutation.mutate(selectedAd.id)}
+                    disabled={unboostMutation.isPending}
+                  >
+                    <RocketLaunchIcon fontSize="small" sx={{ mr: 1 }} />
+                    Retirer le boost
+                  </MenuItem>
+                ) : (
+                  <MenuItem
+                    key="boost"
+                    onClick={() => {
+                      handleMenuClose();
+                      setBoostDialogAd(selectedAd);
+                    }}
+                    sx={{ color: 'primary.main', fontWeight: 600 }}
+                  >
+                    <RocketLaunchIcon fontSize="small" sx={{ mr: 1 }} />
+                    Booster cette annonce
+                  </MenuItem>
+                )
+              ) : null,
+              <MenuItem
+                key="delete"
+                onClick={async () => {
+                  handleMenuClose();
+                  const ok = await confirm({
+                    title: 'Supprimer cette annonce ?',
+                    message:
+                      'Cette action est irréversible. L’annonce et toutes ses photos seront définitivement supprimées.',
+                    confirmLabel: 'Supprimer',
+                    variant: 'danger',
+                  });
+                  if (ok) {
+                    deleteMutation.mutate(selectedAd.id);
+                  }
+                }}
+                disabled={deleteMutation.isPending}
+                sx={{ color: 'error.main' }}
+              >
+                <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                Supprimer
+              </MenuItem>,
+              <Box
+                key="share"
+                sx={{
+                  px: 2,
+                  py: 1,
+                  borderTop: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <ShareAdButtons
+                  adTitle={selectedAd.title}
+                  adUrl={`/ads/${selectedAd.slug || selectedAd.id}`}
+                />
+              </Box>,
+            ].filter(Boolean)
+          : null}
       </Menu>
-      <QrCodeDialog
-        open={qrDialogOpen}
-        onClose={() => {
-          setQrDialogOpen(false);
-          setSelectedAd(null);
-        }}
-        variant="ad"
-        ad={
-          selectedAd
-            ? { id: selectedAd.id, title: selectedAd.title }
-            : undefined
-        }
-      />
       <Snackbar
         open={!!boostFeedback}
         autoHideDuration={4500}

@@ -34,7 +34,6 @@ export interface AdFormValues {
   charges_electricite: string;
   charges_autres: string;
   charges_autres_items: ChargeItem[];
-  is_boost_requested?: boolean;
   distance_main_road_m: string;
   distance_shops_m: string;
   distance_transport_m: string;

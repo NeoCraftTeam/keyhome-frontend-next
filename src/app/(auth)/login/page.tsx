@@ -8,7 +8,7 @@ import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/FadeIn';
 import { useLandingStats } from '@/hooks/useLandingStats';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
-import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
+import { useTurnstileEmailSubmitReady } from '@/hooks/useTurnstileEmailSubmitReady';
 import { getAuthApiErrorMessage } from '@/lib/auth-api-errors';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { useAuth } from '@/providers/AuthProvider';
@@ -54,15 +54,11 @@ export default function LoginPage() {
   const [turnstileIssueCode, setTurnstileIssueCode] = useState<string | null>(
     null
   );
-  const { siteKey: turnstileSiteKey, isResolved: turnstileConfigResolved } =
-    useTurnstileSiteKey();
-  const turnstileEnabled = Boolean(turnstileSiteKey);
-
-  // Le bouton email/password est bloqué tant que Turnstile n'est pas résolu
-  // ET que Turnstile est activé. Les boutons OAuth et passkey ne sont JAMAIS
-  // bloqués par Turnstile — ils ont leur propre flux sans token CSRF.
-  const emailPasswordReady =
-    turnstileConfigResolved && (!turnstileEnabled || Boolean(turnstileToken));
+  const {
+    siteKey: turnstileSiteKey,
+    turnstileEnabled,
+    emailPasswordReady,
+  } = useTurnstileEmailSubmitReady(turnstileToken);
 
   const emailLabelShrink = useOutlinedInputLabelShrink(email.length > 0);
 
@@ -351,7 +347,7 @@ export default function LoginPage() {
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={isSubmitting || !emailPasswordReady}
+                disabled={Boolean(isSubmitting || !emailPasswordReady)}
                 sx={{
                   py: 1.5,
                   fontSize: '1rem',

@@ -424,16 +424,35 @@ export default function OwnerProfilePage() {
               </Typography>
             </Box>
             {!isEditing && (
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<EditIcon />}
-                onClick={enterEditMode}
-                sx={{ textTransform: 'none', fontWeight: 600 }}
-                size="medium"
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 1,
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                }}
               >
-                Modifier
-              </Button>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<EditIcon />}
+                  onClick={enterEditMode}
+                  sx={{ textTransform: 'none', fontWeight: 600 }}
+                  size="medium"
+                >
+                  Modifier
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<QrCodeIcon />}
+                  onClick={() => setProfileQrOpen(true)}
+                  sx={{ textTransform: 'none', fontWeight: 600 }}
+                  size="medium"
+                >
+                  Générer le QR code
+                </Button>
+              </Box>
             )}
           </Box>
         </Paper>
@@ -692,33 +711,6 @@ export default function OwnerProfilePage() {
           )}
         </Grid>
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 2,
-            mb: 3,
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 2,
-          }}
-        >
-          <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-            QR code & carte de visite
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Partagez votre profil public : lien tracké, PNG et PDF prêts à
-            imprimer.
-          </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<QrCodeIcon />}
-            onClick={() => setProfileQrOpen(true)}
-            sx={primaryButtonSx}
-          >
-            Ouvrir
-          </Button>
-        </Paper>
-
         {isEditing && (
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <Button
@@ -773,7 +765,7 @@ export default function OwnerProfilePage() {
             Historique des paiements
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Retrouvez ici toutes vos transactions de crédits.
+            Retrouvez ici vos paiements (boost, abonnements, services).
           </Typography>
           <PaymentHistoryTable />
         </Box>
