@@ -951,6 +951,7 @@ export default function ViewingBookingPanel({
               location={adLocation ?? ''}
               description="Visite de bien sur KeyHome. En attente de confirmation du propriétaire."
               inline
+              sx={{ justifyContent: 'center' }}
             />
           </Box>
         )}
@@ -1325,6 +1326,7 @@ export default function ViewingBookingPanel({
                       location={adLocation ?? ''}
                       description={`Visite confirmée sur KeyHome.\nRéf : ${r.id}`}
                       inline
+                      sx={{ justifyContent: 'center' }}
                     />
                   </Box>
                 )}

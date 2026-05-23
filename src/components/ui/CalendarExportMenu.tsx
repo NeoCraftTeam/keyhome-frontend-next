@@ -81,6 +81,189 @@ const ITEMS = [
   { key: 'ical', label: 'Fichier iCal', bg: '#e05c2b', letter: '📅' },
 ] as const;
 
+// ─── brand SVG icons (inline mode) ───────────────────────────────────────────
+
+function GoogleCalSvg({ size = 28 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="2.5"
+        y="3.5"
+        width="19"
+        height="18"
+        rx="2"
+        stroke="#DADCE0"
+        strokeWidth="1.2"
+        fill="white"
+      />
+      <rect x="2.5" y="3.5" width="19" height="6.5" fill="#1A73E8" rx="2" />
+      <rect x="2.5" y="7" width="19" height="3" fill="#1A73E8" />
+      <line
+        x1="7.5"
+        y1="2"
+        x2="7.5"
+        y2="5"
+        stroke="#5F6368"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <line
+        x1="16.5"
+        y1="2"
+        x2="16.5"
+        y2="5"
+        stroke="#5F6368"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <circle cx="7.5" cy="17" r="2" fill="#EA4335" />
+      <circle cx="12" cy="17" r="2" fill="#FBBC04" />
+      <circle cx="16.5" cy="17" r="2" fill="#34A853" />
+    </svg>
+  );
+}
+
+function AppleCalSvg({ size = 28 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="2.5"
+        y="3.5"
+        width="19"
+        height="18"
+        rx="2"
+        stroke="#DADCE0"
+        strokeWidth="1.2"
+        fill="white"
+      />
+      <rect x="2.5" y="3.5" width="19" height="6.5" fill="#FF3B30" rx="2" />
+      <rect x="2.5" y="7" width="19" height="3" fill="#FF3B30" />
+      <line
+        x1="7.5"
+        y1="2"
+        x2="7.5"
+        y2="5"
+        stroke="#8E8E93"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <line
+        x1="16.5"
+        y1="2"
+        x2="16.5"
+        y2="5"
+        stroke="#8E8E93"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <text
+        x="12"
+        y="20"
+        textAnchor="middle"
+        fontSize="7.5"
+        fontWeight="700"
+        fill="#1C1C1E"
+        fontFamily="-apple-system,sans-serif"
+      >
+        17
+      </text>
+    </svg>
+  );
+}
+
+function OutlookSvg({ size = 28 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect x="2" y="5" width="13" height="14" rx="2" fill="#0078D4" />
+      <circle cx="8.5" cy="12" r="3.5" fill="white" />
+      <circle cx="8.5" cy="12" r="1.8" fill="#0078D4" />
+      <rect x="12" y="7.5" width="10" height="9" rx="1.5" fill="#50B4F0" />
+      <polyline
+        points="12,7.5 17,12 22,7.5"
+        stroke="white"
+        strokeWidth="1.1"
+        fill="none"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ICalSvg({ size = 28 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="2.5"
+        y="3.5"
+        width="19"
+        height="18"
+        rx="2"
+        stroke="#DADCE0"
+        strokeWidth="1.2"
+        fill="white"
+      />
+      <rect x="2.5" y="3.5" width="19" height="6.5" fill="#E05C2B" rx="2" />
+      <rect x="2.5" y="7" width="19" height="3" fill="#E05C2B" />
+      <line
+        x1="7.5"
+        y1="2"
+        x2="7.5"
+        y2="5"
+        stroke="#9E9E9E"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <line
+        x1="16.5"
+        y1="2"
+        x2="16.5"
+        y2="5"
+        stroke="#9E9E9E"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M12 14v4.5M9.5 16.5L12 19l2.5-2.5"
+        stroke="#E05C2B"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function inlineIcon(key: string) {
+  if (key === 'google') return <GoogleCalSvg size={28} />;
+  if (key === 'apple') return <AppleCalSvg size={28} />;
+  if (key === 'outlook') return <OutlookSvg size={28} />;
+  return <ICalSvg size={28} />;
+}
+
 // ─── component ───────────────────────────────────────────────────────────────
 
 function AppleSvg({ size = 14 }: { size?: number }) {
@@ -171,7 +354,7 @@ export default function CalendarExportMenu({
       <Box
         sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', ...(sx as object) }}
       >
-        {ITEMS.map(({ key, label, bg, letter }) => (
+        {ITEMS.map(({ key, label }) => (
           <Box
             key={key}
             component="button"
@@ -199,22 +382,21 @@ export default function CalendarExportMenu({
                 width: 54,
                 height: 54,
                 borderRadius: 3,
-                bgcolor: bg,
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.14)',
-                fontSize: key === 'ical' ? '1.4rem' : '0.9rem',
-                fontWeight: 700,
-                color: '#fff',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
                 transition: 'transform 0.15s, box-shadow 0.15s',
                 '&:hover': {
                   transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.14)',
                 },
               }}
             >
-              {key === 'apple' ? <AppleSvg size={16} /> : letter}
+              {inlineIcon(key)}
             </Box>
             <Box
               component="span"
