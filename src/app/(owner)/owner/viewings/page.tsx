@@ -1,5 +1,6 @@
 'use client';
 
+import CalendarExportMenu from '@/components/ui/CalendarExportMenu';
 import FadeIn from '@/components/ui/FadeIn';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import {
@@ -51,7 +52,6 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AddToCalendarButton } from 'add-to-calendar-button-react';
 import { useCallback, useState } from 'react';
 
 const MOTION_POLYFILL_SX = {
@@ -907,21 +907,14 @@ export default function OwnerViewingsPage() {
                           gap: 1,
                         }}
                       >
-                        <CalendarIcon
-                          sx={{ fontSize: 16, color: 'text.secondary' }}
-                        />
-                        <AddToCalendarButton
-                          name={`Visite — ${r.ad?.title ?? ''}`}
-                          options={['Apple', 'Google', 'Outlook.com', 'iCal']}
-                          startDate={r.slot_date}
+                        <CalendarExportMenu
+                          title={`Visite — ${r.ad?.title ?? ''}`}
+                          date={r.slot_date}
                           startTime={r.slot_starts_at.slice(0, 5)}
                           endTime={r.slot_ends_at.slice(0, 5)}
-                          timeZone="Africa/Douala"
                           description={`Visiteur : ${r.client?.firstname ?? ''} ${r.client?.lastname ?? ''}\nTél : ${r.client?.phone_number ?? 'non renseigné'}\nkeyHome – keyhome.app/owner/viewings`}
-                          buttonStyle="flat"
-                          size="3"
-                          label="Ajouter au calendrier"
-                          language="fr"
+                          teal
+                          buttonVariant="text"
                         />
                       </Box>
                     )}

@@ -1,5 +1,6 @@
 'use client';
 
+import CalendarExportMenu from '@/components/ui/CalendarExportMenu';
 import {
   getLaravelApiErrorMessage,
   getLaravelNestedApiError,
@@ -49,7 +50,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AddToCalendarButton } from 'add-to-calendar-button-react';
 import {
   addDays,
   addMonths,
@@ -935,20 +935,15 @@ export default function ViewingBookingPanel({
         </Alert>
 
         {selectedDate && selectedSlot && (
-          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
-            <AddToCalendarButton
-              name={`Visite — ${adTitle}`}
-              options={['Apple', 'Google', 'Outlook.com', 'iCal']}
-              startDate={format(selectedDate, 'yyyy-MM-dd')}
+          <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'center' }}>
+            <CalendarExportMenu
+              title={`Visite — ${adTitle}`}
+              date={format(selectedDate, 'yyyy-MM-dd')}
               startTime={selectedSlot.starts_at.slice(0, 5)}
               endTime={selectedSlot.ends_at.slice(0, 5)}
-              timeZone="Africa/Douala"
               location={adLocation ?? ''}
-              description={`Visite de bien sur KeyHome. En attente de confirmation du propriétaire.`}
-              buttonStyle="round"
-              size="3"
-              label="Ajouter au calendrier"
-              language="fr"
+              description="Visite de bien sur KeyHome. En attente de confirmation du propriétaire."
+              buttonVariant="outlined"
             />
           </Box>
         )}
@@ -1307,26 +1302,15 @@ export default function ViewingBookingPanel({
                   )}
                 </Box>
                 {r.status === ReservationStatus.Confirmed && (
-                  <Box
-                    sx={{
-                      mt: 1.5,
-                      display: 'flex',
-                      justifyContent: 'flex-start',
-                    }}
-                  >
-                    <AddToCalendarButton
-                      name={`Visite — ${adTitle}`}
-                      options={['Apple', 'Google', 'Outlook.com', 'iCal']}
-                      startDate={r.slot_date}
+                  <Box sx={{ mt: 1.5 }}>
+                    <CalendarExportMenu
+                      title={`Visite — ${adTitle}`}
+                      date={r.slot_date}
                       startTime={r.slot_starts_at.slice(0, 5)}
                       endTime={r.slot_ends_at.slice(0, 5)}
-                      timeZone="Africa/Douala"
                       location={adLocation ?? ''}
                       description={`Visite confirmée sur KeyHome.\nRéf : ${r.id}`}
-                      buttonStyle="flat"
-                      size="3"
-                      label="Ajouter au calendrier"
-                      language="fr"
+                      buttonVariant="text"
                     />
                   </Box>
                 )}
