@@ -935,7 +935,14 @@ export default function ViewingBookingPanel({
         </Alert>
 
         {selectedDate && selectedSlot && (
-          <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ mb: 1.5 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: 'block', mb: 1, fontWeight: 500 }}
+            >
+              Ajouter à votre calendrier
+            </Typography>
             <CalendarExportMenu
               title={`Visite — ${adTitle}`}
               date={format(selectedDate, 'yyyy-MM-dd')}
@@ -943,7 +950,7 @@ export default function ViewingBookingPanel({
               endTime={selectedSlot.ends_at.slice(0, 5)}
               location={adLocation ?? ''}
               description="Visite de bien sur KeyHome. En attente de confirmation du propriétaire."
-              buttonVariant="outlined"
+              inline
             />
           </Box>
         )}
@@ -1303,6 +1310,13 @@ export default function ViewingBookingPanel({
                 </Box>
                 {r.status === ReservationStatus.Confirmed && (
                   <Box sx={{ mt: 1.5 }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: 'block', mb: 1, fontWeight: 500 }}
+                    >
+                      Ajouter à votre calendrier
+                    </Typography>
                     <CalendarExportMenu
                       title={`Visite — ${adTitle}`}
                       date={r.slot_date}
@@ -1310,7 +1324,7 @@ export default function ViewingBookingPanel({
                       endTime={r.slot_ends_at.slice(0, 5)}
                       location={adLocation ?? ''}
                       description={`Visite confirmée sur KeyHome.\nRéf : ${r.id}`}
-                      buttonVariant="text"
+                      inline
                     />
                   </Box>
                 )}

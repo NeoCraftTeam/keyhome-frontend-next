@@ -83,6 +83,21 @@ const ITEMS = [
 
 // ─── component ───────────────────────────────────────────────────────────────
 
+function AppleSvg({ size = 14 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 14 14"
+      width={size}
+      height={size}
+      fill="#fff"
+      aria-hidden="true"
+    >
+      <path d="M11.05 7.42c-.02-1.8 1.47-2.67 1.54-2.71-0.84-1.23-2.15-1.4-2.62-1.42-1.12-.11-2.19.66-2.76.66-.57 0-1.45-.64-2.38-.62-1.22.02-2.35.71-2.97 1.8-1.27 2.2-.32 5.46.91 7.25.61.88 1.33 1.87 2.28 1.83.92-.04 1.26-.59 2.37-.59 1.1 0 1.41.59 2.37.57.98-.02 1.6-.9 2.2-1.78.69-.99.97-1.96 1-2.01-.02-.01-1.92-.74-1.94-2.98z" />
+      <path d="M9.27 2.18c.51-.61.85-1.46.76-2.31-.73.03-1.62.49-2.14 1.09-.47.54-.88 1.4-.77 2.23.81.06 1.64-.41 2.15-1.01z" />
+    </svg>
+  );
+}
+
 export interface CalendarExportMenuProps {
   title: string;
   date: string;
@@ -96,6 +111,11 @@ export interface CalendarExportMenuProps {
   buttonVariant?: 'text' | 'outlined' | 'contained';
   /** Use teal accent for owner panel. Default: false */
   teal?: boolean;
+  /**
+   * Inline mode: render clickable icon tiles directly instead of a dropdown.
+   * Use on success / confirmation screens.
+   */
+  inline?: boolean;
   sx?: SxProps<Theme>;
 }
 
@@ -109,6 +129,7 @@ export default function CalendarExportMenu({
   buttonSize = 'small',
   buttonVariant = 'outlined',
   teal = false,
+  inline = false,
   sx,
 }: CalendarExportMenuProps) {
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
@@ -135,10 +156,6 @@ export default function CalendarExportMenu({
     `&location=${encodeURIComponent(location)}`,
   ].join('');
 
-  function handleOpen(e: MouseEvent<HTMLElement>) {
-    setAnchor(e.currentTarget);
-  }
-
   function handleItem(key: string) {
     setAnchor(null);
     if (key === 'google')
@@ -148,13 +165,83 @@ export default function CalendarExportMenu({
     else downloadIcs(title, date, start5, end5, location, description);
   }
 
+  // ── Inline mode: icon tiles ────────────────────────────────────────────────
+  if (inline) {
+    return (
+      <Box
+        sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', ...(sx as object) }}
+      >
+        {ITEMS.map(({ key, label, bg, letter }) => (
+          <Box
+            key={key}
+            component="button"
+            onClick={() => handleItem(key)}
+            title={label}
+            aria-label={`Ajouter à ${label}`}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 0.75,
+              cursor: 'pointer',
+              background: 'none',
+              border: 'none',
+              p: 0,
+              '&:focus-visible': {
+                outline: '2px solid',
+                outlineColor: 'primary.main',
+                borderRadius: 1,
+              },
+            }}
+          >
+            <Box
+              sx={{
+                width: 54,
+                height: 54,
+                borderRadius: 3,
+                bgcolor: bg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.14)',
+                fontSize: key === 'ical' ? '1.4rem' : '0.9rem',
+                fontWeight: 700,
+                color: '#fff',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                },
+              }}
+            >
+              {key === 'apple' ? <AppleSvg size={16} /> : letter}
+            </Box>
+            <Box
+              component="span"
+              sx={{
+                fontSize: '0.6rem',
+                color: 'text.secondary',
+                textAlign: 'center',
+                lineHeight: 1.2,
+                maxWidth: 60,
+              }}
+            >
+              {label}
+            </Box>
+          </Box>
+        ))}
+      </Box>
+    );
+  }
+
+  // ── Dropdown mode: button + MUI Menu (Portal) ──────────────────────────────
   return (
     <>
       <Button
         size={buttonSize}
         variant={buttonVariant}
         startIcon={<CalendarMonthIcon sx={{ fontSize: '1em' }} />}
-        onClick={handleOpen}
+        onClick={(e: MouseEvent<HTMLElement>) => setAnchor(e.currentTarget)}
         aria-haspopup="true"
         aria-expanded={open}
         sx={{
@@ -212,21 +299,7 @@ export default function CalendarExportMenu({
                 flexShrink: 0,
               }}
             >
-              {key === 'apple' ? (
-                /* Apple symbol — Unicode heavy Apple logo approximation */
-                <svg
-                  viewBox="0 0 14 14"
-                  width={12}
-                  height={12}
-                  fill="#fff"
-                  aria-hidden="true"
-                >
-                  <path d="M11.05 7.42c-.02-1.8 1.47-2.67 1.54-2.71-0.84-1.23-2.15-1.4-2.62-1.42-1.12-.11-2.19.66-2.76.66-.57 0-1.45-.64-2.38-.62-1.22.02-2.35.71-2.97 1.8-1.27 2.2-.32 5.46.91 7.25.61.88 1.33 1.87 2.28 1.83.92-.04 1.26-.59 2.37-.59 1.1 0 1.41.59 2.37.57.98-.02 1.6-.9 2.2-1.78.69-.99.97-1.96 1-2.01-.02-.01-1.92-.74-1.94-2.98z" />
-                  <path d="M9.27 2.18c.51-.61.85-1.46.76-2.31-.73.03-1.62.49-2.14 1.09-.47.54-.88 1.4-.77 2.23.81.06 1.64-.41 2.15-1.01z" />
-                </svg>
-              ) : (
-                letter
-              )}
+              {key === 'apple' ? <AppleSvg size={12} /> : letter}
             </Box>
             <Box sx={{ fontSize: '0.8rem', color: 'text.primary' }}>
               {label}
