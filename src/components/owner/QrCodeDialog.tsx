@@ -12,7 +12,6 @@ import {
 import {
   Close as CloseIcon,
   ContentCopy as CopyIcon,
-  Download as DownloadIcon,
   PictureAsPdf as PdfIcon,
 } from '@mui/icons-material';
 import {
@@ -97,13 +96,6 @@ export default function QrCodeDialog({
   const profileQuery = useQuery({
     queryKey: ['owner-profile-qr-meta'],
     queryFn: ({ signal }) => ownerService.getProfileQrMeta({ signal }),
-    enabled: enabledProfile,
-  });
-
-  const cardPreviewQuery = useQuery({
-    queryKey: ['owner-business-card-preview'],
-    queryFn: ({ signal }) =>
-      ownerService.fetchBusinessCardPreviewHtml({ signal }),
     enabled: enabledProfile,
   });
 
@@ -261,11 +253,6 @@ export default function QrCodeDialog({
   );
 
   const hasQr = !!data?.qr_data_uri && !isLoading;
-  const showPreviewSkeleton =
-    variant === 'profile' && cardPreviewQuery.isLoading && hasQr;
-
-  const showCardPreviewReady =
-    variant === 'profile' && !!cardPreviewQuery.data && hasQr;
 
   return (
     <>
@@ -480,65 +467,6 @@ export default function QrCodeDialog({
 
             {hasQr && (
               <Stack spacing={spacing.lg} alignItems="center">
-                {variant === 'profile' && (
-                  <Box sx={{ width: '100%', maxWidth: 460 }}>
-                    {showPreviewSkeleton && (
-                      <Skeleton
-                        variant="rounded"
-                        width="100%"
-                        height={220}
-                        sx={{ borderRadius: 3 }}
-                      />
-                    )}
-                    {cardPreviewQuery.isError && !showPreviewSkeleton && (
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        textAlign="center"
-                        sx={{ py: spacing.sm }}
-                      >
-                        Aperçu carte indisponible. Le PDF se télécharge
-                        normalement.
-                      </Typography>
-                    )}
-                    {showCardPreviewReady && (
-                      <Box
-                        sx={{
-                          borderRadius: 3,
-                          overflow: 'hidden',
-                          background: `linear-gradient(135deg, ${neutral.white} 0%, ${brandAgent.primaryAlpha08} 100%)`,
-                          boxShadow: `0 12px 40px -16px ${brandAgent.primaryAlpha25}, 0 2px 6px ${slateShadowTint}`,
-                          transition: prefersReducedMotion
-                            ? 'none'
-                            : transition.polish,
-                          ...(prefersReducedMotion
-                            ? ({
-                                '@media (prefers-reduced-motion: reduce)': {
-                                  transition: 'none',
-                                },
-                              } as const)
-                            : {}),
-                        }}
-                      >
-                        <Box
-                          component="iframe"
-                          title="Aperçu de la carte de visite à télécharger"
-                          srcDoc={cardPreviewQuery.data}
-                          sandbox="allow-scripts allow-same-origin"
-                          referrerPolicy="no-referrer"
-                          sx={{
-                            width: '100%',
-                            height: 220,
-                            border: 0,
-                            background: 'transparent',
-                            display: 'block',
-                          }}
-                        />
-                      </Box>
-                    )}
-                  </Box>
-                )}
-
                 {isMetaBusy && (
                   <Stack
                     direction="row"
@@ -609,68 +537,17 @@ export default function QrCodeDialog({
               sx={{
                 px: { xs: spacing.md, sm: spacing.lg },
                 pb: spacing.lg,
-                pt: spacing.sm,
+                pt: spacing.xs ?? spacing.sm,
                 display: 'flex',
-                gap: spacing.md,
-                flexWrap: 'wrap',
-                justifyContent: 'center',
+                flexDirection: 'column',
+                gap: spacing.sm,
+                alignItems: 'stretch',
               }}
             >
-              <Button
-                startIcon={
-                  busy === 'copy' ? (
-                    <CircularProgress size={16} aria-hidden />
-                  ) : (
-                    <CopyIcon fontSize="small" aria-hidden />
-                  )
-                }
-                onClick={handleCopy}
-                disabled={!primaryUrl || busy !== null}
-                aria-busy={busy === 'copy'}
-                sx={{
-                  ...actionButtonSx,
-                  fontWeight: 600,
-                  color: 'text.secondary',
-                  '&:focus-visible': {
-                    boxShadow: shadow.agentFocusRing,
-                    outline: 'none',
-                  },
-                }}
-              >
-                Copier le lien public
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={
-                  busy === 'png' ? (
-                    <CircularProgress size={16} aria-hidden />
-                  ) : (
-                    <DownloadIcon fontSize="small" aria-hidden />
-                  )
-                }
-                onClick={handlePng}
-                disabled={busy !== null}
-                aria-busy={busy === 'png'}
-                sx={{
-                  ...actionButtonSx,
-                  fontWeight: 700,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                  '&:hover': {
-                    borderColor: 'action.disabled',
-                    bgcolor: alpha(theme.palette.common.black, 0.03),
-                  },
-                  '&:focus-visible': {
-                    boxShadow: shadow.agentFocusRing,
-                    outline: 'none',
-                  },
-                }}
-              >
-                Télécharger le QR (PNG)
-              </Button>
               {variant === 'ad' && (
                 <Button
                   variant="contained"
+                  fullWidth
                   startIcon={
                     busy === 'pdf' ? (
                       <CircularProgress
@@ -700,12 +577,13 @@ export default function QrCodeDialog({
                     },
                   }}
                 >
-                  Pancarte vitrine (PDF&nbsp;A5)
+                  Télécharger la pancarte (PDF A5)
                 </Button>
               )}
               {variant === 'profile' && (
                 <Button
                   variant="contained"
+                  fullWidth
                   startIcon={
                     busy === 'card' ? (
                       <CircularProgress
@@ -735,9 +613,37 @@ export default function QrCodeDialog({
                     },
                   }}
                 >
-                  Carte de visite (PDF)
+                  Télécharger la carte de visite (PDF)
                 </Button>
               )}
+              <Button
+                size="small"
+                startIcon={
+                  busy === 'copy' ? (
+                    <CircularProgress size={14} aria-hidden />
+                  ) : (
+                    <CopyIcon
+                      sx={{ fontSize: '15px !important' }}
+                      aria-hidden
+                    />
+                  )
+                }
+                onClick={handleCopy}
+                disabled={!primaryUrl || busy !== null}
+                aria-busy={busy === 'copy'}
+                sx={{
+                  ...actionButtonSx,
+                  fontWeight: 600,
+                  color: 'text.secondary',
+                  fontSize: '0.78rem',
+                  '&:focus-visible': {
+                    boxShadow: shadow.agentFocusRing,
+                    outline: 'none',
+                  },
+                }}
+              >
+                Copier le lien public
+              </Button>
             </Box>
           )}
         </DialogContent>
