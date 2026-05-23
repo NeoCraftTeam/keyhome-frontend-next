@@ -2,16 +2,9 @@
 
 import { getLaravelApiErrorMessage } from '@/lib/api-errors';
 import { ownerService } from '@/services/owner.service';
-import {
-  brandAgent,
-  neutral,
-  shadow,
-  spacing,
-  transition,
-} from '@/theme/tokens';
+import { brandAgent, neutral, shadow, transition } from '@/theme/tokens';
 import {
   Close as CloseIcon,
-  ContentCopy as CopyIcon,
   PictureAsPdf as PdfIcon,
 } from '@mui/icons-material';
 import {
@@ -78,10 +71,7 @@ export default function QrCodeDialog({
   const descId = useId();
   const liveErrorId = useId();
 
-  const slateShadowTint = alpha(theme.palette.grey[900], 0.06);
-  const [busy, setBusy] = useState<null | 'png' | 'pdf' | 'card' | 'copy'>(
-    null
-  );
+  const [busy, setBusy] = useState<null | 'pdf' | 'card'>(null);
   const [snack, setSnack] = useState<SnackState>(null);
 
   const enabledAd = open && variant === 'ad' && !!ad?.id;
@@ -105,11 +95,6 @@ export default function QrCodeDialog({
   const isError = variant === 'ad' ? adQuery.isError : profileQuery.isError;
   const error = variant === 'ad' ? adQuery.error : profileQuery.error;
   const refetch = variant === 'ad' ? adQuery.refetch : profileQuery.refetch;
-
-  const primaryUrl =
-    variant === 'profile'
-      ? (profileQuery.data?.profile_url ?? null)
-      : (adQuery.data?.ad_url ?? null);
 
   const isMetaBusy =
     variant === 'ad'
@@ -144,57 +129,6 @@ export default function QrCodeDialog({
     []
   );
 
-  const handleCopy = useCallback(async () => {
-    if (!primaryUrl) {
-      return;
-    }
-    setBusy('copy');
-    try {
-      await navigator.clipboard.writeText(primaryUrl);
-      notify('Lien copié dans le presse-papiers.', 'success');
-    } catch {
-      notify(
-        'Impossible de copier. Sélectionnez le lien manuellement ou réessayez.',
-        'error'
-      );
-    } finally {
-      setBusy(null);
-    }
-  }, [notify, primaryUrl]);
-
-  const handlePng = useCallback(async () => {
-    if (variant === 'profile') {
-      setBusy('png');
-      try {
-        const blob = await ownerService.downloadProfileQrPng();
-        triggerDownload(blob, 'qrcode-profil-keyhome.png');
-      } catch (err) {
-        notify(
-          getLaravelApiErrorMessage(err, 'Téléchargement du PNG impossible.'),
-          'error'
-        );
-      } finally {
-        setBusy(null);
-      }
-      return;
-    }
-    if (!ad?.id) {
-      return;
-    }
-    setBusy('png');
-    try {
-      const blob = await ownerService.downloadAdQrPng(ad.id);
-      triggerDownload(blob, `qrcode-annonce-${ad.id.slice(0, 8)}.png`);
-    } catch (err) {
-      notify(
-        getLaravelApiErrorMessage(err, 'Téléchargement du PNG impossible.'),
-        'error'
-      );
-    } finally {
-      setBusy(null);
-    }
-  }, [ad?.id, variant, notify]);
-
   const handlePlacarde = useCallback(async () => {
     if (!ad?.id) {
       return;
@@ -228,10 +162,6 @@ export default function QrCodeDialog({
     }
   }, [notify]);
 
-  const paperBackdropTop = alpha(brandAgent.primary, 0.14);
-  const paperWashMid = neutral.white;
-
-  const qrDiameter = isMobile ? 252 : 288;
   const actionButtonSx = useMemo(
     () => ({
       textTransform: 'none' as const,
@@ -259,7 +189,7 @@ export default function QrCodeDialog({
       <Dialog
         open={open}
         onClose={onClose}
-        maxWidth="sm"
+        maxWidth="xs"
         fullWidth
         fullScreen={isMobile}
         aria-labelledby={titleId}
@@ -267,178 +197,139 @@ export default function QrCodeDialog({
         slotProps={{
           backdrop: {
             sx: {
-              backdropFilter: prefersReducedMotion ? 'none' : 'blur(10px)',
-              backgroundColor: alpha(brandAgent.primaryDark, 0.42),
+              backdropFilter: prefersReducedMotion ? 'none' : 'blur(12px)',
+              backgroundColor: alpha(brandAgent.primaryDark, 0.45),
               transition: prefersReducedMotion ? 'none' : transition.polish,
             },
           },
         }}
         PaperProps={{
           sx: {
-            borderRadius: isMobile ? 0 : 4,
+            borderRadius: isMobile ? 0 : 5,
             overflow: 'hidden',
             bgcolor: neutral.white,
-            border: `${isMobile ? 0 : 1}px solid ${brandAgent.primaryAlpha20}`,
+            border: `${isMobile ? 0 : 1}px solid ${alpha(brandAgent.primary, 0.1)}`,
             boxShadow: isMobile
-              ? `${shadow.medium}, inset 0 1px 0 ${brandAgent.primaryAlpha16}`
-              : `${shadow.modal}, inset 0 1px 0 ${brandAgent.primaryAlpha16}`,
-            backgroundImage: `
-              linear-gradient(180deg, ${paperBackdropTop} 0%, ${paperWashMid} 38%, ${brandAgent.primaryAlpha10} 100%)
-            `,
+              ? shadow.medium
+              : `0 32px 80px -24px ${alpha(brandAgent.primary, 0.28)}, 0 8px 24px ${alpha('#000', 0.1)}`,
           },
         }}
       >
-        <DialogContent sx={{ p: 0, position: 'relative' }}>
-          {/* Header grille : équilibre visuel + ordre TAB logique */}
+        <DialogContent sx={{ p: 0, overflowX: 'hidden' }}>
+          {/* ── Hero header ──────────────────────────────────────────── */}
           <Box
             sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '40px 1fr 44px', sm: '48px 1fr 48px' },
-              alignItems: 'start',
-              pt: spacing.lg,
-              pb: spacing.sm,
-              px: spacing.lg,
-              columnGap: spacing.md,
-              rowGap: spacing.sm,
+              position: 'relative',
+              px: { xs: 2.5, sm: 3 },
+              pt: { xs: 2.5, sm: 3 },
+              pb: 2,
+              background: `radial-gradient(ellipse 140% 110% at 50% 0%, ${alpha(brandAgent.primary, 0.13)} 0%, transparent 72%)`,
+              borderBottom: `1px solid ${alpha(brandAgent.primary, 0.07)}`,
             }}
           >
-            <Box
-              sx={{
-                gridColumn: 2,
-                textAlign: 'center',
-                minWidth: 0,
-                position: 'relative',
-              }}
-            >
-              <Typography
-                variant="overline"
-                sx={{
-                  color: 'primary.main',
-                  fontWeight: 800,
-                  letterSpacing: '0.08em',
-                  fontSize: 11,
-                  display: 'block',
-                }}
-              >
-                {headline.kicker}
-              </Typography>
-              <Typography
-                id={titleId}
-                component="h2"
-                variant="h6"
-                sx={{
-                  fontWeight: 800,
-                  color: 'text.primary',
-                  lineHeight: 1.3,
-                  mt: 0.5,
-                  wordBreak: 'break-word',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  maxWidth: '100%',
-                }}
-              >
-                {headline.title}
-              </Typography>
-              <Typography
-                id={descId}
-                component="p"
-                variant="body2"
-                color="text.secondary"
-                sx={{
-                  mt: 1,
-                  position: 'absolute',
-                  width: 1,
-                  height: 1,
-                  padding: 0,
-                  margin: -1,
-                  overflow: 'hidden',
-                  clip: 'rect(0, 0, 0, 0)',
-                  whiteSpace: 'nowrap',
-                  border: 0,
-                }}
-              >
-                {descriptionText}
-              </Typography>
-            </Box>
-
             <IconButton
               onClick={onClose}
               aria-label="Fermer la fenêtre partage QR"
+              size="small"
               sx={{
-                gridColumn: 3,
-                justifySelf: 'end',
-                minWidth: BUTTON_MIN_H,
-                minHeight: BUTTON_MIN_H,
-                bgcolor: alpha(neutral.white, 0.7),
+                position: 'absolute',
+                top: 10,
+                right: 10,
+                bgcolor: alpha(neutral.white, 0.82),
                 backdropFilter: prefersReducedMotion ? 'none' : 'blur(4px)',
                 transition: prefersReducedMotion ? 'none' : transition.polish,
-                '&:hover': { bgcolor: alpha(neutral.white, 0.95) },
+                '&:hover': { bgcolor: neutral.white },
                 '&:focus-visible': {
                   boxShadow: shadow.agentFocusRing,
                   outline: 'none',
                 },
-                ...(prefersReducedMotion
-                  ? ({
-                      '@media (prefers-reduced-motion: reduce)': {
-                        transition: 'none',
-                      },
-                    } as const)
-                  : {}),
               }}
             >
-              <CloseIcon fontSize="small" />
+              <CloseIcon sx={{ fontSize: 18 }} />
             </IconButton>
+
+            <Typography
+              variant="overline"
+              sx={{
+                display: 'block',
+                color: 'primary.main',
+                fontWeight: 800,
+                letterSpacing: '0.09em',
+                fontSize: 10,
+                lineHeight: 1.6,
+              }}
+            >
+              {headline.kicker}
+            </Typography>
+            <Typography
+              id={titleId}
+              component="h2"
+              variant="subtitle1"
+              sx={{
+                fontWeight: 800,
+                color: 'text.primary',
+                lineHeight: 1.3,
+                mt: 0.25,
+                pr: 4,
+                wordBreak: 'break-word',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {headline.title}
+            </Typography>
+            <Typography
+              id={descId}
+              component="p"
+              sx={{
+                position: 'absolute',
+                width: 1,
+                height: 1,
+                padding: 0,
+                margin: -1,
+                overflow: 'hidden',
+                clip: 'rect(0, 0, 0, 0)',
+                whiteSpace: 'nowrap',
+                border: 0,
+              }}
+            >
+              {descriptionText}
+            </Typography>
           </Box>
 
-          <Box
-            sx={{
-              px: { xs: spacing.md, sm: spacing.lg },
-              pb: spacing.lg,
-            }}
-          >
+          <Box sx={{ px: { xs: 2.5, sm: 3 }, pt: 2.5, pb: 3 }}>
+            {/* Loading */}
             {isLoading && (
               <Stack
-                spacing={spacing.md}
+                spacing={2}
                 alignItems="center"
-                sx={{ py: spacing.xl }}
+                sx={{ py: 4 }}
                 aria-busy="true"
-                aria-label="Chargement des données du QR code"
+                aria-label="Chargement du QR code"
               >
-                {variant === 'profile' && (
-                  <Skeleton
-                    variant="rounded"
-                    width="min(92%, 400px)"
-                    height={200}
-                    sx={{ borderRadius: 3, maxWidth: 460 }}
-                  />
-                )}
                 <Skeleton
                   variant="rounded"
-                  width={qrDiameter}
-                  height={Math.round(qrDiameter * 1.38)}
+                  width="52%"
                   sx={{
-                    flexShrink: 0,
-                    borderRadius: 4,
-                    boxShadow: `0 8px 28px ${alpha(brandAgent.primary, 0.12)}`,
+                    aspectRatio: '1000 / 1200',
+                    borderRadius: 3,
+                    boxShadow: `0 8px 24px ${alpha(brandAgent.primary, 0.12)}`,
                   }}
                 />
-                <Stack direction="row" spacing={spacing.sm} alignItems="center">
-                  <CircularProgress size={22} sx={{ color: 'primary.main' }} />
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CircularProgress size={18} sx={{ color: 'primary.main' }} />
                   <Typography variant="body2" color="text.secondary">
-                    Chargement du QR code…
+                    Chargement…
                   </Typography>
                 </Stack>
               </Stack>
             )}
 
+            {/* Error */}
             {isError && (
-              <Stack
-                spacing={spacing.md}
-                alignItems="center"
-                sx={{ py: spacing.xl }}
-              >
+              <Stack spacing={2} alignItems="center" sx={{ py: 4 }}>
                 <Typography
                   id={liveErrorId}
                   role="alert"
@@ -448,33 +339,77 @@ export default function QrCodeDialog({
                 >
                   {getLaravelApiErrorMessage(
                     error,
-                    'Le QR code n’a pas pu être chargé.'
+                    'Le QR code n\u2019a pas pu \u00eatre charg\u00e9.'
                   )}
                 </Typography>
                 <Button
                   variant="outlined"
                   color="primary"
                   onClick={() => refetch()}
-                  sx={{
-                    ...actionButtonSx,
-                    fontWeight: 700,
-                  }}
+                  sx={{ ...actionButtonSx, fontWeight: 700 }}
                 >
                   Réessayer
                 </Button>
               </Stack>
             )}
 
+            {/* QR + Actions */}
             {hasQr && (
-              <Stack spacing={spacing.lg} alignItems="center">
+              <Stack spacing={3}>
+                {/* QR display — glowing frosted card */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    py: { xs: 2.5, sm: 3 },
+                    borderRadius: 4,
+                    background: `radial-gradient(ellipse 110% 90% at 50% 25%, ${alpha(brandAgent.primary, 0.1)} 0%, ${alpha(brandAgent.primary, 0.03)} 55%, transparent 100%)`,
+                    border: `1px solid ${alpha(brandAgent.primary, 0.09)}`,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: { xs: '58%', sm: '50%' },
+                      maxWidth: 220,
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      boxShadow: `0 20px 56px -14px ${alpha(brandAgent.primary, 0.42)}, 0 4px 16px ${alpha('#000', 0.09)}`,
+                      transition: prefersReducedMotion
+                        ? 'none'
+                        : transition.polish,
+                      ...(prefersReducedMotion
+                        ? ({
+                            '@media (prefers-reduced-motion: reduce)': {
+                              transition: 'none',
+                            },
+                          } as const)
+                        : {
+                            '&:hover': {
+                              transform: 'translateY(-3px) scale(1.015)',
+                              boxShadow: `0 28px 64px -12px ${alpha(brandAgent.primary, 0.52)}, 0 6px 20px ${alpha('#000', 0.11)}`,
+                            },
+                          }),
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={data!.qr_data_uri}
+                      alt={qrImageAlt}
+                      sx={{ width: '100%', height: 'auto', display: 'block' }}
+                    />
+                  </Box>
+                </Box>
+
+                {/* Refresh indicator */}
                 {isMetaBusy && (
                   <Stack
                     direction="row"
-                    spacing={spacing.sm}
+                    spacing={1}
+                    justifyContent="center"
                     alignItems="center"
                   >
                     <CircularProgress
-                      size={18}
+                      size={14}
                       sx={{ color: 'primary.main' }}
                     />
                     <Typography variant="caption" color="text.secondary">
@@ -483,169 +418,106 @@ export default function QrCodeDialog({
                   </Stack>
                 )}
 
-                <Stack spacing={spacing.sm} alignItems="center">
-                  {/* QR key-silhouette — portrait 1000×1380 ratio ≈ 0.725 */}
-                  <Box
+                {/* Download actions */}
+                <Stack
+                  component="nav"
+                  aria-label="Téléchargements"
+                  spacing={1.5}
+                >
+                  {variant === 'ad' && (
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      startIcon={
+                        busy === 'pdf' ? (
+                          <CircularProgress
+                            size={16}
+                            sx={{ color: 'primary.contrastText' }}
+                            aria-hidden
+                          />
+                        ) : (
+                          <PdfIcon fontSize="small" aria-hidden />
+                        )
+                      }
+                      onClick={handlePlacarde}
+                      disabled={busy !== null}
+                      aria-busy={busy === 'pdf'}
+                      sx={{
+                        ...actionButtonSx,
+                        fontWeight: 700,
+                        fontSize: '0.875rem',
+                        py: 1.25,
+                        bgcolor: 'primary.main',
+                        boxShadow: shadow.agentGlow,
+                        '&:hover': {
+                          bgcolor: 'primary.dark',
+                          boxShadow: shadow.ownerContainedHover,
+                        },
+                        '&:focus-visible': {
+                          boxShadow: `${shadow.agentFocusRing}, ${shadow.agentGlow}`,
+                          outline: 'none',
+                        },
+                      }}
+                    >
+                      Pancarte vitrine (PDF&nbsp;A5)
+                    </Button>
+                  )}
+                  <Button
+                    variant={variant === 'ad' ? 'outlined' : 'contained'}
+                    fullWidth
+                    startIcon={
+                      busy === 'card' ? (
+                        <CircularProgress
+                          size={16}
+                          sx={{
+                            color:
+                              variant === 'ad'
+                                ? 'primary.main'
+                                : 'primary.contrastText',
+                          }}
+                          aria-hidden
+                        />
+                      ) : (
+                        <PdfIcon fontSize="small" aria-hidden />
+                      )
+                    }
+                    onClick={handleBusinessCard}
+                    disabled={busy !== null}
+                    aria-busy={busy === 'card'}
                     sx={{
-                      width: { xs: 200, sm: 228 },
-                      flexShrink: 0,
-                      borderRadius: 4,
-                      overflow: 'hidden',
-                      mx: 'auto',
-                      boxShadow: `0 14px 42px -18px ${brandAgent.primaryAlpha25}, 0 4px 12px ${slateShadowTint}`,
-                      transition: prefersReducedMotion
-                        ? 'none'
-                        : transition.polish,
-                      ...(prefersReducedMotion
-                        ? {}
-                        : {
+                      ...actionButtonSx,
+                      fontWeight: 700,
+                      fontSize: '0.875rem',
+                      py: 1.25,
+                      ...(variant === 'ad'
+                        ? {
+                            borderColor: alpha(brandAgent.primary, 0.35),
+                            color: 'primary.main',
                             '&:hover': {
-                              transform: 'translateY(-2px)',
-                              boxShadow: `0 18px 46px -16px ${alpha(theme.palette.primary.main, 0.22)}, 0 6px 14px ${slateShadowTint}`,
+                              borderColor: 'primary.main',
+                              bgcolor: alpha(brandAgent.primary, 0.04),
+                            },
+                          }
+                        : {
+                            bgcolor: 'primary.main',
+                            boxShadow: shadow.agentGlow,
+                            '&:hover': {
+                              bgcolor: 'primary.dark',
+                              boxShadow: shadow.ownerContainedHover,
                             },
                           }),
-                      ...(prefersReducedMotion
-                        ? ({
-                            '@media (prefers-reduced-motion: reduce)': {
-                              transition: 'none',
-                              '&:hover': { transform: 'none' },
-                            },
-                          } as const)
-                        : {}),
+                      '&:focus-visible': {
+                        boxShadow: `${shadow.agentFocusRing}, ${shadow.agentGlow}`,
+                        outline: 'none',
+                      },
                     }}
                   >
-                    <Box
-                      component="img"
-                      src={data!.qr_data_uri}
-                      alt={qrImageAlt}
-                      sx={{
-                        width: '100%',
-                        height: 'auto',
-                        display: 'block',
-                      }}
-                    />
-                  </Box>
+                    Carte de visite (PDF)
+                  </Button>
                 </Stack>
               </Stack>
             )}
           </Box>
-
-          {hasQr && (
-            <Box
-              component="nav"
-              aria-label="Actions de partage"
-              sx={{
-                px: { xs: spacing.md, sm: spacing.lg },
-                pb: spacing.lg,
-                pt: spacing.xs ?? spacing.sm,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: spacing.sm,
-                alignItems: 'stretch',
-              }}
-            >
-              {variant === 'ad' && (
-                <Button
-                  variant="contained"
-                  fullWidth
-                  startIcon={
-                    busy === 'pdf' ? (
-                      <CircularProgress
-                        size={16}
-                        sx={{ color: 'primary.contrastText' }}
-                        aria-hidden
-                      />
-                    ) : (
-                      <PdfIcon fontSize="small" aria-hidden />
-                    )
-                  }
-                  onClick={handlePlacarde}
-                  disabled={busy !== null}
-                  aria-busy={busy === 'pdf'}
-                  sx={{
-                    ...actionButtonSx,
-                    fontWeight: 700,
-                    bgcolor: 'primary.main',
-                    boxShadow: shadow.agentGlow,
-                    '&:hover': {
-                      bgcolor: 'primary.dark',
-                      boxShadow: shadow.ownerContainedHover,
-                    },
-                    '&:focus-visible': {
-                      boxShadow: `${shadow.agentFocusRing}, ${shadow.agentGlow}`,
-                      outline: 'none',
-                    },
-                  }}
-                >
-                  Télécharger la pancarte (PDF A5)
-                </Button>
-              )}
-              {variant === 'profile' && (
-                <Button
-                  variant="contained"
-                  fullWidth
-                  startIcon={
-                    busy === 'card' ? (
-                      <CircularProgress
-                        size={16}
-                        sx={{ color: 'primary.contrastText' }}
-                        aria-hidden
-                      />
-                    ) : (
-                      <PdfIcon fontSize="small" aria-hidden />
-                    )
-                  }
-                  onClick={handleBusinessCard}
-                  disabled={busy !== null}
-                  aria-busy={busy === 'card'}
-                  sx={{
-                    ...actionButtonSx,
-                    fontWeight: 700,
-                    bgcolor: 'primary.main',
-                    boxShadow: shadow.agentGlow,
-                    '&:hover': {
-                      bgcolor: 'primary.dark',
-                      boxShadow: shadow.ownerContainedHover,
-                    },
-                    '&:focus-visible': {
-                      boxShadow: `${shadow.agentFocusRing}, ${shadow.agentGlow}`,
-                      outline: 'none',
-                    },
-                  }}
-                >
-                  Télécharger la carte de visite (PDF)
-                </Button>
-              )}
-              <Button
-                size="small"
-                startIcon={
-                  busy === 'copy' ? (
-                    <CircularProgress size={14} aria-hidden />
-                  ) : (
-                    <CopyIcon
-                      sx={{ fontSize: '15px !important' }}
-                      aria-hidden
-                    />
-                  )
-                }
-                onClick={handleCopy}
-                disabled={!primaryUrl || busy !== null}
-                aria-busy={busy === 'copy'}
-                sx={{
-                  ...actionButtonSx,
-                  fontWeight: 600,
-                  color: 'text.secondary',
-                  fontSize: '0.78rem',
-                  '&:focus-visible': {
-                    boxShadow: shadow.agentFocusRing,
-                    outline: 'none',
-                  },
-                }}
-              >
-                Copier le lien public
-              </Button>
-            </Box>
-          )}
         </DialogContent>
       </Dialog>
 
