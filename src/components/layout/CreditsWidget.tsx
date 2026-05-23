@@ -4,7 +4,8 @@ import PurchaseCreditsModal from '@/components/ui/PurchaseCreditsModal';
 import { useAuth } from '@/providers/AuthProvider';
 import { creditsService } from '@/services/credits.service';
 import Toll from '@mui/icons-material/Toll';
-import { Box, Skeleton, Typography } from '@mui/material';
+import WarningAmberRounded from '@mui/icons-material/WarningAmberRounded';
+import { Box, Skeleton, Tooltip, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
@@ -66,6 +67,8 @@ export default function CreditsWidget() {
     return () => window.removeEventListener('kh:welcome-dismissed', handler);
   }, []);
 
+  const isLowCredit = !balanceLoading && balance !== undefined && balance <= 3;
+
   const handleClick = () => {
     // Stop bouncing permanently
     if (bouncing) {
@@ -76,26 +79,39 @@ export default function CreditsWidget() {
     setModalOpen(true);
   };
 
-  return (
-    <>
-      <Box
-        onClick={handleClick}
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.6,
-          background: bouncing
+  const pill = (
+    <Box
+      onClick={handleClick}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.6,
+        background: isLowCredit
+          ? 'linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0.08) 100%)'
+          : bouncing
             ? 'linear-gradient(135deg, rgba(246,71,95,0.25) 0%, rgba(246,71,95,0.15) 100%)'
             : 'linear-gradient(135deg, rgba(246,71,95,0.12) 0%, rgba(246,71,95,0.06) 100%)',
-          border: '1px solid',
-          borderColor: bouncing ? 'primary.main' : 'rgba(246,71,95,0.25)',
-          borderRadius: '40px',
-          px: 1.5,
-          py: 0.55,
-          cursor: 'pointer',
-          userSelect: 'none',
-          transition: 'all 0.18s',
-          ...(bouncing && {
+        border: '1px solid',
+        borderColor: isLowCredit
+          ? 'rgba(245,158,11,0.6)'
+          : bouncing
+            ? 'primary.main'
+            : 'rgba(246,71,95,0.25)',
+        borderRadius: '40px',
+        px: 1.5,
+        py: 0.55,
+        cursor: 'pointer',
+        userSelect: 'none',
+        transition: 'all 0.18s',
+        ...(isLowCredit && {
+          animation: 'creditsAmberPulse 2s ease-in-out infinite',
+          '@keyframes creditsAmberPulse': {
+            '0%, 100%': { boxShadow: '0 0 0 0 rgba(245,158,11,0.25)' },
+            '50%': { boxShadow: '0 0 8px 3px rgba(245,158,11,0.3)' },
+          },
+        }),
+        ...(!isLowCredit &&
+          bouncing && {
             animation:
               'creditsBounce 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite alternate, creditsGlow 1.5s ease-in-out infinite',
             '@keyframes creditsBounce': {
@@ -107,32 +123,54 @@ export default function CreditsWidget() {
               '50%': { boxShadow: '0 0 12px 4px rgba(246,71,95,0.35)' },
             },
           }),
-          '&:hover': {
-            background:
-              'linear-gradient(135deg, rgba(246,71,95,0.2) 0%, rgba(246,71,95,0.12) 100%)',
-            borderColor: 'primary.main',
-            boxShadow: '0 0 0 3px rgba(246,71,95,0.12)',
-          },
-        }}
-      >
+        '&:hover': {
+          background: isLowCredit
+            ? 'linear-gradient(135deg, rgba(245,158,11,0.28) 0%, rgba(245,158,11,0.14) 100%)'
+            : 'linear-gradient(135deg, rgba(246,71,95,0.2) 0%, rgba(246,71,95,0.12) 100%)',
+          borderColor: isLowCredit ? 'rgba(245,158,11,0.9)' : 'primary.main',
+          boxShadow: isLowCredit
+            ? '0 0 0 3px rgba(245,158,11,0.15)'
+            : '0 0 0 3px rgba(246,71,95,0.12)',
+        },
+      }}
+    >
+      {isLowCredit ? (
+        <WarningAmberRounded sx={{ fontSize: 15, color: '#d97706' }} />
+      ) : (
         <Toll sx={{ fontSize: 15, color: 'primary.main' }} />
-        {balanceLoading ? (
-          <Skeleton width={28} height={14} sx={{ borderRadius: 1 }} />
-        ) : (
-          <Typography
-            variant="body2"
-            fontWeight={800}
-            sx={{
-              color: 'primary.main',
-              lineHeight: 1,
-              letterSpacing: -0.3,
-              fontSize: '0.82rem',
-            }}
-          >
-            {(balance ?? 0).toLocaleString('fr-FR')}
-          </Typography>
-        )}
-      </Box>
+      )}
+      {balanceLoading ? (
+        <Skeleton width={28} height={14} sx={{ borderRadius: 1 }} />
+      ) : (
+        <Typography
+          variant="body2"
+          fontWeight={800}
+          sx={{
+            color: isLowCredit ? '#d97706' : 'primary.main',
+            lineHeight: 1,
+            letterSpacing: -0.3,
+            fontSize: '0.82rem',
+          }}
+        >
+          {(balance ?? 0).toLocaleString('fr-FR')}
+        </Typography>
+      )}
+    </Box>
+  );
+
+  return (
+    <>
+      {isLowCredit ? (
+        <Tooltip
+          title="Solde faible — Rechargez pour continuer à contacter des propriétaires"
+          arrow
+          placement="bottom"
+        >
+          {pill}
+        </Tooltip>
+      ) : (
+        pill
+      )}
 
       <PurchaseCreditsModal
         open={modalOpen}

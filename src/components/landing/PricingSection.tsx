@@ -36,11 +36,11 @@ const fallbackPackages: LandingPackageCard[] = [
     points: 10,
     priceXaf: 1000,
     description:
-      'Débloquez vos premiers contacts propriétaires vérifiés pour lancer votre recherche.',
+      'Testez KeyHome sans risque. Contactez 5 propriétaires vérifiés — numéro et WhatsApp inclus — sans passer par une agence.',
     features: [
-      '10 déverrouillages de contacts',
-      'Accès direct aux numéros et WhatsApp',
-      'Historique des annonces déverrouillées',
+      '5 contacts propriétaires débloqués (2 crédits/contact)',
+      'Appelez ou WhatsApp le propriétaire directement',
+      'Zéro commission — 200 FCFA/contact',
     ],
     badge: 'Essai',
     sortOrder: 1,
@@ -51,12 +51,12 @@ const fallbackPackages: LandingPackageCard[] = [
     points: 50,
     priceXaf: 4000,
     description:
-      'Le pack équilibré pour comparer plus d’annonces et contacter rapidement les bons propriétaires.',
+      'Le choix des chercheurs actifs. 25 propriétaires en accès direct — assez pour trouver avant vos concurrents.',
     features: [
-      '50 déverrouillages de contacts',
-      'Accès direct aux numéros et WhatsApp',
-      'Priorité de traitement support',
-      'Meilleur ratio coût/contact',
+      '25 contacts propriétaires débloqués',
+      '160 FCFA/contact — économisez 20 % vs Starter',
+      'Appel + WhatsApp + messagerie KeyHome',
+      'Support prioritaire inclus',
     ],
     badge: 'Populaire',
     isPopular: true,
@@ -66,14 +66,14 @@ const fallbackPackages: LandingPackageCard[] = [
     id: 'fallback-premium',
     name: 'Premium',
     points: 120,
-    priceXaf: 10000,
+    priceXaf: 7000,
     description:
-      'Conçu pour les chercheurs intensifs et pros qui veulent traiter un grand volume d’annonces.',
+      'Pour les familles ambitieuses et les pros en mobilité. 60 contacts sur 12 mois — le meilleur coût par logement trouvé.',
     features: [
-      '120 déverrouillages de contacts',
-      'Accès direct aux numéros et WhatsApp',
-      'Support prioritaire',
-      'Volume optimisé pour pros',
+      '60 contacts propriétaires débloqués',
+      '~117 FCFA/contact — 42 % de réduction vs Starter',
+      'Appel + WhatsApp + messagerie KeyHome',
+      'Support 24h/7j · Crédits valables 12 mois',
     ],
     badge: 'Expert',
     sortOrder: 3,
@@ -103,10 +103,12 @@ const defaultDescription = (points: number): string => {
 };
 
 const defaultFeatures = (points: number): string[] => {
+  const contacts = Math.round(points / 2);
+  const pricePerContact = points <= 20 ? 200 : points <= 80 ? 160 : 117;
   return [
-    `${points} déverrouillages de contacts`,
-    'Accès direct aux numéros et WhatsApp des propriétaires',
-    'Historique des annonces déverrouillées',
+    `${contacts} contacts propriétaires débloqués`,
+    `${pricePerContact} FCFA/contact — appel + WhatsApp direct`,
+    'Zéro commission, zéro intermédiaire',
   ];
 };
 
@@ -378,7 +380,7 @@ export default function PricingSection() {
                       : `0 10px 20px ${brand.primaryAlpha25}`,
                   }}
                 >
-                  Choisir ce pack
+                  Je démarre maintenant →
                 </motion.button>
               </PageTransitionLink>
             </motion.div>

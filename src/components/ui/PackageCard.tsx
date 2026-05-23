@@ -336,10 +336,10 @@ export default function PackageCard({
               variant="caption"
               sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem' }}
             >
-              {Math.round(pkg.price / pkg.points_awarded).toLocaleString(
+              {Math.round(pkg.price / (pkg.points_awarded / 2)).toLocaleString(
                 'fr-FR'
               )}{' '}
-              FCFA/credit
+              FCFA/contact
             </Typography>
           </Box>
 
@@ -389,7 +389,7 @@ export default function PackageCard({
             {loading ? (
               <CircularProgress size={14} sx={{ color: 'inherit' }} />
             ) : wouldBeEnough ? (
-              'Choisir'
+              'Débloquer maintenant'
             ) : (
               'Acheter'
             )}
