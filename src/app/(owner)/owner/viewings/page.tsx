@@ -13,7 +13,6 @@ import {
   CalendarMonth as CalendarIcon,
   CancelOutlined as CancelIcon,
   CheckCircleOutline as ConfirmIcon,
-  ContentCopy as CopyIcon,
   Email as EmailIcon,
   ExpandMore as ExpandIcon,
   FilterList as FilterIcon,
@@ -21,7 +20,6 @@ import {
   EditNote as NotesIcon,
   Person as PersonIcon,
   Phone as PhoneIcon,
-  Subscriptions as SubscribeIcon,
   AccessTime as TimeIcon,
 } from '@mui/icons-material';
 import {
@@ -39,7 +37,6 @@ import {
   DialogTitle,
   FormControl,
   IconButton,
-  InputAdornment,
   InputLabel,
   MenuItem,
   Pagination,
@@ -177,8 +174,6 @@ export default function OwnerViewingsPage() {
   const [notesValue, setNotesValue] = useState('');
   const [noShowDialog, setNoShowDialog] =
     useState<OwnerViewingReservation | null>(null);
-  const [calendarCopied, setCalendarCopied] = useState(false);
-
   // Snackbar
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -276,14 +271,6 @@ export default function OwnerViewingsPage() {
       });
     },
   });
-
-  // Landlord calendar URL
-  const { data: landlordCalendarUrl, refetch: refetchLandlordCalendarUrl } =
-    useQuery({
-      queryKey: ['landlord-calendar-url'],
-      queryFn: () => ownerService.getLandlordCalendarUrl(),
-      staleTime: 55 * 60 * 1000,
-    });
 
   // Notes mutation
   const notesMutation = useMutation({
@@ -1335,70 +1322,6 @@ export default function OwnerViewingsPage() {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* ── Calendar Subscription Section (GAP 4c) ── */}
-      {reservations.length > 0 && (
-        <Box
-          sx={{
-            mt: 4,
-            p: 2.5,
-            borderRadius: 2,
-            border: '1px solid',
-            borderColor: 'divider',
-            bgcolor: 'background.paper',
-          }}
-        >
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-            <SubscribeIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-            <Typography variant="subtitle2" fontWeight={700}>
-              Abonnement calendrier
-            </Typography>
-          </Stack>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Abonnez-vous à votre calendrier de visites dans Google Calendar,
-            Apple Calendar ou Outlook — toujours à jour automatiquement.
-          </Typography>
-          <TextField
-            fullWidth
-            size="small"
-            label="Lien d'abonnement (.ics)"
-            value={landlordCalendarUrl ?? ''}
-            InputProps={{
-              readOnly: true,
-              endAdornment: (
-                <InputAdornment position="end">
-                  <Tooltip
-                    title={calendarCopied ? 'Copié !' : 'Copier le lien'}
-                  >
-                    <IconButton
-                      size="small"
-                      onClick={async () => {
-                        if (landlordCalendarUrl) {
-                          await navigator.clipboard.writeText(
-                            landlordCalendarUrl
-                          );
-                          setCalendarCopied(true);
-                          setTimeout(() => setCalendarCopied(false), 2000);
-                        } else {
-                          await refetchLandlordCalendarUrl();
-                        }
-                      }}
-                      sx={CONTACT_ICON_BTN_FOCUS_VISIBLE_SX}
-                    >
-                      <CopyIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </InputAdornment>
-              ),
-            }}
-            sx={{ mb: 1 }}
-          />
-          <Typography variant="caption" color="text.secondary">
-            Collez ce lien dans « Ajouter un calendrier depuis une URL » dans
-            votre application de calendrier préférée.
-          </Typography>
-        </Box>
-      )}
 
       {/* ── Snackbar ── */}
       <Snackbar
