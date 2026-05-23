@@ -84,6 +84,35 @@ function statusConfig(status: ReservationStatus, isDark?: boolean) {
         border: isDark ? 'rgba(148,163,184,0.25)' : '#cbd5e1',
         icon: <ErrorOutline sx={{ fontSize: 14 }} />,
       };
+    case ReservationStatus.Completed:
+      return {
+        label: 'Terminée',
+        color: '#1d4ed8',
+        darkColor: '#60a5fa',
+        bg: isDark ? 'rgba(96,165,250,0.12)' : '#eff6ff',
+        border: isDark ? 'rgba(96,165,250,0.3)' : '#93c5fd',
+        icon: <CheckCircle sx={{ fontSize: 14 }} />,
+      };
+    case ReservationStatus.NoShow:
+      return {
+        label: 'Absence',
+        color: '#7c2d12',
+        darkColor: '#fb923c',
+        bg: isDark ? 'rgba(251,146,60,0.12)' : '#fff7ed',
+        border: isDark ? 'rgba(251,146,60,0.3)' : '#fdba74',
+        icon: <ErrorOutline sx={{ fontSize: 14 }} />,
+      };
+    default: {
+      const _exhaustive: never = status;
+      return {
+        label: String(_exhaustive),
+        color: '#64748b',
+        darkColor: '#94a3b8',
+        bg: isDark ? 'rgba(148,163,184,0.12)' : '#f8fafc',
+        border: isDark ? 'rgba(148,163,184,0.25)' : '#cbd5e1',
+        icon: <ErrorOutline sx={{ fontSize: 14 }} />,
+      };
+    }
   }
 }
 
