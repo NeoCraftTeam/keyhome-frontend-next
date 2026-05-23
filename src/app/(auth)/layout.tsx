@@ -40,6 +40,16 @@ export default function AuthLayout({
   const [showSplash, setShowSplash] = useState(false);
   const [isAgentSplash, setIsAgentSplash] = useState(false);
   const mountedRef = useRef(false);
+  /**
+   * Tracks whether this layout observed a resolved-guest state
+   * (isLoading=false + isAuthenticated=false) before the user became
+   * authenticated.  When true it means login() was called and already
+   * initiated the post-login navigation — AuthLayout must NOT issue a
+   * second router.replace() that would override the returnTo redirect.
+   * When false the user was already authenticated on page load (e.g. they
+   * bookmarked /login) and AuthLayout is the sole redirect handler.
+   */
+  const wasGuestRef = useRef(false);
 
   const isVerificationPath = VERIFICATION_PATHS.has(pathname ?? '');
 
@@ -54,11 +64,24 @@ export default function AuthLayout({
     // Run once after hydration to decide whether to show the splash
   }, []);
 
+  // Track resolved-guest state so the redirect effect below can tell the
+  // difference between "already authenticated on load" vs "just logged in".
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      wasGuestRef.current = true;
+    }
+  }, [isLoading, isAuthenticated]);
+
   // Redirect authenticated users but only after the splash is done.
   // Never redirect from verification paths — those need to stay visible
   // even if the AuthProvider briefly reports isAuthenticated=true.
+  // Skip when wasGuestRef is true: login() already called router.replace()
+  // and a second navigation here would override the correct returnTo target.
   useEffect(() => {
     if (!isLoading && isAuthenticated && !showSplash && !isVerificationPath) {
+      if (wasGuestRef.current) {
+        return;
+      }
       const returnTo = sessionStorage.getItem('kh_redirect_after_login');
       if (returnTo) {
         sessionStorage.removeItem('kh_redirect_after_login');

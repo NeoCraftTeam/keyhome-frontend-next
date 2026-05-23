@@ -61,6 +61,7 @@ import {
   normalizeAdFormValues,
 } from './ad-form/types';
 import AdFormLivePreview from './AdFormLivePreview';
+import ListingQualityBar from './ListingQualityBar';
 
 export type { AdFormValues, TourScene } from './ad-form/types';
 
@@ -963,6 +964,15 @@ function AdFormWizard({
               >
                 <AuthFlowStepper labels={STEP_LABELS} activeStep={activeStep} />
               </Box>
+
+              {/* ══════════════════ Quality bar ══════════════════ */}
+              {activeStep > 0 && (
+                <ListingQualityBar
+                  values={values}
+                  photosCount={totalImageCount}
+                  has3dTour={tourSceneCount > 0 || !!ad?.has_3d_tour}
+                />
+              )}
 
               {/* ══════════════════ Step 0: Type ══════════════════ */}
               <Collapse in={activeStep === 0} unmountOnExit>

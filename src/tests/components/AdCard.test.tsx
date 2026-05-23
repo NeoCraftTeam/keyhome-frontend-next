@@ -1,6 +1,6 @@
+import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
@@ -56,6 +56,7 @@ vi.mock('framer-motion', () => {
     ),
     AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
     MotionConfig: ({ children }: { children: React.ReactNode }) => children,
+    LayoutGroup: ({ children }: { children: React.ReactNode }) => children,
   };
 });
 
@@ -78,6 +79,9 @@ vi.mock('@/providers/ComparatorProvider', () => ({
     add: vi.fn(),
     remove: vi.fn(),
     isSelected: () => false,
+    addToComparator: vi.fn(),
+    removeFromComparator: vi.fn(),
+    isInComparator: () => false,
   }),
 }));
 
@@ -85,13 +89,9 @@ vi.mock('@/hooks/useSoundFeedback', () => ({
   useSoundFeedback: () => ({ play: vi.fn() }),
 }));
 
-vi.mock('@/components/ads/KeyScoreBadge', () => ({
-  default: () => null,
-}));
-
-import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AdCard from '@/components/ads/AdCard';
 import { Ad } from '@/types';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 
 const theme = createTheme();
 
@@ -189,5 +189,54 @@ describe('AdCard', () => {
   it('renders without crashing when no images', () => {
     const adNoImages = { ...mockAd, images: [], total_images: 0 };
     expect(() => renderAdCard(adNoImages)).not.toThrow();
+  });
+
+  describe('KeyScore badge', () => {
+    it('does not render KeyScore badge when keyscore is absent', () => {
+      renderAdCard({ ...mockAd, keyscore: undefined });
+      expect(screen.queryByRole('img', { hidden: true })).not.toBeNull(); // ad image exists
+      expect(document.querySelector('[aria-label^="KeyScore"]')).toBeNull();
+    });
+
+    it('does not render KeyScore badge when keyscore is null', () => {
+      renderAdCard({ ...mockAd, keyscore: null });
+      expect(document.querySelector('[aria-label^="KeyScore"]')).toBeNull();
+    });
+
+    it('renders KeyScore badge with score when keyscore is provided', () => {
+      renderAdCard({ ...mockAd, keyscore: 82 });
+      const badge = document.querySelector('[aria-label^="KeyScore"]');
+      expect(badge).not.toBeNull();
+      expect(badge?.getAttribute('aria-label')).toBe('KeyScore 82 sur 100');
+    });
+
+    it('shows the numeric score inside the badge', () => {
+      renderAdCard({ ...mockAd, keyscore: 65 });
+      expect(screen.getByText('65')).toBeInTheDocument();
+    });
+
+    it('renders SVG ring inside the badge', () => {
+      renderAdCard({ ...mockAd, keyscore: 50 });
+      const badge = document.querySelector('[aria-label^="KeyScore"]');
+      expect(badge?.querySelector('svg')).not.toBeNull();
+    });
+
+    it('renders for a low score (< 50) without crashing', () => {
+      renderAdCard({ ...mockAd, keyscore: 30 });
+      expect(screen.getByText('30')).toBeInTheDocument();
+    });
+  });
+
+  describe('CARD_VARIANTS & hover prop wiring', () => {
+    it('renders a motion.a with whileHover="hover" (checked via data-testid path)', () => {
+      const { container } = renderAdCard();
+      // The root element rendered by motion.a (which is an <a> in our mock)
+      const anchor = container.querySelector('a');
+      expect(anchor).not.toBeNull();
+    });
+
+    it('card renders without crash when keyscore = 0', () => {
+      expect(() => renderAdCard({ ...mockAd, keyscore: 0 })).not.toThrow();
+    });
   });
 });

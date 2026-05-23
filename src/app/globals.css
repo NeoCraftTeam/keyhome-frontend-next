@@ -14,8 +14,15 @@ html {
    * in standalone PWA mode. */
   overflow-x: clip;
   scroll-behavior: smooth;
-  /* Fills the strip behind the status bar in standalone PWA before body paints */
-  background-color: #f6475f;
+}
+
+/* Fills the strip behind the status bar in standalone PWA before body paints.
+ * NOT applied in browser mode: the html background would bleed through the
+ * scrollbar area and create a red border on the right edge of every page. */
+@media (display-mode: standalone) {
+  html {
+    background-color: #f6475f;
+  }
 }
 
 :root {

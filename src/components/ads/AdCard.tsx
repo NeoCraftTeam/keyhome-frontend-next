@@ -22,6 +22,79 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
+/**
+ * Hover variants — propagated from the root motion.a to children:
+ * - image wrapper: translateY lift + shadow
+ * - image itself: subtle scale zoom
+ */
+const CARD_VARIANTS = {
+  rest: { y: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' },
+  hover: { y: -3, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' },
+};
+
+const IMAGE_VARIANTS = {
+  rest: { scale: 1 },
+  hover: { scale: 1.04 },
+};
+
+/** Returns the color for a KeyScore value (0-100) */
+function keyScoreColor(score: number): string {
+  if (score >= 75) return '#0D9488'; // vert
+  if (score >= 50) return '#D97706'; // orange
+  return '#EF4444'; // rouge
+}
+
+/** Compact inline badge: colored ring + score number */
+function KeyScoreBadge({ score }: { score: number }) {
+  const color = keyScoreColor(score);
+  const radius = 7;
+  const circ = 2 * Math.PI * radius;
+  const dash = (score / 100) * circ;
+  return (
+    <Box
+      component="span"
+      title={`KeyScore : ${score}/100`}
+      aria-label={`KeyScore ${score} sur 100`}
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.3,
+        flexShrink: 0,
+        cursor: 'default',
+      }}
+    >
+      <svg width={18} height={18} viewBox="0 0 18 18">
+        <circle
+          cx={9}
+          cy={9}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          style={{ color: '#E5E7EB' }}
+        />
+        <circle
+          cx={9}
+          cy={9}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={2}
+          strokeDasharray={`${dash} ${circ}`}
+          strokeLinecap="round"
+          transform="rotate(-90 9 9)"
+        />
+      </svg>
+      <Typography
+        component="span"
+        sx={{ fontSize: '0.68rem', fontWeight: 700, color, lineHeight: 1 }}
+      >
+        {score}
+      </Typography>
+    </Box>
+  );
+}
+
 /** Tiny inline blur placeholder — avoids layout shift while image loads */
 const BLUR_DATA_URL =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAARC' +
@@ -142,6 +215,9 @@ function AdCard({ ad, showDistance }: AdCardProps) {
         onClick={handleCardClick}
         onMouseEnter={handlePrefetch}
         onTouchStart={handlePrefetch}
+        variants={CARD_VARIANTS}
+        initial="rest"
+        whileHover="hover"
         whileTap={{ scale: 0.97 }}
         transition={{ type: 'spring', stiffness: 400, damping: 20 }}
         style={{
@@ -233,12 +309,6 @@ function AdCard({ ad, showDistance }: AdCardProps) {
               borderRadius: '12px',
               overflow: 'hidden',
               bgcolor: 'grey.100',
-              transition:
-                'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease',
-              '&:hover': {
-                transform: 'translateY(-3px)',
-                boxShadow: shadow.cardHover,
-              },
             }}
           >
             {/* Images — slide transition */}
@@ -267,16 +337,22 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                   height: '100%',
                 }}
               >
-                <Image
-                  src={images[currentImage].thumb || images[currentImage].url}
-                  alt={`${ad.title} — photo ${currentImage + 1} sur ${images.length}`}
-                  fill
-                  sizes="(max-width: 600px) 50vw, (max-width: 960px) 33vw, 25vw"
-                  priority={currentImage === 0}
-                  placeholder="blur"
-                  blurDataURL={BLUR_DATA_URL}
-                  style={{ objectFit: 'cover' }}
-                />
+                <motion.div
+                  variants={IMAGE_VARIANTS}
+                  transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                  style={{ width: '100%', height: '100%' }}
+                >
+                  <Image
+                    src={images[currentImage].thumb || images[currentImage].url}
+                    alt={`${ad.title} — photo ${currentImage + 1} sur ${images.length}`}
+                    fill
+                    sizes="(max-width: 600px) 50vw, (max-width: 960px) 33vw, 25vw"
+                    priority={currentImage === 0}
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA_URL}
+                    style={{ objectFit: 'cover' }}
+                  />
+                </motion.div>
               </motion.div>
             </AnimatePresence>
 
@@ -610,6 +686,7 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                     </Typography>
                   </Box>
                 )}
+                {ad.keyscore != null && <KeyScoreBadge score={ad.keyscore} />}
               </Box>
             </Box>
 

@@ -35,13 +35,48 @@ export const viewingsService = {
   /**
    * Create a tentative reservation for a slot.
    * POST /api/v1/ads/{adId}/reservations
+   * Sends X-Idempotency-Key to prevent double-submit on unstable networks.
    */
   async reserve(
     adId: string,
-    payload: CreateReservationPayload
+    payload: CreateReservationPayload,
+    idempotencyKey?: string
   ): Promise<Reservation> {
-    const { data } = await api.post(`/ads/${adId}/reservations`, payload);
+    const headers: Record<string, string> = {};
+    if (idempotencyKey) {
+      headers['X-Idempotency-Key'] = idempotencyKey;
+    }
+    const { data } = await api.post(`/ads/${adId}/reservations`, payload, {
+      headers,
+    });
     return data.data ?? data;
+  },
+
+  /**
+   * Confirm a pending reservation (landlord).
+   * POST /api/v1/reservations/{reservationId}/confirm
+   */
+  async confirm(reservationId: string): Promise<Reservation> {
+    const { data } = await api.post(`/reservations/${reservationId}/confirm`);
+    return data.data ?? data;
+  },
+
+  /**
+   * Mark a confirmed reservation as no-show (landlord).
+   * POST /api/v1/reservations/{reservationId}/no-show
+   */
+  async noShow(reservationId: string): Promise<Reservation> {
+    const { data } = await api.post(`/reservations/${reservationId}/no-show`);
+    return data.data ?? data;
+  },
+
+  /**
+   * Get the signed .ics calendar feed URL for the authenticated user.
+   * GET /api/v1/my/calendar-url
+   */
+  async getCalendarUrl(): Promise<string> {
+    const { data } = await api.get('/my/calendar-url');
+    return (data as { url: string }).url;
   },
 
   /**

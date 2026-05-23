@@ -12,12 +12,15 @@ import {
   CalendarMonth as CalendarIcon,
   CancelOutlined as CancelIcon,
   CheckCircleOutline as ConfirmIcon,
+  ContentCopy as CopyIcon,
   Email as EmailIcon,
   ExpandMore as ExpandIcon,
   FilterList as FilterIcon,
+  DoNotDisturb as NoShowIcon,
   EditNote as NotesIcon,
   Person as PersonIcon,
   Phone as PhoneIcon,
+  Subscriptions as SubscribeIcon,
   AccessTime as TimeIcon,
 } from '@mui/icons-material';
 import {
@@ -35,6 +38,7 @@ import {
   DialogTitle,
   FormControl,
   IconButton,
+  InputAdornment,
   InputLabel,
   MenuItem,
   Pagination,
@@ -47,6 +51,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AddToCalendarButton } from 'add-to-calendar-button-react';
 import { useCallback, useState } from 'react';
 
 const MOTION_POLYFILL_SX = {
@@ -151,6 +156,8 @@ const STATUS_CONFIG: Record<
   confirmed: { color: 'success', label: 'Confirmée' },
   cancelled: { color: 'error', label: 'Annulée' },
   expired: { color: 'default', label: 'Expirée' },
+  completed: { color: 'default', label: 'Terminée' },
+  no_show: { color: 'error', label: 'Absent' },
 };
 
 export default function OwnerViewingsPage() {
@@ -168,6 +175,9 @@ export default function OwnerViewingsPage() {
   const [notesDialog, setNotesDialog] =
     useState<OwnerViewingReservation | null>(null);
   const [notesValue, setNotesValue] = useState('');
+  const [noShowDialog, setNoShowDialog] =
+    useState<OwnerViewingReservation | null>(null);
+  const [calendarCopied, setCalendarCopied] = useState(false);
 
   // Snackbar
   const [snackbar, setSnackbar] = useState<{
@@ -245,6 +255,35 @@ export default function OwnerViewingsPage() {
       });
     },
   });
+
+  // No-show mutation
+  const noShowMutation = useMutation({
+    mutationFn: (id: string) => ownerService.noShowReservation(id),
+    onSuccess: () => {
+      setSnackbar({
+        open: true,
+        message: 'Absence enregistrée.',
+        severity: 'success',
+      });
+      setNoShowDialog(null);
+      invalidateReservations();
+    },
+    onError: () => {
+      setSnackbar({
+        open: true,
+        message: "Erreur lors de l'enregistrement de l'absence.",
+        severity: 'error',
+      });
+    },
+  });
+
+  // Landlord calendar URL
+  const { data: landlordCalendarUrl, refetch: refetchLandlordCalendarUrl } =
+    useQuery({
+      queryKey: ['landlord-calendar-url'],
+      queryFn: () => ownerService.getLandlordCalendarUrl(),
+      staleTime: 55 * 60 * 1000,
+    });
 
   // Notes mutation
   const notesMutation = useMutation({
@@ -765,6 +804,25 @@ export default function OwnerViewingsPage() {
                           Confirmer
                         </Button>
                       )}
+                      {r.status === 'confirmed' && (
+                        <Button
+                          size="medium"
+                          variant="outlined"
+                          color="warning"
+                          startIcon={<NoShowIcon />}
+                          onClick={() => setNoShowDialog(r)}
+                          sx={{
+                            borderRadius: 1.5,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            fontSize: '0.875rem',
+                            minHeight: 44,
+                            ...OUTLINED_CONTROL_FOCUS_VISIBLE_SX,
+                          }}
+                        >
+                          Absence
+                        </Button>
+                      )}
                       {isActive(r) && (
                         <Button
                           size="medium"
@@ -838,6 +896,35 @@ export default function OwnerViewingsPage() {
                           : 'Voir les détails'}
                       </Button>
                     </Box>
+
+                    {/* Calendar button for confirmed reservations */}
+                    {r.status === 'confirmed' && (
+                      <Box
+                        sx={{
+                          mt: 1.5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                        }}
+                      >
+                        <CalendarIcon
+                          sx={{ fontSize: 16, color: 'text.secondary' }}
+                        />
+                        <AddToCalendarButton
+                          name={`Visite — ${r.ad?.title ?? ''}`}
+                          options={['Apple', 'Google', 'Outlook.com', 'iCal']}
+                          startDate={r.slot_date}
+                          startTime={r.slot_starts_at.slice(0, 5)}
+                          endTime={r.slot_ends_at.slice(0, 5)}
+                          timeZone="Africa/Douala"
+                          description={`Visiteur : ${r.client?.firstname ?? ''} ${r.client?.lastname ?? ''}\nTél : ${r.client?.phone_number ?? 'non renseigné'}\nkeyHome – keyhome.app/owner/viewings`}
+                          buttonStyle="flat"
+                          size="3"
+                          label="Ajouter au calendrier"
+                          language="fr"
+                        />
+                      </Box>
+                    )}
 
                     {/* Expanded details */}
                     <Collapse in={isExpanded}>
@@ -1196,6 +1283,126 @@ export default function OwnerViewingsPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ── No-Show Dialog ── */}
+      <Dialog
+        open={!!noShowDialog}
+        onClose={() => {
+          if (!noShowMutation.isPending) setNoShowDialog(null);
+        }}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, color: 'warning.dark' }}>
+          Signaler une absence
+        </DialogTitle>
+        <DialogContent>
+          {noShowDialog && (
+            <Typography variant="body2" color="text.secondary">
+              Confirmez l&apos;absence de{' '}
+              <strong>
+                {noShowDialog.client?.firstname} {noShowDialog.client?.lastname}
+              </strong>{' '}
+              pour la visite du{' '}
+              <strong>
+                {formatDateTime(
+                  noShowDialog.slot_date,
+                  noShowDialog.slot_starts_at
+                )}
+              </strong>
+              . Le créneau sera libéré.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setNoShowDialog(null)}
+            disabled={noShowMutation.isPending}
+            sx={{ borderRadius: 1.5, textTransform: 'none', minHeight: 44 }}
+          >
+            Retour
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() =>
+              noShowDialog && noShowMutation.mutate(noShowDialog.id)
+            }
+            disabled={noShowMutation.isPending}
+            sx={{
+              borderRadius: 1.5,
+              textTransform: 'none',
+              fontWeight: 600,
+              minHeight: 44,
+            }}
+          >
+            {noShowMutation.isPending
+              ? 'Enregistrement...'
+              : "Confirmer l'absence"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Calendar Subscription Section (GAP 4c) ── */}
+      <Box
+        sx={{
+          mt: 4,
+          p: 2.5,
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+          <SubscribeIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+          <Typography variant="subtitle2" fontWeight={700}>
+            Abonnement calendrier
+          </Typography>
+        </Stack>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Abonnez-vous à votre calendrier de visites dans Google Calendar, Apple
+          Calendar ou Outlook — toujours à jour automatiquement.
+        </Typography>
+        <TextField
+          fullWidth
+          size="small"
+          label="Lien d'abonnement (.ics)"
+          value={landlordCalendarUrl ?? ''}
+          InputProps={{
+            readOnly: true,
+            endAdornment: (
+              <InputAdornment position="end">
+                <Tooltip title={calendarCopied ? 'Copié !' : 'Copier le lien'}>
+                  <IconButton
+                    size="small"
+                    onClick={async () => {
+                      if (landlordCalendarUrl) {
+                        await navigator.clipboard.writeText(
+                          landlordCalendarUrl
+                        );
+                        setCalendarCopied(true);
+                        setTimeout(() => setCalendarCopied(false), 2000);
+                      } else {
+                        await refetchLandlordCalendarUrl();
+                      }
+                    }}
+                    sx={CONTACT_ICON_BTN_FOCUS_VISIBLE_SX}
+                  >
+                    <CopyIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </InputAdornment>
+            ),
+          }}
+          sx={{ mb: 1 }}
+        />
+        <Typography variant="caption" color="text.secondary">
+          Collez ce lien dans « Ajouter un calendrier depuis une URL » dans
+          votre application de calendrier préférée.
+        </Typography>
+      </Box>
 
       {/* ── Snackbar ── */}
       <Snackbar

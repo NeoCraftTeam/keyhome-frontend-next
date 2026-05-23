@@ -149,24 +149,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── Proactive token refresh (AUTH-1) ──────────────────────────
   // Schedule a silent refresh 5 minutes before the stored token expires.
-  // Fires only when a user is authenticated and an expiry timestamp is known.
+  // Uses a self-chaining ref to avoid including `token` in deps (which caused
+  // an infinite loop: setToken → dep change → immediate re-run → setToken …).
+  // Math.max(60_000, …) enforces a 60 s minimum gap as a safety net against
+  // a misconfigured or very-short-lived expires_at from the backend.
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleRefreshRef = useRef<() => void>(() => {});
+
   useEffect(() => {
-    if (!user) return;
-    const expiresAt = getActiveExpiresAt();
-    if (!expiresAt) return;
+    scheduleRefreshRef.current = () => {
+      if (refreshTimerRef.current !== null) {
+        clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+      if (!user) return;
+      const expiresAt = getActiveExpiresAt();
+      if (!expiresAt) return;
+      const ms = Math.max(60_000, expiresAt - Date.now() - 5 * 60 * 1000);
+      refreshTimerRef.current = setTimeout(() => {
+        refreshTimerRef.current = null;
+        refreshSession()
+          .then((ok) => {
+            if (ok) scheduleRefreshRef.current();
+          })
+          .catch(() => {});
+      }, ms);
+    };
 
-    const msUntilRefresh = expiresAt - Date.now() - 5 * 60 * 1000;
-    if (msUntilRefresh <= 0) {
-      refreshSession().catch(() => {});
-      return;
-    }
+    scheduleRefreshRef.current();
 
-    const timer = setTimeout(() => {
-      refreshSession().catch(() => {});
-    }, msUntilRefresh);
-
-    return () => clearTimeout(timer);
-  }, [user, token, refreshSession]);
+    return () => {
+      if (refreshTimerRef.current !== null) {
+        clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+    };
+  }, [user, refreshSession]);
 
   // ── Chat E2EE bootstrap (E2EE-1) ────────────────────────────────
   // Ensures the device has an RSA-OAEP keypair registered with the server

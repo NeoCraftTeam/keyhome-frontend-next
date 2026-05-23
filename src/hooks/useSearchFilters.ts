@@ -11,6 +11,7 @@
 
 import { useSearchStaticData } from '@/hooks/search/useSearchStaticData';
 import { useSearchUrlSync } from '@/hooks/search/useSearchUrlSync';
+import { useDebounce } from '@/hooks/useDebounce';
 import type { propertyAttributesService } from '@/services/property-attributes.service';
 import type { AdType, City, FacetsResponse, SearchParams } from '@/types';
 import { useCallback, useMemo, useState } from 'react';
@@ -139,6 +140,11 @@ export function useSearchFilters(): SearchFiltersReturn {
     }
   );
 
+  // ── Debounced values for API calls (sliders + text query) ───
+  const debouncedQuery = useDebounce(query, 300);
+  const debouncedPriceRange = useDebounce(priceRange, 300);
+  const debouncedSurfaceRange = useDebounce(surfaceRange, 300);
+
   // ── Remote data + auto-select ────────────────────────────────
   const { cities, isCitiesLoading, adTypes, propertyAttributes, facets } =
     useSearchStaticData(
@@ -153,17 +159,21 @@ export function useSearchFilters(): SearchFiltersReturn {
   // ── buildParams ──────────────────────────────────────────────
   const buildParams = useCallback(
     (): SearchParams => ({
-      q: query || undefined,
+      q: debouncedQuery || undefined,
       city: selectedCity?.name || cityInput.trim() || undefined,
       quarter: selectedQuarter || undefined,
       type_id: selectedType?.id || undefined,
       type: selectedType?.id ? undefined : selectedType?.name || undefined,
       bedrooms: bedrooms || undefined,
       bathrooms: bathrooms || undefined,
-      price_min: priceRange[0] > 0 ? priceRange[0] : undefined,
-      price_max: priceRange[1] < 5000000 ? priceRange[1] : undefined,
-      surface_min: surfaceRange[0] > 0 ? surfaceRange[0] : undefined,
-      surface_max: surfaceRange[1] < 1000 ? surfaceRange[1] : undefined,
+      price_min:
+        debouncedPriceRange[0] > 0 ? debouncedPriceRange[0] : undefined,
+      price_max:
+        debouncedPriceRange[1] < 5000000 ? debouncedPriceRange[1] : undefined,
+      surface_min:
+        debouncedSurfaceRange[0] > 0 ? debouncedSurfaceRange[0] : undefined,
+      surface_max:
+        debouncedSurfaceRange[1] < 1000 ? debouncedSurfaceRange[1] : undefined,
       has_parking: hasParking || undefined,
       transaction_type: transactionType || undefined,
       price_period: pricePeriod || undefined,
@@ -179,15 +189,15 @@ export function useSearchFilters(): SearchFiltersReturn {
       per_page: 20,
     }),
     [
-      query,
+      debouncedQuery,
       selectedCity,
       cityInput,
       selectedQuarter,
       selectedType,
       bedrooms,
       bathrooms,
-      priceRange,
-      surfaceRange,
+      debouncedPriceRange,
+      debouncedSurfaceRange,
       hasParking,
       transactionType,
       pricePeriod,

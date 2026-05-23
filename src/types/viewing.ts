@@ -6,6 +6,8 @@ export enum ReservationStatus {
   Confirmed = 'confirmed',
   Cancelled = 'cancelled',
   Expired = 'expired',
+  Completed = 'completed',
+  NoShow = 'no_show',
 }
 
 export enum CancelledBy {

@@ -132,9 +132,11 @@ export function useAuthActions({
       const expiresAtMs = expires_at
         ? new Date(expires_at).getTime()
         : undefined;
-      persistClientToken(sanctumToken, expiresAtMs);
-      setUserState(laravelUser);
-      setRoleCookie(UserRole.CUSTOMER);
+      flushSync(() => {
+        persistClientToken(sanctumToken, expiresAtMs);
+        setUserState(laravelUser);
+        setRoleCookie(UserRole.CUSTOMER);
+      });
 
       const returnTo = sessionStorage.getItem('kh_redirect_after_login');
       if (returnTo) {
@@ -162,9 +164,11 @@ export function useAuthActions({
       const expiresAtMs = expires_at
         ? new Date(expires_at).getTime()
         : undefined;
-      persistOwnerToken(sanctumToken, expiresAtMs);
-      setUserState(laravelUser);
-      setRoleCookie(laravelUser.role ?? UserRole.AGENT);
+      flushSync(() => {
+        persistOwnerToken(sanctumToken, expiresAtMs);
+        setUserState(laravelUser);
+        setRoleCookie(laravelUser.role ?? UserRole.AGENT);
+      });
 
       const returnTo = sessionStorage.getItem('kh_owner_redirect');
       if (returnTo) {

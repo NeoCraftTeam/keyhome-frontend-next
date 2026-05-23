@@ -184,6 +184,12 @@ export interface Ad {
   distance_transport_m?: number | null;
   distance_school_m?: number | null;
   distance_hospital_m?: number | null;
+  /**
+   * KeyScore — score de quartier 0–100 pré-calculé (OSM/ORS).
+   * Null si le GPS de l'annonce est absent ou si le score n'est pas encore calculé.
+   * Calculé par le backend via NeighborhoodScorecardService et inclus dans AdResource.
+   */
+  keyscore?: number | null;
   /** Pending-edit draft — populated only for the ad owner. Non-null means unsaved changes exist. */
   draft_payload?: Record<string, unknown> | null;
 }

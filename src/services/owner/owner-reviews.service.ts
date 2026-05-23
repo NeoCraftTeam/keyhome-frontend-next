@@ -96,4 +96,14 @@ export const ownerReviewsService = {
     });
     return data;
   },
+
+  async noShowReservation(reservationId: string) {
+    const { data } = await api.post(`/reservations/${reservationId}/no-show`);
+    return data;
+  },
+
+  async getLandlordCalendarUrl(): Promise<string> {
+    const { data } = await api.get('/my/landlord-calendar-url');
+    return (data as { url: string }).url;
+  },
 };

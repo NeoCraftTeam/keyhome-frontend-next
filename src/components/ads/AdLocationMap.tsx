@@ -1,15 +1,15 @@
 'use client';
 
-import 'mapbox-gl/dist/mapbox-gl.css';
-import { formatDistance, haversineDistance } from '@/lib/geo';
-import { MAPBOX_TOKEN } from '@/lib/constants';
 import type { UserLocation } from '@/hooks/useUserLocation';
-import { Box, Typography, useTheme } from '@mui/material';
-import PlaceOutlined from '@mui/icons-material/PlaceOutlined';
-import InfoOutlined from '@mui/icons-material/InfoOutlined';
-import mapboxgl from 'mapbox-gl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { MAPBOX_TOKEN } from '@/lib/constants';
+import { formatDistance, haversineDistance } from '@/lib/geo';
 import { brand } from '@/theme/tokens';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
+import PlaceOutlined from '@mui/icons-material/PlaceOutlined';
+import { Box, Typography, useTheme } from '@mui/material';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 if (process.env.NODE_ENV === 'development') {
@@ -27,6 +27,14 @@ interface Props {
   isLocked?: boolean;
   userLocation?: UserLocation | null;
   locationError?: string | null;
+  /** ORS GeoJSON route — when provided replaces the straight-line with the real road */
+  routeGeojson?: GeoJSON.FeatureCollection | null;
+  /** Road-trip summary from ORS (driving-car) — shown instead of haversine disclaimer */
+  roadSummary?: {
+    distance_label: string;
+    duration_label: string;
+    profile_label: string;
+  } | null;
 }
 
 function fuzzyCoords(lat: number, lng: number): [number, number] {
@@ -136,6 +144,8 @@ export default function AdLocationMap({
   isLocked = false,
   userLocation,
   locationError,
+  routeGeojson = null,
+  roadSummary = null,
 }: Props) {
   const muiTheme = useTheme();
   const isDarkMode = muiTheme.palette.mode === 'dark';
@@ -301,32 +311,53 @@ export default function AdLocationMap({
 
       // ── unlocked ad + user location: route line + blue + red markers ─────────
     } else if (showRoute && userLocation && distanceKm !== null) {
+      const isRealRoute = routeGeojson !== null;
+
       map.addSource('route-line', {
         type: 'geojson',
-        data: {
-          type: 'Feature',
-          geometry: {
-            type: 'LineString',
-            coordinates: [
-              [userLocation.longitude, userLocation.latitude],
-              [displayLng, displayLat],
-            ],
+        data: isRealRoute
+          ? routeGeojson
+          : {
+              type: 'Feature',
+              geometry: {
+                type: 'LineString',
+                coordinates: [
+                  [userLocation.longitude, userLocation.latitude],
+                  [displayLng, displayLat],
+                ],
+              },
+              properties: {},
+            },
+      });
+
+      if (isRealRoute) {
+        // Real road route — solid blue line
+        map.addLayer({
+          id: 'route-line-dashed',
+          type: 'line',
+          source: 'route-line',
+          paint: {
+            'line-color': '#0284c7',
+            'line-width': 4,
+            'line-opacity': 0.82,
           },
-          properties: {},
-        },
-      });
-      map.addLayer({
-        id: 'route-line-dashed',
-        type: 'line',
-        source: 'route-line',
-        paint: {
-          'line-color': PRIMARY_RED,
-          'line-width': 2.5,
-          'line-dasharray': [4, 3],
-          'line-opacity': 0.7,
-        },
-        layout: { 'line-cap': 'round', 'line-join': 'round' },
-      });
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+        });
+      } else {
+        // Straight-line fallback — dashed red
+        map.addLayer({
+          id: 'route-line-dashed',
+          type: 'line',
+          source: 'route-line',
+          paint: {
+            'line-color': PRIMARY_RED,
+            'line-width': 2.5,
+            'line-dasharray': [4, 3],
+            'line-opacity': 0.7,
+          },
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+        });
+      }
 
       const adMarker = new mapboxgl.Marker({
         element: createAdMarker(),
@@ -404,6 +435,7 @@ export default function AdLocationMap({
     isDarkMode,
     displayLat,
     displayLng,
+    routeGeojson,
   ]);
 
   if (!MAPBOX_TOKEN) return null;
@@ -459,38 +491,61 @@ export default function AdLocationMap({
               <PlaceOutlined sx={{ fontSize: 20, color: PRIMARY_RED }} />
             </Box>
             <Box>
-              <Typography
-                variant="body2"
-                fontWeight={700}
-                sx={{ lineHeight: 1.3 }}
-              >
-                {formatDistance(distanceKm)} de votre position
-                {userLocation?.isApproximate && (
-                  <Box
-                    component="span"
-                    sx={{
-                      color: 'warning.main',
-                      fontWeight: 600,
-                      ml: 0.5,
-                      fontSize: 'inherit',
-                    }}
+              {roadSummary ? (
+                <>
+                  <Typography
+                    variant="body2"
+                    fontWeight={700}
+                    sx={{ lineHeight: 1.3 }}
                   >
-                    (approx.)
-                  </Box>
-                )}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Distance à vol d&apos;oiseau
-              </Typography>
-              {userLocation?.isApproximate && (
-                <Typography
-                  variant="caption"
-                  color="warning.main"
-                  sx={{ display: 'block', mt: 0.25, fontSize: '0.65rem' }}
-                >
-                  Position approximative (précision ~
-                  {Math.round(userLocation.accuracy / 1000)} km)
-                </Typography>
+                    {roadSummary.duration_label} en voiture
+                    <Box
+                      component="span"
+                      sx={{ color: 'text.secondary', fontWeight: 400, ml: 0.5 }}
+                    >
+                      ({roadSummary.distance_label})
+                    </Box>
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Distance à vol d&apos;oiseau : {formatDistance(distanceKm)}
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <Typography
+                    variant="body2"
+                    fontWeight={700}
+                    sx={{ lineHeight: 1.3 }}
+                  >
+                    {formatDistance(distanceKm)} de votre position
+                    {userLocation?.isApproximate && (
+                      <Box
+                        component="span"
+                        sx={{
+                          color: 'warning.main',
+                          fontWeight: 600,
+                          ml: 0.5,
+                          fontSize: 'inherit',
+                        }}
+                      >
+                        (approx.)
+                      </Box>
+                    )}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Distance à vol d&apos;oiseau
+                  </Typography>
+                  {userLocation?.isApproximate && (
+                    <Typography
+                      variant="caption"
+                      color="warning.main"
+                      sx={{ display: 'block', mt: 0.25, fontSize: '0.65rem' }}
+                    >
+                      Position approximative (précision ~
+                      {Math.round(userLocation.accuracy / 1000)} km)
+                    </Typography>
+                  )}
+                </>
               )}
             </Box>
           </Box>
@@ -619,15 +674,26 @@ export default function AdLocationMap({
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-            <Box
-              sx={{
-                width: 20,
-                borderTop: `2px dashed ${PRIMARY_RED}`,
-                opacity: 0.65,
-              }}
-            />
+            {routeGeojson ? (
+              <Box
+                sx={{
+                  width: 20,
+                  borderTop: '3px solid #0284c7',
+                  borderRadius: 1,
+                  opacity: 0.85,
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: 20,
+                  borderTop: `2px dashed ${PRIMARY_RED}`,
+                  opacity: 0.65,
+                }}
+              />
+            )}
             <Typography variant="caption" color="text.secondary">
-              Trajectoire directe
+              {routeGeojson ? 'Itinéraire routier' : 'Trajectoire directe'}
             </Typography>
           </Box>
         </Box>
@@ -670,7 +736,9 @@ export default function AdLocationMap({
           {isLocked
             ? 'La localisation exacte sera communiquée après déverrouillage.'
             : showRoute
-              ? 'Distance calculée en ligne droite. L\u2019emplacement exact est visible car l\u2019annonce est débloquée.'
+              ? routeGeojson
+                ? 'Itinéraire routier calculé via OpenRouteService. L\u2019emplacement exact est visible car l\u2019annonce est débloquée.'
+                : 'Distance calculée en ligne droite. L\u2019emplacement exact est visible car l\u2019annonce est débloquée.'
               : 'L\u2019emplacement exact est indiqué sur la carte.'}
         </Typography>
       </Box>

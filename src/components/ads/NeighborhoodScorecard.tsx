@@ -1,29 +1,20 @@
 'use client';
 
 import { adsService } from '@/services/ads.service';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 import DirectionsBus from '@mui/icons-material/DirectionsBus';
 import DirectionsWalk from '@mui/icons-material/DirectionsWalk';
+import Info from '@mui/icons-material/Info';
 import LocalHospital from '@mui/icons-material/LocalHospital';
+import LocalPolice from '@mui/icons-material/LocalPolice';
 import NearMe from '@mui/icons-material/NearMe';
 import Restaurant from '@mui/icons-material/Restaurant';
 import School from '@mui/icons-material/School';
-import LocalPolice from '@mui/icons-material/LocalPolice';
 import Storefront from '@mui/icons-material/Storefront';
-import Info from '@mui/icons-material/Info';
 import WarningAmberRounded from '@mui/icons-material/WarningAmberRounded';
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Skeleton,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Chip, Skeleton, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -340,10 +331,12 @@ function ScorecardSkeleton() {
 
 interface Props {
   adId: string;
+  /** Called once when OSM data is unavailable or the query fails — lets the parent hide the whole section */
+  onUnavailable?: () => void;
 }
 
-export default function NeighborhoodScorecard({ adId }: Props) {
-  const [forceKey, setForceKey] = useState(0);
+export default function NeighborhoodScorecard({ adId, onUnavailable }: Props) {
+  const [forceKey] = useState(0);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['neighborhood-scorecard', adId, forceKey],
@@ -353,6 +346,19 @@ export default function NeighborhoodScorecard({ adId }: Props) {
   });
 
   const scorecard: ScorecardData | null = data?.data ?? null;
+
+  const isUnavailable = isError || scorecard?.status === 'unavailable';
+
+  // Notify parent once so it can hide the section wrapper
+  const notifiedRef = useRef(false);
+  useEffect(() => {
+    if (isUnavailable && !notifiedRef.current) {
+      notifiedRef.current = true;
+      onUnavailable?.();
+    }
+  }, [isUnavailable, onUnavailable]);
+
+  if (isUnavailable) return null;
   const totalPoi = scorecard
     ? Object.values(scorecard.categories).reduce((s, c) => s + c.poi_count, 0)
     : 0;
@@ -411,34 +417,18 @@ export default function NeighborhoodScorecard({ adId }: Props) {
 
       {isLoading && <ScorecardSkeleton />}
 
-      {isError && (
-        <Box sx={{ py: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Typography variant="body2" color="text.secondary">
-            Données de quartier non disponibles.
-          </Typography>
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={() => setForceKey((k) => k + 1)}
-          >
-            Réessayer
-          </Button>
-        </Box>
-      )}
-
       {scorecard && (
         <>
-          {scorecard.ors_used === false &&
-            scorecard.status !== 'unavailable' && (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                <Typography variant="body2">
-                  Distances en <strong>ligne droite</strong> (approximation).
-                  Les distances <strong>à pied réelles</strong> (routes)
-                  utilisent OpenRouteService — ajoutez <code>ORS_API_KEY</code>{' '}
-                  sur l&apos;API backend.
-                </Typography>
-              </Alert>
-            )}
+          {scorecard.ors_used === false && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="body2">
+                Distances en <strong>ligne droite</strong> (approximation). Les
+                distances <strong>à pied réelles</strong> utilisent
+                OpenRouteService — ajoutez <code>ORS_API_KEY</code> sur
+                l&apos;API backend.
+              </Typography>
+            </Alert>
+          )}
 
           {/* Global score row */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
@@ -469,43 +459,6 @@ export default function NeighborhoodScorecard({ adId }: Props) {
                     },
                   }}
                 />
-              )}
-              {scorecard.status === 'unavailable' && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 1,
-                    mt: 0.5,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <Chip
-                    icon={<WarningAmberRounded sx={{ fontSize: 13 }} />}
-                    label="Données OSM indisponibles"
-                    size="small"
-                    sx={{
-                      fontSize: 10,
-                      height: 20,
-                      maxWidth: '100%',
-                      bgcolor: 'error.light',
-                      color: 'error.dark',
-                      '& .MuiChip-label': {
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      },
-                    }}
-                  />
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="error"
-                    sx={{ height: 20, fontSize: 10, px: 1, minWidth: 0 }}
-                    onClick={() => setForceKey((k) => k + 1)}
-                  >
-                    Réessayer
-                  </Button>
-                </Box>
               )}
             </Box>
           </Box>

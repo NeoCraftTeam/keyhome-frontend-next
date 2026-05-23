@@ -16,7 +16,7 @@ import {
   Pagination,
   Typography,
 } from '@mui/material';
-import { motion } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { memo } from 'react';
 
@@ -337,26 +337,34 @@ const SearchResultsList = memo(function SearchResultsList({
         </Box>
       ) : (
         <>
-          <Grid
-            container
-            spacing={1.5}
-            sx={{ '& .ad-card-title': { color: '#222 !important' } }}
-          >
-            {ads.map((ad, idx) => (
-              <Grid key={ad.id} size={{ xs: 6, lg: 4, xl: 3 }}>
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.2,
-                    delay: Math.min(idx * 0.04, 0.4),
-                  }}
-                >
-                  <AdCard ad={ad} />
-                </motion.div>
-              </Grid>
-            ))}
-          </Grid>
+          <LayoutGroup id="search-results">
+            <Grid
+              container
+              spacing={1.5}
+              sx={{ '& .ad-card-title': { color: '#222 !important' } }}
+            >
+              <AnimatePresence mode="popLayout" initial={false}>
+                {ads.map((ad, idx) => (
+                  <Grid key={ad.id} size={{ xs: 6, lg: 4, xl: 3 }}>
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -8 }}
+                      transition={{
+                        layout: { type: 'spring', stiffness: 350, damping: 30 },
+                        opacity: { duration: 0.2 },
+                        y: { duration: 0.2, delay: Math.min(idx * 0.04, 0.32) },
+                        scale: { duration: 0.15 },
+                      }}
+                    >
+                      <AdCard ad={ad} />
+                    </motion.div>
+                  </Grid>
+                ))}
+              </AnimatePresence>
+            </Grid>
+          </LayoutGroup>
 
           {totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>

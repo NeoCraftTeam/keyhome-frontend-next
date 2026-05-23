@@ -4,6 +4,7 @@ import { useUserLocation } from '@/hooks/useUserLocation';
 import {
   geoService,
   type DirectionsResult,
+  type DirectionsSummary,
   type OrsProfile,
 } from '@/services/geo.service';
 import Accessible from '@mui/icons-material/Accessible';
@@ -25,7 +26,7 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // ─── Profile config ───────────────────────────────────────────────────────────
 
@@ -159,12 +160,18 @@ interface Props {
   adLng: number;
   /** Pass the already-fetched location to avoid a second geolocation request */
   userLocation?: import('@/hooks/useUserLocation').UserLocation | null;
+  /** Called once when the driving-car route is first computed — used to draw the real road on the map */
+  onRouteComputed?: (
+    geojson: GeoJSON.FeatureCollection,
+    summary: DirectionsSummary
+  ) => void;
 }
 
 export default function DirectionsPanel({
   adLat,
   adLng,
   userLocation: userLocationProp,
+  onRouteComputed,
 }: Props) {
   const { location: userLocationInternal } = useUserLocation();
   const userLocation = userLocationProp ?? userLocationInternal;
@@ -174,6 +181,7 @@ export default function DirectionsPanel({
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<DirectionsResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const routeNotifiedRef = useRef(false);
 
   const compute = useCallback(async () => {
     if (!userLocation) return;
@@ -209,23 +217,62 @@ export default function DirectionsPanel({
     setResults([]);
 
     try {
-      const fetches = PROFILES.slice(0, 3).map((p) =>
+      // Load driving-car first (primary profile + needed for map route)
+      const carResult = await geoService
+        .getDirections(
+          userLocation.latitude,
+          userLocation.longitude,
+          adLat,
+          adLng,
+          'driving-car'
+        )
+        .then((res) => res.data)
+        .catch(() => null);
+
+      if (carResult) {
+        setResults([carResult]);
+        // Notify parent to draw road on map (once per panel session)
+        if (!routeNotifiedRef.current && onRouteComputed) {
+          routeNotifiedRef.current = true;
+          onRouteComputed(
+            carResult.geojson as GeoJSON.FeatureCollection,
+            carResult.summary
+          );
+        }
+      }
+
+      // Lazy-load foot + cycling after a short delay to spread ORS rate-limit
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
+      const lazyFetches = (
+        ['foot-walking', 'cycling-regular'] as OrsProfile[]
+      ).map((p) =>
         geoService
           .getDirections(
             userLocation.latitude,
             userLocation.longitude,
             adLat,
             adLng,
-            p.value
+            p
           )
           .then((res) => res.data)
           .catch(() => null)
       );
 
-      const all = await Promise.all(fetches);
-      const valid = all.filter((r): r is DirectionsResult => r !== null);
-      setResults(valid);
-      if (valid.length === 0) {
+      const lazyAll = await Promise.all(lazyFetches);
+      const lazyValid = lazyAll.filter(
+        (r): r is DirectionsResult => r !== null
+      );
+
+      setResults((prev) => {
+        const merged = [...prev];
+        lazyValid.forEach((r) => {
+          if (!merged.find((m) => m.profile === r.profile)) merged.push(r);
+        });
+        return merged;
+      });
+
+      if (!carResult && lazyValid.length === 0) {
         setError("Service d'itinéraires temporairement indisponible.");
       }
     } catch {
@@ -233,7 +280,12 @@ export default function DirectionsPanel({
     } finally {
       setLoading(false);
     }
-  }, [userLocation, adLat, adLng]);
+  }, [userLocation, adLat, adLng, onRouteComputed]);
+
+  // Reset notification flag when user location changes significantly
+  useEffect(() => {
+    routeNotifiedRef.current = false;
+  }, [userLocation?.latitude, userLocation?.longitude]);
 
   if (!userLocation) return null;
 

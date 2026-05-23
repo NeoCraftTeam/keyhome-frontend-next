@@ -1,9 +1,9 @@
 'use client';
 
 import {
+  getLaravelApiErrorMessage,
   getLaravelNestedApiError,
   getLaravelNestedApiErrorCode,
-  getLaravelApiErrorMessage,
 } from '@/lib/api-errors';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
@@ -48,6 +48,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AddToCalendarButton } from 'add-to-calendar-button-react';
 import {
   addDays,
   addMonths,
@@ -77,6 +78,8 @@ const STATUS_CONFIG: Record<
   [ReservationStatus.Confirmed]: { label: 'Confirmée', color: 'success' },
   [ReservationStatus.Cancelled]: { label: 'Annulée', color: 'error' },
   [ReservationStatus.Expired]: { label: 'Expirée', color: 'default' },
+  [ReservationStatus.Completed]: { label: 'Terminée', color: 'default' },
+  [ReservationStatus.NoShow]: { label: 'Absent', color: 'error' },
 };
 
 const MAX_BOOKING_DAYS = 90; // how many days ahead to allow booking
@@ -123,6 +126,8 @@ function StatusChip({ status }: { status: ReservationStatus }) {
 interface Props {
   adId: string;
   adTitle: string;
+  /** Human-readable location for calendar events (e.g. "Biyem-Assi, Yaoundé"). */
+  adLocation?: string;
   /** Use contained variant for higher visibility (e.g. sidebar CTA) */
   variant?: 'outlined' | 'contained';
   /** Host given name — personalises the booking CTA. */
@@ -142,6 +147,7 @@ interface Props {
 export default function ViewingBookingPanel({
   adId,
   adTitle,
+  adLocation,
   variant = DEFAULT_VARIANT,
   hostFirstName,
   open: openProp,
@@ -179,6 +185,8 @@ export default function ViewingBookingPanel({
   const [bookingErrorHint, setBookingErrorHint] = useState('');
   /** Blocks duplicate POST before React applies isPending (double-click / dual pointer). */
   const bookingSubmitLockRef = useRef(false);
+  /** Per-attempt idempotency key — regenerated on each new booking attempt. */
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
 
   // Calendar month currently displayed
   const [calendarMonth, setCalendarMonth] = useState<Date>(startOfMonth(today));
@@ -259,14 +267,19 @@ export default function ViewingBookingPanel({
   // ── Create reservation mutation ────────────────────────────────────────────
   const { mutate: createReservation, isPending: isCreating } = useMutation({
     mutationFn: () =>
-      viewingsService.reserve(adId, {
-        slot_date: dateStr,
-        slot_starts_at: selectedSlot!.starts_at,
-        slot_ends_at: selectedSlot!.ends_at,
-        client_message: message.trim() || undefined,
-      }),
+      viewingsService.reserve(
+        adId,
+        {
+          slot_date: dateStr,
+          slot_starts_at: selectedSlot!.starts_at,
+          slot_ends_at: selectedSlot!.ends_at,
+          client_message: message.trim() || undefined,
+        },
+        idempotencyKeyRef.current
+      ),
     onSuccess: () => {
       setStep(3);
+      idempotencyKeyRef.current = crypto.randomUUID();
       queryClient.invalidateQueries({ queryKey: ['my-reservations', adId] });
       queryClient.invalidateQueries({ queryKey: ['slots', adId, dateStr] });
     },
@@ -320,6 +333,35 @@ export default function ViewingBookingPanel({
       );
     },
   });
+
+  // ── Real-time slot availability listener ────────────────────────────────────
+  // Listens on the public ad.{adId}.slots channel so the calendar refreshes
+  // automatically when another user books or cancels a slot on this ad.
+  useEffect(() => {
+    if (!open || !isReverbRealtimeConfigured()) return;
+
+    let echo: ReturnType<typeof getEcho> | null = null;
+    try {
+      echo = getEcho();
+    } catch {
+      return;
+    }
+
+    const channel = echo.channel(`ad.${adId}.slots`);
+
+    channel.listen('.slot.availability_changed', () => {
+      void queryClient.invalidateQueries({ queryKey: ['slots', adId] });
+      void queryClient.invalidateQueries({ queryKey: ['slots-range', adId] });
+    });
+
+    return () => {
+      try {
+        echo?.leave(`ad.${adId}.slots`);
+      } catch {
+        // ignore cleanup errors
+      }
+    };
+  }, [open, adId, queryClient]);
 
   // ─── calendar month navigation ─────────────────────────────────────────────
   const canGoPrevMonth = isAfter(
@@ -891,6 +933,25 @@ export default function ViewingBookingPanel({
           </Typography>
         </Alert>
 
+        {selectedDate && selectedSlot && (
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+            <AddToCalendarButton
+              name={`Visite — ${adTitle}`}
+              options={['Apple', 'Google', 'Outlook.com', 'iCal']}
+              startDate={format(selectedDate, 'yyyy-MM-dd')}
+              startTime={selectedSlot.starts_at.slice(0, 5)}
+              endTime={selectedSlot.ends_at.slice(0, 5)}
+              timeZone="Africa/Douala"
+              location={adLocation ?? ''}
+              description={`Visite de bien sur KeyHome. En attente de confirmation du propriétaire.`}
+              buttonStyle="round"
+              size="3"
+              label="Ajouter au calendrier"
+              language="fr"
+            />
+          </Box>
+        )}
+
         <Box
           sx={{
             display: 'flex',
@@ -1244,6 +1305,30 @@ export default function ViewingBookingPanel({
                     </Button>
                   )}
                 </Box>
+                {r.status === ReservationStatus.Confirmed && (
+                  <Box
+                    sx={{
+                      mt: 1.5,
+                      display: 'flex',
+                      justifyContent: 'flex-start',
+                    }}
+                  >
+                    <AddToCalendarButton
+                      name={`Visite — ${adTitle}`}
+                      options={['Apple', 'Google', 'Outlook.com', 'iCal']}
+                      startDate={r.slot_date}
+                      startTime={r.slot_starts_at.slice(0, 5)}
+                      endTime={r.slot_ends_at.slice(0, 5)}
+                      timeZone="Africa/Douala"
+                      location={adLocation ?? ''}
+                      description={`Visite confirmée sur KeyHome.\nRéf : ${r.id}`}
+                      buttonStyle="flat"
+                      size="3"
+                      label="Ajouter au calendrier"
+                      language="fr"
+                    />
+                  </Box>
+                )}
               </Paper>
             );
           })}
