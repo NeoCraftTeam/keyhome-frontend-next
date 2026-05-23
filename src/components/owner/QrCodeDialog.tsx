@@ -428,11 +428,12 @@ export default function QrCodeDialog({
                   />
                 )}
                 <Skeleton
-                  variant="circular"
+                  variant="rounded"
                   width={qrDiameter}
-                  height={qrDiameter}
+                  height={Math.round(qrDiameter * 1.38)}
                   sx={{
                     flexShrink: 0,
+                    borderRadius: 4,
                     boxShadow: `0 8px 28px ${alpha(brandAgent.primary, 0.12)}`,
                   }}
                 />
@@ -555,21 +556,15 @@ export default function QrCodeDialog({
                 )}
 
                 <Stack spacing={spacing.sm} alignItems="center">
+                  {/* QR key-silhouette — portrait 1000×1380 ratio ≈ 0.725 */}
                   <Box
                     sx={{
-                      width: { xs: 252, sm: 288 },
-                      height: { xs: 252, sm: 288 },
+                      width: { xs: 200, sm: 228 },
                       flexShrink: 0,
-                      borderRadius: '50%',
-                      boxSizing: 'border-box',
-                      p: { xs: 1.25, sm: 1.5 },
+                      borderRadius: 4,
+                      overflow: 'hidden',
                       mx: 'auto',
-                      border: `2px solid ${alpha(theme.palette.grey[900], 0.14)}`,
-                      background: `linear-gradient(155deg, ${neutral.white} 0%, ${alpha(theme.palette.grey[900], 0.04)} 100%)`,
                       boxShadow: `0 14px 42px -18px ${brandAgent.primaryAlpha25}, 0 4px 12px ${slateShadowTint}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
                       transition: prefersReducedMotion
                         ? 'none'
                         : transition.polish,
@@ -596,12 +591,9 @@ export default function QrCodeDialog({
                       src={data!.qr_data_uri}
                       alt={qrImageAlt}
                       sx={{
-                        width: '71%',
-                        height: '71%',
-                        maxWidth: '100%',
-                        objectFit: 'contain',
+                        width: '100%',
+                        height: 'auto',
                         display: 'block',
-                        borderRadius: 2,
                       }}
                     />
                   </Box>

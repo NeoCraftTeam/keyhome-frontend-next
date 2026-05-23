@@ -38,7 +38,7 @@ const fallbackPackages: LandingPackageCard[] = [
     description:
       'Testez KeyHome sans risque. Contactez 5 propriétaires vérifiés — numéro et WhatsApp inclus — sans passer par une agence.',
     features: [
-      '5 contacts propriétaires débloqués (2 crédits/contact)',
+      '5 annonces propriétaires débloqués (2 crédits/annonce)',
       'Appelez ou WhatsApp le propriétaire directement',
       'Zéro commission — 200 FCFA/contact',
     ],
@@ -53,8 +53,8 @@ const fallbackPackages: LandingPackageCard[] = [
     description:
       'Le choix des chercheurs actifs. 25 propriétaires en accès direct — assez pour trouver avant vos concurrents.',
     features: [
-      '25 contacts propriétaires débloqués',
-      '160 FCFA/contact — économisez 20 % vs Starter',
+      '25 annonces propriétaires débloqués',
+      '160 FCFA/annonce — économisez 20 % vs Starter',
       'Appel + WhatsApp + messagerie KeyHome',
       'Support prioritaire inclus',
     ],
@@ -70,8 +70,8 @@ const fallbackPackages: LandingPackageCard[] = [
     description:
       'Pour les familles ambitieuses et les pros en mobilité. 60 contacts sur 12 mois — le meilleur coût par logement trouvé.',
     features: [
-      '60 contacts propriétaires débloqués',
-      '~117 FCFA/contact — 42 % de réduction vs Starter',
+      '60 annonces propriétaires débloqués',
+      '~117 FCFA/annonce — 42 % de réduction vs Starter',
       'Appel + WhatsApp + messagerie KeyHome',
       'Support 24h/7j · Crédits valables 12 mois',
     ],
