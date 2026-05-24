@@ -395,6 +395,34 @@ export default function OwnerNewAdPage() {
     return enhanced;
   }, []);
 
+  const handleEnhanceTitle = useCallback(
+    async (
+      title: string,
+      context: { type?: string; city?: string; transaction_type?: string }
+    ) => {
+      const { enhanced } = await adsService.enhanceTitle(title, context);
+      return enhanced;
+    },
+    []
+  );
+
+  const handleGenerateDescription = useCallback(
+    async (attributes: {
+      type?: string;
+      city?: string;
+      quarter?: string;
+      bedrooms?: number;
+      surface?: number;
+      price?: number;
+      transaction_type?: string;
+    }) => {
+      const { generated } =
+        await adsService.generateDescriptionFromAttributes(attributes);
+      return generated;
+    },
+    []
+  );
+
   /**
    * Called by AdForm before the API call.
    * If the profile is incomplete, we force-save the current values as a draft,
@@ -441,6 +469,8 @@ export default function OwnerNewAdPage() {
           isSubmitting={createMutation.isPending}
           isSavingDraft={draftMutation.isPending}
           onEnhanceDescription={handleEnhance}
+          onEnhanceTitle={handleEnhanceTitle}
+          onGenerateDescription={handleGenerateDescription}
           onDraftCreated={handleDraftCreated}
         />
       </Container>

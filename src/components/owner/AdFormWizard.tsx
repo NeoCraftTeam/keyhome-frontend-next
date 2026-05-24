@@ -110,6 +110,19 @@ interface AdFormWizardProps {
   isSubmitting?: boolean;
   isSavingDraft?: boolean;
   onEnhanceDescription?: (description: string) => Promise<string>;
+  onEnhanceTitle?: (
+    title: string,
+    context: { type?: string; city?: string; transaction_type?: string }
+  ) => Promise<string>;
+  onGenerateDescription?: (attributes: {
+    type?: string;
+    city?: string;
+    quarter?: string;
+    bedrooms?: number;
+    surface?: number;
+    price?: number;
+    transaction_type?: string;
+  }) => Promise<string>;
   /** Called once when server-side auto-save creates a new draft (new-ad flow only). */
   onDraftCreated?: (id: string) => void;
   /**
@@ -144,6 +157,8 @@ function AdFormWizard({
   isSubmitting = false,
   isSavingDraft = false,
   onEnhanceDescription,
+  onEnhanceTitle,
+  onGenerateDescription,
   onDraftCreated,
   editDraftMode = false,
   onSaveEditDraft,
@@ -174,6 +189,12 @@ function AdFormWizard({
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
   const [enhancing, setEnhancing] = useState(false);
+  const [enhancingTitle, setEnhancingTitle] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [originalDescription, setOriginalDescription] = useState<string | null>(
+    null
+  );
+  const [originalTitle, setOriginalTitle] = useState<string | null>(null);
   const [enhanceError, setEnhanceError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [propertyConditionPdf, setPropertyConditionPdf] = useState<File | null>(
@@ -587,9 +608,11 @@ function AdFormWizard({
   /* ── AI enhance ── */
   const handleEnhance = async () => {
     if (isAdFormTextEmpty(values.description) || !onEnhanceDescription) return;
+    const prev = values.description;
     setEnhancing(true);
     try {
       const enhanced = await onEnhanceDescription(values.description);
+      setOriginalDescription(prev);
       update('description', enhanced);
     } catch {
       setEnhanceError(
@@ -599,6 +622,62 @@ function AdFormWizard({
       setEnhancing(false);
     }
   };
+
+  const handleEnhanceTitle = async () => {
+    if (!values.title.trim() || !onEnhanceTitle) return;
+    const prev = values.title;
+    setEnhancingTitle(true);
+    try {
+      const adTypeName = adTypes.find((t) => t.id === values.type_id)?.name;
+      const enhanced = await onEnhanceTitle(values.title, {
+        type: adTypeName,
+        city: selectedCity?.name,
+        transaction_type: values.transaction_type,
+      });
+      setOriginalTitle(prev);
+      update('title', enhanced);
+    } catch {
+      /* silent — title enhance is best-effort */
+    } finally {
+      setEnhancingTitle(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!onGenerateDescription) return;
+    setGenerating(true);
+    try {
+      const adTypeName = adTypes.find((t) => t.id === values.type_id)?.name;
+      const generated = await onGenerateDescription({
+        type: adTypeName,
+        city: selectedCity?.name ?? selectedQuarter?.city_name,
+        quarter: selectedQuarter?.name,
+        bedrooms: values.bedrooms ? Number(values.bedrooms) : undefined,
+        surface: values.surface_area ? Number(values.surface_area) : undefined,
+        price: values.price ? Number(values.price) : undefined,
+        transaction_type: values.transaction_type,
+      });
+      if (generated) update('description', generated);
+    } catch {
+      /* silent */
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleRestoreDescription = useCallback(() => {
+    if (originalDescription !== null) {
+      update('description', originalDescription);
+      setOriginalDescription(null);
+    }
+  }, [originalDescription, update]);
+
+  const handleRestoreTitle = useCallback(() => {
+    if (originalTitle !== null) {
+      update('title', originalTitle);
+      setOriginalTitle(null);
+    }
+  }, [originalTitle, update]);
 
   /* ── Tour handlers ── */
   const addTourScene = useCallback(() => {
@@ -996,7 +1075,21 @@ function AdFormWizard({
                     update={update}
                     errors={errors}
                     enhancing={enhancing}
+                    enhancingTitle={enhancingTitle}
+                    generating={generating}
+                    originalDescription={originalDescription}
+                    originalTitle={originalTitle}
                     onEnhance={onEnhanceDescription ? handleEnhance : null}
+                    onGenerate={onGenerateDescription ? handleGenerate : null}
+                    onEnhanceTitle={onEnhanceTitle ? handleEnhanceTitle : null}
+                    onRestoreDescription={
+                      originalDescription !== null
+                        ? handleRestoreDescription
+                        : null
+                    }
+                    onRestoreTitle={
+                      originalTitle !== null ? handleRestoreTitle : null
+                    }
                   />
                   <AdFormPhotos
                     imagePreviewUrls={imagePreviewUrls}

@@ -260,9 +260,35 @@ export const adsService = {
   async enhanceDescription(description: string): Promise<{ enhanced: string }> {
     const { data } = await api.post<{ enhanced: string }>(
       '/ads/ai/enhance-description',
-      {
-        description,
-      }
+      { description }
+    );
+    return data;
+  },
+
+  async generateDescriptionFromAttributes(attributes: {
+    type?: string;
+    city?: string;
+    quarter?: string;
+    bedrooms?: number;
+    surface?: number;
+    price?: number;
+    transaction_type?: string;
+    notes?: string;
+  }): Promise<{ generated: string }> {
+    const { data } = await api.post<{ generated: string }>(
+      '/ads/ai/generate-from-attributes',
+      attributes
+    );
+    return data;
+  },
+
+  async enhanceTitle(
+    title: string,
+    context?: { type?: string; city?: string; transaction_type?: string }
+  ): Promise<{ enhanced: string }> {
+    const { data } = await api.post<{ enhanced: string }>(
+      '/ads/ai/enhance-title',
+      { title, ...context }
     );
     return data;
   },

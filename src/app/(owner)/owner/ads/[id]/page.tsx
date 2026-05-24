@@ -558,6 +558,34 @@ export default function OwnerAdEditPage() {
     return enhanced;
   }, []);
 
+  const handleEnhanceTitle = useCallback(
+    async (
+      title: string,
+      context: { type?: string; city?: string; transaction_type?: string }
+    ) => {
+      const { enhanced } = await adsService.enhanceTitle(title, context);
+      return enhanced;
+    },
+    []
+  );
+
+  const handleGenerateDescription = useCallback(
+    async (attributes: {
+      type?: string;
+      city?: string;
+      quarter?: string;
+      bedrooms?: number;
+      surface?: number;
+      price?: number;
+      transaction_type?: string;
+    }) => {
+      const { generated } =
+        await adsService.generateDescriptionFromAttributes(attributes);
+      return generated;
+    },
+    []
+  );
+
   const initialData = useMemo((): AdFormValues => {
     if (!ad) {
       return normalizeAdFormValues();
@@ -929,6 +957,8 @@ export default function OwnerAdEditPage() {
         }
         isSavingDraft={saveDraftMutation.isPending}
         onEnhanceDescription={handleEnhance}
+        onEnhanceTitle={handleEnhanceTitle}
+        onGenerateDescription={handleGenerateDescription}
         editDraftMode={!isDraft}
         onSaveEditDraft={async (fields) => {
           await saveEditDraftMutation.mutateAsync(fields);
@@ -1114,19 +1144,49 @@ export default function OwnerAdEditPage() {
               setContractForm((p) => ({ ...p, deposit_amount: e.target.value }))
             }
           />
-          <TextField
-            label="Conditions particulières"
-            size="small"
-            multiline
-            rows={3}
-            value={contractForm.special_conditions}
-            onChange={(e) =>
-              setContractForm((p) => ({
-                ...p,
-                special_conditions: e.target.value,
-              }))
-            }
-          />
+          <Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1 }}>
+              {[
+                'Interdiction de sous-location',
+                'Animaux domestiques autorisés',
+                'Entretien jardin à la charge du locataire',
+                'Préavis de 2 mois requis',
+                'Loyer payable avant le 5 du mois',
+                'État des lieux contradictoire obligatoire',
+              ].map((clause) => (
+                <Chip
+                  key={clause}
+                  label={clause}
+                  size="small"
+                  variant="outlined"
+                  clickable
+                  onClick={() =>
+                    setContractForm((p) => ({
+                      ...p,
+                      special_conditions: p.special_conditions
+                        ? `${p.special_conditions}\n${clause}`
+                        : clause,
+                    }))
+                  }
+                  sx={{ fontSize: '0.7rem' }}
+                />
+              ))}
+            </Box>
+            <TextField
+              label="Conditions particulières"
+              size="small"
+              multiline
+              rows={3}
+              fullWidth
+              value={contractForm.special_conditions}
+              onChange={(e) =>
+                setContractForm((p) => ({
+                  ...p,
+                  special_conditions: e.target.value,
+                }))
+              }
+            />
+          </Box>
           {contractForm.special_conditions.trim() && (
             <Button
               size="small"

@@ -1,9 +1,10 @@
+import { Button } from '@/components/ui/Button';
+import { TextField } from '@/components/ui/TextField';
+import { Typography } from '@/components/ui/Typography';
 import AiIcon from '@mui/icons-material/AutoAwesome';
 import HomeIcon from '@mui/icons-material/Home';
-import { Box, CircularProgress, Paper } from '@mui/material';
-import { Button } from '@/components/ui/Button';
-import { Typography } from '@/components/ui/Typography';
-import { TextField } from '@/components/ui/TextField';
+import UndoIcon from '@mui/icons-material/Undo';
+import { Box, CircularProgress, Paper, Tooltip } from '@mui/material';
 import type { AdFormValues, UpdateFn } from './types';
 import { sectionSx, sectionTitleSx } from './types';
 
@@ -12,7 +13,15 @@ interface AdFormBasicInfoProps {
   update: UpdateFn;
   errors: Record<string, string>;
   enhancing: boolean;
+  enhancingTitle: boolean;
+  generating: boolean;
+  originalDescription: string | null;
+  originalTitle: string | null;
   onEnhance: (() => Promise<void>) | null;
+  onGenerate: (() => Promise<void>) | null;
+  onEnhanceTitle: (() => Promise<void>) | null;
+  onRestoreDescription: (() => void) | null;
+  onRestoreTitle: (() => void) | null;
 }
 
 export default function AdFormBasicInfo({
@@ -20,8 +29,18 @@ export default function AdFormBasicInfo({
   update,
   errors,
   enhancing,
+  enhancingTitle,
+  generating,
+  originalDescription,
+  originalTitle,
   onEnhance,
+  onGenerate,
+  onEnhanceTitle,
+  onRestoreDescription,
+  onRestoreTitle,
 }: AdFormBasicInfoProps) {
+  const descriptionIsEmpty = !values.description.trim();
+
   return (
     <Paper elevation={0} sx={sectionSx}>
       <Typography
@@ -37,16 +56,57 @@ export default function AdFormBasicInfo({
         <HomeIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         Informations principales
       </Typography>
-      <TextField
-        fullWidth
-        label="Titre de l'annonce"
-        placeholder="Ex: Appartement 3 pièces vue mer — Bonanjo"
-        value={values.title}
-        onChange={(e) => update('title', e.target.value)}
-        error={!!errors.title}
-        helperText={errors.title}
-        sx={{ mb: 2 }}
-      />
+
+      {/* ── Titre ── */}
+      <Box sx={{ position: 'relative', mb: 2 }}>
+        <TextField
+          fullWidth
+          label="Titre de l'annonce"
+          placeholder="Ex: Appartement 3 pièces vue mer — Bonanjo"
+          value={values.title}
+          onChange={(e) => update('title', e.target.value)}
+          error={!!errors.title}
+          helperText={errors.title}
+        />
+        <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
+          {onEnhanceTitle && values.title.trim() && (
+            <Button
+              size="small"
+              variant="text"
+              color="primary"
+              startIcon={
+                enhancingTitle ? <CircularProgress size={14} /> : <AiIcon />
+              }
+              onClick={onEnhanceTitle}
+              disabled={enhancingTitle}
+              sx={{ textTransform: 'none', fontSize: '0.75rem', px: 1 }}
+            >
+              Améliorer le titre
+            </Button>
+          )}
+          {onRestoreTitle && originalTitle !== null && (
+            <Tooltip title="Revenir au titre original">
+              <Button
+                size="small"
+                variant="text"
+                color="inherit"
+                startIcon={<UndoIcon sx={{ fontSize: 14 }} />}
+                onClick={onRestoreTitle}
+                sx={{
+                  textTransform: 'none',
+                  fontSize: '0.75rem',
+                  px: 1,
+                  color: 'text.secondary',
+                }}
+              >
+                Annuler
+              </Button>
+            </Tooltip>
+          )}
+        </Box>
+      </Box>
+
+      {/* ── Description ── */}
       <Box sx={{ position: 'relative' }}>
         <TextField
           fullWidth
@@ -59,19 +119,57 @@ export default function AdFormBasicInfo({
           error={!!errors.description}
           helperText={errors.description}
         />
-        {onEnhance && (
-          <Button
-            size="small"
-            variant="text"
-            color="primary"
-            startIcon={enhancing ? <CircularProgress size={16} /> : <AiIcon />}
-            onClick={onEnhance}
-            disabled={!values.description.trim() || enhancing}
-            sx={{ mt: 1 }}
-          >
-            Améliorer avec l&apos;IA
-          </Button>
-        )}
+        <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
+          {onEnhance && !descriptionIsEmpty && (
+            <Button
+              size="small"
+              variant="text"
+              color="primary"
+              startIcon={
+                enhancing ? <CircularProgress size={14} /> : <AiIcon />
+              }
+              onClick={onEnhance}
+              disabled={enhancing}
+              sx={{ textTransform: 'none', fontSize: '0.75rem', px: 1 }}
+            >
+              Améliorer avec l&apos;IA
+            </Button>
+          )}
+          {onGenerate && descriptionIsEmpty && (
+            <Button
+              size="small"
+              variant="text"
+              color="primary"
+              startIcon={
+                generating ? <CircularProgress size={14} /> : <AiIcon />
+              }
+              onClick={onGenerate}
+              disabled={generating}
+              sx={{ textTransform: 'none', fontSize: '0.75rem', px: 1 }}
+            >
+              Générer une description ✨
+            </Button>
+          )}
+          {onRestoreDescription && originalDescription !== null && (
+            <Tooltip title="Revenir à la description originale">
+              <Button
+                size="small"
+                variant="text"
+                color="inherit"
+                startIcon={<UndoIcon sx={{ fontSize: 14 }} />}
+                onClick={onRestoreDescription}
+                sx={{
+                  textTransform: 'none',
+                  fontSize: '0.75rem',
+                  px: 1,
+                  color: 'text.secondary',
+                }}
+              >
+                Annuler
+              </Button>
+            </Tooltip>
+          )}
+        </Box>
       </Box>
     </Paper>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import FadeIn from '@/components/ui/FadeIn';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import {
   ownerService,
@@ -40,7 +41,6 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import FadeIn from '@/components/ui/FadeIn';
 
 function formatDate(s: string) {
   try {
@@ -613,16 +613,49 @@ export default function OwnerLeaseContractsPage() {
               setEditForm((f) => ({ ...f, unit_reference: e.target.value }))
             }
           />
-          <TextField
-            label="Conditions particulières"
-            size="small"
-            multiline
-            rows={3}
-            value={editForm.special_conditions}
-            onChange={(e) =>
-              setEditForm((f) => ({ ...f, special_conditions: e.target.value }))
-            }
-          />
+          <Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1 }}>
+              {[
+                'Interdiction de sous-location',
+                'Animaux domestiques autorisés',
+                'Entretien jardin à la charge du locataire',
+                'Préavis de 2 mois requis',
+                'Loyer payable avant le 5 du mois',
+                'État des lieux contradictoire obligatoire',
+              ].map((clause) => (
+                <Chip
+                  key={clause}
+                  label={clause}
+                  size="small"
+                  variant="outlined"
+                  clickable
+                  onClick={() =>
+                    setEditForm((f) => ({
+                      ...f,
+                      special_conditions: f.special_conditions
+                        ? `${f.special_conditions}\n${clause}`
+                        : clause,
+                    }))
+                  }
+                  sx={{ fontSize: '0.7rem' }}
+                />
+              ))}
+            </Box>
+            <TextField
+              label="Conditions particulières"
+              size="small"
+              multiline
+              rows={3}
+              fullWidth
+              value={editForm.special_conditions}
+              onChange={(e) =>
+                setEditForm((f) => ({
+                  ...f,
+                  special_conditions: e.target.value,
+                }))
+              }
+            />
+          </Box>
           {editForm.special_conditions.trim() && (
             <Button
               size="small"
