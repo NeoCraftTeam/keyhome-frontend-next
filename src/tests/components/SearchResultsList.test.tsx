@@ -134,6 +134,11 @@ const defaultProps = {
   setCityInput: vi.fn(),
   setSelectedCity: vi.fn(),
   clearFilters: vi.fn(),
+  facets: undefined,
+  selectedType: null,
+  setSelectedType: vi.fn(),
+  priceRange: [0, 5000000] as [number, number],
+  setPriceRange: vi.fn(),
 };
 
 function renderList(ads: Ad[], overrides = {}) {

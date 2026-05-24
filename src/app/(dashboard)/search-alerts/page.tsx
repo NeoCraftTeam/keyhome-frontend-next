@@ -34,6 +34,8 @@ import {
   IconButton,
   Switch,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
   useMediaQuery,
@@ -41,7 +43,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 const ALERTS_QK = ['search-alerts'] as const;
 const MAX_ALERTS = 10;
@@ -77,6 +79,8 @@ export default function SearchAlertsPage() {
   const [editingAlert, setEditingAlert] = useState<SearchAlert | null>(null);
   const [form, setForm] = useState<SearchAlertPayload>({});
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [previewCount, setPreviewCount] = useState<number | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const { data: alertsData, isLoading } = useQuery({
     queryKey: [...ALERTS_QK],
@@ -129,14 +133,65 @@ export default function SearchAlertsPage() {
   const resetForm = useCallback(() => {
     setEditingAlert(null);
     setForm({});
+    setPreviewCount(null);
   }, []);
+
+  useEffect(() => {
+    if (!editOpen) return;
+    const timer = setTimeout(async () => {
+      if (
+        !form.city_id &&
+        !form.city_name &&
+        !form.type_id &&
+        !form.price_min &&
+        !form.price_max &&
+        !form.bedrooms_min
+      ) {
+        setPreviewCount(null);
+        return;
+      }
+      setPreviewLoading(true);
+      try {
+        const res = await searchAlertsService.previewCount({
+          city_id: form.city_id,
+          city_name: form.city_name,
+          type_id: form.type_id,
+          quarter_id: form.quarter_id,
+          price_min: form.price_min,
+          price_max: form.price_max,
+          bedrooms_min: form.bedrooms_min,
+          surface_min: form.surface_min,
+          has_parking: form.has_parking,
+        });
+        setPreviewCount(res.count);
+      } catch {
+        setPreviewCount(null);
+      } finally {
+        setPreviewLoading(false);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [
+    editOpen,
+    form.city_id,
+    form.city_name,
+    form.type_id,
+    form.quarter_id,
+    form.price_min,
+    form.price_max,
+    form.bedrooms_min,
+    form.surface_min,
+    form.has_parking,
+  ]);
 
   const handleOpenCreate = () => {
     setEditingAlert(null);
     setForm({
       notify_email: true,
       notify_push: true,
+      frequency: 'immediate',
     });
+    setPreviewCount(null);
     setEditOpen(true);
   };
 
@@ -153,7 +208,9 @@ export default function SearchAlertsPage() {
       query: alert.query,
       notify_email: alert.notify_email ?? true,
       notify_push: alert.notify_push ?? true,
+      frequency: alert.frequency ?? 'immediate',
     });
+    setPreviewCount(null);
     setEditOpen(true);
   };
 
@@ -567,6 +624,78 @@ export default function SearchAlertsPage() {
               size="small"
               fullWidth
             />
+            {/* Frequency selector */}
+            <Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mb: 0.75 }}
+              >
+                Fréquence de notification
+              </Typography>
+              <ToggleButtonGroup
+                value={form.frequency ?? 'immediate'}
+                exclusive
+                onChange={(_, v) => {
+                  if (v)
+                    setForm((f) => ({
+                      ...f,
+                      frequency: v as 'immediate' | 'daily' | 'weekly',
+                    }));
+                }}
+                size="small"
+                fullWidth
+                sx={{
+                  '& .MuiToggleButton-root': {
+                    flex: 1,
+                    textTransform: 'none',
+                    fontSize: 12,
+                    py: 0.75,
+                  },
+                }}
+              >
+                <ToggleButton value="immediate">Immédiat</ToggleButton>
+                <ToggleButton value="daily">Quotidien</ToggleButton>
+                <ToggleButton value="weekly">Hebdo</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+
+            {/* Match count preview */}
+            {(previewCount !== null || previewLoading) && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  p: 1.25,
+                  borderRadius: 2,
+                  bgcolor: (t) =>
+                    t.palette.mode === 'dark'
+                      ? 'rgba(246,71,95,0.1)'
+                      : '#fff5f6',
+                  border: '1px solid',
+                  borderColor: 'primary.light',
+                }}
+              >
+                {previewLoading ? (
+                  <CircularProgress size={14} color="primary" />
+                ) : (
+                  <SearchIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                )}
+                <Typography
+                  variant="caption"
+                  color="text.primary"
+                  fontWeight={600}
+                >
+                  {previewLoading
+                    ? 'Calcul en cours…'
+                    : previewCount === 0
+                      ? "Aucune annonce ne correspond actuellement — vous serez notifié dès qu'une correspond."
+                      : `${(previewCount ?? 0).toLocaleString('fr-FR')} annonce${(previewCount ?? 0) > 1 ? 's' : ''} correspond${(previewCount ?? 0) > 1 ? 'ent' : ''} déjà`}
+                </Typography>
+              </Box>
+            )}
+
             <FormGroup sx={{ gap: 0.25 }}>
               <FormControlLabel
                 control={

@@ -228,9 +228,10 @@ function AdCard({ ad, showDistance }: AdCardProps) {
           display: 'block',
           // Override framer-motion's internal `touch-action: none` that the
           // press/whileTap gesture handler sets automatically. Without this,
-          // Android Chrome cannot detect the vertical pan gesture and the page
-          // becomes un-scrollable when the user starts a touch on a card.
-          touchAction: 'pan-y',
+          // Android Chrome cannot detect vertical/horizontal pan gestures and
+          // the page (or a horizontal scroll container) becomes un-scrollable
+          // when the user starts a touch on a card.
+          touchAction: 'pan-x pan-y',
         }}
         role="link"
         aria-label={ad.title}
@@ -845,7 +846,7 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                   }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  style={{ display: 'flex', touchAction: 'pan-y' }}
+                  style={{ display: 'flex', touchAction: 'pan-x pan-y' }}
                 >
                   <Box
                     sx={{

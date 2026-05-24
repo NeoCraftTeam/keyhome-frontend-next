@@ -5,6 +5,7 @@ import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { gradient } from '@/theme/tokens';
 import type { City } from '@/types';
 import CloseIcon from '@mui/icons-material/Close';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ViewInArIcon from '@mui/icons-material/ViewInAr';
 import {
   Autocomplete,
@@ -131,7 +132,38 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
             : 'Aucune ville trouvée'
         }
         slotProps={citySlotProps}
-        renderOption={(props, option) => renderCityOption(props, option)}
+        renderOption={(props, option) => {
+          const { key, ...restProps } = props as typeof props & {
+            key?: React.Key;
+          };
+          const cityFacet = facets?.cities?.find(
+            (c) => c.name.toLowerCase() === option.name.toLowerCase()
+          );
+          return (
+            <li key={key ?? option.id} {...restProps}>
+              <LocationOnIcon
+                sx={{
+                  fontSize: 15,
+                  color: 'text.disabled',
+                  mr: 0.75,
+                  flexShrink: 0,
+                }}
+              />
+              <span style={{ flex: 1 }}>{option.name}</span>
+              {cityFacet && (
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--mui-palette-text-secondary)',
+                    marginLeft: 8,
+                  }}
+                >
+                  {cityFacet.count}
+                </span>
+              )}
+            </li>
+          );
+        }}
         renderInput={(params) => (
           <TextField
             {...params}

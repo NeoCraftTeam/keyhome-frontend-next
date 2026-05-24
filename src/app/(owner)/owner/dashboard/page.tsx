@@ -1,9 +1,11 @@
 'use client';
 
 import DashboardHeroStatCard from '@/components/owner/dashboard/DashboardHeroStatCard';
+import MarketPriceWidget from '@/components/owner/dashboard/MarketPriceWidget';
 import OwnerTopAdsTable from '@/components/owner/dashboard/OwnerTopAdsTable';
 import OwnerViewsFavoritesAreaChart from '@/components/owner/dashboard/OwnerViewsFavoritesAreaChart';
 import ProfileCompletionCard from '@/components/owner/dashboard/ProfileCompletionCard';
+import RankEstimateWidget from '@/components/owner/dashboard/RankEstimateWidget';
 import AppTour from '@/components/ui/AppTour';
 import EmptyState from '@/components/ui/EmptyState';
 import FadeIn from '@/components/ui/FadeIn';
@@ -964,6 +966,36 @@ export default function OwnerDashboardPage() {
                 />
               </Box>
             )}
+
+            {/* Market price widget + Rank estimate — shown for first recent ad */}
+            {(() => {
+              const topAd = recentAds.find(
+                (a) =>
+                  a.price && a.quarter?.city_id && a.type?.id && a.surface_area
+              );
+              if (!topAd) return null;
+              return (
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gap: 2,
+                  }}
+                >
+                  <MarketPriceWidget
+                    adId={topAd.id}
+                    adTitle={topAd.title}
+                    adPrice={topAd.price ?? 0}
+                    cityId={topAd.quarter?.city_id ?? ''}
+                    typeId={topAd.type?.id ?? ''}
+                    surface={topAd.surface_area ?? 0}
+                    bedrooms={topAd.bedrooms ?? undefined}
+                  />
+                  <RankEstimateWidget adId={topAd.id} adTitle={topAd.title} />
+                </Box>
+              );
+            })()}
 
             {/* ─── Boost actif ─── */}
             <Card

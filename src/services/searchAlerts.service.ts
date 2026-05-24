@@ -18,6 +18,8 @@ export interface SearchAlertPayload {
   notify_email?: boolean;
   /** Web Push + FCM mobile when token registered. */
   notify_push?: boolean;
+  /** How often to receive notifications: immediate (each match), daily digest, weekly digest. */
+  frequency?: 'immediate' | 'daily' | 'weekly';
 }
 
 export interface SearchAlert extends SearchAlertPayload {
@@ -41,4 +43,20 @@ export const searchAlertsService = {
     api.put(`/search-alerts/${id}`, payload).then((r) => r.data),
 
   remove: (id: string): Promise<void> => api.delete(`/search-alerts/${id}`),
+
+  previewCount: (
+    criteria: Pick<
+      SearchAlertPayload,
+      | 'city_id'
+      | 'city_name'
+      | 'type_id'
+      | 'quarter_id'
+      | 'price_min'
+      | 'price_max'
+      | 'bedrooms_min'
+      | 'surface_min'
+      | 'has_parking'
+    >
+  ): Promise<{ count: number }> =>
+    api.post('/search-alerts/preview-count', criteria).then((r) => r.data),
 };

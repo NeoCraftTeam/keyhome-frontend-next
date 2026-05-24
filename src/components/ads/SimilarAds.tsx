@@ -1,12 +1,12 @@
 'use client';
 
 import AdCard from '@/components/ads/AdCard';
-import { recommendationsService } from '@/services/users.service';
+import { adsService } from '@/services/ads.service';
 import { Ad } from '@/types';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
 import { Box, Button, Grid, Skeleton, Typography } from '@mui/material';
-import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
 
 interface Props {
   currentAdId: string;
@@ -26,14 +26,12 @@ export default function SimilarAds({
 }: Props) {
   const { data, isLoading } = useQuery({
     queryKey: ['similar-ads', currentAdId],
-    queryFn: () => recommendationsService.list(),
+    queryFn: () => adsService.getSimilar(currentAdId),
     staleTime: 5 * 60 * 1000,
+    enabled: !!currentAdId,
   });
 
-  const limit = variant === 'sidebar' ? 8 : 8;
-  const ads: Ad[] = (data?.data ?? [])
-    .filter((ad: Ad) => ad.id !== currentAdId)
-    .slice(0, limit);
+  const ads: Ad[] = (data?.data ?? []).slice(0, 6);
 
   if (!isLoading && ads.length === 0) {
     return null;

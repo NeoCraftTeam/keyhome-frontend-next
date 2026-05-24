@@ -448,4 +448,25 @@ export const adsService = {
     });
     return data;
   },
+
+  async getSimilar(adId: string): Promise<{ data: Ad[]; source: string }> {
+    const { data } = await api.get(`/ads/${adId}/similar`);
+    return data;
+  },
+
+  async getRankEstimate(adId: string): Promise<{
+    rank: number | null;
+    total_in_market: number;
+    relevance_score: number;
+    percentile: number | null;
+    message?: string;
+    segment: {
+      type: string | null;
+      transaction_type: string | null;
+      city: string | null;
+    };
+  }> {
+    const { data } = await api.get(`/ads/${adId}/rank-estimate`);
+    return data;
+  },
 };

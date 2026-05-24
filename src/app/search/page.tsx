@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import SearchFiltersDrawerContent from './SearchFiltersDrawerContent';
 import SearchResultsList from './SearchResultsList';
 
+import type { ParsedSearchParams } from '@/components/search/ImageSearchButton';
 import { useSearchFilters } from '@/hooks/useSearchFilters';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useSearchResults } from '@/hooks/useSearchResults';
@@ -43,7 +44,7 @@ import { MotionConfig } from 'framer-motion';
 import type * as MapboxGL from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useRouter } from 'next/navigation';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Mapbox GL is lazy-loaded the first time the user actually needs the map.
@@ -99,6 +100,11 @@ async function loadMapbox(): Promise<MapboxLib> {
 
 const IsochroneFilter = dynamic(
   () => import('@/components/ads/IsochroneFilter'),
+  { ssr: false }
+);
+
+const ImageSearchButton = dynamic(
+  () => import('@/components/search/ImageSearchButton'),
   { ssr: false }
 );
 
@@ -216,6 +222,54 @@ function SearchContent() {
     isError,
     refetch,
   } = useSearchResults({ buildParams, isMobile, mobileViewMode });
+
+  /* ── Image search ──────────────────────────────────────────── */
+  const [imageSearchError, setImageSearchError] = useState<string | null>(null);
+
+  const handleImageSearchResult = useCallback(
+    (parsed: ParsedSearchParams) => {
+      setImageSearchError(null);
+      if (parsed.q) {
+        setQuery(parsed.q);
+      }
+      if (parsed.city_name) {
+        setCityInput(parsed.city_name);
+      }
+      if (parsed.bedrooms) {
+        setBedrooms(parsed.bedrooms);
+      }
+      if (parsed.price_max || parsed.price_min) {
+        setPriceRange([
+          parsed.price_min ?? priceRange[0],
+          parsed.price_max ?? priceRange[1],
+        ]);
+      }
+      if (parsed.transaction_type) {
+        setTransactionType(parsed.transaction_type as 'location' | 'vente');
+      }
+      if (parsed.type_id || parsed.type_name) {
+        const match = adTypes?.find(
+          (t) =>
+            (parsed.type_id && String(t.id) === String(parsed.type_id)) ||
+            (parsed.type_name &&
+              t.name.toLowerCase() === parsed.type_name.toLowerCase())
+        );
+        if (match) setSelectedType(match);
+      }
+      setPage(1);
+    },
+    [
+      adTypes,
+      priceRange,
+      setBedrooms,
+      setCityInput,
+      setPage,
+      setPriceRange,
+      setQuery,
+      setSelectedType,
+      setTransactionType,
+    ]
+  );
 
   const mapStyleUrl =
     mapStyle === 'satellite'
@@ -839,6 +893,21 @@ function SearchContent() {
                         {isCitiesLoading ? (
                           <CircularProgress color="inherit" size={16} />
                         ) : null}
+                        <ImageSearchButton
+                          onResult={handleImageSearchResult}
+                          onError={(msg) => setImageSearchError(msg)}
+                          size={28}
+                        />
+                        {imageSearchError && (
+                          <Tooltip
+                            title={imageSearchError}
+                            placement="bottom"
+                            open
+                            arrow
+                          >
+                            <span />
+                          </Tooltip>
+                        )}
                         {(selectedCity || cityInput) && (
                           <IconButton
                             size="small"
@@ -1242,6 +1311,11 @@ function SearchContent() {
                 setCityInput={setCityInput}
                 setSelectedCity={setSelectedCity}
                 clearFilters={clearFilters}
+                facets={facets}
+                selectedType={selectedType}
+                setSelectedType={setSelectedType}
+                priceRange={priceRange}
+                setPriceRange={setPriceRange}
               />
             </Box>
           )}

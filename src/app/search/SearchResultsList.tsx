@@ -4,12 +4,13 @@ import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import SearchAlertButton from '@/components/ads/SearchAlertButton';
 import { gradient } from '@/theme/tokens';
-import type { Ad, City } from '@/types';
+import type { Ad, AdType, City, FacetsResponse } from '@/types';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
 import {
   Box,
   Button,
+  Chip,
   Grid,
   Menu,
   MenuItem,
@@ -61,6 +62,11 @@ interface Props {
   setCityInput: (v: string) => void;
   setSelectedCity: (v: City | null) => void;
   clearFilters: () => void;
+  facets?: FacetsResponse;
+  selectedType: AdType | null;
+  setSelectedType: (v: AdType | null) => void;
+  priceRange: [number, number];
+  setPriceRange: (v: [number, number]) => void;
 }
 
 /**
@@ -92,6 +98,11 @@ const SearchResultsList = memo(function SearchResultsList({
   setCityInput,
   setSelectedCity,
   clearFilters,
+  facets,
+  selectedType,
+  setSelectedType,
+  priceRange,
+  setPriceRange,
 }: Props) {
   const router = useRouter();
 
@@ -241,11 +252,93 @@ const SearchResultsList = memo(function SearchResultsList({
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ mb: 3, maxWidth: 340, mx: 'auto', lineHeight: 1.6 }}
+            sx={{ mb: 2, maxWidth: 340, mx: 'auto', lineHeight: 1.6 }}
           >
             Créez une alerte et soyez notifié dès qu&apos;un bien est publié, ou
             élargissez votre recherche.
           </Typography>
+
+          {/* Smart suggestions */}
+          {(facets?.cities?.length ||
+            selectedType ||
+            priceRange[1] < 5000000) && (
+            <Box sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  display: 'block',
+                  mb: 1,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  fontWeight: 600,
+                }}
+              >
+                Suggestions
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                  justifyContent: 'center',
+                }}
+              >
+                {/* Suggest removing type filter */}
+                {selectedType && (
+                  <Chip
+                    size="small"
+                    label={`Tous types (pas seulement ${selectedType.name})`}
+                    onClick={() => {
+                      setSelectedType(null);
+                      setPage(1);
+                    }}
+                    variant="outlined"
+                    sx={{ borderRadius: 99, fontSize: 12 }}
+                  />
+                )}
+                {/* Suggest expanding budget by 20% */}
+                {priceRange[1] < 4000000 && (
+                  <Chip
+                    size="small"
+                    label={`Budget +20 % (${((priceRange[1] * 1.2) / 1000).toFixed(0)}k FCFA max)`}
+                    onClick={() => {
+                      setPriceRange([
+                        priceRange[0],
+                        Math.round(priceRange[1] * 1.2),
+                      ]);
+                      setPage(1);
+                    }}
+                    variant="outlined"
+                    sx={{ borderRadius: 99, fontSize: 12 }}
+                  />
+                )}
+                {/* Suggest other active cities from facets */}
+                {facets?.cities
+                  ?.filter((c) => c.name !== selectedCity?.name && c.count > 0)
+                  .slice(0, 3)
+                  .map((c) => (
+                    <Chip
+                      key={c.name}
+                      size="small"
+                      label={`${c.name} (${c.count})`}
+                      onClick={() => {
+                        setCityInput(c.name);
+                        setSelectedCity({
+                          id: '',
+                          name: c.name,
+                          slug: '',
+                        } as City);
+                        setPage(1);
+                      }}
+                      variant="outlined"
+                      sx={{ borderRadius: 99, fontSize: 12 }}
+                    />
+                  ))}
+              </Box>
+            </Box>
+          )}
+
           <Box
             sx={{
               display: 'flex',
