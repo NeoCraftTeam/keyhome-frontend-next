@@ -153,6 +153,20 @@ export const ownerLeaseService = {
     return data.enhanced;
   },
 
+  async summarizeLeaseContract(params: {
+    monthly_rent?: number;
+    deposit_amount?: number;
+    start_date?: string;
+    duration_months?: number;
+    special_conditions?: string;
+  }): Promise<string> {
+    const { data } = await api.post<{ summary: string }>(
+      '/my/lease-contracts/ai/summarize',
+      params
+    );
+    return data.summary;
+  },
+
   // ── E-Signature ──────────────────────────────────────────
 
   async getSignatureRequests(

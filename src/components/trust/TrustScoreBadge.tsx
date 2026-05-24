@@ -1,8 +1,8 @@
 'use client';
 
 import {
-  type TrustScoreTier,
   type TrustScorePublic,
+  type TrustScoreTier,
   TRUST_SCORE_TIERS,
 } from '@/types/trust-score';
 import ShieldIcon from '@mui/icons-material/VerifiedUser';
@@ -112,6 +112,17 @@ export default function TrustScoreBadge({
           <Typography
             variant="caption"
             sx={{ color: 'text.secondary', mt: 1, display: 'block' }}
+          >
+            {tierConfig.description}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.disabled',
+              mt: 0.5,
+              display: 'block',
+              fontSize: '0.65rem',
+            }}
           >
             Score de confiance KeyHome
           </Typography>

@@ -20,6 +20,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ContractIcon from '@mui/icons-material/Description';
 import CalendarIcon from '@mui/icons-material/EventAvailable';
 import OpenIcon from '@mui/icons-material/OpenInNew';
+import UndoIcon from '@mui/icons-material/Undo';
 import TourIcon from '@mui/icons-material/ViewInAr';
 import VisibleIcon from '@mui/icons-material/Visibility';
 import HiddenIcon from '@mui/icons-material/VisibilityOff';
@@ -62,6 +63,11 @@ export default function OwnerAdEditPage() {
   const [contractOpen, setContractOpen] = useState(false);
   const [contractPreviewOpen, setContractPreviewOpen] = useState(false);
   const [enhancingConditions, setEnhancingConditions] = useState(false);
+  const [originalConditions, setOriginalConditions] = useState<string | null>(
+    null
+  );
+  const [summarizingContract, setSummarizingContract] = useState(false);
+  const [contractSummary, setContractSummary] = useState<string | null>(null);
   const [contractForm, setContractForm] = useState({
     tenant_name: '',
     tenant_phone: '',
@@ -1187,47 +1193,116 @@ export default function OwnerAdEditPage() {
               }
             />
           </Box>
-          {contractForm.special_conditions.trim() && (
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
+            {contractForm.special_conditions.trim() && (
+              <Button
+                size="small"
+                startIcon={
+                  enhancingConditions ? (
+                    <CircularProgress size={14} />
+                  ) : (
+                    <AiIcon />
+                  )
+                }
+                onClick={async () => {
+                  const prev = contractForm.special_conditions;
+                  setEnhancingConditions(true);
+                  try {
+                    const enhanced = await ownerService.enhanceLeaseConditions(
+                      contractForm.special_conditions
+                    );
+                    setOriginalConditions(prev);
+                    setContractForm((p) => ({
+                      ...p,
+                      special_conditions: enhanced,
+                    }));
+                  } catch (err: unknown) {
+                    setSnackbar({
+                      message: getLaravelApiErrorMessage(
+                        err,
+                        "Impossible d'améliorer le texte avec l'IA."
+                      ),
+                      severity: 'error',
+                    });
+                  } finally {
+                    setEnhancingConditions(false);
+                  }
+                }}
+                disabled={enhancingConditions}
+                sx={{ textTransform: 'none', fontWeight: 600 }}
+              >
+                Améliorer avec l&apos;IA
+              </Button>
+            )}
+            {originalConditions !== null && (
+              <Button
+                size="small"
+                variant="text"
+                color="inherit"
+                startIcon={<UndoIcon sx={{ fontSize: 14 }} />}
+                onClick={() => {
+                  setContractForm((p) => ({
+                    ...p,
+                    special_conditions: originalConditions,
+                  }));
+                  setOriginalConditions(null);
+                }}
+                sx={{ textTransform: 'none', color: 'text.secondary' }}
+              >
+                Annuler
+              </Button>
+            )}
             <Button
               size="small"
+              variant="text"
               startIcon={
-                enhancingConditions ? (
-                  <CircularProgress size={16} />
+                summarizingContract ? (
+                  <CircularProgress size={14} />
                 ) : (
                   <AiIcon />
                 )
               }
               onClick={async () => {
-                setEnhancingConditions(true);
+                setSummarizingContract(true);
+                setContractSummary(null);
                 try {
-                  const enhanced = await ownerService.enhanceLeaseConditions(
-                    contractForm.special_conditions
-                  );
-                  setContractForm((p) => ({
-                    ...p,
-                    special_conditions: enhanced,
-                  }));
-                } catch (err: unknown) {
-                  setSnackbar({
-                    message: getLaravelApiErrorMessage(
-                      err,
-                      "Impossible d'améliorer le texte avec l'IA."
-                    ),
-                    severity: 'error',
+                  const s = await ownerService.summarizeLeaseContract({
+                    monthly_rent: contractForm.monthly_rent
+                      ? Number(contractForm.monthly_rent)
+                      : undefined,
+                    deposit_amount: contractForm.deposit_amount
+                      ? Number(contractForm.deposit_amount)
+                      : undefined,
+                    start_date: contractForm.lease_start || undefined,
+                    duration_months:
+                      contractForm.lease_duration_months || undefined,
+                    special_conditions:
+                      contractForm.special_conditions || undefined,
                   });
+                  setContractSummary(s);
                 } finally {
-                  setEnhancingConditions(false);
+                  setSummarizingContract(false);
                 }
               }}
-              disabled={enhancingConditions}
+              disabled={summarizingContract}
+              sx={{ textTransform: 'none' }}
+            >
+              Résumé locataire
+            </Button>
+          </Box>
+          {contractSummary && (
+            <Box
               sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-                alignSelf: 'flex-start',
+                p: 1.5,
+                borderRadius: 1.5,
+                bgcolor: 'action.hover',
+                fontSize: '0.78rem',
+                whiteSpace: 'pre-line',
+                lineHeight: 1.7,
               }}
             >
-              Améliorer avec l&apos;IA
-            </Button>
+              {contractSummary}
+            </Box>
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>

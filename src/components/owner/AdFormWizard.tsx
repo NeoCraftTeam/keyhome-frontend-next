@@ -3,6 +3,7 @@
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import { useServerAutoSave } from '@/hooks/useServerAutoSave';
+import { useStreamingEnhance } from '@/hooks/useStreamingEnhance';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { compressAdPhotos } from '@/lib/image-compression';
 import { adsService } from '@/services/ads.service';
@@ -605,22 +606,16 @@ function AdFormWizard({
     setPhotoLightboxOpen(true);
   };
 
-  /* ── AI enhance ── */
+  /* ── AI enhance (streaming) ── */
+  const { isStreaming, streamedText, startStream } = useStreamingEnhance();
+
   const handleEnhance = async () => {
-    if (isAdFormTextEmpty(values.description) || !onEnhanceDescription) return;
+    if (isAdFormTextEmpty(values.description)) return;
     const prev = values.description;
-    setEnhancing(true);
-    try {
-      const enhanced = await onEnhanceDescription(values.description);
-      setOriginalDescription(prev);
-      update('description', enhanced);
-    } catch {
-      setEnhanceError(
-        "Impossible d'améliorer la description. Vérifiez votre connexion et réessayez."
-      );
-    } finally {
-      setEnhancing(false);
-    }
+    setOriginalDescription(prev);
+    await startStream(values.description, (full) => {
+      if (full) update('description', full);
+    });
   };
 
   const handleEnhanceTitle = async () => {
@@ -1074,12 +1069,14 @@ function AdFormWizard({
                     values={values}
                     update={update}
                     errors={errors}
-                    enhancing={enhancing}
+                    enhancing={enhancing || isStreaming}
                     enhancingTitle={enhancingTitle}
                     generating={generating}
+                    isStreaming={isStreaming}
+                    streamedText={streamedText}
                     originalDescription={originalDescription}
                     originalTitle={originalTitle}
-                    onEnhance={onEnhanceDescription ? handleEnhance : null}
+                    onEnhance={handleEnhance}
                     onGenerate={onGenerateDescription ? handleGenerate : null}
                     onEnhanceTitle={onEnhanceTitle ? handleEnhanceTitle : null}
                     onRestoreDescription={

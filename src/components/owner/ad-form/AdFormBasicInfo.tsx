@@ -15,6 +15,8 @@ interface AdFormBasicInfoProps {
   enhancing: boolean;
   enhancingTitle: boolean;
   generating: boolean;
+  isStreaming?: boolean;
+  streamedText?: string;
   originalDescription: string | null;
   originalTitle: string | null;
   onEnhance: (() => Promise<void>) | null;
@@ -31,6 +33,8 @@ export default function AdFormBasicInfo({
   enhancing,
   enhancingTitle,
   generating,
+  isStreaming = false,
+  streamedText = '',
   originalDescription,
   originalTitle,
   onEnhance,
@@ -114,10 +118,28 @@ export default function AdFormBasicInfo({
           multiline
           rows={4}
           placeholder="Décrivez votre bien en détail : état, environnement, commodités à proximité…"
-          value={values.description}
-          onChange={(e) => update('description', e.target.value)}
+          value={isStreaming ? streamedText : values.description}
+          onChange={(e) => {
+            if (!isStreaming) update('description', e.target.value);
+          }}
           error={!!errors.description}
           helperText={errors.description}
+          slotProps={{
+            input: {
+              readOnly: isStreaming,
+              sx: isStreaming
+                ? {
+                    background:
+                      'linear-gradient(90deg, rgba(246,71,95,0.04) 0%, transparent 100%)',
+                    animation: 'khPulse 1.5s ease-in-out infinite',
+                    '@keyframes khPulse': {
+                      '0%,100%': { opacity: 1 },
+                      '50%': { opacity: 0.7 },
+                    },
+                  }
+                : undefined,
+            },
+          }}
         />
         <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
           {onEnhance && !descriptionIsEmpty && (

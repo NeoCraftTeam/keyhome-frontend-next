@@ -14,6 +14,7 @@ import {
   Draw as DrawIcon,
   Edit as EditIcon,
   ExpandMore as ExpandMoreIcon,
+  Undo as UndoIcon,
   Visibility as ViewIcon,
 } from '@mui/icons-material';
 import {
@@ -73,6 +74,11 @@ export default function OwnerLeaseContractsPage() {
     severity: 'success' | 'error';
   } | null>(null);
   const [enhancingConditions, setEnhancingConditions] = useState(false);
+  const [summarizingContract, setSummarizingContract] = useState(false);
+  const [contractSummary, setContractSummary] = useState<string | null>(null);
+  const [originalConditions, setOriginalConditions] = useState<string | null>(
+    null
+  );
   const [signatureContract, setSignatureContract] =
     useState<LeaseContract | null>(null);
   const [signatureForm, setSignatureForm] = useState({
@@ -656,36 +662,104 @@ export default function OwnerLeaseContractsPage() {
               }
             />
           </Box>
-          {editForm.special_conditions.trim() && (
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {editForm.special_conditions.trim() && (
+              <Button
+                size="small"
+                startIcon={
+                  enhancingConditions ? (
+                    <CircularProgress size={14} />
+                  ) : (
+                    <AiIcon />
+                  )
+                }
+                onClick={async () => {
+                  const prev = editForm.special_conditions;
+                  setEnhancingConditions(true);
+                  try {
+                    const enhanced = await ownerService.enhanceLeaseConditions(
+                      editForm.special_conditions
+                    );
+                    setOriginalConditions(prev);
+                    setEditForm((f) => ({
+                      ...f,
+                      special_conditions: enhanced,
+                    }));
+                  } finally {
+                    setEnhancingConditions(false);
+                  }
+                }}
+                disabled={enhancingConditions}
+                sx={{ textTransform: 'none', fontWeight: 600 }}
+              >
+                Améliorer avec l&apos;IA
+              </Button>
+            )}
+            {originalConditions !== null && (
+              <Button
+                size="small"
+                variant="text"
+                color="inherit"
+                startIcon={<UndoIcon sx={{ fontSize: 14 }} />}
+                onClick={() => {
+                  setEditForm((f) => ({
+                    ...f,
+                    special_conditions: originalConditions,
+                  }));
+                  setOriginalConditions(null);
+                }}
+                sx={{ textTransform: 'none', color: 'text.secondary' }}
+              >
+                Annuler
+              </Button>
+            )}
             <Button
               size="small"
+              variant="text"
               startIcon={
-                enhancingConditions ? (
-                  <CircularProgress size={16} />
+                summarizingContract ? (
+                  <CircularProgress size={14} />
                 ) : (
                   <AiIcon />
                 )
               }
               onClick={async () => {
-                setEnhancingConditions(true);
+                setSummarizingContract(true);
+                setContractSummary(null);
                 try {
-                  const enhanced = await ownerService.enhanceLeaseConditions(
-                    editForm.special_conditions
-                  );
-                  setEditForm((f) => ({ ...f, special_conditions: enhanced }));
+                  const s = await ownerService.summarizeLeaseContract({
+                    monthly_rent: editContract?.monthly_rent ?? undefined,
+                    deposit_amount: editContract?.deposit_amount ?? undefined,
+                    start_date: editContract?.lease_start ?? undefined,
+                    duration_months:
+                      editContract?.lease_duration_months ?? undefined,
+                    special_conditions:
+                      editForm.special_conditions || undefined,
+                  });
+                  setContractSummary(s);
                 } finally {
-                  setEnhancingConditions(false);
+                  setSummarizingContract(false);
                 }
               }}
-              disabled={enhancingConditions}
+              disabled={summarizingContract}
+              sx={{ textTransform: 'none' }}
+            >
+              Résumé locataire
+            </Button>
+          </Box>
+          {contractSummary && (
+            <Box
               sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-                alignSelf: 'flex-start',
+                p: 1.5,
+                borderRadius: 1.5,
+                bgcolor: 'action.hover',
+                fontSize: '0.78rem',
+                whiteSpace: 'pre-line',
+                lineHeight: 1.7,
               }}
             >
-              Améliorer avec l&apos;IA
-            </Button>
+              {contractSummary}
+            </Box>
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>

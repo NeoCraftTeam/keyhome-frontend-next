@@ -40,11 +40,40 @@ export type TrustScoreTier =
 
 export const TRUST_SCORE_TIERS: Record<
   TrustScoreTier,
-  { label: string; color: string; minScore: number }
+  { label: string; color: string; minScore: number; description: string }
 > = {
-  non_verifie: { label: 'Non vérifié', color: '#9CA3AF', minScore: 0 },
-  bronze: { label: 'Bronze', color: '#D97706', minScore: 20 },
-  argent: { label: 'Argent', color: '#64748B', minScore: 40 },
-  or: { label: 'Or', color: '#EAB308', minScore: 60 },
-  platine: { label: 'Platine', color: '#0D9488', minScore: 80 },
+  non_verifie: {
+    label: 'Non vérifié',
+    color: '#9CA3AF',
+    minScore: 0,
+    description: 'Profil sans vérification. Coordonnées non confirmées.',
+  },
+  bronze: {
+    label: 'Bronze',
+    color: '#D97706',
+    minScore: 20,
+    description:
+      'Profil basique vérifié. Email confirmé, quelques annonces actives.',
+  },
+  argent: {
+    label: 'Argent',
+    color: '#64748B',
+    minScore: 40,
+    description:
+      'Bailleur actif. Identité vérifiée, bonne réactivité aux demandes.',
+  },
+  or: {
+    label: 'Or',
+    color: '#EAB308',
+    minScore: 60,
+    description:
+      'Bailleur fiable. Documents fournis, avis positifs, réponse rapide.',
+  },
+  platine: {
+    label: 'Platine',
+    color: '#0D9488',
+    minScore: 80,
+    description:
+      'Bailleur de confiance certifié KeyHome. Historique exemplaire.',
+  },
 };
