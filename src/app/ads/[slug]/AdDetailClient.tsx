@@ -1851,19 +1851,6 @@ function AdDetailContent() {
                           >
                             Proximité & Accessibilité
                           </Typography>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{
-                              display: 'block',
-                              maxWidth: 520,
-                              lineHeight: 1.45,
-                            }}
-                          >
-                            Distances déclarées par l&apos;annonceur à la
-                            publication — indicatives, non vérifiées par
-                            KeyHome.
-                          </Typography>
                         </Box>
                       </Box>
 
