@@ -2901,18 +2901,9 @@ function AdDetailContent() {
           setPaymentError('');
           setConfirmStep(false);
         }}
-        maxWidth={unlockState?.status === 'insufficient_points' ? 'lg' : 'xs'}
+        maxWidth="xs"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            p: 1,
-            maxWidth:
-              unlockState?.status === 'insufficient_points'
-                ? { xs: '92vw', md: 980 }
-                : undefined,
-          },
-        }}
+        PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
       >
         <Box sx={{ p: 3, textAlign: 'center' }}>
           {/* Gradient lock icon */}
@@ -3087,20 +3078,21 @@ function AdDetailContent() {
                       const requiredPoints = unlockState.required_points ?? 0;
                       const balancePoints = unlockState.current_balance ?? 0;
                       return (
-                        <Alert
-                          severity="warning"
-                          sx={{ mb: 2, borderRadius: 2 }}
+                        <Typography
+                          variant="body2"
+                          color="warning.main"
+                          sx={{ mb: 2, fontWeight: 500 }}
                         >
-                          Solde insuffisant — il vous faut{' '}
+                          Solde insuffisant —{' '}
                           <strong>
                             {requiredPoints} crédit
                             {requiredPoints > 1 ? 's' : ''}
                           </strong>{' '}
-                          pour débloquer cette annonce.
+                          requis
                           {balancePoints > 0
-                            ? ` Vous avez ${balancePoints} crédit${balancePoints > 1 ? 's' : ''}.`
-                            : ' Rechargez votre solde pour continuer.'}
-                        </Alert>
+                            ? `, vous en avez ${balancePoints}.`
+                            : '.'}
+                        </Typography>
                       );
                     })()}
 
