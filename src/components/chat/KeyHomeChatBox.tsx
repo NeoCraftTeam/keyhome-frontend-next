@@ -8,7 +8,7 @@ import {
   OWNER_THEME,
 } from '@/components/chat/chat-theme';
 import { useConversations } from '@/hooks/useConversations';
-import { fetchConversation } from '@/lib/chat-api';
+import { fetchConversation } from '@/lib/chat/chat-api';
 import { useOwnerTheme } from '@/providers/OwnerThemeProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
 import { CircularProgress, useMediaQuery, useTheme } from '@mui/material';

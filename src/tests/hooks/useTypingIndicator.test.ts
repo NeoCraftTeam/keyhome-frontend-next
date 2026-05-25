@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const whisperMock = vi.fn();
 
-vi.mock('@/lib/echo', () => ({
+vi.mock('@/lib/chat/echo', () => ({
   getEcho: () => ({
     private: () => ({ whisper: whisperMock }),
   }),

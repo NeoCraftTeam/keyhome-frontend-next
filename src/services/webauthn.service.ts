@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import { getAuthApiErrorMessage } from '@/lib/auth-api-errors';
+import { getAuthApiErrorMessage } from '@/lib/auth/auth-api-errors';
 import { User } from '@/types';
 
 // ── Types ────────────────────────────────────────────────────────────────────

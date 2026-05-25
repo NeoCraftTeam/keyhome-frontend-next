@@ -1,7 +1,7 @@
 'use client';
 
 /** OAuth icon row from `getConfiguredOAuthProviders()` (GitHub shown unless opted out via env). */
-import { getConfiguredOAuthProviders } from '@/lib/oauth-providers';
+import { getConfiguredOAuthProviders } from '@/lib/auth/oauth-providers';
 import { useAuth } from '@/providers/AuthProvider';
 import { OAuthProvider } from '@/services/auth.service';
 import { brand } from '@/theme/tokens';

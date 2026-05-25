@@ -1,6 +1,6 @@
 'use client';
 
-import { getEcho } from '@/lib/echo';
+import { getEcho } from '@/lib/chat/echo';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCallback, useEffect, useRef } from 'react';
 

@@ -6,7 +6,7 @@ import {
   getLaravelNestedApiError,
   getLaravelNestedApiErrorCode,
 } from '@/lib/api-errors';
-import { getEcho, isReverbRealtimeConfigured } from '@/lib/echo';
+import { getEcho, isReverbRealtimeConfigured } from '@/lib/chat/echo';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { viewingsService } from '@/services/viewings.service';

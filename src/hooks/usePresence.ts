@@ -1,6 +1,6 @@
 'use client';
 
-import { getEcho, isReverbRealtimeConfigured } from '@/lib/echo';
+import { getEcho, isReverbRealtimeConfigured } from '@/lib/chat/echo';
 import { useEffect, useState } from 'react';
 
 export type PresenceStatus = 'online' | 'offline' | 'unknown';

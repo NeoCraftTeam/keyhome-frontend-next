@@ -3,7 +3,7 @@
 import CreditPurchaseReturnView from '@/components/payment/return/CreditPurchaseReturnView';
 import OwnerFlowPaymentReturnView from '@/components/payment/return/OwnerFlowPaymentReturnView';
 import UnlockPaymentReturnView from '@/components/payment/return/UnlockPaymentReturnView';
-import { parsePaymentReturnParams } from '@/lib/payment-gateway-return';
+import { parsePaymentReturnParams } from '@/lib/payment/payment-gateway-return';
 import { brand } from '@/theme/tokens';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useRouter, useSearchParams } from 'next/navigation';

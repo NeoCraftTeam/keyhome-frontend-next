@@ -3,7 +3,7 @@
 import {
   writeStoredRegisterAccountRole,
   writeStoredRegisterLock,
-} from '@/lib/register-intent';
+} from '@/lib/auth/register-intent';
 import { brandAgent } from '@/theme/tokens';
 import { Box, CircularProgress } from '@mui/material';
 import { useRouter } from 'next/navigation';

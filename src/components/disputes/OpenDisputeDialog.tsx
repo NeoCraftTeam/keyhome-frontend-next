@@ -18,7 +18,7 @@
  * an ad detail page → skips steps 1 and 2).
  */
 
-import { fetchConversations } from '@/lib/chat-api';
+import { fetchConversations } from '@/lib/chat/chat-api';
 import { disputesService } from '@/services/disputes.service';
 import { unlockedAdsService } from '@/services/users.service';
 import type {

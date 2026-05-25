@@ -1,6 +1,6 @@
 'use client';
 
-import { getAuthToken } from '@/lib/auth-token';
+import { getAuthToken } from '@/lib/auth/auth-token';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { useEffect, useState } from 'react';

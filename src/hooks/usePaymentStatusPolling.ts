@@ -3,7 +3,7 @@
 import {
   isGatewayRedirectSuccess,
   shouldDeferVerifyFailure,
-} from '@/lib/payment-gateway-return';
+} from '@/lib/payment/payment-gateway-return';
 import { creditsService } from '@/services/credits.service';
 import { paymentsService } from '@/services/payments.service';
 import axios from 'axios';

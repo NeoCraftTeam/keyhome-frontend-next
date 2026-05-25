@@ -1,4 +1,4 @@
-import { buildStripeConfirmReturnUrl } from '@/lib/stripe-confirm-return';
+import { buildStripeConfirmReturnUrl } from '@/lib/payment/stripe-confirm-return';
 import { PaymentType } from '@/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 

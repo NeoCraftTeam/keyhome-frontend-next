@@ -1,7 +1,7 @@
 'use client';
 
-import { fetchConversations, fetchUnreadCount } from '@/lib/chat-api';
-import { selectConversationsForBackgroundWs } from '@/lib/chat-subscriptions';
+import { fetchConversations, fetchUnreadCount } from '@/lib/chat/chat-api';
+import { selectConversationsForBackgroundWs } from '@/lib/chat/chat-subscriptions';
 import { chatKeys } from '@/lib/query-keys';
 import { prefetchChatMessages } from './useChat';
 import type { Conversation, UnreadCountResponse } from '@/types/chat';

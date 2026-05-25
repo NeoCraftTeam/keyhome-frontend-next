@@ -9,7 +9,7 @@ import FadeIn from '@/components/ui/FadeIn';
 import { useLandingStats } from '@/hooks/useLandingStats';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { useTurnstileEmailSubmitReady } from '@/hooks/useTurnstileEmailSubmitReady';
-import { getAuthApiErrorMessage } from '@/lib/auth-api-errors';
+import { getAuthApiErrorMessage } from '@/lib/auth/auth-api-errors';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { useAuth } from '@/providers/AuthProvider';
 import { gradient } from '@/theme/tokens';

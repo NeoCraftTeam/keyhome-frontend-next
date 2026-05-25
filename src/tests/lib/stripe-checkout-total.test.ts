@@ -1,4 +1,4 @@
-import { readCheckoutSessionTotalAmount } from '@/lib/stripe-checkout-total';
+import { readCheckoutSessionTotalAmount } from '@/lib/payment/stripe-checkout-total';
 import { describe, expect, it } from 'vitest';
 
 describe('readCheckoutSessionTotalAmount', () => {

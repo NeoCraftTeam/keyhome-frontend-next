@@ -1,8 +1,8 @@
 'use client';
 
 import { COUNTRY_COOKIE } from '@/lib/currency';
-import { getStripePromise, isStripeModeMismatch } from '@/lib/stripe';
-import { readCheckoutSessionTotalAmount } from '@/lib/stripe-checkout-total';
+import { getStripePromise, isStripeModeMismatch } from '@/lib/payment/stripe';
+import { readCheckoutSessionTotalAmount } from '@/lib/payment/stripe-checkout-total';
 import { brand } from '@/theme/tokens';
 import ErrorIcon from '@mui/icons-material/Error';
 import {

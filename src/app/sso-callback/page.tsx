@@ -9,8 +9,8 @@ import {
   getOAuthSignInPath,
   getOAuthSignUpPath,
   isAgentRegistrationIntent,
-} from '@/lib/oauth-redirect';
-import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
+} from '@/lib/auth/oauth-redirect';
+import { OWNER_LOGO_SRC } from '@/lib/owner/owner-auth-assets';
 import { brandAgent } from '@/theme/tokens';
 import { useClerk, useAuth as useClerkAuth, useSignUp } from '@clerk/nextjs';
 import { Box, Typography } from '@mui/material';

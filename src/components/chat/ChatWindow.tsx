@@ -8,10 +8,13 @@ import { ChatHeader } from './ChatHeader';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { TypingIndicator } from './TypingIndicator';
-import { archiveConversation, unarchiveConversation } from '@/lib/chat-api';
+import {
+  archiveConversation,
+  unarchiveConversation,
+} from '@/lib/chat/chat-api';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { chatKeys } from '@/lib/query-keys';
-import { useEchoConnectionState } from '@/lib/echo';
+import { useEchoConnectionState } from '@/lib/chat/echo';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {

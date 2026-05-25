@@ -1,7 +1,7 @@
 'use client';
 
 import { isImplicitDialogDismissReason } from '@/lib/dialog-dismiss';
-import { getStripePromise } from '@/lib/stripe';
+import { getStripePromise } from '@/lib/payment/stripe';
 import { paymentsService } from '@/services/payments.service';
 import { brand } from '@/theme/tokens';
 import type { StripePaymentMethod } from '@/types';

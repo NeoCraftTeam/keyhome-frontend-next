@@ -1,7 +1,7 @@
 import {
   buildClerkSignUpPatch,
   clerkMissingPhoneOnly,
-} from '@/lib/clerk-signup-safe-update';
+} from '@/lib/auth/clerk-signup-safe-update';
 import { describe, expect, it } from 'vitest';
 
 describe('buildClerkSignUpPatch', () => {

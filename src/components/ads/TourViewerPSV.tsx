@@ -8,9 +8,9 @@ import {
   buildPanoDataFromAngles,
   inferPanoDataFromImageSize,
   type EquirectPanoDataRect,
-} from '@/lib/inferEquirectangularPanoData';
-import { buildPsvKeyboardActions } from '@/lib/psvKeyboardActions';
-import { attachPartialPanoPitchClamp } from '@/lib/psvPitchClampForPartialEquirect';
+} from '@/lib/tour/inferEquirectangularPanoData';
+import { buildPsvKeyboardActions } from '@/lib/tour/psvKeyboardActions';
+import { attachPartialPanoPitchClamp } from '@/lib/tour/psvPitchClampForPartialEquirect';
 import type { TourConfig } from '@/types';
 import type { VirtualTourNode } from '@photo-sphere-viewer/virtual-tour-plugin';
 import Close from '@mui/icons-material/Close';

@@ -9,7 +9,7 @@
  *  - Rollback on API failure
  */
 
-import { addReaction, removeReaction } from '@/lib/chat-api';
+import { addReaction, removeReaction } from '@/lib/chat/chat-api';
 import type { MessagesCache } from '@/hooks/chat/useChatMessages';
 import type { User } from '@/types/user';
 import { useCallback } from 'react';

@@ -6,7 +6,7 @@ import {
   type SubscriptionPlan,
   type CurrentSubscription,
 } from '@/services/subscriptions.service';
-import { rememberPaymentOriginPath } from '@/lib/payment-return';
+import { rememberPaymentOriginPath } from '@/lib/payment/payment-return';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import {
   Autorenew as AutorenewIcon,

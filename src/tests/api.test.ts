@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import axios from 'axios';
 
 // Mock auth-token before importing api so the interceptor uses our mock
-vi.mock('@/lib/auth-token', () => ({
+vi.mock('@/lib/auth/auth-token', () => ({
   getAuthToken: vi.fn(),
 }));
 
 import api, { ensureCsrfCookie, resetCsrfState } from '@/lib/api';
-import { getAuthToken } from '@/lib/auth-token';
+import { getAuthToken } from '@/lib/auth/auth-token';
 import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 const mockedGetAuthToken = vi.mocked(getAuthToken);

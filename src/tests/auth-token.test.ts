@@ -6,13 +6,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  */
 
 // Reset the module-level state by re-importing before each test
-let registerTokenGetter: typeof import('@/lib/auth-token').registerTokenGetter;
-let getAuthToken: typeof import('@/lib/auth-token').getAuthToken;
+let registerTokenGetter: typeof import('@/lib/auth/auth-token').registerTokenGetter;
+let getAuthToken: typeof import('@/lib/auth/auth-token').getAuthToken;
 
 beforeEach(async () => {
   // Reset the module so tokenGetter starts as null each time
   vi.resetModules();
-  const mod = await import('@/lib/auth-token');
+  const mod = await import('@/lib/auth/auth-token');
   registerTokenGetter = mod.registerTokenGetter;
   getAuthToken = mod.getAuthToken;
 });

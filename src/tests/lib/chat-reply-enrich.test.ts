@@ -1,4 +1,4 @@
-import { enrichReplyToQuotes } from '@/lib/chat-reply-enrich';
+import { enrichReplyToQuotes } from '@/lib/chat/chat-reply-enrich';
 import type { Message } from '@/types/chat';
 import { describe, expect, it } from 'vitest';
 

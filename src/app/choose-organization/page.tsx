@@ -6,8 +6,8 @@ import AppLoader from '@/components/ui/AppLoader';
 import {
   getOAuthCallbackPath,
   isAgentRegistrationIntent,
-} from '@/lib/oauth-redirect';
-import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
+} from '@/lib/auth/oauth-redirect';
+import { OWNER_LOGO_SRC } from '@/lib/owner/owner-auth-assets';
 import { TaskChooseOrganization } from '@clerk/nextjs';
 import { Box, Typography } from '@mui/material';
 import Image from 'next/image';

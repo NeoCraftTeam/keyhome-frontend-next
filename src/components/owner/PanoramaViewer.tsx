@@ -4,9 +4,9 @@ import {
   buildPanoDataFromAngles,
   inferPanoDataFromImageSize,
   type EquirectPanoDataRect,
-} from '@/lib/inferEquirectangularPanoData';
-import { buildPsvKeyboardActions } from '@/lib/psvKeyboardActions';
-import { attachPartialPanoPitchClamp } from '@/lib/psvPitchClampForPartialEquirect';
+} from '@/lib/tour/inferEquirectangularPanoData';
+import { buildPsvKeyboardActions } from '@/lib/tour/psvKeyboardActions';
+import { attachPartialPanoPitchClamp } from '@/lib/tour/psvPitchClampForPartialEquirect';
 import type { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';

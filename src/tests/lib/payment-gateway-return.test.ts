@@ -8,7 +8,7 @@ import {
   parsePaymentReturnParams,
   resolvePaymentVerifyUiState,
   shouldDeferVerifyFailure,
-} from '@/lib/payment-gateway-return';
+} from '@/lib/payment/payment-gateway-return';
 
 describe('payment-gateway-return', () => {
   it('parses geniuspay redirect query params', () => {

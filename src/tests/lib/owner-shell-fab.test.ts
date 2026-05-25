@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shouldShowOwnerQuickCreateFab } from '@/lib/owner-shell-fab';
+import { shouldShowOwnerQuickCreateFab } from '@/lib/owner/owner-shell-fab';
 
 describe('shouldShowOwnerQuickCreateFab', () => {
   it('returns false for null pathname', () => {

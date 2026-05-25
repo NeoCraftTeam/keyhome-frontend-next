@@ -1,6 +1,6 @@
 'use client';
 
-import { findOrCreateConversation } from '@/lib/chat-api';
+import { findOrCreateConversation } from '@/lib/chat/chat-api';
 import { ensureCsrfCookie, resetCsrfState } from '@/lib/api';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';

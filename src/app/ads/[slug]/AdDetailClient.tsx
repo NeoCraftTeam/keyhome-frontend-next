@@ -3345,7 +3345,7 @@ function AdDetailContent() {
                   }
                   try {
                     const { findOrCreateConversation } =
-                      await import('@/lib/chat-api');
+                      await import('@/lib/chat/chat-api');
                     const { buildDraftMessage } =
                       await import('@/components/chat/ContactChatButton');
                     const { conversation } = await findOrCreateConversation(

@@ -1,6 +1,6 @@
 'use client';
 
-import { resolveChatAudioUrl } from '@/lib/chat-attachment-audio';
+import { resolveChatAudioUrl } from '@/lib/chat/chat-attachment-audio';
 import type { MessageAttachment } from '@/types/chat';
 import type { ChatTheme } from './chat-theme';
 import { AlertTriangle, Loader2, Pause, Play } from 'lucide-react';

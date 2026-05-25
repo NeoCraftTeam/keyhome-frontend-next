@@ -18,9 +18,9 @@
 
 import type { MessagesCache } from '@/hooks/chat/useChatMessages';
 import { chatKeys } from '@/lib/query-keys';
-import type { ConversationsListQueryData } from '@/lib/conversation-list-cache';
-import { applyConversationStatusToConversationsCache } from '@/lib/conversation-list-cache';
-import { getEcho, isReverbRealtimeConfigured } from '@/lib/echo';
+import type { ConversationsListQueryData } from '@/lib/chat/conversation-list-cache';
+import { applyConversationStatusToConversationsCache } from '@/lib/chat/conversation-list-cache';
+import { getEcho, isReverbRealtimeConfigured } from '@/lib/chat/echo';
 import type {
   Conversation,
   Message,

@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import { rememberPaymentOriginPath } from '@/lib/payment-return';
+import { rememberPaymentOriginPath } from '@/lib/payment/payment-return';
 import {
   FlutterwaveInitiatePayload,
   FlutterwaveInitiateResponse,

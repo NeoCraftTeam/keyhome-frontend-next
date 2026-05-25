@@ -3,7 +3,7 @@
 import {
   explainPasskeyUnsupported,
   formatWebAuthnClientError,
-} from '@/lib/passkey-support';
+} from '@/lib/auth/passkey-support';
 import { passkeyKeys } from '@/lib/query-keys';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import {

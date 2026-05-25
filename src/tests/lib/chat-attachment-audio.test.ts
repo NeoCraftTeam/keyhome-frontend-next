@@ -1,4 +1,4 @@
-import { resolveChatAudioUrl } from '@/lib/chat-attachment-audio';
+import { resolveChatAudioUrl } from '@/lib/chat/chat-attachment-audio';
 import type { MessageAttachment } from '@/types/chat';
 import { describe, expect, it } from 'vitest';
 

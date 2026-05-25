@@ -7,7 +7,10 @@
  * Extracted from AuthProvider to keep the provider file focused on composition.
  */
 
-import { clearAllInMemoryTokens, clearRoleCookie } from '@/lib/auth-session';
+import {
+  clearAllInMemoryTokens,
+  clearRoleCookie,
+} from '@/lib/auth/auth-session';
 import type { User } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';

@@ -1,5 +1,5 @@
-import { AUTH_PANEL_UNAVAILABLE_MESSAGE } from '@/lib/auth-api-errors';
-import { mayAccessOwnerPanel } from '@/lib/owner-panel-access';
+import { AUTH_PANEL_UNAVAILABLE_MESSAGE } from '@/lib/auth/auth-api-errors';
+import { mayAccessOwnerPanel } from '@/lib/owner/owner-panel-access';
 import { UserRole } from '@/types';
 import { describe, expect, it } from 'vitest';
 

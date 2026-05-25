@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { selectConversationsForBackgroundWs } from '@/lib/chat-subscriptions';
+import { selectConversationsForBackgroundWs } from '@/lib/chat/chat-subscriptions';
 import type { Conversation } from '@/types/chat';
 
 function conv(uuid: string, unread: number, lastAt: string): Conversation {

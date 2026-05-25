@@ -1,4 +1,4 @@
-import { getConfiguredOAuthProviders } from '@/lib/oauth-providers';
+import { getConfiguredOAuthProviders } from '@/lib/auth/oauth-providers';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 describe('getConfiguredOAuthProviders', () => {

@@ -21,7 +21,7 @@
  */
 
 import api from '@/lib/api';
-import { ensureLocalE2eeIdentity, rtrimPem } from '@/lib/chat-e2ee-crypto';
+import { ensureLocalE2eeIdentity, rtrimPem } from '@/lib/chat/chat-e2ee-crypto';
 
 const inFlightByUser = new Map<string, Promise<string | null>>();
 

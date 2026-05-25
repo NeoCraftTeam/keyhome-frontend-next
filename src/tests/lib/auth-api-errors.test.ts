@@ -11,7 +11,7 @@ import {
   getAuthApiErrorMessage,
   isLeakyAuthMessage,
   messageForAuthErrorCode,
-} from '@/lib/auth-api-errors';
+} from '@/lib/auth/auth-api-errors';
 
 function makeAxiosError(status: number, data: unknown): AxiosError {
   const response = {

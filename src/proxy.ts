@@ -1,4 +1,4 @@
-import { getClerkFrontendOrigins } from '@/lib/clerk-frontend-origins';
+import { getClerkFrontendOrigins } from '@/lib/auth/clerk-frontend-origins';
 import {
   CSP_FONT_HOSTS,
   CSP_FRAME_HOSTS_STATIC,
@@ -7,7 +7,7 @@ import {
   CSP_SCRIPT_HOSTS,
   CSP_STYLE_HOSTS,
   buildConnectSrcParts,
-} from '@/lib/csp-allowlist';
+} from '@/lib/seo/csp-allowlist';
 import {
   COUNTRY_COOKIE,
   CURRENCY_COOKIE,

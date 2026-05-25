@@ -10,11 +10,14 @@ import { useTurnstileEmailSubmitReady } from '@/hooks/useTurnstileEmailSubmitRea
 import {
   AUTH_PANEL_UNAVAILABLE_MESSAGE,
   getAuthApiErrorMessage,
-} from '@/lib/auth-api-errors';
-import { setRoleCookie } from '@/lib/auth-session';
+} from '@/lib/auth/auth-api-errors';
+import { setRoleCookie } from '@/lib/auth/auth-session';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
-import { getConfiguredOAuthProviders } from '@/lib/oauth-providers';
-import { OWNER_LOGIN_HERO_SRC, OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
+import { getConfiguredOAuthProviders } from '@/lib/auth/oauth-providers';
+import {
+  OWNER_LOGIN_HERO_SRC,
+  OWNER_LOGO_SRC,
+} from '@/lib/owner/owner-auth-assets';
 import { useAuth } from '@/providers/AuthProvider';
 import { brandAgent, neutral } from '@/theme/tokens';
 import { UserRole } from '@/types';

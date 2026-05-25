@@ -1,6 +1,6 @@
 'use client';
 
-import { registerFcmToken, removeFcmToken } from '@/lib/chat-api';
+import { registerFcmToken, removeFcmToken } from '@/lib/chat/chat-api';
 import { FCM_TOKEN_STORAGE_KEY } from '@/lib/fcm-token-key';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEffect, useRef, useState } from 'react';

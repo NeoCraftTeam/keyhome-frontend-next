@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   isOwnerPlacardePreviewPath,
   openAdPlacardePreview,
-} from '@/lib/owner-placarde-preview';
+} from '@/lib/owner/owner-placarde-preview';
 
 describe('owner-placarde-preview', () => {
   it('detects placarde preview routes', () => {

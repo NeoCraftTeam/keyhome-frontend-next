@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchUnreadCount } from '@/lib/chat-api';
+import { fetchUnreadCount } from '@/lib/chat/chat-api';
 import { chatKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/AuthProvider';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';

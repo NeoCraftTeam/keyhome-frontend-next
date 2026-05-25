@@ -17,7 +17,7 @@ import {
   extractMetricSeries,
   mergeViewsAndFavoritesSeries,
   periodParamToDays,
-} from '@/lib/owner-dashboard-analytics';
+} from '@/lib/owner/owner-dashboard-analytics';
 import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
 import { useAuth } from '@/providers/AuthProvider';
 import {

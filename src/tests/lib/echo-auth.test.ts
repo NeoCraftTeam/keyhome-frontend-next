@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   isReverbRealtimeConfigured,
   shouldUseBearerForBroadcastAuth,
-} from '@/lib/echo';
+} from '@/lib/chat/echo';
 
 describe('isReverbRealtimeConfigured', () => {
   afterEach(() => {

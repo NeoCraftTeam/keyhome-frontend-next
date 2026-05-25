@@ -6,7 +6,7 @@ import {
   formatPaymentHistoryDate,
   paymentHistoryMethodPrimary,
   paymentHistoryMethodSecondary,
-} from '@/lib/payment-history-display';
+} from '@/lib/payment/payment-history-display';
 import { paymentKeys } from '@/lib/query-keys';
 import { paymentsService } from '@/services/payments.service';
 import { useCurrency } from '@/providers/CurrencyProvider';

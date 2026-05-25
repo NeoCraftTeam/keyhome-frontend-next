@@ -10,7 +10,7 @@ import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { ShimmerBox } from '@/components/ui/ShimmerCard';
 import { getLaravelApiErrorMessage } from '@/lib/api-errors';
 import { formatPrice } from '@/lib/constants';
-import { openAdPlacardePreview } from '@/lib/owner-placarde-preview';
+import { openAdPlacardePreview } from '@/lib/owner/owner-placarde-preview';
 import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
 import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';

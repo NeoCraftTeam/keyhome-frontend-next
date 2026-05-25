@@ -1,6 +1,6 @@
 'use client';
 
-import { getEcho, isReverbRealtimeConfigured } from '@/lib/echo';
+import { getEcho, isReverbRealtimeConfigured } from '@/lib/chat/echo';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEffect } from 'react';
 

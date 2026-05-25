@@ -1,6 +1,6 @@
 'use client';
 
-import { registerTokenGetter } from '@/lib/auth-token';
+import { registerTokenGetter } from '@/lib/auth/auth-token';
 import { authService } from '@/services/auth.service';
 import { UserRole } from '@/types';
 

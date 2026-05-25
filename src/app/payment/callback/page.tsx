@@ -1,4 +1,4 @@
-import { buildPaymentReturnRedirectUrl } from '@/lib/payment-gateway-return';
+import { buildPaymentReturnRedirectUrl } from '@/lib/payment/payment-gateway-return';
 import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mergeConversationLastMessage } from '@/lib/conversation-list-preview';
+import { mergeConversationLastMessage } from '@/lib/chat/conversation-list-preview';
 import type { Message } from '@/types/chat';
 import type { MessagesCache } from '@/hooks/useChat';
 

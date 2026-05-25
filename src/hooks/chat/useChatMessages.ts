@@ -11,8 +11,8 @@
  * Does NOT handle: WebSocket, E2EE decrypt, mark-as-read, reactions.
  */
 
-import { fetchMessages } from '@/lib/chat-api';
-import { enrichReplyToQuotes } from '@/lib/chat-reply-enrich';
+import { fetchMessages } from '@/lib/chat/chat-api';
+import { enrichReplyToQuotes } from '@/lib/chat/chat-reply-enrich';
 import type { Message } from '@/types/chat';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';

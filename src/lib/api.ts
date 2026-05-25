@@ -1,5 +1,5 @@
-import { getAuthToken } from '@/lib/auth-token';
-import { getEchoSocketId } from '@/lib/echo';
+import { getAuthToken } from '@/lib/auth/auth-token';
+import { getEchoSocketId } from '@/lib/chat/echo';
 import { getOrCreateCorrelationId } from '@/lib/request-correlation';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 

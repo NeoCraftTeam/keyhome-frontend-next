@@ -13,7 +13,7 @@ import {
   trackUnlockAd,
 } from '@/lib/analytics/track-events';
 import { creditsKeys, paymentKeys } from '@/lib/query-keys';
-import { buildStripeConfirmReturnUrl } from '@/lib/stripe-confirm-return';
+import { buildStripeConfirmReturnUrl } from '@/lib/payment/stripe-confirm-return';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCurrency } from '@/providers/CurrencyProvider';
 import { paymentsService } from '@/services/payments.service';

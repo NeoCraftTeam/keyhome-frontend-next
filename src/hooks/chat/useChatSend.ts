@@ -21,11 +21,11 @@ import {
   sendMessage,
   uploadAttachment,
   type SendMessageInput,
-} from '@/lib/chat-api';
+} from '@/lib/chat/chat-api';
 import {
   buildSealedMessagePayload,
   convSessionAesMapKey,
-} from '@/lib/chat-e2ee-crypto';
+} from '@/lib/chat/chat-e2ee-crypto';
 import { chatKeys } from '@/lib/query-keys';
 import type { Conversation, Message, MessageAttachment } from '@/types/chat';
 import type { User } from '@/types/user';

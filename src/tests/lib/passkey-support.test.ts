@@ -3,7 +3,7 @@ import {
   explainPasskeyUnsupported,
   formatWebAuthnClientError,
   isLocalhostLikeHostname,
-} from '@/lib/passkey-support';
+} from '@/lib/auth/passkey-support';
 
 describe('isLocalhostLikeHostname', () => {
   it.each([

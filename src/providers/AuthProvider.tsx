@@ -17,8 +17,8 @@ import {
   getActiveExpiresAt,
   persistClientToken,
   persistOwnerToken,
-} from '@/lib/auth-session';
-import { syncChatE2eePublicKeyWithServer } from '@/lib/chat-e2ee-identity';
+} from '@/lib/auth/auth-session';
+import { syncChatE2eePublicKeyWithServer } from '@/lib/chat/chat-e2ee-identity';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
@@ -33,7 +33,7 @@ import {
 } from 'react';
 
 // Re-export for tests
-export { __resetModuleStateForTests } from '@/lib/auth-session';
+export { __resetModuleStateForTests } from '@/lib/auth/auth-session';
 
 /* ── Context type ─────────────────────────────────────────────── */
 

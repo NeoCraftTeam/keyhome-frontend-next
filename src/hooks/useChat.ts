@@ -27,7 +27,7 @@ import {
 import { useChatReactions } from '@/hooks/chat/useChatReactions';
 import { useChatSend } from '@/hooks/chat/useChatSend';
 import { useMarkAsRead } from '@/hooks/chat/useMarkAsRead';
-import { useEchoConnectionState } from '@/lib/echo';
+import { useEchoConnectionState } from '@/lib/chat/echo';
 import { useAuth } from '@/providers/AuthProvider';
 import type { Conversation, Message, MessageAttachment } from '@/types/chat';
 import { useState } from 'react';

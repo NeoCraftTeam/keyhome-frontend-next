@@ -5,7 +5,7 @@ import FadeIn from '@/components/ui/FadeIn';
 import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
 import { trackSignUp } from '@/lib/analytics/track-events';
 import { getSafeErrorMessage } from '@/lib/error-messages';
-import { OWNER_LOGO_SRC } from '@/lib/owner-auth-assets';
+import { OWNER_LOGO_SRC } from '@/lib/owner/owner-auth-assets';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
 import { brandAgent, gradient } from '@/theme/tokens';

@@ -277,7 +277,7 @@ export { rtrimPem };
 // Moved here from useChat.ts so they can be imported by useChatSend and
 // tested independently without mounting a React component.
 
-import type { SendMessageInput } from '@/lib/chat-api';
+import type { SendMessageInput } from '@/lib/chat/chat-api';
 import type { Conversation } from '@/types/chat';
 
 /**

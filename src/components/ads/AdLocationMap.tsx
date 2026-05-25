@@ -2,7 +2,7 @@
 
 import type { UserLocation } from '@/hooks/useUserLocation';
 import { MAPBOX_TOKEN } from '@/lib/constants';
-import { formatDistance, haversineDistance } from '@/lib/geo';
+import { formatDistance, haversineDistance } from '@/lib/geo/geo';
 import { brand } from '@/theme/tokens';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import PlaceOutlined from '@mui/icons-material/PlaceOutlined';

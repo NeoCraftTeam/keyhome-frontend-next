@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { buildSiteVerification } from '@/lib/seo-verification';
+import { buildSiteVerification } from '@/lib/seo/seo-verification';
 
 describe('buildSiteVerification', () => {
   afterEach(() => {

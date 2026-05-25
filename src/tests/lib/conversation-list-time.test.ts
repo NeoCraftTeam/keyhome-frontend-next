@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeAll, afterAll, vi } from 'vitest';
-import { formatConversationListTimestamp } from '@/lib/conversation-list-time';
+import { formatConversationListTimestamp } from '@/lib/chat/conversation-list-time';
 
 describe('formatConversationListTimestamp', () => {
   const NOW = new Date('2026-05-05T14:00:00+02:00');

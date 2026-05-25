@@ -1,7 +1,7 @@
 'use client';
 
 import { getLaravelApiErrorMessage } from '@/lib/api-errors';
-import { openAdPlacardePreview } from '@/lib/owner-placarde-preview';
+import { openAdPlacardePreview } from '@/lib/owner/owner-placarde-preview';
 import { ownerService } from '@/services/owner.service';
 import { brandAgent, neutral, shadow, transition } from '@/theme/tokens';
 import {

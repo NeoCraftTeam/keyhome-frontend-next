@@ -7,7 +7,7 @@ import {
   getOAuthSignInPath,
   getOAuthSignUpPath,
   oauthPanelContextFromIntent,
-} from '@/lib/oauth-redirect';
+} from '@/lib/auth/oauth-redirect';
 
 describe('oauth-redirect', () => {
   it('maps agent registration intent to owner panel', () => {

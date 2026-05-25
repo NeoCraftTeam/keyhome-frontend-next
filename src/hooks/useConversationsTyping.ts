@@ -1,7 +1,7 @@
 'use client';
 
-import { getEcho, isReverbRealtimeConfigured } from '@/lib/echo';
-import { selectConversationsForBackgroundWs } from '@/lib/chat-subscriptions';
+import { getEcho, isReverbRealtimeConfigured } from '@/lib/chat/echo';
+import { selectConversationsForBackgroundWs } from '@/lib/chat/chat-subscriptions';
 import { useAuth } from '@/providers/AuthProvider';
 import type { Conversation, TypingEvent } from '@/types/chat';
 import { useEffect, useMemo, useRef, useState } from 'react';

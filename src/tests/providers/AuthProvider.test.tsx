@@ -52,13 +52,14 @@ vi.mock('@/services/auth.service', () => ({
   OAuthProvider: { google: 'google', facebook: 'facebook', github: 'github' },
 }));
 
-vi.mock('@/lib/auth-token', () => ({
+vi.mock('@/lib/auth/auth-token', () => ({
   registerTokenGetter: vi.fn(),
   getAuthToken: vi.fn(),
 }));
 
-vi.mock('@/lib/auth-session', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/auth-session')>();
+vi.mock('@/lib/auth/auth-session', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/lib/auth/auth-session')>();
   return {
     ...actual,
     // Keep real implementations — they manage module-level state needed by tests
@@ -79,7 +80,7 @@ vi.mock('@/lib/trusted-redirect', () => ({
 }));
 
 // Import AFTER mocks are set up
-import { registerTokenGetter } from '@/lib/auth-token';
+import { registerTokenGetter } from '@/lib/auth/auth-token';
 import {
   __resetModuleStateForTests,
   AuthProvider,

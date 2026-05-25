@@ -9,12 +9,12 @@ import {
   type MessagesCache,
 } from '@/hooks/useChat';
 import { useChatMessagesCacheEntry } from '@/hooks/useChatMessagesCacheEntry';
-import { mergeConversationLastMessage } from '@/lib/conversation-list-preview';
-import { decryptSealedTextForListPreview } from '@/lib/conversation-list-sealed-decrypt';
-import type { ConversationsListQueryData } from '@/lib/conversation-list-cache';
+import { mergeConversationLastMessage } from '@/lib/chat/conversation-list-preview';
+import { decryptSealedTextForListPreview } from '@/lib/chat/conversation-list-sealed-decrypt';
+import type { ConversationsListQueryData } from '@/lib/chat/conversation-list-cache';
 import { chatKeys } from '@/lib/query-keys';
-import { formatConversationListTimestamp } from '@/lib/conversation-list-time';
-import { CHAT_E2EE_READY_EVENT } from '@/lib/chat-e2ee-identity';
+import { formatConversationListTimestamp } from '@/lib/chat/conversation-list-time';
+import { CHAT_E2EE_READY_EVENT } from '@/lib/chat/chat-e2ee-identity';
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/providers/AuthProvider';

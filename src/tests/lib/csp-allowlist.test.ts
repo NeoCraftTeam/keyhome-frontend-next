@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildConnectSrcParts } from '@/lib/csp-allowlist';
+import { buildConnectSrcParts } from '@/lib/seo/csp-allowlist';
 
 describe('buildConnectSrcParts', () => {
   it('includes Google / Firebase API patterns', () => {

@@ -10,7 +10,7 @@
  *  - window focus + document visibilitychange listeners
  */
 
-import { markConversationAsRead } from '@/lib/chat-api';
+import { markConversationAsRead } from '@/lib/chat/chat-api';
 import { chatKeys } from '@/lib/query-keys';
 import type { Conversation, UnreadCountResponse } from '@/types/chat';
 import { useQueryClient } from '@tanstack/react-query';

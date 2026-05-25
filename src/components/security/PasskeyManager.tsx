@@ -5,7 +5,7 @@ import FadeIn from '@/components/ui/FadeIn';
 import KhSnackbar from '@/components/ui/KhSnackbar';
 import { usePasskeyManager } from '@/hooks/usePasskey';
 import { getSafeErrorMessage } from '@/lib/error-messages';
-import { formatWebAuthnClientError } from '@/lib/passkey-support';
+import { formatWebAuthnClientError } from '@/lib/auth/passkey-support';
 import Add from '@mui/icons-material/Add';
 import Delete from '@mui/icons-material/Delete';
 import Edit from '@mui/icons-material/Edit';

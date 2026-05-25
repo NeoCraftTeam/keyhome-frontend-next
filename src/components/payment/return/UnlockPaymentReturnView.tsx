@@ -8,8 +8,8 @@ import {
   isGatewayRedirectFailed,
   isGatewayRedirectSuccess,
   parsePaymentReturnParams,
-} from '@/lib/payment-gateway-return';
-import { consumePaymentReturnPath } from '@/lib/payment-return';
+} from '@/lib/payment/payment-gateway-return';
+import { consumePaymentReturnPath } from '@/lib/payment/payment-return';
 import { creditsKeys, paymentKeys } from '@/lib/query-keys';
 import { brand, gradient } from '@/theme/tokens';
 import CheckCircle from '@mui/icons-material/CheckCircle';

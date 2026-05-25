@@ -1,18 +1,18 @@
 'use client';
 
-import { getEcho, isReverbRealtimeConfigured } from '@/lib/echo';
+import { getEcho, isReverbRealtimeConfigured } from '@/lib/chat/echo';
 import {
   applyMessageSentToConversationsCache,
   applyMessagesReadToConversationsCache,
   applyConversationStatusToConversationsCache,
-} from '@/lib/conversation-list-cache';
-import type { ConversationsListQueryData } from '@/lib/conversation-list-cache';
-import { selectConversationsForBackgroundWs } from '@/lib/chat-subscriptions';
+} from '@/lib/chat/conversation-list-cache';
+import type { ConversationsListQueryData } from '@/lib/chat/conversation-list-cache';
+import { selectConversationsForBackgroundWs } from '@/lib/chat/chat-subscriptions';
 import { chatKeys } from '@/lib/query-keys';
 import { chatMessagesKey } from '@/hooks/useChat';
 import type { MessagesCache } from '@/hooks/useChat';
 import type { Message, Conversation, UnreadCountResponse } from '@/types/chat';
-import { fetchConversations } from '@/lib/chat-api';
+import { fetchConversations } from '@/lib/chat/chat-api';
 import { useAuth } from '@/providers/AuthProvider';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';

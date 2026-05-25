@@ -4,7 +4,7 @@ import {
   aesGcmDecrypt,
   getChatE2eePrivateKey,
   rsaOaepUnwrap,
-} from '@/lib/chat-e2ee-crypto';
+} from '@/lib/chat/chat-e2ee-crypto';
 
 const listRowAesByConversation = new Map<string, CryptoKey>();
 

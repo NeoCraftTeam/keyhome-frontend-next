@@ -1,6 +1,6 @@
 'use client';
 
-import { getEcho, isReverbRealtimeConfigured } from '@/lib/echo';
+import { getEcho, isReverbRealtimeConfigured } from '@/lib/chat/echo';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 

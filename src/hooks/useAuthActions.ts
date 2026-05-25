@@ -4,7 +4,7 @@ import api, { ensureCsrfCookie, resetCsrfState } from '@/lib/api';
 import {
   AUTH_LOGIN_FAILURE_MESSAGE,
   AUTH_PANEL_UNAVAILABLE_MESSAGE,
-} from '@/lib/auth-api-errors';
+} from '@/lib/auth/auth-api-errors';
 import {
   clearAllInMemoryTokens,
   clearRoleCookie,
@@ -16,17 +16,17 @@ import {
   persistOwnerToken,
   setRoleCookie,
   wipeBrowserStoragesForLogout,
-} from '@/lib/auth-session';
-import { removeFcmToken } from '@/lib/chat-api';
-import { resetChatE2eeBootstrap } from '@/lib/chat-e2ee-identity';
-import { disconnectEcho } from '@/lib/echo';
+} from '@/lib/auth/auth-session';
+import { removeFcmToken } from '@/lib/chat/chat-api';
+import { resetChatE2eeBootstrap } from '@/lib/chat/chat-e2ee-identity';
+import { disconnectEcho } from '@/lib/chat/echo';
 import { FCM_TOKEN_STORAGE_KEY } from '@/lib/fcm-token-key';
 import {
   getOAuthCallbackUrl,
   KH_REGISTRATION_INTENT_KEY,
   oauthPanelContextFromIntent,
-} from '@/lib/oauth-redirect';
-import { mayAccessOwnerPanel } from '@/lib/owner-panel-access';
+} from '@/lib/auth/oauth-redirect';
+import { mayAccessOwnerPanel } from '@/lib/owner/owner-panel-access';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';

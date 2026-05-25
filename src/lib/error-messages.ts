@@ -4,7 +4,7 @@ import {
   extractAuthErrorCode,
   getAuthApiErrorMessage,
   isLeakyAuthMessage,
-} from '@/lib/auth-api-errors';
+} from '@/lib/auth/auth-api-errors';
 import { parseLaravelNestedApiErrorPayload } from '@/lib/api-errors';
 
 const DEFAULT_ERROR = 'Une erreur est survenue. Veuillez réessayer.';

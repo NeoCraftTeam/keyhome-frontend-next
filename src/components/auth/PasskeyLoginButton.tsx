@@ -1,13 +1,13 @@
 'use client';
 
 import { usePasskeyLogin } from '@/hooks/usePasskey';
-import { AUTH_PANEL_UNAVAILABLE_MESSAGE } from '@/lib/auth-api-errors';
+import { AUTH_PANEL_UNAVAILABLE_MESSAGE } from '@/lib/auth/auth-api-errors';
 import {
   persistClientToken,
   persistOwnerToken,
   setRoleCookie,
-} from '@/lib/auth-session';
-import { mayAccessOwnerPanel } from '@/lib/owner-panel-access';
+} from '@/lib/auth/auth-session';
+import { mayAccessOwnerPanel } from '@/lib/owner/owner-panel-access';
 import { useAuth } from '@/providers/AuthProvider';
 import { UserRole } from '@/types';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';

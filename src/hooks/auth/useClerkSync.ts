@@ -24,8 +24,8 @@ import {
   persistOwnerToken,
   registerInMemoryGetter,
   setRoleCookie,
-} from '@/lib/auth-session';
-import { registerTokenGetter } from '@/lib/auth-token';
+} from '@/lib/auth/auth-session';
+import { registerTokenGetter } from '@/lib/auth/auth-token';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService } from '@/services/auth.service';
 import type { User } from '@/types';

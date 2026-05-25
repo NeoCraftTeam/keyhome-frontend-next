@@ -7,7 +7,7 @@ import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/FadeIn';
 import PhoneField from '@/components/ui/PhoneField';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
-import { registerTokenGetter } from '@/lib/auth-token';
+import { registerTokenGetter } from '@/lib/auth/auth-token';
 import {
   clearStoredRegisterAccountRole,
   clearStoredRegisterLock,
@@ -18,7 +18,7 @@ import {
   registerUrlHasRoleIntent,
   writeStoredRegisterAccountRole,
   writeStoredRegisterLock,
-} from '@/lib/register-intent';
+} from '@/lib/auth/register-intent';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { useTurnstileEmailSubmitReady } from '@/hooks/useTurnstileEmailSubmitReady';
@@ -30,7 +30,7 @@ import {
   getRegisterThemeTokens,
   REGISTER_AGENT_HERO_SRC,
   type RegisterAccountVisual,
-} from '@/lib/register-theme';
+} from '@/lib/auth/register-theme';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { City } from '@/types';
