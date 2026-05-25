@@ -4,7 +4,7 @@ import { Box, Button, Container, Paper, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ShareOutlinedIcon from '@mui/icons-material/ShareOutlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { useParams, useRouter } from 'next/navigation';
 import { brand, gradient } from '@/theme/tokens';
 

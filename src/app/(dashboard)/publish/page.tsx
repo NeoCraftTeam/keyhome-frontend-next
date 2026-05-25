@@ -47,7 +47,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MAPBOX_TOKEN, DEFAULT_CENTER } from '@/lib/constants';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 
 const STEPS = [
   'Informations',

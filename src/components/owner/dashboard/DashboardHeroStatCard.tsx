@@ -1,7 +1,7 @@
 'use client';
 
 import MiniMetricSparkline from '@/components/owner/dashboard/MiniMetricSparkline';
-import { ShimmerBox } from '@/components/ui/ShimmerCard';
+import { ShimmerBox } from '@/components/ui/feedback/ShimmerCard';
 import { useCountUp } from '@/hooks/useCountUp';
 import {
   TrendingDown as DownIcon,

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import SkeletonCard from '@/components/ui/SkeletonCard';
+import SkeletonCard from '@/components/ui/feedback/SkeletonCard';
 import { Box } from '@mui/material';
 
 const meta: Meta<typeof SkeletonCard> = {

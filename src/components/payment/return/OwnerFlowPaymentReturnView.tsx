@@ -1,6 +1,6 @@
 'use client';
 
-import AppLoader from '@/components/ui/AppLoader';
+import AppLoader from '@/components/ui/feedback/AppLoader';
 import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import {
   hasPaymentReturnReference,

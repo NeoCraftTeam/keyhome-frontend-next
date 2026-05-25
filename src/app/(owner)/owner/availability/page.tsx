@@ -1,7 +1,7 @@
 'use client';
 
-import FadeIn from '@/components/ui/FadeIn';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import {
   ownerService,
   type AvailabilityPayload,

@@ -6,8 +6,8 @@ import { CurrencySelector } from '@/components/layout/CurrencySelector';
 import NavDesktopMenu from '@/components/layout/NavDesktopMenu';
 import NavDrawer from '@/components/layout/NavDrawer';
 import NavLogoutDialog from '@/components/layout/NavLogoutDialog';
-import { Button } from '@/components/ui/Button';
-import { Typography } from '@/components/ui/Typography';
+import { Button } from '@/components/ui/forms/Button';
+import { Typography } from '@/components/ui/typography/Typography';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { useNavbarState } from '@/hooks/useNavbarState';
 import {

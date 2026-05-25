@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import HostBadge from '@/components/ui/HostBadge';
+import HostBadge from '@/components/ui/display/HostBadge';
 import { Box } from '@mui/material';
 
 const meta: Meta<typeof HostBadge> = {

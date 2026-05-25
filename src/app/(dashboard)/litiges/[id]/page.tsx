@@ -1,7 +1,7 @@
 'use client';
 
-import FadeIn from '@/components/ui/FadeIn';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { useAuth } from '@/providers/AuthProvider';
 import { disputesService } from '@/services/disputes.service';
 import type { DisputeEvidenceType, DisputeStatus } from '@/types';

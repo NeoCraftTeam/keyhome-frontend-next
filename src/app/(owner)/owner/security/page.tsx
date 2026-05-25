@@ -1,7 +1,7 @@
 'use client';
 
-import EmptyState from '@/components/ui/EmptyState';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import EmptyState from '@/components/ui/feedback/EmptyState';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import api from '@/lib/api';
 import { loginHistoryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/AuthProvider';
@@ -42,7 +42,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 
 function DeviceIcon({ deviceType }: { deviceType: string | null }) {
   if (deviceType === 'phone' || deviceType === 'mobile') {

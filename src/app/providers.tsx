@@ -3,8 +3,8 @@
 import ComparatorBar from '@/components/ads/ComparatorBar';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SafeAreaInsetBridge } from '@/components/pwa/SafeAreaInsetBridge';
-import { ConfirmDialogProvider } from '@/components/ui/ConfirmDialog';
-import SkipLink from '@/components/ui/SkipLink';
+import { ConfirmDialogProvider } from '@/components/ui/overlay/ConfirmDialog';
+import SkipLink from '@/components/ui/navigation/SkipLink';
 import { UtmCaptureProvider } from '@/components/utm/UtmCaptureProvider';
 import type { SupportedCurrency } from '@/lib/currency';
 import { AuthProvider } from '@/providers/AuthProvider';

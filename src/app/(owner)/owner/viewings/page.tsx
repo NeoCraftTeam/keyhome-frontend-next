@@ -1,8 +1,8 @@
 'use client';
 
-import CalendarExportMenu from '@/components/ui/CalendarExportMenu';
-import FadeIn from '@/components/ui/FadeIn';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import CalendarExportMenu from '@/components/ui/display/CalendarExportMenu';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import {
   ownerService,
   type OwnerViewingReservation,

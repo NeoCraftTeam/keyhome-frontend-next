@@ -1,8 +1,8 @@
 'use client';
 
 import LinkedAccountsCard from '@/components/settings/LinkedAccountsCard';
-import FadeIn from '@/components/ui/FadeIn';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { SOUND_ENABLED_KEY, useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useAuth } from '@/providers/AuthProvider';
 import { useThemeMode, type ThemeChoice } from '@/providers/ThemeProvider';

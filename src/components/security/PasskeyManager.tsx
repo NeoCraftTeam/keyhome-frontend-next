@@ -1,8 +1,8 @@
 'use client';
 
-import EmptyState from '@/components/ui/EmptyState';
-import FadeIn from '@/components/ui/FadeIn';
-import KhSnackbar from '@/components/ui/KhSnackbar';
+import EmptyState from '@/components/ui/feedback/EmptyState';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import { usePasskeyManager } from '@/hooks/usePasskey';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { formatWebAuthnClientError } from '@/lib/auth/passkey-support';

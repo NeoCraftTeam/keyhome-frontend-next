@@ -1,7 +1,7 @@
 'use client';
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
-import ImageLightbox from '@/components/ui/ImageLightbox';
+import ImageLightbox from '@/components/ui/overlay/ImageLightbox';
 import { useServerAutoSave } from '@/hooks/useServerAutoSave';
 import { useStreamingEnhance } from '@/hooks/useStreamingEnhance';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';

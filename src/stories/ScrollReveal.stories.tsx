@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import ScrollReveal from '@/components/ui/ScrollReveal';
+import ScrollReveal from '@/components/ui/layout/ScrollReveal';
 import { Box, Typography } from '@mui/material';
 
 const meta: Meta<typeof ScrollReveal> = {

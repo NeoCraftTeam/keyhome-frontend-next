@@ -9,7 +9,7 @@ import {
   mapAdToFormValues,
   normalizeAdFormValues,
 } from '@/components/owner/ad-form/types';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { getLaravelApiErrorMessage } from '@/lib/api-errors';
 import { adsService } from '@/services/ads.service';
 import { ownerService } from '@/services/owner.service';

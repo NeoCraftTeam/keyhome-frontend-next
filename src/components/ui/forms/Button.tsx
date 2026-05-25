@@ -2,7 +2,7 @@
 
 import { Button as MuiButton, ButtonProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { radius, shadow, transition } from '../../theme/tokens';
+import { radius, shadow, transition } from '../../../theme/tokens';
 
 /**
  * Enterprise Grade Button Component.

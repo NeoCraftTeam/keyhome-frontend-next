@@ -6,12 +6,12 @@ import OwnerTopAdsTable from '@/components/owner/dashboard/OwnerTopAdsTable';
 import OwnerViewsFavoritesAreaChart from '@/components/owner/dashboard/OwnerViewsFavoritesAreaChart';
 import ProfileCompletionCard from '@/components/owner/dashboard/ProfileCompletionCard';
 import RankEstimateWidget from '@/components/owner/dashboard/RankEstimateWidget';
-import AppTour from '@/components/ui/AppTour';
-import EmptyState from '@/components/ui/EmptyState';
-import FadeIn from '@/components/ui/FadeIn';
-import SectionBoundary from '@/components/ui/SectionBoundary';
-import { ShimmerBox } from '@/components/ui/ShimmerCard';
-import StaggerList from '@/components/ui/StaggerList';
+import AppTour from '@/components/ui/display/AppTour';
+import EmptyState from '@/components/ui/feedback/EmptyState';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import SectionBoundary from '@/components/ui/layout/SectionBoundary';
+import { ShimmerBox } from '@/components/ui/feedback/ShimmerCard';
+import StaggerList from '@/components/ui/layout/StaggerList';
 import { useGreeting } from '@/hooks/useGreeting';
 import {
   extractMetricSeries,

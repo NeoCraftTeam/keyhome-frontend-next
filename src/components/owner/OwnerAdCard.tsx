@@ -1,6 +1,6 @@
 'use client';
 
-import { Price } from '@/components/ui/Price';
+import { Price } from '@/components/ui/typography/Price';
 import {
   brandAgent,
   neutral,

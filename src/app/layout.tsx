@@ -7,8 +7,8 @@ import ViewportInteractiveWidget from '@/components/pwa/ViewportInteractiveWidge
 import JsonLd from '@/components/seo/JsonLd';
 import { WebVitals } from '@/components/seo/WebVitals';
 import { ThemeInitScript } from '@/components/ThemeInitScript';
-import CookieBanner from '@/components/ui/CookieBanner';
-import RouteProgressBar from '@/components/ui/RouteProgressBar';
+import CookieBanner from '@/components/ui/display/CookieBanner';
+import RouteProgressBar from '@/components/ui/navigation/RouteProgressBar';
 import { getGoogleMarketingIds } from '@/lib/analytics/google-marketing-env';
 import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
 import { getClerkPreconnectOrigin } from '@/lib/auth/clerk-frontend-origins';

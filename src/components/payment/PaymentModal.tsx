@@ -1,7 +1,7 @@
 'use client';
 
 import PaymentFlow from '@/components/payment/PaymentFlow';
-import { Price } from '@/components/ui/Price';
+import { Price } from '@/components/ui/typography/Price';
 import {
   khSafeAreaBottomSx,
   khSafeAreaTopSx,

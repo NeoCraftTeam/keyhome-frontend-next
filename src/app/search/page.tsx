@@ -1,7 +1,7 @@
 'use client';
 
 import SearchAlertButton from '@/components/ads/SearchAlertButton';
-import AppLoader from '@/components/ui/AppLoader';
+import AppLoader from '@/components/ui/feedback/AppLoader';
 import { useAuth } from '@/providers/AuthProvider';
 import dynamic from 'next/dynamic';
 import SearchFiltersDrawerContent from './SearchFiltersDrawerContent';

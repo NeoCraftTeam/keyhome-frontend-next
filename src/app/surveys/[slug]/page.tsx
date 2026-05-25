@@ -4,7 +4,7 @@ import { publicSurveysService } from '@/services/publicSurveys.service';
 import { surveysService } from '@/services/surveys.service';
 import { PublicSurvey, SurveyAnswerPayload } from '@/types';
 import SurveyStepper from '@/components/surveys/public/SurveyStepper';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   Box,

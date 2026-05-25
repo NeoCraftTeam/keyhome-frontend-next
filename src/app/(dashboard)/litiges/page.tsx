@@ -1,8 +1,8 @@
 'use client';
 
 import OpenDisputeDialog from '@/components/disputes/OpenDisputeDialog';
-import FadeIn from '@/components/ui/FadeIn';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { useAuth } from '@/providers/AuthProvider';
 import { disputesService } from '@/services/disputes.service';
 import type { Dispute, DisputeStatus } from '@/types';

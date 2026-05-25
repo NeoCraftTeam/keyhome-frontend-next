@@ -8,23 +8,23 @@
  * Layout   → FadeIn, ScrollReveal, PageTransition, SkipLink
  */
 
-export { Button } from './Button';
-export { Card } from './Card';
-export { GradientButton } from './GradientButton';
-export type { GradientButtonProps } from './GradientButton';
-export { Input } from './Input';
-export type { InputProps } from './Input';
-export { TextField } from './TextField';
-export { Typography } from './Typography';
+export { Button } from './forms/Button';
+export { Card } from './layout/Card';
+export { GradientButton } from './forms/GradientButton';
+export type { GradientButtonProps } from './forms/GradientButton';
+export { Input } from './forms/Input';
+export type { InputProps } from './forms/Input';
+export { TextField } from './forms/TextField';
+export { Typography } from './typography/Typography';
 
-export { default as AppLoader } from './AppLoader';
-export { default as EmptyState } from './EmptyState';
-export { default as FadeIn } from './FadeIn';
-export { default as PageBreadcrumbs } from './PageBreadcrumbs';
-export { default as PageLoader } from './PageLoader';
-export { default as PageTransition } from './PageTransition';
-export { default as PhoneField } from './PhoneField';
-export { default as QueryError } from './QueryError';
-export { default as RouteProgressBar } from './RouteProgressBar';
-export { default as ScrollReveal } from './ScrollReveal';
-export { default as SkipLink } from './SkipLink';
+export { default as AppLoader } from './feedback/AppLoader';
+export { default as EmptyState } from './feedback/EmptyState';
+export { default as FadeIn } from './layout/FadeIn';
+export { default as PageBreadcrumbs } from './layout/PageBreadcrumbs';
+export { default as PageLoader } from './feedback/PageLoader';
+export { default as PageTransition } from './layout/PageTransition';
+export { default as PhoneField } from './forms/PhoneField';
+export { default as QueryError } from './feedback/QueryError';
+export { default as RouteProgressBar } from './navigation/RouteProgressBar';
+export { default as ScrollReveal } from './layout/ScrollReveal';
+export { default as SkipLink } from './navigation/SkipLink';

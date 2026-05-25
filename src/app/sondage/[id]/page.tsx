@@ -1,7 +1,7 @@
 'use client';
 
 import SurveyForm from '@/components/surveys/SurveyForm';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { useAuth } from '@/providers/AuthProvider';
 import { surveysService } from '@/services/surveys.service';
 import { brandAgent } from '@/theme/tokens';

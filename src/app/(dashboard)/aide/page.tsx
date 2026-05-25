@@ -1,6 +1,6 @@
 'use client';
 
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { useThemeMode } from '@/providers/ThemeProvider';
 import { brand } from '@/theme/tokens';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';

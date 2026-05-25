@@ -1,6 +1,6 @@
 'use client';
 
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import {
   ownerService,
   type Expense,
@@ -40,7 +40,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { brandAgent, neutral, semantic } from '@/theme/tokens';
 import {
   Cell,

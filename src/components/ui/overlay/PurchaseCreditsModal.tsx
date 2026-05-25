@@ -1,9 +1,9 @@
 'use client';
 
 import PaymentFlow from '@/components/payment/PaymentFlow';
-import PackageCard from '@/components/ui/PackageCard';
-import { Price } from '@/components/ui/Price';
-import { ShimmerBox } from '@/components/ui/ShimmerCard';
+import PackageCard from '@/components/ui/display/PackageCard';
+import { Price } from '@/components/ui/typography/Price';
+import { ShimmerBox } from '@/components/ui/feedback/ShimmerCard';
 import { useTurnstileSiteKey } from '@/hooks/useTurnstileSiteKey';
 import { API_URL } from '@/lib/api';
 import {

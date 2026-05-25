@@ -2,8 +2,8 @@
 
 import OwnerPushNotificationCard from '@/components/owner/OwnerPushNotificationCard';
 import LinkedAccountsCard from '@/components/settings/LinkedAccountsCard';
-import FadeIn from '@/components/ui/FadeIn';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   useOwnerTheme,

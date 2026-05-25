@@ -1,9 +1,9 @@
 'use client';
 
 import PaymentHistoryTable from '@/components/payment/PaymentHistoryTable';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { Container, Typography } from '@mui/material';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 
 export default function OwnerPaymentsPage() {
   return (

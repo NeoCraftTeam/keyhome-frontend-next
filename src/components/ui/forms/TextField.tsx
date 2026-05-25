@@ -2,7 +2,7 @@
 
 import { TextField as MuiTextField, TextFieldProps } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
-import { radius, shadow, spacing, transition } from '../../theme/tokens';
+import { radius, shadow, spacing, transition } from '../../../theme/tokens';
 
 /**
  * Enterprise Grade TextField Component.

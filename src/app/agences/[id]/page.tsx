@@ -22,7 +22,7 @@ import Group from '@mui/icons-material/Group';
 import Home from '@mui/icons-material/Home';
 import Verified from '@mui/icons-material/Verified';
 import AdCard from '@/components/ads/AdCard';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 

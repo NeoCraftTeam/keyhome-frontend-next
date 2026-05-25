@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import AppLoader from '@/components/ui/AppLoader';
+import AppLoader from '@/components/ui/feedback/AppLoader';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';

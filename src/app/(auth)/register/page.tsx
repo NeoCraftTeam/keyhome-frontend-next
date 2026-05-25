@@ -4,8 +4,8 @@ import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import TurnstileConfigAlert from '@/components/auth/TurnstileConfigAlert';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
-import FadeIn from '@/components/ui/FadeIn';
-import PhoneField from '@/components/ui/PhoneField';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import PhoneField from '@/components/ui/forms/PhoneField';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { registerTokenGetter } from '@/lib/auth/auth-token';
 import {

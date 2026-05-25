@@ -15,8 +15,8 @@ import {
   Stack,
   Tooltip,
 } from '@mui/material';
-import { Button } from '@/components/ui/Button';
-import { Typography } from '@/components/ui/Typography';
+import { Button } from '@/components/ui/forms/Button';
+import { Typography } from '@/components/ui/typography/Typography';
 import { brand } from '@/theme/tokens';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';

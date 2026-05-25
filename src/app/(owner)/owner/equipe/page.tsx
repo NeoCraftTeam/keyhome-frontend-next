@@ -1,12 +1,12 @@
 'use client';
 
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import {
   Group as GroupIcon,
   HourglassEmpty as SoonIcon,
 } from '@mui/icons-material';
 import { Box, Chip, Container, Paper, Typography } from '@mui/material';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 
 export default function OwnerEquipePage() {
   return (

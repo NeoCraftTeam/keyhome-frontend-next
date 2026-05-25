@@ -3,7 +3,7 @@
 import { Box } from '@mui/material';
 import type { ReactElement, ReactNode } from 'react';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { EmptyState, type EmptyStateProps } from './EmptyState';
+import { EmptyState, type EmptyStateProps } from '../feedback/EmptyState';
 import { SectionErrorFallback } from './SectionBoundary';
 
 /**

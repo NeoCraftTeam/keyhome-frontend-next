@@ -1,6 +1,6 @@
 'use client';
 
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import SearchAlertDigestCard from '@/components/notifications/SearchAlertDigestCard';
 import {
   deleteNotification,
@@ -14,7 +14,7 @@ import {
   formatNotificationTime,
   getNotificationMessage,
 } from '@/lib/notification-routing';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { useAuth } from '@/providers/AuthProvider';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';

@@ -7,7 +7,7 @@ import {
   type TextFieldProps,
 } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
-import { radius, shadow, transition } from '../../theme/tokens';
+import { radius, shadow, transition } from '../../../theme/tokens';
 
 type InputVariant = 'primary' | 'agent';
 

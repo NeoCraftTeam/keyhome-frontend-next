@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SectionBoundary } from '@/components/ui/SectionBoundary';
+import { SectionBoundary } from '@/components/ui/layout/SectionBoundary';
 
 function ThrowOnRender({
   message = 'boom',

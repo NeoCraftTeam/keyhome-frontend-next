@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/Button';
-import { TextField } from '@/components/ui/TextField';
-import { Typography } from '@/components/ui/Typography';
+import { Button } from '@/components/ui/forms/Button';
+import { TextField } from '@/components/ui/forms/TextField';
+import { Typography } from '@/components/ui/typography/Typography';
 import AiIcon from '@mui/icons-material/AutoAwesome';
 import HomeIcon from '@mui/icons-material/Home';
 import UndoIcon from '@mui/icons-material/Undo';

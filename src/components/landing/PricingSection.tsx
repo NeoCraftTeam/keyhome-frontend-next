@@ -1,6 +1,6 @@
 'use client';
 
-import { Price } from '@/components/ui/Price';
+import { Price } from '@/components/ui/typography/Price';
 import { creditsService } from '@/services/credits.service';
 import { brand, semantic } from '@/theme/tokens';
 import { PointPackage } from '@/types';

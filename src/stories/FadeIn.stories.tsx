@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { Box, Typography } from '@mui/material';
 
 const meta: Meta<typeof FadeIn> = {

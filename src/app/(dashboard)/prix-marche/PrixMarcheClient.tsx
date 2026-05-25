@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 
 export default function PrixMarcheClient() {
   const [tab, setTab] = useState(0);

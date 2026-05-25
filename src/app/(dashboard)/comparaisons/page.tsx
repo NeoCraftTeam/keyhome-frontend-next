@@ -1,7 +1,7 @@
 'use client';
 
 import ComparisonTable from '@/components/ads/ComparisonTable';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { useComparator } from '@/providers/ComparatorProvider';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import CompareArrows from '@mui/icons-material/CompareArrows';

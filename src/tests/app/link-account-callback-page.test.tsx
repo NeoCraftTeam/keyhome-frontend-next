@@ -14,7 +14,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 // AppLoader renders a spinner — mock it out to keep tests fast and DOM clean.
-vi.mock('@/components/ui/AppLoader', () => ({
+vi.mock('@/components/ui/feedback/AppLoader', () => ({
   default: () => null,
 }));
 

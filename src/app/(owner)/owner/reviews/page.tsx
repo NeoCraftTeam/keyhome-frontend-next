@@ -1,6 +1,6 @@
 'use client';
 
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { ownerService, type OwnerReview } from '@/services/owner.service';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import {
@@ -37,7 +37,7 @@ import {
 import { alpha } from '@mui/material/styles';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { brandAgent, neutral } from '@/theme/tokens';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 

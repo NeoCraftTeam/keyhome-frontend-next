@@ -4,9 +4,9 @@ import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import HeroSearch from '@/components/ads/HeroSearch';
 import ClientProfileBanner from '@/components/dashboard/ClientProfileBanner';
-import { EmptyState } from '@/components/ui/EmptyState';
-import FadeIn from '@/components/ui/FadeIn';
-import QueryError from '@/components/ui/QueryError';
+import { EmptyState } from '@/components/ui/feedback/EmptyState';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import QueryError from '@/components/ui/feedback/QueryError';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
@@ -61,7 +61,7 @@ import {
   useTransition,
 } from 'react';
 
-const AppTour = dynamic(() => import('@/components/ui/AppTour'), {
+const AppTour = dynamic(() => import('@/components/ui/display/AppTour'), {
   ssr: false,
 });
 

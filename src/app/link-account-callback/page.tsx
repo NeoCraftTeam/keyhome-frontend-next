@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import AppLoader from '@/components/ui/AppLoader';
+import AppLoader from '@/components/ui/feedback/AppLoader';
 import { useUser } from '@clerk/nextjs';
 import { Box, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';

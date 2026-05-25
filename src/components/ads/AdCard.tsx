@@ -1,7 +1,7 @@
 'use client';
 
-import { Price } from '@/components/ui/Price';
-import { Typography } from '@/components/ui/Typography';
+import { Price } from '@/components/ui/typography/Price';
+import { Typography } from '@/components/ui/typography/Typography';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useComparator } from '@/providers/ComparatorProvider';
 import { useFavorites } from '@/providers/FavoritesProvider';

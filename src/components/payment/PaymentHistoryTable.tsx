@@ -2,8 +2,8 @@
 
 import PaymentAmountDisplay from '@/components/payment/PaymentAmountDisplay';
 import PaymentStatusBadge from '@/components/payment/PaymentStatusBadge';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { ShimmerBox } from '@/components/ui/ShimmerCard';
+import { EmptyState } from '@/components/ui/feedback/EmptyState';
+import { ShimmerBox } from '@/components/ui/feedback/ShimmerCard';
 import {
   formatPaymentHistoryDate,
   paymentHistoryMethodPrimary,

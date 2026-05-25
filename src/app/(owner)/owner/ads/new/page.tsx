@@ -4,8 +4,8 @@ import type { AdFormValues } from '@/components/owner/AdFormWizard';
 import AdFormWizard, { type TourScene } from '@/components/owner/AdFormWizard';
 import MarkdownBioEditor from '@/components/owner/MarkdownBioEditor';
 import PublishingOverlay from '@/components/owner/PublishingOverlay';
-import FadeIn from '@/components/ui/FadeIn';
-import PhoneField from '@/components/ui/PhoneField';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import PhoneField from '@/components/ui/forms/PhoneField';
 import { getLaravelApiErrorMessage } from '@/lib/api-errors';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import {

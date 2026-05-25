@@ -19,7 +19,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import QuizOutlinedIcon from '@mui/icons-material/QuizOutlined';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { gradient } from '@/theme/tokens';
 
 export default function SurveysIndexPage() {

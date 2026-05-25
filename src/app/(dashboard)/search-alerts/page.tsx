@@ -1,7 +1,7 @@
 'use client';
 
-import { EmptyState } from '@/components/ui/EmptyState';
-import FadeIn from '@/components/ui/FadeIn';
+import { EmptyState } from '@/components/ui/feedback/EmptyState';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   searchAlertsService,

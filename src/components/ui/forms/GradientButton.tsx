@@ -12,7 +12,7 @@ import {
   radius,
   shadow,
   transition,
-} from '../../theme/tokens';
+} from '../../../theme/tokens';
 
 type GradientVariant = 'primary' | 'agent';
 

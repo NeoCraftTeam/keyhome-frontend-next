@@ -2,7 +2,7 @@
 
 import { Card as MuiCard, CardProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { radius, transition } from '../../theme/tokens';
+import { radius, transition } from '../../../theme/tokens';
 
 /**
  * Enterprise Grade Card Component.

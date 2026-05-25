@@ -1,6 +1,6 @@
 'use client';
 
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { OWNER_LOGO_SRC } from '@/lib/owner/owner-auth-assets';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';

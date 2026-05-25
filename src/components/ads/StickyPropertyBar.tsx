@@ -1,6 +1,6 @@
 'use client';
 
-import { Price } from '@/components/ui/Price';
+import { Price } from '@/components/ui/typography/Price';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import PhoneIcon from '@mui/icons-material/Phone';

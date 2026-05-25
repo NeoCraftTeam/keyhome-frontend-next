@@ -1,6 +1,6 @@
 'use client';
 
-import { Price } from '@/components/ui/Price';
+import { Price } from '@/components/ui/typography/Price';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { estimatorService } from '@/services/estimator.service';

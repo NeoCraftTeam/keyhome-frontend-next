@@ -1,6 +1,6 @@
 'use client';
 
-import PurchaseCreditsModal from '@/components/ui/PurchaseCreditsModal';
+import PurchaseCreditsModal from '@/components/ui/overlay/PurchaseCreditsModal';
 import { useAuth } from '@/providers/AuthProvider';
 import { creditsService } from '@/services/credits.service';
 import Toll from '@mui/icons-material/Toll';

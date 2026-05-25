@@ -1,9 +1,9 @@
 'use client';
 
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import RentEstimatorWidget from '@/components/ads/RentEstimatorWidget';
 import PriceHeatmapLayer from '@/components/maps/PriceHeatmapLayer';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import Calculate from '@mui/icons-material/Calculate';
 import Layers from '@mui/icons-material/Layers';
 import { Box, Container, Grid, Tab, Tabs, Typography } from '@mui/material';

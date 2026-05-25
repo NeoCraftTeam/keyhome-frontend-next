@@ -1,8 +1,8 @@
 'use client';
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
-import FadeIn from '@/components/ui/FadeIn';
-import WelcomeOverlay from '@/components/ui/WelcomeOverlay';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import WelcomeOverlay from '@/components/ui/overlay/WelcomeOverlay';
 import { trackSignUp } from '@/lib/analytics/track-events';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';

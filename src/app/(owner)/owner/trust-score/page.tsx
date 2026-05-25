@@ -1,8 +1,8 @@
 'use client';
 
 import api from '@/lib/api';
-import FadeIn from '@/components/ui/FadeIn';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import Info from '@mui/icons-material/Info';
 import LightbulbOutlined from '@mui/icons-material/LightbulbOutlined';

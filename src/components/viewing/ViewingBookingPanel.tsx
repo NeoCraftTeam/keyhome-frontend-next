@@ -1,6 +1,6 @@
 'use client';
 
-import CalendarExportMenu from '@/components/ui/CalendarExportMenu';
+import CalendarExportMenu from '@/components/ui/display/CalendarExportMenu';
 import {
   getLaravelApiErrorMessage,
   getLaravelNestedApiError,

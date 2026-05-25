@@ -1,6 +1,6 @@
 'use client';
 
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import {
   RocketLaunch as BoostIcon,
   Verified as VerifiedIcon,
@@ -18,7 +18,7 @@ import {
   Typography,
   Chip,
 } from '@mui/material';
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
 import { useRouter } from 'next/navigation';
 import { alpha } from '@mui/material/styles';

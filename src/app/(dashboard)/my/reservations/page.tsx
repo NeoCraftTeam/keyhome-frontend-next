@@ -1,6 +1,6 @@
 'use client';
 
-import FadeIn from '@/components/ui/FadeIn';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { viewingsService } from '@/services/viewings.service';
 import { gradient } from '@/theme/tokens';

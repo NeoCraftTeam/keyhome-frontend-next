@@ -1,6 +1,6 @@
 'use client';
 
-import { Price } from '@/components/ui/Price';
+import { Price } from '@/components/ui/typography/Price';
 import { neutral } from '@/theme/tokens';
 import type { PointPackage } from '@/types';
 import ArrowForward from '@mui/icons-material/ArrowForward';

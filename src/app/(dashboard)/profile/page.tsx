@@ -5,11 +5,11 @@ import PaymentHistoryTableModern from '@/components/payment/PaymentHistoryTableM
 import SavedCardsManager from '@/components/payment/SavedCardsManager';
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
 import PasskeyManager from '@/components/security/PasskeyManager';
-import FadeIn from '@/components/ui/FadeIn';
-import KhSnackbar from '@/components/ui/KhSnackbar';
-import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
-import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar';
-import PhoneField from '@/components/ui/PhoneField';
+import FadeIn from '@/components/ui/layout/FadeIn';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
+import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
+import PasswordStrengthBar from '@/components/ui/forms/PasswordStrengthBar';
+import PhoneField from '@/components/ui/forms/PhoneField';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import {
@@ -62,7 +62,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 const AvatarCropDialog = dynamic(
-  () => import('@/components/ui/AvatarCropDialog'),
+  () => import('@/components/ui/forms/AvatarCropDialog'),
   { ssr: false }
 );
 

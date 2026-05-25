@@ -2,7 +2,7 @@
 
 import { Skeleton as MuiSkeleton, SkeletonProps } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
-import { radius } from '../../theme/tokens';
+import { radius } from '../../../theme/tokens';
 
 /**
  * Enterprise Grade Skeleton Component.

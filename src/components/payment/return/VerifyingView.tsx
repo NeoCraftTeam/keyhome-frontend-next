@@ -1,6 +1,6 @@
 'use client';
 
-import AppLoader from '@/components/ui/AppLoader';
+import AppLoader from '@/components/ui/feedback/AppLoader';
 import { DEFAULT_MINIMUM_VERIFYING_MS } from '@/hooks/usePaymentStatusPolling';
 import LockIcon from '@mui/icons-material/Lock';
 import { Box, Typography } from '@mui/material';

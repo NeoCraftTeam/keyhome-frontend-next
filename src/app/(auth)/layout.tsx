@@ -1,7 +1,7 @@
 'use client';
 
-import AppLoader from '@/components/ui/AppLoader';
-import SplashTransition from '@/components/ui/SplashTransition';
+import AppLoader from '@/components/ui/feedback/AppLoader';
+import SplashTransition from '@/components/ui/overlay/SplashTransition';
 import { useAuth } from '@/providers/AuthProvider';
 import { brandAgent } from '@/theme/tokens';
 import { Box } from '@mui/material';
