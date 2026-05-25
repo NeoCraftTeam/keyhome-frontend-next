@@ -77,6 +77,7 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
     hasParking,
     setHasParking,
     transactionType,
+    setTransactionType,
     pricePeriod,
     setPricePeriod,
     has3dTour,
@@ -223,6 +224,25 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
           <TextField {...params} label="Type de bien" sx={{ mb: 2 }} />
         )}
       />
+
+      {/* Transaction type */}
+      <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
+        Type de transaction
+      </Typography>
+      <ToggleButtonGroup
+        value={transactionType}
+        exclusive
+        onChange={(_, val: 'location' | 'vente' | null) => {
+          setTransactionType(val);
+          setPage(1);
+        }}
+        size="small"
+        color="primary"
+        sx={{ mb: 2.5 }}
+      >
+        <ToggleButton value="location">À louer</ToggleButton>
+        <ToggleButton value="vente">À vendre</ToggleButton>
+      </ToggleButtonGroup>
 
       {/* Price */}
       <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>

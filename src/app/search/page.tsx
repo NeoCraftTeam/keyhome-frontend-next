@@ -962,6 +962,42 @@ function SearchContent() {
                 isMobile && mobileViewMode === 'map' ? 'none' : 'inline-flex',
             }}
           />
+          {/* Transaction type quick toggle — visible on both desktop and mobile list */}
+          {!(isMobile && mobileViewMode === 'map') && (
+            <ToggleButtonGroup
+              value={transactionType}
+              exclusive
+              onChange={(_, val: 'location' | 'vente' | null) => {
+                setTransactionType(val);
+                setPage(1);
+              }}
+              size="small"
+              sx={{
+                flexShrink: 0,
+                '& .MuiToggleButton-root': {
+                  borderRadius: '8px !important',
+                  border: '1.5px solid',
+                  borderColor: 'divider',
+                  px: { xs: 1.25, md: 1.5 },
+                  py: 0.5,
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  color: 'text.secondary',
+                  whiteSpace: 'nowrap',
+                },
+                '& .Mui-selected': {
+                  bgcolor: 'primary.main !important',
+                  color: '#fff !important',
+                  borderColor: 'primary.main !important',
+                },
+              }}
+            >
+              <ToggleButton value="location">À louer</ToggleButton>
+              <ToggleButton value="vente">À vendre</ToggleButton>
+            </ToggleButtonGroup>
+          )}
+
           {!isMobile && (
             <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
           )}
