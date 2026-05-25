@@ -67,6 +67,11 @@ const nextConfig: NextConfig = {
     // Tighter responsive sizes — avoids serving 1920-wide images for mobile cards.
     deviceSizes: [390, 640, 768, 1024, 1280, 1920],
     imageSizes: [64, 128, 256, 384],
+    // Cache optimized images for 7 days in the Next.js image cache (default is 60 s).
+    // R2/CDN images are immutable — no need to re-process them on every request.
+    minimumCacheTTL: 60 * 60 * 24 * 7,
+    // Serve images inline (not as attachment) — required for browser img tag display.
+    contentDispositionType: 'inline',
     // In dev, keyhome.test resolves to 127.0.0.1 which next/image blocks.
     // Skip optimization locally; production uses real domains and works fine.
     unoptimized: process.env.NODE_ENV === 'development',

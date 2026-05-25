@@ -358,6 +358,7 @@ function AdCard({ ad, showDistance, imageSizes }: AdCardProps) {
                       '(max-width: 600px) 50vw, (max-width: 960px) 33vw, 25vw'
                     }
                     priority={currentImage === 0}
+                    fetchPriority={currentImage === 0 ? 'high' : 'auto'}
                     placeholder="blur"
                     blurDataURL={BLUR_DATA_URL}
                     style={{ objectFit: 'cover' }}

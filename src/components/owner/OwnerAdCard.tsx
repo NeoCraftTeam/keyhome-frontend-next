@@ -84,6 +84,8 @@ export default function OwnerAdCard({
               src={imageUrl}
               alt={ad.title}
               fill
+              priority
+              fetchPriority="high"
               sizes="(max-width: 600px) 100vw, 400px"
               style={{ objectFit: 'cover' }}
             />
