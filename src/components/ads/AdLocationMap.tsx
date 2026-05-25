@@ -4,7 +4,6 @@ import type { UserLocation } from '@/hooks/useUserLocation';
 import { MAPBOX_TOKEN } from '@/lib/constants';
 import { formatDistance, haversineDistance } from '@/lib/geo/geo';
 import { brand } from '@/theme/tokens';
-import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import PlaceOutlined from '@mui/icons-material/PlaceOutlined';
 import { Box, Typography, useTheme } from '@mui/material';
 import mapboxgl from 'mapbox-gl';
@@ -730,18 +729,7 @@ export default function AdLocationMap({
           gap: 0.5,
           mt: 1.5,
         }}
-      >
-        <InfoOutlined sx={{ fontSize: 14, color: 'text.disabled', mt: 0.15 }} />
-        <Typography variant="caption" color="text.secondary">
-          {isLocked
-            ? 'La localisation exacte sera communiquée après déverrouillage.'
-            : showRoute
-              ? routeGeojson
-                ? 'Itinéraire routier calculé via OpenRouteService. L\u2019emplacement exact est visible car l\u2019annonce est débloquée.'
-                : 'Distance calculée en ligne droite. L\u2019emplacement exact est visible car l\u2019annonce est débloquée.'
-              : 'L\u2019emplacement exact est indiqué sur la carte.'}
-        </Typography>
-      </Box>
+      ></Box>
     </Box>
   );
 }

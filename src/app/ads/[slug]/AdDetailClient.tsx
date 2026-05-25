@@ -13,7 +13,6 @@ import SimilarAds from '@/components/ads/SimilarAds';
 import StickyPropertyBar from '@/components/ads/StickyPropertyBar';
 import SupplementaryInfoCard from '@/components/ads/SupplementaryInfoCard';
 import ContactChatButton from '@/components/chat/ContactChatButton';
-import ReportAdButton from '@/components/disputes/ReportAdButton';
 import ReviewForm from '@/components/reviews/ReviewForm';
 import ReviewsSection from '@/components/reviews/ReviewsSection';
 import TrustScoreBadge from '@/components/trust/TrustScoreBadge';
@@ -2226,9 +2225,6 @@ function AdDetailContent() {
                         adSlug={ad.slug}
                         hostFirstName={publisherFirstName || undefined}
                       />
-                      {isAuthenticated && !isOwnAd && (
-                        <ReportAdButton ad={ad} size="small" />
-                      )}
                       {/* Booking button — mobile only, unlocked */}
                       {!isOwnAd && !isLocked && (
                         <Button
@@ -2714,9 +2710,6 @@ function AdDetailContent() {
                         adSlug={ad.slug}
                         hostFirstName={publisherFirstName || undefined}
                       />
-                      {isAuthenticated && !isOwnAd && (
-                        <ReportAdButton ad={ad} size="small" />
-                      )}
                       {publisherEmail && (
                         <Box
                           sx={{

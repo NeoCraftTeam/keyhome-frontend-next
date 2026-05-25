@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import EmailOutlined from '@mui/icons-material/EmailOutlined';
-import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
-import { useLandingTheme } from './LandingThemeContext';
 import { brand, gradient, semantic } from '@/theme/tokens';
+import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
+import EmailOutlined from '@mui/icons-material/EmailOutlined';
+import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { useLandingTheme } from './LandingThemeContext';
 
 /** RFC-5322 compatible enough for client-side gating; backend re-validates. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -191,6 +191,7 @@ export default function NewsletterSection() {
                   inputMode="email"
                   aria-invalid={Boolean(error)}
                   aria-describedby={error ? 'newsletter-error' : undefined}
+                  suppressHydrationWarning
                   style={{
                     flex: 1,
                     padding: '14px 18px',
