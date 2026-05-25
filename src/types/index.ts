@@ -126,6 +126,8 @@ export interface CursorPaginatedResponse<T> {
     prev: string | null;
     next: string | null;
   };
+  /** Approximate total count — cached 10 min server-side (gap #3 audit). */
+  total_approximate?: number;
 }
 
 import type { User } from './user';

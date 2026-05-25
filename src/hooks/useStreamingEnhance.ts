@@ -46,7 +46,7 @@ export function useStreamingEnhance() {
                 ?.split('=')[1]
             : undefined;
 
-        const res = await fetch(`${API_BASE}/api/v1/ads/ai/stream-enhance`, {
+        const res = await fetch(`${API_BASE}/ads/ai/stream-enhance`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -49,13 +49,14 @@ export const adsService = {
   },
 
   /**
-   * Cursor-paginated public feed (`GET /ads/feed`) for infinite scroll
-   * (home page — no total count).
+   * Cursor-paginated public feed (`GET /ads/feed`) for infinite scroll.
+   * Response includes `total_approximate` (cached 10 min server-side).
    */
   async feed(params?: {
     cursor?: string | null;
     per_page?: number;
     type?: string;
+    sort?: 'newest' | 'price_asc' | 'price_desc';
     exclude_ids?: string[];
   }): Promise<CursorPaginatedResponse<Ad>> {
     const { data } = await api.get<CursorPaginatedResponse<Ad>>('/ads/feed', {

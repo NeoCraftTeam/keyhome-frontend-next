@@ -171,6 +171,7 @@ export default function OwnerNewAdPage() {
   const { user, refreshUser } = useAuth();
   const router = useRouter();
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [adCreated, setAdCreated] = useState(false);
   const [activePanel, setActivePanel] = useState<'form' | 'profile'>('form');
   const { steps, isComplete, progress } = useProfileCompleteness(user);
 
@@ -350,6 +351,7 @@ export default function OwnerNewAdPage() {
       return ad;
     },
     onSuccess: () => {
+      setAdCreated(true);
       setScheduleDialogOpen(true);
     },
     onError: (err: unknown) => {
@@ -466,7 +468,7 @@ export default function OwnerNewAdPage() {
           onCancel={() => router.back()}
           submitLabel="Publier l'annonce"
           draftLabel="Enregistrer le brouillon"
-          isSubmitting={createMutation.isPending}
+          isSubmitting={createMutation.isPending || adCreated}
           isSavingDraft={draftMutation.isPending}
           onEnhanceDescription={handleEnhance}
           onEnhanceTitle={handleEnhanceTitle}

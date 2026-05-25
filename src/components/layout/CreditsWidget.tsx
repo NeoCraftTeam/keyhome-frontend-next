@@ -67,6 +67,14 @@ export default function CreditsWidget() {
     return () => window.removeEventListener('kh:welcome-dismissed', handler);
   }, []);
 
+  // Singleton : d'autres composants peuvent demander l'ouverture du modal
+  // via window.dispatchEvent(new CustomEvent('kh:open-credits-modal'))
+  useEffect(() => {
+    const handler = () => setModalOpen(true);
+    window.addEventListener('kh:open-credits-modal', handler);
+    return () => window.removeEventListener('kh:open-credits-modal', handler);
+  }, []);
+
   const isLowCredit = !balanceLoading && balance !== undefined && balance <= 3;
 
   const handleClick = () => {

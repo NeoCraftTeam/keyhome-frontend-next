@@ -7,6 +7,7 @@ import ClientProfileBanner from '@/components/dashboard/ClientProfileBanner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import FadeIn from '@/components/ui/FadeIn';
 import QueryError from '@/components/ui/QueryError';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 
@@ -21,8 +22,10 @@ import { City } from '@/types';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import Apartment from '@mui/icons-material/Apartment';
 import HomeIcon from '@mui/icons-material/Home';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Landscape from '@mui/icons-material/Landscape';
 import MapsHomeWork from '@mui/icons-material/MapsHomeWork';
+import SortIcon from '@mui/icons-material/Sort';
 import Store from '@mui/icons-material/Store';
 import Villa from '@mui/icons-material/Villa';
 import WavingHandIcon from '@mui/icons-material/WavingHand';
@@ -35,8 +38,14 @@ import {
   Dialog,
   DialogContent,
   Divider,
+  Fab,
   Grid,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Tooltip,
   Typography,
+  Zoom,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -84,6 +93,10 @@ const CATEGORIES = [
 export default function HomePage() {
   const prefersReducedMotion = useReducedMotion();
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [feedSort, setFeedSort] = useState<
+    'newest' | 'price_asc' | 'price_desc'
+  >('newest');
+  const [showBackTop, setShowBackTop] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const gridRef = useRef<HTMLDivElement>(null);
@@ -183,13 +196,21 @@ export default function HomePage() {
     );
   }, [router]);
 
+  // Gap #6: affiche le FAB "retour en haut" après 600px de scroll
+  useEffect(() => {
+    const onScroll = () => setShowBackTop(window.scrollY > 600);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   // Recommendations
-  const { data: recommendationsData } = useQuery({
-    queryKey: ['recommendations'],
-    queryFn: () => recommendationsService.list(),
-    staleTime: 5 * 60 * 1000,
-    enabled: isAuthenticated,
-  });
+  const { data: recommendationsData, isLoading: isRecommendationsLoading } =
+    useQuery({
+      queryKey: ['recommendations'],
+      queryFn: () => recommendationsService.list(),
+      staleTime: 5 * 60 * 1000,
+      enabled: isAuthenticated,
+    });
 
   const recommendations = recommendationsData?.data || [];
   const recommendedIds = useMemo(
@@ -210,12 +231,13 @@ export default function HomePage() {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: ['ads-feed', selectedCategory, recommendedIds],
+    queryKey: ['ads-feed', selectedCategory, recommendedIds, feedSort],
     queryFn: ({ pageParam }) =>
       adsService.feed({
         cursor: pageParam ?? undefined,
         per_page: 20,
         type: selectedCategory || undefined,
+        sort: feedSort,
         exclude_ids: recommendedIds.length > 0 ? recommendedIds : undefined,
       }),
     initialPageParam: null as string | null,
@@ -228,6 +250,13 @@ export default function HomePage() {
     () => adsData?.pages.flatMap((p) => p.data) ?? [],
     [adsData]
   );
+
+  // Gap #3: compteur approx depuis la 1ère page
+  const totalApproximate = adsData?.pages[0]?.total_approximate;
+
+  // Gap #1: restaure la position de scroll après le retour arrière
+  useScrollRestoration('/home', ads.length > 0 || isError);
+
   const skeletonCount = isMobile ? 4 : 12;
   const showShimmer =
     isLoading || (isFetching && ads.length === 0) || isPending;
@@ -548,23 +577,53 @@ export default function HomePage() {
           <>
             {/* Main grid — en premier quand un filtre est actif */}
             <FadeIn delay={0.1} direction="up">
-              <Box
-                ref={gridRef}
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  mb: 2,
-                  scrollMarginTop: '80px',
-                }}
-              >
-                <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
-                  {CATEGORIES.find((c) => c.value === selectedCategory)
-                    ?.label || selectedCategory}
-                </Typography>
-                {isFetching && !showShimmer && (
+              <Box ref={gridRef} sx={{ mb: 2, scrollMarginTop: '80px' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
+                    {CATEGORIES.find((c) => c.value === selectedCategory)
+                      ?.label || selectedCategory}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {isFetching && !showShimmer && (
+                      <Typography variant="caption" color="text.secondary">
+                        Mise à jour...
+                      </Typography>
+                    )}
+                    <Select
+                      value={feedSort}
+                      onChange={(e: SelectChangeEvent) =>
+                        setFeedSort(e.target.value as typeof feedSort)
+                      }
+                      size="small"
+                      variant="outlined"
+                      aria-label="Trier les annonces"
+                      startAdornment={
+                        <SortIcon sx={{ fontSize: 15, mr: 0.5 }} />
+                      }
+                      sx={{
+                        fontSize: '0.78rem',
+                        '& .MuiSelect-select': {
+                          py: 0.6,
+                          pr: '28px !important',
+                        },
+                      }}
+                    >
+                      <MenuItem value="newest">Plus récentes</MenuItem>
+                      <MenuItem value="price_asc">Prix croissant</MenuItem>
+                      <MenuItem value="price_desc">Prix décroissant</MenuItem>
+                    </Select>
+                  </Box>
+                </Box>
+                {totalApproximate !== undefined && (
                   <Typography variant="caption" color="text.secondary">
-                    Mise à jour...
+                    {totalApproximate.toLocaleString('fr-FR')} annonces
+                    disponibles
                   </Typography>
                 )}
               </Box>
@@ -640,45 +699,62 @@ export default function HomePage() {
             <Divider sx={{ my: { xs: 3, md: 4 } }} />
 
             {/* Recommendations — en dessous quand filtre actif */}
-            {recommendations.length > 0 && (
-              <FadeIn delay={0.15} direction="up">
-                <Box sx={{ mb: { xs: 3, md: 4 } }}>
-                  <Typography
-                    variant={isMobile ? 'h6' : 'h5'}
-                    fontWeight={700}
-                    gutterBottom
-                  >
-                    Recommandé pour vous
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      gap: { xs: 1.5, md: 2 },
-                      overflowX: 'auto',
-                      pb: 1,
-                      scrollbarWidth: 'none',
-                      '&::-webkit-scrollbar': { display: 'none' },
-                      mx: { xs: -2, sm: 0 },
-                      px: { xs: 2, sm: 0 },
-                      touchAction: 'pan-x pan-y',
-                    }}
-                  >
-                    {recommendations.slice(0, 8).map((ad) => (
-                      <Box
-                        key={ad.id}
-                        sx={{
-                          minWidth: { xs: 220, sm: 260, md: 280 },
-                          maxWidth: { xs: 220, sm: 260, md: 280 },
-                          flexShrink: 0,
-                        }}
-                      >
-                        <AdCard ad={ad} />
-                      </Box>
-                    ))}
+            {isAuthenticated &&
+              (isRecommendationsLoading || recommendations.length > 0) && (
+                <FadeIn delay={0.15} direction="up">
+                  <Box sx={{ mb: { xs: 3, md: 4 } }}>
+                    <Typography
+                      variant={isMobile ? 'h6' : 'h5'}
+                      fontWeight={700}
+                      gutterBottom
+                    >
+                      Recommandé pour vous
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: { xs: 1.5, md: 2 },
+                        overflowX: 'auto',
+                        pb: 1,
+                        scrollbarWidth: 'none',
+                        '&::-webkit-scrollbar': { display: 'none' },
+                        mx: { xs: -2, sm: 0 },
+                        px: { xs: 2, sm: 0 },
+                        touchAction: 'pan-x pan-y',
+                      }}
+                    >
+                      {isRecommendationsLoading
+                        ? Array.from({ length: 4 }).map((_, i) => (
+                            <Box
+                              key={i}
+                              sx={{
+                                minWidth: { xs: 220, sm: 260, md: 280 },
+                                maxWidth: { xs: 220, sm: 260, md: 280 },
+                                flexShrink: 0,
+                              }}
+                            >
+                              <AdCardSkeleton />
+                            </Box>
+                          ))
+                        : recommendations.slice(0, 8).map((ad) => (
+                            <Box
+                              key={ad.id}
+                              sx={{
+                                minWidth: { xs: 220, sm: 260, md: 280 },
+                                maxWidth: { xs: 220, sm: 260, md: 280 },
+                                flexShrink: 0,
+                              }}
+                            >
+                              <AdCard
+                                ad={ad}
+                                imageSizes="(max-width: 600px) 220px, 280px"
+                              />
+                            </Box>
+                          ))}
+                    </Box>
                   </Box>
-                </Box>
-              </FadeIn>
-            )}
+                </FadeIn>
+              )}
 
             {/* Recently viewed */}
             {recentlyViewed.length > 0 && (
@@ -724,7 +800,10 @@ export default function HomePage() {
                           flexShrink: 0,
                         }}
                       >
-                        <AdCard ad={ad} />
+                        <AdCard
+                          ad={ad}
+                          imageSizes="(max-width: 600px) 220px, 280px"
+                        />
                       </Box>
                     ))}
                   </Box>
@@ -735,46 +814,63 @@ export default function HomePage() {
         ) : (
           <>
             {/* Default (Tous): Recommendations et Récemment consultés en premier */}
-            {recommendations.length > 0 && (
-              <FadeIn delay={0.1} direction="up">
-                <Box sx={{ mb: { xs: 3, md: 4 } }}>
-                  <Typography
-                    variant={isMobile ? 'h6' : 'h5'}
-                    fontWeight={700}
-                    gutterBottom
-                  >
-                    Recommandé pour vous
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      gap: { xs: 1.5, md: 2 },
-                      overflowX: 'auto',
-                      pb: 1,
-                      scrollbarWidth: 'none',
-                      '&::-webkit-scrollbar': { display: 'none' },
-                      mx: { xs: -2, sm: 0 },
-                      px: { xs: 2, sm: 0 },
-                      touchAction: 'pan-x pan-y',
-                    }}
-                  >
-                    {recommendations.slice(0, 8).map((ad) => (
-                      <Box
-                        key={ad.id}
-                        sx={{
-                          minWidth: { xs: 220, sm: 260, md: 280 },
-                          maxWidth: { xs: 220, sm: 260, md: 280 },
-                          flexShrink: 0,
-                        }}
-                      >
-                        <AdCard ad={ad} />
-                      </Box>
-                    ))}
+            {isAuthenticated &&
+              (isRecommendationsLoading || recommendations.length > 0) && (
+                <FadeIn delay={0.1} direction="up">
+                  <Box sx={{ mb: { xs: 3, md: 4 } }}>
+                    <Typography
+                      variant={isMobile ? 'h6' : 'h5'}
+                      fontWeight={700}
+                      gutterBottom
+                    >
+                      Recommandé pour vous
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: { xs: 1.5, md: 2 },
+                        overflowX: 'auto',
+                        pb: 1,
+                        scrollbarWidth: 'none',
+                        '&::-webkit-scrollbar': { display: 'none' },
+                        mx: { xs: -2, sm: 0 },
+                        px: { xs: 2, sm: 0 },
+                        touchAction: 'pan-x pan-y',
+                      }}
+                    >
+                      {isRecommendationsLoading
+                        ? Array.from({ length: 4 }).map((_, i) => (
+                            <Box
+                              key={i}
+                              sx={{
+                                minWidth: { xs: 220, sm: 260, md: 280 },
+                                maxWidth: { xs: 220, sm: 260, md: 280 },
+                                flexShrink: 0,
+                              }}
+                            >
+                              <AdCardSkeleton />
+                            </Box>
+                          ))
+                        : recommendations.slice(0, 8).map((ad) => (
+                            <Box
+                              key={ad.id}
+                              sx={{
+                                minWidth: { xs: 220, sm: 260, md: 280 },
+                                maxWidth: { xs: 220, sm: 260, md: 280 },
+                                flexShrink: 0,
+                              }}
+                            >
+                              <AdCard
+                                ad={ad}
+                                imageSizes="(max-width: 600px) 220px, 280px"
+                              />
+                            </Box>
+                          ))}
+                    </Box>
+                    <Divider sx={{ mt: { xs: 2, md: 3 } }} />
                   </Box>
-                  <Divider sx={{ mt: { xs: 2, md: 3 } }} />
-                </Box>
-              </FadeIn>
-            )}
+                </FadeIn>
+              )}
 
             {recentlyViewed.length > 0 && (
               <FadeIn delay={0.15} direction="up">
@@ -819,7 +915,10 @@ export default function HomePage() {
                           flexShrink: 0,
                         }}
                       >
-                        <AdCard ad={ad} />
+                        <AdCard
+                          ad={ad}
+                          imageSizes="(max-width: 600px) 220px, 280px"
+                        />
                       </Box>
                     ))}
                   </Box>
@@ -830,25 +929,55 @@ export default function HomePage() {
 
             {/* Main grid — Annonces récentes */}
             <FadeIn delay={0.2} direction="up">
-              <Box
-                ref={gridRef}
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  mb: 2,
-                  scrollMarginTop: '80px',
-                }}
-              >
-                <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
-                  {selectedCategory
-                    ? CATEGORIES.find((c) => c.value === selectedCategory)
-                        ?.label || selectedCategory
-                    : 'Annonces récentes'}
-                </Typography>
-                {isFetching && !showShimmer && (
+              <Box ref={gridRef} sx={{ mb: 2, scrollMarginTop: '80px' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
+                    {selectedCategory
+                      ? CATEGORIES.find((c) => c.value === selectedCategory)
+                          ?.label || selectedCategory
+                      : 'Annonces récentes'}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {isFetching && !showShimmer && (
+                      <Typography variant="caption" color="text.secondary">
+                        Mise à jour...
+                      </Typography>
+                    )}
+                    <Select
+                      value={feedSort}
+                      onChange={(e: SelectChangeEvent) =>
+                        setFeedSort(e.target.value as typeof feedSort)
+                      }
+                      size="small"
+                      variant="outlined"
+                      aria-label="Trier les annonces"
+                      startAdornment={
+                        <SortIcon sx={{ fontSize: 15, mr: 0.5 }} />
+                      }
+                      sx={{
+                        fontSize: '0.78rem',
+                        '& .MuiSelect-select': {
+                          py: 0.6,
+                          pr: '28px !important',
+                        },
+                      }}
+                    >
+                      <MenuItem value="newest">Plus récentes</MenuItem>
+                      <MenuItem value="price_asc">Prix croissant</MenuItem>
+                      <MenuItem value="price_desc">Prix décroissant</MenuItem>
+                    </Select>
+                  </Box>
+                </Box>
+                {totalApproximate !== undefined && (
                   <Typography variant="caption" color="text.secondary">
-                    Mise à jour...
+                    {totalApproximate.toLocaleString('fr-FR')} annonces
+                    disponibles
                   </Typography>
                 )}
               </Box>
@@ -923,6 +1052,29 @@ export default function HomePage() {
           </>
         )}
       </Container>
+
+      {/* Gap #6: Bouton retour en haut — apparaît après 600px de scroll */}
+      <Zoom in={showBackTop}>
+        <Tooltip title="Retour en haut" placement="left">
+          <Fab
+            size="small"
+            aria-label="Retour en haut de la page"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            sx={{
+              position: 'fixed',
+              bottom: { xs: 80, sm: 32 },
+              right: { xs: 16, sm: 32 },
+              zIndex: 1200,
+              bgcolor: 'background.paper',
+              color: 'text.primary',
+              boxShadow: 3,
+              '&:hover': { bgcolor: 'action.hover' },
+            }}
+          >
+            <KeyboardArrowUpIcon />
+          </Fab>
+        </Tooltip>
+      </Zoom>
     </Box>
   );
 }

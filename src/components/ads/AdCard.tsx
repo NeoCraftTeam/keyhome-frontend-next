@@ -105,6 +105,8 @@ const BLUR_DATA_URL =
 interface AdCardProps {
   ad: Ad;
   showDistance?: boolean;
+  /** Override Next.js Image `sizes` — use `"220px"` in horizontal carousels (gap #5 audit). */
+  imageSizes?: string;
 }
 
 /**
@@ -113,7 +115,7 @@ interface AdCardProps {
  *  - Clean typography directly below image, no wrapper box
  *  - Price on its own line, features compact row above it
  */
-function AdCard({ ad, showDistance }: AdCardProps) {
+function AdCard({ ad, showDistance, imageSizes }: AdCardProps) {
   const router = useRouter();
   const [currentImage, setCurrentImage] = useState(0);
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
@@ -351,7 +353,10 @@ function AdCard({ ad, showDistance }: AdCardProps) {
                     src={images[currentImage].thumb || images[currentImage].url}
                     alt={`${ad.title} — photo ${currentImage + 1} sur ${images.length}`}
                     fill
-                    sizes="(max-width: 600px) 50vw, (max-width: 960px) 33vw, 25vw"
+                    sizes={
+                      imageSizes ??
+                      '(max-width: 600px) 50vw, (max-width: 960px) 33vw, 25vw'
+                    }
                     priority={currentImage === 0}
                     placeholder="blur"
                     blurDataURL={BLUR_DATA_URL}
@@ -895,5 +900,6 @@ export default memo(
   (prev, next) =>
     prev.ad.id === next.ad.id &&
     prev.ad.updated_at === next.ad.updated_at &&
-    prev.showDistance === next.showDistance
+    prev.showDistance === next.showDistance &&
+    prev.imageSizes === next.imageSizes
 );

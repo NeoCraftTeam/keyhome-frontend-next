@@ -19,7 +19,6 @@ import TrustScoreBadge from '@/components/trust/TrustScoreBadge';
 import AppLoader from '@/components/ui/AppLoader';
 import FadeIn from '@/components/ui/FadeIn';
 import ImageLightbox from '@/components/ui/ImageLightbox';
-import PackageCard from '@/components/ui/PackageCard';
 import PageBreadcrumbs from '@/components/ui/PageBreadcrumbs';
 import { Price } from '@/components/ui/Price';
 import QueryError from '@/components/ui/QueryError';
@@ -32,7 +31,6 @@ import { useUserLocation } from '@/hooks/useUserLocation';
 import { trackViewAd } from '@/lib/analytics/track-events';
 import { formatDate, formatPrice, formatRelativeDate } from '@/lib/constants';
 import { getSafeErrorMessage } from '@/lib/error-messages';
-import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   COMPARATOR_MAX_ITEMS,
@@ -44,7 +42,7 @@ import { creditsService } from '@/services/credits.service';
 import type { DirectionsSummary } from '@/services/geo.service';
 import { paymentsService } from '@/services/payments.service';
 import { brand, gradient } from '@/theme/tokens';
-import type { PointPackage, UnlockResponse } from '@/types';
+import type { UnlockResponse } from '@/types';
 import AccountBalanceWallet from '@mui/icons-material/AccountBalanceWallet';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import BathtubOutlined from '@mui/icons-material/BathtubOutlined';
@@ -141,7 +139,6 @@ function AdDetailContent() {
   } = useComparator();
   const [compareDrawerOpen, setCompareDrawerOpen] = useState(false);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
-  const [isPackageLoading, setIsPackageLoading] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState('');
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [unlockState, setUnlockState] = useState<UnlockResponse | null>(null);
@@ -405,34 +402,6 @@ function AdDetailContent() {
         });
       }
       setIsPaymentLoading(false);
-    }
-  };
-
-  const handlePurchasePackage = async (pkg: PointPackage) => {
-    setIsPackageLoading(pkg.id);
-    setPaymentError('');
-    try {
-      // The callback page reads `tx_ref` from the query string so it can
-      // verify the EXACT payment created in this checkout session, even if
-      // the user's session cookie was lost during the cross-origin
-      // Flutterwave redirect (Safari/Firefox SameSite=Lax limitation).
-      // We hit `purchase()` first (returns tx_ref), THEN navigate.
-      const probeUrl = `${window.location.origin}/credits/callback?ad_id=${ad.id}`;
-      const response = await creditsService.purchase(pkg.id, probeUrl);
-
-      // Append `tx_ref` to the callback so the page can target it. The
-      // callback URL was already passed to Flutterwave above, but
-      // Flutterwave appends its own `?status=...&tx_ref=...` on return,
-      // so we don't need to update it server-side here.
-      if (!redirectToTrustedUrl(response.payment_url)) {
-        throw new Error('URL de paiement non approuvée.');
-      }
-    } catch (err) {
-      setPaymentError(
-        getSafeErrorMessage(err, "Erreur lors de l'initialisation du paiement.")
-      );
-    } finally {
-      setIsPackageLoading(null);
     }
   };
 
@@ -1632,7 +1601,7 @@ function AdDetailContent() {
                           titleAccess="Annonce vérifiée"
                         />
                       )}
-                      {ad.user?.trust_score && (
+                      {!!ad.user?.trust_score && (
                         <TrustScoreBadge
                           trustScore={ad.user.trust_score}
                           size="small"
@@ -3135,62 +3104,33 @@ function AdDetailContent() {
                       );
                     })()}
 
-                    {unlockState.packages && unlockState.packages.length > 0 ? (
-                      <>
-                        <Typography
-                          variant="subtitle2"
-                          fontWeight={600}
-                          sx={{
-                            mb: 1.5,
-                            color: 'text.secondary',
-                            textTransform: 'uppercase',
-                            fontSize: '0.7rem',
-                            letterSpacing: 0.5,
-                          }}
-                        >
-                          Choisissez un pack de crédits
-                        </Typography>
-                        <Grid container spacing={1.5} sx={{ mb: 2 }}>
-                          {[...unlockState.packages]
-                            .sort(
-                              (a, b) =>
-                                (b.is_popular ? 1 : 0) - (a.is_popular ? 1 : 0)
-                            )
-                            .map((pkg) => {
-                              const requiredPoints =
-                                unlockState.required_points ?? 0;
-                              const wouldBeEnough =
-                                (pkg.points_awarded ?? 0) >= requiredPoints;
-                              return (
-                                <Grid
-                                  key={pkg.id}
-                                  size={{
-                                    xs: 12,
-                                    sm: 6,
-                                    lg: pkg.is_popular ? 12 : 4,
-                                  }}
-                                >
-                                  <PackageCard
-                                    pkg={pkg}
-                                    loading={isPackageLoading === pkg.id}
-                                    onPurchase={handlePurchasePackage}
-                                    wouldBeEnough={wouldBeEnough}
-                                  />
-                                </Grid>
-                              );
-                            })}
-                        </Grid>
-                      </>
-                    ) : (
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 2 }}
-                      >
-                        Aucun pack disponible pour le moment. Veuillez réessayer
-                        ultérieurement.
-                      </Typography>
-                    )}
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      size="large"
+                      onClick={() => {
+                        setPaymentDialogOpen(false);
+                        window.dispatchEvent(
+                          new CustomEvent('kh:open-credits-modal')
+                        );
+                      }}
+                      sx={{
+                        py: 1.5,
+                        fontWeight: 700,
+                        mb: 1,
+                        borderRadius: 2.5,
+                        background: (theme) =>
+                          theme.palette.gradient?.primary ?? gradient.primary,
+                        '&:hover': {
+                          background: (theme) =>
+                            theme.palette.gradient?.primaryHover ??
+                            gradient.primaryHover,
+                        },
+                        '&:active': { transform: 'scale(0.97)' },
+                      }}
+                    >
+                      Recharger mes crédits
+                    </Button>
                   </Box>
                 ) : confirmStep ? (
                   <>
