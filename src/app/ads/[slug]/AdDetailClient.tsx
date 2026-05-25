@@ -3104,33 +3104,42 @@ function AdDetailContent() {
                       );
                     })()}
 
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      size="large"
-                      onClick={() => {
-                        setPaymentDialogOpen(false);
-                        window.dispatchEvent(
-                          new CustomEvent('kh:open-credits-modal')
-                        );
-                      }}
+                    <Box
                       sx={{
-                        py: 1.5,
-                        fontWeight: 700,
-                        mb: 1,
-                        borderRadius: 2.5,
-                        background: (theme) =>
-                          theme.palette.gradient?.primary ?? gradient.primary,
-                        '&:hover': {
-                          background: (theme) =>
-                            theme.palette.gradient?.primaryHover ??
-                            gradient.primaryHover,
-                        },
-                        '&:active': { transform: 'scale(0.97)' },
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        mt: 1,
                       }}
                     >
-                      Recharger mes crédits
-                    </Button>
+                      <Button
+                        variant="contained"
+                        size="medium"
+                        onClick={() => {
+                          setPaymentDialogOpen(false);
+                          window.dispatchEvent(
+                            new CustomEvent('kh:open-credits-modal')
+                          );
+                        }}
+                        sx={{
+                          width: '100%',
+                          maxWidth: 280,
+                          py: 1.2,
+                          fontWeight: 700,
+                          borderRadius: 2.5,
+                          background: (theme) =>
+                            theme.palette.gradient?.primary ?? gradient.primary,
+                          '&:hover': {
+                            background: (theme) =>
+                              theme.palette.gradient?.primaryHover ??
+                              gradient.primaryHover,
+                          },
+                          '&:active': { transform: 'scale(0.97)' },
+                        }}
+                      >
+                        Recharger mes crédits
+                      </Button>
+                    </Box>
                   </Box>
                 ) : confirmStep ? (
                   <>
@@ -3153,37 +3162,47 @@ function AdDetailContent() {
                         irréversible.
                       </Typography>
                     </Alert>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      size="large"
-                      onClick={handleUnlock}
-                      disabled={isPaymentLoading}
+                    <Box
                       sx={{
-                        py: 1.5,
-                        fontWeight: 600,
-                        mb: 1,
-                        borderRadius: 2.5,
-                        background: (theme) =>
-                          theme.palette.gradient?.primary ?? gradient.primary,
-                        '&:hover': {
-                          background: (theme) =>
-                            theme.palette.gradient?.primaryHover ??
-                            gradient.primaryHover,
-                        },
-                        '&:active': { transform: 'scale(0.97)' },
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        mt: 1,
                       }}
                     >
-                      Confirmer
-                    </Button>
-                    <Button
-                      fullWidth
-                      variant="text"
-                      onClick={() => setConfirmStep(false)}
-                      sx={{ color: 'text.secondary', borderRadius: 2.5 }}
-                    >
-                      Retour
-                    </Button>
+                      <Button
+                        variant="contained"
+                        size="medium"
+                        onClick={handleUnlock}
+                        disabled={isPaymentLoading}
+                        sx={{
+                          width: '100%',
+                          maxWidth: 280,
+                          py: 1.2,
+                          fontWeight: 600,
+                          borderRadius: 2.5,
+                          background: (theme) =>
+                            theme.palette.gradient?.primary ?? gradient.primary,
+                          '&:hover': {
+                            background: (theme) =>
+                              theme.palette.gradient?.primaryHover ??
+                              gradient.primaryHover,
+                          },
+                          '&:active': { transform: 'scale(0.97)' },
+                        }}
+                      >
+                        Confirmer
+                      </Button>
+                      <Button
+                        variant="text"
+                        size="small"
+                        onClick={() => setConfirmStep(false)}
+                        sx={{ color: 'text.secondary', borderRadius: 2.5 }}
+                      >
+                        Retour
+                      </Button>
+                    </Box>
                   </>
                 ) : (
                   <>
@@ -3208,47 +3227,58 @@ function AdDetailContent() {
                     >
                       Plus de 200 annonces déverrouillées cette semaine
                     </Typography>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      size="large"
-                      onClick={() => setConfirmStep(true)}
+                    <Box
                       sx={{
-                        py: 1.5,
-                        fontWeight: 600,
-                        mb: 1,
-                        borderRadius: 2.5,
-                        background: (theme) =>
-                          theme.palette.gradient?.primary ?? gradient.primary,
-                        '&:hover': {
-                          background: (theme) =>
-                            theme.palette.gradient?.primaryHover ??
-                            gradient.primaryHover,
-                        },
-                        '&:active': { transform: 'scale(0.97)' },
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        mt: 1,
                       }}
                     >
-                      Déverrouiller
-                    </Button>
+                      <Button
+                        variant="contained"
+                        size="medium"
+                        onClick={() => setConfirmStep(true)}
+                        sx={{
+                          width: '100%',
+                          maxWidth: 280,
+                          py: 1.2,
+                          fontWeight: 600,
+                          borderRadius: 2.5,
+                          background: (theme) =>
+                            theme.palette.gradient?.primary ?? gradient.primary,
+                          '&:hover': {
+                            background: (theme) =>
+                              theme.palette.gradient?.primaryHover ??
+                              gradient.primaryHover,
+                          },
+                          '&:active': { transform: 'scale(0.97)' },
+                        }}
+                      >
+                        Déverrouiller
+                      </Button>
+                    </Box>
                   </>
                 )}
               </motion.div>
             )}
           </AnimatePresence>
 
-          <Button
-            fullWidth
-            variant="text"
-            onClick={() => {
-              setPaymentDialogOpen(false);
-              setUnlockState(null);
-              setPaymentError('');
-              setConfirmStep(false);
-            }}
-            sx={{ color: 'text.secondary', mt: 1, borderRadius: 2.5 }}
-          >
-            Annuler
-          </Button>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+            <Button
+              variant="text"
+              size="small"
+              onClick={() => {
+                setPaymentDialogOpen(false);
+                setUnlockState(null);
+                setPaymentError('');
+                setConfirmStep(false);
+              }}
+              sx={{ color: 'text.secondary', borderRadius: 2.5 }}
+            >
+              Annuler
+            </Button>
+          </Box>
         </Box>
       </Dialog>
 
