@@ -507,11 +507,10 @@ export default function HomePage() {
                 color="text.primary"
                 sx={{ fontSize: { xs: '1rem', md: '1.15rem' } }}
               >
-                {greeting},{' '}
+                {greeting}{' '}
                 <Box component="span" sx={{ color: 'primary.main' }}>
                   {user.firstname}
                 </Box>{' '}
-                !
               </Typography>
             </Box>
           </FadeIn>

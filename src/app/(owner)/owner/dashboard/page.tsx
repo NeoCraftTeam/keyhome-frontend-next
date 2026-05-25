@@ -314,11 +314,10 @@ export default function OwnerDashboardPage() {
                   fontWeight={700}
                   sx={{ fontSize: { xs: '1.05rem', sm: '1.2rem' } }}
                 >
-                  {greeting},{' '}
+                  {greeting}{' '}
                   <Box component="span" sx={{ color: 'primary.main' }}>
                     {user?.firstname || 'Propriétaire'}
                   </Box>{' '}
-                  !
                 </Typography>
               </Box>
             </FadeIn>

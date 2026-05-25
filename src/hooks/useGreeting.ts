@@ -13,7 +13,8 @@ function getTimeBasedGreeting(): string {
   const hour = new Date().getHours();
   if (hour >= 5 && hour < 12) return 'Bonjour';
   if (hour >= 12 && hour < 18) return 'Bon après-midi';
-  return 'Bonsoir';
+  if (hour >= 18 && hour < 21) return 'Bonsoir';
+  return 'Il se fait tard';
 }
 
 /**
