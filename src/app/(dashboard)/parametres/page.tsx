@@ -449,6 +449,8 @@ export default function ParametresPage() {
               <SectionTitle>A propos</SectionTitle>
               <SettingsCard>
                 {[
+                  { label: 'Signaler un litige', href: '/litiges' },
+                  { label: 'Mes remboursements', href: '/remboursements' },
                   { label: 'Aide & FAQ', href: '/aide' },
                   { label: "Conditions d'utilisation", href: '/conditions' },
                   { label: 'Confidentialite', href: '/confidentialite' },

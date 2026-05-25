@@ -30,7 +30,7 @@ export function explainPasskeyUnsupported(): string {
     typeof navigator === 'undefined' ||
     typeof navigator.credentials === 'undefined'
   ) {
-    return 'Votre navigateur ne prend pas en charge WebAuthn. Utilisez une version récente de Safari, Chrome ou Firefox.';
+    return 'Votre navigateur ne prend pas en charge les Passkeys. Utilisez une version récente de Safari, Chrome ou Firefox.';
   }
 
   return 'Les passkeys ne sont pas disponibles dans ce contexte (navigateur intégré, restrictions de sécurité, etc.).';

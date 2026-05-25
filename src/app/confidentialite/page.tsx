@@ -406,8 +406,8 @@ export default function PrivacyPolicyPage() {
               <p>
                 L&apos;accès au compte peut s&apos;effectuer par adresse e-mail
                 et mot de passe, par{' '}
-                <span className={styles.strong}>passkeys</span> (WebAuthn), ou
-                via des fournisseurs tiers proposés sur la plateforme (par
+                <span className={styles.strong}>passkeys</span>, ou via des
+                fournisseurs tiers proposés sur la plateforme (par
                 ex.&nbsp;connexion avec{' '}
                 <span className={styles.strong}>Google</span> ou{' '}
                 <span className={styles.strong}>Apple</span> selon les options

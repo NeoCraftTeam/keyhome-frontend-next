@@ -92,6 +92,18 @@ export type {
   VoiceRecordingEvent,
 } from './chat';
 
+// ── Dispute ────────────────────────────────────────────────
+export type {
+  CreateDisputePayload,
+  Dispute,
+  DisputeEvidence,
+  DisputeEvidenceType,
+  DisputeMessage,
+  DisputeParty,
+  DisputeStatus,
+  DisputeType,
+} from './dispute';
+
 // ── Shared pagination (not domain-specific) ─────────────────
 export interface PaginatedResponse<T> {
   data: T[];

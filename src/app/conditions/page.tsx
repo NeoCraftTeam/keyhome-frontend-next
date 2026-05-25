@@ -228,8 +228,8 @@ export default function TermsOfUsePage() {
               <p>
                 Selon les options proposées sur la plateforme, vous pouvez
                 également sécuriser votre compte avec des{' '}
-                <span className={styles.strong}>passkeys </span> (WebAuthn) en
-                complément ou à la place d&apos;un mot de passe.
+                <span className={styles.strong}>passkeys </span> en complément
+                ou à la place d&apos;un mot de passe.
               </p>
               <div className={styles.note}>
                 Vous êtes responsable de toutes les actions effectuées sous
