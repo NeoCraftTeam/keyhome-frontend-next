@@ -49,9 +49,9 @@ export default function MapPicker({
   const [searching, setSearching] = useState(false);
   const [geolocating, setGeolocating] = useState(false);
 
-  // Default center: Douala, Cameroon
-  const defaultLat = latitude || 4.0511;
-  const defaultLng = longitude || 9.7679;
+  // Default center: world-neutral fallback when no coords provided yet
+  const defaultLat = latitude ?? 10.0;
+  const defaultLng = longitude ?? 20.0;
 
   const updateMarker = useCallback(
     (lat: number, lng: number) => {
@@ -164,7 +164,7 @@ export default function MapPicker({
       const res = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           searchQuery.trim()
-        )}.json?access_token=${MAPBOX_TOKEN}&country=cm&limit=1&language=fr`
+        )}.json?access_token=${MAPBOX_TOKEN}&limit=5&language=fr`
       );
       const data = await res.json();
       if (data.features?.[0]) {
