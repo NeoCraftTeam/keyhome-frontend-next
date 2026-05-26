@@ -41,6 +41,9 @@ export interface GeoLocation {
 export interface City {
   id: string;
   name: string;
+  country?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface Quarter {
@@ -48,6 +51,8 @@ export interface Quarter {
   name: string;
   city_id: string;
   city_name: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface AdType {

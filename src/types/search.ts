@@ -15,9 +15,11 @@ export interface FacetsResponse {
 export interface SearchParams {
   q?: string;
   city?: string;
+  country?: string;
   type?: string;
   type_id?: string | number;
   quarter?: string;
+  quarter_id?: string;
   bedrooms?: number;
   bathrooms?: number;
   price_min?: number;

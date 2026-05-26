@@ -21,6 +21,14 @@ export const citiesService = {
     const { data } = await api.get(`/cities/${id}`);
     return data.data ?? data;
   },
+
+  async findOrCreate(payload: {
+    name: string;
+    country?: string;
+  }): Promise<{ data: City; created: boolean }> {
+    const { data } = await api.post('/geo/city', payload);
+    return data;
+  },
 };
 
 export const quartersService = {
@@ -43,6 +51,14 @@ export const quartersService = {
   async show(id: string): Promise<Quarter> {
     const { data } = await api.get(`/quarters/${id}`);
     return data.data ?? data;
+  },
+
+  async findOrCreate(payload: {
+    name: string;
+    city_id: string;
+  }): Promise<{ data: Quarter; created: boolean }> {
+    const { data } = await api.post('/geo/quarter', payload);
+    return data;
   },
 };
 

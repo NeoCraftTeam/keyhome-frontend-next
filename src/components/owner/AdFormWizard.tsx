@@ -725,8 +725,28 @@ function AdFormWizard({
     setSelectedCity(city);
     setSelectedQuarter(null);
     setQuarterInput('');
-    setValues((prev) => ({ ...prev, quarter_id: '' }));
+    setValues((prev) => ({
+      ...prev,
+      quarter_id: '',
+      // Centre la carte sur la ville si ses coords sont connues
+      ...(city?.latitude != null && city?.longitude != null
+        ? { latitude: city.latitude, longitude: city.longitude }
+        : {}),
+    }));
     setErrors((prev) => ({ ...prev, quarter_id: '' }));
+  }, []);
+
+  /* ── Quarter change handler ── */
+  const handleQuarterChange = useCallback((quarter: Quarter | null) => {
+    setSelectedQuarter(quarter);
+    if (quarter?.latitude != null && quarter?.longitude != null) {
+      // Précision maximale : coords du quartier priment sur celles de la ville
+      setValues((prev) => ({
+        ...prev,
+        latitude: quarter.latitude as number,
+        longitude: quarter.longitude as number,
+      }));
+    }
   }, []);
 
   /* ── Step validation ── */
@@ -1126,7 +1146,7 @@ function AdFormWizard({
                     onCityInputChange={setCityInput}
                     onCityChange={handleCityChange}
                     onQuarterInputChange={setQuarterInput}
-                    onQuarterChange={setSelectedQuarter}
+                    onQuarterChange={handleQuarterChange}
                     citySlotProps={citySlotProps}
                     renderCityOption={renderCityOption}
                     cityInputSx={cityInputSx}

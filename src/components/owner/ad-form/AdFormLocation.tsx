@@ -1,5 +1,7 @@
+import type { AdType, City, Quarter } from '@/types';
 import {
   Autocomplete,
+  CircularProgress,
   FormControl,
   Grid,
   InputLabel,
@@ -8,10 +10,13 @@ import {
   Select,
   TextField,
   Typography,
+  createFilterOptions,
 } from '@mui/material';
-import type { AdType, City, Quarter } from '@/types';
 import type { AdFormValues, UpdateFn } from './types';
 import { sectionSx, sectionTitleSx } from './types';
+
+const cityFilter = createFilterOptions<City | string>();
+const quarterFilter = createFilterOptions<Quarter | string>();
 
 interface AdFormLocationProps {
   values: AdFormValues;
@@ -26,10 +31,15 @@ interface AdFormLocationProps {
   quarterInput: string;
   isCitiesLoading: boolean;
   isQuartersLoading: boolean;
+  isCreatingCity?: boolean;
+  isCreatingQuarter?: boolean;
+  cityCreateError?: string | null;
   onCityInputChange: (value: string) => void;
   onCityChange: (city: City | null) => void;
   onQuarterInputChange: (value: string) => void;
   onQuarterChange: (quarter: Quarter | null) => void;
+  onCityCreate?: (name: string) => void;
+  onQuarterCreate?: (name: string) => void;
   citySlotProps: object;
   renderCityOption: (
     props: React.HTMLAttributes<HTMLLIElement>,
@@ -39,6 +49,8 @@ interface AdFormLocationProps {
   /** Hide the ad-type selector (used by wizard which has its own Step 1). */
   hideTypeSelector?: boolean;
 }
+
+const ADD_PREFIX = '__add__:';
 
 export default function AdFormLocation({
   values,
@@ -53,10 +65,15 @@ export default function AdFormLocation({
   quarterInput,
   isCitiesLoading,
   isQuartersLoading,
+  isCreatingCity = false,
+  isCreatingQuarter = false,
+  cityCreateError = null,
   onCityInputChange,
   onCityChange,
   onQuarterInputChange,
   onQuarterChange,
+  onCityCreate,
+  onQuarterCreate,
   citySlotProps,
   renderCityOption,
   cityInputSx,
@@ -69,27 +86,72 @@ export default function AdFormLocation({
       </Typography>
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Autocomplete
-            options={cities}
-            getOptionLabel={(o) => (typeof o === 'string' ? o : o.name)}
+          <Autocomplete<City | string, false, false, true>
+            freeSolo
+            options={cities as (City | string)[]}
+            getOptionLabel={(o) =>
+              typeof o === 'string' ? o.replace(ADD_PREFIX, '') : o.name
+            }
             value={selectedCity}
             inputValue={cityInput}
             onInputChange={(_, v) => onCityInputChange(v)}
-            onChange={(_, v) => onCityChange(v)}
-            loading={isCitiesLoading}
-            filterOptions={(x) => x}
-            noOptionsText="Aucune ville"
+            onChange={(_, v) => {
+              if (typeof v === 'string') {
+                const name = v.startsWith(ADD_PREFIX)
+                  ? v.slice(ADD_PREFIX.length)
+                  : v;
+                onCityCreate?.(name);
+              } else {
+                onCityChange(v);
+              }
+            }}
+            loading={isCitiesLoading || isCreatingCity}
+            filterOptions={(options, params) => {
+              const filtered = cityFilter(options, params);
+              const { inputValue } = params;
+              const alreadyExists = options.some(
+                (o) =>
+                  typeof o !== 'string' &&
+                  o.name.toLowerCase() === inputValue.toLowerCase()
+              );
+              if (inputValue.length >= 2 && !alreadyExists) {
+                filtered.push(`${ADD_PREFIX}${inputValue}` as unknown as City);
+              }
+              return filtered;
+            }}
+            noOptionsText={
+              cityInput.length >= 2
+                ? 'Appuyez sur Entrée pour ajouter cette ville'
+                : 'Tapez pour rechercher'
+            }
             slotProps={citySlotProps}
-            renderOption={(props, opt) => renderCityOption(props, opt)}
+            renderOption={(props, opt) => {
+              if (typeof opt === 'string' && opt.startsWith(ADD_PREFIX)) {
+                const name = opt.slice(ADD_PREFIX.length);
+                return (
+                  <li {...props} key="__add_city__">
+                    <em>+ Ajouter &laquo;{name}&raquo;</em>
+                  </li>
+                );
+              }
+              return renderCityOption(props, opt as City);
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
                 label="Ville"
-                placeholder="Rechercher une ville..."
+                placeholder="Rechercher ou créer une ville…"
                 sx={cityInputSx}
+                error={!!cityCreateError}
+                helperText={cityCreateError ?? undefined}
                 slotProps={{
                   input: {
                     ...params.InputProps,
+                    endAdornment: isCreatingCity ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      params.InputProps.endAdornment
+                    ),
                   },
                 }}
               />
@@ -97,33 +159,90 @@ export default function AdFormLocation({
           />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Autocomplete
-            options={quarters}
-            getOptionLabel={(o) => (typeof o === 'string' ? o : o.name)}
+          <Autocomplete<Quarter | string, false, false, true>
+            freeSolo
+            options={quarters as (Quarter | string)[]}
+            getOptionLabel={(o) =>
+              typeof o === 'string' ? o.replace(ADD_PREFIX, '') : o.name
+            }
             value={selectedQuarter}
             inputValue={quarterInput}
             onInputChange={(_, v) => onQuarterInputChange(v)}
             onChange={(_, v) => {
-              onQuarterChange(v);
-              update('quarter_id', v?.id ?? '');
+              if (typeof v === 'string') {
+                const name = v.startsWith(ADD_PREFIX)
+                  ? v.slice(ADD_PREFIX.length)
+                  : v;
+                onQuarterCreate?.(name);
+              } else {
+                onQuarterChange(v);
+                update('quarter_id', v?.id ?? '');
+              }
             }}
-            loading={isQuartersLoading}
-            filterOptions={(x) => x}
-            noOptionsText="Aucun quartier"
+            loading={isQuartersLoading || isCreatingQuarter}
+            filterOptions={(options, params) => {
+              const filtered = quarterFilter(options, params);
+              const { inputValue } = params;
+              const alreadyExists = options.some(
+                (o) =>
+                  typeof o !== 'string' &&
+                  o.name.toLowerCase() === inputValue.toLowerCase()
+              );
+              if (
+                inputValue.length >= 2 &&
+                selectedCity?.id &&
+                !alreadyExists
+              ) {
+                filtered.push(
+                  `${ADD_PREFIX}${inputValue}` as unknown as Quarter
+                );
+              }
+              return filtered;
+            }}
+            noOptionsText={
+              !selectedCity?.id
+                ? "Sélectionnez d'abord une ville"
+                : 'Aucun quartier trouvé'
+            }
             disabled={!selectedCity?.id}
             slotProps={citySlotProps}
-            renderOption={(props, opt) => (
-              <li {...props} key={opt.id}>
-                {opt.name} {opt.city_name ? `(${opt.city_name})` : ''}
-              </li>
-            )}
+            renderOption={(props, opt) => {
+              if (typeof opt === 'string' && opt.startsWith(ADD_PREFIX)) {
+                const name = opt.slice(ADD_PREFIX.length);
+                return (
+                  <li {...props} key="__add_quarter__">
+                    <em>+ Ajouter &laquo;{name}&raquo;</em>
+                  </li>
+                );
+              }
+              const q = opt as Quarter;
+              return (
+                <li {...props} key={q.id}>
+                  {q.name} {q.city_name ? `(${q.city_name})` : ''}
+                </li>
+              );
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
                 label="Quartier"
-                placeholder="Sélectionnez d'abord une ville"
+                placeholder={
+                  selectedCity
+                    ? 'Rechercher ou créer un quartier…'
+                    : "Sélectionnez d'abord une ville"
+                }
                 error={!!errors.quarter_id}
                 helperText={errors.quarter_id}
+                slotProps={{
+                  input: {
+                    ...params.InputProps,
+                    endAdornment: isCreatingQuarter ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      params.InputProps.endAdornment
+                    ),
+                  },
+                }}
               />
             )}
           />

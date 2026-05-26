@@ -1,8 +1,12 @@
 import { AdStatus, type Ad, type TourHotspot } from '@/types';
 
-/** Defaults for map picker / preview — keep in sync with `AdFormMapLocation` */
-export const AD_FORM_MAP_DEFAULT_LAT = 4.0511;
-export const AD_FORM_MAP_DEFAULT_LNG = 9.7679;
+/**
+ * Default map position when no city/quarter coords are available yet.
+ * World-neutral center (Africa/Europe meridian) — the map auto-centers
+ * on the selected city or quarter's real GPS coords when available.
+ */
+export const AD_FORM_MAP_DEFAULT_LAT = 10.0;
+export const AD_FORM_MAP_DEFAULT_LNG = 20.0;
 
 export interface ChargeItem {
   label: string;

@@ -13,15 +13,15 @@
  * Uses the same query keys as AdFormWizard so they share the TanStack cache.
  */
 
+import type { AttributeOption } from '@/components/owner/ad-form/types';
 import {
   adTypesService,
   citiesService,
   quartersService,
 } from '@/services/cities.service';
 import { propertyAttributesService } from '@/services/property-attributes.service';
-import type { City, Quarter, AdType } from '@/types';
-import type { AttributeOption } from '@/components/owner/ad-form/types';
-import { useQuery } from '@tanstack/react-query';
+import type { AdType, City, Quarter } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 type GroupedAttr = {
@@ -35,16 +35,24 @@ export interface UseAdFormStaticDataReturn {
   isCitiesLoading: boolean;
   quarters: Quarter[];
   isQuartersLoading: boolean;
+  isCreatingCity: boolean;
+  isCreatingQuarter: boolean;
+  cityCreateError: string | null;
   adTypes: AdType[];
   groupedAttrs: GroupedAttr[];
   autocompleteOptions: AttributeOption[];
+  onCityCreate: (name: string) => void;
+  onQuarterCreate: (name: string) => void;
 }
 
 export function useAdFormStaticData(
   cityInput: string,
   quarterInput: string,
-  selectedCity: City | null
+  selectedCity: City | null,
+  onCitySelected?: (city: City) => void,
+  onQuarterSelected?: (quarter: Quarter) => void
 ): UseAdFormStaticDataReturn {
+  const queryClient = useQueryClient();
   const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
     queryKey: ['ad-form-cities', cityInput],
     queryFn: ({ signal }) =>
@@ -96,13 +104,51 @@ export function useAdFormStaticData(
     return opts;
   }, [groupedAttrs]);
 
+  const {
+    mutate: createCity,
+    isPending: isCreatingCity,
+    error: cityMutationError,
+  } = useMutation({
+    mutationFn: (name: string) => citiesService.findOrCreate({ name }),
+    onSuccess: (result: { data: City; created: boolean }) => {
+      queryClient.invalidateQueries({ queryKey: ['ad-form-cities'] });
+      onCitySelected?.(result.data);
+    },
+  });
+
+  const cityCreateError: string | null = cityMutationError
+    ? ((cityMutationError as { response?: { data?: { message?: string } } })
+        .response?.data?.message ?? 'Ville introuvable')
+    : null;
+
+  const { mutate: createQuarter, isPending: isCreatingQuarter } = useMutation({
+    mutationFn: (name: string) =>
+      quartersService.findOrCreate({ name, city_id: selectedCity!.id }),
+    onSuccess: (result: { data: Quarter; created: boolean }) => {
+      queryClient.invalidateQueries({
+        queryKey: ['ad-form-quarters', selectedCity?.id],
+      });
+      onQuarterSelected?.(result.data);
+    },
+  });
+
+  const onCityCreate = (name: string) => createCity(name);
+  const onQuarterCreate = (name: string) => {
+    if (selectedCity?.id) createQuarter(name);
+  };
+
   return {
     cities: (citiesData?.data ?? []) as City[],
     isCitiesLoading,
     quarters: (quartersData?.data ?? []) as Quarter[],
     isQuartersLoading,
+    isCreatingCity,
+    isCreatingQuarter,
+    cityCreateError,
     adTypes,
     groupedAttrs,
     autocompleteOptions,
+    onCityCreate,
+    onQuarterCreate,
   };
 }
