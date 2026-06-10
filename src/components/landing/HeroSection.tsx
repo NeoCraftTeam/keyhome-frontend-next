@@ -14,6 +14,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import VoiceSearchButton from '../search/VoiceSearchButton';
 import { useLandingTheme } from './LandingThemeContext';
 
 const HeroVideoBackground = dynamic(() => import('./HeroVideoBackground'), {
@@ -167,6 +168,16 @@ export default function HeroSection() {
     setIsTyping(true);
   }, [displayedPlaceholder, isTyping, placeholderIdx, isFocused, query]);
 
+  // Forward-declared ref: filled in by an effect once `handleAISearch` is
+  // defined below, so voice-transcript callbacks can fire without taking the
+  // memoised search callback as a dependency (which would re-bind every render).
+  const handleAISearchRef = useRef<(q?: string) => void>(() => {});
+
+  const handleVoiceTranscript = useCallback((transcript: string) => {
+    setQuery(transcript);
+    handleAISearchRef.current(transcript);
+  }, []);
+
   const handleAISearch = useCallback(
     async (q?: string) => {
       const searchQuery = (q ?? query).trim();
@@ -193,6 +204,10 @@ export default function HeroSection() {
     },
     [query, router, startTransition, currency]
   );
+
+  useEffect(() => {
+    handleAISearchRef.current = handleAISearch;
+  }, [handleAISearch]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -348,9 +363,9 @@ export default function HeroSection() {
               transition: 'color 0.4s ease',
             }}
           >
-            Des milliers d&apos;annonces immobilières vérifiées à travers
-            l&apos;Afrique. Maisons, appartements, terrains et villas — accédez
-            aux coordonnées en toute sécurité.
+            Des milliers d&apos;annonces immobilières vérifiées, partout dans le
+            monde. Maisons, appartements, terrains et villas — accédez aux
+            coordonnées en toute sécurité.
           </motion.p>
 
           {/* AI Search bar */}
@@ -481,42 +496,51 @@ export default function HeroSection() {
                     />
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleAISearch()}
-                    aria-label="Rechercher"
-                    onMouseEnter={() => setSearchIconHovered(true)}
-                    onMouseLeave={() => setSearchIconHovered(false)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      minWidth: 44,
-                      minHeight: 44,
-                      padding: 6,
-                      margin: 0,
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      borderRadius: 12,
-                      transform: searchIconHovered ? 'scale(1.08)' : 'scale(1)',
-                      transition:
-                        'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
-                    }}
-                  >
-                    <Search
-                      style={{
-                        color:
-                          isFocused || searchIconHovered
-                            ? brand.primary
-                            : textMuted,
-                        fontSize: 26,
-                        transition: 'color 0.2s',
-                        display: 'block',
-                      }}
+                  <>
+                    <VoiceSearchButton
+                      onTranscript={handleVoiceTranscript}
+                      disabled={isSearching}
+                      size={24}
                     />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAISearch()}
+                      aria-label="Rechercher"
+                      onMouseEnter={() => setSearchIconHovered(true)}
+                      onMouseLeave={() => setSearchIconHovered(false)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: 44,
+                        minHeight: 44,
+                        padding: 6,
+                        margin: 0,
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        borderRadius: 12,
+                        transform: searchIconHovered
+                          ? 'scale(1.08)'
+                          : 'scale(1)',
+                        transition:
+                          'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
+                      }}
+                    >
+                      <Search
+                        style={{
+                          color:
+                            isFocused || searchIconHovered
+                              ? brand.primary
+                              : textMuted,
+                          fontSize: 26,
+                          transition: 'color 0.2s',
+                          display: 'block',
+                        }}
+                      />
+                    </button>
+                  </>
                 )}
               </div>
 
