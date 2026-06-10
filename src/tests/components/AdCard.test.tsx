@@ -227,6 +227,46 @@ describe('AdCard', () => {
     });
   });
 
+  describe('Sponsorship badge', () => {
+    it('renders no sponsorship pill for organic ads', () => {
+      renderAdCard({
+        ...mockAd,
+        sponsorship_tier: 'organic',
+        is_boosted: false,
+      });
+      expect(
+        document.querySelector('[aria-label^="Annonce premium"]')
+      ).toBeNull();
+      expect(
+        document.querySelector('[aria-label^="Annonce sponsorisé"]')
+      ).toBeNull();
+      expect(
+        document.querySelector('[aria-label^="Annonce boosté"]')
+      ).toBeNull();
+    });
+
+    it('renders the Premium pill for premium-tier ads', () => {
+      renderAdCard({ ...mockAd, sponsorship_tier: 'premium' });
+      expect(screen.getByLabelText('Annonce premium')).toBeInTheDocument();
+    });
+
+    it('renders the Sponsorisé pill for subscription-tier ads', () => {
+      renderAdCard({ ...mockAd, sponsorship_tier: 'subscription' });
+      expect(screen.getByLabelText('Annonce sponsorisé')).toBeInTheDocument();
+    });
+
+    it('renders the Boosté pill for manual-tier ads', () => {
+      renderAdCard({ ...mockAd, sponsorship_tier: 'manual' });
+      expect(screen.getByLabelText('Annonce boosté')).toBeInTheDocument();
+    });
+
+    it('falls back to the Boosté pill when sponsorship_tier is missing but is_boosted is true', () => {
+      const ad = { ...mockAd, sponsorship_tier: undefined, is_boosted: true };
+      renderAdCard(ad);
+      expect(screen.getByLabelText('Annonce boosté')).toBeInTheDocument();
+    });
+  });
+
   describe('CARD_VARIANTS & hover prop wiring', () => {
     it('renders a motion.a with whileHover="hover" (checked via data-testid path)', () => {
       const { container } = renderAdCard();

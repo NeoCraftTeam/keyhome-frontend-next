@@ -1,5 +1,6 @@
 'use client';
 
+import { SponsorshipBadge } from '@/components/ads/SponsorshipBadge';
 import { Price } from '@/components/ui/typography/Price';
 import { Typography } from '@/components/ui/typography/Typography';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
@@ -398,36 +399,14 @@ function AdCard({ ad, showDistance, imageSizes }: AdCardProps) {
               </Box>
             )}
 
-            {/* Boosted badge — top left, slightly below compare badge.
-                Promoted listings carry a small "Sponsorisé" pill so users
-                see why they appear on top. */}
-            {ad.is_boosted && (
-              <Box
-                aria-label="Annonce sponsorisée"
-                sx={{
-                  position: 'absolute',
-                  top: isInComparator(ad.id) ? 36 : 8,
-                  left: 8,
-                  zIndex: 2,
-                  px: 1,
-                  py: 0.25,
-                  borderRadius: 99,
-                  bgcolor: 'rgba(15, 23, 42, 0.85)',
-                  color: 'white',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: 0.3,
-                  textTransform: 'uppercase',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  boxShadow: shadow.medium,
-                  backdropFilter: 'blur(4px)',
-                }}
-              >
-                ★ Sponsorisé
-              </Box>
-            )}
+            {/* Sponsorship pill — Premium / Subscription / Manual tier.
+                Organic ads render no badge. Slides below the Compare badge
+                when the listing is in the comparator. */}
+            <SponsorshipBadge
+              tier={ad.sponsorship_tier}
+              fallbackBoosted={ad.is_boosted}
+              top={isInComparator(ad.id) ? 36 : 8}
+            />
 
             {/* Heart button with burst animation */}
             <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>

@@ -10,6 +10,12 @@ export enum AdStatus {
   DECLINED = 'declined',
 }
 
+/**
+ * Ranking tier an ad currently holds in the sponsored-feed system.
+ * Mirrors App\Enums\SponsorshipTier on the backend.
+ */
+export type SponsorshipTier = 'premium' | 'subscription' | 'manual' | 'organic';
+
 export enum PropertyAttribute {
   Wifi = 'wifi',
   AirConditioning = 'air_conditioning',
@@ -154,6 +160,8 @@ export interface Ad {
   is_verified?: boolean;
   is_boosted?: boolean;
   boost_expires_at?: string | null;
+  is_subscription_sponsored?: boolean;
+  sponsorship_tier?: SponsorshipTier;
   rating?: number | null;
   reviews_count?: number;
   expires_at: string | null;
