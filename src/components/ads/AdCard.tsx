@@ -25,12 +25,18 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Hover variants — propagated from the root motion.a to children:
- * - image wrapper: translateY lift + shadow
- * - image itself: subtle scale zoom
+ * - root anchor: subtle translateY lift (no box shadow — see note)
+ * - image itself: gentle scale zoom
+ *
+ * The Airbnb-flat aesthetic this card targets requires NO shadow on the
+ * root anchor at rest. A shadow on the unrounded <a> renders as a square
+ * halo around the rounded image + flat text below, which looks broken
+ * on grid views. The hover state communicates affordance through the
+ * translateY lift + image zoom instead.
  */
 const CARD_VARIANTS = {
-  rest: { y: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' },
-  hover: { y: -3, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' },
+  rest: { y: 0 },
+  hover: { y: -4 },
 };
 
 const IMAGE_VARIANTS = {
