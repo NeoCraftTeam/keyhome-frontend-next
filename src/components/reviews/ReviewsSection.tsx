@@ -128,9 +128,15 @@ export default function ReviewsSection({
             textDecoration: 'underline',
             textDecorationColor: 'divider',
             textUnderlineOffset: '3px',
+            // Active scale gives this CTA a touch-feedback signal on
+            // mobile where the underline-color hover state is invisible.
+            transition: 'transform 0.12s ease',
             '&:hover': {
               bgcolor: 'transparent',
               textDecorationColor: 'text.primary',
+            },
+            '&:active': {
+              transform: 'scale(0.97)',
             },
           }}
         >

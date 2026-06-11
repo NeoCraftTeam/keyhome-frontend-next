@@ -743,15 +743,20 @@ export default function AidePage() {
                         </Box>
                       </AccordionSummary>
                       <AccordionDetails sx={{ px: 3, pb: 3, pt: 0 }}>
-                        <Box sx={{ borderLeft: `3px solid ${BRAND}`, pl: 2.5 }}>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ lineHeight: 1.85 }}
-                          >
-                            {item.a}
-                          </Typography>
-                        </Box>
+                        {/*
+                          The outer Accordion already carries a BRAND-tinted
+                          border when expanded; the inner BRAND borderLeft
+                          stacked a second emphasis treatment on top.
+                          Dropped the inner border for a single, clean
+                          emphasis cue.
+                        */}
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ lineHeight: 1.85 }}
+                        >
+                          {item.a}
+                        </Typography>
                       </AccordionDetails>
                     </Accordion>
                   ))}

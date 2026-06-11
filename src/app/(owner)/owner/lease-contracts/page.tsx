@@ -885,6 +885,7 @@ export default function OwnerLeaseContractsPage() {
       >
         {snackbar ? (
           <Alert
+            variant="filled"
             onClose={() => setSnackbar(null)}
             severity={snackbar.severity}
             sx={{ borderRadius: 2 }}

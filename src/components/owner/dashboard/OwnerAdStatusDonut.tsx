@@ -43,15 +43,18 @@ export default function OwnerAdStatusDonut({
   const tooltipBorder = theme.palette.divider;
 
   if (loading) {
+    // Mirror the real chart's outer shape: a ~130px donut on the left
+    // with a 3-row legend on the right. Heights match the rendered
+    // Typography lines so the box stops reflowing when data arrives.
     return (
       <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-        <Skeleton variant="circular" width={140} height={140} />
+        <Skeleton variant="circular" width={130} height={130} />
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
           {[1, 2, 3].map((i) => (
             <Skeleton
               key={i}
               variant="rounded"
-              height={18}
+              height={16}
               sx={{ borderRadius: 1 }}
             />
           ))}

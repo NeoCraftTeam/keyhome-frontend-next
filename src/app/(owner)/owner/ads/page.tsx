@@ -15,7 +15,7 @@ import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
 import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { ownerService } from '@/services/owner.service';
-import { neutral } from '@/theme/tokens';
+import { neutral, shadow } from '@/theme/tokens';
 import { Ad, AdStatus, AdType, City } from '@/types';
 import {
   Add as AddIcon,
@@ -491,8 +491,15 @@ export default function OwnerAdsPage() {
                       cursor: 'pointer',
                       bgcolor: 'warning.600',
                       color: neutral.white,
+                      transition: 'background-color 0.15s, box-shadow 0.15s',
                       '&:hover': { bgcolor: 'warning.700' },
-                      transition: 'background-color 0.15s',
+                      // `Box component="button"` opts out of MUI's default
+                      // focus styling — give keyboard users a visible cue
+                      // matching the rest of the owner panel.
+                      '&:focus-visible': {
+                        outline: 'none',
+                        boxShadow: shadow.agentFocusRing,
+                      },
                     }}
                   >
                     Continuer →
@@ -1011,6 +1018,11 @@ export default function OwnerAdsPage() {
               minWidth: 240,
               maxWidth: 'calc(100vw - 32px)',
               maxHeight: 'min(70vh, 520px)',
+              // The menu hosts a flush-bottom <ShareAdButtons /> row whose
+              // borderTop ignores the default tight menu radius — clip it
+              // to the rounded paper so corners line up.
+              borderRadius: 2,
+              overflow: 'hidden',
             },
           },
         }}

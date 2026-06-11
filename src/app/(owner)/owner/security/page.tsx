@@ -637,6 +637,7 @@ export default function OwnerSecurityPage() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert
+          variant="filled"
           onClose={() => setSnackbar(null)}
           severity={snackbar?.severity}
           sx={{ borderRadius: 2 }}

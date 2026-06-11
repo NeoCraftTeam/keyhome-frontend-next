@@ -1,6 +1,7 @@
 'use client';
 
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
+import RentPaymentsSection from '@/components/owner/financials/RentPaymentsSection';
 import {
   ownerService,
   type Expense,
@@ -536,6 +537,9 @@ export default function OwnerFinancialsPage() {
               )}
             </>
           )}
+
+          {/* Rent collection ledger — out-of-band rent received per lease */}
+          <RentPaymentsSection adId={selectedAdId} />
         </>
       )}
 
@@ -689,6 +693,7 @@ export default function OwnerFinancialsPage() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert
+          variant="filled"
           severity={snackbar?.severity}
           onClose={() => setSnackbar(null)}
           sx={{ borderRadius: 2 }}

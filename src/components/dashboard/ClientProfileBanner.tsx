@@ -78,6 +78,11 @@ export default function ClientProfileBanner() {
     setVisible(false);
   };
 
+  // Single source of truth for the banner's corner radius so the outer
+  // Box and the inner ::before accent bar stay locked even when the
+  // visual is later re-tuned.
+  const BANNER_RADIUS = 14;
+
   return (
     <Collapse in={visible} unmountOnExit>
       <Box
@@ -85,7 +90,7 @@ export default function ClientProfileBanner() {
         aria-label="Progression du profil"
         sx={{
           position: 'relative',
-          borderRadius: '14px',
+          borderRadius: `${BANNER_RADIUS}px`,
           border: '1px solid',
           borderColor: (t) =>
             t.palette.mode === 'dark'
@@ -105,7 +110,7 @@ export default function ClientProfileBanner() {
             bottom: 0,
             width: 4,
             background: `linear-gradient(180deg, ${brand.primary} 0%, #ff8c42 100%)`,
-            borderRadius: '14px 0 0 14px',
+            borderRadius: `${BANNER_RADIUS}px 0 0 ${BANNER_RADIUS}px`,
           },
         }}
       >
