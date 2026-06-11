@@ -431,11 +431,7 @@ const SearchResultsList = memo(function SearchResultsList({
       ) : (
         <>
           <LayoutGroup id="search-results">
-            <Grid
-              container
-              spacing={1.5}
-              sx={{ '& .ad-card-title': { color: '#222 !important' } }}
-            >
+            <Grid container spacing={1.5}>
               <AnimatePresence mode="popLayout" initial={false}>
                 {ads.map((ad, idx) => (
                   <Grid key={ad.id} size={{ xs: 6, lg: 4, xl: 3 }}>

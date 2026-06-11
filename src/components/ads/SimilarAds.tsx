@@ -1,10 +1,11 @@
 'use client';
 
 import AdCard from '@/components/ads/AdCard';
+import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import { adsService } from '@/services/ads.service';
 import { Ad } from '@/types';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
-import { Box, Button, Grid, Skeleton, Typography } from '@mui/material';
+import { Box, Button, Grid, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 
@@ -66,12 +67,7 @@ export default function SimilarAds({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 2 }}>
           {isLoading
             ? Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton
-                  key={i}
-                  variant="rounded"
-                  height={120}
-                  sx={{ borderRadius: 2 }}
-                />
+                <AdCardSkeleton key={i} />
               ))
             : ads.map((ad) => (
                 <Box key={ad.id} sx={{ flexShrink: 0 }}>
@@ -121,11 +117,7 @@ export default function SimilarAds({
                       scrollSnapAlign: 'start',
                     }}
                   >
-                    <Skeleton
-                      variant="rounded"
-                      height={280}
-                      sx={{ borderRadius: 3 }}
-                    />
+                    <AdCardSkeleton />
                   </Box>
                 ))
               : ads.map((ad) => (
@@ -152,11 +144,7 @@ export default function SimilarAds({
             {isLoading
               ? Array.from({ length: 4 }).map((_, i) => (
                   <Grid key={i} size={{ md: 3 }}>
-                    <Skeleton
-                      variant="rounded"
-                      height={280}
-                      sx={{ borderRadius: 3 }}
-                    />
+                    <AdCardSkeleton />
                   </Grid>
                 ))
               : ads.map((ad) => (

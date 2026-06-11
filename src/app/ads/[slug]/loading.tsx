@@ -17,12 +17,35 @@ export default function AdDetailLoading() {
       className="mx-auto w-full max-w-[1280px] px-3 md:px-6 pt-3 md:pt-6"
       style={{ animation: 'kh-skel-in 200ms cubic-bezier(0.22,1,0.36,1)' }}
     >
-      {/* Hero image */}
+      {/*
+        Hero — must mirror AdDetailClient so the handoff is seamless.
+        Mobile: 55vh tall, full-bleed, rounded ONLY at the bottom
+                (matches AdDetailClient ~L557).
+        Desktop: 2-col grid, primary 400px + two 210px stacked thumbs
+                (matches AdDetailClient ~L863-865).
+      */}
       <div
-        className="relative w-full overflow-hidden rounded-2xl bg-gray-200 dark:bg-zinc-800"
-        style={{ aspectRatio: '16 / 10' }}
+        className="relative w-full overflow-hidden bg-gray-200 dark:bg-zinc-800 md:hidden"
+        style={{ height: '55vh', borderRadius: '0 0 24px 24px' }}
       >
         <span className="kh-shimmer absolute inset-0" />
+      </div>
+      <div
+        className="relative hidden w-full gap-2 overflow-hidden rounded-2xl bg-transparent md:grid"
+        style={{
+          gridTemplateColumns: '2fr 1fr',
+          gridTemplateRows: '210px 210px',
+        }}
+      >
+        <div className="relative row-span-2 overflow-hidden rounded-2xl bg-gray-200 dark:bg-zinc-800">
+          <span className="kh-shimmer absolute inset-0" />
+        </div>
+        <div className="relative overflow-hidden rounded-2xl bg-gray-200 dark:bg-zinc-800">
+          <span className="kh-shimmer absolute inset-0" />
+        </div>
+        <div className="relative overflow-hidden rounded-2xl bg-gray-200 dark:bg-zinc-800">
+          <span className="kh-shimmer absolute inset-0" />
+        </div>
       </div>
 
       {/* Title + price stack */}

@@ -888,6 +888,11 @@ export default function AidePage() {
                             ? 'rgba(255,255,255,0.07)'
                             : 'rgba(0,0,0,0.06)',
                           cursor: 'pointer',
+                          // Required because the inner Chip + decorative
+                          // absolutely-positioned overlays would otherwise
+                          // bleed past the rounded corners on hover.
+                          overflow: 'hidden',
+                          position: 'relative',
                           transition: 'all 0.25s ease',
                           height: '100%',
                           display: 'flex',
@@ -1149,9 +1154,9 @@ export default function AidePage() {
               color="text.secondary"
               sx={{ maxWidth: 600, mx: 'auto', lineHeight: 1.8 }}
             >
-              KeyHome est la plateforme immobilière de référence en Afrique
-              francophone. Nous connectons propriétaires, locataires et agents
-              dans un écosystème de confiance, transparent et sécurisé.
+              KeyHome connecte propriétaires, locataires et agents dans un
+              écosystème de confiance, transparent et sécurisé — où que vous
+              soyez.
             </Typography>
           </Box>
 
@@ -1299,7 +1304,10 @@ export default function AidePage() {
             <Link
               href="/"
               style={{
-                color: '#6B7280',
+                // Mid-grey reads ok on light backgrounds but disappears
+                // into the dark theme's `background.default`. Resolve from
+                // the theme so both modes stay readable.
+                color: theme.palette.text.secondary,
                 textDecoration: 'none',
                 fontSize: '0.9rem',
               }}
