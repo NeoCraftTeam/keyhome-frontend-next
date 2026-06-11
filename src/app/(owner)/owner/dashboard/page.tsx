@@ -28,6 +28,7 @@ import {
 import { brandAgent } from '@/theme/tokens';
 import { Ad } from '@/types';
 import {
+  Apartment as ApartmentIcon,
   ArrowForward as ArrowIcon,
   RocketLaunch as BoostIcon,
   CalendarMonth as CalendarIcon,
@@ -37,6 +38,7 @@ import {
   BarChart as EngagementIcon,
   Favorite as FavoriteIcon,
   Home as HomeIcon,
+  ReceiptLong as ReceiptLongIcon,
   Visibility as VisibilityIcon,
   WavingHand as WavingHandIcon,
 } from '@mui/icons-material';
@@ -194,6 +196,11 @@ export default function OwnerDashboardPage() {
         { signal }
       ),
     staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: dashboardStats } = useQuery({
+    queryKey: ['owner-dashboard-stats'],
+    queryFn: ({ signal }) => ownerService.getDashboardStats({ signal }),
   });
 
   const analytics = analyticsData as OwnerAnalyticsOverview | undefined;
@@ -453,6 +460,26 @@ export default function OwnerDashboardPage() {
             accentColor={GOLD}
             sparklineData={Array(chartDays).fill(boostedCount > 0 ? 1 : 0)}
             loading={boostedLoading}
+          />
+          <DashboardHeroStatCard
+            title="Taux d'occupation"
+            value={`${(dashboardStats?.occupancy_rate ?? 0).toFixed(0)}%`}
+            subtitle="Baux actifs / annonces publiées"
+            icon={<ApartmentIcon sx={{ fontSize: { xs: 20, sm: 22 } }} />}
+            accentColor={SKY}
+            sparklineData={Array(chartDays).fill(
+              dashboardStats?.occupancy_rate ?? 0
+            )}
+            loading={!dashboardStats}
+          />
+          <DashboardHeroStatCard
+            title="Dépenses (30j)"
+            value={`${(dashboardStats?.expenses_total_xaf_30d ?? 0).toLocaleString('fr-FR')} FCFA`}
+            subtitle="Maintenance, charges, travaux"
+            icon={<ReceiptLongIcon sx={{ fontSize: { xs: 20, sm: 22 } }} />}
+            accentColor={GOLD}
+            sparklineData={Array(chartDays).fill(0)}
+            loading={!dashboardStats}
           />
         </StaggerList>
 
@@ -939,13 +966,16 @@ export default function OwnerDashboardPage() {
                   </Button>
                 </Box>
                 {analyticsLoading ? (
+                  // Match OwnerViewsFavoritesAreaChart's actual rendered
+                  // height per breakpoint (220/280/320) so the dashboard
+                  // doesn't reflow when analytics resolve. The previous
+                  // percentage paddingTop produced a noticeably shorter
+                  // box than the rendered chart.
                   <ShimmerBox
                     width="100%"
-                    height={0}
                     sx={{
                       borderRadius: '16px',
-                      paddingTop: { xs: '55%', sm: '48%', md: '42%' },
-                      height: 'auto',
+                      height: { xs: 220, sm: 280, md: 320 },
                     }}
                   />
                 ) : (

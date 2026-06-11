@@ -4,7 +4,14 @@ import { ownerAnalyticsService } from '@/services/owner/owner-analytics.service'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import { Box, Skeleton, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardContent,
+  Skeleton,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
 interface Props {
@@ -69,68 +76,76 @@ export default function MarketPriceWidget({
       : 'Dans la fourchette du marché';
 
   return (
-    <Box
+    <Card
+      elevation={0}
       sx={{
-        p: 2,
-        borderRadius: 3,
         border: '1px solid',
         borderColor: 'divider',
-        bgcolor: 'background.paper',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0.75,
-        minWidth: 200,
+        borderRadius: 3,
+        // Match RankEstimateWidget so the paired dashboard widgets align
+        // at the same height in their 2-column grid.
+        height: '100%',
       }}
     >
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        fontWeight={600}
-        sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
+      <CardContent
+        sx={{
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.75,
+          minWidth: 200,
+        }}
       >
-        Prix vs marché
-      </Typography>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        noWrap
-        sx={{ maxWidth: 200 }}
-      >
-        {adTitle}
-      </Typography>
-
-      {isLoading ? (
-        <Skeleton variant="text" width={120} height={28} />
-      ) : isError || !data || data.error ? (
-        <Typography variant="caption" color="text.disabled">
-          Données insuffisantes
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          fontWeight={600}
+          sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
+        >
+          Prix vs marché
         </Typography>
-      ) : (
-        <>
-          <Tooltip
-            title={`Médiane estimée : ${formatFCFA(median)} FCFA · Min ${formatFCFA(data.estimated_min)} · Max ${formatFCFA(data.estimated_max)} (${data.sample_count} annonces)`}
-            placement="top"
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.75,
-                cursor: 'help',
-              }}
-            >
-              <Icon sx={{ fontSize: 20, color }} />
-              <Typography variant="body2" fontWeight={700} color={color}>
-                {label}
-              </Typography>
-            </Box>
-          </Tooltip>
-          <Typography variant="caption" color="text.secondary">
-            Votre prix : <strong>{formatFCFA(adPrice)} FCFA</strong> · Médiane :{' '}
-            <strong>{formatFCFA(median)} FCFA</strong>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          noWrap
+          sx={{ maxWidth: 200 }}
+        >
+          {adTitle}
+        </Typography>
+
+        {isLoading ? (
+          <Skeleton variant="text" width={120} height={28} />
+        ) : isError || !data || data.error ? (
+          <Typography variant="caption" color="text.disabled">
+            Données insuffisantes
           </Typography>
-        </>
-      )}
-    </Box>
+        ) : (
+          <>
+            <Tooltip
+              title={`Médiane estimée : ${formatFCFA(median)} FCFA · Min ${formatFCFA(data.estimated_min)} · Max ${formatFCFA(data.estimated_max)} (${data.sample_count} annonces)`}
+              placement="top"
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.75,
+                  cursor: 'help',
+                }}
+              >
+                <Icon sx={{ fontSize: 20, color }} />
+                <Typography variant="body2" fontWeight={700} color={color}>
+                  {label}
+                </Typography>
+              </Box>
+            </Tooltip>
+            <Typography variant="caption" color="text.secondary">
+              Votre prix : <strong>{formatFCFA(adPrice)} FCFA</strong> · Médiane
+              : <strong>{formatFCFA(median)} FCFA</strong>
+            </Typography>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

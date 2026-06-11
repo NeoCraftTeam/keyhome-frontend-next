@@ -68,7 +68,7 @@ function ScoreGauge({ score, color }: { score: number; color: string }) {
         value={100}
         size={140}
         thickness={5}
-        sx={{ color: 'grey.200', position: 'absolute' }}
+        sx={{ color: 'action.disabledBackground', position: 'absolute' }}
       />
       <CircularProgress
         variant="determinate"
@@ -310,8 +310,14 @@ export default function OwnerTrustScorePage() {
                     comp.max > 0
                       ? Math.round((comp.score / comp.max) * 100)
                       : 0;
+                  // Use palette tokens so the bar resolves through the theme.
+                  // Was hard-coded Tailwind hex which didn't adapt to dark mode.
                   const color =
-                    pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444';
+                    pct >= 80
+                      ? 'success.main'
+                      : pct >= 50
+                        ? 'warning.main'
+                        : 'error.main';
                   return (
                     <Box key={key}>
                       <Stack
@@ -338,7 +344,10 @@ export default function OwnerTrustScorePage() {
                         sx={{
                           height: 6,
                           borderRadius: 3,
-                          bgcolor: 'grey.100',
+                          // `grey.100` is a fixed light shade that doesn't
+                          // adapt to dark mode; `action.hover` resolves to
+                          // a low-alpha neutral in both modes.
+                          bgcolor: 'action.hover',
                           '& .MuiLinearProgress-bar': {
                             bgcolor: color,
                             borderRadius: 3,

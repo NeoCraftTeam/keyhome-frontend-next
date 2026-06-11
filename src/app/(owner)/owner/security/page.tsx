@@ -3,10 +3,14 @@
 import EmptyState from '@/components/ui/feedback/EmptyState';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import api from '@/lib/api';
-import { loginHistoryKeys } from '@/lib/query-keys';
+import { loginHistoryKeys, sessionsKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/AuthProvider';
 
-import { ownerService, type LoginHistoryEntry } from '@/services/owner.service';
+import {
+  ownerService,
+  type ActiveSession,
+  type LoginHistoryEntry,
+} from '@/services/owner.service';
 import { useUser } from '@clerk/nextjs';
 import {
   Cancel as CancelIcon,
@@ -69,6 +73,16 @@ function formatDateTime(dateString: string): string {
   });
 }
 
+function sessionDeviceLabel(name: string): string {
+  if (name.startsWith('owner_token')) {
+    return 'Session propriétaire';
+  }
+  if (name.startsWith('client_token')) {
+    return 'Session client';
+  }
+  return name;
+}
+
 export default function OwnerSecurityPage() {
   const { logout } = useAuth();
   const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
@@ -109,6 +123,49 @@ export default function OwnerSecurityPage() {
     },
   });
 
+  // ─── Active Sessions ───
+  const { data: sessions, isLoading: sessionsLoading } = useQuery({
+    queryKey: sessionsKeys.list(),
+    queryFn: () => ownerService.getActiveSessions(),
+  });
+
+  const revokeSessionMutation = useMutation({
+    mutationFn: (id: string) => ownerService.revokeSession(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
+      setSnackbar({
+        message: 'Session révoquée',
+        severity: 'success',
+      });
+    },
+    onError: () => {
+      setSnackbar({
+        message: 'Erreur lors de la révocation de la session',
+        severity: 'error',
+      });
+    },
+  });
+
+  const revokeOtherSessionsMutation = useMutation({
+    mutationFn: () => ownerService.revokeOtherSessions(),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
+      setSnackbar({
+        message:
+          result.count > 0
+            ? `${result.count} session(s) déconnectée(s)`
+            : 'Aucune autre session à déconnecter',
+        severity: 'success',
+      });
+    },
+    onError: () => {
+      setSnackbar({
+        message: 'Erreur lors de la déconnexion des autres appareils',
+        severity: 'error',
+      });
+    },
+  });
+
   // ─── GDPR Data Export ───
   const dataExportMutation = useMutation({
     mutationFn: async () => {
@@ -131,6 +188,7 @@ export default function OwnerSecurityPage() {
 
   const entries = historyData?.data ?? [];
   const meta = historyData?.meta;
+  const sessionList = sessions ?? [];
 
   return (
     <Container
@@ -318,7 +376,9 @@ export default function OwnerSecurityPage() {
             {/* ─── Section 2: Active Sessions ─── */}
             <Card
               sx={{
-                borderRadius: 4,
+                // Match the sibling Login-history and RGPD-export cards on
+                // the same page; was 4 (32px) while siblings use 3 (24px).
+                borderRadius: 3,
                 border: '1px solid',
                 borderColor: 'divider',
               }}
@@ -336,7 +396,7 @@ export default function OwnerSecurityPage() {
                   </Typography>
                 </Stack>
 
-                {!clerkLoaded ? (
+                {sessionsLoading || !clerkLoaded ? (
                   <Skeleton
                     variant="rectangular"
                     height={80}
@@ -344,38 +404,145 @@ export default function OwnerSecurityPage() {
                   />
                 ) : (
                   <Box>
-                    {clerkUser && (
+                    {sessionList.length > 0 ? (
                       <Box
                         sx={{
-                          p: 2,
-                          borderRadius: 2,
-                          bgcolor: 'action.hover',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1,
                           mb: 2,
                         }}
                       >
-                        <Typography variant="body2" fontWeight={600}>
-                          {clerkUser.primaryEmailAddress?.emailAddress ??
-                            clerkUser.fullName ??
-                            'Compte actif'}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="success.main"
-                          sx={{ fontWeight: 600 }}
-                        >
-                          ● Connecté depuis ce navigateur (session active)
-                        </Typography>
+                        {sessionList.map((session: ActiveSession) => (
+                          <Box
+                            key={session.id}
+                            sx={{
+                              display: 'flex',
+                              alignItems: { xs: 'flex-start', sm: 'center' },
+                              flexDirection: { xs: 'column', sm: 'row' },
+                              justifyContent: 'space-between',
+                              gap: { xs: 1, sm: 2 },
+                              p: 2,
+                              borderRadius: 2,
+                              bgcolor: 'action.hover',
+                            }}
+                          >
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              gap={1}
+                              sx={{ minWidth: 0 }}
+                            >
+                              <DevicesOtherIcon
+                                fontSize="small"
+                                sx={{ color: 'text.secondary' }}
+                              />
+                              <Box sx={{ minWidth: 0 }}>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  noWrap
+                                >
+                                  {sessionDeviceLabel(session.name)}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  {session.last_used_at
+                                    ? `Dernière activité ${formatDateTime(
+                                        session.last_used_at
+                                      )}`
+                                    : 'Dernière activité inconnue'}
+                                </Typography>
+                              </Box>
+                            </Stack>
+                            {session.is_current ? (
+                              <Chip
+                                size="small"
+                                color="success"
+                                variant="outlined"
+                                label="Cet appareil"
+                                sx={{ fontWeight: 600 }}
+                              />
+                            ) : (
+                              <Button
+                                size="small"
+                                color="error"
+                                variant="outlined"
+                                aria-label={`Révoquer la session ${sessionDeviceLabel(
+                                  session.name
+                                )}`}
+                                onClick={() =>
+                                  revokeSessionMutation.mutate(session.id)
+                                }
+                                disabled={revokeSessionMutation.isPending}
+                                sx={{
+                                  borderRadius: 2,
+                                  textTransform: 'none',
+                                  minHeight: 44,
+                                  minWidth: 44,
+                                }}
+                              >
+                                Révoquer
+                              </Button>
+                            )}
+                          </Box>
+                        ))}
                       </Box>
+                    ) : (
+                      clerkUser && (
+                        <Box
+                          sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            bgcolor: 'action.hover',
+                            mb: 2,
+                          }}
+                        >
+                          <Typography variant="body2" fontWeight={600}>
+                            {clerkUser.primaryEmailAddress?.emailAddress ??
+                              clerkUser.fullName ??
+                              'Compte actif'}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="success.main"
+                            sx={{ fontWeight: 600 }}
+                          >
+                            ● Connecté depuis ce navigateur (session active)
+                          </Typography>
+                        </Box>
+                      )
                     )}
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      startIcon={<LogoutIcon />}
-                      onClick={() => logout('/owner/login')}
-                      sx={{ borderRadius: 2, textTransform: 'none' }}
+
+                    <Stack
+                      direction={{ xs: 'column', sm: 'row' }}
+                      gap={1.5}
+                      flexWrap="wrap"
                     >
-                      Déconnexion de tous les appareils
-                    </Button>
+                      {sessionList.length > 1 && (
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          startIcon={<LogoutIcon />}
+                          onClick={() => revokeOtherSessionsMutation.mutate()}
+                          disabled={revokeOtherSessionsMutation.isPending}
+                          sx={{ borderRadius: 2, textTransform: 'none' }}
+                        >
+                          Déconnecter les autres appareils
+                        </Button>
+                      )}
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<LogoutIcon />}
+                        onClick={() => logout('/owner/login')}
+                        sx={{ borderRadius: 2, textTransform: 'none' }}
+                      >
+                        Déconnexion de tous les appareils
+                      </Button>
+                    </Stack>
                   </Box>
                 )}
               </CardContent>

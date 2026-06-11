@@ -13,10 +13,14 @@ interface ListingQualityBarProps {
   has3dTour?: boolean;
 }
 
-const SCORE_COLOR: Record<'error' | 'warning' | 'success', string> = {
-  error: '#ef4444',
-  warning: '#f59e0b',
-  success: '#22c55e',
+// Map quality buckets to MUI palette tokens so the colour resolves through
+// the theme — was hard-coded Tailwind hex which doesn't adapt to dark mode
+// and drifts from the rest of the design system (semantic.success/warning/
+// error tokens already exist for this purpose).
+const SCORE_PALETTE_KEY: Record<'error' | 'warning' | 'success', string> = {
+  error: 'error.main',
+  warning: 'warning.main',
+  success: 'success.main',
 };
 
 export default function ListingQualityBar({
@@ -29,7 +33,7 @@ export default function ListingQualityBar({
     [values, photosCount, has3dTour]
   );
 
-  const hex = SCORE_COLOR[quality.color];
+  const color = SCORE_PALETTE_KEY[quality.color];
   const hint = quality.missing[0];
   const isExcellent = quality.score >= 80;
 
@@ -48,15 +52,15 @@ export default function ListingQualityBar({
       }}
     >
       {isExcellent ? (
-        <CheckCircleIcon sx={{ fontSize: 16, color: hex, flexShrink: 0 }} />
+        <CheckCircleIcon sx={{ fontSize: 16, color, flexShrink: 0 }} />
       ) : (
-        <TipsAndUpdatesIcon sx={{ fontSize: 16, color: hex, flexShrink: 0 }} />
+        <TipsAndUpdatesIcon sx={{ fontSize: 16, color, flexShrink: 0 }} />
       )}
 
       <Typography
         variant="caption"
         fontWeight={700}
-        sx={{ color: hex, flexShrink: 0 }}
+        sx={{ color, flexShrink: 0 }}
       >
         {quality.score}/100
       </Typography>
@@ -81,7 +85,7 @@ export default function ListingQualityBar({
             borderRadius: 3,
             bgcolor: 'action.hover',
             '& .MuiLinearProgress-bar': {
-              bgcolor: hex,
+              bgcolor: color,
               borderRadius: 3,
               transition: 'transform 0.4s ease',
             },
