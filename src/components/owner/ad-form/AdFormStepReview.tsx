@@ -55,7 +55,7 @@ const ValueChip = ({ label }: { label: string }) => (
     label={label}
     size="small"
     sx={{
-      bgcolor: 'grey.100',
+      bgcolor: 'action.hover',
       color: 'text.primary',
       fontWeight: 600,
       fontSize: '0.8rem',

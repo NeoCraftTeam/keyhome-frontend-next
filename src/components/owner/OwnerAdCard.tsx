@@ -85,7 +85,9 @@ export default function OwnerAdCard({
           // a flash. Reserve the slot with paddingTop instead, matching the
           // pattern used by AdCard and AdCardSkeleton (62.5% = 16:10).
           paddingTop: '62.5%',
-          bgcolor: 'grey.200',
+          // Adapts to theme — `grey.200` was a fixed light shade that
+          // stayed bright against dark `background.paper`.
+          bgcolor: 'action.hover',
         }}
       >
         {imageUrl ? (

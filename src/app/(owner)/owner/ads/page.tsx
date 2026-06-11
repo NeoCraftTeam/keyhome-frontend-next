@@ -409,7 +409,7 @@ export default function OwnerAdsPage() {
                     height: 42,
                     borderRadius: 1,
                     overflow: 'hidden',
-                    bgcolor: 'grey.100',
+                    bgcolor: 'action.hover',
                     flexShrink: 0,
                   }}
                 >
@@ -638,10 +638,16 @@ export default function OwnerAdsPage() {
               <Grid container spacing={2}>
                 {[1, 2, 3, 4].map((i) => (
                   <Grid key={i} size={{ xs: 12, sm: 6 }}>
+                    {/*
+                      Mirror OwnerAdCard exactly: 16:10 image (62.5%),
+                      title, meta line, AND a third row for the price
+                      + "Booster" action — was 56% + only two text
+                      lines, which left the list reflowing on load.
+                    */}
                     <ShimmerBox
                       height={0}
                       sx={{
-                        paddingTop: '56%',
+                        paddingTop: '62.5%',
                         height: 'auto',
                         borderRadius: '12px',
                       }}
@@ -651,7 +657,8 @@ export default function OwnerAdsPage() {
                       width="75%"
                       sx={{ mt: 1, mb: 0.5 }}
                     />
-                    <ShimmerBox height={11} width="55%" />
+                    <ShimmerBox height={11} width="55%" sx={{ mb: 0.75 }} />
+                    <ShimmerBox height={13} width="40%" />
                   </Grid>
                 ))}
               </Grid>
@@ -867,7 +874,10 @@ export default function OwnerAdsPage() {
                               <Avatar
                                 variant="rounded"
                                 alt={ad.title}
-                                sx={{ bgcolor: 'grey.200', color: 'grey.500' }}
+                                sx={{
+                                  bgcolor: 'action.disabledBackground',
+                                  color: 'text.disabled',
+                                }}
                               >
                                 <HomeOutlinedIcon fontSize="small" />
                               </Avatar>

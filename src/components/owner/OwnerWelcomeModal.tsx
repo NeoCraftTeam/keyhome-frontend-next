@@ -222,7 +222,7 @@ export default function OwnerWelcomeModal() {
         value={progress}
         sx={{
           height: 4,
-          bgcolor: 'grey.200',
+          bgcolor: 'action.hover',
           '& .MuiLinearProgress-bar': {
             bgcolor: brandAgent.primary,
           },

@@ -200,7 +200,7 @@ export default function OwnerRemboursementsPage() {
                     borderColor: 'divider',
                   }}
                 >
-                  <CardContent sx={{ py: '14px !important', px: 2 }}>
+                  <CardContent sx={{ py: '12px !important', px: 2 }}>
                     <Stack
                       direction={{ xs: 'column', sm: 'row' }}
                       justifyContent="space-between"

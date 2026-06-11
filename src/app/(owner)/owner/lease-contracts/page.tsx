@@ -1,6 +1,9 @@
 'use client';
 
 import FadeIn from '@/components/ui/layout/FadeIn';
+import LeaseLifecycleMenu from '@/components/owner/leases/LeaseLifecycleMenu';
+import LeaseStatusChip from '@/components/owner/leases/LeaseStatusChip';
+import ScreeningSection from '@/components/owner/screening/ScreeningSection';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import {
   ownerService,
@@ -208,11 +211,15 @@ export default function OwnerLeaseContractsPage() {
       {isLoading ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {[1, 2, 3].map((i) => (
+            // The real contract card has contract number, two chips, three
+            // meta lines, a 5-button action row, and a collapse zone —
+            // ~220px tall with radius 3. Match it so the list doesn't
+            // reflow on data arrival.
             <Skeleton
               key={i}
               variant="rectangular"
-              height={120}
-              sx={{ borderRadius: 2 }}
+              height={220}
+              sx={{ borderRadius: 3 }}
             />
           ))}
         </Box>
@@ -265,25 +272,36 @@ export default function OwnerLeaseContractsPage() {
                       >
                         {c.contract_number}
                       </Typography>
-                      <Tooltip title={c.ad?.title || '—'} arrow>
-                        <Chip
-                          label={c.ad?.title || '—'}
-                          size="small"
-                          variant="outlined"
-                          sx={{
-                            fontSize: '0.75rem',
-                            maxWidth: '100%',
-                            height: 'auto',
-                            minHeight: 28,
-                            '& .MuiChip-label': {
-                              whiteSpace: 'normal',
-                              py: 0.5,
-                              display: 'block',
-                              textAlign: 'left',
-                            },
-                          }}
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        sx={{ flexWrap: 'wrap', gap: 1 }}
+                      >
+                        <Tooltip title={c.ad?.title || '—'} arrow>
+                          <Chip
+                            label={c.ad?.title || '—'}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              fontSize: '0.75rem',
+                              maxWidth: '100%',
+                              height: 'auto',
+                              minHeight: 28,
+                              '& .MuiChip-label': {
+                                whiteSpace: 'normal',
+                                py: 0.5,
+                                display: 'block',
+                                textAlign: 'left',
+                              },
+                            }}
+                          />
+                        </Tooltip>
+                        <LeaseStatusChip
+                          status={c.status}
+                          label={c.status_label}
                         />
-                      </Tooltip>
+                      </Stack>
                       <Typography variant="body2" color="text.secondary">
                         Locataire : <strong>{c.tenant_name}</strong>
                       </Typography>
@@ -393,6 +411,7 @@ export default function OwnerLeaseContractsPage() {
                           <ExpandMoreIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
+                      <LeaseLifecycleMenu contract={c} />
                     </Stack>
                     <Collapse in={expandedSignatureIds.has(c.id)} unmountOnExit>
                       <Box
@@ -530,6 +549,13 @@ export default function OwnerLeaseContractsPage() {
                     : '—'
                 }
               />
+              <Box sx={{ mt: 2 }}>
+                <ScreeningSection
+                  leaseContractId={viewContract.id}
+                  tenantName={viewContract.tenant_name}
+                  tenantEmail={viewContract.tenant_email ?? ''}
+                />
+              </Box>
             </Box>
           </DialogContent>
         )}

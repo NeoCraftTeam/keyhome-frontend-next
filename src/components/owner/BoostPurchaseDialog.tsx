@@ -192,7 +192,9 @@ export default function BoostPurchaseDialog({
                       justifyContent: 'space-between',
                       gap: 2,
                       p: 2.5,
-                      borderRadius: 2.5,
+                      // Was 2.5 (20px) — odd one out vs the project's
+                      // canonical 2 / 3 / 4 radii. Normalise to 2.
+                      borderRadius: 2,
                       border: '2px solid',
                       borderColor: alpha(brandAgent.primary, 0.2),
                       bgcolor: alpha(brandAgent.primary, 0.02),

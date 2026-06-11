@@ -489,6 +489,14 @@ export default function OwnerDashboardPage() {
           onChange={(_, v) => setTab(v)}
           sx={{
             mb: 3,
+            // Anchor tabs to a divider track so the indicator doesn't
+            // float over empty space (matches the owner/profile tabs).
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            '& .MuiTabs-indicator': {
+              height: 3,
+              borderRadius: '3px 3px 0 0',
+            },
             '& .MuiTab-root': {
               textTransform: 'none',
               fontWeight: 600,
@@ -816,7 +824,7 @@ export default function OwnerDashboardPage() {
                                   height: 36,
                                   borderRadius: 1,
                                   overflow: 'hidden',
-                                  bgcolor: 'grey.200',
+                                  bgcolor: 'action.hover',
                                   flexShrink: 0,
                                 }}
                               >
@@ -1032,8 +1040,14 @@ export default function OwnerDashboardPage() {
               sx={{
                 mt: 3,
                 borderRadius: 3,
-                border: '2px solid',
-                borderColor: boostedCount > 0 ? GOLD : 'divider',
+                // Match the 1px borders of every other dashboard card —
+                // the 2px outline was pushing this card 1px out of
+                // horizontal alignment with the neighbouring rows.
+                // Keep the gold accent via a left-edge strip instead.
+                border: '1px solid',
+                borderColor: 'divider',
+                borderLeft: '4px solid',
+                borderLeftColor: boostedCount > 0 ? GOLD : 'divider',
                 overflow: 'hidden',
               }}
             >
