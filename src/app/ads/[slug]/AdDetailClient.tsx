@@ -1,6 +1,5 @@
 'use client';
 
-import AdLocationMap from '@/components/ads/AdLocationMap';
 import AdReportModal from '@/components/ads/AdReportModal';
 import CompareDrawer from '@/components/ads/CompareDrawer';
 import DirectionsPanel from '@/components/ads/DirectionsPanel';
@@ -41,7 +40,7 @@ import { adsService } from '@/services/ads.service';
 import { creditsService } from '@/services/credits.service';
 import type { DirectionsSummary } from '@/services/geo.service';
 import { paymentsService } from '@/services/payments.service';
-import { brand, gradient } from '@/theme/tokens';
+import { brand, gradient, shadow } from '@/theme/tokens';
 import type { UnlockResponse } from '@/types';
 import AccountBalanceWallet from '@mui/icons-material/AccountBalanceWallet';
 import ArrowBack from '@mui/icons-material/ArrowBack';
@@ -111,6 +110,15 @@ import {
 const TourViewer = dynamic(() => import('@/components/ads/TourViewerPSV'), {
   ssr: false,
   loading: () => null,
+});
+
+// Lazy-load the map so mapbox-gl (~250 KB) stays out of the ad-detail initial
+// bundle — it renders below the fold and is client-only anyway.
+const AdLocationMap = dynamic(() => import('@/components/ads/AdLocationMap'), {
+  ssr: false,
+  loading: () => (
+    <Box sx={{ height: 300, bgcolor: 'action.hover', borderRadius: 2 }} />
+  ),
 });
 
 const SlideUpTransition = forwardRef(function SlideUpTransition(
@@ -561,6 +569,7 @@ function AdDetailContent() {
               fill
               priority
               sizes="100vw"
+              referrerPolicy="no-referrer"
               style={{
                 objectFit: 'cover',
                 filter: isLocked ? 'blur(12px) brightness(0.85)' : 'none',
@@ -736,6 +745,7 @@ function AdDetailContent() {
                       fill
                       priority
                       sizes="100vw"
+                      referrerPolicy="no-referrer"
                       style={{
                         objectFit: 'cover',
                         filter: 'blur(12px) brightness(0.85)',
@@ -909,6 +919,7 @@ function AdDetailContent() {
                             fill
                             priority
                             sizes="(max-width: 960px) 100vw, 60vw"
+                            referrerPolicy="no-referrer"
                             style={{
                               objectFit: 'cover',
                             }}
@@ -965,6 +976,7 @@ function AdDetailContent() {
                         alt={`${ad.title} ${idx + 2}`}
                         fill
                         sizes="(max-width: 960px) 0px, 20vw"
+                        referrerPolicy="no-referrer"
                         style={{
                           objectFit: 'cover',
                           transition: 'transform 0.3s ease',
@@ -1873,7 +1885,10 @@ function AdDetailContent() {
                               alignItems: 'center',
                               gap: 1.25,
                               p: { xs: 1.5, sm: 2 },
-                              borderRadius: 2.5,
+                              // Match the sibling tour / pricing cards on
+                              // the same detail page; was 2.5 (20px) while
+                              // every adjacent surface uses 3 (24px).
+                              borderRadius: 3,
                               border: '1px solid',
                               borderColor: 'divider',
                               bgcolor: 'background.paper',
@@ -2418,7 +2433,10 @@ function AdDetailContent() {
                     borderColor: 'divider',
                     borderRadius: 3,
                     p: 3,
-                    boxShadow: '0 6px 20px rgba(0,0,0,0.08)',
+                    // Was a hand-rolled hex; use the project shadow token so
+                    // the right-column pricing card matches every other card
+                    // on the page.
+                    boxShadow: shadow.medium,
                   }}
                 >
                   <Typography

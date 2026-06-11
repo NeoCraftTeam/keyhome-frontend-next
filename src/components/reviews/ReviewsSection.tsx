@@ -82,20 +82,29 @@ export default function ReviewsSection({
           </Typography>
           {averageRating != null && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Box
-                  key={s}
-                  component="span"
-                  sx={{
-                    color:
-                      s <= Math.round(averageRating) ? '#FFB400' : '#E0E0E0',
-                    fontSize: 18,
-                    lineHeight: 1,
-                  }}
-                >
-                  ★
-                </Box>
-              ))}
+              <Box
+                role="img"
+                aria-label={`Note moyenne : ${averageRating.toFixed(1)} sur 5`}
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+              >
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Box
+                    key={s}
+                    component="span"
+                    aria-hidden="true"
+                    sx={{
+                      color:
+                        s <= Math.round(averageRating)
+                          ? '#FFB400'
+                          : 'action.disabled',
+                      fontSize: 18,
+                      lineHeight: 1,
+                    }}
+                  >
+                    ★
+                  </Box>
+                ))}
+              </Box>
               <Typography variant="body2" fontWeight={600} sx={{ ml: 0.5 }}>
                 {averageRating.toFixed(1)}
               </Typography>
@@ -178,7 +187,10 @@ export default function ReviewsSection({
                   mb: 2,
                 }}
               >
-                ★ {averageRating?.toFixed(2).replace('.', ',') ?? '—'}
+                <Box component="span" aria-hidden="true">
+                  ★
+                </Box>{' '}
+                {averageRating?.toFixed(2).replace('.', ',') ?? '—'}
               </Typography>
               <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
                 Évaluation globale
@@ -311,14 +323,21 @@ export default function ReviewsSection({
                         </Typography>
                       </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 0.25, mb: 0.6 }}>
+                    <Box
+                      role="img"
+                      aria-label={`Note : ${review.rating} sur 5`}
+                      sx={{ display: 'flex', gap: 0.25, mb: 0.6 }}
+                    >
                       {[1, 2, 3, 4, 5].map((s) => (
                         <Box
                           key={s}
                           component="span"
+                          aria-hidden="true"
                           sx={{
                             color:
-                              s <= review.rating ? 'primary.main' : '#D1D5DB',
+                              s <= review.rating
+                                ? 'primary.main'
+                                : 'action.disabled',
                             fontSize: 14,
                           }}
                         >

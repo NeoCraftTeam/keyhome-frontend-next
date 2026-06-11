@@ -332,7 +332,15 @@ export default function SearchAlertsPage() {
                     sx={{
                       borderRadius: 3,
                       opacity: isActive ? 1 : 0.6,
-                      transition: 'opacity 0.2s',
+                      transition:
+                        'opacity 0.2s, border-color 0.15s, box-shadow 0.15s',
+                      // The card houses an active switch + edit/delete
+                      // affordances, so the surface itself should signal
+                      // that it's a hover/focus target.
+                      '&:hover': {
+                        borderColor: 'primary.light',
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                      },
                     }}
                   >
                     <CardContent sx={{ pb: 1 }}>
@@ -674,7 +682,14 @@ export default function SearchAlertsPage() {
                       ? 'rgba(246,71,95,0.1)'
                       : '#fff5f6',
                   border: '1px solid',
-                  borderColor: 'primary.light',
+                  // Match the border to the alpha-soft fill in dark mode —
+                  // `primary.light` (a saturated pink) against the 10%-alpha
+                  // pink fill reads as a hard ring; resolve via theme so the
+                  // ring is softer in dark mode.
+                  borderColor: (t) =>
+                    t.palette.mode === 'dark'
+                      ? 'rgba(246,71,95,0.4)'
+                      : t.palette.primary.light,
                 }}
               >
                 {previewLoading ? (

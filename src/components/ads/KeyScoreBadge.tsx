@@ -5,10 +5,10 @@ import EmojiEvents from '@mui/icons-material/EmojiEvents';
 import Info from '@mui/icons-material/Info';
 import {
   Box,
-  CircularProgress,
   Divider,
   LinearProgress,
   Popover,
+  Skeleton,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -38,6 +38,7 @@ const SCORE_COLOR = (score: number): string => {
 
 export default function KeyScoreBadge({ adId, size = 'medium' }: Props) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const isSmall = size === 'small';
 
   const { data, isLoading } = useQuery({
     queryKey: ['keyscore', adId],
@@ -46,7 +47,17 @@ export default function KeyScoreBadge({ adId, size = 'medium' }: Props) {
   });
 
   if (isLoading) {
-    return <CircularProgress size={16} />;
+    // Reserve the badge's pill footprint while loading so the row of chips
+    // around it doesn't reflow when the score lands. A bare CircularProgress
+    // is ~16x16 — the real pill is ~60-110px wide and 22-30px tall.
+    return (
+      <Skeleton
+        variant="rounded"
+        width={isSmall ? 60 : 110}
+        height={isSmall ? 22 : 30}
+        sx={{ borderRadius: 99 }}
+      />
+    );
   }
 
   if (!data) {
@@ -54,7 +65,6 @@ export default function KeyScoreBadge({ adId, size = 'medium' }: Props) {
   }
 
   const color = SCORE_COLOR(data.score);
-  const isSmall = size === 'small';
 
   return (
     <>

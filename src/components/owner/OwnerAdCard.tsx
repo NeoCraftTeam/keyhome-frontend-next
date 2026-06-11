@@ -76,7 +76,17 @@ export default function OwnerAdCard({
       }}
     >
       <Box
-        sx={{ position: 'relative', aspectRatio: '16/10', bgcolor: 'grey.200' }}
+        sx={{
+          position: 'relative',
+          width: '100%',
+          // `aspectRatio` is unreliable as a sizing contract for the
+          // `<Image fill />` child on Safari <=16 — the absolutely-positioned
+          // inner Box collapses to 0 height before the image loads, causing
+          // a flash. Reserve the slot with paddingTop instead, matching the
+          // pattern used by AdCard and AdCardSkeleton (62.5% = 16:10).
+          paddingTop: '62.5%',
+          bgcolor: 'grey.200',
+        }}
       >
         {imageUrl ? (
           <Box sx={{ position: 'absolute', inset: 0 }}>

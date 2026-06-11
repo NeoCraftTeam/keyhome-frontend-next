@@ -13,6 +13,7 @@ import Image from 'next/image';
 
 import { useGreeting } from '@/hooks/useGreeting';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { dedupeById } from '@/lib/dedupe-by-id';
 import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
 import { citiesService } from '@/services/cities.service';
@@ -212,7 +213,7 @@ export default function HomePage() {
       enabled: isAuthenticated,
     });
 
-  const recommendations = recommendationsData?.data || [];
+  const recommendations = dedupeById(recommendationsData?.data ?? []);
   const recommendedIds = useMemo(
     () => (recommendationsData?.data ?? []).map((r) => String(r.id)),
     [recommendationsData]
@@ -246,8 +247,11 @@ export default function HomePage() {
     refetchOnWindowFocus: false,
   });
 
+  // Dedupe by id: a cursor feed ordered by boost_score/recency can return the
+  // same ad on two adjacent pages, and flattening the infinite-query pages would
+  // then render duplicate `key={ad.id}` values (React duplicate-key warnings).
   const ads = useMemo(
-    () => adsData?.pages.flatMap((p) => p.data) ?? [],
+    () => dedupeById(adsData?.pages.flatMap((p) => p.data) ?? []),
     [adsData]
   );
 
@@ -553,6 +557,8 @@ export default function HomePage() {
                 variant={isActive ? 'filled' : 'outlined'}
                 sx={{
                   flexShrink: 0,
+                  height: 40,
+                  fontSize: '0.8125rem',
                   fontWeight: isActive ? 700 : 500,
                   transition: 'all 0.2s ease',
                   '&:active': { transform: 'scale(0.96)' },
@@ -712,7 +718,7 @@ export default function HomePage() {
                     <Box
                       sx={{
                         display: 'flex',
-                        gap: { xs: 1.5, md: 2 },
+                        gap: { xs: 1.5, sm: 2, md: 2.5 },
                         overflowX: 'auto',
                         pb: 1,
                         scrollbarWidth: 'none',
@@ -780,7 +786,7 @@ export default function HomePage() {
                   <Box
                     sx={{
                       display: 'flex',
-                      gap: { xs: 1.5, md: 2 },
+                      gap: { xs: 1.5, sm: 2, md: 2.5 },
                       overflowX: 'auto',
                       pb: 1,
                       scrollbarWidth: 'none',
@@ -827,7 +833,7 @@ export default function HomePage() {
                     <Box
                       sx={{
                         display: 'flex',
-                        gap: { xs: 1.5, md: 2 },
+                        gap: { xs: 1.5, sm: 2, md: 2.5 },
                         overflowX: 'auto',
                         pb: 1,
                         scrollbarWidth: 'none',
@@ -895,7 +901,7 @@ export default function HomePage() {
                   <Box
                     sx={{
                       display: 'flex',
-                      gap: { xs: 1.5, md: 2 },
+                      gap: { xs: 1.5, sm: 2, md: 2.5 },
                       overflowX: 'auto',
                       pb: 1,
                       scrollbarWidth: 'none',
