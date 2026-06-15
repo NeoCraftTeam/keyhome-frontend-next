@@ -16,6 +16,7 @@ import { CURRENCY_COOKIE, parseSupportedCurrencyCookie } from '@/lib/currency';
 import { KH_SAFE_AREA_INIT_SCRIPT } from '@/lib/safe-area-init-inline';
 import { buildSiteVerification } from '@/lib/seo/seo-verification';
 import { getSiteOrigin } from '@/lib/site-url';
+import { buildHreflangAlternates } from '@/i18n/routing';
 import { frFR } from '@clerk/localizations';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Analytics } from '@vercel/analytics/next';
@@ -30,9 +31,9 @@ import { Providers } from './providers';
 const SITE = getSiteOrigin();
 const siteVerification = buildSiteVerification();
 
-const SITE_META_DESCRIPTION = `${BRAND_TAGLINE}. KeyHome : des milliers d'annonces immobilières vérifiées. Maisons, appartements, terrains et villas à Douala, Abidjan, Cotonou, Lomé et partout dans le monde. Inscription gratuite, paiement sécurisé.`;
+const SITE_META_DESCRIPTION = `Des milliers d'annonces immobilières vérifiées — maisons, appartements, terrains et villas, partout dans le monde. Inscription gratuite, paiement sécurisé, contact direct propriétaire. ${BRAND_TAGLINE}.`;
 
-const TWITTER_CARD_DESCRIPTION = `${BRAND_TAGLINE}. Trouvez votre bien parmi des milliers d'annonces vérifiées. Inscription gratuite, paiement sécurisé, contact direct.`;
+const TWITTER_CARD_DESCRIPTION = `Trouvez votre bien parmi des milliers d'annonces vérifiées. Inscription gratuite, paiement sécurisé, contact direct. ${BRAND_TAGLINE}.`;
 
 const inter = Inter({
   variable: '--font-inter',
@@ -55,19 +56,20 @@ export const metadata: Metadata = {
   },
   description: SITE_META_DESCRIPTION,
   keywords: [
-    'immobilier Afrique',
+    'immobilier',
     'location appartement',
     'vente maison',
     'terrain à vendre',
-    'immobilier Douala',
-    'immobilier Cotonou',
-    'immobilier Lomé',
-    'immobilier Abidjan',
     'annonces immobilières',
-    'KeyHome',
-    'location villa',
-    'achat terrain Afrique',
+    'propriétaire direct',
     'agence immobilière en ligne',
+    'location villa',
+    'achat terrain',
+    'immobilier Douala',
+    'immobilier Yaoundé',
+    'immobilier Abidjan',
+    'immobilier Dakar',
+    'KeyHome',
   ],
   authors: [{ name: 'KeyHome', url: SITE }],
   creator: 'NeoCraftTeam',
@@ -88,10 +90,7 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: SITE,
-    languages: {
-      'fr-FR': SITE,
-      'x-default': SITE,
-    },
+    languages: buildHreflangAlternates(SITE),
   },
   openGraph: {
     type: 'website',
@@ -124,7 +123,11 @@ export const metadata: Metadata = {
     ],
     apple: [
       { url: '/icons/icon-152x152.png', sizes: '152x152' },
-      { url: '/icons/icon-192x192.png', sizes: '180x180' },
+      // iOS expects the file dimensions to match `sizes`. A 192×192 file
+      // declared as `180x180` previously caused iOS to reject the icon
+      // and fall back to a screenshot of the launch URL. Use the
+      // dedicated 180×180 asset for the standard iPhone touch icon.
+      { url: '/icons/icon-180x180.png', sizes: '180x180' },
     ],
   },
   manifest: '/manifest.json',
