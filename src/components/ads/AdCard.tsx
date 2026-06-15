@@ -590,9 +590,14 @@ function AdCard({ ad, showDistance, imageSizes }: AdCardProps) {
                 {images.slice(0, 5).map((_, idx) => (
                   <Box
                     key={idx}
-                    role="button"
-                    tabIndex={-1}
-                    aria-label={`Photo ${idx + 1}`}
+                    // Dots are purely visual position indicators nested
+                    // inside the card's outer <motion.a>. Exposing them
+                    // as additional interactive controls would create a
+                    // nested-interactive-content violation. Keyboard +
+                    // SR users get the same information via the image's
+                    // alt text (already includes "photo N sur M") and
+                    // navigate the card link itself.
+                    aria-hidden="true"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();

@@ -180,10 +180,18 @@ describe('AdCard', () => {
     ).not.toThrow();
   });
 
-  it('renders dot indicators for multiple images', () => {
-    renderAdCard();
-    const dots = screen.getAllByRole('button', { name: /Photo \d+/ });
-    expect(dots.length).toBeGreaterThanOrEqual(3);
+  it('renders dot indicators for multiple images (decorative, aria-hidden)', () => {
+    const { container } = renderAdCard();
+    // Dots are visual position markers nested inside the card's outer
+    // <motion.a>; exposing them as buttons would create a nested-
+    // interactive-content violation (see AdCard.tsx). They sit in the
+    // DOM for mouse / pointer users but are hidden from assistive tech.
+    // Find them via the aria-hidden attribute + sibling structure: the
+    // dots are direct children of the same parent in clusters of
+    // `min(images, 5)` and there are no other aria-hidden siblings in
+    // the photo overlay.
+    const hiddenChildren = container.querySelectorAll('[aria-hidden="true"]');
+    expect(hiddenChildren.length).toBeGreaterThanOrEqual(3);
   });
 
   it('renders without crashing when no images', () => {

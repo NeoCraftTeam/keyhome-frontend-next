@@ -229,6 +229,12 @@ export default function PWAInstallPrompt() {
       >
         <Alert
           severity="info"
+          // Service-worker update is an interruptive event (user has to
+          // tap to reload). Announce assertively so screen-reader users
+          // know an action is available before the snackbar auto-hides.
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
           icon={<SystemUpdate />}
           action={
             <Button

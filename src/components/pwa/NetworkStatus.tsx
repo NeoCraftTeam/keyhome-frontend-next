@@ -46,6 +46,11 @@ export default function NetworkStatus() {
       >
         <Alert
           severity="warning"
+          // Offline transitions matter immediately for what the user is
+          // about to attempt — assertive so screen readers interrupt.
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
           icon={<SignalWifiOff sx={{ fontSize: 20 }} />}
           sx={{
             borderRadius: 2,
@@ -66,6 +71,11 @@ export default function NetworkStatus() {
       >
         <Alert
           severity="success"
+          // Coming back online is informational; let the SR finish the
+          // current utterance before announcing.
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
           icon={<Wifi sx={{ fontSize: 20 }} />}
           sx={{
             borderRadius: 2,
