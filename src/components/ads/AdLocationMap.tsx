@@ -154,6 +154,14 @@ export default function AdLocationMap({
   /** Tracks all active Mapbox Marker instances so Effect 2 can remove them on re-run. */
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   /**
+   * Tracks the last style URL we know is applied to the live map instance.
+   * Effect 1b uses this to detect *actual* style swaps (vs. the initial
+   * style set inside `new mapboxgl.Map()`) and call `setStyle()` only
+   * when needed. Updating it inside Effect 1 keeps it in sync when the
+   * map is recreated for unrelated reasons (lat/lng/lock change).
+   */
+  const appliedStyleRef = useRef<string | null>(null);
+  /**
    * Incremented each time the map style finishes loading.
    * Effect 2 depends on this so it runs after the map is ready,
    * without depending on mapRef directly (refs don't trigger re-renders).
@@ -189,7 +197,9 @@ export default function AdLocationMap({
   }, [userLocation, latitude, longitude]);
 
   // ── Effect 1: create / destroy the map ──────────────────────────────────────
-  // Only re-runs when coordinates, lock status, or map style change.
+  // Only re-runs when coordinates or lock status change — NOT on style changes
+  // (dark-mode toggle, plan↔satellite). Effect 1b below swaps the style in
+  // place on the existing instance to preserve markers / camera / overlays.
   // Does NOT depend on userLocation — position updates never recreate the map.
   useEffect(() => {
     if (!mapContainerRef.current || !MAPBOX_TOKEN) return;
@@ -216,6 +226,10 @@ export default function AdLocationMap({
     );
 
     mapRef.current = map;
+    // Effect 1b will compare against this to decide whether a setStyle() is
+    // actually needed; updating it here keeps the two effects in sync when
+    // the map is rebuilt (lat/lng/lock change) under a new style.
+    appliedStyleRef.current = mapStyle;
 
     // Signal Effect 2 that the map style is ready. Using once() so the counter
     // only increments once per map instance even if the style reloads.
@@ -229,8 +243,33 @@ export default function AdLocationMap({
       markersRef.current = [];
       map.remove();
       mapRef.current = null;
+      appliedStyleRef.current = null;
     };
-  }, [displayLat, displayLng, isLocked, mapStyle]); // ← NO userLocation here
+    // mapStyle is intentionally omitted: it's read from closure once at mount,
+    // and subsequent style swaps go through Effect 1b (map.setStyle) so the
+    // live instance survives a theme toggle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayLat, displayLng, isLocked]);
+
+  // ── Effect 1b: hot-swap the style on the live map ───────────────────────────
+  // Avoids the expensive teardown + rebuild Effect 1 used to do whenever the
+  // theme flipped (mapStyle was a dep). Calling `setStyle()` keeps the camera,
+  // markers, and DOM-overlay attribution controls intact; Mapbox drops user-
+  // added sources/layers in the process, so we bump `mapKey` once the new
+  // style finishes loading to re-run Effect 2 (which re-adds the route line
+  // and approx-zone source/layer).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (appliedStyleRef.current === mapStyle) return;
+
+    appliedStyleRef.current = mapStyle;
+    map.setStyle(mapStyle);
+    map.once('style.load', () => {
+      if (!mapRef.current) return; // unmounted while loading
+      setMapKey((k) => k + 1);
+    });
+  }, [mapStyle]);
 
   // ── Effect 2: add / refresh markers — no map recreation ─────────────────────
   // Runs after the map style loads (via mapKey) and whenever location data updates.
