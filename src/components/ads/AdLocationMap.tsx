@@ -54,16 +54,18 @@ function getDistanceLabel(km: number): { text: string; color: string } {
 
 function createUserMarker(): HTMLDivElement {
   const el = document.createElement('div');
+  el.setAttribute('role', 'img');
+  el.setAttribute('aria-label', 'Votre position actuelle');
   el.style.cssText =
     'width:36px;height:36px;position:relative;display:flex;align-items:center;justify-content:center;';
   el.innerHTML = `
-    <div style="
+    <div aria-hidden="true" style="
       position:absolute;inset:0;
       border-radius:50%;
       background:rgba(66,133,244,0.18);
       animation:kh-pulse-blue 2s ease-out infinite;
     "></div>
-    <div style="
+    <div aria-hidden="true" style="
       width:20px;height:20px;
       background:#4285F4;
       border-radius:50%;
@@ -77,17 +79,26 @@ function createUserMarker(): HTMLDivElement {
         70%{transform:scale(2.6);opacity:0}
         100%{transform:scale(1);opacity:0}
       }
+      /* Respect reduced-motion: the pulse is purely decorative. */
+      @media (prefers-reduced-motion: reduce) {
+        [data-kh-marker="user"] div[style*="kh-pulse-blue"] {
+          animation: none !important;
+        }
+      }
     </style>
   `;
+  el.setAttribute('data-kh-marker', 'user');
   return el;
 }
 
-function createAdMarker(): HTMLDivElement {
+function createAdMarker(label: string): HTMLDivElement {
   const el = document.createElement('div');
+  el.setAttribute('role', 'img');
+  el.setAttribute('aria-label', label);
   el.style.cssText =
     'width:36px;height:48px;display:flex;flex-direction:column;align-items:center;cursor:default;';
   el.innerHTML = `
-    <div style="
+    <div aria-hidden="true" style="
       width:36px;height:36px;
       background:${PRIMARY_RED};
       border-radius:50% 50% 50% 0;
@@ -99,11 +110,11 @@ function createAdMarker(): HTMLDivElement {
       justify-content:center;
       flex-shrink:0;
     ">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="white" style="transform:rotate(45deg)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="white" style="transform:rotate(45deg)" aria-hidden="true">
         <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
       </svg>
     </div>
-    <div style="
+    <div aria-hidden="true" style="
       width:4px;height:12px;
       background:${PRIMARY_RED};
       border-radius:0 0 3px 3px;
@@ -116,8 +127,14 @@ function createAdMarker(): HTMLDivElement {
 
 function createDistanceLabel(text: string, dark: boolean): HTMLDivElement {
   const el = document.createElement('div');
+  // The visible label conveys distance information that isn't present
+  // anywhere else on the marker overlay (the banner above the map shows
+  // the same value, but the label sits where the route line bends).
+  el.setAttribute('role', 'img');
+  el.setAttribute('aria-label', `Distance approximative : ${text}`);
   const inner = document.createElement('div');
   inner.textContent = text;
+  inner.setAttribute('aria-hidden', 'true');
   inner.style.cssText = `
     background: ${dark ? 'rgba(30,30,30,0.92)' : 'rgba(255,255,255,0.95)'};
     backdrop-filter: blur(6px);
@@ -184,6 +201,14 @@ export default function AdLocationMap({
   );
 
   const showRoute = !isLocked && !!userLocation;
+
+  // Accessible label attached to the ad marker. Built from the same
+  // quartier / city props that drive the visible heading so screen readers
+  // hear "Logement, Bonanjo, Douala" instead of just "Logement".
+  const adMarkerLabel = useMemo(() => {
+    const parts = [quartierName, cityName].filter(Boolean);
+    return parts.length > 0 ? `Logement, ${parts.join(', ')}` : 'Logement';
+  }, [quartierName, cityName]);
 
   const distanceKm = useMemo(() => {
     if (!userLocation) return null;
@@ -330,14 +355,19 @@ export default function AdLocationMap({
         },
       });
       const iconEl = document.createElement('div');
+      iconEl.setAttribute('role', 'img');
+      iconEl.setAttribute(
+        'aria-label',
+        'Zone approximative du logement (position exacte masquée)'
+      );
       iconEl.innerHTML = `
-        <div style="
+        <div aria-hidden="true" style="
           width:40px;height:40px;
           background:rgba(246,71,95,0.15);
           border-radius:50%;
           display:flex;align-items:center;justify-content:center;
         ">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="${PRIMARY_RED}">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="${PRIMARY_RED}" aria-hidden="true">
             <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
           </svg>
         </div>
@@ -398,7 +428,7 @@ export default function AdLocationMap({
       }
 
       const adMarker = new mapboxgl.Marker({
-        element: createAdMarker(),
+        element: createAdMarker(adMarkerLabel),
         anchor: 'bottom',
       })
         .setLngLat([displayLng, displayLat])
@@ -443,8 +473,10 @@ export default function AdLocationMap({
       // ── unlocked ad, no user location: simple dark pin ───────────────────────
     } else {
       const markerEl = document.createElement('div');
+      markerEl.setAttribute('role', 'img');
+      markerEl.setAttribute('aria-label', adMarkerLabel);
       markerEl.innerHTML = `
-        <div style="
+        <div aria-hidden="true" style="
           width:44px;height:44px;
           background:#222;
           border-radius:50%;
@@ -452,7 +484,7 @@ export default function AdLocationMap({
           box-shadow:0 4px 16px rgba(0,0,0,0.25);
           border:3px solid #fff;
         ">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white" aria-hidden="true">
             <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
           </svg>
         </div>
@@ -474,6 +506,7 @@ export default function AdLocationMap({
     displayLat,
     displayLng,
     routeGeojson,
+    adMarkerLabel,
   ]);
 
   if (!MAPBOX_TOKEN) return null;
@@ -620,10 +653,17 @@ export default function AdLocationMap({
           borderColor: 'divider',
         }}
       >
-        <Box ref={mapContainerRef} sx={{ width: '100%', height: '100%' }} />
+        <Box
+          ref={mapContainerRef}
+          role="region"
+          aria-label={`Carte de localisation du ${adMarkerLabel.toLowerCase()}`}
+          sx={{ width: '100%', height: '100%' }}
+        />
 
         {/* Style picker overlay — bottom-left, above Mapbox attribution */}
         <Box
+          role="group"
+          aria-label="Style de la carte"
           sx={{
             position: 'absolute',
             bottom: 28,
@@ -635,37 +675,42 @@ export default function AdLocationMap({
             boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
           }}
         >
-          {(['streets', 'satellite'] as const).map((style) => (
-            <Box
-              key={style}
-              component="button"
-              type="button"
-              onClick={() => setMapViewStyle(style)}
-              sx={{
-                px: 1.25,
-                py: 0.5,
-                fontSize: 10,
-                fontWeight: 600,
-                border: 'none',
-                cursor: 'pointer',
-                lineHeight: 1.4,
-                bgcolor:
-                  mapViewStyle === style
-                    ? 'primary.main'
-                    : 'rgba(255,255,255,0.92)',
-                color: mapViewStyle === style ? '#fff' : 'rgba(0,0,0,0.78)',
-                transition: 'background 0.15s',
-                '&:hover': {
-                  bgcolor:
-                    mapViewStyle === style
-                      ? 'primary.dark'
-                      : 'rgba(255,255,255,1)',
-                },
-              }}
-            >
-              {style === 'streets' ? 'Plan' : 'Satellite'}
-            </Box>
-          ))}
+          {(['streets', 'satellite'] as const).map((style) => {
+            const isActive = mapViewStyle === style;
+            const label = style === 'streets' ? 'Plan' : 'Satellite';
+            return (
+              <Box
+                key={style}
+                component="button"
+                type="button"
+                onClick={() => setMapViewStyle(style)}
+                aria-pressed={isActive}
+                aria-label={`Afficher la carte en mode ${label}`}
+                sx={{
+                  px: 1.25,
+                  py: 0.5,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                  lineHeight: 1.4,
+                  bgcolor: isActive ? 'primary.main' : 'rgba(255,255,255,0.92)',
+                  color: isActive ? '#fff' : 'rgba(0,0,0,0.78)',
+                  transition: 'background 0.15s',
+                  '&:hover': {
+                    bgcolor: isActive ? 'primary.dark' : 'rgba(255,255,255,1)',
+                  },
+                  '&:focus-visible': {
+                    outline: '2px solid',
+                    outlineColor: 'primary.main',
+                    outlineOffset: 2,
+                  },
+                }}
+              >
+                {label}
+              </Box>
+            );
+          })}
         </Box>
       </Box>
 

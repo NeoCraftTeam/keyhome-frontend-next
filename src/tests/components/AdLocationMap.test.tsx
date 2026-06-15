@@ -119,12 +119,18 @@ function ThemeFlipper({ initialDark = false }: { initialDark?: boolean }) {
       <button data-testid="flip" onClick={() => setDark((d) => !d)}>
         flip
       </button>
-      <AdLocationMap latitude={4.0511} longitude={9.7679} isLocked={true} />
+      <AdLocationMap
+        latitude={4.0511}
+        longitude={9.7679}
+        isLocked={true}
+        quartierName="Bonanjo"
+        cityName="Douala"
+      />
     </ThemeProvider>
   );
 }
 
-describe('AdLocationMap — Gap 3 (style hot-swap)', () => {
+describe('AdLocationMap', () => {
   beforeEach(() => {
     mapboxFake.mapInstances.length = 0;
   });
@@ -165,5 +171,32 @@ describe('AdLocationMap — Gap 3 (style hot-swap)', () => {
 
     unmount();
     expect(map.remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('exposes a labelled map region + accessible style picker (Gap 4)', () => {
+    const { getByRole, getAllByRole } = render(
+      <ThemeFlipper initialDark={false} />
+    );
+
+    // Map container Box uses role="region" with the address-aware label.
+    const region = getByRole('region', {
+      name: /carte de localisation du logement, bonanjo, douala/i,
+    });
+    expect(region).toBeInTheDocument();
+
+    // Style picker exposes aria-pressed on each button so SR users know
+    // which style is active.
+    const planBtn = getByRole('button', {
+      name: /afficher la carte en mode plan/i,
+    });
+    const satelliteBtn = getByRole('button', {
+      name: /afficher la carte en mode satellite/i,
+    });
+    expect(planBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(satelliteBtn).toHaveAttribute('aria-pressed', 'false');
+
+    // The picker is grouped so SR users hear it as a single control.
+    const group = getAllByRole('group', { name: /style de la carte/i });
+    expect(group).toHaveLength(1);
   });
 });
