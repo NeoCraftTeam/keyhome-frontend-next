@@ -38,11 +38,6 @@ export interface AdFormValues {
   charges_electricite: string;
   charges_autres: string;
   charges_autres_items: ChargeItem[];
-  distance_main_road_m: string;
-  distance_shops_m: string;
-  distance_transport_m: string;
-  distance_school_m: string;
-  distance_hospital_m: string;
 }
 
 export interface TourScene {
@@ -105,11 +100,6 @@ export const initialValues: AdFormValues = {
   charges_electricite: '',
   charges_autres: '',
   charges_autres_items: [],
-  distance_main_road_m: '',
-  distance_shops_m: '',
-  distance_transport_m: '',
-  distance_school_m: '',
-  distance_hospital_m: '',
 };
 
 /** Coerce nullable API / draft fields to safe form strings. */
@@ -135,11 +125,6 @@ export const AD_FORM_STRING_FIELD_KEYS = [
   'charges_eau',
   'charges_electricite',
   'charges_autres',
-  'distance_main_road_m',
-  'distance_shops_m',
-  'distance_transport_m',
-  'distance_school_m',
-  'distance_hospital_m',
 ] as const satisfies readonly (keyof AdFormValues)[];
 
 const adFormStringFieldSet = new Set<string>(AD_FORM_STRING_FIELD_KEYS);
@@ -205,11 +190,6 @@ export function normalizeAdFormValues(
     charges_autres_items: Array.isArray(merged.charges_autres_items)
       ? merged.charges_autres_items
       : [],
-    distance_main_road_m: adFormText(merged.distance_main_road_m),
-    distance_shops_m: adFormText(merged.distance_shops_m),
-    distance_transport_m: adFormText(merged.distance_transport_m),
-    distance_school_m: adFormText(merged.distance_school_m),
-    distance_hospital_m: adFormText(merged.distance_hospital_m),
     has_parking: Boolean(merged.has_parking),
     charges_forfaitaires: Boolean(merged.charges_forfaitaires),
     latitude: lat,
@@ -307,20 +287,5 @@ export function mapAdToFormValues(ad: Ad): AdFormValues {
         };
       })
       .filter((item) => item.label),
-    distance_main_road_m:
-      ds('distance_main_road_m') ??
-      (ad.distance_main_road_m != null ? String(ad.distance_main_road_m) : ''),
-    distance_shops_m:
-      ds('distance_shops_m') ??
-      (ad.distance_shops_m != null ? String(ad.distance_shops_m) : ''),
-    distance_transport_m:
-      ds('distance_transport_m') ??
-      (ad.distance_transport_m != null ? String(ad.distance_transport_m) : ''),
-    distance_school_m:
-      ds('distance_school_m') ??
-      (ad.distance_school_m != null ? String(ad.distance_school_m) : ''),
-    distance_hospital_m:
-      ds('distance_hospital_m') ??
-      (ad.distance_hospital_m != null ? String(ad.distance_hospital_m) : ''),
   });
 }

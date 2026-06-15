@@ -66,11 +66,6 @@ const RESIDENTIAL_SPECIFIC_FIELDS: (keyof AdFormValues)[] = [
   'latitude',
   'longitude',
   'attributes',
-  'distance_main_road_m',
-  'distance_shops_m',
-  'distance_transport_m',
-  'distance_school_m',
-  'distance_hospital_m',
 ];
 
 export const AD_TYPE_CATEGORIES: AdTypeCategoryConfig[] = [

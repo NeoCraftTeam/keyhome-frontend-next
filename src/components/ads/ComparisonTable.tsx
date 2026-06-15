@@ -174,45 +174,6 @@ const CRITERIA: Criterion[] = [
       ),
   },
   {
-    label: 'Transport en commun (approx.)',
-    render: (ad: Ad) =>
-      ad.distance_transport_m != null ? (
-        <Typography variant="body2">
-          {Math.round(ad.distance_transport_m).toLocaleString('fr-FR')} m
-        </Typography>
-      ) : (
-        <Typography variant="caption" color="text.disabled">
-          —
-        </Typography>
-      ),
-  },
-  {
-    label: 'Commerces (approx.)',
-    render: (ad: Ad) =>
-      ad.distance_shops_m != null ? (
-        <Typography variant="body2">
-          {Math.round(ad.distance_shops_m).toLocaleString('fr-FR')} m
-        </Typography>
-      ) : (
-        <Typography variant="caption" color="text.disabled">
-          —
-        </Typography>
-      ),
-  },
-  {
-    label: 'École (approx.)',
-    render: (ad: Ad) =>
-      ad.distance_school_m != null ? (
-        <Typography variant="body2">
-          {Math.round(ad.distance_school_m).toLocaleString('fr-FR')} m
-        </Typography>
-      ) : (
-        <Typography variant="caption" color="text.disabled">
-          —
-        </Typography>
-      ),
-  },
-  {
     label: 'Visite 360°',
     render: (ad: Ad) =>
       ad.has_3d_tour ? (

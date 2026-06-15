@@ -250,11 +250,6 @@ function AdFormWizard({
       transaction_type: values.transaction_type,
       latitude: values.latitude,
       longitude: values.longitude,
-      distance_main_road_m: values.distance_main_road_m,
-      distance_shops_m: values.distance_shops_m,
-      distance_transport_m: values.distance_transport_m,
-      distance_school_m: values.distance_school_m,
-      distance_hospital_m: values.distance_hospital_m,
       attributes: values.attributes,
     }),
     [values]
@@ -843,6 +838,16 @@ function AdFormWizard({
             stepErrors.title = 'Le titre est obligatoire.';
           if (isAdFormTextEmpty(values.description))
             stepErrors.description = 'La description est obligatoire.';
+          // Mirror the per-step photo gate at publish time — without this, an ad
+          // edited down to 0 photos (or reached via review) could publish photoless.
+          {
+            const existingCount =
+              ad?.images?.filter((img) => !imagesToDelete.includes(img.id))
+                .length ?? 0;
+            if (images.length + existingCount < 4)
+              stepErrors.images =
+                'Veuillez ajouter au moins 4 photos avant de publier.';
+          }
           break;
         }
         case 2: {
@@ -878,7 +883,7 @@ function AdFormWizard({
       const errorFields = Object.keys(allErrors);
       const stepFieldMap: Record<number, string[]> = {
         0: ['transaction_type', 'type_id'],
-        1: ['title', 'description'],
+        1: ['title', 'description', 'images'],
         2: ['adresse', 'price', 'surface_area', 'quarter_id'],
         4: errorFields.filter((f) => f.startsWith('tour_scene_')),
       };
@@ -960,11 +965,6 @@ function AdFormWizard({
         transaction_type: values.transaction_type,
         latitude: values.latitude,
         longitude: values.longitude,
-        distance_main_road_m: values.distance_main_road_m,
-        distance_shops_m: values.distance_shops_m,
-        distance_transport_m: values.distance_transport_m,
-        distance_school_m: values.distance_school_m,
-        distance_hospital_m: values.distance_hospital_m,
         attributes: values.attributes,
       };
       await onSaveEditDraft(fields);

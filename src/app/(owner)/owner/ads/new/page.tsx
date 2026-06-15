@@ -154,16 +154,6 @@ function buildAdFormData(
     )
     .join('\n');
   if (chargesAutresStr) formData.append('charges_autres', chargesAutresStr);
-  if (values.distance_main_road_m)
-    formData.append('distance_main_road_m', values.distance_main_road_m);
-  if (values.distance_shops_m)
-    formData.append('distance_shops_m', values.distance_shops_m);
-  if (values.distance_transport_m)
-    formData.append('distance_transport_m', values.distance_transport_m);
-  if (values.distance_school_m)
-    formData.append('distance_school_m', values.distance_school_m);
-  if (values.distance_hospital_m)
-    formData.append('distance_hospital_m', values.distance_hospital_m);
   return formData;
 }
 

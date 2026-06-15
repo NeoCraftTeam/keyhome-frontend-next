@@ -52,24 +52,19 @@ import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import Call from '@mui/icons-material/Call';
 import CompareArrows from '@mui/icons-material/CompareArrows';
 import ContentCopy from '@mui/icons-material/ContentCopy';
-import DirectionsBus from '@mui/icons-material/DirectionsBus';
 import Email from '@mui/icons-material/Email';
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
-import LocalHospital from '@mui/icons-material/LocalHospital';
 import LocalParking from '@mui/icons-material/LocalParking';
 import LocationOn from '@mui/icons-material/LocationOn';
 import Lock from '@mui/icons-material/Lock';
-import NearMe from '@mui/icons-material/NearMe';
 import NotificationsNone from '@mui/icons-material/NotificationsNone';
 import Phone from '@mui/icons-material/Phone';
 import PrintIcon from '@mui/icons-material/Print';
 import Schedule from '@mui/icons-material/Schedule';
-import School from '@mui/icons-material/School';
 import Share from '@mui/icons-material/Share';
 import SquareFootOutlined from '@mui/icons-material/SquareFootOutlined';
 import Star from '@mui/icons-material/Star';
-import Storefront from '@mui/icons-material/Storefront';
 import Verified from '@mui/icons-material/Verified';
 import ViewInAr from '@mui/icons-material/ViewInAr';
 import Visibility from '@mui/icons-material/Visibility';
@@ -454,53 +449,6 @@ function AdDetailContent() {
     liveBalance ??
     currentUser?.point_balance ??
     0;
-
-  const formatProximityM = (m: number | null | undefined): string | null => {
-    if (m == null || m <= 0) return null;
-    return m >= 1000
-      ? `${(m / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`
-      : `${m} m`;
-  };
-
-  const proximityItems = [
-    {
-      key: 'main_road',
-      icon: <NearMe sx={{ fontSize: 17, color: '#64748B' }} />,
-      iconBg: 'rgba(100,116,139,0.10)',
-      label: 'Route principale',
-      distance: formatProximityM(ad.distance_main_road_m),
-    },
-    {
-      key: 'shops',
-      icon: <Storefront sx={{ fontSize: 17, color: '#059669' }} />,
-      iconBg: 'rgba(5,150,105,0.10)',
-      label: 'Commerces',
-      distance: formatProximityM(ad.distance_shops_m),
-    },
-    {
-      key: 'transport',
-      icon: <DirectionsBus sx={{ fontSize: 17, color: '#3B82F6' }} />,
-      iconBg: 'rgba(59,130,246,0.10)',
-      label: 'Transport',
-      distance: formatProximityM(ad.distance_transport_m),
-    },
-    {
-      key: 'school',
-      icon: <School sx={{ fontSize: 17, color: '#8B5CF6' }} />,
-      iconBg: 'rgba(139,92,246,0.10)',
-      label: 'École / Université',
-      distance: formatProximityM(ad.distance_school_m),
-    },
-    {
-      key: 'hospital',
-      icon: <LocalHospital sx={{ fontSize: 17, color: '#EF4444' }} />,
-      iconBg: 'rgba(239,68,68,0.10)',
-      label: 'Hôpital / Clinique',
-      distance: formatProximityM(ad.distance_hospital_m),
-    },
-  ].filter((item) => item.distance !== null);
-
-  const hasProximityData = proximityItems.length > 0;
 
   // Format phone number for WhatsApp (remove spaces, dashes, etc.)
   const whatsappNumber = publisherPhone
@@ -1821,129 +1769,6 @@ function AdDetailContent() {
                       )}
                     </SectionBoundary>
                     <Divider sx={{ my: 3 }} />
-                  </>
-                )}
-
-                {/* Proximité & Accessibilité — owner-declared distances (form), not OSM */}
-                {hasProximityData && (
-                  <>
-                    <Box sx={{ mb: 4 }}>
-                      {/* Section header */}
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1.5,
-                          mb: 2.5,
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: 36,
-                            height: 36,
-                            borderRadius: 2,
-                            bgcolor: (t) =>
-                              t.palette.mode === 'dark'
-                                ? 'rgba(255,255,255,0.07)'
-                                : 'rgba(0,0,0,0.05)',
-                          }}
-                        >
-                          <NearMe
-                            sx={{ fontSize: 18, color: 'text.secondary' }}
-                          />
-                        </Box>
-                        <Box>
-                          <Typography
-                            variant="h6"
-                            fontWeight={700}
-                            sx={{ lineHeight: 1.2 }}
-                          >
-                            Proximité & Accessibilité
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      {/* Cards grid */}
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: {
-                            xs: 'repeat(2, 1fr)',
-                            sm: 'repeat(3, 1fr)',
-                          },
-                          gap: { xs: 1, sm: 1.5 },
-                        }}
-                      >
-                        {proximityItems.map((item) => (
-                          <Box
-                            key={item.key}
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1.25,
-                              p: { xs: 1.5, sm: 2 },
-                              // Match the sibling tour / pricing cards on
-                              // the same detail page; was 2.5 (20px) while
-                              // every adjacent surface uses 3 (24px).
-                              borderRadius: 3,
-                              border: '1px solid',
-                              borderColor: 'divider',
-                              bgcolor: 'background.paper',
-                              transition: 'box-shadow 0.2s ease',
-                              '&:hover': {
-                                boxShadow: '0 4px 16px rgba(0,0,0,0.07)',
-                              },
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: 34,
-                                height: 34,
-                                borderRadius: 1.75,
-                                bgcolor: (
-                                  item as typeof item & { iconBg: string }
-                                ).iconBg,
-                                flexShrink: 0,
-                              }}
-                            >
-                              {item.icon}
-                            </Box>
-                            <Box sx={{ minWidth: 0 }}>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{
-                                  fontWeight: 500,
-                                  display: 'block',
-                                  lineHeight: 1.3,
-                                  mb: 0.2,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                {item.label}
-                              </Typography>
-                              <Typography
-                                variant="subtitle2"
-                                fontWeight={700}
-                                color="text.primary"
-                                sx={{ lineHeight: 1.2, letterSpacing: 0.2 }}
-                              >
-                                {item.distance}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        ))}
-                      </Box>
-                    </Box>
-                    <Divider sx={{ mb: 3 }} />
                   </>
                 )}
 

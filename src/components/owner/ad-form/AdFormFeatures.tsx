@@ -155,96 +155,14 @@ export default function AdFormFeatures({
         )}
       </Grid>
 
-      {/* ═══ Proximité & Accessibilité ═══ */}
-      <Typography
-        variant="subtitle1"
-        sx={{
-          ...sectionTitleSx,
-          mt: 3,
-        }}
-      >
-        Proximité & Accessibilité
-      </Typography>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ mb: 1.5, display: 'block' }}
-      >
-        Distances approximatives depuis le bien (en mètres). Laisser vide si non
-        applicable.
-      </Typography>
-      <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <TextField
-            fullWidth
-            size="medium"
-            label="Route principale"
-            type="number"
-            inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
-            value={values.distance_main_road_m}
-            onChange={(e) => update('distance_main_road_m', e.target.value)}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">m</InputAdornment>,
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <TextField
-            fullWidth
-            size="medium"
-            label="Magasins / Marchés"
-            type="number"
-            inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
-            value={values.distance_shops_m}
-            onChange={(e) => update('distance_shops_m', e.target.value)}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">m</InputAdornment>,
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <TextField
-            fullWidth
-            size="medium"
-            label="Transport en commun"
-            type="number"
-            inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
-            value={values.distance_transport_m}
-            onChange={(e) => update('distance_transport_m', e.target.value)}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">m</InputAdornment>,
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <TextField
-            fullWidth
-            size="medium"
-            label="École / Université"
-            type="number"
-            inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
-            value={values.distance_school_m}
-            onChange={(e) => update('distance_school_m', e.target.value)}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">m</InputAdornment>,
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <TextField
-            fullWidth
-            size="medium"
-            label="Hôpital / Clinique"
-            type="number"
-            inputProps={{ min: 0, max: 99999, inputMode: 'numeric' }}
-            value={values.distance_hospital_m}
-            onChange={(e) => update('distance_hospital_m', e.target.value)}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">m</InputAdornment>,
-            }}
-          />
-        </Grid>
-      </Grid>
+      {/*
+        Proximité & Accessibilité — supprimé (Juin 2026).
+        Les distances aux commerces / transports / écoles / hôpitaux sont
+        désormais calculées serveur via NeighborhoodScorecardService
+        (`/api/v1/ads/{ad}/keyscore`). Le détail-annonce affiche la
+        section « Quartier » alimentée par ces données — pas besoin de
+        saisie manuelle ici.
+      */}
     </Paper>
   );
 }
