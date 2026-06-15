@@ -299,6 +299,15 @@ self.addEventListener("notificationclick", (event) => {
 // the page queues it in IndexedDB under a well-known sync tag. Once
 // connectivity is restored the browser fires the 'sync' event here and we
 // replay those queued requests against the API.
+//
+// ⚠️ iOS Safari does NOT implement the Background Sync API. On iOS, the
+// 'sync' handler below is dead code — sync.register() throws and queued
+// items never flush. The page-side fallback is `NetworkStatus` (the
+// online/offline snackbar): when the user comes back online, the
+// affected pages should re-issue their pending writes from in-memory
+// state. Anything truly persistent across an iOS app restart needs to
+// live in localStorage and be replayed by application code on the next
+// `online` event, NOT by the Background Sync path.
 
 const SYNC_TAG_VIEWING_RESPONSE  = 'kh-sync-viewing-response';
 // NOTE: kh-sync-favorites and kh-sync-contacts are intentionally NOT declared here.

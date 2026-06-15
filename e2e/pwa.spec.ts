@@ -149,7 +149,26 @@ test.describe('PWA — Offline Behaviour', () => {
     await page.goto('/offline');
     await expect(page).toHaveTitle(/hors ligne/i);
     // Should contain a retry/reload affordance
-    await expect(page.getByRole('button', { name: 'Réessayer' })).toBeVisible();
+    const retry = page.getByRole('button', { name: 'Réessayer' });
+    await expect(retry).toBeVisible();
+
+    // A11y contract: the offline state must be announced to assistive
+    // tech (status / alert region) and the retry control must be
+    // reachable via keyboard alone. Gap 15 of the PWA audit.
+    const announcement = page
+      .locator('[role="alert"], [role="status"], [aria-live]')
+      .first();
+    await expect(announcement).toBeVisible();
+
+    // Page should expose a primary heading so SR users get a named
+    // landmark when they jump to the start of the document.
+    await expect(
+      page.locator('h1, [role="heading"][aria-level="1"]')
+    ).toBeVisible();
+
+    // Retry button is keyboard-focusable.
+    await retry.focus();
+    await expect(retry).toBeFocused();
   });
 });
 
