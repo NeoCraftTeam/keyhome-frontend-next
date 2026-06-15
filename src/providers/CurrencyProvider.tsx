@@ -36,6 +36,13 @@ export interface CurrencyContextValue {
   symbol: string;
   /** True until the first rate fetch resolves. */
   isLoading: boolean;
+  /**
+   * True when the displayed rates are the static fallback snapshot
+   * (both FX providers failed). Components rendering converted prices
+   * can show a subtle "cours indicatif" hint so users know the value
+   * isn't real-time. Always `false` for XAF/XOF (no conversion needed).
+   */
+  isStale: boolean;
   /** Convert an XAF amount into the active currency. */
   convert: (amountXAF: number) => number;
   /** Convert + format (locale-aware). */
@@ -139,12 +146,14 @@ export function CurrencyProvider({
   const [isLoading, setIsLoading] = useState(
     currency !== 'XAF' && rates === null
   );
+  const [isStale, setIsStale] = useState(false);
 
   // Fetch /api/exchange-rates on mount (only when needed: any non-XAF
   // currency requires a rate). XAF & XOF visitors skip the network entirely.
   useEffect(() => {
     if (currency === 'XAF' || currency === 'XOF') {
       setIsLoading(false);
+      setIsStale(false);
       return;
     }
     const cached = readCachedRates();
@@ -161,6 +170,7 @@ export function CurrencyProvider({
         const data = (await res.json()) as RatePayload;
         if (cancelled) return;
         setRates(data.rates);
+        setIsStale(Boolean(data.stale));
         writeCachedRates(data.rates);
       } catch {
         // Network error → rates stay null → format() uses resolveDisplayedMoney
@@ -216,13 +226,14 @@ export function CurrencyProvider({
       currency,
       symbol: CURRENCY_SYMBOLS[currency],
       isLoading,
+      isStale,
       convert,
       format,
       formatCompact,
       setCurrency,
       supported: SUPPORTED_CURRENCIES,
     }),
-    [currency, isLoading, convert, format, formatCompact, setCurrency]
+    [currency, isLoading, isStale, convert, format, formatCompact, setCurrency]
   );
 
   return (
@@ -270,6 +281,7 @@ export function useCurrency(): CurrencyContextValue {
     currency: 'XAF',
     symbol: CURRENCY_SYMBOLS.XAF,
     isLoading: false,
+    isStale: false,
     convert: (amountXAF: number) => amountXAF,
     format: (amountXAF: number) => formatCurrency(amountXAF, 'XAF'),
     formatCompact: (amountXAF: number) =>

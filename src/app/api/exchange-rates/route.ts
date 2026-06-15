@@ -24,6 +24,8 @@ const REVALIDATE_SECONDS = 60 * 60; // 1 hour
 // Static snapshot, used only if both online providers fail.
 // Approximate rates from XAF as of late 2024 — intentionally conservative.
 // Source : exchangerate-api.com snapshot.
+const STATIC_FALLBACK_FETCHED_AT = Date.parse('2024-12-01T00:00:00Z');
+
 const STATIC_FALLBACK_RATES: Record<string, number> = {
   XAF: 1,
   XOF: 1,
@@ -105,10 +107,27 @@ export async function GET() {
   const stale = rates === null;
   const finalRates = rates ?? STATIC_FALLBACK_RATES;
 
+  if (stale) {
+    // Both online providers failed. The UI keeps rendering thanks to
+    // STATIC_FALLBACK_RATES, but ops needs visibility so the FX
+    // provider outage doesn't go unnoticed for hours. Static rates
+    // are from late 2024 — every minute past that is drift.
+    console.error(
+      '[exchange-rates] BOTH PROVIDERS FAILED — serving static fallback',
+      {
+        static_snapshot_age_days: Math.floor(
+          (Date.now() - STATIC_FALLBACK_FETCHED_AT) / 86_400_000
+        ),
+      }
+    );
+  }
+
   const body: RateResponse = {
     base: 'XAF',
     rates: finalRates,
-    fetched_at: Date.now(),
+    // Reflect the actual freshness of the data — clients can react
+    // to genuinely-old rates (e.g. show a "cours indicatif" badge).
+    fetched_at: stale ? STATIC_FALLBACK_FETCHED_AT : Date.now(),
     source,
     stale,
   };
