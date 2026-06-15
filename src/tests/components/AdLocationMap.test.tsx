@@ -14,6 +14,8 @@ const mapboxFake = vi.hoisted(() => {
     style: string;
     setStyle: ReturnType<typeof vi.fn>;
     remove: ReturnType<typeof vi.fn>;
+    addSource: ReturnType<typeof vi.fn>;
+    addLayer: ReturnType<typeof vi.fn>;
     listeners: Record<string, Array<() => void>>;
   }> = [];
 
@@ -109,7 +111,7 @@ vi.mock('@/lib/constants', async (original) => {
   return { ...actual, MAPBOX_TOKEN: 'test-token' };
 });
 
-import AdLocationMap from '@/components/ads/AdLocationMap';
+import AdLocationMap, { fuzzyCoords } from '@/components/ads/AdLocationMap';
 
 function ThemeFlipper({ initialDark = false }: { initialDark?: boolean }) {
   const [dark, setDark] = useState(initialDark);
@@ -216,6 +218,31 @@ describe('AdLocationMap', () => {
     expect(getByText('À distance raisonnable')).toBeInTheDocument();
   });
 
+  it('locked ads add the approx-zone source/layer, not the route line (Gap 10)', async () => {
+    render(
+      <ThemeProvider theme={createTheme({ palette: { mode: 'light' } })}>
+        <AdLocationMap latitude={4.0511} longitude={9.7679} isLocked={true} />
+      </ThemeProvider>
+    );
+
+    // Effect 2 waits for the map's `load` event. The fake fires it on
+    // the next microtask, so let the queue drain before assertions.
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const map = mapboxFake.mapInstances[0];
+    expect(map.addSource).toHaveBeenCalledWith(
+      'approx-zone',
+      expect.objectContaining({ type: 'geojson' })
+    );
+    expect(map.addSource).not.toHaveBeenCalledWith(
+      'route-line',
+      expect.anything()
+    );
+  });
+
   it('exposes a labelled map region + accessible style picker (Gap 4)', () => {
     const { getByRole, getAllByRole } = render(
       <ThemeFlipper initialDark={false} />
@@ -241,5 +268,34 @@ describe('AdLocationMap', () => {
     // The picker is grouped so SR users hear it as a single control.
     const group = getAllByRole('group', { name: /style de la carte/i });
     expect(group).toHaveLength(1);
+  });
+});
+
+describe('fuzzyCoords', () => {
+  it('is deterministic for the same input', () => {
+    const a = fuzzyCoords(4.0511, 9.7679);
+    const b = fuzzyCoords(4.0511, 9.7679);
+    expect(a).toEqual(b);
+  });
+
+  it('produces different offsets for nearby but distinct points', () => {
+    const a = fuzzyCoords(4.0511, 9.7679);
+    const b = fuzzyCoords(4.0512, 9.7679);
+    expect(a).not.toEqual(b);
+  });
+
+  it('stays within ~500 m of the real coordinate', () => {
+    // 1 degree latitude ≈ 111 km. 500 m ≈ 0.0045 deg. The function
+    // mixes a base 0.003 deg offset with up to 0.002 deg of noise,
+    // so each axis stays well inside ~600 m of the input.
+    const [fuzzedLat, fuzzedLng] = fuzzyCoords(4.0511, 9.7679);
+    expect(Math.abs(fuzzedLat - 4.0511)).toBeLessThan(0.006);
+    expect(Math.abs(fuzzedLng - 9.7679)).toBeLessThan(0.006);
+  });
+
+  it('handles edge coordinates (poles, antemeridian) without throwing', () => {
+    expect(() => fuzzyCoords(89.99, 179.99)).not.toThrow();
+    expect(() => fuzzyCoords(-89.99, -179.99)).not.toThrow();
+    expect(() => fuzzyCoords(0, 0)).not.toThrow();
   });
 });

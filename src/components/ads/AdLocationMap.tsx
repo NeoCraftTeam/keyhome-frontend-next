@@ -54,7 +54,15 @@ interface Props {
   onLiveTrackingChange?: (enabled: boolean) => void;
 }
 
-function fuzzyCoords(lat: number, lng: number): [number, number] {
+/**
+ * Deterministically offset a coordinate by ~300–500 m for locked-ad
+ * previews. Same input → same output, so the fuzzy marker stays put
+ * across re-renders (otherwise it would visibly wander every time
+ * the component re-mounted, defeating the obfuscation). Exported so
+ * the unit suite can assert determinism + locality without hitting
+ * Mapbox internals.
+ */
+export function fuzzyCoords(lat: number, lng: number): [number, number] {
   const seed = Math.abs(Math.sin(lat * 1e4) * 1e4 + Math.cos(lng * 1e4) * 1e4);
   const angle = (seed % 360) * (Math.PI / 180);
   const distance = 0.003 + (seed % 200) / 100_000;
