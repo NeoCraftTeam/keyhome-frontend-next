@@ -17,6 +17,21 @@ export interface UseUserLocationReturn {
   refresh: () => void;
 }
 
+export interface UseUserLocationOptions {
+  /**
+   * When true, the hook subscribes to `navigator.geolocation.watchPosition`
+   * instead of a one-shot `getCurrentPosition` — the singleton continuously
+   * receives position updates and re-notifies listeners on every coarse
+   * change (the geolocation API throttles based on device sensors).
+   *
+   * The watcher is reference-counted across mounted components: it starts
+   * the first time any caller passes `watch: true` and stops only when the
+   * last such caller unmounts. Default `false` keeps the existing one-shot
+   * behaviour intact for callers that don't opt in.
+   */
+  watch?: boolean;
+}
+
 const ACCURACY_THRESHOLD_METERS = 5_000;
 const STORAGE_KEY = 'user-location';
 const DENIED_KEY = 'user-location-denied';
@@ -89,9 +104,71 @@ const _singleton: SingletonState = {
 };
 
 const _listeners = new Set<() => void>();
+/** Listeners that opted into continuous tracking. The watcher stays live
+ *  while this set is non-empty and is cleared down when the last live
+ *  caller unmounts. Keyed by the same update fn that's in `_listeners`. */
+const _watchListeners = new Set<() => void>();
+/** ID returned by `navigator.geolocation.watchPosition`; null when idle. */
+let _watchId: number | null = null;
 
 function _notifyAll() {
   _listeners.forEach((fn) => fn());
+}
+
+function _applyPosition(pos: GeolocationPosition): void {
+  const isApproximate = pos.coords.accuracy > ACCURACY_THRESHOLD_METERS;
+  const loc: UserLocation = {
+    latitude: pos.coords.latitude,
+    longitude: pos.coords.longitude,
+    accuracy: pos.coords.accuracy,
+    isApproximate,
+  };
+  _singleton.location = loc;
+  _singleton.error = null;
+  _singleton.loading = false;
+  writeCache(loc);
+  _notifyAll();
+}
+
+function _applyError(err: GeolocationPositionError): void {
+  _singleton.loading = false;
+  switch (err.code) {
+    case err.PERMISSION_DENIED:
+      _singleton.error = 'Vous avez refusé l’accès à votre position.';
+      writeDenied();
+      break;
+    case err.POSITION_UNAVAILABLE:
+      _singleton.error = 'Position indisponible.';
+      break;
+    case err.TIMEOUT:
+      _singleton.error = 'Délai d’attente dépassé.';
+      break;
+    default:
+      _singleton.error = 'Impossible d’obtenir votre position.';
+  }
+  _notifyAll();
+}
+
+function _startWatchIfNeeded(): void {
+  if (_watchId !== null) return; // already watching
+  if (typeof window === 'undefined' || !navigator.geolocation) return;
+  if (wasDenied()) return;
+
+  _watchId = navigator.geolocation.watchPosition(_applyPosition, _applyError, {
+    enableHighAccuracy: true,
+    timeout: 15_000,
+    // `maximumAge: 0` would force a fresh fix on every coalesced update;
+    // 30 s reuses recent OS-level fixes when the user is stationary,
+    // which is the dominant case even in "live tracking" mode.
+    maximumAge: 30_000,
+  });
+}
+
+function _stopWatchIfIdle(): void {
+  if (_watchListeners.size === 0 && _watchId !== null) {
+    navigator.geolocation.clearWatch(_watchId);
+    _watchId = null;
+  }
 }
 
 function _requestPositionOnce(forceRefresh = false): void {
@@ -127,60 +204,40 @@ function _requestPositionOnce(forceRefresh = false): void {
   _singleton.settled = true;
   _notifyAll();
 
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const isApproximate = pos.coords.accuracy > ACCURACY_THRESHOLD_METERS;
-      const loc: UserLocation = {
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        accuracy: pos.coords.accuracy,
-        isApproximate,
-      };
-      _singleton.location = loc;
-      _singleton.error = null;
-      _singleton.loading = false;
-      writeCache(loc);
-      _notifyAll();
-    },
-    (err) => {
-      _singleton.loading = false;
-      switch (err.code) {
-        case err.PERMISSION_DENIED:
-          _singleton.error = 'Vous avez refusé l\u2019accès à votre position.';
-          writeDenied();
-          break;
-        case err.POSITION_UNAVAILABLE:
-          _singleton.error = 'Position indisponible.';
-          break;
-        case err.TIMEOUT:
-          _singleton.error = 'Délai d\u2019attente dépassé.';
-          break;
-        default:
-          _singleton.error = 'Impossible d\u2019obtenir votre position.';
-      }
-      _notifyAll();
-    },
-    { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 }
-  );
+  navigator.geolocation.getCurrentPosition(_applyPosition, _applyError, {
+    enableHighAccuracy: true,
+    timeout: 15_000,
+    maximumAge: 60_000,
+  });
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────
 
-export function useUserLocation(): UseUserLocationReturn {
+export function useUserLocation(
+  options: UseUserLocationOptions = {}
+): UseUserLocationReturn {
+  const { watch = false } = options;
   const [, rerender] = useState(0);
 
   useEffect(() => {
     const update = () => rerender((n) => n + 1);
     _listeners.add(update);
 
-    if (!_singleton.settled) {
+    if (watch) {
+      _watchListeners.add(update);
+      _startWatchIfNeeded();
+    } else if (!_singleton.settled) {
       _requestPositionOnce();
     }
 
     return () => {
       _listeners.delete(update);
+      if (watch) {
+        _watchListeners.delete(update);
+        _stopWatchIfIdle();
+      }
     };
-  }, []);
+  }, [watch]);
 
   const refresh = useCallback(() => {
     _singleton.settled = false;

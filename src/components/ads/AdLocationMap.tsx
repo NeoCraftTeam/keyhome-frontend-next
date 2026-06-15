@@ -42,6 +42,16 @@ interface Props {
     duration_label: string;
     profile_label: string;
   } | null;
+  /**
+   * Whether the parent has the user's position on a continuous watch
+   * (`navigator.geolocation.watchPosition`). When true the toggle button
+   * rendered next to the style picker shows the "tracking" state. The
+   * actual `useUserLocation({ watch })` call lives in the parent because
+   * it owns the `userLocation` state; this prop + callback are a
+   * controlled pair so the toggle stays in sync.
+   */
+  liveTracking?: boolean;
+  onLiveTrackingChange?: (enabled: boolean) => void;
 }
 
 function fuzzyCoords(lat: number, lng: number): [number, number] {
@@ -170,6 +180,8 @@ export default function AdLocationMap({
   locationError,
   routeGeojson = null,
   roadSummary = null,
+  liveTracking = false,
+  onLiveTrackingChange,
 }: Props) {
   const muiTheme = useTheme();
   const isDarkMode = muiTheme.palette.mode === 'dark';
@@ -745,6 +757,77 @@ export default function AdLocationMap({
             );
           })}
         </Box>
+
+        {/* Live-tracking toggle — only for unlocked ads with an
+            onLiveTrackingChange handler. Stays in the bottom-right
+            corner so it doesn't fight with the bottom-left style picker
+            or the top-right NavigationControl. */}
+        {!isLocked && onLiveTrackingChange && (
+          <Box
+            component="button"
+            type="button"
+            onClick={() => onLiveTrackingChange(!liveTracking)}
+            aria-pressed={liveTracking}
+            aria-label={
+              liveTracking
+                ? 'Arrêter le suivi en direct de votre position'
+                : 'Suivre votre position en direct'
+            }
+            sx={{
+              position: 'absolute',
+              bottom: 28,
+              right: 8,
+              zIndex: 1,
+              px: 1.25,
+              py: 0.5,
+              fontSize: 10,
+              fontWeight: 600,
+              border: 'none',
+              borderRadius: 1.5,
+              cursor: 'pointer',
+              lineHeight: 1.4,
+              boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+              bgcolor: liveTracking ? 'primary.main' : 'rgba(255,255,255,0.92)',
+              color: liveTracking ? '#fff' : 'rgba(0,0,0,0.78)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              transition: 'background 0.15s',
+              '&:hover': {
+                bgcolor: liveTracking ? 'primary.dark' : 'rgba(255,255,255,1)',
+              },
+              '&:focus-visible': {
+                outline: '2px solid',
+                outlineColor: 'primary.main',
+                outlineOffset: 2,
+              },
+            }}
+          >
+            <Box
+              aria-hidden="true"
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                bgcolor: liveTracking ? '#fff' : '#dc2626',
+                boxShadow: liveTracking
+                  ? '0 0 0 2px rgba(255,255,255,0.4)'
+                  : 'none',
+                animation: liveTracking
+                  ? 'kh-tracking-pulse 1.5s ease-in-out infinite'
+                  : 'none',
+                '@media (prefers-reduced-motion: reduce)': {
+                  animation: 'none',
+                },
+                '@keyframes kh-tracking-pulse': {
+                  '0%, 100%': { opacity: 1 },
+                  '50%': { opacity: 0.4 },
+                },
+              }}
+            />
+            {liveTracking ? 'Suivi actif' : 'Suivre'}
+          </Box>
+        )}
       </Box>
 
       {/* Legend — only when route is shown */}

@@ -245,7 +245,14 @@ function AdDetailContent() {
   const { addRecentlyViewed } = useRecentlyViewed();
   const { track } = useAnalytics();
   const { play: playSound } = useSoundFeedback();
-  const { location: userLocation, error: locationError } = useUserLocation();
+  // `liveTracking` opts the geolocation singleton into
+  // `navigator.geolocation.watchPosition`. Default off so battery and
+  // permission semantics match the legacy one-shot behaviour; users on
+  // the map can flip it on via the toggle inside <AdLocationMap>.
+  const [liveTracking, setLiveTracking] = useState(false);
+  const { location: userLocation, error: locationError } = useUserLocation({
+    watch: liveTracking,
+  });
 
   // Track the ad in recently viewed once it loads
   useEffect(() => {
@@ -1758,6 +1765,8 @@ function AdDetailContent() {
                               }
                             : null
                         }
+                        liveTracking={liveTracking}
+                        onLiveTrackingChange={setLiveTracking}
                       />
                       {/* Directions panel — only for unlocked ads (exact GPS) */}
                       {!isLocked && (
