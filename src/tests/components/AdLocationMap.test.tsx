@@ -173,6 +173,49 @@ describe('AdLocationMap', () => {
     expect(map.remove).toHaveBeenCalledTimes(1);
   });
 
+  it('uses road distance for the status pill when roadSummary is provided (Gap 5)', () => {
+    const userNearby = {
+      latitude: 4.052,
+      longitude: 9.768,
+      accuracy: 10,
+      isApproximate: false,
+    };
+
+    // Without roadSummary, haversine (~110 m) → pill says "À proximité".
+    const { getByText, rerender } = render(
+      <ThemeProvider theme={createTheme({ palette: { mode: 'light' } })}>
+        <AdLocationMap
+          latitude={4.0511}
+          longitude={9.7679}
+          isLocked={false}
+          userLocation={userNearby}
+        />
+      </ThemeProvider>
+    );
+    expect(getByText('À proximité')).toBeInTheDocument();
+
+    // With roadSummary forcing 12 km of road, the pill classification
+    // upgrades to "À distance raisonnable" even though haversine is
+    // still ~110 m. Tests Gap 5's road > haversine preference.
+    rerender(
+      <ThemeProvider theme={createTheme({ palette: { mode: 'light' } })}>
+        <AdLocationMap
+          latitude={4.0511}
+          longitude={9.7679}
+          isLocked={false}
+          userLocation={userNearby}
+          roadSummary={{
+            distance_m: 12_000,
+            distance_label: '12 km',
+            duration_label: '18 min',
+            profile_label: 'En voiture',
+          }}
+        />
+      </ThemeProvider>
+    );
+    expect(getByText('À distance raisonnable')).toBeInTheDocument();
+  });
+
   it('exposes a labelled map region + accessible style picker (Gap 4)', () => {
     const { getByRole, getAllByRole } = render(
       <ThemeFlipper initialDark={false} />

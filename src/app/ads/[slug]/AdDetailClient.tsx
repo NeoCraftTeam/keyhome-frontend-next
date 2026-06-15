@@ -1751,6 +1751,7 @@ function AdDetailContent() {
                         roadSummary={
                           roadSummary
                             ? {
+                                distance_m: roadSummary.distance_m,
                                 distance_label: roadSummary.distance_label,
                                 duration_label: roadSummary.duration_label,
                                 profile_label: 'En voiture',

@@ -28,8 +28,16 @@ interface Props {
   locationError?: string | null;
   /** ORS GeoJSON route — when provided replaces the straight-line with the real road */
   routeGeojson?: GeoJSON.FeatureCollection | null;
-  /** Road-trip summary from ORS (driving-car) — shown instead of haversine disclaimer */
+  /**
+   * Road-trip summary from ORS (driving-car). When provided, its distance
+   * drives the status pill and the in-map distance label; the haversine
+   * (`distanceKm`) computed below is demoted to a "à vol d'oiseau" caveat.
+   */
   roadSummary?: {
+    /** Road distance in metres — required so the component can classify
+     *  the user-to-ad distance (`getDistanceLabel`) without re-parsing the
+     *  pre-formatted label string. */
+    distance_m: number;
     distance_label: string;
     duration_label: string;
     profile_label: string;
@@ -220,6 +228,21 @@ export default function AdLocationMap({
     );
     return Number.isFinite(km) ? km : null;
   }, [userLocation, latitude, longitude]);
+
+  /**
+   * The kilometres value that drives the status pill ("À proximité" /
+   * "À distance raisonnable" / "Loin de vous") and the in-map distance
+   * label. Prefer the ORS road distance whenever it's available — the
+   * straight-line haversine routinely understates real-world travel
+   * (e.g. across a river without a near-by bridge) and made the pill
+   * over-optimistic. Falls back to haversine when ORS hasn't returned.
+   */
+  const effectiveDistanceKm = useMemo(() => {
+    if (roadSummary && Number.isFinite(roadSummary.distance_m)) {
+      return roadSummary.distance_m / 1000;
+    }
+    return distanceKm;
+  }, [roadSummary, distanceKm]);
 
   // ── Effect 1: create / destroy the map ──────────────────────────────────────
   // Only re-runs when coordinates or lock status change — NOT on style changes
@@ -461,8 +484,14 @@ export default function AdLocationMap({
           (userPx.x + adPx.x) / 2,
           (userPx.y + adPx.y) / 2,
         ]);
+        // Prefer the pre-formatted road distance from ORS when available —
+        // it's the same string the banner already shows, so users see a
+        // single consistent value across the map overlay and the chip.
+        const labelText = roadSummary
+          ? roadSummary.distance_label
+          : formatDistance(distanceKm);
         const labelMarker = new mapboxgl.Marker({
-          element: createDistanceLabel(formatDistance(distanceKm), isDarkMode),
+          element: createDistanceLabel(labelText, isDarkMode),
           anchor: 'center',
         })
           .setLngLat(midLngLat)
@@ -506,14 +535,18 @@ export default function AdLocationMap({
     displayLat,
     displayLng,
     routeGeojson,
+    roadSummary,
     adMarkerLabel,
   ]);
 
   if (!MAPBOX_TOKEN) return null;
 
   const locationLabel = [quartierName, cityName].filter(Boolean).join(', ');
+  // Pill classification follows the effective (road > haversine) value so
+  // "À proximité / raisonnable / Loin" reflects how the user actually
+  // travels — not the bird's-eye underestimate.
   const distanceInfo =
-    distanceKm !== null ? getDistanceLabel(distanceKm) : null;
+    effectiveDistanceKm !== null ? getDistanceLabel(effectiveDistanceKm) : null;
 
   return (
     <Box sx={{ mb: 3 }}>
