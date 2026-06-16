@@ -243,10 +243,25 @@ export function mapAdToFormValues(ad: Ad): AdFormValues {
     bathrooms:
       ds('bathrooms') ?? (ad.bathrooms != null ? String(ad.bathrooms) : ''),
     has_parking: db('has_parking') ?? ad.has_parking ?? false,
-    latitude:
-      dn('latitude') ?? ad.location?.latitude ?? AD_FORM_MAP_DEFAULT_LAT,
-    longitude:
-      dn('longitude') ?? ad.location?.longitude ?? AD_FORM_MAP_DEFAULT_LNG,
+    // Coordinates must travel together — autosave only writes
+    // `ad.location` when BOTH `latitude` and `longitude` are present
+    // (see `AdStatusController::autosave`, GeoLocation::fromArray).
+    // If a half-pair leaked into `draft_payload` somehow, falling back
+    // to the live coord for the missing half would render a marker
+    // pointing somewhere neither the draft nor the live ad actually
+    // describes. Resolve the pair atomically instead.
+    ...(() => {
+      const draftLat = dn('latitude');
+      const draftLng = dn('longitude');
+      const hasFullDraftPair = draftLat !== undefined && draftLng !== undefined;
+      if (hasFullDraftPair) {
+        return { latitude: draftLat, longitude: draftLng };
+      }
+      return {
+        latitude: ad.location?.latitude ?? AD_FORM_MAP_DEFAULT_LAT,
+        longitude: ad.location?.longitude ?? AD_FORM_MAP_DEFAULT_LNG,
+      };
+    })(),
     quarter_id: ds('quarter_id') ?? ad.quarter?.id ?? '',
     type_id: ds('type_id') ?? ad.type?.id ?? '',
     transaction_type:
