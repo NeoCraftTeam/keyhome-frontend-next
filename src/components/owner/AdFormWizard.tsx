@@ -516,6 +516,43 @@ function AdFormWizard({
     [tourScenes]
   );
 
+  /* ── Unload guard for unsaved media ──
+   * Autosave is text-only by design (see comment near `autoSaveData`).
+   * Photos / panoramas / the property-condition PDF live in browser
+   * memory as `File` objects until the owner clicks "Enregistrer le
+   * brouillon". If they close the tab, refresh, or navigate to an
+   * external origin first, the file selections vanish — autosave's
+   * 5s text snapshot has nothing to recover from.
+   *
+   * `beforeunload` is the standard browser-level protection: when any
+   * pending media is in memory we ask the browser to confirm the
+   * unload, giving the user one last chance to save. (Next.js
+   * client-side navigation between owner-panel pages doesn't trigger
+   * this — that's a separate, smaller concern. The current flow keeps
+   * the wizard mounted across step navigation, so internal step
+   * changes don't lose state either.)
+   */
+  const hasUnsavedMedia = useMemo(
+    () =>
+      images.length > 0 ||
+      propertyConditionPdf !== null ||
+      tourScenes.some((s) => s.file !== null),
+    [images, propertyConditionPdf, tourScenes]
+  );
+
+  useEffect(() => {
+    if (!hasUnsavedMedia) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Spec says any non-undefined returnValue triggers the confirm;
+      // the message is owned by the browser (Chrome shows a generic
+      // "Leave site?" since 2017, custom strings are ignored).
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsavedMedia]);
+
   const livePreviewProps = useMemo(
     () => ({
       values,
