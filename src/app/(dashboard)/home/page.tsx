@@ -64,6 +64,12 @@ import {
 
 const AppTour = dynamic(() => import('@/components/ui/display/AppTour'), {
   ssr: false,
+  // Explicit no-op loading state — the onboarding tour is opt-in,
+  // user only sees it after triggering it. Skeleton would be visually
+  // disruptive on the home grid. Without the explicit `loading`, Next
+  // defaults to a generic spinner that briefly flashes when the chunk
+  // arrives.
+  loading: () => null,
 });
 
 const CATEGORIES = [
