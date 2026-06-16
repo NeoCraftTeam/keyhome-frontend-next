@@ -13,6 +13,14 @@ export interface RentEstimateResult {
   estimated_max: number;
   price_per_sqm: { p25: number; p50: number; p75: number };
   sample_count: number;
+  /**
+   * True when `sample_count` is below the backend's reliable threshold
+   * (RELIABLE_SAMPLE_MIN). The min/max range is published anyway so
+   * the user still gets a rough number, but the UI should mark it
+   * "estimation indicative" so they don't treat thin-sample noise as
+   * a confident forecast.
+   */
+  is_unreliable?: boolean;
   surface: number;
   /** When false, not enough data for the selected type — city-wide rentals were used instead. */
   type_scope_matched?: boolean;

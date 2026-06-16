@@ -227,7 +227,17 @@ export default function ComparisonTable({
           minWidth: { xs: `${100 + items.length * 140}px`, sm: 'auto' },
         }}
       >
-        <Box sx={{ p: { xs: 1, sm: 2 } }} />
+        <Box
+          sx={{
+            p: { xs: 1, sm: 2 },
+            // Mobile horizontal scroll: keep the criterion-label column
+            // visible so the user never loses what each row means.
+            position: { xs: 'sticky', sm: 'static' },
+            left: 0,
+            zIndex: 2,
+            bgcolor: isDark ? 'grey.900' : 'grey.50',
+          }}
+        />
 
         {items.map((ad) => {
           const cover = ad.images?.find((i) => i.is_primary) ?? ad.images?.[0];
@@ -358,6 +368,14 @@ export default function ComparisonTable({
                 py: { xs: 1.25, sm: 1.75 },
                 display: 'flex',
                 alignItems: 'center',
+                // Keep the row label visible while users swipe through
+                // the comparison columns on mobile. Match the row's
+                // alternating background so the sticky pin doesn't
+                // visually float above the adjacent cells.
+                position: { xs: 'sticky', sm: 'static' },
+                left: 0,
+                zIndex: 1,
+                bgcolor: idx % 2 === 0 ? 'background.paper' : 'action.hover',
               }}
             >
               <Typography

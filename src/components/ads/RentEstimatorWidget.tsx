@@ -23,9 +23,9 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
-export default function RentEstimatorWidget() {
+function RentEstimatorWidget() {
   const {
     slotProps: citySlotProps,
     renderOption: renderCityOption,
@@ -213,15 +213,32 @@ export default function RentEstimatorWidget() {
         </Button>
       </Box>
 
-      {/* Results */}
+      {/* Results — wrapped in a polite live region so screen-reader
+          users hear the new range without having to refocus the widget. */}
       {data && !data.error && (
-        <>
+        <Box
+          role="region"
+          aria-live="polite"
+          aria-label="Résultats d'estimation de loyer"
+        >
           <Divider sx={{ my: 3 }} />
           {data.type_scope_matched === false && (
             <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
               Peu d&apos;annonces pour ce type dans cette ville :
               l&apos;estimation s&apos;appuie sur l&apos;ensemble des locations
               publiées dans la ville.
+            </Alert>
+          )}
+          {data.is_unreliable && (
+            <Alert
+              severity="info"
+              sx={{ mb: 2, borderRadius: 2 }}
+              role="status"
+            >
+              Estimation indicative — calculée sur seulement {data.sample_count}{' '}
+              annonce
+              {data.sample_count > 1 ? 's' : ''}. La fourchette peut être
+              biaisée par un cas atypique.
             </Alert>
           )}
           <Typography variant="subtitle2" color="text.secondary" mb={2}>
@@ -301,14 +318,17 @@ export default function RentEstimatorWidget() {
             {data.sample_count > 1 ? 's' : ''} similaire
             {data.sample_count > 1 ? 's' : ''}
           </Typography>
-        </>
+        </Box>
       )}
 
       {data?.error && (
-        <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
+        // `role="alert"` so SR users hear "no data" immediately —
+        // they wouldn't otherwise know the click did anything.
+        <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }} role="alert">
           {data.error}
         </Alert>
       )}
     </Paper>
   );
 }
+export default memo(RentEstimatorWidget);
