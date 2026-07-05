@@ -314,9 +314,8 @@ function AdCard({ ad, showDistance, imageSizes }: AdCardProps) {
             sx={{
               position: 'relative',
               width: '100%',
-              paddingTop: '66.67%', // 3:2 — matches Airbnb
-              // radius.md = 12px
-              borderRadius: '12px',
+              paddingTop: '100%', // 1:1 — vignette carrée façon Airbnb
+              borderRadius: '16px', // coins bien arrondis
               overflow: 'hidden',
               bgcolor: 'grey.100',
             }}

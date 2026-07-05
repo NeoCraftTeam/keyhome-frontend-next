@@ -32,8 +32,8 @@ export default function AdCardSkeleton() {
       <Box
         sx={{
           width: '100%',
-          paddingTop: '66.67%',
-          borderRadius: '12px',
+          paddingTop: '100%',
+          borderRadius: '16px',
           overflow: 'hidden',
           position: 'relative',
           bgcolor: isDark ? 'grey.800' : 'grey.100',
