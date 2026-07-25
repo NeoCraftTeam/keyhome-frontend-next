@@ -85,7 +85,7 @@ export default function LandingNav() {
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handler);
+    window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
   }, []);
 
@@ -147,7 +147,7 @@ export default function LandingNav() {
           >
             <Image
               src="/images/logo.png"
-              alt="KeyHome — Logo plateforme immobilière en Afrique"
+              alt="KeyHome — Logo plateforme immobilière internationale"
               width={36}
               height={36}
               priority

@@ -37,6 +37,8 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
@@ -71,11 +73,10 @@ const SOCIAL_LINKS = [
   },
 ];
 
-const ITEM_SX = {
+const itemSxBase = {
   borderRadius: 2,
   mx: 1,
   minHeight: 48,
-  '&:active': { bgcolor: 'rgba(246,71,95,0.08)' },
 };
 
 const DRAWER_ICON_SLOT_SX = {
@@ -108,6 +109,9 @@ const ACCOUNT_LIST_ITEM_TEXT_SLOT_PROPS = {
 
 /** Compact credit balance row for the mobile side drawer. */
 function CreditsRow() {
+  const theme = useTheme();
+  const primary = theme.palette.primary.main;
+
   const { data: balance, isLoading } = useQuery({
     queryKey: ['credits-balance'],
     queryFn: () => creditsService.getBalance(),
@@ -131,10 +135,9 @@ function CreditsRow() {
           display: 'flex',
           alignItems: 'center',
           gap: 0.6,
-          background:
-            'linear-gradient(135deg, rgba(246,71,95,0.12) 0%, rgba(246,71,95,0.06) 100%)',
+          background: `linear-gradient(135deg, ${alpha(primary, 0.12)} 0%, ${alpha(primary, 0.06)} 100%)`,
           border: '1px solid',
-          borderColor: 'rgba(246,71,95,0.25)',
+          borderColor: alpha(primary, 0.25),
           borderRadius: '40px',
           px: 1.5,
           py: 0.55,
@@ -172,20 +175,28 @@ export default function NavDrawer({
   pathname,
   isStandalone,
 }: NavDrawerProps) {
+  const theme = useTheme();
+  const primary = theme.palette.primary.main;
+
   const go = (href: string) => {
     onClose();
     onNavigate(href);
+  };
+
+  const itemSx = {
+    ...itemSxBase,
+    '&:active': { bgcolor: alpha(primary, 0.08) },
   };
 
   const isActive = (href: string) =>
     pathname === href || (pathname?.startsWith(href + '/') ?? false);
 
   const activeSx = (href: string) => ({
-    ...ITEM_SX,
-    bgcolor: isActive(href) ? 'rgba(246,71,95,0.08)' : 'transparent',
+    ...itemSx,
+    bgcolor: isActive(href) ? alpha(primary, 0.08) : 'transparent',
     color: isActive(href) ? 'primary.main' : 'text.primary',
     '&:hover': {
-      bgcolor: isActive(href) ? 'rgba(246,71,95,0.12)' : 'action.hover',
+      bgcolor: isActive(href) ? alpha(primary, 0.12) : 'action.hover',
     },
   });
 
@@ -211,10 +222,21 @@ export default function NavDrawer({
           display: 'flex',
           flexDirection: 'column',
           boxSizing: 'border-box',
+          bgcolor: 'background.default',
+          color: 'text.primary',
           padding: khLeftRailPaddingSx,
           paddingBottom: khSafeAreaBottomSx,
           userSelect: 'none',
           WebkitUserSelect: 'none',
+          borderRight: '1px solid',
+          borderColor: 'divider',
+        },
+      }}
+      slotProps={{
+        backdrop: {
+          sx: {
+            bgcolor: alpha(theme.palette.common.black, 0.35),
+          },
         },
       }}
     >
@@ -360,7 +382,7 @@ export default function NavDrawer({
             <ListItem disablePadding>
               <ListItemButton
                 onClick={() => go('/my/reservations')}
-                sx={ITEM_SX}
+                sx={itemSx}
               >
                 <ListItemIcon sx={ACCOUNT_LIST_ITEM_ICON_SX}>
                   <Box sx={DRAWER_ICON_SLOT_SX}>
@@ -374,7 +396,7 @@ export default function NavDrawer({
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton onClick={() => go('/search-alerts')} sx={ITEM_SX}>
+              <ListItemButton onClick={() => go('/search-alerts')} sx={itemSx}>
                 <ListItemIcon sx={ACCOUNT_LIST_ITEM_ICON_SX}>
                   <Box sx={DRAWER_ICON_SLOT_SX}>
                     <NotificationsActiveIcon />
@@ -387,7 +409,7 @@ export default function NavDrawer({
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton onClick={() => go('/profile')} sx={ITEM_SX}>
+              <ListItemButton onClick={() => go('/profile')} sx={itemSx}>
                 <ListItemIcon sx={ACCOUNT_LIST_ITEM_ICON_SX}>
                   <Box sx={DRAWER_ICON_SLOT_SX}>
                     <PersonIcon />
@@ -400,7 +422,7 @@ export default function NavDrawer({
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton onClick={() => go('/parametres')} sx={ITEM_SX}>
+              <ListItemButton onClick={() => go('/parametres')} sx={itemSx}>
                 <ListItemIcon sx={ACCOUNT_LIST_ITEM_ICON_SX}>
                   <Box sx={DRAWER_ICON_SLOT_SX}>
                     <SettingsIcon />
@@ -419,7 +441,7 @@ export default function NavDrawer({
                   onClose();
                   onLogoutClick();
                 }}
-                sx={{ ...ITEM_SX, color: 'error.main' }}
+                sx={{ ...itemSx, color: 'error.main' }}
               >
                 <ListItemIcon
                   sx={{

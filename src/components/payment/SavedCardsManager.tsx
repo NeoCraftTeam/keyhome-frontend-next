@@ -24,6 +24,8 @@ import {
   ListItem,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Elements,
@@ -32,7 +34,7 @@ import {
   useStripe,
 } from '@stripe/react-stripe-js';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 /** Query key — kept stable so other components can prefetch / invalidate it. */
 export const STRIPE_SAVED_CARDS_QUERY_KEY = ['payments', 'stripe', 'cards'];
@@ -396,12 +398,12 @@ function AddCardDialog({
   accent,
   accentHover,
 }: AddCardDialogProps): React.ReactElement {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const stripePromise = useMemo(() => getStripePromise(), []);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [setupError, setSetupError] = useState<string | null>(null);
 
-  // Fetch the SetupIntent client secret the first time the dialog opens.
-  // The intent is single-use — close+reopen creates a fresh one.
   const setupQuery = useQuery({
     queryKey: ['payments', 'stripe', 'setup-intent', open],
     queryFn: () => paymentsService.createStripeSetupIntent(),
@@ -410,16 +412,21 @@ function AddCardDialog({
     refetchOnWindowFocus: false,
   });
 
-  // When the query resolves, snapshot the secret in component state so
-  // the `<Elements>` provider doesn't unmount on every parent re-render.
-  if (setupQuery.data && !clientSecret) {
-    setClientSecret(setupQuery.data.client_secret);
-  }
-  if (setupQuery.isError && !setupError) {
-    setSetupError(
-      "Impossible de préparer le formulaire d'ajout de carte. Réessayez."
-    );
-  }
+  useEffect(() => {
+    if (!open) {
+      setClientSecret(null);
+      setSetupError(null);
+      return;
+    }
+    if (setupQuery.data?.client_secret) {
+      setClientSecret(setupQuery.data.client_secret);
+    }
+    if (setupQuery.isError) {
+      setSetupError(
+        "Impossible de préparer le formulaire d'ajout de carte. Réessayez."
+      );
+    }
+  }, [open, setupQuery.data, setupQuery.isError]);
 
   const handleClose = () => {
     setClientSecret(null);
@@ -437,9 +444,18 @@ function AddCardDialog({
         handleClose();
       }}
       disableEscapeKeyDown
+      fullScreen={isMobile}
       maxWidth="sm"
       fullWidth
-      PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+      scroll="paper"
+      sx={{ zIndex: (t) => t.zIndex.modal + 2 }}
+      PaperProps={{
+        sx: {
+          borderRadius: isMobile ? 0 : 3,
+          p: isMobile ? 0 : 1,
+          bgcolor: 'background.default',
+        },
+      }}
     >
       <DialogTitle sx={{ fontWeight: 700 }}>Ajouter une carte</DialogTitle>
       <DialogContent>

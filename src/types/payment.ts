@@ -16,10 +16,9 @@ export enum PaymentMethod {
   MOBILE_MONEY = 'mobile_money',
   CARD = 'card',
   STRIPE = 'stripe',
-  FLUTTERWAVE = 'flutterwave',
 }
 
-export type PaymentGateway = 'geniuspay' | 'flutterwave' | 'stripe';
+export type PaymentGateway = 'kpay' | 'stripe';
 
 /**
  * Catalogue entry returned by `GET /api/v1/payments/methods`
@@ -32,9 +31,9 @@ export interface PaymentMethodInfo {
   enabled: boolean;
 }
 
-export interface FlutterwaveInitiatePayload {
+export interface PaymentInitiatePayload {
   type: 'unlock' | 'subscription' | 'credit';
-  payment_method?: 'mobile_money' | 'orange_money' | 'flutterwave' | 'card';
+  payment_method?: 'mobile_money' | 'orange_money' | 'card';
   phone_number?: string;
   ad_id?: string | null;
   agency_id?: string | null;
@@ -62,7 +61,7 @@ export interface FlutterwaveInitiatePayload {
  * Normalised gateway status returned by the backend's central orchestrator.
  *
  *  - `pending` — default; the gateway is awaiting user input (Stripe Elements
- *    or Flutterwave hosted checkout).
+ *    or hosted checkout).
  *  - `success` — only emitted by Stripe when an off-session charge against a
  *    saved card cleared without a 3DS challenge. Frontend can skip the
  *    verify roundtrip.
@@ -80,7 +79,7 @@ export type PaymentInitiateStatus =
   | 'requires_action'
   | 'cancelled';
 
-export interface FlutterwaveInitiateResponse {
+export interface PaymentInitiateResponse {
   reference: string;
   payment_link: string;
   tx_ref: string;
@@ -117,7 +116,7 @@ export interface StripeSetupIntent {
   id: string;
 }
 
-export interface FlutterwaveVerifyResponse {
+export interface PaymentVerifyResponse {
   status: string;
   is_paid: boolean;
   is_unlocked: boolean;
@@ -134,6 +133,7 @@ export interface PaymentHistoryItem {
   id: string;
   reference: string | null;
   status: string;
+  status_label?: string | null;
   type: string;
   amount: number;
   gateway: PaymentGateway | null;

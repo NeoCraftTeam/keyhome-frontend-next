@@ -3,7 +3,9 @@
 import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PaymentHistoryTableModern from '@/components/payment/PaymentHistoryTableModern';
+import SavedCardsManager from '@/components/payment/SavedCardsManager';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
+import FadeIn from '@/components/ui/layout/FadeIn';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
   Box,
@@ -12,7 +14,6 @@ import {
   IconButton,
   Typography,
 } from '@mui/material';
-import FadeIn from '@/components/ui/layout/FadeIn';
 
 /**
  * Dual-purpose route:
@@ -76,8 +77,13 @@ function PaymentsContent() {
           Historique de vos transactions.
         </Typography>
       </FadeIn>
+      <FadeIn delay={0.08}>
+        <SavedCardsManager />
+      </FadeIn>
       <FadeIn delay={0.1}>
-        <PaymentHistoryTableModern />
+        <Box sx={{ mt: 4 }}>
+          <PaymentHistoryTableModern />
+        </Box>
       </FadeIn>
     </Container>
   );
