@@ -76,6 +76,9 @@ function writeCookie(name: string, value: string, maxAgeSeconds: number) {
 
 const RATES_CACHE_KEY = 'kh_exchange_rates_v1';
 
+/** Marqueur : l'utilisateur a explicitement choisi sa devise (bloque la géo). */
+const CURRENCY_MANUAL_COOKIE = 'kh_currency_manual';
+
 interface CachedRates {
   rates: Record<string, number>;
   fetched_at: number;
@@ -189,6 +192,46 @@ export function CurrencyProvider({
     setCurrencyState(next);
     // 30-day persistence for explicit user choice — overrides geo detection.
     writeCookie(CURRENCY_COOKIE, next, 60 * 60 * 24 * 30);
+    // Marqueur de choix MANUEL : bloque la re-détection géo (un choix
+    // utilisateur est sacré). Le cookie kh_currency seul ne suffit pas à
+    // distinguer un choix manuel d'une détection edge/géo.
+    writeCookie(CURRENCY_MANUAL_COOKIE, '1', 60 * 60 * 24 * 30);
+  }, []);
+
+  // Détection par IP côté backend (MaxMind) quand aucune source fiable n'a
+  // fixé la devise : sur un déploiement sans en-tête edge (Cloudflare/
+  // Vercel), la middleware ne pose pas de cookie et l'utilisateur resterait
+  // en FCFA. On interroge alors GET /geo/currency (vraie IP côté Laravel).
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    // Un choix manuel prime toujours — pas de re-détection.
+    if (readCookie(CURRENCY_MANUAL_COOKIE)) return;
+    // Une devise déjà résolue (cookie edge/géo) : on ne re-fetch pas.
+    if (readCookie(CURRENCY_COOKIE)) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const base = process.env.NEXT_PUBLIC_API_URL ?? '';
+        const res = await fetch(`${base}/geo/currency`, {
+          credentials: 'omit',
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { currency?: string };
+        if (cancelled) return;
+        if (data.currency && isSupportedCurrency(data.currency)) {
+          setCurrencyState(data.currency);
+          // Cookie court (pas le marqueur manuel) : sert de graine SSR au
+          // prochain chargement, reste re-détectable.
+          writeCookie(CURRENCY_COOKIE, data.currency, 60 * 60 * 24);
+        }
+      } catch {
+        /* réseau indisponible → on garde XAF (jamais un mauvais symbole) */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const convert = useCallback(
