@@ -4,27 +4,25 @@ import { COMPARISONS } from './comparisons';
 import { brand, gradient } from '@/theme/tokens';
 import { BRAND_TAGLINE } from '@/lib/brand';
 import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+import { buildHreflangAlternates } from '@/i18n/routing';
 
 const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
-  title: 'Comparaisons immobilières en Afrique — KeyHome',
-  description: `${BRAND_TAGLINE}. Louer vs acheter, Douala vs Yaoundé, appartement vs maison… Comparez les options immobilières en Afrique de l'Ouest pour faire le meilleur choix.`,
+  title: 'Comparaisons immobilières',
+  description: `Louer vs acheter, ville vs ville, appartement vs maison… Comparez les options immobilières pour faire le meilleur choix. ${BRAND_TAGLINE}.`,
   alternates: {
     canonical: absoluteUrl('/comparaison'),
-    languages: {
-      'fr-FR': absoluteUrl('/comparaison'),
-      'x-default': absoluteUrl('/comparaison'),
-    },
+    languages: buildHreflangAlternates(absoluteUrl('/comparaison')),
   },
   openGraph: {
     title: 'Comparaisons immobilières — KeyHome',
-    description: `${BRAND_TAGLINE}. Analyses comparatives pour vous aider à prendre les meilleures décisions immobilières en Afrique.`,
+    description: `Analyses comparatives pour vous aider à prendre les meilleures décisions immobilières. ${BRAND_TAGLINE}.`,
     url: absoluteUrl('/comparaison'),
     siteName: 'KeyHome',
     images: [
       {
-        url: `${SITE}/opengraph-image`,
+        url: `${SITE}/og?title=${encodeURIComponent('Comparaisons immobilières')}&subtitle=${encodeURIComponent('Louer vs acheter, ville vs ville, type vs type')}`,
         width: 1200,
         height: 630,
         alt: 'Comparaisons immobilières — KeyHome',
@@ -83,7 +81,7 @@ export default function ComparaisonIndexPage() {
       >
         Louer ou acheter ? Douala ou Yaoundé ? Appartement ou maison ? Découvrez
         nos analyses détaillées pour prendre les meilleures décisions
-        immobilières en Afrique.
+        immobilières.
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>

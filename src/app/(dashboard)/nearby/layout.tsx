@@ -6,8 +6,8 @@ const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
   title: 'Annonces à proximité — Logements près de chez vous',
-  description: `${BRAND_TAGLINE}. Localisez les annonces immobilières autour de vous grâce à la géolocalisation. Maisons, appartements et terrains affichés sur une carte interactive en temps réel. Trouvez votre futur logement dans votre quartier avec KeyHome.`,
-  robots: { index: true, follow: true },
+  description: `Localisez les annonces immobilières autour de vous grâce à la géolocalisation. Maisons, appartements et terrains sur une carte interactive en temps réel. ${BRAND_TAGLINE}.`,
+  robots: { index: false, follow: false },
   alternates: {
     canonical: absoluteUrl('/nearby'),
     languages: {

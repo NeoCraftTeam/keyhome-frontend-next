@@ -59,15 +59,22 @@ export default function VoiceSearchButton({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    // Check if the SpeechRecognition constructor exists.
-    // We don't probe with start() because it requires a user gesture
-    // on Chrome/Firefox and would fail silently.
-    // If the browser exposes the API but it doesn't actually work
-    // (e.g. DuckDuckGo/WebKit), the onerror in toggle() handles it
-    // and hides the button on first failed attempt.
+
+    // Check if the SpeechRecognition constructor exists
     const hasApi =
       'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
-    setSupported(hasApi);
+
+    // Web Speech API requires HTTPS (except localhost)
+    const isSecure =
+      window.location.protocol === 'https:' ||
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1';
+
+    if (!isSecure) {
+      console.warn('[VoiceSearch] Web Speech API requires HTTPS in production');
+    }
+
+    setSupported(hasApi && isSecure);
   }, []);
 
   const stop = useCallback(() => {
@@ -109,9 +116,28 @@ export default function VoiceSearchButton({
 
     rec.onerror = (e: SpeechErrorEvent) => {
       console.warn('[VoiceSearch] error:', e.error, e.message);
+
+      // Handle different error types
       if (e.error === 'service-not-allowed' || e.error === 'not-allowed') {
+        alert(
+          'Microphone permission denied. Please enable microphone access in your browser settings.'
+        );
         setSupported(false);
+      } else if (e.error === 'network') {
+        alert(
+          'Network error. Voice search requires an internet connection and HTTPS.'
+        );
+      } else if (e.error === 'no-speech') {
+        console.info('[VoiceSearch] No speech detected');
+      } else if (e.error === 'audio-capture') {
+        alert(
+          'No microphone found. Please connect a microphone and try again.'
+        );
+        setSupported(false);
+      } else if (e.error === 'aborted') {
+        console.info('[VoiceSearch] Recording aborted by user');
       }
+
       setState('idle');
     };
     rec.onend = () => setState((s) => (s === 'listening' ? 'idle' : s));
@@ -144,68 +170,135 @@ export default function VoiceSearchButton({
   return (
     <Tooltip title={isListening ? 'Arrêter' : 'Recherche vocale (fr)'}>
       <Box
-        role="button"
-        tabIndex={disabled ? -1 : 0}
-        aria-label={
-          isListening
-            ? 'Arrêter la recherche vocale'
-            : 'Lancer la recherche vocale'
-        }
-        aria-pressed={isListening}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!disabled) toggle();
-        }}
-        onKeyDown={(e) => {
-          if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
-            e.preventDefault();
-            e.stopPropagation();
-            toggle();
-          }
-        }}
         sx={{
-          // Visual size from prop, but hit area ≥ 44px (SKILL.md touch target)
-          width: hitArea,
-          height: hitArea,
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: disabled ? 'default' : 'pointer',
-          color: isListening ? 'error.main' : 'text.secondary',
-          transition: 'color 0.2s, background-color 0.2s, transform 0.2s',
-          bgcolor: isListening ? 'rgba(246,71,95,0.1)' : 'transparent',
-          '@keyframes pulse': {
-            '0%, 100%': { transform: 'scale(1)', opacity: 1 },
-            '50%': { transform: 'scale(1.15)', opacity: 0.8 },
-          },
-          animation: isListening ? 'pulse 1.2s ease-in-out infinite' : 'none',
-          // Touch feedback (SKILL.md: ripple/highlight on tap)
-          '&:active': disabled
-            ? {}
-            : { bgcolor: 'rgba(246,71,95,0.15)', transform: 'scale(0.92)' },
-          '&:hover': disabled
-            ? {}
-            : {
-                color: isListening ? 'error.dark' : 'primary.main',
-                bgcolor: 'action.hover',
-              },
-          '&:focus-visible': {
-            outline: '2px solid',
-            outlineColor: 'primary.main',
-            outlineOffset: 2,
-          },
-          // Negative margin to keep visual alignment when hit area > icon size
+          position: 'relative',
+          display: 'inline-flex',
           mx: hitArea > size ? `-${(hitArea - size) / 2}px` : 0,
         }}
       >
-        {isProcessing ? (
-          <CircularProgress size={size * 0.55} sx={{ color: 'primary.main' }} />
-        ) : isListening ? (
-          <StopIcon sx={{ fontSize: size * 0.6, color: 'error.main' }} />
-        ) : (
-          <MicIcon sx={{ fontSize: size * 0.6 }} />
+        {/* Animated beat effect circles */}
+        {isListening && (
+          <>
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: hitArea,
+                height: hitArea,
+                borderRadius: '50%',
+                border: '2px solid',
+                borderColor: 'error.main',
+                opacity: 0.6,
+                '@keyframes ripple1': {
+                  '0%': {
+                    transform: 'translate(-50%, -50%) scale(0.8)',
+                    opacity: 0.8,
+                  },
+                  '100%': {
+                    transform: 'translate(-50%, -50%) scale(1.8)',
+                    opacity: 0,
+                  },
+                },
+                animation: 'ripple1 1.5s ease-out infinite',
+              }}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: hitArea,
+                height: hitArea,
+                borderRadius: '50%',
+                border: '2px solid',
+                borderColor: 'error.main',
+                opacity: 0.6,
+                '@keyframes ripple2': {
+                  '0%': {
+                    transform: 'translate(-50%, -50%) scale(0.8)',
+                    opacity: 0.8,
+                  },
+                  '100%': {
+                    transform: 'translate(-50%, -50%) scale(1.8)',
+                    opacity: 0,
+                  },
+                },
+                animation: 'ripple2 1.5s ease-out infinite 0.5s',
+              }}
+            />
+          </>
         )}
+
+        <Box
+          role="button"
+          tabIndex={disabled ? -1 : 0}
+          aria-label={
+            isListening
+              ? 'Arrêter la recherche vocale'
+              : 'Lancer la recherche vocale'
+          }
+          aria-pressed={isListening}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!disabled) toggle();
+          }}
+          onKeyDown={(e) => {
+            if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
+              e.preventDefault();
+              e.stopPropagation();
+              toggle();
+            }
+          }}
+          sx={{
+            // Visual size from prop, but hit area ≥ 44px (SKILL.md touch target)
+            width: hitArea,
+            height: hitArea,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: disabled ? 'default' : 'pointer',
+            color: isListening ? 'error.main' : 'text.secondary',
+            transition: 'color 0.2s, background-color 0.2s, transform 0.2s',
+            bgcolor: isListening ? 'rgba(246,71,95,0.15)' : 'transparent',
+            position: 'relative',
+            zIndex: 1,
+            '@keyframes pulse': {
+              '0%, 100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.1)' },
+            },
+            animation: isListening ? 'pulse 0.8s ease-in-out infinite' : 'none',
+            // Touch feedback (SKILL.md: ripple/highlight on tap)
+            '&:active': disabled
+              ? {}
+              : { bgcolor: 'rgba(246,71,95,0.2)', transform: 'scale(0.92)' },
+            '&:hover': disabled
+              ? {}
+              : {
+                  color: isListening ? 'error.dark' : 'primary.main',
+                  bgcolor: isListening ? 'rgba(246,71,95,0.2)' : 'action.hover',
+                },
+            '&:focus-visible': {
+              outline: '2px solid',
+              outlineColor: 'primary.main',
+              outlineOffset: 2,
+            },
+          }}
+        >
+          {isProcessing ? (
+            <CircularProgress
+              size={size * 0.55}
+              sx={{ color: 'primary.main' }}
+            />
+          ) : isListening ? (
+            <StopIcon sx={{ fontSize: size * 0.6, color: 'error.main' }} />
+          ) : (
+            <MicIcon sx={{ fontSize: size * 0.6 }} />
+          )}
+        </Box>
       </Box>
     </Tooltip>
   );

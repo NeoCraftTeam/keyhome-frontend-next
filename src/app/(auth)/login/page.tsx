@@ -21,6 +21,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Collapse,
   Divider,
   IconButton,
   InputAdornment,
@@ -32,6 +33,39 @@ import { AxiosError } from 'axios';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+
+function MoreLoginOptions({ onError }: { onError: (err: string) => void }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <Box sx={{ width: '100%', mt: 1 }}>
+      <Button
+        fullWidth
+        variant="text"
+        size="small"
+        onClick={() => setExpanded((v) => !v)}
+        sx={{
+          textTransform: 'none',
+          color: 'text.secondary',
+          fontWeight: 500,
+          fontSize: '0.8125rem',
+          '&:hover': { bgcolor: 'action.hover' },
+        }}
+      >
+        {expanded ? 'Moins d’options' : 'Plus d’options de connexion'}
+      </Button>
+      <Collapse in={expanded}>
+        <SocialLoginButtons
+          onError={onError}
+          disabled={false}
+          providers={['facebook', 'github']}
+          showDivider={false}
+        />
+        <PasskeyLoginButton loginContext="client" />
+      </Collapse>
+    </Box>
+  );
+}
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -373,16 +407,18 @@ export default function LoginPage() {
             </Box>
           </FadeIn>
 
-          {/* OAuth et passkey : jamais bloqués par Turnstile — flux indépendant */}
+          {/* Primary OAuth: Google only — most common, reduces choice overload */}
           <FadeIn delay={0.3} direction="up">
             <SocialLoginButtons
               onError={(err) => setError(err)}
               disabled={false}
+              providers={['google']}
             />
           </FadeIn>
 
+          {/* Secondary options: Passkey + other OAuth (collapsed by default) */}
           <FadeIn delay={0.35} direction="up">
-            <PasskeyLoginButton loginContext="client" />
+            <MoreLoginOptions onError={(err) => setError(err)} />
           </FadeIn>
 
           <FadeIn delay={0.4} direction="up">

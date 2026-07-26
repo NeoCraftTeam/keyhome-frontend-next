@@ -32,6 +32,12 @@ const nextConfig: NextConfig = {
         destination: '/ads/:slug',
         permanent: true,
       },
+      // Slug typo fix — preserve link equity from the previously published URL
+      {
+        source: '/blog/eviter-arnaques-immobilieres-',
+        destination: '/blog/eviter-arnaques-immobilieres',
+        permanent: true,
+      },
       // Legacy / mistaken asset path (returns a real image)
       {
         source: '/placeholder-house.jpg',
@@ -130,10 +136,6 @@ const nextConfig: NextConfig = {
           {
             key: 'X-DNS-Prefetch-Control',
             value: 'on',
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
           },
           {
             key: 'X-Frame-Options',

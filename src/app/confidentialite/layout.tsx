@@ -5,8 +5,8 @@ import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
 const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
-  title: 'Politique de Confidentialité — KeyHome',
-  description: `${BRAND_TAGLINE}. Découvrez comment KeyHome protège vos données personnelles. Notre politique de confidentialité détaille la collecte, l'utilisation et la sécurisation de vos informations sur notre plateforme immobilière en Afrique.`,
+  title: 'Politique de confidentialité',
+  description: `Comment KeyHome protège vos données personnelles : collecte, utilisation, sécurisation et vos droits sur la plateforme immobilière. ${BRAND_TAGLINE}.`,
   robots: { index: true, follow: true },
   alternates: {
     canonical: absoluteUrl('/confidentialite'),

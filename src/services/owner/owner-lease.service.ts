@@ -27,8 +27,16 @@ async function publicFetch<T>(path: string, options?: RequestInit): Promise<T> {
   return JSON.parse(text) as T;
 }
 
+export type LeaseStatus =
+  | 'draft'
+  | 'active'
+  | 'expired'
+  | 'terminated'
+  | 'archived';
+
 export interface LeaseContract {
   id: string;
+  ad_id: string;
   contract_number: string;
   unit_reference: string | null;
   tenant_name: string;
@@ -41,6 +49,11 @@ export interface LeaseContract {
   monthly_rent: number;
   deposit_amount: number | null;
   special_conditions: string | null;
+  status: LeaseStatus;
+  status_label: string;
+  terminated_at: string | null;
+  termination_reason: string | null;
+  archived_at: string | null;
   created_at: string;
   ad?: { id: string; title: string };
 }
@@ -218,5 +231,36 @@ export const ownerLeaseService = {
       method: 'POST',
       body: JSON.stringify({ otp: payload.otp, reason: payload.reason }),
     });
+  },
+
+  // ── Lifecycle ────────────────────────────────────────────────
+
+  async renewLeaseContract(
+    leaseContractId: string,
+    payload: { extend_months: number; monthly_rent?: number }
+  ): Promise<LeaseContract> {
+    const { data } = await api.post<{ data: LeaseContract }>(
+      `/my/lease-contracts/${leaseContractId}/renew`,
+      payload
+    );
+    return data.data ?? data;
+  },
+
+  async terminateLeaseContract(
+    leaseContractId: string,
+    payload: { reason: string }
+  ): Promise<LeaseContract> {
+    const { data } = await api.post<{ data: LeaseContract }>(
+      `/my/lease-contracts/${leaseContractId}/terminate`,
+      payload
+    );
+    return data.data ?? data;
+  },
+
+  async archiveLeaseContract(leaseContractId: string): Promise<LeaseContract> {
+    const { data } = await api.post<{ data: LeaseContract }>(
+      `/my/lease-contracts/${leaseContractId}/archive`
+    );
+    return data.data ?? data;
   },
 };

@@ -6,15 +6,15 @@ import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
 const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
-  title: 'Inscription gratuite — Trouvez votre logement en Afrique',
-  description: `${BRAND_TAGLINE}. Créez votre compte KeyHome en 30 secondes, c'est 100% gratuit. Parcourez des milliers d'annonces vérifiées (maisons, appartements, terrains, villas) et contactez directement les propriétaires. Zéro arnaque, zéro intermédiaire.`,
-  robots: { index: true, follow: true },
+  title: 'Inscription gratuite — Trouvez votre logement',
+  description: `Créez votre compte KeyHome en 30 secondes — 100% gratuit. Parcourez des milliers d'annonces vérifiées (maisons, appartements, terrains, villas), contactez directement les propriétaires. Zéro arnaque, zéro intermédiaire. ${BRAND_TAGLINE}.`,
+  robots: { index: false, follow: true },
   alternates: {
     canonical: absoluteUrl('/register'),
   },
   openGraph: {
     title: `Inscription gratuite — ${BRAND_NAME}`,
-    description: `${BRAND_TAGLINE}. Rejoignez des milliers d'utilisateurs qui trouvent leur logement en Afrique grâce à KeyHome. Inscription en 30s, annonces vérifiées, contact direct.`,
+    description: `Rejoignez des milliers d'utilisateurs qui trouvent leur logement grâce à KeyHome. Inscription en 30s, annonces vérifiées, contact direct. ${BRAND_TAGLINE}.`,
     url: absoluteUrl('/register'),
     siteName: 'KeyHome',
     images: [

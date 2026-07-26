@@ -341,7 +341,7 @@ export default function NeighborhoodScorecard({ adId, onUnavailable }: Props) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['neighborhood-scorecard', adId, forceKey],
     queryFn: () => adsService.getNeighborhoodScorecard(adId, forceKey > 0),
-    staleTime: 1000 * 60 * 60 * 6,
+    staleTime: 24 * 60 * 60 * 1000,
     retry: 1,
   });
 

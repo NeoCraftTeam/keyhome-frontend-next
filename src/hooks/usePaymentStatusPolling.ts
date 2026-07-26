@@ -40,6 +40,7 @@ export type PaymentPollingState =
   | 'verifying'
   | 'processing'
   | 'success'
+  | 'pending'
   | 'failed'
   | 'cancelled'
   | 'auth_lost'
@@ -48,7 +49,7 @@ export type PaymentPollingState =
 interface UsePaymentStatusPollingOptions {
   /** `tx_ref` returned by `purchase()` / `initiate()`. */
   txRef: string | null;
-  /** GeniusPay `reference` (MTX-* / SANDBOX_*) when the redirect omits `tx_ref`. */
+  /** Kpay `reference` (KPAY-* / pay_*) when the redirect omits `tx_ref`. */
   gatewayReference?: string | null;
   /** `status` query param from the hosted checkout redirect (`completed`, …). */
   gatewayRedirectStatus?: string | null;
@@ -97,10 +98,13 @@ const FAST_INITIAL_MS = 800;
 const FAST_MAX_MS = 4000;
 const SLOW_MAX_RETRIES = 36; // 36 × 5 s = 3 min
 const SLOW_POLL_MS = 5000;
+// Consecutive `not_found` responses required before the state is terminal —
+// absorbs initiate/DB-commit latency right after the hosted-checkout redirect.
+const NOT_FOUND_STREAK_THRESHOLD = 3;
 
 /**
  * Robust payment polling that survives :
- *  - lost session cookies (cross-origin Flutterwave redirect)
+ *  - lost session cookies (cross-origin hosted-checkout redirect)
  *  - slow webhooks (mobile money operators take 30–60 s)
  *  - transient network failures (mobile data on returning home)
  *
@@ -138,6 +142,10 @@ export function usePaymentStatusPolling({
   const floorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const authLostRef = useRef(false);
   const successFiredRef = useRef(false);
+  // A `not_found` right after the redirect is often just initiate/commit
+  // latency (the payment row isn't visible yet). Only commit the terminal
+  // `not_found` state after several consecutive sightings.
+  const notFoundStreakRef = useRef(0);
   const onSuccessRef = useRef(onSuccess);
   // Seeded in the polling `useEffect` / `retry()` — avoid Date.now in ref init
   // (React purity rule: render must not call impure fns).
@@ -239,9 +247,14 @@ export function usePaymentStatusPolling({
             return true;
           }
           if (result.status === 'not_found') {
-            commitTerminal('not_found');
-            return true;
+            notFoundStreakRef.current += 1;
+            if (notFoundStreakRef.current >= NOT_FOUND_STREAK_THRESHOLD) {
+              commitTerminal('not_found');
+              return true;
+            }
+            return false;
           }
+          notFoundStreakRef.current = 0;
           return false;
         }
 
@@ -273,8 +286,12 @@ export function usePaymentStatusPolling({
           err.response?.status === 404 &&
           variant === 'credit'
         ) {
-          commitTerminal('not_found');
-          return true;
+          notFoundStreakRef.current += 1;
+          if (notFoundStreakRef.current >= NOT_FOUND_STREAK_THRESHOLD) {
+            commitTerminal('not_found');
+            return true;
+          }
+          return false;
         }
         // Any other error → retry on next tick.
       }
@@ -329,20 +346,30 @@ export function usePaymentStatusPolling({
   const runSlowLoopRef = useRef<(attempt: number) => void>(() => undefined);
   const runFastLoopRef = useRef<(attempt: number) => void>(() => undefined);
 
+  // Mirrored into a ref for the same reason as `pollOnceRef`: the loop
+  // effect below runs once, but the redirect status comes from the URL
+  // and must stay readable from inside the closure.
+  const gatewayRedirectStatusRef = useRef(gatewayRedirectStatus);
+  useEffect(() => {
+    gatewayRedirectStatusRef.current = gatewayRedirectStatus;
+  }, [gatewayRedirectStatus]);
+
   useEffect(() => {
     const slow = (attempt: number): void => {
       if (cancelledRef.current) return;
       void pollOnceRef.current().then((done) => {
         if (done || cancelledRef.current) return;
         if (attempt + 1 >= SLOW_MAX_RETRIES) {
-          if (isGatewayRedirectSuccess(gatewayRedirectStatus)) {
-            commitTerminal('success', fireSuccessOnce);
-            return;
-          }
+          // `?status=completed` is client-controlled (and the webhook can
+          // outlast the whole slow window on mobile money) — never commit
+          // a success nor fire `onSuccess` from it. Surface "confirmation
+          // en cours" instead; the webhook stays the source of truth.
           setState((prev) =>
             prev === 'success' || prev === 'failed' || prev === 'cancelled'
               ? prev
-              : 'processing'
+              : isGatewayRedirectSuccess(gatewayRedirectStatusRef.current)
+                ? 'pending'
+                : 'processing'
           );
           return;
         }
@@ -379,16 +406,27 @@ export function usePaymentStatusPolling({
     cancelledRef.current = false;
     authLostRef.current = false;
     successFiredRef.current = false;
+    notFoundStreakRef.current = 0;
     startTsRef.current = Date.now();
     setFastAttempt(0);
+    if (!txRef && !gatewayReference) {
+      setState('not_found');
+      return;
+    }
     setState('verifying');
     runFastLoopRef.current(0);
-  }, [clearTimer]);
+  }, [clearTimer, txRef, gatewayReference]);
 
   useEffect(() => {
     cancelledRef.current = false;
     startTsRef.current = Date.now();
     if (skip || (!txRef && !gatewayReference)) {
+      // Without any reference there is nothing to poll — surface the
+      // terminal `not_found` instead of leaving the UI on an endless
+      // "verifying" spinner (redirect stripped of its query params).
+      if (!skip) {
+        setState((prev) => (prev === 'verifying' ? 'not_found' : prev));
+      }
       return () => {
         cancelledRef.current = true;
         clearTimer();

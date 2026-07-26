@@ -1,12 +1,12 @@
 import api from '@/lib/api';
 import { rememberPaymentOriginPath } from '@/lib/payment/payment-return';
 import {
-  FlutterwaveInitiatePayload,
-  FlutterwaveInitiateResponse,
-  FlutterwaveVerifyResponse,
   PaginatedResponse,
   PaymentHistoryItem,
+  PaymentInitiatePayload,
+  PaymentInitiateResponse,
   PaymentMethodInfo,
+  PaymentVerifyResponse,
   StripePaymentMethod,
   StripeSetupIntent,
   UnlockResponse,
@@ -54,36 +54,36 @@ export const paymentsService = {
   // ─── Multi-gateway lifecycle ─────────────────────────────────────────────
   // The naming is deliberately gateway-agnostic — the same endpoints route
   // through `PaymentMethod::gateway()` server-side and call the right
-  // implementation (Flutterwave hosted checkout OR Stripe PaymentIntent).
+  // implementation (Kpay hosted checkout OR Stripe PaymentIntent).
 
   /**
    * Initiate a payment and receive either :
-   *  - a hosted-checkout URL (`gateway === 'flutterwave'`), or
+   *  - a hosted-checkout URL (`gateway === 'kpay'`), or
    *  - a PaymentIntent client secret in `payment_link` (`gateway === 'stripe'`).
    *
    * The persisted `tx_ref` doubles as our cross-gateway lookup key — used
    * by `verify()` and `cancel()` regardless of the gateway.
    */
   async initiate(
-    payload: FlutterwaveInitiatePayload
-  ): Promise<FlutterwaveInitiateResponse> {
+    payload: PaymentInitiatePayload
+  ): Promise<PaymentInitiateResponse> {
     rememberPaymentOriginPath();
     const { data } = await api.post('/payments/initiate_payment', payload);
-    return data as FlutterwaveInitiateResponse;
+    return data as PaymentInitiateResponse;
   },
 
   /**
    * Verify a payment with the gateway and grant credits / unlocks if paid.
    * Idempotent — safe to retry. The backend uses a row lock to avoid
    * double-spending. Used :
-   *  - by the Flutterwave callback page after the user returns from checkout
+   *  - by the callback page after the user returns from hosted checkout
    *  - by the Stripe flow after `confirmPayment` succeeds, to fast-track
    *    the optimistic UI without waiting for the webhook
    */
   async verify(
     txRef?: string | null,
     gatewayReference?: string | null
-  ): Promise<FlutterwaveVerifyResponse> {
+  ): Promise<PaymentVerifyResponse> {
     const body: { tx_ref?: string; reference?: string } = {};
     if (txRef) {
       body.tx_ref = txRef;
@@ -92,7 +92,7 @@ export const paymentsService = {
       body.reference = gatewayReference;
     }
     const { data } = await api.post('/payments/verify_payment', body);
-    return data as FlutterwaveVerifyResponse;
+    return data as PaymentVerifyResponse;
   },
 
   /**
@@ -147,26 +147,6 @@ export const paymentsService = {
       { params: { page } }
     );
     return data;
-  },
-
-  // Legacy aliases — kept temporarily for backward compatibility with any
-  // call site that still uses the Flutterwave-prefixed names. Prefer the
-  // gateway-agnostic helpers above.
-  flutterwaveInitiate(
-    payload: FlutterwaveInitiatePayload
-  ): Promise<FlutterwaveInitiateResponse> {
-    return this.initiate(payload);
-  },
-  flutterwaveVerify(
-    txRef?: string | null,
-    gatewayReference?: string | null
-  ): Promise<FlutterwaveVerifyResponse> {
-    return this.verify(txRef, gatewayReference);
-  },
-  flutterwaveCancel(
-    txRef: string
-  ): Promise<{ message: string; status: string }> {
-    return this.cancel(txRef);
   },
 
   /**

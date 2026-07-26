@@ -178,7 +178,7 @@ describe('usePaymentStatusPolling — credit variant', () => {
     expect(mockedPayments.publicStatus).not.toHaveBeenCalled();
   });
 
-  it('treats 404 (no recent purchase) as terminal not_found for the credit variant', async () => {
+  it('treats repeated 404s (no recent purchase) as terminal not_found for the credit variant', async () => {
     mockedCredits.verifyPurchase.mockRejectedValue(
       new axios.AxiosError('Not found', 'ERR_BAD_REQUEST', undefined, null, {
         status: 404,
@@ -197,8 +197,90 @@ describe('usePaymentStatusPolling — credit variant', () => {
       })
     );
 
-    await waitFor(() => expect(result.current.state).toBe('not_found'));
+    // A single 404 right after the redirect may just be initiate latency —
+    // the state only becomes terminal after 3 consecutive sightings.
+    await waitFor(() => expect(result.current.state).toBe('not_found'), {
+      timeout: 8000,
+    });
+    expect(
+      mockedCredits.verifyPurchase.mock.calls.length
+    ).toBeGreaterThanOrEqual(3);
     expect(mockedPayments.publicStatus).not.toHaveBeenCalled();
+  }, 10000);
+
+  it('keeps polling after a single not_found (initiate latency) and succeeds', async () => {
+    mockedCredits.verifyPurchase
+      .mockResolvedValueOnce({
+        status: 'not_found',
+        message: 'Introuvable',
+        point_balance: 0,
+      })
+      .mockResolvedValueOnce({
+        status: 'completed',
+        message: 'OK',
+        point_balance: 42,
+      });
+    const onSuccess = vi.fn();
+
+    const { result } = renderHook(() =>
+      usePaymentStatusPolling({
+        txRef: 'KH-FFFFFF000006',
+        variant: 'credit',
+        onSuccess,
+        minimumVerifyingMs: 0,
+      })
+    );
+
+    await waitFor(() => expect(result.current.state).toBe('success'), {
+      timeout: 5000,
+    });
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+  }, 8000);
+
+  it('surfaces not_found instead of an endless spinner when no reference is provided', async () => {
+    const { result } = renderHook(() =>
+      usePaymentStatusPolling({
+        txRef: null,
+        variant: 'credit',
+        minimumVerifyingMs: 0,
+      })
+    );
+
+    await waitFor(() => expect(result.current.state).toBe('not_found'));
+    expect(mockedCredits.verifyPurchase).not.toHaveBeenCalled();
+    expect(mockedPayments.publicStatus).not.toHaveBeenCalled();
+  });
+
+  it('never commits a success from the redirect status when polling exhausts', async () => {
+    vi.useFakeTimers();
+    // The backend never confirms — pending forever (slow webhook).
+    mockedCredits.verifyPurchase.mockResolvedValue({
+      status: 'pending',
+      message: 'En attente',
+      point_balance: 0,
+    });
+    const onSuccess = vi.fn();
+
+    const { result } = renderHook(() =>
+      usePaymentStatusPolling({
+        txRef: 'KH-GGGGGG000007',
+        gatewayRedirectStatus: 'completed',
+        variant: 'credit',
+        onSuccess,
+        minimumVerifyingMs: 0,
+      })
+    );
+
+    // Burn through the entire fast (~30 s) + slow (3 min) windows.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+    });
+
+    // `?status=completed` is client-controlled: the exhausted poll must
+    // surface "confirmation en cours", never a success.
+    expect(result.current.state).toBe('pending');
+    expect(onSuccess).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });
 
@@ -211,7 +293,7 @@ describe('usePaymentStatusPolling — unlock variant', () => {
       reference: 'pay-id',
       ad_id: 'ad-id',
       tx_ref: 'KH-UNLK000001',
-      gateway: 'flutterwave',
+      gateway: 'kpay',
       payment_method: 'mobile_money',
       payment_method_label: 'Mobile Money',
     });
@@ -238,7 +320,7 @@ describe('usePaymentStatusPolling — unlock variant', () => {
       reference: 'pay-id',
       ad_id: 'ad-id',
       tx_ref: 'KH-UNLK000002',
-      gateway: 'flutterwave',
+      gateway: 'kpay',
       payment_method: null,
       payment_method_label: null,
     });
@@ -262,7 +344,7 @@ describe('usePaymentStatusPolling — unlock variant', () => {
       reference: 'pay-id',
       ad_id: 'ad-id',
       tx_ref: 'KH-UNLK000003',
-      gateway: 'geniuspay',
+      gateway: 'kpay',
       payment_method: null,
       payment_method_label: null,
     });

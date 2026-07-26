@@ -5,9 +5,13 @@ import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { gradient } from '@/theme/tokens';
 import type { City } from '@/types';
 import CloseIcon from '@mui/icons-material/Close';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ViewInArIcon from '@mui/icons-material/ViewInAr';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Autocomplete,
   Box,
   Button,
@@ -304,7 +308,7 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
       <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
         Chambres
       </Typography>
-      <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 2.5 }}>
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2.5 }}>
         {[undefined, 1, 2, 3, 4, 5].map((val) => {
           const fc =
             val !== undefined
@@ -320,17 +324,18 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
             <Chip
               key={val ?? 'all'}
               label={label}
-              size="small"
               onClick={() => {
                 setBedrooms(val);
                 setPage(1);
               }}
               variant={bedrooms === val ? 'filled' : 'outlined'}
-              sx={
-                bedrooms === val
+              sx={{
+                height: 40,
+                fontSize: '0.8125rem',
+                ...(bedrooms === val
                   ? { bgcolor: 'primary.main', color: '#fff' }
-                  : {}
-              }
+                  : {}),
+              }}
             />
           );
         })}
@@ -340,22 +345,23 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
       <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
         Salles de bain
       </Typography>
-      <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 2.5 }}>
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2.5 }}>
         {[undefined, 1, 2, 3, 4].map((val) => (
           <Chip
             key={val ?? 'all'}
             label={val === undefined ? 'Tous' : `${val}+`}
-            size="small"
             onClick={() => {
               setBathrooms(val);
               setPage(1);
             }}
             variant={bathrooms === val ? 'filled' : 'outlined'}
-            sx={
-              bathrooms === val
+            sx={{
+              height: 40,
+              fontSize: '0.8125rem',
+              ...(bathrooms === val
                 ? { bgcolor: 'primary.main', color: '#fff' }
-                : {}
-            }
+                : {}),
+            }}
           />
         ))}
       </Box>
@@ -412,60 +418,100 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
         sx={{ mb: 2 }}
       />
 
-      {/* Property attribute groups */}
+      {/* Property attribute groups — collapsible accordions to reduce cognitive load */}
       {propertyAttributes?.grouped && propertyAttributes.grouped.length > 0 && (
         <>
           <Divider sx={{ my: 2 }} />
           <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>
             Équipements
           </Typography>
-          {propertyAttributes.grouped.map((group) => (
-            <Box key={group.slug} sx={{ mb: 2 }}>
-              <Typography
-                variant="caption"
-                color="text.secondary"
+          {propertyAttributes.grouped.map((group) => {
+            const activeCount = group.attributes.filter((attr) =>
+              selectedAmenities.includes(attr.value)
+            ).length;
+            return (
+              <Accordion
+                key={group.slug}
+                disableGutters
+                elevation={0}
                 sx={{
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                  display: 'block',
-                  mb: 0.75,
+                  '&:before': { display: 'none' },
+                  bgcolor: 'transparent',
+                  border: '1px solid',
+                  borderColor: activeCount > 0 ? 'primary.main' : 'divider',
+                  borderRadius: '8px !important',
+                  mb: 1,
+                  overflow: 'hidden',
                 }}
               >
-                {group.name}
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-                {group.attributes.map((attr) => {
-                  const active = selectedAmenities.includes(attr.value);
-                  return (
-                    <Chip
-                      key={attr.value}
-                      label={attr.label}
-                      size="small"
-                      onClick={() => {
-                        setSelectedAmenities((prev) =>
-                          prev.includes(attr.value)
-                            ? prev.filter((v) => v !== attr.value)
-                            : [...prev, attr.value]
-                        );
-                        setPage(1);
-                      }}
-                      variant={active ? 'filled' : 'outlined'}
-                      sx={
-                        active
-                          ? {
-                              bgcolor: 'primary.main',
-                              color: '#fff',
-                              fontWeight: 600,
-                            }
-                          : {}
-                      }
-                    />
-                  );
-                })}
-              </Box>
-            </Box>
-          ))}
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    minHeight: 44,
+                    px: 1.5,
+                    '& .MuiAccordionSummary-content': { my: 0.75 },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      width: '100%',
+                    }}
+                  >
+                    <Typography variant="body2" fontWeight={600}>
+                      {group.name}
+                    </Typography>
+                    {activeCount > 0 && (
+                      <Chip
+                        label={activeCount}
+                        size="small"
+                        sx={{
+                          height: 20,
+                          fontSize: '0.7rem',
+                          bgcolor: 'primary.main',
+                          color: '#fff',
+                        }}
+                      />
+                    )}
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: 1.5, pt: 0, pb: 1.5 }}>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {group.attributes.map((attr) => {
+                      const active = selectedAmenities.includes(attr.value);
+                      return (
+                        <Chip
+                          key={attr.value}
+                          label={attr.label}
+                          onClick={() => {
+                            setSelectedAmenities((prev) =>
+                              prev.includes(attr.value)
+                                ? prev.filter((v) => v !== attr.value)
+                                : [...prev, attr.value]
+                            );
+                            setPage(1);
+                          }}
+                          variant={active ? 'filled' : 'outlined'}
+                          sx={{
+                            height: 36,
+                            ...(active
+                              ? {
+                                  bgcolor: 'primary.main',
+                                  color: '#fff',
+                                  fontWeight: 600,
+                                }
+                              : {}),
+                          }}
+                        />
+                      );
+                    })}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
+            );
+          })}
         </>
       )}
 

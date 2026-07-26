@@ -19,6 +19,7 @@
  */
 
 import { fetchConversations } from '@/lib/chat/chat-api';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { disputesService } from '@/services/disputes.service';
 import { unlockedAdsService } from '@/services/users.service';
 import type {
@@ -135,8 +136,8 @@ export default function OpenDisputeDialog({
       onCreated?.(dispute.id);
       onClose();
     },
-    onError: (err: { response?: { data?: { message?: string } } }) => {
-      setError(err?.response?.data?.message ?? 'Une erreur est survenue.');
+    onError: (err: unknown) => {
+      setError(getSafeErrorMessage(err));
     },
   });
 

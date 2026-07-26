@@ -1,6 +1,7 @@
 'use client';
 
 import { COUNTRY_COOKIE } from '@/lib/currency';
+import { isUnsafeBackendMessage } from '@/lib/error-messages';
 import { getStripePromise, isStripeModeMismatch } from '@/lib/payment/stripe';
 import { readCheckoutSessionTotalAmount } from '@/lib/payment/stripe-checkout-total';
 import { brand } from '@/theme/tokens';
@@ -302,10 +303,11 @@ function CheckoutConfirmInner({
 
       onSuccess();
     } catch (err: unknown) {
+      const fallback = 'Une erreur est survenue lors du paiement. Réessayez.';
       const message =
-        err instanceof Error
+        err instanceof Error && !isUnsafeBackendMessage(err.message)
           ? err.message
-          : 'Une erreur est survenue lors du paiement. Réessayez.';
+          : fallback;
       setError(message);
     } finally {
       setSubmitting(false);
@@ -664,10 +666,11 @@ function StripeConfirmInner({
         "Le paiement n'a pas été finalisé. Vérifiez votre carte ou réessayez."
       );
     } catch (err: unknown) {
+      const fallback = 'Une erreur est survenue lors du paiement. Réessayez.';
       const message =
-        err instanceof Error
+        err instanceof Error && !isUnsafeBackendMessage(err.message)
           ? err.message
-          : 'Une erreur est survenue lors du paiement. Réessayez.';
+          : fallback;
       setError(message);
     } finally {
       setSubmitting(false);

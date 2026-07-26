@@ -52,6 +52,39 @@ export interface PaginatedMeta {
   per_page: number;
 }
 
+// ── Rent collection ledger ───────────────────────────────────
+// Manual ledger of actual rent received from tenants (cash / mobile
+// money / bank transfer / other). Distinct from the platform payments
+// table (`/payments`) which tracks Stripe + Kpay flows for
+// credits, subscriptions, unlocks, and boosts.
+
+export type RentPaymentMethod =
+  | 'cash'
+  | 'mobile_money'
+  | 'bank_transfer'
+  | 'other';
+
+export interface RentPayment {
+  id: string;
+  lease_contract_id: string;
+  period_month: string; // YYYY-MM-DD, first day of the rental month
+  amount: number; // XAF (integer)
+  payment_method: RentPaymentMethod;
+  received_at: string; // YYYY-MM-DD
+  notes: string | null;
+  recorded_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RentPaymentPayload {
+  period_month: string;
+  amount: number;
+  payment_method: RentPaymentMethod;
+  received_at: string;
+  notes?: string | null;
+}
+
 export const ownerFinancialsService = {
   async getExpenses(
     adId: string,
@@ -127,5 +160,48 @@ export const ownerFinancialsService = {
 
   async deleteDocument(documentId: string): Promise<void> {
     await api.delete(`/my/documents/${documentId}`);
+  },
+
+  // ── Rent payments ────────────────────────────────────────────
+
+  async getRentPayments(
+    leaseContractId: string,
+    params?: { page?: number },
+    request?: { signal?: AbortSignal }
+  ): Promise<{ data: RentPayment[]; meta: PaginatedMeta }> {
+    const { data } = await api.get(
+      `/my/lease-contracts/${leaseContractId}/rent-payments`,
+      {
+        params: params ?? {},
+        ...(request?.signal ? { signal: request.signal } : {}),
+      }
+    );
+    return data;
+  },
+
+  async createRentPayment(
+    leaseContractId: string,
+    payload: RentPaymentPayload
+  ): Promise<RentPayment> {
+    const { data } = await api.post<{ data: RentPayment }>(
+      `/my/lease-contracts/${leaseContractId}/rent-payments`,
+      payload
+    );
+    return data.data ?? data;
+  },
+
+  async updateRentPayment(
+    rentPaymentId: string,
+    payload: Partial<RentPaymentPayload>
+  ): Promise<RentPayment> {
+    const { data } = await api.put<{ data: RentPayment }>(
+      `/my/rent-payments/${rentPaymentId}`,
+      payload
+    );
+    return data.data ?? data;
+  },
+
+  async deleteRentPayment(rentPaymentId: string): Promise<void> {
+    await api.delete(`/my/rent-payments/${rentPaymentId}`);
   },
 };

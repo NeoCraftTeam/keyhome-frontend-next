@@ -35,7 +35,7 @@ export const creditsService = {
   },
 
   /**
-   * Initiate a Flutterwave checkout to purchase a point package.
+   * Initiate a hosted checkout to purchase a point package.
    * Returns the payment URL to redirect the user to.
    */
   async purchase(

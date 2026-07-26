@@ -10,7 +10,7 @@ type PageProps = {
 /**
  * Legacy hosted-checkout return URL (`/payment/callback`).
  *
- * GeniusPay / Flutterwave redirect here with `tx_ref`, `reference`, `status`, …
+ * Kpay redirects here with `tx_ref`, `reference`, `status`, …
  * Server-side redirect to the canonical `/payment/return` route so browsers
  * receive a normal HTML navigation (not an RSC flight payload) and the shared
  * polling UI handles verification.

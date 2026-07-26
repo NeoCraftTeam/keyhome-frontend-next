@@ -13,6 +13,7 @@ import { notFound } from 'next/navigation';
 import { brand, gradient } from '@/theme/tokens';
 import { BRAND_TAGLINE } from '@/lib/brand';
 import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+import { buildHreflangAlternates } from '@/i18n/routing';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -33,9 +34,9 @@ const PROPERTY_TYPES: Record<string, PropertyTypeData> = {
     plural: 'Appartements',
     apiParam: 'Appartement',
     Icon: ApartmentIcon,
-    description: "Appartements à louer et à vendre en Afrique de l'Ouest",
+    description: 'Appartements à louer et à vendre, partout dans le monde',
     longDescription:
-      "Trouvez l'appartement idéal parmi nos annonces vérifiées. Du studio compact aux grands appartements familiaux, KeyHome référence toutes les typologies dans les grandes métropoles d'Afrique.",
+      "Trouvez l'appartement idéal parmi nos annonces vérifiées. Du studio compact aux grands appartements familiaux, KeyHome référence toutes les typologies — dans les grandes métropoles comme dans les villes secondaires.",
     features: [
       'Studio',
       'F1 / F2 / F3',
@@ -49,9 +50,9 @@ const PROPERTY_TYPES: Record<string, PropertyTypeData> = {
     plural: 'Maisons',
     apiParam: 'Maison',
     Icon: HomeIcon,
-    description: "Maisons à louer et à vendre en Afrique de l'Ouest",
+    description: 'Maisons à louer et à vendre, partout dans le monde',
     longDescription:
-      "Découvrez des maisons individuelles, jumelées ou en bande dans les villes d'Afrique de l'Ouest. Chaque annonce est vérifiée par notre équipe pour garantir l'authenticité des photos et des prix.",
+      "Découvrez des maisons individuelles, jumelées ou en bande. Chaque annonce est vérifiée par notre équipe pour garantir l'authenticité des photos et des prix.",
     features: [
       'Maison individuelle',
       'Villa',
@@ -81,7 +82,7 @@ const PROPERTY_TYPES: Record<string, PropertyTypeData> = {
     plural: 'Terrains',
     apiParam: 'Terrain',
     Icon: LandscapeIcon,
-    description: "Terrains à vendre et à bâtir en Afrique de l'Ouest",
+    description: 'Terrains à vendre et à bâtir, partout dans le monde',
     longDescription:
       'Investissez dans un terrain viabilisé ou un lotissement. KeyHome liste les terrains disponibles avec titre foncier, pour construire votre projet immobilier en toute sécurité.',
     features: [
@@ -99,7 +100,7 @@ const PROPERTY_TYPES: Record<string, PropertyTypeData> = {
     Icon: BusinessIcon,
     description: 'Bureaux et espaces commerciaux à louer et à vendre',
     longDescription:
-      "Locaux professionnels, open spaces, salles de réunion et plateaux de bureaux — KeyHome accompagne les entreprises dans leur recherche de locaux adaptés en Afrique de l'Ouest.",
+      'Locaux professionnels, open spaces, salles de réunion et plateaux de bureaux — KeyHome accompagne les entreprises dans leur recherche de locaux adaptés.',
     features: [
       'Open space',
       'Salle de réunion',
@@ -115,7 +116,7 @@ const PROPERTY_TYPES: Record<string, PropertyTypeData> = {
     Icon: BedIcon,
     description: 'Studios meublés et non meublés à louer',
     longDescription:
-      'Étudiants, jeunes actifs, expatriés — trouvez un studio fonctionnel et abordable dans les grandes villes africaines. Meublés ou vides, nos studios sont vérifiés et disponibles rapidement.',
+      'Étudiants, jeunes actifs, expatriés — trouvez un studio fonctionnel et abordable. Meublés ou vides, nos studios sont vérifiés et disponibles rapidement.',
     features: [
       'Studio meublé',
       'Kichenette',
@@ -147,29 +148,26 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { type } = await params;
   const data = PROPERTY_TYPES[type.toLowerCase()];
-  if (!data) return { title: 'Bien immobilier — KeyHome' };
+  if (!data) notFound();
 
   const site = getSiteOrigin();
   const path = `/type-bien/${type.toLowerCase()}`;
 
   return {
-    title: `${data.plural} à louer et à vendre en Afrique — KeyHome`,
-    description: `${BRAND_TAGLINE}. ${data.description}. Annonces vérifiées avec contact direct propriétaire. Prix, photos et carte.`,
+    title: `${data.plural} à louer et à vendre`,
+    description: `${data.description} — annonces vérifiées, contact direct propriétaire, prix transparents, photos et carte. ${BRAND_TAGLINE}.`,
     alternates: {
       canonical: absoluteUrl(path),
-      languages: {
-        'fr-FR': absoluteUrl(path),
-        'x-default': absoluteUrl(path),
-      },
+      languages: buildHreflangAlternates(absoluteUrl(path)),
     },
     openGraph: {
-      title: `${data.plural} en Afrique | KeyHome`,
-      description: `${BRAND_TAGLINE}. ${data.description}. Annonces vérifiées.`,
+      title: `${data.plural} | KeyHome`,
+      description: `${data.description}. Annonces vérifiées. ${BRAND_TAGLINE}.`,
       url: absoluteUrl(path),
       siteName: 'KeyHome',
       images: [
         {
-          url: `${site}/opengraph-image`,
+          url: `${site}/og?title=${encodeURIComponent(data.plural)}&subtitle=${encodeURIComponent(data.description)}`,
           width: 1200,
           height: 630,
           alt: `${data.plural} — KeyHome`,
@@ -225,7 +223,7 @@ export default async function PropertyTypePage({
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: `${data.plural} en Afrique de l'Ouest — KeyHome`,
+    name: `${data.plural} — KeyHome`,
     description: `${BRAND_TAGLINE}. ${data.description}`,
     url: absoluteUrl(`/type-bien/${typeKey}`),
     numberOfItems: total,
@@ -318,7 +316,7 @@ export default async function PropertyTypePage({
             }}
           >
             <data.Icon style={{ fontSize: 36, color: brand.primary }} />
-            {data.plural} en Afrique de l&apos;Ouest
+            {data.plural} à louer et à vendre
           </h1>
           {total > 0 && (
             <p

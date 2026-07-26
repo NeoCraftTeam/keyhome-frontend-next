@@ -1,5 +1,6 @@
 import { markdownBlogToHtml } from '@/lib/markdown-blog';
 import { absoluteAssetUrl, absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+import { buildHreflangAlternates } from '@/i18n/routing';
 import { brand, gradient } from '@/theme/tokens';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -17,7 +18,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = BLOG_POSTS.find((p) => p.slug === slug);
-  if (!post) return { title: 'Article introuvable | KeyHome' };
+  if (!post) notFound();
 
   const site = getSiteOrigin();
   const path = `/blog/${slug}`;
@@ -27,10 +28,7 @@ export async function generateMetadata({
     description: post.excerpt,
     alternates: {
       canonical: absoluteUrl(path),
-      languages: {
-        'fr-FR': absoluteUrl(path),
-        'x-default': absoluteUrl(path),
-      },
+      languages: buildHreflangAlternates(absoluteUrl(path)),
     },
     openGraph: {
       type: 'article',
@@ -41,7 +39,7 @@ export async function generateMetadata({
       siteName: 'KeyHome',
       images: [
         {
-          url: `${site}/opengraph-image`,
+          url: `${site}/og?title=${encodeURIComponent(post.title)}&subtitle=${encodeURIComponent(post.excerpt.slice(0, 120))}`,
           width: 1200,
           height: 630,
           alt: post.title,

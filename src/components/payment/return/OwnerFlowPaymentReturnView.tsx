@@ -1,5 +1,6 @@
 'use client';
 
+import PendingPaymentMessage from '@/components/payment/return/PendingPaymentMessage';
 import AppLoader from '@/components/ui/feedback/AppLoader';
 import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import {
@@ -10,7 +11,7 @@ import {
   parsePaymentReturnParams,
 } from '@/lib/payment/payment-gateway-return';
 import { consumePaymentReturnPath } from '@/lib/payment/payment-return';
-import { paymentKeys } from '@/lib/query-keys';
+import { ownerKeys, paymentKeys, subscriptionKeys } from '@/lib/query-keys';
 import { brand, gradient } from '@/theme/tokens';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -56,7 +57,17 @@ export default function OwnerFlowPaymentReturnView({
 
   const onSuccess = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: paymentKeys.all });
-  }, [queryClient]);
+    // Refresh the business-domain caches the payment just mutated, so an
+    // in-SPA return (Stripe) never shows the previous plan / un-boosted ad.
+    if (flow === 'subscription') {
+      void queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+      void queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.current,
+      });
+    } else {
+      void queryClient.invalidateQueries({ queryKey: ownerKeys.ads.all });
+    }
+  }, [queryClient, flow]);
 
   const { state, retry } = usePaymentStatusPolling({
     txRef,
@@ -74,18 +85,24 @@ export default function OwnerFlowPaymentReturnView({
     if (isGatewayRedirectFailed(gwStatus)) {
       return 'failed' as const;
     }
-    if (isGatewayRedirectSuccess(gwStatus)) {
-      if (
-        state === 'verifying' ||
-        state === 'processing' ||
-        state === 'not_found' ||
-        state === 'failed'
-      ) {
-        return 'success' as const;
-      }
+    // No reference at all (gateway stripped the query, retyped URL) —
+    // polling never starts, so surface a terminal state instead of an
+    // endless "verifying" spinner.
+    if (!hasPaymentReturnReference(returnParams)) {
+      return 'not_found' as const;
+    }
+    // Polling still active (`verifying` / `processing`) flows through to the
+    // loading view. Only the TERMINAL "polling exhausted but redirect said
+    // success" cases (`failed` / `not_found`) become `pending` — never a
+    // false "success", since subscription/boost activation is webhook-gated.
+    if (
+      isGatewayRedirectSuccess(gwStatus) &&
+      (state === 'failed' || state === 'not_found')
+    ) {
+      return 'pending' as const;
     }
     return state;
-  }, [state, gwStatus]);
+  }, [state, gwStatus, returnParams]);
 
   const continuePath =
     flow === 'subscription' ? '/owner/subscriptions' : '/owner/ads';
@@ -127,6 +144,10 @@ export default function OwnerFlowPaymentReturnView({
         <AppLoader size={48} color={brand.primary} />
       </Box>
     );
+  }
+
+  if (effectiveState === 'pending') {
+    return <PendingPaymentMessage variant={flow} onRetry={retry} />;
   }
 
   return (
@@ -283,8 +304,8 @@ export default function OwnerFlowPaymentReturnView({
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               {effectiveState === 'cancelled'
-                ? 'Vous avez annulé le paiement. Aucun montant n\u2019a été débité.'
-                : 'Le paiement n\u2019a pas abouti. Aucun montant n\u2019a été débité.'}
+                ? 'Vous avez annulé le paiement. Si un montant a malgré tout été débité, il sera automatiquement pris en compte.'
+                : 'Le paiement n\u2019a pas abouti. Si un montant a malgré tout été débité, il sera automatiquement pris en compte.'}
             </Typography>
             <Button
               variant="contained"
@@ -324,15 +345,20 @@ export default function OwnerFlowPaymentReturnView({
               <HourglassIcon sx={{ fontSize: 44, color: brand.primary }} />
             </Box>
             <Typography variant="h5" fontWeight={700} gutterBottom>
-              Confirmation en cours…
+              {effectiveState === 'not_found'
+                ? 'Paiement introuvable'
+                : 'Confirmation en cours…'}
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Vérification automatique en cours — vous pouvez fermer cette page
-              sans perdre votre paiement.
+              {effectiveState === 'not_found'
+                ? 'Nous n’avons pas retrouvé la référence de ce paiement. Si vous avez validé un paiement, il sera pris en compte automatiquement — consultez votre historique de paiements.'
+                : 'Vérification automatique en cours — vous pouvez fermer cette page sans perdre votre paiement.'}
             </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-              <AppLoader size={40} color={brand.primary} />
-            </Box>
+            {effectiveState === 'processing' && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                <AppLoader size={40} color={brand.primary} />
+              </Box>
+            )}
             <Button variant="outlined" fullWidth onClick={retry} sx={{ mb: 1 }}>
               Vérifier maintenant
             </Button>

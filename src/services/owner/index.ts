@@ -13,6 +13,8 @@ export * from './owner-availability.service';
 export * from './owner-financials.service';
 export * from './owner-lease.service';
 export * from './owner-reviews.service';
+export * from './owner-sessions.service';
+export * from './owner-screening.service';
 export * from './owner-tenants.service';
 
 // ── Legacy ownerService shim ──────────────────────────────────────────────────
@@ -24,6 +26,8 @@ import { ownerAvailabilityService } from './owner-availability.service';
 import { ownerFinancialsService } from './owner-financials.service';
 import { ownerLeaseService } from './owner-lease.service';
 import { ownerReviewsService } from './owner-reviews.service';
+import { ownerSessionsService } from './owner-sessions.service';
+import { ownerScreeningService } from './owner-screening.service';
 import { ownerTenantsService } from './owner-tenants.service';
 
 export const ownerService = {
@@ -33,5 +37,7 @@ export const ownerService = {
   ...ownerFinancialsService,
   ...ownerLeaseService,
   ...ownerReviewsService,
+  ...ownerSessionsService,
+  ...ownerScreeningService,
   ...ownerTenantsService,
 };

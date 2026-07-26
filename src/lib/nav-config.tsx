@@ -12,7 +12,8 @@ import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 import PaymentIcon from '@mui/icons-material/Payment';
-import GroupsIcon from '@mui/icons-material/Groups';
+// NOTE: re-add `import GroupsIcon from '@mui/icons-material/Groups';` when the
+// 'Mon équipe' nav entry below is restored (frontend team UI shipped).
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import PersonIcon from '@mui/icons-material/Person';
 import RateReviewIcon from '@mui/icons-material/RateReview';
@@ -156,7 +157,10 @@ export const OWNER_NAV_ITEMS: NavItem[] = [
     icon: <WorkspacePremiumIcon />,
   },
   { label: 'Profil', href: '/owner/profile', icon: <PersonIcon /> },
-  { label: 'Mon équipe', href: '/owner/equipe', icon: <GroupsIcon /> },
+  // 'Mon équipe' (/owner/equipe) is hidden until the frontend is built — the page is
+  // currently a "Bientôt disponible" stub. The backend (TeamController + TeamInvitation)
+  // is ready, so restore this entry once the team-management UI ships.
+  // { label: 'Mon équipe', href: '/owner/equipe', icon: <GroupsIcon /> },
   { label: 'Sécurité', href: '/owner/security', icon: <SecurityIcon /> },
   { label: 'Paramètres', href: '/owner/parametres', icon: <SettingsIcon /> },
 ];

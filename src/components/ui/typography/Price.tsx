@@ -17,7 +17,7 @@ interface PriceProps extends Omit<ComponentProps<'span'>, 'children'> {
    *   marketing, listings, charges. Pair with `showOriginal` to keep FCFA
    *   as a small reference.
    * - `'xaf'` — keeps FCFA as primary and appends the local conversion as
-   *   a small subtitle. Use for **payment contexts** (Flutterwave bills
+   *   a small subtitle. Use for **payment contexts** (the gateway bills
    *   XAF only — receipts, history, payment modals must stay canonical).
    */
   primary?: 'local' | 'xaf';

@@ -6,7 +6,7 @@
  * Owns:
  *  - handleUnlock: calls paymentsService.initialize, updates credits cache,
  *    invalidates ad cache, shows snackbar on success
- *  - handlePurchasePackage: redirects to Flutterwave checkout for credit top-up
+ *  - handlePurchasePackage: redirects to hosted checkout for credit top-up
  *  - All loading / error state for the payment dialog
  */
 

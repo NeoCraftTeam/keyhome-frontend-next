@@ -1,6 +1,7 @@
 'use client';
 
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
@@ -99,11 +100,7 @@ export default function CompleteOAuthProfileDialog({
 
       onComplete(token, user);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Une erreur est survenue. Veuillez réessayer.');
-      }
+      setError(getSafeErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }

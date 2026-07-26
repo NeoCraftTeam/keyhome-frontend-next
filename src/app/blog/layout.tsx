@@ -1,18 +1,16 @@
 import type { Metadata } from 'next';
 import { BRAND_TAGLINE } from '@/lib/brand';
 import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+import { buildHreflangAlternates } from '@/i18n/routing';
 
 const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
-  title: 'Blog Immobilier Afrique — Guides, Conseils & Actualités',
-  description: `${BRAND_TAGLINE}. Guides pratiques, conseils et actualités sur l'immobilier en Afrique. Prix des loyers, arnaques à éviter, quartiers recommandés à Douala, Abidjan, Cotonou et plus.`,
+  title: 'Blog immobilier Afrique — Guides, conseils & actualités',
+  description: `Guides pratiques, conseils et actualités sur l'immobilier. Prix des loyers, arnaques à éviter, quartiers recommandés à Douala, Abidjan, Cotonou et plus. ${BRAND_TAGLINE}.`,
   alternates: {
     canonical: absoluteUrl('/blog'),
-    languages: {
-      'fr-FR': absoluteUrl('/blog'),
-      'x-default': absoluteUrl('/blog'),
-    },
+    languages: buildHreflangAlternates(absoluteUrl('/blog')),
   },
   openGraph: {
     title: 'Blog Immobilier — KeyHome',
@@ -21,7 +19,7 @@ export const metadata: Metadata = {
     siteName: 'KeyHome',
     images: [
       {
-        url: `${SITE}/opengraph-image`,
+        url: `${SITE}/og?title=${encodeURIComponent('Blog immobilier Afrique')}&subtitle=${encodeURIComponent('Guides, conseils & actualités')}`,
         width: 1200,
         height: 630,
         alt: 'Blog Immobilier — KeyHome',

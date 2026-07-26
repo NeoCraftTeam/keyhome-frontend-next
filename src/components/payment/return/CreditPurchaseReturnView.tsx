@@ -1,5 +1,6 @@
 'use client';
 
+import PendingPaymentMessage from '@/components/payment/return/PendingPaymentMessage';
 import VerifyingView from '@/components/payment/return/VerifyingView';
 import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import {
@@ -32,7 +33,7 @@ import type { ReactElement } from 'react';
 import { useCallback, useEffect, useMemo } from 'react';
 
 /**
- * Post-checkout UI for credit purchases (Flutterwave redirect + Stripe return URL).
+ * Post-checkout UI for credit purchases (hosted-checkout redirect + Stripe return URL).
  * Rendered on `/credits/callback` (legacy) and `/payment/return?flow=credit`.
  */
 export default function CreditPurchaseReturnView(): ReactElement {
@@ -71,13 +72,15 @@ export default function CreditPurchaseReturnView(): ReactElement {
     if (isGatewayRedirectCancelled(status)) return 'cancelled' as const;
     if (isGatewayRedirectFailed(status)) return 'failed' as const;
 
-    // When redirect says completed but the backend explicitly marks failed
-    // (webhook never arrived, retries exhausted) → treat as success so the
-    // user isn't left on a false "failed" screen after a real payment.
-    // verifying / processing / not_found are left as-is so the loading
-    // screen renders while the backend actually processes the credit.
-    if (isGatewayRedirectSuccess(status) && state === 'failed') {
-      return 'success' as const;
+    // When the redirect says completed but the backend hasn't confirmed
+    // (webhook delayed / retries exhausted), surface "confirmation en cours"
+    // — never a false "success" (credits aren't granted until the webhook
+    // lands). `verifying` / `processing` keep showing the loading screen.
+    if (
+      isGatewayRedirectSuccess(status) &&
+      (state === 'failed' || state === 'not_found')
+    ) {
+      return 'pending' as const;
     }
 
     return state;
@@ -91,6 +94,10 @@ export default function CreditPurchaseReturnView(): ReactElement {
 
   if (effectiveState === 'verifying') {
     return <VerifyingView variant="credit" />;
+  }
+
+  if (effectiveState === 'pending') {
+    return <PendingPaymentMessage variant="credit" onRetry={retry} />;
   }
 
   return (
@@ -288,8 +295,8 @@ export default function CreditPurchaseReturnView(): ReactElement {
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               {effectiveState === 'cancelled'
-                ? 'Vous avez annulé le paiement. Aucun montant n\u2019a été débité. Vous pouvez réessayer à tout moment.'
-                : "Le paiement n'a pas abouti. Aucun montant n'a été débité de votre compte."}
+                ? 'Vous avez annulé le paiement. Vous pouvez réessayer à tout moment. Si un montant a malgré tout été débité, il sera automatiquement pris en compte.'
+                : "Le paiement n'a pas abouti. Si un montant a malgré tout été débité, il sera automatiquement pris en compte."}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1.5, flexDirection: 'column' }}>
               <Button
@@ -362,24 +369,27 @@ export default function CreditPurchaseReturnView(): ReactElement {
                 : 'Votre paiement a bien été reçu. La confirmation bancaire peut prendre quelques instants supplémentaires.'}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Vérification automatique en cours — vous pouvez fermer cette page
-              sans perdre votre paiement.
+              {effectiveState === 'not_found'
+                ? 'Si vous avez validé un paiement, il sera pris en compte automatiquement. Touchez « Vérifier maintenant » pour relancer la vérification.'
+                : 'Vérification automatique en cours — vous pouvez fermer cette page sans perdre votre paiement.'}
             </Typography>
 
-            <Box sx={{ width: '100%', mb: 3 }}>
-              <LinearProgress
-                variant="indeterminate"
-                sx={{
-                  height: 4,
-                  borderRadius: 2,
-                  bgcolor: brand.primaryAlpha12,
-                  '& .MuiLinearProgress-bar': {
-                    bgcolor: brand.primary,
+            {effectiveState === 'processing' && (
+              <Box sx={{ width: '100%', mb: 3 }}>
+                <LinearProgress
+                  variant="indeterminate"
+                  sx={{
+                    height: 4,
                     borderRadius: 2,
-                  },
-                }}
-              />
-            </Box>
+                    bgcolor: brand.primaryAlpha12,
+                    '& .MuiLinearProgress-bar': {
+                      bgcolor: brand.primary,
+                      borderRadius: 2,
+                    },
+                  }}
+                />
+              </Box>
+            )}
 
             <Box
               sx={{ display: 'flex', gap: 1.5, flexDirection: 'column', mt: 1 }}

@@ -9,6 +9,7 @@ import NotificationsActive from '@mui/icons-material/NotificationsActive';
 import NotificationsNone from '@mui/icons-material/NotificationsNone';
 import type { SxProps, Theme } from '@mui/material';
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -26,6 +27,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 
 interface Props {
   prefill?: Partial<SearchAlertPayload>;
@@ -44,6 +46,7 @@ export default function SearchAlertButton({
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState(prefill.label ?? '');
   const [saved, setSaved] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
@@ -61,10 +64,16 @@ export default function SearchAlertButton({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['search-alerts'] });
       setSaved(true);
+      setErrorMessage(null);
       setTimeout(() => {
         setOpen(false);
         setSaved(false);
       }, 1500);
+    },
+    onError: (error: unknown) => {
+      // Surface the backend message verbatim (e.g. the 10-alert cap or a
+      // duplicate-criteria conflict) so the user knows why nothing happened.
+      setErrorMessage(getSafeErrorMessage(error));
     },
   });
 
@@ -75,7 +84,13 @@ export default function SearchAlertButton({
   });
 
   const handleSave = () => {
+    setErrorMessage(null);
     createMutation.mutate({ ...prefill, label: label || undefined });
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setErrorMessage(null);
   };
 
   if (!isAuthenticated) {
@@ -116,7 +131,7 @@ export default function SearchAlertButton({
       {trigger}
       <Dialog
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={handleClose}
         maxWidth="sm"
         fullWidth
         fullScreen={isMobile}
@@ -130,6 +145,15 @@ export default function SearchAlertButton({
           Alertes de recherche
         </DialogTitle>
         <DialogContent>
+          {errorMessage && !saved && (
+            <Alert
+              severity="error"
+              onClose={() => setErrorMessage(null)}
+              sx={{ mb: 2 }}
+            >
+              {errorMessage}
+            </Alert>
+          )}
           {saved ? (
             <Box textAlign="center" py={3}>
               <NotificationsActive color="success" sx={{ fontSize: 48 }} />
@@ -282,7 +306,7 @@ export default function SearchAlertButton({
         </DialogContent>
         {!saved && (
           <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button onClick={() => setOpen(false)}>Annuler</Button>
+            <Button onClick={handleClose}>Annuler</Button>
             <Button
               variant="contained"
               onClick={handleSave}

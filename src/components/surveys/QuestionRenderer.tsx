@@ -82,6 +82,7 @@ function QuestionRenderer({
               size="large"
               value={Number(value) || 0}
               onChange={(_, newValue) => onChange(newValue ?? 0)}
+              aria-label={`Note : ${Number(value) || 0} sur 5`}
               sx={{ color: 'warning.main' }}
             />
             {Number(value) > 0 && (

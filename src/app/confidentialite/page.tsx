@@ -173,7 +173,7 @@ export default function PrivacyPolicyPage() {
                     Informations de paiement :
                   </span>{' '}
                   traitées exclusivement par nos partenaires de paiement
-                  sécurisés (Flutterwave). Nous ne stockons jamais vos données
+                  sécurisés (Stripe, Kpay). Nous ne stockons jamais vos données
                   bancaires
                 </li>
                 <li>
@@ -349,8 +349,8 @@ export default function PrivacyPolicyPage() {
                 , <span className={styles.strong}>authentification</span>{' '}
                 (compte et connexion sociale),{' '}
                 <span className={styles.strong}>paiement</span> (ex.&nbsp;
-                Flutterwave), <span className={styles.strong}>messagerie</span>{' '}
-                et notifications (y compris canal push),{' '}
+                Stripe), <span className={styles.strong}>messagerie</span> et
+                notifications (y compris canal push),{' '}
                 <span className={styles.strong}>
                   stockage de pièces jointes
                 </span>

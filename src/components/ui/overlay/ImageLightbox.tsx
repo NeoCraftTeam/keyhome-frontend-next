@@ -195,7 +195,12 @@ export default function ImageLightbox({
                 setZoom((z) => Math.max(0.5, parseFloat((z - 0.25).toFixed(2))))
               }
               disabled={zoom <= 0.5}
-              sx={{ color: '#fff', opacity: zoom <= 0.5 ? 0.3 : 1 }}
+              sx={{
+                color: '#fff',
+                opacity: zoom <= 0.5 ? 0.3 : 1,
+                minWidth: 44,
+                minHeight: 44,
+              }}
             >
               <ZoomOut fontSize="small" />
             </IconButton>
@@ -218,7 +223,12 @@ export default function ImageLightbox({
                 setZoom((z) => Math.min(4, parseFloat((z + 0.25).toFixed(2))))
               }
               disabled={zoom >= 4}
-              sx={{ color: '#fff', opacity: zoom >= 4 ? 0.3 : 1 }}
+              sx={{
+                color: '#fff',
+                opacity: zoom >= 4 ? 0.3 : 1,
+                minWidth: 44,
+                minHeight: 44,
+              }}
             >
               <ZoomIn fontSize="small" />
             </IconButton>
@@ -226,7 +236,11 @@ export default function ImageLightbox({
               size="small"
               onClick={() => setZoom(1)}
               aria-label="Réinitialiser le zoom"
-              sx={{ color: 'rgba(255,255,255,0.5)' }}
+              sx={{
+                color: 'rgba(255,255,255,0.5)',
+                minWidth: 44,
+                minHeight: 44,
+              }}
             >
               <ZoomOutMap sx={{ fontSize: 16 }} />
             </IconButton>
@@ -370,8 +384,17 @@ export default function ImageLightbox({
             {images.map((img, idx) => (
               <Box
                 key={img.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`Voir l'image ${idx + 1}`}
                 data-active={idx === currentIndex}
                 onClick={() => navigate(idx)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(idx);
+                  }
+                }}
                 sx={{
                   width: { xs: 48, sm: 64 },
                   height: { xs: 36, sm: 48 },

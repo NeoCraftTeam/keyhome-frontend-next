@@ -122,7 +122,8 @@ export default function CTASection() {
             }}
           >
             Rejoignez des milliers d&apos;utilisateurs qui font confiance à
-            KeyHome pour leurs projets immobiliers à travers l&apos;Afrique.
+            KeyHome pour leurs projets immobiliers, où qu&apos;ils soient dans
+            le monde.
           </p>
 
           <div className="cta-buttons" style={{ marginBottom: 0 }}>

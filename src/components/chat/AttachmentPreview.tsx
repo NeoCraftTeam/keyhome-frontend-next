@@ -71,6 +71,7 @@ export function AttachmentPreview({
             alt={attachment.original_name}
             loading="lazy"
             decoding="async"
+            referrerPolicy="no-referrer"
             className="block rounded-xl transition-opacity group-hover:opacity-90"
             style={{
               maxWidth: '100%',
@@ -98,9 +99,11 @@ export function AttachmentPreview({
               className="relative max-w-[92vw] max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={attachment.signed_url}
                 alt={attachment.original_name}
+                referrerPolicy="no-referrer"
                 className="max-w-[92vw] max-h-[85vh] rounded-lg object-contain shadow-2xl"
               />
               <div className="absolute top-2 right-2 flex gap-2">

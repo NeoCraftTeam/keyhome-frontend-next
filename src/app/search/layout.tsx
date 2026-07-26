@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import SearchLayoutClient from './SearchLayoutClient';
 import { BRAND_TAGLINE } from '@/lib/brand';
 import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+import { buildHreflangAlternates } from '@/i18n/routing';
 
 const SITE = getSiteOrigin();
 
@@ -29,18 +30,15 @@ const ITEM_LINKS: Array<{ name: string; path: string }> = [
 
 export const metadata: Metadata = {
   title: 'Rechercher un logement — Carte interactive & filtres avancés',
-  description: `${BRAND_TAGLINE}. Trouvez votre maison, appartement, terrain ou villa en Afrique grâce à la recherche intelligente de KeyHome. Filtrez par ville (Douala, Abidjan, Cotonou, Lomé…), budget et superficie. Carte interactive pour explorer les quartiers. Annonces vérifiées uniquement.`,
+  description: `Trouvez maisons, appartements, terrains et villas grâce à la recherche intelligente KeyHome. Filtres par ville, budget et superficie. Carte interactive, annonces vérifiées uniquement. ${BRAND_TAGLINE}.`,
   robots: { index: true, follow: true },
   alternates: {
     canonical: absoluteUrl('/search'),
-    languages: {
-      'fr-FR': absoluteUrl('/search'),
-      'x-default': absoluteUrl('/search'),
-    },
+    languages: buildHreflangAlternates(absoluteUrl('/search')),
   },
   openGraph: {
     title: 'Recherche immobilière — KeyHome',
-    description: `${BRAND_TAGLINE}. Carte interactive + filtres par ville, budget et type de bien. Trouvez votre logement parmi des milliers d'annonces vérifiées en Afrique.`,
+    description: `Carte interactive + filtres par ville, budget et type de bien. Trouvez votre logement parmi des milliers d'annonces vérifiées. ${BRAND_TAGLINE}.`,
     url: absoluteUrl('/search'),
     siteName: 'KeyHome',
     images: [
@@ -66,8 +64,8 @@ export default function SearchLayout({
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: 'Annonces immobilières en Afrique — KeyHome',
-    description: `${BRAND_TAGLINE}. Recherchez des appartements, maisons, villas, terrains et bureaux à vendre ou à louer en Afrique de l'Ouest.`,
+    name: 'Annonces immobilières — KeyHome',
+    description: `Recherchez des appartements, maisons, villas, terrains et bureaux à vendre ou à louer. ${BRAND_TAGLINE}.`,
     url: absoluteUrl('/search'),
     numberOfItems: ITEM_LINKS.length,
     itemListElement: ITEM_LINKS.map((item, index) => ({

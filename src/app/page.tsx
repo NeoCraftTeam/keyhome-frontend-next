@@ -1,26 +1,30 @@
 import LandingPage from '@/components/landing/LandingPage';
 import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
 import { getSiteOrigin } from '@/lib/site-url';
+import { buildHreflangAlternates } from '@/i18n/routing';
 import type { Metadata } from 'next';
 
 const SITE = getSiteOrigin();
 
-const LANDING_DESCRIPTION = `${BRAND_TAGLINE}. KeyHome : des milliers d'annonces immobilières vérifiées — maisons, appartements, terrains et villas. Recherchez, comparez et contactez directement les propriétaires.`;
+const LANDING_DESCRIPTION = `Des milliers d'annonces immobilières vérifiées — maisons, appartements, terrains et villas, partout dans le monde. Recherchez, comparez et contactez directement les propriétaires. ${BRAND_TAGLINE}.`;
 
 export const metadata: Metadata = {
   title: BRAND_TITLE_WITH_TAGLINE,
   description: LANDING_DESCRIPTION,
   keywords: [
-    'immobilier Afrique',
+    'immobilier',
     'location maison',
     'achat appartement',
     'terrain à vendre',
+    'annonces immobilières',
+    'propriétaire direct',
     'Cameroun immobilier',
     'Douala',
     'Yaoundé',
     'Abidjan',
     'Cotonou',
     'Lomé',
+    'Dakar',
     'KeyHome',
   ],
   openGraph: {
@@ -41,11 +45,12 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: BRAND_TITLE_WITH_TAGLINE,
-    description: `${BRAND_TAGLINE}. Des milliers d'annonces vérifiées — accès coordonnées sécurisé.`,
+    description: `Des milliers d'annonces vérifiées — accès coordonnées sécurisé, partout dans le monde. ${BRAND_TAGLINE}.`,
     images: [`${SITE}/og`],
   },
   alternates: {
     canonical: `${SITE}/`,
+    languages: buildHreflangAlternates(`${SITE}/`),
   },
 };
 

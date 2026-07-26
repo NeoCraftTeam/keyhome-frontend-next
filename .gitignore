@@ -56,3 +56,4 @@ data.ms/*
 
 # Sentry Config File
 .sentryclirc
+.firecrawl/

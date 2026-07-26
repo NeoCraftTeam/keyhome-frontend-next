@@ -106,9 +106,9 @@ export default function LandingFooter() {
                 margin: '0 0 24px',
               }}
             >
-              {BRAND_TAGLINE}. La plateforme immobilière numérique de référence
-              en Afrique. Trouvez, louez ou achetez votre bien en toute
-              confiance.
+              {BRAND_TAGLINE}. La plateforme immobilière numérique qui connecte
+              propriétaires, locataires et agents partout dans le monde.
+              Trouvez, louez ou achetez votre bien en toute confiance.
             </p>
             {/* Social links */}
             <div style={{ display: 'flex', gap: 12 }}>

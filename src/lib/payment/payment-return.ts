@@ -14,7 +14,7 @@ function shouldSkipRemember(path: string): boolean {
 }
 
 /**
- * Call immediately before redirecting the user to Flutterwave checkout.
+ * Call immediately before redirecting the user to hosted checkout.
  * After payment, {@link consumePaymentReturnPath} restores this path.
  */
 export function rememberPaymentOriginPath(): void {

@@ -141,7 +141,9 @@ export default function ContactChatButton({
       await performOpen();
     } catch (firstErr) {
       // Console log so users can paste it in DevTools if support asks.
-      console.error('[ContactChatButton] First attempt failed:', firstErr);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[ContactChatButton] First attempt failed:', firstErr);
+      }
 
       // Retry once for transient infra / CSRF
       if (isRetryableAxiosError(firstErr)) {
@@ -151,7 +153,9 @@ export default function ContactChatButton({
           await performOpen();
           return; // success after retry
         } catch (retryErr) {
-          console.error('[ContactChatButton] Retry failed:', retryErr);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('[ContactChatButton] Retry failed:', retryErr);
+          }
 
           if (isAxiosError(retryErr) && retryErr.response?.status === 403) {
             setLoading(false);

@@ -4,7 +4,7 @@ import { Price } from '@/components/ui/typography/Price';
 import { Typography } from '@mui/material';
 
 interface PaymentAmountDisplayProps {
-  /** Amount in XAF (canonical Flutterwave currency). */
+  /** Amount in XAF (canonical gateway currency). */
   amount: number;
   /** Reserved for legacy callers — only XAF is supported in production. */
   currency?: string;
@@ -20,7 +20,7 @@ interface PaymentAmountDisplayProps {
  * payment modal hero. For visitors already in XAF/XOF the component
  * collapses to a single FCFA line — no redundant subtitle.
  *
- * Historical note: previously kept FCFA primary because Flutterwave bills
+ * Historical note: previously kept FCFA primary because the gateway bills
  * XAF only. Switched to local-primary for consistency with the in-flow
  * checkout hero and to better reflect what the cardholder is debited for
  * (Stripe charges in EUR/USD, displayed locally).

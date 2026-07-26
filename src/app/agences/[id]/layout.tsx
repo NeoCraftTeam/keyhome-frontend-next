@@ -25,8 +25,8 @@ export async function generateMetadata({
       const path = `/agences/${id}`;
 
       return {
-        title: `${name} — Agence immobilière sur KeyHome`,
-        description: `${BRAND_TAGLINE}. Découvrez les annonces de l'agence ${name} sur KeyHome.${total ? ` ${total} bien${total > 1 ? 's' : ''} disponible${total > 1 ? 's' : ''}.` : ''} Annonces vérifiées, contact direct.`,
+        title: `${name} — Agence immobilière`,
+        description: `Annonces de l'agence ${name}${total ? ` — ${total} bien${total > 1 ? 's' : ''} disponible${total > 1 ? 's' : ''}` : ''}. Biens vérifiés, contact direct. ${BRAND_TAGLINE}.`,
         alternates: { canonical: absoluteUrl(path) },
         openGraph: {
           title: `${name} — Agence immobilière | KeyHome`,
@@ -51,8 +51,8 @@ export async function generateMetadata({
   const path = `/agences/${id}`;
 
   return {
-    title: 'Profil agence — KeyHome',
-    description: `${BRAND_TAGLINE}. Découvrez les annonces de cette agence immobilière sur KeyHome. Biens vérifiés, contact direct propriétaire.`,
+    title: 'Profil agence',
+    description: `Annonces d'une agence immobilière vérifiée sur KeyHome — biens vérifiés, contact direct. ${BRAND_TAGLINE}.`,
     alternates: { canonical: absoluteUrl(path) },
   };
 }
@@ -88,7 +88,7 @@ export default async function AgencyLayout({
         image: agency.logo
           ? absoluteAssetUrl(agency.logo as string)
           : undefined,
-        description: `Agence immobilière vérifiée sur KeyHome. ${name} propose des annonces de qualité en Afrique.`,
+        description: `Agence immobilière vérifiée sur KeyHome. ${name} propose des annonces de qualité.`,
         parentOrganization: {
           '@type': 'Organization',
           '@id': `${site}/#organization`,

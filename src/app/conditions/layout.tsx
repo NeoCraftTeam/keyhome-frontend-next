@@ -5,8 +5,8 @@ import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
 const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
-  title: "Conditions Générales d'Utilisation — KeyHome",
-  description: `${BRAND_TAGLINE}. Consultez les conditions générales d'utilisation de KeyHome : règles de publication, système de crédits, Score de Confiance, propriété intellectuelle et responsabilités sur notre plateforme immobilière en Afrique.`,
+  title: "Conditions générales d'utilisation",
+  description: `CGU KeyHome : règles de publication, système de crédits, Score de Confiance, propriété intellectuelle et responsabilités sur la plateforme immobilière.`,
   robots: { index: true, follow: true },
   alternates: {
     canonical: absoluteUrl('/conditions'),

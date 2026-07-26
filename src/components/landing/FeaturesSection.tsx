@@ -155,7 +155,7 @@ export default function FeaturesSection() {
             }}
           >
             Une plateforme complète pensée pour les locataires, acheteurs et
-            bailleurs à travers l&apos;Afrique.
+            bailleurs, où qu&apos;ils soient.
           </p>
         </motion.div>
 

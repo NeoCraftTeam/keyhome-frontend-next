@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Alertes de recherche — KeyHome',
+  title: 'Alertes de recherche',
   description:
     "Gérez vos alertes de recherche immobilière. Recevez des notifications dès qu'une annonce correspond à vos critères.",
+  robots: { index: false, follow: false },
 };
 
 export default function SearchAlertsLayout({

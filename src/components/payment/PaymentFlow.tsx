@@ -19,7 +19,7 @@ import { useCurrency } from '@/providers/CurrencyProvider';
 import { paymentsService } from '@/services/payments.service';
 import { brand } from '@/theme/tokens';
 import {
-  type FlutterwaveInitiatePayload,
+  type PaymentInitiatePayload,
   PaymentMethod,
   type PaymentMethodInfo,
   PaymentType,
@@ -103,13 +103,13 @@ interface PaymentFlowProps {
   /**
    * Called when the server has accepted the payment and verification ran
    * (Stripe in-page flows). Use to refresh balance / UI. Not invoked for
-   * Flutterwave hosted checkout — the user leaves the app before confirmation.
+   * hosted checkout — the user leaves the app before confirmation.
    */
   onSuccess?: () => void;
   /**
    * Optional: shown on the in-modal success step (Stripe). When set, a primary
    * "Continuer" button appears so the user dismisses explicitly after reading
-   * the confirmation. Flutterwave never reaches this step (redirect). When
+   * the confirmation. Hosted checkout never reaches this step (redirect). When
    * omitted, the success screen has no CTA (parent may still close via dialog X).
    */
   onProceedAfterSuccess?: () => void;
@@ -136,7 +136,7 @@ interface PaymentFlowProps {
  * the parent (no nested Dialog). Handles :
  *  1. fetch the admin-gated catalogue (`GET /payments/methods`)
  *  2. let the user pick a method
- *  3. mobile money → ask phone number → POST initiate → redirect Flutterwave
+ *  3. mobile money → ask phone number → POST initiate → redirect to hosted checkout
  *  4. carte → POST initiate → mount Stripe `<Elements>` in-page → confirm
  *
  * Use `<PaymentModal>` when you want this flow popped over the current page,
@@ -340,9 +340,9 @@ export default function PaymentFlow({
       setStep('loading');
       setVerifyError(null);
 
-      const payload: FlutterwaveInitiatePayload = {
-        type: type as FlutterwaveInitiatePayload['type'],
-        payment_method: method as FlutterwaveInitiatePayload['payment_method'],
+      const payload: PaymentInitiatePayload = {
+        type: type as PaymentInitiatePayload['type'],
+        payment_method: method as PaymentInitiatePayload['payment_method'],
         ...(phoneNumber && { phone_number: `+237${phoneNumber}` }),
         ...(adId && { ad_id: adId }),
         ...(agencyId && { agency_id: agencyId }),
@@ -398,8 +398,8 @@ export default function PaymentFlow({
         return;
       }
 
-      // Flutterwave : `usePayment` navigates away synchronously — keep the
-      // loading step until the document unloads (no intermediate UI).
+      // Hosted checkout (Kpay) : `usePayment` navigates away synchronously
+      // — keep the loading step until the document unloads (no intermediate UI).
     },
     [
       type,

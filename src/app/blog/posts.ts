@@ -15,7 +15,7 @@ export interface BlogPost {
 
 export const BLOG_POSTS: BlogPost[] = [
   {
-    slug: 'eviter-arnaques-immobilieres-',
+    slug: 'eviter-arnaques-immobilieres',
     title: 'Comment éviter les arnaques immobilières au Cameroun : Guide 2026',
     excerpt:
       "Découvrez les 7 types d'arnaques immobilières les plus courantes au Cameroun et apprenez à reconnaître les fausses annonces. Checklist anti-arnaque incluse.",

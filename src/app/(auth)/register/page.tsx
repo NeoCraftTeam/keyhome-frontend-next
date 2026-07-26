@@ -717,71 +717,26 @@ export default function RegisterPage() {
 
                     {accountRole === 'agent' && (
                       <FadeIn direction="up" duration={0.3}>
-                        <Typography
-                          variant="body2"
-                          fontWeight={600}
-                          sx={{ mb: 1 }}
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                            p: 2,
+                            mb: 2,
+                            borderRadius: '8px',
+                            border: '1px solid',
+                            borderColor: 'primary.main',
+                            bgcolor: tokens.selectedBgAlpha,
+                          }}
                         >
-                          Précisez votre profil :
-                        </Typography>
-                        <ToggleButtonGroup
-                          value={agentType}
-                          exclusive
-                          onChange={(_, val) => val && setAgentType(val)}
-                          fullWidth
-                          sx={{ mb: 1 }}
-                        >
-                          <ToggleButton
-                            value="individual"
-                            sx={{
-                              py: 1.5,
-                              borderRadius: '8px !important',
-                              textTransform: 'none',
-                              transition:
-                                'background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease',
-                              '&.Mui-selected': {
-                                borderColor: 'primary.main',
-                                color: 'primary.main',
-                                bgcolor: tokens.selectedBgAlpha,
-                              },
-                            }}
-                          >
-                            <PersonOutline sx={{ mr: 1 }} />
-                            Indépendant
-                          </ToggleButton>
-                          <ToggleButton
-                            value="agency"
-                            disabled
-                            title="Bientôt disponible — inscription en tant qu'agence"
-                            aria-label="Agence — bientôt disponible"
-                            sx={{
-                              py: 1.5,
-                              borderRadius: '8px !important',
-                              textTransform: 'none',
-                              ml: '8px !important',
-                              cursor: 'not-allowed',
-                              borderStyle: 'dashed',
-                              opacity: 0.7,
-                              '&.Mui-disabled': {
-                                opacity: 0.7,
-                                borderColor: 'divider',
-                                color: 'text.disabled',
-                              },
-                            }}
-                          >
-                            <BusinessIcon sx={{ mr: 1 }} />
-                            Agence
-                          </ToggleButton>
-                        </ToggleButtonGroup>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ display: 'block', mb: 2, fontStyle: 'italic' }}
-                        >
-                          L&apos;inscription en tant qu&apos;agence sera bientôt
-                          disponible — pour l&apos;instant, choisissez «
-                          Indépendant ».
-                        </Typography>
+                          <PersonOutline
+                            sx={{ color: 'primary.main', fontSize: 22 }}
+                          />
+                          <Typography variant="body2" fontWeight={600}>
+                            Inscription en tant qu&apos;indépendant
+                          </Typography>
+                        </Box>
                       </FadeIn>
                     )}
 

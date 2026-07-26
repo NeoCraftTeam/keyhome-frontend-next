@@ -11,7 +11,7 @@ import {
 } from '@/lib/payment/payment-gateway-return';
 
 describe('payment-gateway-return', () => {
-  it('parses geniuspay redirect query params', () => {
+  it('parses kpay redirect query params', () => {
     const params = new URLSearchParams(
       'reference=SANDBOX_V1A7ZXW9QSR8HHP6&status=completed'
     );
@@ -50,7 +50,7 @@ describe('payment-gateway-return', () => {
     ).toBe(false);
   });
 
-  it('resolves optimistic success after retries when URL is completed', () => {
+  it('resolves to pending after retries when redirect is completed but verify never confirmed', () => {
     expect(
       resolvePaymentVerifyUiState(
         { status: 'failed', is_paid: false },
@@ -58,13 +58,16 @@ describe('payment-gateway-return', () => {
         { retriesExhausted: false }
       )
     ).toBe('retry');
+    // Webhook-delayed / verify-never-confirmed → pending, NOT a false success
+    // (credits/access aren't granted until the webhook lands).
     expect(
       resolvePaymentVerifyUiState(
         { status: 'failed', is_paid: false },
         'completed',
         { retriesExhausted: true }
       )
-    ).toBe('success');
+    ).toBe('pending');
+    // Real verified success stays as success.
     expect(
       resolvePaymentVerifyUiState(
         { status: 'success', is_paid: true },

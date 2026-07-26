@@ -2,8 +2,8 @@
 
 import { paymentsService } from '@/services/payments.service';
 import type {
-  FlutterwaveInitiatePayload,
-  FlutterwaveInitiateResponse,
+  PaymentInitiatePayload,
+  PaymentInitiateResponse,
   PaymentInitiateStatus,
 } from '@/types';
 import { useCallback, useState } from 'react';
@@ -11,7 +11,7 @@ import { useCallback, useState } from 'react';
 interface UsePaymentState {
   isLoading: boolean;
   error: string | null;
-  response: FlutterwaveInitiateResponse | null;
+  response: PaymentInitiateResponse | null;
   /**
    * Stripe PaymentIntent client secret. Populated only when the backend
    * routed the payment to `gateway: 'stripe'`. Consumed by
@@ -46,8 +46,8 @@ interface UsePaymentReturn extends UsePaymentState {
    * exposed via `state.error`.
    */
   initiatePayment: (
-    payload: FlutterwaveInitiatePayload
-  ) => Promise<FlutterwaveInitiateResponse | null>;
+    payload: PaymentInitiatePayload
+  ) => Promise<PaymentInitiateResponse | null>;
   resetPayment: () => void;
 }
 
@@ -55,7 +55,7 @@ interface UsePaymentReturn extends UsePaymentState {
  * Hook for initiating a payment.
  *
  * Behaviour by gateway :
- *  - `geniuspay` / `flutterwave` → automatic redirect to the hosted checkout.
+ *  - `kpay` (and other hosted checkouts) → automatic redirect to the hosted checkout.
  *  - `stripe` → no redirect; exposes `stripeClientSecret` so the caller can
  *    mount `<Elements>` + `<PaymentElement>` and confirm in-page.
  */
@@ -71,8 +71,8 @@ export function usePayment(): UsePaymentReturn {
 
   const initiatePayment = useCallback(
     async (
-      payload: FlutterwaveInitiatePayload
-    ): Promise<FlutterwaveInitiateResponse | null> => {
+      payload: PaymentInitiatePayload
+    ): Promise<PaymentInitiateResponse | null> => {
       setState({
         isLoading: true,
         error: null,
@@ -108,7 +108,7 @@ export function usePayment(): UsePaymentReturn {
           return result;
         }
 
-        // GeniusPay / legacy Flutterwave : redirect to hosted checkout immediately.
+        // Kpay hosted checkout : redirect immediately.
         // Avoid setting React state first — that paints a one-frame KeyHome
         // "redirection…" step before the gateway UI.
         if (typeof window !== 'undefined') {

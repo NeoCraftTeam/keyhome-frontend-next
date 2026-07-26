@@ -1,5 +1,5 @@
 /**
- * Query parameters appended by hosted checkout gateways (GeniusPay, legacy Flutterwave).
+ * Query parameters appended by hosted checkout gateways (Kpay).
  */
 
 export type PaymentReturnParams = {
@@ -14,6 +14,7 @@ export function parsePaymentReturnParams(
   const txRef = searchParams.get('tx_ref');
   const gatewayReference =
     searchParams.get('reference') ??
+    searchParams.get('paymentId') ??
     searchParams.get('trx_ref') ??
     searchParams.get('transaction_id');
 
@@ -33,7 +34,7 @@ export function hasPaymentReturnReference(
   return params.txRef !== null || params.gatewayReference !== null;
 }
 
-/** GeniusPay uses `completed`; Flutterwave legacy uses `successful`. */
+/** Kpay may use `completed`; accept other common success synonyms too. */
 export function isGatewayRedirectSuccess(status: string | null): boolean {
   if (!status) {
     return false;
@@ -83,12 +84,16 @@ export function shouldDeferVerifyFailure(
 /**
  * Maps verify API output + redirect query to a UI terminal state.
  * Returns `retry` when polling should continue (redirect says paid, API disagrees).
+ * Returns `pending` when the redirect reports success but verify never confirms
+ * after retries are exhausted — the customer was probably charged but the
+ * webhook hasn't landed yet; show "confirmation en cours" rather than a
+ * misleading "success" (credits/access aren't actually granted yet).
  */
 export function resolvePaymentVerifyUiState(
   verify: PaymentVerifySnapshot | null | undefined,
   redirectStatus: string | null,
   options: { retriesExhausted?: boolean } = {}
-): 'success' | 'failed' | 'cancelled' | 'retry' {
+): 'success' | 'pending' | 'failed' | 'cancelled' | 'retry' {
   const exhausted = options.retriesExhausted === true;
 
   if (isGatewayRedirectCancelled(redirectStatus)) {
@@ -108,7 +113,7 @@ export function resolvePaymentVerifyUiState(
   }
 
   if (shouldDeferVerifyFailure(verify, redirectStatus)) {
-    return exhausted ? 'success' : 'retry';
+    return exhausted ? 'pending' : 'retry';
   }
 
   if (
@@ -124,7 +129,7 @@ export function resolvePaymentVerifyUiState(
   }
 
   if (isGatewayRedirectSuccess(redirectStatus)) {
-    return exhausted ? 'success' : 'retry';
+    return exhausted ? 'pending' : 'retry';
   }
 
   return exhausted ? 'failed' : 'retry';
@@ -215,8 +220,8 @@ export function inferPaymentReturnFlow(
 }
 
 /**
- * Canonical redirect target for legacy hosted-checkout callbacks
- * (`GENIUSPAY_REDIRECT_URL` / `FLW_REDIRECT_URL` → `/payment/callback`).
+ * Canonical redirect target for hosted-checkout callbacks
+ * (`KPAY_REDIRECT_URL` → `/payment/callback`).
  */
 export function buildPaymentReturnRedirectUrl(
   input: URLSearchParams | SearchParamRecord

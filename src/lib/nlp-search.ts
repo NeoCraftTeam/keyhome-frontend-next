@@ -1,11 +1,17 @@
-import type { ParsedSearchParams } from '@/components/search/ImageSearchButton';
+import type { ParsedSearchParams } from '@/types/nlp-search';
+
+export type { ParsedSearchParams };
 
 /**
- * Convert an NLP parse result (from POST /search/parse or image search) into
+ * Convert an NLP parse result (from POST /ads/search/parse) into
  * URLSearchParams ready to append to /search.
  *
- * Single source of truth — used by HeroSection, HeroSearch, and NaturalSearchBar
- * so all three surfaces produce identical URLs.
+ * Single source of truth — used by HeroSection (landing) and HeroSearch (home)
+ * so both surfaces produce identical URLs.
+ *
+ * When `nlp=1` is present, the /search page signals AdSearchController to keep
+ * the natural-language `q` term as the semantic seed for the Cohere embedder
+ * (instead of treating it as a literal keyword search).
  */
 export function buildNlpParams(parsed: ParsedSearchParams): URLSearchParams {
   const params = new URLSearchParams();
@@ -22,5 +28,6 @@ export function buildNlpParams(parsed: ParsedSearchParams): URLSearchParams {
     params.set('transaction_type', parsed.transaction_type);
   if (parsed.has_parking) params.set('parking', '1');
   if (parsed.furnished) params.set('furnished', '1');
+  params.set('nlp', '1');
   return params;
 }

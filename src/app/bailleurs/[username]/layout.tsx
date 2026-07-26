@@ -33,8 +33,8 @@ export async function generateMetadata({
       const path = `/bailleurs/${username}`;
 
       return {
-        title: `${displayName} — Propriétaire immobilier | KeyHome`,
-        description: `${BRAND_TAGLINE}. Découvrez les ${total ? `${total} annonce${total > 1 ? 's' : ''} de ` : 'annonces de '}${displayName}${city} sur KeyHome. Biens vérifiés, contact direct.`,
+        title: `${displayName} — Propriétaire immobilier`,
+        description: `${total ? `${total} annonce${total > 1 ? 's' : ''} de ` : 'Annonces de '}${displayName}${city} — biens vérifiés, contact direct propriétaire. ${BRAND_TAGLINE}.`,
         alternates: { canonical: absoluteUrl(path) },
         openGraph: {
           title: `${displayName} — Propriétaire | KeyHome`,
@@ -54,8 +54,8 @@ export async function generateMetadata({
   const path = `/bailleurs/${username}`;
 
   return {
-    title: 'Profil propriétaire — KeyHome',
-    description: `${BRAND_TAGLINE}. Découvrez les annonces de ce propriétaire sur KeyHome. Biens immobiliers vérifiés, contact direct.`,
+    title: 'Profil propriétaire',
+    description: `Annonces immobilières d'un propriétaire vérifié sur KeyHome — biens vérifiés, contact direct. ${BRAND_TAGLINE}.`,
     alternates: { canonical: absoluteUrl(path) },
   };
 }

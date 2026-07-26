@@ -200,7 +200,7 @@ export default function PurchaseCreditsModal({
   // Step 3a : payment verified on the server — refresh balance immediately.
   // Closing the dialog is deferred to explicit "Continuer" on the success
   // step (Stripe in-modal). No timer: avoids perceived "flash" close and
-  // races with manual dismiss. Flutterwave leaves the page; return flow uses
+  // races with manual dismiss. Hosted checkout leaves the page; return flow uses
   // the callback route, not this handler.
   const handlePaymentSuccess = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
@@ -458,7 +458,7 @@ export default function PurchaseCreditsModal({
                   >
                     {pendingPkg.points_awarded.toLocaleString('fr-FR')}{' '}
                     {pendingPkg.points_awarded > 1 ? 'crédits' : 'crédit'}{' '}
-                    séront ajoutés à votre compte après le paiement
+                    seront ajoutés à votre compte après le paiement
                   </Typography>
                 </Box>
               </Box>

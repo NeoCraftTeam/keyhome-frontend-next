@@ -108,6 +108,13 @@ export const loginHistoryKeys = {
   list: (page: number) => ['login-history', page] as const,
 } as const;
 
+// ── Active Sessions ───────────────────────────────────────────────────────────
+
+export const sessionsKeys = {
+  all: ['active-sessions'] as const,
+  list: () => ['active-sessions', 'list'] as const,
+} as const;
+
 // ── Team ─────────────────────────────────────────────────────────────────────
 
 export const teamKeys = {

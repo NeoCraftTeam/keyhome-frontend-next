@@ -106,9 +106,8 @@ export const authService = {
   },
 
   /**
-   * Backend returns `otp_required` for new Clerk identities only. If a Laravel user
-   * already exists for the same email (or clerk_id), the API returns `access_token`
-   * immediately with no OTP (see ClerkAuthController::clerkExchange).
+   * OAuth via Clerk provisions the Laravel user immediately (email verified by the provider).
+   * OTP is only used for email/password registration, not for Clerk SSO exchange.
    */
   async clerkExchange(
     bearerToken?: string | null,

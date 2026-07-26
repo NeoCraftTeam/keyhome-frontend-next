@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { COMPARISONS } from '../comparisons';
 import { brand, gradient } from '@/theme/tokens';
 import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+import { buildHreflangAlternates } from '@/i18n/routing';
 
 export function generateStaticParams() {
   return Object.keys(COMPARISONS).map((slug) => ({ slug }));
@@ -17,7 +18,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const data = COMPARISONS[slug];
-  if (!data) return { title: 'Comparaison immobilière — KeyHome' };
+  if (!data) notFound();
 
   const site = getSiteOrigin();
   const path = `/comparaison/${slug}`;
@@ -27,10 +28,7 @@ export async function generateMetadata({
     description: data.metaDescription,
     alternates: {
       canonical: absoluteUrl(path),
-      languages: {
-        'fr-FR': absoluteUrl(path),
-        'x-default': absoluteUrl(path),
-      },
+      languages: buildHreflangAlternates(absoluteUrl(path)),
     },
     openGraph: {
       title: data.metaTitle,
@@ -39,7 +37,7 @@ export async function generateMetadata({
       siteName: 'KeyHome',
       images: [
         {
-          url: `${site}/opengraph-image`,
+          url: `${site}/og?title=${encodeURIComponent(data.title)}&subtitle=${encodeURIComponent(`${data.labelA} vs ${data.labelB} — comparatif`)}`,
           width: 1200,
           height: 630,
           alt: data.metaTitle,

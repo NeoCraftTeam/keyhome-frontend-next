@@ -1,6 +1,7 @@
 'use client';
 
 import { adsService } from '@/services/ads.service';
+import { dedupeById } from '@/lib/dedupe-by-id';
 import { useAuth } from '@/providers/AuthProvider';
 import { Ad } from '@/types';
 import { useQuery } from '@tanstack/react-query';
@@ -49,10 +50,10 @@ export function useRecentlyViewed() {
 
   // Merge: backend items first, then local-only items (deduped)
   const items = (() => {
-    if (!backendItems?.length) return localItems;
+    if (!backendItems?.length) return dedupeById(localItems);
     const backendIds = new Set(backendItems.map((a) => String(a.id)));
     const localOnly = localItems.filter((a) => !backendIds.has(String(a.id)));
-    return [...backendItems, ...localOnly].slice(0, MAX_ITEMS);
+    return dedupeById([...backendItems, ...localOnly]).slice(0, MAX_ITEMS);
   })();
 
   useEffect(() => {

@@ -494,9 +494,10 @@ export default function PanoramaViewer({
       containerRef.current.addEventListener('pointerup', onPointerUp, {
         signal: ac.signal,
       });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erreur inconnue';
-      setError(`Impossible de charger le panorama: ${msg}`);
+    } catch (_err) {
+      setError(
+        'Impossible de charger le panorama. Vérifiez le fichier et réessayez.'
+      );
       setLoading(false);
     }
   }, [

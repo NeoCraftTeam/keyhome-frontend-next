@@ -2,8 +2,9 @@ import { KeyHomeChatBox } from '@/components/chat/KeyHomeChatBox';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Messages — KeyHome',
+  title: 'Messages',
   description: 'Vos conversations avec les propriétaires.',
+  robots: { index: false, follow: false },
 };
 
 /**

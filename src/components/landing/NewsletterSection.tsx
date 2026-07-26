@@ -1,5 +1,6 @@
 'use client';
 
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { brand, gradient, semantic } from '@/theme/tokens';
 import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
 import EmailOutlined from '@mui/icons-material/EmailOutlined';
@@ -54,7 +55,7 @@ export default function NewsletterSection() {
       setIsSuccess(true);
       setEmail('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue.');
+      setError(getSafeErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

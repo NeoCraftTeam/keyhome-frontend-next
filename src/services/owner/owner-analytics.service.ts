@@ -29,6 +29,18 @@ export interface OwnerAnalyticsOverview {
   }>;
 }
 
+export interface OwnerDashboardStats {
+  active_ads_count: number;
+  active_leases_count: number;
+  occupancy_rate: number;
+  monthly_rent_total_xaf: number;
+  pending_viewings_count: number;
+  confirmed_viewings_count: number;
+  active_boosts_count: number;
+  unread_conversations_count: number;
+  expenses_total_xaf_30d: number;
+}
+
 export const ownerAnalyticsService = {
   async getAnalytics(
     period: '7d' | '30d' | '90d' = '30d',
@@ -42,6 +54,15 @@ export const ownerAnalyticsService = {
       }
     );
     return data.data ?? data;
+  },
+
+  async getDashboardStats(opts?: {
+    signal?: AbortSignal;
+  }): Promise<OwnerDashboardStats> {
+    const res = await api.get<{ data: OwnerDashboardStats }>('/my/stats', {
+      ...(opts?.signal ? { signal: opts.signal } : {}),
+    });
+    return res.data.data as OwnerDashboardStats;
   },
 
   async getBoostPlans(request?: { signal?: AbortSignal }) {

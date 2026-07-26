@@ -186,10 +186,12 @@ export default function StickyPropertyBar({
                   component={motion.button}
                   whileTap={shouldReduce ? undefined : { scale: 0.96 }}
                   onClick={onBooking}
+                  aria-label="Proposer une visite"
                   startIcon={<CalendarMonthIcon sx={{ fontSize: 16 }} />}
                   sx={{
                     flex: onMessage ? '0 0 auto' : 1,
                     minWidth: onMessage ? 110 : 'auto',
+                    minHeight: 44,
                     borderRadius: '10px',
                     py: 1.1,
                     fontWeight: 700,
@@ -216,6 +218,7 @@ export default function StickyPropertyBar({
                   startIcon={<ChatBubbleOutlineIcon sx={{ fontSize: 16 }} />}
                   sx={{
                     flex: 1,
+                    minHeight: 44,
                     borderRadius: '10px',
                     py: 1.1,
                     fontWeight: 700,
@@ -242,6 +245,9 @@ export default function StickyPropertyBar({
                   rel={whatsappUrl ? 'noopener noreferrer' : undefined}
                   component={motion.a}
                   whileTap={shouldReduce ? undefined : { scale: 0.96 }}
+                  aria-label={
+                    whatsappUrl ? 'Contacter par WhatsApp' : phoneLabel
+                  }
                   startIcon={
                     whatsappUrl ? (
                       <WhatsApp sx={{ fontSize: 16 }} />
@@ -251,6 +257,7 @@ export default function StickyPropertyBar({
                   }
                   sx={{
                     flex: 1,
+                    minHeight: 44,
                     borderRadius: '10px',
                     py: 1.1,
                     fontWeight: 700,
@@ -278,9 +285,11 @@ export default function StickyPropertyBar({
                     rel="noopener noreferrer"
                     component={motion.a}
                     whileTap={shouldReduce ? undefined : { scale: 0.96 }}
+                    aria-label="Contacter par WhatsApp"
                     startIcon={<WhatsApp sx={{ fontSize: 15 }} />}
                     sx={{
                       flex: 1,
+                      minHeight: 44,
                       borderRadius: '8px',
                       py: 0.6,
                       fontWeight: 600,
@@ -301,9 +310,11 @@ export default function StickyPropertyBar({
                     href={phoneUrl}
                     component={motion.a}
                     whileTap={shouldReduce ? undefined : { scale: 0.96 }}
+                    aria-label={phoneLabel}
                     startIcon={<PhoneIcon sx={{ fontSize: 15 }} />}
                     sx={{
                       flex: 1,
+                      minHeight: 44,
                       borderRadius: '8px',
                       py: 0.6,
                       fontWeight: 600,

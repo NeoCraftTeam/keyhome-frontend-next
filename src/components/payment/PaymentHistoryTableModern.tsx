@@ -6,6 +6,7 @@ import {
   formatPaymentHistoryDate,
   paymentHistoryMethodPrimary,
   paymentHistoryMethodSecondary,
+  paymentHistoryStatusLabel,
 } from '@/lib/payment/payment-history-display';
 import { paymentKeys } from '@/lib/query-keys';
 import { paymentsService } from '@/services/payments.service';
@@ -137,7 +138,10 @@ const ModernMobilePaymentCard = memo(function ModernMobilePaymentCard({
               gap: 0.5,
             }}
           >
-            <PaymentStatusBadge status={item.status} />
+            <PaymentStatusBadge
+              status={item.status}
+              label={paymentHistoryStatusLabel(item)}
+            />
             <Tooltip title="Reçu PDF">
               <IconButton
                 size="small"
@@ -277,17 +281,25 @@ const ModernDesktopRow = memo(function ModernDesktopRow({
         />
       </TableCell>
       <TableCell sx={{ maxWidth: 200 }}>
-        <Typography variant="body2" fontWeight={600}>
+        <Typography variant="body2" fontWeight={700} lineHeight={1.25}>
           {primary}
         </Typography>
         {secondary ? (
-          <Typography variant="caption" color="text.secondary" display="block">
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            display="block"
+            sx={{ mt: 0.25, lineHeight: 1.3 }}
+          >
             {secondary}
           </Typography>
         ) : null}
       </TableCell>
       <TableCell>
-        <PaymentStatusBadge status={item.status} />
+        <PaymentStatusBadge
+          status={item.status}
+          label={paymentHistoryStatusLabel(item)}
+        />
       </TableCell>
       <TableCell align="center" sx={{ width: 48 }}>
         <Tooltip title="Reçu PDF">

@@ -127,6 +127,8 @@ function buildCsp(nonce: string): string {
     `frame-src ${CSP_FRAME_HOSTS_STATIC}${clerkExplicitOriginsCsp ? ` ${clerkExplicitOriginsCsp}` : ''}`,
     "object-src 'self' blob:",
     "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
   ];
 
   return directives.join('; ');
@@ -336,6 +338,13 @@ export default clerkMiddleware(async (auth, req) => {
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set('Content-Security-Policy', csp);
+  // Trusted Types rollout (report-only): surfaces DOM-XSS sink usage without
+  // breaking third-party libs (Mapbox/MUI/Clerk) that assign strings to
+  // innerHTML internally. Promote into the enforced CSP once reports are clean.
+  response.headers.set(
+    'Content-Security-Policy-Report-Only',
+    "require-trusted-types-for 'script'"
+  );
 
   return applyGeoCookies(req, withRewrite(response));
 });

@@ -65,8 +65,8 @@ export function buildConnectSrcParts(ctx: CspConnectBuildContext): string[] {
     'wss://*.googleapis.com',
     'https://www.gstatic.com',
     // Payments
-    'https://api.flutterwave.com',
-    'https://pay.genius.ci',
+    'https://admin.kpay.site',
+    'https://kpay.site',
     // Stripe — connect-src for the Stripe SDK + Elements analytics.
     // Iframe sources (`js.stripe.com`, `hooks.stripe.com`) are listed in
     // CSP_FRAME_HOSTS_STATIC below.
@@ -154,4 +154,4 @@ export const CSP_IMG_HOSTS_STATIC =
 export const CSP_MEDIA_HOSTS_STATIC = CSP_IMG_HOSTS_STATIC;
 
 export const CSP_FRAME_HOSTS_STATIC =
-  "'self' blob: https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://checkout.flutterwave.com https://pay.genius.ci https://js.stripe.com https://hooks.stripe.com https://vercel.live https://accounts.google.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev";
+  "'self' blob: https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://admin.kpay.site https://kpay.site https://js.stripe.com https://hooks.stripe.com https://vercel.live https://accounts.google.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.keyhome.app https://*.keyhome.cm https://*.keyhome.neocraft.dev https://*.neocraft.dev";

@@ -61,6 +61,7 @@ export default function SignPage() {
 
   const [signDialogOpen, setSignDialogOpen] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedConsent, setAcceptedConsent] = useState(false);
   const [signOtp, setSignOtp] = useState('');
   const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
   const [declineOtp, setDeclineOtp] = useState('');
@@ -323,6 +324,15 @@ export default function SignPage() {
             }
             label="J'ai lu et j'accepte les termes du contrat"
           />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={acceptedConsent}
+                onChange={(e) => setAcceptedConsent(e.target.checked)}
+              />
+            }
+            label="J'accepte de signer ce document par voie électronique"
+          />
           {requireOtp && (
             <>
               <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 2 }}>
@@ -388,6 +398,7 @@ export default function SignPage() {
             variant="contained"
             disabled={
               !acceptedTerms ||
+              !acceptedConsent ||
               signMutation.isPending ||
               (requireOtp && signOtp.length !== 6)
             }

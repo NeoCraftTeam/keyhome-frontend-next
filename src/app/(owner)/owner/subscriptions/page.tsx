@@ -174,7 +174,13 @@ function CurrentSubscriptionCard({
               <Chip
                 size="small"
                 color={current.is_active ? 'success' : 'warning'}
-                label={current.is_active ? 'Actif' : current.status}
+                label={
+                  current.is_active
+                    ? current.cancelled_at
+                      ? 'Actif (résilié)'
+                      : 'Actif'
+                    : current.status
+                }
                 sx={{ fontWeight: 700 }}
               />
               <Chip
@@ -280,6 +286,12 @@ interface PlanCardProps {
   period: BillingPeriod;
   isCurrent: boolean;
   isProcessing: boolean;
+  /**
+   * `true` while ANY plan checkout is in flight — disables every card so two
+   * concurrent `subscribe` calls (two pending payments + racing redirects)
+   * can't be started from different cards on a slow network.
+   */
+  checkoutBusy: boolean;
   onSelect: () => void;
   hasActiveSubscription: boolean;
 }
@@ -289,6 +301,7 @@ function PlanCard({
   period,
   isCurrent,
   isProcessing,
+  checkoutBusy,
   onSelect,
   hasActiveSubscription,
 }: PlanCardProps) {
@@ -390,6 +403,7 @@ function PlanCard({
           disabled={
             isCurrent ||
             isProcessing ||
+            checkoutBusy ||
             !isAvailable ||
             (hasActiveSubscription && !isCurrent)
           }
@@ -468,7 +482,7 @@ export default function OwnerSubscriptionsPage() {
       billingPeriod: BillingPeriod;
     }) => subscriptionsService.subscribe(planId, billingPeriod),
     onSuccess: (data) => {
-      // Persist the page we leave from so the Flutterwave callback can return here.
+      // Persist the page we leave from so the payment callback can return here.
       rememberPaymentOriginPath();
       window.location.assign(data.payment_url);
     },
@@ -524,6 +538,9 @@ export default function OwnerSubscriptionsPage() {
   });
 
   const handleSelect = (plan: SubscriptionPlan) => {
+    if (subscribeMutation.isPending) {
+      return;
+    }
     setPendingPlanId(plan.id);
     subscribeMutation.mutate({ planId: plan.id, billingPeriod: period });
   };
@@ -671,6 +688,7 @@ export default function OwnerSubscriptionsPage() {
                           subscribeMutation.isPending &&
                           pendingPlanId === plan.id
                         }
+                        checkoutBusy={subscribeMutation.isPending}
                         hasActiveSubscription={hasActiveSubscription}
                         onSelect={() => handleSelect(plan)}
                       />

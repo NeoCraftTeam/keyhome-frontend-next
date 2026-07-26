@@ -29,6 +29,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Collapse,
   Divider,
   IconButton,
   InputAdornment,
@@ -41,6 +42,49 @@ import { AxiosError } from 'axios';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+
+function OwnerMoreLoginOptions({
+  onError,
+}: {
+  onError: (err: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const secondaryProviders = getConfiguredOAuthProviders().filter(
+    (p) => p !== 'google'
+  );
+
+  return (
+    <Box sx={{ width: '100%', mt: 1 }}>
+      <Button
+        fullWidth
+        variant="text"
+        size="small"
+        onClick={() => setExpanded((v) => !v)}
+        sx={{
+          textTransform: 'none',
+          color: 'text.secondary',
+          fontWeight: 500,
+          fontSize: '0.8125rem',
+          '&:hover': { bgcolor: 'action.hover' },
+        }}
+      >
+        {expanded ? 'Moins d’options' : 'Plus d’options de connexion'}
+      </Button>
+      <Collapse in={expanded}>
+        {secondaryProviders.length > 0 && (
+          <SocialLoginButtons
+            registrationIntent="agent"
+            onError={onError}
+            disabled={false}
+            providers={secondaryProviders}
+            showDivider={false}
+          />
+        )}
+        <PasskeyLoginButton loginContext="owner" />
+      </Collapse>
+    </Box>
+  );
+}
 
 export default function OwnerLoginPage() {
   const { loginOwner, user, isAuthenticated, isLoading } = useAuth();
@@ -349,19 +393,20 @@ export default function OwnerLoginPage() {
             </Box>
           </FadeIn>
 
-          {/* OAuth et passkey : jamais bloqués par Turnstile — flux indépendant */}
+          {/* Primary OAuth: Google only — reduces decision fatigue */}
           <FadeIn delay={0.4} direction="up">
             <SocialLoginButtons
               registrationIntent="agent"
               onError={setError}
               showDivider
               disabled={false}
-              providers={getConfiguredOAuthProviders()}
+              providers={['google']}
             />
           </FadeIn>
 
+          {/* Secondary options: other OAuth + Passkey (collapsed) */}
           <FadeIn delay={0.45} direction="up">
-            <PasskeyLoginButton loginContext="owner" />
+            <OwnerMoreLoginOptions onError={setError} />
           </FadeIn>
 
           <FadeIn delay={0.5} direction="up">

@@ -21,7 +21,7 @@ src/
 │   ├── auth/              Login, Register, Passkey, Social
 │   ├── chat/              Chat en temps réel (Reverb + E2EE)
 │   ├── owner/             Composants panel bailleur
-│   ├── payment/           Flux paiement (GeniusPay, Stripe)
+│   ├── payment/           Flux paiement (Kpay, Stripe)
 │   ├── ui/                Composants UI génériques (boutons, dialogs…)
 │   └── …
 │
@@ -30,7 +30,7 @@ src/
 ├── lib/                   Utilitaires et logique pure (pas de JSX)
 │   ├── auth/              Session, tokens, Clerk, OAuth, passkeys
 │   ├── chat/              API chat, E2EE crypto, Echo, conversation utils
-│   ├── payment/           Stripe, GeniusPay return, historique
+│   ├── payment/           Stripe, Kpay return, historique
 │   ├── tour/              PSV / Pannellum (visites 3D panoramiques)
 │   ├── owner/             Auth bailleur, thème, dashboard analytics
 │   ├── geo/               Géolocalisation

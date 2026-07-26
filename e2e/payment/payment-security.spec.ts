@@ -51,7 +51,7 @@ test.describe('Payment Security — No Secret Key Exposure', () => {
           is_unlocked: true,
           reference: 'PAY-SEC-001',
           tx_ref: 'KH-SEC-001',
-          gateway: 'geniuspay',
+          gateway: 'kpay',
         }),
       });
     });
@@ -109,7 +109,7 @@ test.describe('Payment Security — No Secret Key Exposure', () => {
           is_paid: true,
           reference: 'X',
           tx_ref: 'X',
-          gateway: 'geniuspay',
+          gateway: 'kpay',
         }),
       });
     });

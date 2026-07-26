@@ -40,7 +40,7 @@ const fallbackPackages: LandingPackageCard[] = [
     features: [
       '5 annonces propriétaires débloqués (2 crédits/annonce)',
       'Appelez ou WhatsApp le propriétaire directement',
-      'Zéro commission — 200 FCFA/contact',
+      'Zéro commission, zéro intermédiaire',
     ],
     badge: 'Essai',
     sortOrder: 1,
@@ -54,7 +54,7 @@ const fallbackPackages: LandingPackageCard[] = [
       'Le choix des chercheurs actifs. 25 propriétaires en accès direct — assez pour trouver avant vos concurrents.',
     features: [
       '25 annonces propriétaires débloqués',
-      '160 FCFA/annonce — économisez 20 % vs Starter',
+      'Économisez 20 % par contact vs Starter',
       'Appel + WhatsApp + messagerie KeyHome',
       'Support prioritaire inclus',
     ],
@@ -71,7 +71,7 @@ const fallbackPackages: LandingPackageCard[] = [
       'Pour les familles ambitieuses et les pros en mobilité. 60 contacts sur 12 mois — le meilleur coût par logement trouvé.',
     features: [
       '60 annonces propriétaires débloqués',
-      '~117 FCFA/annonce — 42 % de réduction vs Starter',
+      '42 % de réduction par contact vs Starter',
       'Appel + WhatsApp + messagerie KeyHome',
       'Support 24h/7j · Crédits valables 12 mois',
     ],
@@ -81,10 +81,6 @@ const fallbackPackages: LandingPackageCard[] = [
 ];
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
-
-const formatFcfa = (amount: number): string => {
-  return new Intl.NumberFormat('fr-FR').format(amount);
-};
 
 const normalizeName = (name: string): string => {
   return name.replace(/^pack\s+/i, '').trim();
@@ -104,11 +100,10 @@ const defaultDescription = (points: number): string => {
 
 const defaultFeatures = (points: number): string[] => {
   const contacts = Math.round(points / 2);
-  const pricePerContact = points <= 20 ? 200 : points <= 80 ? 160 : 117;
   return [
     `${contacts} contacts propriétaires débloqués`,
-    `${pricePerContact} FCFA/contact — appel + WhatsApp direct`,
-    'Zéro commission, zéro intermédiaire',
+    'Appel + WhatsApp direct, sans intermédiaire',
+    'Zéro commission',
   ];
 };
 
@@ -363,7 +358,7 @@ export default function PricingSection() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ duration: 0.2, ease: EASE }}
-                  aria-label={`Choisir le pack ${pkg.name} — ${formatFcfa(pkg.priceXaf)} FCFA`}
+                  aria-label={`Choisir le pack ${pkg.name}`}
                   style={{
                     width: '100%',
                     padding: '16px',

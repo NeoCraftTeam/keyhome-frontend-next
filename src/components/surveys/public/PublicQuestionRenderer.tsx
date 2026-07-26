@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { SurveyQuestion } from '@/types';
 import {
   Box,
@@ -30,7 +31,7 @@ const STAR_LABELS: Record<number, string> = {
   5: 'Excellent',
 };
 
-export default function PublicQuestionRenderer({
+function PublicQuestionRenderer({
   question,
   value,
   onChange,
@@ -150,6 +151,7 @@ export default function PublicQuestionRenderer({
                 size="large"
                 value={numVal}
                 onChange={(_, newValue) => onChange(newValue ?? 0)}
+                aria-label={`Note : ${numVal} sur 5`}
                 icon={<StarIcon sx={{ fontSize: 40, color: '#F59E0B' }} />}
                 emptyIcon={
                   <StarBorderIcon sx={{ fontSize: 40, color: '#E5E7EB' }} />
@@ -208,3 +210,4 @@ export default function PublicQuestionRenderer({
 
   return <Box sx={{ width: '100%' }}>{renderInput()}</Box>;
 }
+export default memo(PublicQuestionRenderer);

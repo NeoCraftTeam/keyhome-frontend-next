@@ -8,7 +8,7 @@ const API_URL =
 
 export const metadata: Metadata = {
   title: 'Indice des loyers KeyHome 2026 — Prix immobilier par quartier',
-  description: `${BRAND_TAGLINE}. Consultez les prix médians des loyers à Douala, Yaoundé, Abidjan et dans toutes les grandes villes d'Afrique. Données issues de milliers d'annonces vérifiées.`,
+  description: `Prix médians des loyers à Douala, Yaoundé, Abidjan et dans toutes les grandes villes d'Afrique. Indice mis à jour à partir de milliers d'annonces vérifiées. ${BRAND_TAGLINE}.`,
   alternates: { canonical: absoluteUrl('/indices-loyers') },
   openGraph: {
     title: 'Indice des loyers KeyHome 2026',

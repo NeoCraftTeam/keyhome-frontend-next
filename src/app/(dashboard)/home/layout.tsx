@@ -5,18 +5,14 @@ import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
 const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
-  title: 'Accueil — Annonces immobilières vérifiées en Afrique',
-  description: `${BRAND_TAGLINE}. Découvrez les meilleures annonces immobilières en Afrique, triées par recommandations personnalisées. Maisons, appartements, terrains et villas — photos réelles, prix transparents, propriétaires vérifiés. Trouvez votre futur logement sur KeyHome.`,
-  robots: { index: true, follow: true },
+  title: 'Accueil',
+  description: `${BRAND_TAGLINE}. Votre tableau de bord KeyHome — annonces recommandées, favoris et messages.`,
+  robots: { index: false, follow: false },
   alternates: {
-    canonical: absoluteUrl('/home'),
-    languages: {
-      'fr-FR': absoluteUrl('/home'),
-      'x-default': absoluteUrl('/home'),
-    },
+    canonical: absoluteUrl('/'),
   },
   openGraph: {
-    title: 'Accueil KeyHome — Votre logement idéal en Afrique',
+    title: 'Accueil KeyHome — Votre logement idéal',
     description: `${BRAND_TAGLINE}. Des milliers d'annonces immobilières vérifiées. Recommandations personnalisées, photos réelles, contact direct avec les propriétaires.`,
     url: absoluteUrl('/home'),
     siteName: 'KeyHome',

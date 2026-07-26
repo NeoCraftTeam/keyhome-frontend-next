@@ -158,8 +158,8 @@ export async function generateMetadata({
 
   if (country) {
     return {
-      title: `Immobilier ${country.display} — Location & Vente | KeyHome`,
-      description: `${BRAND_TAGLINE}. Découvrez les meilleures annonces immobilières au ${country.display}. Appartements, maisons, terrains et villas vérifiés. Contact direct propriétaire.`,
+      title: `Immobilier ${country.display} — Location & Vente`,
+      description: `Annonces immobilières vérifiées au ${country.display} — appartements, maisons, terrains et villas avec contact direct propriétaire, prix transparents et photos réelles. ${BRAND_TAGLINE}.`,
       alternates: {
         canonical: url,
         languages: {
@@ -170,7 +170,7 @@ export async function generateMetadata({
       },
       openGraph: {
         title: `Immobilier ${country.display} | KeyHome`,
-        description: `${BRAND_TAGLINE}. Annonces vérifiées au ${country.display} — trouvez votre bien idéal.`,
+        description: `Annonces vérifiées au ${country.display} — trouvez votre bien idéal. ${BRAND_TAGLINE}.`,
         url,
         siteName: 'KeyHome',
         images: [
@@ -189,7 +189,7 @@ export async function generateMetadata({
 
   return {
     title: `Immobilier à ${name} — Location & Vente`,
-    description: `${BRAND_TAGLINE}. Trouvez votre logement à ${name}${city ? `, ${city.country}` : ''}. Annonces vérifiées : appartements, maisons, terrains et villas. Contact direct propriétaire sur KeyHome.`,
+    description: `Trouvez votre logement à ${name}${city ? `, ${city.country}` : ''} — appartements, maisons, terrains et villas avec contact direct propriétaire. Annonces vérifiées, prix transparents. ${BRAND_TAGLINE}.`,
     alternates: {
       canonical: url,
       languages: {
@@ -202,7 +202,7 @@ export async function generateMetadata({
     },
     openGraph: {
       title: `Immobilier à ${name} | KeyHome`,
-      description: `${BRAND_TAGLINE}. Annonces immobilières vérifiées à ${name}. Trouvez votre bien idéal.`,
+      description: `Annonces immobilières vérifiées à ${name} — trouvez votre bien idéal. ${BRAND_TAGLINE}.`,
       url,
       siteName: 'KeyHome',
       images: [

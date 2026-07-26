@@ -14,12 +14,17 @@ export function formatPaymentHistoryDate(iso: string): string {
 }
 
 const LEGACY_METHOD_LABELS: Record<string, string> = {
-  mobile_money: 'MTN Money',
-  orange_money: 'Orange Money',
+  mobile_money: 'Mobile',
+  orange_money: 'Mobile',
   card: 'Carte',
-  flutterwave: 'Autres',
 };
 
+const LEGACY_METHOD_DETAILS: Record<string, string> = {
+  mobile_money: 'MTN Mobile Money',
+  orange_money: 'Orange Money',
+};
+
+/** Primary line in the Méthode column (Mobile, Carte, PayPal…). */
 export function paymentHistoryMethodPrimary(item: PaymentHistoryItem): string {
   if (item.payment_method_label) {
     return item.payment_method_label;
@@ -30,6 +35,7 @@ export function paymentHistoryMethodPrimary(item: PaymentHistoryItem): string {
   return LEGACY_METHOD_LABELS[key] ?? (key !== '' ? key : '—');
 }
 
+/** Secondary line (operator, •••• 4242, wallet hint). */
 export function paymentHistoryMethodSecondary(
   item: PaymentHistoryItem
 ): string | null {
@@ -37,5 +43,23 @@ export function paymentHistoryMethodSecondary(
     return item.payment_method_detail;
   }
 
-  return null;
+  const key = item.payment_method ?? '';
+
+  return LEGACY_METHOD_DETAILS[key] ?? null;
+}
+
+export function paymentHistoryStatusLabel(item: PaymentHistoryItem): string {
+  if (item.status_label) {
+    return item.status_label;
+  }
+
+  return (
+    {
+      success: 'Payé',
+      failed: 'Échoué',
+      cancelled: 'Annulé',
+      pending: 'En attente',
+      refunded: 'Remboursé',
+    }[item.status] ?? item.status
+  );
 }

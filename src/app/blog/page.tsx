@@ -5,27 +5,25 @@ import { BLOG_POSTS } from './posts';
 import { brand } from '@/theme/tokens';
 import { BRAND_TAGLINE } from '@/lib/brand';
 import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
+import { buildHreflangAlternates } from '@/i18n/routing';
 
 const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
-  title: "Blog immobilier — Conseils & Guides pour l'Afrique | KeyHome",
-  description: `${BRAND_TAGLINE}. Guides pratiques, analyses de marché et conseils immobiliers. Location, achat, terrains : tous les conseils KeyHome.`,
+  title: "Blog immobilier — Conseils & Guides pour l'Afrique",
+  description: `Guides pratiques, analyses de marché et conseils immobiliers pour l'Afrique. Location, achat, terrains : tous les conseils KeyHome. ${BRAND_TAGLINE}.`,
   alternates: {
     canonical: absoluteUrl('/blog'),
-    languages: {
-      'fr-FR': absoluteUrl('/blog'),
-      'x-default': absoluteUrl('/blog'),
-    },
+    languages: buildHreflangAlternates(absoluteUrl('/blog')),
   },
   openGraph: {
-    title: 'Blog KeyHome — Immobilier en Afrique',
-    description: `${BRAND_TAGLINE}. Guides et conseils pour trouver votre logement en Afrique. Analyses de marché, astuces location et achat.`,
+    title: 'Blog KeyHome — Immobilier, conseils & guides',
+    description: `Guides et conseils pour trouver votre logement — analyses de marché, astuces location et achat. ${BRAND_TAGLINE}.`,
     url: absoluteUrl('/blog'),
     siteName: 'KeyHome',
     images: [
       {
-        url: `${SITE}/opengraph-image`,
+        url: `${SITE}/og?title=${encodeURIComponent('Blog immobilier')}&subtitle=${encodeURIComponent("Guides, conseils & actualités pour l'Afrique")}`,
         width: 1200,
         height: 630,
         alt: 'Blog KeyHome',
@@ -74,7 +72,7 @@ export default function BlogPage() {
         }}
       >
         Guides pratiques, analyses de marché et conseils pour trouver votre
-        logement en Afrique sans stress.
+        logement sans stress, où que vous soyez.
       </p>
 
       <BlogPostsList posts={BLOG_POSTS} />

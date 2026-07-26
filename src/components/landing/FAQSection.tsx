@@ -28,7 +28,7 @@ const faqs = [
   {
     question: 'Dans quelles villes KeyHome est-il disponible ?',
     answer:
-      "KeyHome couvre les principales villes d'Afrique de l'Ouest et Centrale : Douala, Yaoundé, Abidjan, Cotonou, Lomé, Accra, Bamako et bien d'autres. Nous nous étendons continuellement à de nouvelles villes.",
+      "KeyHome est une plateforme mondiale ouverte à toutes les villes. Notre catalogue le plus dense couvre aujourd'hui Douala, Yaoundé, Abidjan, Cotonou, Lomé, Accra, Dakar, Bamako et leurs quartiers, et de nouvelles villes s'ajoutent régulièrement dès qu'un propriétaire y publie une annonce.",
   },
   {
     question: 'Comment publier une annonce en tant que propriétaire ?',

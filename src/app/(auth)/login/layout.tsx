@@ -6,8 +6,8 @@ const SITE = getSiteOrigin();
 
 export const metadata: Metadata = {
   title: 'Connexion — Accédez à votre espace KeyHome',
-  description: `${BRAND_TAGLINE}. Connectez-vous à KeyHome et retrouvez vos annonces favorites, vos contacts débloqués et votre historique de paiements. Accès rapide via email ou réseaux sociaux.`,
-  robots: { index: true, follow: true },
+  description: `Connectez-vous à KeyHome et retrouvez vos annonces favorites, vos contacts débloqués et votre historique de paiements. Accès rapide via email ou réseaux sociaux. ${BRAND_TAGLINE}.`,
+  robots: { index: false, follow: true },
   alternates: {
     canonical: absoluteUrl('/login'),
   },

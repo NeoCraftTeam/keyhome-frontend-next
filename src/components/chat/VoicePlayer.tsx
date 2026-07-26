@@ -33,6 +33,7 @@ type PlayerState = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
  */
 export function VoicePlayer({ attachment, isOwn, theme }: VoicePlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioAbortRef = useRef<AbortController | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [state, setState] = useState<PlayerState>('idle');
   const [position, setPosition] = useState(0);
@@ -49,6 +50,8 @@ export function VoicePlayer({ attachment, isOwn, theme }: VoicePlayerProps) {
   // Stop / cleanup when the source changes or the component unmounts.
   useEffect(() => {
     return () => {
+      audioAbortRef.current?.abort();
+      audioAbortRef.current = null;
       audioRef.current?.pause();
       audioRef.current = null;
     };
@@ -67,26 +70,44 @@ export function VoicePlayer({ attachment, isOwn, theme }: VoicePlayerProps) {
     el.preload = 'auto';
     el.src = audioSrc;
 
-    el.addEventListener('loadedmetadata', () => {
-      if (Number.isFinite(el.duration) && el.duration > 0) {
-        setDurationMs(Math.round(el.duration * 1000));
-      }
-    });
-    el.addEventListener('timeupdate', () => {
-      setPosition(el.currentTime * 1000);
-    });
-    el.addEventListener('playing', () => setState('playing'));
-    el.addEventListener('pause', () =>
-      setState((s) => (s === 'error' || s === 'loading' ? s : 'paused'))
+    // Tie every listener to an AbortController so they are removed when the
+    // source changes or the component unmounts (no dangling listeners).
+    const abort = new AbortController();
+    audioAbortRef.current = abort;
+    const { signal } = abort;
+
+    el.addEventListener(
+      'loadedmetadata',
+      () => {
+        if (Number.isFinite(el.duration) && el.duration > 0) {
+          setDurationMs(Math.round(el.duration * 1000));
+        }
+      },
+      { signal }
     );
-    el.addEventListener('ended', () => {
-      setState('paused');
-      setPosition(0);
-      el.currentTime = 0;
-    });
-    el.addEventListener('error', () => {
-      setState('error');
-    });
+    el.addEventListener(
+      'timeupdate',
+      () => {
+        setPosition(el.currentTime * 1000);
+      },
+      { signal }
+    );
+    el.addEventListener('playing', () => setState('playing'), { signal });
+    el.addEventListener(
+      'pause',
+      () => setState((s) => (s === 'error' || s === 'loading' ? s : 'paused')),
+      { signal }
+    );
+    el.addEventListener(
+      'ended',
+      () => {
+        setState('paused');
+        setPosition(0);
+        el.currentTime = 0;
+      },
+      { signal }
+    );
+    el.addEventListener('error', () => setState('error'), { signal });
 
     audioRef.current = el;
     return el;
@@ -99,6 +120,8 @@ export function VoicePlayer({ attachment, isOwn, theme }: VoicePlayerProps) {
     }
 
     if (state === 'error') {
+      audioAbortRef.current?.abort();
+      audioAbortRef.current = null;
       audioRef.current?.pause();
       audioRef.current = null;
       setState('idle');

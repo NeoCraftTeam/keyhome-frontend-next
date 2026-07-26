@@ -64,6 +64,8 @@ export default function TrustScoreBadge({
         }
         size={size}
         onClick={handleClick}
+        aria-haspopup="dialog"
+        aria-label={`Score de confiance : ${tierConfig.label} (${trustScore.score}/100). Afficher le détail.`}
         sx={{
           bgcolor: `${tierConfig.color}15`,
           color: tierConfig.color,

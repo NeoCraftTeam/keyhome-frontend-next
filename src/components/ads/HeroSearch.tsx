@@ -1,12 +1,12 @@
 'use client';
 
-import { type ParsedSearchParams } from '@/components/search/ImageSearchButton';
 import VoiceSearchButton from '@/components/search/VoiceSearchButton';
 import api from '@/lib/api';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { buildNlpParams } from '@/lib/nlp-search';
 import { useCurrency } from '@/providers/CurrencyProvider';
 import { City } from '@/types';
+import type { ParsedSearchParams } from '@/types/nlp-search';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import LocationOn from '@mui/icons-material/LocationOn';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
@@ -177,6 +177,7 @@ export default function HeroSearch({
       <Tabs
         value={tab}
         onChange={(_, v) => setTab(v)}
+        aria-label="Mode de recherche"
         sx={{
           mb: 1.5,
           minHeight: 32,
@@ -198,11 +199,15 @@ export default function HeroSearch({
         }}
       >
         <Tab
+          id="hero-search-tab-city"
+          aria-controls="hero-search-panel-city"
           icon={<LocationOn sx={{ fontSize: 14 }} />}
           iconPosition="start"
           label="Par ville"
         />
         <Tab
+          id="hero-search-tab-ai"
+          aria-controls="hero-search-panel-ai"
           icon={<AutoAwesome sx={{ fontSize: 14 }} />}
           iconPosition="start"
           label="Recherche IA"
@@ -212,6 +217,9 @@ export default function HeroSearch({
       {/* Tab 0 — City search */}
       {tab === 0 && (
         <Box
+          role="tabpanel"
+          id="hero-search-panel-city"
+          aria-labelledby="hero-search-tab-city"
           sx={{
             display: 'flex',
             alignItems: 'stretch',
@@ -305,7 +313,11 @@ export default function HeroSearch({
 
       {/* Tab 1 — AI natural language search */}
       {tab === 1 && (
-        <Box>
+        <Box
+          role="tabpanel"
+          id="hero-search-panel-ai"
+          aria-labelledby="hero-search-tab-ai"
+        >
           <motion.div animate={aiBoxControls} style={{ width: '100%' }}>
             <Box
               sx={{

@@ -1,5 +1,6 @@
 'use client';
 
+import PendingPaymentMessage from '@/components/payment/return/PendingPaymentMessage';
 import VerifyingView from '@/components/payment/return/VerifyingView';
 import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import {
@@ -81,18 +82,23 @@ export default function UnlockPaymentReturnView(): ReactElement {
     if (isGatewayRedirectFailed(gwStatus)) {
       return 'failed' as const;
     }
-    if (isGatewayRedirectSuccess(gwStatus)) {
-      if (
-        state === 'verifying' ||
-        state === 'processing' ||
-        state === 'not_found' ||
-        state === 'failed'
-      ) {
-        return 'success' as const;
-      }
+    // No usable reference / ad id — polling never starts, so surface a
+    // terminal state instead of an endless "verifying" spinner.
+    if (!adId || !hasPaymentReturnReference(returnParams)) {
+      return 'not_found' as const;
+    }
+    // Polling still active (`verifying` / `processing`) flows through to the
+    // loading view. Only the TERMINAL "polling exhausted but redirect said
+    // success" cases (`failed` / `not_found`) become `pending` — never a
+    // false "success", since unlock is webhook-gated.
+    if (
+      isGatewayRedirectSuccess(gwStatus) &&
+      (state === 'failed' || state === 'not_found')
+    ) {
+      return 'pending' as const;
     }
     return state;
-  }, [state, gwStatus]);
+  }, [state, gwStatus, adId, returnParams]);
 
   useEffect(() => {
     if (effectiveState !== 'success') return;
@@ -117,6 +123,10 @@ export default function UnlockPaymentReturnView(): ReactElement {
 
   if (effectiveState === 'verifying') {
     return <VerifyingView variant="unlock" />;
+  }
+
+  if (effectiveState === 'pending') {
+    return <PendingPaymentMessage variant="unlock" onRetry={retry} />;
   }
 
   return (
@@ -301,8 +311,8 @@ export default function UnlockPaymentReturnView(): ReactElement {
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               {effectiveState === 'cancelled'
-                ? 'Vous avez annulé le paiement. Aucun montant n\u2019a été débité.'
-                : 'Le paiement n\u2019a pas abouti. Aucun montant n\u2019a été débité.'}
+                ? 'Vous avez annulé le paiement. Si un montant a malgré tout été débité, il sera automatiquement pris en compte.'
+                : 'Le paiement n\u2019a pas abouti. Si un montant a malgré tout été débité, il sera automatiquement pris en compte.'}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1.5, flexDirection: 'column' }}>
               {adId && (
@@ -372,30 +382,41 @@ export default function UnlockPaymentReturnView(): ReactElement {
               <HourglassIcon sx={{ fontSize: 44, color: brand.primary }} />
             </Box>
             <Typography variant="h5" fontWeight={700} gutterBottom>
-              Confirmation en cours…
+              {effectiveState === 'not_found'
+                ? 'Paiement introuvable'
+                : 'Confirmation en cours…'}
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-              Votre paiement a bien été reçu. La confirmation bancaire peut
-              prendre quelques instants supplémentaires.
+              {effectiveState === 'not_found'
+                ? 'Nous n’avons pas retrouvé la référence de ce paiement. Si vous avez validé un paiement, il sera pris en compte automatiquement — consultez votre historique de paiements.'
+                : 'Votre paiement a bien été reçu. La confirmation bancaire peut prendre quelques instants supplémentaires.'}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Vérification automatique en cours — vous pouvez fermer cette page
-              sans perdre votre paiement.
-            </Typography>
-            <Box sx={{ width: '100%', mb: 3 }}>
-              <LinearProgress
-                variant="indeterminate"
-                sx={{
-                  height: 4,
-                  borderRadius: 2,
-                  bgcolor: brand.primaryAlpha12,
-                  '& .MuiLinearProgress-bar': {
-                    bgcolor: brand.primary,
-                    borderRadius: 2,
-                  },
-                }}
-              />
-            </Box>
+            {effectiveState === 'processing' && (
+              <>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 3 }}
+                >
+                  Vérification automatique en cours — vous pouvez fermer cette
+                  page sans perdre votre paiement.
+                </Typography>
+                <Box sx={{ width: '100%', mb: 3 }}>
+                  <LinearProgress
+                    variant="indeterminate"
+                    sx={{
+                      height: 4,
+                      borderRadius: 2,
+                      bgcolor: brand.primaryAlpha12,
+                      '& .MuiLinearProgress-bar': {
+                        bgcolor: brand.primary,
+                        borderRadius: 2,
+                      },
+                    }}
+                  />
+                </Box>
+              </>
+            )}
             <Box sx={{ display: 'flex', gap: 1.5, flexDirection: 'column' }}>
               <Button
                 variant="outlined"

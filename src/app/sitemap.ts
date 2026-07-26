@@ -7,8 +7,10 @@ const API_URL =
 
 /**
  * Dynamic sitemap — static + programmatic URLs + listings from the API.
- * Auth-only shells (/profile, /messages, /owner, …) are omitted; see robots.txt.
- * /login and /register are included (indexable marketing entry points).
+ *
+ * Excluded by design: auth pages (/login, /register — noindex), auth-only
+ * shells (/home, /profile, /messages, /owner, /nearby), and the bare /search
+ * landing (parameterized variants are blocked in robots.txt).
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteOrigin();
@@ -23,34 +25,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1.0,
     },
     {
-      url: `${baseUrl}/home`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.85,
-    },
-    {
-      url: `${baseUrl}/nearby`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.75,
-    },
-    {
       url: `${baseUrl}/search`,
       lastModified: now,
       changeFrequency: 'daily',
       priority: 0.95,
-    },
-    {
-      url: `${baseUrl}/register`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.55,
-    },
-    {
-      url: `${baseUrl}/login`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.5,
     },
     {
       url: `${baseUrl}/conditions`,
@@ -163,10 +141,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const res = await fetch(`${API_URL}/ads?per_page=5000&status=available`, {
       next: { revalidate: 3600 },
     });
-    if (res.ok) {
+    if (!res.ok) {
+      console.error(
+        `sitemap: ads fetch failed with status ${res.status} — listings excluded from sitemap`
+      );
+    } else {
       const json = await res.json();
       const ads: Array<{ id: string; slug?: string; updated_at?: string }> =
         json.data ?? [];
+      if (ads.length === 0) {
+        console.warn(
+          'sitemap: ads endpoint returned 0 listings — check API status=available filter'
+        );
+      }
       adPages = ads.map((ad) => ({
         url: `${baseUrl}/ads/${ad.slug || ad.id}`,
         lastModified: ad.updated_at || now,
@@ -174,8 +161,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
       }));
     }
-  } catch {
-    // Fail silently — static pages are always included even if the API is down
+  } catch (error) {
+    console.error('sitemap: ads fetch threw:', error);
   }
 
   // ── Agency profile pages ─────────────────────────────────────────
@@ -184,7 +171,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const res = await fetch(`${API_URL}/agencies?per_page=500`, {
       next: { revalidate: 3600 },
     });
-    if (res.ok) {
+    if (!res.ok) {
+      console.error(`sitemap: agencies fetch failed with status ${res.status}`);
+    } else {
       const json = await res.json();
       const agencies: Array<{ id: string; updated_at?: string }> =
         json.data ?? [];
@@ -195,8 +184,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.6,
       }));
     }
-  } catch {
-    // Fail silently
+  } catch (error) {
+    console.error('sitemap: agencies fetch threw:', error);
   }
 
   // ── Bailleur (landlord) public profile pages ──────────────────────
@@ -206,7 +195,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       `${API_URL}/users?role=agent&per_page=500&public=true`,
       { next: { revalidate: 3600 } }
     );
-    if (res.ok) {
+    if (!res.ok) {
+      console.error(
+        `sitemap: landlords fetch failed with status ${res.status}`
+      );
+    } else {
       const json = await res.json();
       const users: Array<{
         username?: string;
@@ -222,8 +215,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           priority: 0.55,
         }));
     }
-  } catch {
-    // Fail silently
+  } catch (error) {
+    console.error('sitemap: landlords fetch threw:', error);
   }
 
   return [
