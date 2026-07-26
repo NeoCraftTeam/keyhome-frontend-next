@@ -2,6 +2,7 @@
 
 import KeyHomeClarityIdentity from '@/components/analytics/KeyHomeClarityIdentity';
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
+import { CreditsRealtimeListener } from '@/components/credits/CreditsRealtimeListener';
 import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import BottomNav from '@/components/layout/BottomNav';
@@ -291,6 +292,7 @@ export default function DashboardLayout({
         {isAuthenticated && <FcmRegistrar />}
         {isAuthenticated && <KeyHomeClarityIdentity />}
         {isAuthenticated && <GlobalPresenceChannel />}
+        {isAuthenticated && <CreditsRealtimeListener />}
         {isAuthenticated && <ChatNotificationListener accentColor="#F6475F" />}
         {!hideNavForChat && <Navbar />}
         <Box

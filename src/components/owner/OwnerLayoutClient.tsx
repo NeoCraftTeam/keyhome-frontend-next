@@ -2,6 +2,7 @@
 
 import KeyHomeClarityIdentity from '@/components/analytics/KeyHomeClarityIdentity';
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
+import { CreditsRealtimeListener } from '@/components/credits/CreditsRealtimeListener';
 import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
 import {
   SIDEBAR_COLLAPSED_WIDTH,
@@ -374,6 +375,7 @@ export default function OwnerLayoutClient({
       <GlobalPresenceChannel />
       <KeyHomeClarityIdentity />
       <FcmRegistrar />
+      <CreditsRealtimeListener />
       <ChatNotificationListener
         basePath="/owner/messages"
         accentColor={brandAgent.primary}
