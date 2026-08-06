@@ -41,7 +41,6 @@ export interface NotificationPreferences {
 
 export interface LoginHistoryEntry {
   id: string;
-  ip_address: string;
   device_type: string | null;
   browser: string | null;
   platform: string | null;

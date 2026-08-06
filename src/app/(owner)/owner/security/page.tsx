@@ -308,7 +308,7 @@ export default function OwnerSecurityPage() {
                         >
                           {[entry.city, entry.country]
                             .filter(Boolean)
-                            .join(', ') || entry.ip_address}
+                            .join(', ') || 'Localisation inconnue'}
                         </Typography>
                         <Typography
                           variant="caption"
