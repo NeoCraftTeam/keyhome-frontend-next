@@ -223,7 +223,8 @@ L'application utilise **Clerk** comme fournisseur d'identité principal :
 - Carte interactive Mapbox : vue split liste/carte, pins de prix, heatmap
 - Recherche géographique (géolocalisation navigateur, rayon configurable)
 - Recherche en langage naturel (IA)
-- Alertes de recherche avec notifications push/email
+- Alertes de recherche avec notifications push/email et temps réel
+- Messagerie temps réel avec les bailleurs (bulles façon Messenger, réactions, pièces jointes, notes vocales)
 - Comparateur d'annonces
 - Estimateur de prix/loyer
 - Profil utilisateur, annonces débloquées, réservations de visites
@@ -237,6 +238,7 @@ L'application utilise **Clerk** comme fournisseur d'identité principal :
 - Suivi des paiements & dépenses
 - Dashboard analytique (vues, clics, favoris — Recharts)
 - Gestion des abonnements & crédits
+- Messagerie temps réel avec les prospects (même moteur que côté client)
 - Notifications Web Push et WhatsApp
 
 ### SEO & Performance
@@ -245,6 +247,27 @@ L'application utilise **Clerk** comme fournisseur d'identité principal :
 - OpenGraph dynamique par annonce avec image de prévisualisation
 - PWA : Service Worker, mode hors-ligne, installation sur écran d'accueil
 - Optimisation images (`next/image`), Turbopack, bundle analyzer
+
+## Temps réel (Laravel Echo / Reverb)
+
+Le frontend consomme le broadcasting Reverb du backend via `laravel-echo`
+(singleton dans `src/lib/chat/echo.ts`, auth Sanctum sur
+`POST /broadcasting/auth`). Des listeners globaux sont montés dans les
+layouts authentifiés (`(dashboard)/layout.tsx`, `OwnerLayoutClient.tsx`) :
+
+| Listener                        | Canal / event                                                                        | Effet                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `ChatNotificationListener`      | `user.{id}` → `message.received` + `conversation.{uuid}` (fil ouvert, read receipts) | Toast « Voir », badge non-lu, inbox live — couvre aussi les conversations neuves |
+| `CreditsRealtimeListener`       | `user.{id}` → `credits.updated`                                                      | Solde de crédits + historique de transactions en direct                          |
+| `NotificationsRealtimeListener` | `user.{id}` → `search_alert.match`                                                   | Centre de notifications invalidé en direct + toast vers la fiche annonce         |
+| `GlobalPresenceChannel`         | `online-users` (presence)                                                            | Pastilles « en ligne »                                                           |
+| `useChatChannel` (fil ouvert)   | `conversation.{uuid}` → `message.sent`, `messages.read`, `user.typing`, réactions…   | Messages, accusés de lecture et indicateur de frappe en direct                   |
+
+Règles : `message.received` est la source unique pour inbox/badge/toast
+(les bindings par conversation ne doublent jamais ces effets) ; cleanup avec
+`stopListening()` et non `leave()` car le canal `user.{id}` est partagé.
+Sans `NEXT_PUBLIC_REVERB_APP_KEY`/`NEXT_PUBLIC_REVERB_HOST`, tout se
+désactive proprement (repli polling).
 
 ## Services API consommés
 
