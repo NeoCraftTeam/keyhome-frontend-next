@@ -62,7 +62,7 @@ export function ChatNotificationListener({
     gcTime: 30 * 60 * 1000,
   });
 
-  const conversations: Conversation[] = data?.data ?? [];
+  const conversations = useMemo<Conversation[]>(() => data?.data ?? [], [data]);
   const subscribedConversations = useMemo(
     () => selectConversationsForBackgroundWs(conversations),
     [conversations]
@@ -158,6 +158,112 @@ export function ChatNotificationListener({
     };
   }, [isAuthenticated, syncChatCaches]);
 
+  // ─── User-channel listener (`private-user.{id}`, event `message.received`) ─
+  // Source UNIQUE de vérité temps réel pour : inbox list, badge non-lu
+  // agrégé et toast. Couvre toutes les conversations — y compris celles au-
+  // delà du cap MAX_BACKGROUND_WS et les conversations toutes neuves (le
+  // backend diffuse MessageReceived sur le canal du destinataire à chaque
+  // envoi). Les bindings par conversation ci-dessous ne gèrent plus que le
+  // cache du fil ouvert + read receipts + archive.
+  const seenMessageUuidsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!user || !isAuthenticated) return;
+    if (!isReverbRealtimeConfigured()) return;
+
+    const echo = getEcho();
+    const channel = echo.private(`user.${user.id}`);
+
+    const handler = (raw: unknown) => {
+      const event = raw as Message & {
+        sender?: { id: string; name: string; avatar: string | null } | null;
+      };
+      const uuid = event.conversation_uuid;
+      if (!event.uuid || !uuid) return;
+
+      // Dédup défensive (retry réseau, double livraison) — les effets
+      // ci-dessous ne sont pas idempotents (incréments).
+      const seen = seenMessageUuidsRef.current;
+      if (seen.has(event.uuid)) return;
+      seen.add(event.uuid);
+      if (seen.size > 200) {
+        seen.delete(seen.values().next().value as string);
+      }
+
+      // ── Inbox list ──────────────────────────────────────────────────────
+      const listData =
+        queryClient.getQueryData<ConversationsListQueryData>(listKey);
+      const convExists = listData?.data.some((c) => c.uuid === uuid) ?? false;
+      if (convExists) {
+        queryClient.setQueryData(
+          listKey,
+          (old: ConversationsListQueryData | undefined) =>
+            applyMessageSentToConversationsCache(old, event, user.id)
+        );
+      } else {
+        // Conversation toute neuve (ou liste pas encore en cache) : refetch
+        // pour récupérer la fiche complète (interlocuteur, annonce liée…).
+        void queryClient.invalidateQueries({ queryKey: listKey });
+      }
+
+      // Skip toast + badge quand le fil concerné est déjà ouvert.
+      if (pathnameRef.current === `${basePath}/${uuid}`) return;
+
+      // ── Real-time unread badge ──────────────────────────────────────────
+      queryClient.setQueryData<UnreadCountResponse>(
+        chatKeys.unread(user.id),
+        (old) => {
+          if (!old) return old;
+          const hasConv = old.conversations.some((c) => c.uuid === uuid);
+          return {
+            total: old.total + 1,
+            conversations: hasConv
+              ? old.conversations.map((c) =>
+                  c.uuid === uuid ? { ...c, count: c.count + 1 } : c
+                )
+              : [...old.conversations, { uuid, count: 1 }],
+          };
+        }
+      );
+
+      // ── Toast ───────────────────────────────────────────────────────────
+      const senderName = event.sender?.name ?? 'Nouveau message';
+      // E2EE off by default (mai 2026) — sealed previews are now only seen for
+      // legacy messages emitted from devices that still hold a private key.
+      const preview = event.is_client_sealed
+        ? 'Message d’un ancien appareil'
+        : event.body
+          ? event.body.slice(0, 55)
+          : event.type === 'image'
+            ? '📷 Photo'
+            : '📎 Pièce jointe';
+
+      enqueueSnackbar(`${senderName}: ${preview}`, {
+        variant: 'chatMessage',
+        accentColor,
+        onClick: () => router.push(`${basePath}/${uuid}`),
+        anchorOrigin: { vertical: 'top', horizontal: 'right' },
+        autoHideDuration: 5000,
+      });
+    };
+
+    channel.listen('.message.received', handler);
+
+    return () => {
+      // stopListening (et non leave) : le canal `user.{id}` est partagé avec
+      // CreditsRealtimeListener (`.credits.updated`) — ne pas le couper.
+      channel.stopListening('.message.received', handler);
+    };
+  }, [
+    user,
+    isAuthenticated,
+    listKey,
+    queryClient,
+    enqueueSnackbar,
+    router,
+    basePath,
+    accentColor,
+  ]);
+
   // ─── Per-conversation listeners ────────────────────────────────────────────
   // Race-safe binding: echo.private(name).subscription may be momentarily
   // undefined (StrictMode, fast nav, freshly-recreated singleton). Retry
@@ -170,12 +276,11 @@ export function ChatNotificationListener({
 
     const echo = getEcho();
     const uuids = convUuids.split(',').filter(Boolean);
-    const convMap = new Map(subscribedConversations.map((c) => [c.uuid, c]));
     /**
      * Minimal Pusher channel surface we actually use here. The full Pusher
      * channel type isn't exported from `laravel-echo`, so we keep a structural
-     * type rather than `any`. We bind two events per channel:
-     *  - `message.sent`   → list preview / unread bump
+     * type rather than `any`. We bind these events per channel:
+     *  - `message.sent`   → append au cache du fil (idempotent, dédup uuid)
      *  - `messages.read`  → flip own-message ticks to "read" in real time
      */
     type AnyHandler = (data: unknown) => void;
@@ -227,58 +332,11 @@ export function ChatNotificationListener({
           if (old.messages.some((m) => m.uuid === event.uuid)) return old;
           return { ...old, messages: [...old.messages, event] };
         });
-
-        queryClient.setQueryData(
-          listKey,
-          (old: ConversationsListQueryData | undefined) =>
-            applyMessageSentToConversationsCache(old, event, user.id)
-        );
-
-        // Skip toast + aggregate unread for own messages or while viewing this thread
-        if (event.sender_id === user.id) return;
-        if (pathnameRef.current === `${basePath}/${uuid}`) return;
-
-        // ── Real-time unread badge ──────────────────────────────────────────
-        // Increment unread cache for this user — no re-fetch needed.
-        // Both ChatBadgeIcon (client nav) and OwnerSidebar read this key.
-        queryClient.setQueryData<UnreadCountResponse>(
-          chatKeys.unread(user.id),
-          (old) => {
-            if (!old) return old;
-            const hasConv = old.conversations.some((c) => c.uuid === uuid);
-            return {
-              total: old.total + 1,
-              conversations: hasConv
-                ? old.conversations.map((c) =>
-                    c.uuid === uuid ? { ...c, count: c.count + 1 } : c
-                  )
-                : [...old.conversations, { uuid, count: 1 }],
-            };
-          }
-        );
-
-        const conv = convMap.get(uuid);
-        const senderName = conv?.other_participant?.name ?? 'Nouveau message';
-        // E2EE off by default (mai 2026) — sealed previews are now only seen for
-        // legacy messages emitted from devices that still hold a private key.
-        // The matching copy lives in ConversationItem, ReplyPreview, MessageBubble.
-        const preview = event.is_client_sealed
-          ? 'Message d’un ancien appareil'
-          : event.body
-            ? event.body.slice(0, 55)
-            : event.type === 'image'
-              ? '📷 Photo'
-              : '📎 Pièce jointe';
-
-        const convUuid = uuid;
-
-        enqueueSnackbar(`${senderName}: ${preview}`, {
-          variant: 'chatMessage',
-          accentColor,
-          onClick: () => router.push(`${basePath}/${convUuid}`),
-          anchorOrigin: { vertical: 'top', horizontal: 'right' },
-          autoHideDuration: 5000,
-        });
+        // Inbox list, unread badge et toast sont gérés par l'abonnement au
+        // canal utilisateur (`message.received`) ci-dessous — source unique
+        // qui couvre AUSSI les conversations non souscrites ici (cap
+        // MAX_BACKGROUND_WS) et les conversations toutes neuves. Doubler
+        // ces effets ici compterait les non-lus en double.
       };
 
       // `messages.read` flips own-message ticks to read in the inbox even

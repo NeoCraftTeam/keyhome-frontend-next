@@ -3,6 +3,7 @@
 import KeyHomeClarityIdentity from '@/components/analytics/KeyHomeClarityIdentity';
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
 import { CreditsRealtimeListener } from '@/components/credits/CreditsRealtimeListener';
+import { NotificationsRealtimeListener } from '@/components/notifications/NotificationsRealtimeListener';
 import { GlobalPresenceChannel } from '@/components/chat/GlobalPresenceChannel';
 import {
   SIDEBAR_COLLAPSED_WIDTH,
@@ -380,6 +381,7 @@ export default function OwnerLayoutClient({
         basePath="/owner/messages"
         accentColor={brandAgent.primary}
       />
+      <NotificationsRealtimeListener />
 
       {/* Sidebar — MUI Drawer permanent (desktop) / temporary (mobile via Navbar) */}
       <Drawer
