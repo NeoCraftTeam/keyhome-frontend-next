@@ -269,6 +269,21 @@ Règles : `message.received` est la source unique pour inbox/badge/toast
 Sans `NEXT_PUBLIC_REVERB_APP_KEY`/`NEXT_PUBLIC_REVERB_HOST`, tout se
 désactive proprement (repli polling).
 
+## Cache chat chiffré (modèle WhatsApp Web)
+
+`src/providers/QueryProvider.tsx` monte un `PersistQueryClientProvider`
+(@tanstack/react-query-persist-client) avec un persister maison
+(`src/lib/query-persister.ts`) : les snapshots des racines chat
+(`conversations`, `chat-messages`, `chat-unread`) sont chiffrés en
+**AES-GCM 256** (`src/lib/query-cache-crypto.ts` — clé **non-extractible**
+WebCrypto rangée en IndexedDB, IV 96 bits par écriture) avant d'atterrir
+dans `localStorage`, avec un throttle de 1 s. Résultat : inbox et fils
+s'affichent **instantanément** au chargement, puis resynchronisent en
+arrière-plan. La restauration est asynchrone (aucun mismatch
+d'hydratation) ; un snapshot corrompu est purgé silencieusement. Au
+logout, `clearChatCacheSnapshot()` pose un verrou anti-réécriture puis le
+wipe des storages efface le snapshot.
+
 ## Services API consommés
 
 | Fichier service                  | Domaine                                           |

@@ -21,6 +21,7 @@ import { removeFcmToken } from '@/lib/chat/chat-api';
 import { resetChatE2eeBootstrap } from '@/lib/chat/chat-e2ee-identity';
 import { disconnectEcho } from '@/lib/chat/echo';
 import { FCM_TOKEN_STORAGE_KEY } from '@/lib/fcm-token-key';
+import { clearChatCacheSnapshot } from '@/lib/query-persister';
 import {
   getOAuthCallbackUrl,
   KH_REGISTRATION_INTENT_KEY,
@@ -311,6 +312,7 @@ export function useAuthActions({
 
       // 3) Client: React Query + in-memory Sanctum, role cookie, full storage wipe.
       disconnectEcho();
+      clearChatCacheSnapshot();
       clearSession();
       setUserState(null);
       clearRoleCookie();
