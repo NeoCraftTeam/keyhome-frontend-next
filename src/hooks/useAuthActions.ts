@@ -27,6 +27,13 @@ import {
   KH_REGISTRATION_INTENT_KEY,
   oauthPanelContextFromIntent,
 } from '@/lib/auth/oauth-redirect';
+import {
+  clearReturnTo,
+  consumeReturnTo,
+  defaultDestination,
+  peekReturnTo,
+  type ReturnToContext,
+} from '@/lib/auth/return-to';
 import { mayAccessOwnerPanel } from '@/lib/owner/owner-panel-access';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService, OAuthProvider } from '@/services/auth.service';
@@ -90,11 +97,18 @@ export function useAuthActions({
         return;
       }
 
-      const returnTo = sessionStorage.getItem('kh_redirect_after_login');
-      const clearContext = mayAccessOwnerPanel(laravelUser.role)
-        ? ('owner' as const)
-        : ('client' as const);
-      clearSessionStorage(clearContext);
+      // The destination must be read from the key matching the user's actual
+      // space: reading the client key for an owner is what previously dropped
+      // `kh_owner_redirect` (OTP owner always landed on the dashboard) and
+      // could bounce an owner to a stale client URL.
+      const returnToContext: ReturnToContext = mayAccessOwnerPanel(
+        laravelUser.role
+      )
+        ? 'owner'
+        : 'client';
+      const returnTo = peekReturnTo(returnToContext);
+      clearReturnTo();
+      clearSessionStorage(returnToContext);
 
       flushSync(() => {
         if (mayAccessOwnerPanel(laravelUser.role)) {
@@ -107,13 +121,7 @@ export function useAuthActions({
         setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
       });
 
-      if (returnTo) {
-        router.replace(returnTo);
-      } else if (mayAccessOwnerPanel(laravelUser.role)) {
-        router.replace('/owner/dashboard');
-      } else {
-        router.replace('/home');
-      }
+      router.replace(returnTo ?? defaultDestination(returnToContext));
     },
     [clearSession, router, setToken, setUserState]
   );
@@ -139,13 +147,7 @@ export function useAuthActions({
         setRoleCookie(UserRole.CUSTOMER);
       });
 
-      const returnTo = sessionStorage.getItem('kh_redirect_after_login');
-      if (returnTo) {
-        sessionStorage.removeItem('kh_redirect_after_login');
-        router.replace(returnTo);
-      } else {
-        router.replace('/home');
-      }
+      router.replace(consumeReturnTo('client'));
     },
     [router, setUserState]
   );
@@ -171,13 +173,7 @@ export function useAuthActions({
         setRoleCookie(laravelUser.role ?? UserRole.AGENT);
       });
 
-      const returnTo = sessionStorage.getItem('kh_owner_redirect');
-      if (returnTo) {
-        sessionStorage.removeItem('kh_owner_redirect');
-        router.replace(returnTo);
-      } else {
-        router.replace('/owner/dashboard');
-      }
+      router.replace(consumeReturnTo('owner'));
     },
     [router, setUserState]
   );

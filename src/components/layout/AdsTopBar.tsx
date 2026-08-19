@@ -1,6 +1,7 @@
 'use client';
 
 import CreditsWidget from '@/components/layout/CreditsWidget';
+import { captureReturnTo } from '@/lib/auth/return-to';
 import { useAuth } from '@/providers/AuthProvider';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import PersonOutline from '@mui/icons-material/PersonOutline';
@@ -86,7 +87,11 @@ export default function AdsTopBar() {
             </Avatar>
           </Link>
         ) : !isAuthenticated ? (
-          <Link href="/login" style={{ textDecoration: 'none' }}>
+          <Link
+            href="/login"
+            onClick={() => captureReturnTo('client')}
+            style={{ textDecoration: 'none' }}
+          >
             <Box
               sx={{
                 display: 'flex',

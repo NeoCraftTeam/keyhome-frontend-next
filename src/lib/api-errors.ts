@@ -94,6 +94,11 @@ function flattenLaravelErrors(errors: LaravelValidationErrors): string[] {
 
 /**
  * Human-readable message from a Laravel API error payload (Axios) or generic Error.
+ *
+ * @deprecated Prefer `getSafeErrorMessage` from `@/lib/error-messages` — this
+ * helper concatenates `debug.message` and does not filter sensitive patterns
+ * beyond `No query results for model`. Kept only as a parser for legacy calls
+ * until they migrate.
  */
 export function getLaravelApiErrorMessage(
   err: unknown,

@@ -20,6 +20,7 @@ import WelcomeModal from '@/components/ui/overlay/WelcomeModal';
 import { useFcmToken } from '@/hooks/useFcmToken';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { useUserLocation } from '@/hooks/useUserLocation';
+import { buildAuthUrlWithReturnTo } from '@/lib/auth/return-to';
 import { isLikelyIosWebKit } from '@/lib/ios-environment';
 import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
 import { useAuth } from '@/providers/AuthProvider';
@@ -214,18 +215,21 @@ export default function DashboardLayout({
       return;
     }
     if (isPrivatePage && !isLoading && !isAuthenticated) {
-      // Save where the user was so we can bring them back after re-auth
+      // Save where the user was so we can bring them back after re-auth.
+      // The destination also travels in `?redirect=` so third-party auth
+      // (Clerk OAuth) can recover it after leaving our origin.
       const shouldSave =
         pathname &&
         !AUTH_PAGES.some((p) => pathname.startsWith(p)) &&
         pathname !== '/';
-      if (shouldSave) {
-        sessionStorage.setItem(
-          'kh_redirect_after_login',
-          pathname + window.location.search
-        );
-      }
-      router.replace('/login');
+      const loginUrl = shouldSave
+        ? buildAuthUrlWithReturnTo(
+            '/login',
+            'client',
+            pathname + window.location.search
+          )
+        : '/login';
+      router.replace(loginUrl);
     }
 
     // Cross-panel guard: owners/agents must not use client-private paths.

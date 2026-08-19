@@ -22,6 +22,7 @@ import PushPrompt from '@/components/ui/overlay/PushPrompt';
 import { useFcmToken } from '@/hooks/useFcmToken';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { isLikelyIosWebKit } from '@/lib/ios-environment';
+import { buildAuthUrlWithReturnTo } from '@/lib/auth/return-to';
 import { isOwnerPlacardePreviewPath } from '@/lib/owner/owner-placarde-preview';
 import { shouldShowOwnerQuickCreateFab } from '@/lib/owner/owner-shell-fab';
 import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
@@ -225,11 +226,15 @@ export default function OwnerLayoutClient({
     }
 
     if (!isAuthenticated || !user) {
-      sessionStorage.setItem(
-        'kh_owner_redirect',
-        pathname || '/owner/dashboard'
+      // Keep the query string: `/owner/ads?status=pending&page=3` must come
+      // back with its filters, not stripped down to `/owner/ads`.
+      router.replace(
+        buildAuthUrlWithReturnTo(
+          '/owner/login',
+          'owner',
+          `${pathname}${window.location.search}`
+        )
       );
-      router.replace('/owner/login');
       return;
     }
 

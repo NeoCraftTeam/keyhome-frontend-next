@@ -3,6 +3,7 @@
 import CalendarExportMenu from '@/components/ui/display/CalendarExportMenu';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import {
   ownerService,
   type OwnerViewingReservation,
@@ -219,10 +220,11 @@ export default function OwnerViewingsPage() {
       invalidateReservations();
     },
     onError: (error: unknown) => {
-      const msg =
-        (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message ?? 'Erreur lors de la confirmation.';
-      setSnackbar({ open: true, message: msg, severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: getSafeErrorMessage(error, 'Erreur lors de la confirmation.'),
+        severity: 'error',
+      });
       setConfirmDialog(null);
       invalidateReservations();
     },

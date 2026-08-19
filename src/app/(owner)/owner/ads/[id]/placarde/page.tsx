@@ -1,6 +1,6 @@
 'use client';
 
-import { getLaravelApiErrorMessage } from '@/lib/api-errors';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { isLikelyIosWebKit } from '@/lib/ios-environment';
 import { ownerService } from '@/services/owner.service';
 import { brandAgent, neutral } from '@/theme/tokens';
@@ -60,7 +60,7 @@ export default function AdPlacardePreviewPage() {
       } catch (err) {
         if (!cancelled) {
           setError(
-            getLaravelApiErrorMessage(
+            getSafeErrorMessage(
               err,
               'Impossible de charger l\u2019aper\u00e7u de la pancarte.'
             )
@@ -94,10 +94,7 @@ export default function AdPlacardePreviewPage() {
       window.setTimeout(() => URL.revokeObjectURL(url), 2500);
     } catch (err) {
       setError(
-        getLaravelApiErrorMessage(
-          err,
-          'Impossible de t\u00e9l\u00e9charger le PDF.'
-        )
+        getSafeErrorMessage(err, 'Impossible de t\u00e9l\u00e9charger le PDF.')
       );
     }
   }, [adId, filename]);

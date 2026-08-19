@@ -1,5 +1,6 @@
 'use client';
 
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { paymentsService } from '@/services/payments.service';
 import type {
   PaymentInitiatePayload,
@@ -116,22 +117,10 @@ export function usePayment(): UsePaymentReturn {
         }
         return result;
       } catch (err: unknown) {
-        const axiosErr = err as {
-          response?: {
-            data?: { message?: string; errors?: Record<string, string[]> };
-          };
-        };
-        // Backend gating rejects disabled methods via 422 with a French
-        // label — surface that exact message to the user.
-        const validationPaymentMethod =
-          axiosErr?.response?.data?.errors?.['payment_method']?.[0];
-        const validationTurnstile =
-          axiosErr?.response?.data?.errors?.['turnstile_token']?.[0];
-        const message =
-          validationPaymentMethod ||
-          validationTurnstile ||
-          axiosErr?.response?.data?.message ||
-          "Une erreur est survenue lors de l'initialisation du paiement.";
+        const message = getSafeErrorMessage(
+          err,
+          "Une erreur est survenue lors de l'initialisation du paiement."
+        );
 
         setState({
           isLoading: false,

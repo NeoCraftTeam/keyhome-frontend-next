@@ -26,7 +26,7 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 // ─── Profile config ───────────────────────────────────────────────────────────
 
@@ -160,10 +160,11 @@ interface Props {
   adLng: number;
   /** Pass the already-fetched location to avoid a second geolocation request */
   userLocation?: import('@/hooks/useUserLocation').UserLocation | null;
-  /** Called once when the driving-car route is first computed — used to draw the real road on the map */
+  /** Called whenever the active transport route changes on the map. */
   onRouteComputed?: (
     geojson: GeoJSON.FeatureCollection,
-    summary: DirectionsSummary
+    summary: DirectionsSummary,
+    profileLabel: string
   ) => void;
 }
 
@@ -181,7 +182,15 @@ export default function DirectionsPanel({
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<DirectionsResult[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const routeNotifiedRef = useRef(false);
+
+  const displayRoute = useCallback(
+    (result: DirectionsResult) => {
+      if (!onRouteComputed) return;
+
+      onRouteComputed(result.geojson, result.summary, result.profile_label);
+    },
+    [onRouteComputed]
+  );
 
   const compute = useCallback(async () => {
     if (!userLocation) return;
@@ -202,12 +211,13 @@ export default function DirectionsPanel({
         const filtered = prev.filter((r) => r.profile !== profile);
         return [...filtered, res.data];
       });
+      displayRoute(res.data);
     } catch {
       setError("Calcul d'itinéraire indisponible. Vérifiez votre connexion.");
     } finally {
       setLoading(false);
     }
-  }, [userLocation, adLat, adLng, profile]);
+  }, [userLocation, adLat, adLng, profile, displayRoute]);
 
   const computeAll = useCallback(async () => {
     if (!userLocation) return;
@@ -231,14 +241,7 @@ export default function DirectionsPanel({
 
       if (carResult) {
         setResults([carResult]);
-        // Notify parent to draw road on map (once per panel session)
-        if (!routeNotifiedRef.current && onRouteComputed) {
-          routeNotifiedRef.current = true;
-          onRouteComputed(
-            carResult.geojson as GeoJSON.FeatureCollection,
-            carResult.summary
-          );
-        }
+        displayRoute(carResult);
       }
 
       // Lazy-load foot + cycling after a short delay to spread ORS rate-limit
@@ -280,12 +283,7 @@ export default function DirectionsPanel({
     } finally {
       setLoading(false);
     }
-  }, [userLocation, adLat, adLng, onRouteComputed]);
-
-  // Reset notification flag when user location changes significantly
-  useEffect(() => {
-    routeNotifiedRef.current = false;
-  }, [userLocation?.latitude, userLocation?.longitude]);
+  }, [userLocation, adLat, adLng, displayRoute]);
 
   if (!userLocation) return null;
 
@@ -388,6 +386,8 @@ export default function DirectionsPanel({
                 if (v) {
                   setProfile(v);
                   setError(null);
+                  const existingResult = results.find((r) => r.profile === v);
+                  if (existingResult) displayRoute(existingResult);
                 }
               }}
               size="small"

@@ -22,9 +22,15 @@ import {
 } from '@stripe/react-stripe-js';
 import {
   CheckoutElementsProvider,
+  ExpressCheckoutElement,
   PaymentElement as CheckoutPaymentElement,
   useCheckoutElements,
 } from '@stripe/react-stripe-js/checkout';
+import type {
+  AvailablePaymentMethods,
+  StripeExpressCheckoutElementConfirmEvent,
+  StripeExpressCheckoutElementReadyEvent,
+} from '@stripe/stripe-js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
@@ -267,6 +273,12 @@ function CheckoutConfirmInner({
   const [error, setError] = useState<string | null>(null);
   const [elementReady, setElementReady] = useState(false);
   const [saveChecked, setSaveChecked] = useState<boolean>(defaultSaveCheckbox);
+  // Whether any express wallet (Apple Pay / Google Pay / Link…) is actually
+  // available on this device/browser. `null` until the ExpressCheckoutElement
+  // fires `onReady`; when it resolves to an empty set we unmount the element
+  // and its divider so the modal never shows a blank gap.
+  const [expressAvailable, setExpressAvailable] =
+    useState<AvailablePaymentMethods | null>(null);
 
   const checkoutTotalAmount =
     result.type === 'success'
@@ -314,6 +326,78 @@ function CheckoutConfirmInner({
     }
   }, [result, onSuccess]);
 
+  // Fired once the ExpressCheckoutElement has probed the device/browser. When
+  // no wallet is available (`availablePaymentMethods` undefined) we keep
+  // `expressAvailable` at an all-false object so the element and its divider
+  // stay unmounted — the user just sees the standard PaymentElement.
+  const handleExpressReady = useCallback(
+    (event: StripeExpressCheckoutElementReadyEvent) => {
+      setExpressAvailable(
+        event.availablePaymentMethods ?? {
+          amazonPay: false,
+          applePay: false,
+          googlePay: false,
+          link: false,
+          paypal: false,
+          klarna: false,
+        }
+      );
+    },
+    []
+  );
+
+  // Fired when the user completes an Apple Pay / Google Pay / Link sheet. The
+  // wallet sheet has already collected payment + billing details, so we hand
+  // the confirm event straight to `checkout.confirm()` — no PaymentElement
+  // roundtrip. On error we surface the message and let Stripe dismiss its
+  // sheet; `redirect: 'if_required'` keeps card-backed wallets in-page while
+  // still allowing a 3DS/redirect step when the issuer demands it.
+  const handleExpressConfirm = useCallback(
+    async (event: StripeExpressCheckoutElementConfirmEvent) => {
+      if (result.type !== 'success') {
+        return;
+      }
+
+      setSubmitting(true);
+      setError(null);
+
+      try {
+        const confirmResult = await result.checkout.confirm({
+          redirect: 'if_required',
+          expressCheckoutConfirmEvent: event,
+        });
+
+        if (confirmResult.type === 'error') {
+          const message =
+            confirmResult.error.message ??
+            'Une erreur est survenue lors du paiement. Réessayez.';
+          event.paymentFailed({ reason: 'fail', message });
+          setError(message);
+
+          return;
+        }
+
+        onSuccess();
+      } catch (err: unknown) {
+        const fallback = 'Une erreur est survenue lors du paiement. Réessayez.';
+        const message =
+          err instanceof Error && !isUnsafeBackendMessage(err.message)
+            ? err.message
+            : fallback;
+        event.paymentFailed({ reason: 'fail', message });
+        setError(message);
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [result, onSuccess]
+  );
+
+  // True once the ExpressCheckoutElement reported at least one usable wallet.
+  // Drives the "ou payer par carte" divider so it never shows alone.
+  const hasExpressWallet =
+    expressAvailable !== null && Object.values(expressAvailable).some(Boolean);
+
   const handleSaveCheckboxChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const next = event.target.checked;
@@ -358,6 +442,38 @@ function CheckoutConfirmInner({
               ? `Total à payer : ${checkoutTotalAmount}`
               : null)}
         </Typography>
+      )}
+
+      {/* Express wallets (Apple Pay / Google Pay / Link…). The element is
+          always mounted so it can probe the device via `onReady`; Stripe
+          renders nothing when no wallet is available, so a zero-height box is
+          harmless. The "ou" divider only appears once we KNOW a wallet showed,
+          to avoid a lone divider above the card form. */}
+      <Box sx={{ mb: hasExpressWallet ? 2 : 0 }}>
+        <ExpressCheckoutElement
+          onReady={handleExpressReady}
+          onConfirm={handleExpressConfirm}
+        />
+      </Box>
+
+      {hasExpressWallet && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            my: 2,
+          }}
+        >
+          <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.secondary', fontWeight: 600 }}
+          >
+            ou payer par carte
+          </Typography>
+          <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
+        </Box>
       )}
 
       <Box sx={{ mb: 2, minHeight: 64 }}>

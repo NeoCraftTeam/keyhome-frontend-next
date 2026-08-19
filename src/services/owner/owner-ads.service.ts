@@ -19,7 +19,35 @@ export interface BoostPlan {
   description: string | null;
 }
 
+export interface PrivateOwnerNote {
+  is_property_owner: boolean;
+  owner_name?: string | null;
+  owner_address?: string | null;
+  owner_phone?: string | null;
+  owner_email?: string | null;
+  notes?: string | null;
+  updated_at?: string | null;
+}
+
 export const ownerAdsService = {
+  async getPrivateOwnerNote(adId: string): Promise<PrivateOwnerNote | null> {
+    const { data } = await api.get<{ data: PrivateOwnerNote | null }>(
+      `/my/ads/${adId}/private-owner-note`
+    );
+    return data.data;
+  },
+
+  async savePrivateOwnerNote(
+    adId: string,
+    note: PrivateOwnerNote
+  ): Promise<PrivateOwnerNote> {
+    const { data } = await api.put<{ data: PrivateOwnerNote }>(
+      `/my/ads/${adId}/private-owner-note`,
+      note
+    );
+    return data.data;
+  },
+
   async getMyAds(
     params?: {
       page?: number;

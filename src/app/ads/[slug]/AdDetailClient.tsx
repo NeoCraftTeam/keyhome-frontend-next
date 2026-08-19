@@ -1,5 +1,6 @@
 'use client';
 
+import { captureReturnTo } from '@/lib/auth/return-to';
 import AdReportModal from '@/components/ads/AdReportModal';
 import CompareDrawer from '@/components/ads/CompareDrawer';
 import DirectionsPanel from '@/components/ads/DirectionsPanel';
@@ -159,15 +160,19 @@ function AdDetailContent() {
   >(null);
   const [routeGeojson, setRouteGeojson] =
     useState<GeoJSON.FeatureCollection | null>(null);
-  const [roadSummary, setRoadSummary] = useState<DirectionsSummary | null>(
-    null
-  );
+  const [roadSummary, setRoadSummary] = useState<
+    (DirectionsSummary & { profile_label: string }) | null
+  >(null);
   const [showScorecardSection, setShowScorecardSection] = useState(true);
 
   const handleRouteComputed = useCallback(
-    (geojson: GeoJSON.FeatureCollection, summary: DirectionsSummary) => {
+    (
+      geojson: GeoJSON.FeatureCollection,
+      summary: DirectionsSummary,
+      profileLabel: string
+    ) => {
       setRouteGeojson(geojson);
-      setRoadSummary(summary);
+      setRoadSummary({ ...summary, profile_label: profileLabel });
     },
     []
   );
@@ -1755,16 +1760,7 @@ function AdDetailContent() {
                         userLocation={userLocation}
                         locationError={locationError}
                         routeGeojson={routeGeojson}
-                        roadSummary={
-                          roadSummary
-                            ? {
-                                distance_m: roadSummary.distance_m,
-                                distance_label: roadSummary.distance_label,
-                                duration_label: roadSummary.duration_label,
-                                profile_label: 'En voiture',
-                              }
-                            : null
-                        }
+                        roadSummary={roadSummary}
                         liveTracking={liveTracking}
                         onLiveTrackingChange={setLiveTracking}
                       />
@@ -1902,10 +1898,7 @@ function AdDetailContent() {
                       size="small"
                       startIcon={<NotificationsNone />}
                       onClick={() => {
-                        sessionStorage.setItem(
-                          'kh_redirect_after_login',
-                          window.location.pathname + window.location.search
-                        );
+                        captureReturnTo('client');
                         router.push('/login');
                       }}
                       sx={{
@@ -2175,10 +2168,7 @@ function AdDetailContent() {
                         size="large"
                         onClick={() => {
                           if (!isAuthenticated) {
-                            sessionStorage.setItem(
-                              'kh_redirect_after_login',
-                              window.location.pathname + window.location.search
-                            );
+                            captureReturnTo('client');
                             router.push('/login');
                             return;
                           }
@@ -2225,10 +2215,7 @@ function AdDetailContent() {
                     startIcon={<FlagOutlined />}
                     onClick={() => {
                       if (!isAuthenticated) {
-                        sessionStorage.setItem(
-                          'kh_redirect_after_login',
-                          window.location.pathname + window.location.search
-                        );
+                        captureReturnTo('client');
                         router.push('/login');
                         return;
                       }
@@ -2313,10 +2300,7 @@ function AdDetailContent() {
                         size="large"
                         onClick={() => {
                           if (!isAuthenticated) {
-                            sessionStorage.setItem(
-                              'kh_redirect_after_login',
-                              window.location.pathname + window.location.search
-                            );
+                            captureReturnTo('client');
                             router.push('/login');
                             return;
                           }
@@ -2605,10 +2589,7 @@ function AdDetailContent() {
                       startIcon={<FlagOutlined />}
                       onClick={() => {
                         if (!isAuthenticated) {
-                          sessionStorage.setItem(
-                            'kh_redirect_after_login',
-                            window.location.pathname + window.location.search
-                          );
+                          captureReturnTo('client');
                           router.push('/login');
                           return;
                         }
@@ -3165,10 +3146,7 @@ function AdDetailContent() {
             !isOwnAd
               ? async () => {
                   if (!isAuthenticated) {
-                    sessionStorage.setItem(
-                      'kh_redirect_after_login',
-                      window.location.pathname + window.location.search
-                    );
+                    captureReturnTo('client');
                     router.push('/login');
                     return;
                   }

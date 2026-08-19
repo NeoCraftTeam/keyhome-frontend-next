@@ -1,5 +1,7 @@
 'use client';
 
+import { getSafeErrorMessage } from '@/lib/error-messages';
+
 /**
  * useAdFormStaticData — remote data needed by all steps of AdFormWizard.
  *
@@ -117,8 +119,7 @@ export function useAdFormStaticData(
   });
 
   const cityCreateError: string | null = cityMutationError
-    ? ((cityMutationError as { response?: { data?: { message?: string } } })
-        .response?.data?.message ?? 'Ville introuvable')
+    ? getSafeErrorMessage(cityMutationError, 'Ville introuvable')
     : null;
 
   const { mutate: createQuarter, isPending: isCreatingQuarter } = useMutation({

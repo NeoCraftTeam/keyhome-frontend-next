@@ -6,7 +6,7 @@ import MarkdownBioEditor from '@/components/owner/MarkdownBioEditor';
 import PublishingOverlay from '@/components/owner/PublishingOverlay';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PhoneField from '@/components/ui/forms/PhoneField';
-import { getLaravelApiErrorMessage } from '@/lib/api-errors';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import {
   normalizePhoneLikeBackend,
@@ -163,6 +163,7 @@ export default function OwnerNewAdPage() {
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [adCreated, setAdCreated] = useState(false);
   const [activePanel, setActivePanel] = useState<'form' | 'profile'>('form');
+  const [autoSavedDraftId, setAutoSavedDraftId] = useState<string | null>(null);
   const { steps, isComplete, progress } = useProfileCompleteness(user);
 
   // Inline profile completion state
@@ -267,19 +268,23 @@ export default function OwnerNewAdPage() {
       images: File[];
     }) => {
       const formData = buildAdFormData(values, images);
-      return adsService.saveDraft(formData);
+      return autoSavedDraftId
+        ? adsService.updateDraft(autoSavedDraftId, formData)
+        : adsService.saveDraft(formData);
     },
     onSuccess: (ad) => {
       setDraftSnackbar({
         message: 'Brouillon enregistré sur le serveur.',
         severity: 'success',
       });
-      // Redirect to edit page so further saves update the same ad
+      setAutoSavedDraftId(ad.id);
+      // A manual draft save includes the in-memory media, so it is now safe
+      // to switch to the regular edit route.
       router.push(`/owner/ads/${ad.id}`);
     },
     onError: (err: unknown) => {
       setDraftSnackbar({
-        message: getLaravelApiErrorMessage(
+        message: getSafeErrorMessage(
           err,
           "Erreur lors de l'enregistrement du brouillon."
         ),
@@ -309,7 +314,9 @@ export default function OwnerNewAdPage() {
         formData.append('property_condition', propertyConditionPdf);
       }
 
-      const ad = await adsService.create(formData);
+      const ad = autoSavedDraftId
+        ? await adsService.updateDraft(autoSavedDraftId, formData)
+        : await adsService.create(formData);
 
       // Upload tour scenes if any — clean up orphan ad on failure
       if (tourScenes && tourScenes.length > 0) {
@@ -331,11 +338,18 @@ export default function OwnerNewAdPage() {
               }))
             );
           } catch (scenesError) {
-            // Roll back: delete the orphan ad so DB stays consistent
-            await adsService.destroy(ad.id).catch(() => {});
+            // Only a newly-created ad is orphaned here. An auto-saved draft
+            // must remain recoverable when a tour upload fails.
+            if (!autoSavedDraftId) {
+              await adsService.destroy(ad.id).catch(() => {});
+            }
             throw scenesError;
           }
         }
+      }
+
+      if (autoSavedDraftId) {
+        await adsService.publishDraft(ad.id);
       }
 
       return ad;
@@ -345,7 +359,7 @@ export default function OwnerNewAdPage() {
       setScheduleDialogOpen(true);
     },
     onError: (err: unknown) => {
-      const msg = getLaravelApiErrorMessage(
+      const msg = getSafeErrorMessage(
         err,
         "Erreur lors de la création de l'annonce."
       );
@@ -432,12 +446,13 @@ export default function OwnerNewAdPage() {
     [isComplete]
   );
 
-  const handleDraftCreated = useCallback(
-    (draftId: string) => {
-      router.push(`/owner/ads/${draftId}`);
-    },
-    [router]
-  );
+  const handleDraftCreated = useCallback((draftId: string) => {
+    // Keep the mounted wizard (and its in-memory photos / 360° files) alive.
+    // Any URL change is intercepted as an App Router navigation by Next.js
+    // 16 and remounts the form. The lightweight autosave intentionally
+    // persists text fields only, so navigation here would lose media.
+    setAutoSavedDraftId(draftId);
+  }, []);
 
   return (
     <>
@@ -715,7 +730,9 @@ export default function OwnerNewAdPage() {
               boxShadow: 'none',
             }}
           >
-            {isSavingProfile ? 'Sauvegarde…' : 'Sauvegarder et publier'}
+            {isSavingProfile
+              ? 'Sauvegarde…'
+              : 'Sauvegarder et revenir à l’annonce'}
           </Button>
         </Box>
       </Drawer>

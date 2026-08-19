@@ -197,7 +197,7 @@ export default function TurnstileWidget({
         id={`kh-turnstile-${id}`}
         ref={containerRef}
         role="region"
-        aria-label="Vérification anti-robot Cloudflare Turnstile"
+        aria-label="Vérification de sécurité"
       />
     </>
   );

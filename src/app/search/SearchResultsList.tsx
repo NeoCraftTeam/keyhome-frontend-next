@@ -1,5 +1,6 @@
 'use client';
 
+import { buildAuthUrlWithReturnTo } from '@/lib/auth/return-to';
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import SearchAlertButton from '@/components/ads/SearchAlertButton';
@@ -372,7 +373,11 @@ const SearchResultsList = memo(function SearchResultsList({
                 variant="contained"
                 onClick={() =>
                   router.push(
-                    `/login?redirect=${encodeURIComponent(typeof window !== 'undefined' && window.location.search ? `/search${window.location.search}` : '/search')}`
+                    buildAuthUrlWithReturnTo(
+                      '/login',
+                      'client',
+                      `/search${typeof window !== 'undefined' ? window.location.search : ''}`
+                    )
                   )
                 }
                 sx={{

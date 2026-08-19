@@ -10,6 +10,7 @@ import { useLandingStats } from '@/hooks/useLandingStats';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { useTurnstileEmailSubmitReady } from '@/hooks/useTurnstileEmailSubmitReady';
 import { getAuthApiErrorMessage } from '@/lib/auth/auth-api-errors';
+import { adoptReturnToFromQuery, RETURN_TO_PARAM } from '@/lib/auth/return-to';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { useAuth } from '@/providers/AuthProvider';
 import { gradient } from '@/theme/tokens';
@@ -78,6 +79,19 @@ export default function LoginPage() {
       router.replace('/choose-organization');
     }
   }, [router]);
+
+  // `?redirect=` carries the page an anonymous visitor was trying to reach.
+  // Persisting it to sessionStorage is what makes it survive the third-party
+  // auth round-trip (Clerk OAuth leaves our origin and returns on
+  // `/sso-callback`, without our query string). Read from `window.location`
+  // rather than `useSearchParams()` to avoid forcing a client-side bail-out of
+  // the prerender for this page. The value is validated in `captureReturnTo`.
+  useEffect(() => {
+    adoptReturnToFromQuery(
+      'client',
+      new URLSearchParams(window.location.search).get(RETURN_TO_PARAM)
+    );
+  }, []);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

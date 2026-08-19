@@ -3,6 +3,7 @@
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { useAuth } from '@/providers/AuthProvider';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { disputesService } from '@/services/disputes.service';
 import type { DisputeEvidenceType, DisputeStatus } from '@/types';
 import AccessTime from '@mui/icons-material/AccessTime';
@@ -138,9 +139,9 @@ export default function DisputeDetailPage() {
       setEvidenceFile(null);
       queryClient.invalidateQueries({ queryKey: ['dispute', id] });
     },
-    onError: (err: { response?: { data?: { message?: string } } }) => {
+    onError: (err: unknown) => {
       setSnackbar({
-        msg: err?.response?.data?.message ?? "Erreur lors de l'upload.",
+        msg: getSafeErrorMessage(err, "Erreur lors de l'upload."),
         ok: false,
       });
     },

@@ -1,0 +1,12 @@
+Replace this file with the actual content downloaded from:
+Stripe Dashboard → Settings → Payment methods → Apple Pay → Configure → Add domain → Download verification file
+
+Steps:
+1. Go to https://dashboard.stripe.com/settings/payment_methods
+2. Find "Apple Pay" in the Wallets section
+3. Click "Configure"
+4. Add domain: keyhome.app
+5. Download the verification file
+6. Replace this file's content with the downloaded file's content
+7. Deploy to Vercel (git push)
+8. Return to Stripe Dashboard and click "Verify"

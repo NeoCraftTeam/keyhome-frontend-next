@@ -1,5 +1,6 @@
 import { getAuthToken } from '@/lib/auth/auth-token';
 import { getEchoSocketId } from '@/lib/chat/echo';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { getOrCreateCorrelationId } from '@/lib/request-correlation';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
@@ -191,6 +192,13 @@ api.interceptors.response.use(
           })
         );
       }
+    }
+    // Annotate with a sanitized user-facing message for catch sites.
+    try {
+      (error as unknown as Record<string, unknown>)._safeMessage =
+        getSafeErrorMessage(error);
+    } catch {
+      /* non-fatal */
     }
     return Promise.reject(error);
   }

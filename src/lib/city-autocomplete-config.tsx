@@ -1,8 +1,8 @@
 'use client';
 
 import LocationOn from '@mui/icons-material/LocationOn';
-import { Typography } from '@mui/material';
-import type { City } from '@/types';
+import { Box, Typography } from '@mui/material';
+import type { City, Quarter } from '@/types';
 
 /**
  * Shared config for city Autocomplete components across the app.
@@ -58,12 +58,18 @@ export function useCityAutocompleteConfig() {
   const renderOption = (
     props: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key },
     option: City
+  ) => renderOptionWithTrailing(props, option);
+
+  const renderOptionWithTrailing = (
+    props: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key },
+    option: City,
+    trailingContent?: React.ReactNode
   ) => {
-    const { key, ...restProps } = props;
+    const { key: _muiKey, ...restProps } = props;
     const isSelected =
       props['aria-selected'] === true || props['aria-selected'] === 'true';
     return (
-      <li key={key ?? option.id} {...restProps}>
+      <li key={option.id} {...restProps}>
         <LocationOn
           sx={{
             fontSize: 16,
@@ -71,7 +77,29 @@ export function useCityAutocompleteConfig() {
             mr: 0.5,
           }}
         />
-        {option.name}
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            component="span"
+            sx={{ display: 'block', fontSize: 14, fontWeight: 650 }}
+          >
+            {option.name}
+          </Typography>
+          {(option.admin_area || option.country) && (
+            <Typography
+              component="span"
+              sx={{
+                display: 'block',
+                color: 'text.secondary',
+                fontSize: 12,
+                lineHeight: 1.35,
+              }}
+            >
+              {[option.admin_area, option.country].filter(Boolean).join(' · ')}
+              {option.place_type ? ` · ${option.place_type}` : ''}
+            </Typography>
+          )}
+        </Box>
+        {trailingContent}
       </li>
     );
   };
@@ -80,14 +108,11 @@ export function useCityAutocompleteConfig() {
     props: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key },
     option: City | string
   ) => {
-    const { key, ...restProps } = props;
+    const { key: _muiKey, ...restProps } = props;
     const isSelected =
       props['aria-selected'] === true || props['aria-selected'] === 'true';
     return (
-      <li
-        key={key ?? (typeof option === 'string' ? option : option.id)}
-        {...restProps}
-      >
+      <li key={typeof option === 'string' ? option : option.id} {...restProps}>
         <LocationOn
           sx={{
             fontSize: 16,
@@ -95,9 +120,75 @@ export function useCityAutocompleteConfig() {
             mr: 0.5,
           }}
         />
-        <Typography component="span" sx={{ fontSize: 14 }}>
-          {typeof option === 'string' ? option : option.name}
-        </Typography>
+        {typeof option === 'string' ? (
+          <Typography component="span" sx={{ fontSize: 14 }}>
+            {option}
+          </Typography>
+        ) : (
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              component="span"
+              sx={{ display: 'block', fontSize: 14, fontWeight: 650 }}
+            >
+              {option.name}
+            </Typography>
+            {(option.admin_area || option.country) && (
+              <Typography
+                component="span"
+                sx={{ display: 'block', color: 'text.secondary', fontSize: 12 }}
+              >
+                {[option.admin_area, option.country]
+                  .filter(Boolean)
+                  .join(' · ')}
+                {option.place_type ? ` · ${option.place_type}` : ''}
+              </Typography>
+            )}
+          </Box>
+        )}
+      </li>
+    );
+  };
+
+  const renderQuarterOption = (
+    props: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key },
+    option: Quarter
+  ) => {
+    const { key: _muiKey, ...restProps } = props;
+    const isSelected =
+      props['aria-selected'] === true || props['aria-selected'] === 'true';
+
+    return (
+      <li key={option.id} {...restProps}>
+        <LocationOn
+          sx={{
+            fontSize: 16,
+            color: isSelected ? 'primary.main' : 'text.disabled',
+            mr: 0.5,
+          }}
+        />
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            component="span"
+            sx={{ display: 'block', fontSize: 14, fontWeight: 650 }}
+          >
+            {option.name}
+          </Typography>
+          {(option.city_name || option.place_type) && (
+            <Typography
+              component="span"
+              sx={{
+                display: 'block',
+                color: 'text.secondary',
+                fontSize: 12,
+                lineHeight: 1.35,
+              }}
+            >
+              {[option.city_name, option.place_type]
+                .filter(Boolean)
+                .join(' · ')}
+            </Typography>
+          )}
+        </Box>
       </li>
     );
   };
@@ -109,5 +200,12 @@ export function useCityAutocompleteConfig() {
     },
   };
 
-  return { slotProps, renderOption, renderOptionFreeSolo, inputSx };
+  return {
+    slotProps,
+    renderOption,
+    renderOptionWithTrailing,
+    renderOptionFreeSolo,
+    renderQuarterOption,
+    inputSx,
+  };
 }

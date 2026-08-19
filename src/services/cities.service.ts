@@ -1,12 +1,32 @@
 import api from '@/lib/api';
 import { AdType, City, PaginatedResponse, Quarter } from '@/types';
 
+function uniqueCitiesForAutocomplete(cities: City[]): City[] {
+  const seen = new Set<string>();
+
+  return cities.filter((city) => {
+    const identity = [
+      city.name,
+      city.admin_area ?? '',
+      city.country_code ?? city.country ?? '',
+      city.place_type ?? '',
+    ]
+      .map((part) => part.trim().toLocaleLowerCase('fr'))
+      .join('|');
+
+    if (seen.has(identity)) return false;
+    seen.add(identity);
+    return true;
+  });
+}
+
 export const citiesService = {
   async list(
     params?: {
       q?: string;
       page?: number;
       per_page?: number;
+      country_code?: string;
     },
     config?: { signal?: AbortSignal }
   ): Promise<PaginatedResponse<City>> {
@@ -14,7 +34,10 @@ export const citiesService = {
       params,
       ...(config?.signal ? { signal: config.signal } : {}),
     });
-    return data;
+    return {
+      ...data,
+      data: uniqueCitiesForAutocomplete(data.data ?? []),
+    };
   },
 
   async show(id: string): Promise<City> {

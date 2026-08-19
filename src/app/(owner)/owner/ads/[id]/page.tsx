@@ -10,7 +10,7 @@ import {
   normalizeAdFormValues,
 } from '@/components/owner/ad-form/types';
 import FadeIn from '@/components/ui/layout/FadeIn';
-import { getLaravelApiErrorMessage } from '@/lib/api-errors';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { adsService } from '@/services/ads.service';
 import { ownerService } from '@/services/owner.service';
 import { AdStatus } from '@/types';
@@ -226,10 +226,7 @@ export default function OwnerAdEditPage() {
     },
     onError: (err: unknown) => {
       setSnackbar({
-        message: getLaravelApiErrorMessage(
-          err,
-          'Erreur lors de la mise à jour.'
-        ),
+        message: getSafeErrorMessage(err, 'Erreur lors de la mise à jour.'),
         severity: 'error',
       });
     },
@@ -247,7 +244,7 @@ export default function OwnerAdEditPage() {
     },
     onError: (err: unknown) => {
       setSnackbar({
-        message: getLaravelApiErrorMessage(
+        message: getSafeErrorMessage(
           err,
           'Impossible de modifier la visibilité.'
         ),
@@ -265,7 +262,7 @@ export default function OwnerAdEditPage() {
     },
     onError: (err: unknown) => {
       setSnackbar({
-        message: getLaravelApiErrorMessage(
+        message: getSafeErrorMessage(
           err,
           'Impossible de mettre à jour le statut.'
         ),
@@ -281,7 +278,7 @@ export default function OwnerAdEditPage() {
     },
     onError: (err: unknown) => {
       setSnackbar({
-        message: getLaravelApiErrorMessage(
+        message: getSafeErrorMessage(
           err,
           'Impossible de supprimer cette annonce.'
         ),
@@ -300,10 +297,7 @@ export default function OwnerAdEditPage() {
     },
     onError: (err: unknown) => {
       setSnackbar({
-        message: getLaravelApiErrorMessage(
-          err,
-          'Erreur lors de la publication.'
-        ),
+        message: getSafeErrorMessage(err, 'Erreur lors de la publication.'),
         severity: 'error',
       });
     },
@@ -392,7 +386,7 @@ export default function OwnerAdEditPage() {
     },
     onError: (err: unknown) => {
       setSnackbar({
-        message: getLaravelApiErrorMessage(
+        message: getSafeErrorMessage(
           err,
           'Erreur lors de la sauvegarde du brouillon.'
         ),
@@ -412,10 +406,7 @@ export default function OwnerAdEditPage() {
       ),
     onError: (err: unknown) => {
       setSnackbar({
-        message: getLaravelApiErrorMessage(
-          err,
-          'Erreur lors de la sauvegarde.'
-        ),
+        message: getSafeErrorMessage(err, 'Erreur lors de la sauvegarde.'),
         severity: 'error',
       });
     },
@@ -434,7 +425,7 @@ export default function OwnerAdEditPage() {
     },
     onError: (err: unknown) => {
       setSnackbar({
-        message: getLaravelApiErrorMessage(
+        message: getSafeErrorMessage(
           err,
           "Erreur lors de l'application des modifications."
         ),
@@ -452,7 +443,7 @@ export default function OwnerAdEditPage() {
     },
     onError: (err: unknown) => {
       setSnackbar({
-        message: getLaravelApiErrorMessage(err, "Erreur lors de l'annulation."),
+        message: getSafeErrorMessage(err, "Erreur lors de l'annulation."),
         severity: 'error',
       });
     },
@@ -486,7 +477,7 @@ export default function OwnerAdEditPage() {
     },
     onError: (err: unknown) => {
       setSnackbar({
-        message: getLaravelApiErrorMessage(
+        message: getSafeErrorMessage(
           err,
           'Erreur lors de la génération du contrat.'
         ),
@@ -1195,7 +1186,7 @@ export default function OwnerAdEditPage() {
                     }));
                   } catch (err: unknown) {
                     setSnackbar({
-                      message: getLaravelApiErrorMessage(
+                      message: getSafeErrorMessage(
                         err,
                         "Impossible d'améliorer le texte avec l'IA."
                       ),

@@ -3,12 +3,13 @@
 import BoostPurchaseDialog from '@/components/owner/BoostPurchaseDialog';
 import OwnerAdCard from '@/components/owner/OwnerAdCard';
 import PublishingOverlay from '@/components/owner/PublishingOverlay';
+import PrivateOwnerNoteDialog from '@/components/owner/PrivateOwnerNoteDialog';
 import ShareAdButtons from '@/components/owner/ShareAdButtons';
 import { useConfirm } from '@/components/ui/overlay/ConfirmDialog';
 import EmptyState from '@/components/ui/feedback/EmptyState';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { ShimmerBox } from '@/components/ui/feedback/ShimmerCard';
-import { getLaravelApiErrorMessage } from '@/lib/api-errors';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { formatPrice } from '@/lib/constants';
 import { openAdPlacardePreview } from '@/lib/owner/owner-placarde-preview';
 import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
@@ -25,6 +26,7 @@ import {
   VisibilityOff as HiddenIcon,
   HomeOutlined as HomeOutlinedIcon,
   MoreVert as MoreIcon,
+  NoteAltOutlined as NoteIcon,
   PictureAsPdf as PdfIcon,
   RocketLaunch as RocketLaunchIcon,
   Visibility as VisibleIcon,
@@ -100,6 +102,7 @@ export default function OwnerAdsPage() {
     severity: 'success' | 'error';
   } | null>(null);
   const [boostDialogAd, setBoostDialogAd] = useState<Ad | null>(null);
+  const [privateNoteAd, setPrivateNoteAd] = useState<Ad | null>(null);
 
   const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: [
@@ -167,7 +170,7 @@ export default function OwnerAdsPage() {
       setAnchorEl(null);
       setSelectedAd(null);
       setBoostFeedback({
-        message: getLaravelApiErrorMessage(
+        message: getSafeErrorMessage(
           err,
           'Impossible de modifier la visibilité.'
         ),
@@ -188,7 +191,7 @@ export default function OwnerAdsPage() {
       setAnchorEl(null);
       setSelectedAd(null);
       setBoostFeedback({
-        message: getLaravelApiErrorMessage(
+        message: getSafeErrorMessage(
           err,
           'Impossible de mettre à jour le statut.'
         ),
@@ -208,7 +211,7 @@ export default function OwnerAdsPage() {
       setAnchorEl(null);
       setSelectedAd(null);
       setBoostFeedback({
-        message: getLaravelApiErrorMessage(
+        message: getSafeErrorMessage(
           err,
           'Impossible de supprimer cette annonce.'
         ),
@@ -228,7 +231,7 @@ export default function OwnerAdsPage() {
       setAnchorEl(null);
       setSelectedAd(null);
       setBoostFeedback({
-        message: getLaravelApiErrorMessage(
+        message: getSafeErrorMessage(
           err,
           'Impossible de publier le brouillon.'
         ),
@@ -252,10 +255,7 @@ export default function OwnerAdsPage() {
       setAnchorEl(null);
       setSelectedAd(null);
       setBoostFeedback({
-        message: getLaravelApiErrorMessage(
-          err,
-          'Impossible de retirer le boost.'
-        ),
+        message: getSafeErrorMessage(err, 'Impossible de retirer le boost.'),
         severity: 'error',
       });
     },
@@ -1030,6 +1030,16 @@ export default function OwnerAdsPage() {
         {selectedAd
           ? [
               <MenuItem
+                key="private-owner-note"
+                onClick={() => {
+                  setPrivateNoteAd(selectedAd);
+                  setAnchorEl(null);
+                }}
+              >
+                <NoteIcon sx={{ mr: 1 }} fontSize="small" />
+                Note privée du bien
+              </MenuItem>,
+              <MenuItem
                 key="edit"
                 onClick={() => {
                   runAppRouterNavigation(router, `/owner/ads/${selectedAd.id}`);
@@ -1193,6 +1203,11 @@ export default function OwnerAdsPage() {
             ].filter(Boolean)
           : null}
       </Menu>
+      <PrivateOwnerNoteDialog
+        adId={privateNoteAd?.id ?? null}
+        adTitle={privateNoteAd?.title}
+        onClose={() => setPrivateNoteAd(null)}
+      />
       <Snackbar
         open={!!boostFeedback}
         autoHideDuration={4500}

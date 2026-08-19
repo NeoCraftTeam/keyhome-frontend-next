@@ -2,11 +2,11 @@
 
 import type { SearchFiltersReturn } from '@/hooks/useSearchFilters';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
+import { quartersService } from '@/services/cities.service';
 import { gradient } from '@/theme/tokens';
-import type { City } from '@/types';
+import type { City, Quarter } from '@/types';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ViewInArIcon from '@mui/icons-material/ViewInAr';
 import {
   Accordion,
@@ -27,7 +27,8 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { memo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { memo, useEffect, useState } from 'react';
 
 interface Props {
   /** Full return value of useSearchFilters() — avoids threading 20+ individual props. */
@@ -41,7 +42,12 @@ interface Props {
   citySlotProps: ReturnType<typeof useCityAutocompleteConfig>['slotProps'];
   renderCityOption: (
     props: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key },
-    option: City
+    option: City,
+    trailingContent?: React.ReactNode
+  ) => React.ReactNode;
+  renderQuarterOption: (
+    props: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key },
+    option: Quarter
   ) => React.ReactNode;
 }
 
@@ -58,6 +64,7 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
   onClose,
   citySlotProps,
   renderCityOption,
+  renderQuarterOption,
 }: Props) {
   const {
     cities,
@@ -66,6 +73,8 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
     setSelectedCity,
     cityInput,
     setCityInput,
+    selectedQuarter,
+    setSelectedQuarter,
     adTypes,
     facets,
     selectedType,
@@ -92,6 +101,24 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
     setPage,
     clearFilters,
   } = filters;
+
+  const [quarterInput, setQuarterInput] = useState(selectedQuarter);
+  useEffect(() => setQuarterInput(selectedQuarter), [selectedQuarter]);
+
+  const { data: quartersData, isFetching: isQuartersLoading } = useQuery({
+    queryKey: ['search-filter-quarters', selectedCity?.id, quarterInput],
+    queryFn: ({ signal }) =>
+      quartersService.list(
+        { city_id: selectedCity?.id, q: quarterInput, per_page: 30 },
+        { signal }
+      ),
+    enabled: !!selectedCity?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const quarters = quartersData?.data ?? [];
+  const selectedQuarterOption =
+    quarters.find((quarter) => quarter.name === selectedQuarter) ?? null;
 
   return (
     <Box sx={{ p: 3, width: isMobile ? '100%' : 380 }}>
@@ -123,6 +150,8 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
         onChange={(_, val) => {
           setSelectedCity(val);
           setCityInput(val?.name || '');
+          setSelectedQuarter('');
+          setQuarterInput('');
           setPage(1);
         }}
         inputValue={cityInput}
@@ -144,29 +173,22 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
           const cityFacet = facets?.cities?.find(
             (c) => c.name.toLowerCase() === option.name.toLowerCase()
           );
-          return (
-            <li key={key ?? option.id} {...restProps}>
-              <LocationOnIcon
+          return renderCityOption(
+            { key, ...restProps },
+            option,
+            cityFacet ? (
+              <Typography
+                component="span"
                 sx={{
-                  fontSize: 15,
-                  color: 'text.disabled',
-                  mr: 0.75,
-                  flexShrink: 0,
+                  ml: 'auto',
+                  pl: 1,
+                  fontSize: 12,
+                  color: 'text.secondary',
                 }}
-              />
-              <span style={{ flex: 1 }}>{option.name}</span>
-              {cityFacet && (
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--mui-palette-text-secondary)',
-                    marginLeft: 8,
-                  }}
-                >
-                  {cityFacet.count}
-                </span>
-              )}
-            </li>
+              >
+                {cityFacet.count}
+              </Typography>
+            ) : undefined
           );
         }}
         renderInput={(params) => (
@@ -185,6 +207,60 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
                   {params.InputProps.endAdornment}
                 </>
               ),
+            }}
+          />
+        )}
+      />
+
+      <Autocomplete<Quarter>
+        size="small"
+        disablePortal
+        options={quarters}
+        forcePopupIcon={false}
+        getOptionLabel={(option) => option.name}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        value={selectedQuarterOption}
+        inputValue={quarterInput}
+        onInputChange={(_, value, reason) => {
+          if (reason !== 'reset') setQuarterInput(value);
+        }}
+        onChange={(_, value) => {
+          setSelectedQuarter(value?.name ?? '');
+          setQuarterInput(value?.name ?? '');
+          setPage(1);
+        }}
+        filterOptions={(options) => options}
+        loading={isQuartersLoading}
+        disabled={!selectedCity}
+        noOptionsText={
+          selectedCity
+            ? 'Aucun quartier trouvé'
+            : "Sélectionnez d'abord une ville"
+        }
+        slotProps={citySlotProps}
+        renderOption={renderQuarterOption}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Quartier"
+            placeholder={
+              selectedCity
+                ? 'Rechercher un quartier…'
+                : "Sélectionnez d'abord une ville"
+            }
+            sx={{ mb: 2 }}
+            slotProps={{
+              input: {
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {isQuartersLoading ? (
+                      <CircularProgress color="inherit" size={18} />
+                    ) : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              },
             }}
           />
         )}

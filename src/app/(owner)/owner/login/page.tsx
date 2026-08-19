@@ -12,6 +12,11 @@ import {
   getAuthApiErrorMessage,
 } from '@/lib/auth/auth-api-errors';
 import { setRoleCookie } from '@/lib/auth/auth-session';
+import {
+  adoptReturnToFromQuery,
+  consumeReturnTo,
+  RETURN_TO_PARAM,
+} from '@/lib/auth/return-to';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { getConfiguredOAuthProviders } from '@/lib/auth/oauth-providers';
 import {
@@ -96,6 +101,12 @@ export default function OwnerLoginPage() {
       sessionStorage.removeItem('kh_owner_admin_panel_hint');
       setError(AUTH_PANEL_UNAVAILABLE_MESSAGE);
     }
+
+    // `?redirect=` survives the OAuth round-trip only once persisted.
+    adoptReturnToFromQuery(
+      'owner',
+      new URLSearchParams(window.location.search).get(RETURN_TO_PARAM)
+    );
   }, []);
 
   // Redirect already-authenticated agents away from the login page
@@ -103,10 +114,7 @@ export default function OwnerLoginPage() {
     if (isLoading) return;
     if (isAuthenticated && user?.role === UserRole.AGENT) {
       setRoleCookie(user.role);
-      const redirect =
-        sessionStorage.getItem('kh_owner_redirect') || '/owner/dashboard';
-      sessionStorage.removeItem('kh_owner_redirect');
-      router.replace(redirect);
+      router.replace(consumeReturnTo('owner'));
     }
   }, [isAuthenticated, isLoading, user, router]);
 

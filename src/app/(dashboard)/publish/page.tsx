@@ -1,7 +1,9 @@
 'use client';
 
+import { buildAuthUrlWithReturnTo } from '@/lib/auth/return-to';
 import { useAuth } from '@/providers/AuthProvider';
 import { brand } from '@/theme/tokens';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { adsService } from '@/services/ads.service';
 import {
   adTypesService,
@@ -159,7 +161,9 @@ export default function PublishPage() {
       router.replace('/home');
     }
     if (!authLoading && !isAuthenticated) {
-      router.replace('/login');
+      // Publishing is a long form: bring the visitor straight back here after
+      // authenticating instead of dropping them on /home.
+      router.replace(buildAuthUrlWithReturnTo('/login', 'client'));
     }
   }, [authLoading, isAuthenticated, user, router]);
 
@@ -345,9 +349,9 @@ export default function PublishPage() {
       await adsService.create(fd);
       setSuccess(true);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message;
-      setError(msg ?? 'Une erreur est survenue. Veuillez réessayer.');
+      setError(
+        getSafeErrorMessage(err, 'Une erreur est survenue. Veuillez réessayer.')
+      );
     } finally {
       setSubmitting(false);
     }

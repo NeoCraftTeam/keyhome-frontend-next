@@ -1,5 +1,6 @@
 'use client';
 
+import { captureReturnTo } from '@/lib/auth/return-to';
 import { findOrCreateConversation } from '@/lib/chat/chat-api';
 import { ensureCsrfCookie, resetCsrfState } from '@/lib/api';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -121,10 +122,7 @@ export default function ContactChatButton({
 
   const handleClick = useCallback(async () => {
     if (!isAuthenticated) {
-      sessionStorage.setItem(
-        'kh_redirect_after_login',
-        window.location.pathname + window.location.search
-      );
+      captureReturnTo('client');
       router.push('/login');
       return;
     }

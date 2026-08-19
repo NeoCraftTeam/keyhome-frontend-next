@@ -218,6 +218,28 @@ describe('AdLocationMap', () => {
     expect(getByText('À distance raisonnable')).toBeInTheDocument();
   });
 
+  it('shows an approximate distance inside the map for a locked ad', () => {
+    const { getByTestId } = render(
+      <ThemeProvider theme={createTheme({ palette: { mode: 'light' } })}>
+        <AdLocationMap
+          latitude={4.0511}
+          longitude={9.7679}
+          isLocked
+          userLocation={{
+            latitude: 4.0611,
+            longitude: 9.7779,
+            accuracy: 12,
+            isApproximate: false,
+          }}
+        />
+      </ThemeProvider>
+    );
+
+    expect(getByTestId('map-distance-chip')).toHaveTextContent(
+      /≈ .*vers la zone/
+    );
+  });
+
   it('locked ads add the approx-zone source/layer, not the route line (Gap 10)', async () => {
     render(
       <ThemeProvider theme={createTheme({ palette: { mode: 'light' } })}>

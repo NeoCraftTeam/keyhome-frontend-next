@@ -26,6 +26,7 @@ import {
   setRoleCookie,
 } from '@/lib/auth/auth-session';
 import { registerTokenGetter } from '@/lib/auth/auth-token';
+import { consumeReturnTo } from '@/lib/auth/return-to';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService } from '@/services/auth.service';
 import type { User } from '@/types';
@@ -227,7 +228,10 @@ export function useClerkSync(
             roleCookie === 'agent' ||
             roleCookie === 'admin' ||
             intentRaw === 'agent';
-          router.replace(isOwner ? '/owner/dashboard' : '/home');
+          // The OAuth round-trip leaves our origin, so `?redirect=` is long
+          // gone by the time Clerk lands on /sso-callback — the destination is
+          // recovered from sessionStorage instead.
+          router.replace(consumeReturnTo(isOwner ? 'owner' : 'client'));
         }
         return;
       }
@@ -347,7 +351,7 @@ export function useClerkSync(
             setToken(sanctumToken);
             setUserState(laravelUser);
             setRoleCookie(laravelUser.role ?? UserRole.AGENT);
-            router.replace('/owner/dashboard');
+            router.replace(consumeReturnTo('owner'));
             return;
           }
 
@@ -371,10 +375,15 @@ export function useClerkSync(
           setUserState(laravelUser);
           setRoleCookie(laravelUser.role ?? UserRole.CUSTOMER);
 
+          // Honour the captured destination instead of always landing on the
+          // space's home page. `consumeReturnTo` falls back to that home page
+          // when nothing safe was stored, so behaviour is unchanged otherwise.
           if (isOwnerRole) {
-            if (!path.startsWith('/owner')) router.replace('/owner/dashboard');
+            if (!path.startsWith('/owner')) {
+              router.replace(consumeReturnTo('owner'));
+            }
           } else if (path.startsWith('/owner') || path === '/sso-callback') {
-            router.replace('/home');
+            router.replace(consumeReturnTo('client'));
           }
         } catch (err) {
           console.error('[useClerkSync] clerkExchange failed:', err);

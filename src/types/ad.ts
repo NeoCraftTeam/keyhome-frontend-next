@@ -47,7 +47,11 @@ export interface GeoLocation {
 export interface City {
   id: string;
   name: string;
+  display_name?: string | null;
   country?: string | null;
+  country_code?: string | null;
+  admin_area?: string | null;
+  place_type?: string | null;
   latitude?: number | null;
   longitude?: number | null;
 }
@@ -55,8 +59,10 @@ export interface City {
 export interface Quarter {
   id: string;
   name: string;
+  display_name?: string | null;
   city_id: string;
   city_name: string;
+  place_type?: string | null;
   latitude?: number | null;
   longitude?: number | null;
 }

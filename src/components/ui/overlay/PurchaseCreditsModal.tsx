@@ -12,6 +12,7 @@ import {
   syncKhSafeAreaInsets,
 } from '@/lib/safe-area-insets';
 import { creditsService } from '@/services/credits.service';
+import { useAuth } from '@/providers/AuthProvider';
 import { brand, brandAgent } from '@/theme/tokens';
 import { PaymentType, type PointPackage } from '@/types';
 import ArrowBack from '@mui/icons-material/ArrowBack';
@@ -22,7 +23,6 @@ import Toll from '@mui/icons-material/Toll';
 import {
   Box,
   Dialog,
-  Grid,
   IconButton,
   Typography,
   useMediaQuery,
@@ -59,10 +59,14 @@ export default function PurchaseCreditsModal({
   });
 
   const [pkgError, setPkgError] = useState('');
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isShortViewport = useMediaQuery('(max-height:760px)');
+  const compactPacks = isMobile;
+  const compactChrome = isMobile || isShortViewport;
   const ownerShell = pathname === '/owner' || pathname?.startsWith('/owner/');
 
   const shellPrimary = ownerShell ? brandAgent.primary : brand.primary;
@@ -146,7 +150,8 @@ export default function PurchaseCreditsModal({
       query.state.status === 'error' ? false : 30_000,
     staleTime: 15_000,
     enabled: open,
-    retry: false,
+    retry: 1,
+    refetchOnMount: 'always',
   });
 
   const { data: packages, isLoading: packagesLoading } = useQuery({
@@ -155,9 +160,13 @@ export default function PurchaseCreditsModal({
     staleTime: 5 * 60_000,
     enabled: open,
   });
-  const availableCredits = balance ?? 0;
+  const availableCredits = balance ?? user?.point_balance;
   const creditsLabel =
-    availableCredits > 1 ? 'crédits disponibles' : 'crédit disponible';
+    availableCredits === undefined
+      ? 'solde en cours de synchronisation'
+      : availableCredits > 1
+        ? 'crédits disponibles'
+        : 'crédit disponible';
 
   const creditCaptchaConfigured =
     creditCaptchaConfig.loaded &&
@@ -255,21 +264,13 @@ export default function PurchaseCreditsModal({
       PaperProps={{
         sx: {
           borderRadius: isMobile ? 0 : 5,
-          // If the content ever exceeds the dialog height, we scroll the
-          // WHOLE modal as one block (header + body + footer together)
-          // rather than scrolling the body alone. Matches the user ask :
-          // "les cards des packs et le formulaire stripe doivent être
-          // fix et non scrollable" — the cards/form never scroll inside.
-          overflow: 'auto',
+          overflow: 'hidden',
           maxHeight: isMobile ? '100dvh' : '95vh',
-          ...(isMobile && { height: '100dvh' }),
+          height: isMobile ? '100dvh' : isShortViewport ? '95vh' : 'auto',
+          display: 'flex',
+          flexDirection: 'column',
           background: 'transparent',
           boxShadow: isMobile ? 'none' : '0 32px 80px rgba(0,0,0,0.28)',
-          // Hide the scrollbar for a clean look (accessibility : keyboard
-          // scroll still works — just the visual thumb is removed).
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          '&::-webkit-scrollbar': { display: 'none', width: 0, height: 0 },
         },
       }}
     >
@@ -284,16 +285,24 @@ export default function PurchaseCreditsModal({
                 sm: `calc(${khSafeAreaTopSx} + 1rem)`,
               }
             : {
-                xs: `calc(${khSafeAreaTopSx} + 1.5rem)`,
-                sm: `calc(${khSafeAreaTopSx} + 2.25rem)`,
+                xs: `calc(${khSafeAreaTopSx} + ${compactChrome ? '1.25rem' : '2.25rem'})`,
+                sm: `calc(${khSafeAreaTopSx} + ${compactChrome ? '1.25rem' : '2.5rem'})`,
               },
           pb: checkoutPastPackSelection
             ? { xs: 1.75, sm: 2 }
-            : { xs: 2.5, sm: 4 },
+            : compactChrome
+              ? 1.5
+              : { xs: 2.5, sm: 4 },
           background:
             'linear-gradient(135deg, #0A1628 0%, #132138 55%, #0D1F3C 100%)',
           textAlign: checkoutPastPackSelection ? 'left' : 'center',
           overflow: 'hidden',
+          minHeight: checkoutPastPackSelection
+            ? 'auto'
+            : compactChrome
+              ? 132
+              : { xs: 168, sm: 180 },
+          flexShrink: 0,
         }}
       >
         {/* Soft crimson glow in the corner — ties the header to the brand
@@ -505,7 +514,16 @@ export default function PurchaseCreditsModal({
         )}
 
         {phase === 'packs' && (
-          <Box sx={{ position: 'relative', zIndex: 1 }}>
+          <Box
+            sx={{
+              position: 'relative',
+              zIndex: 1,
+              transform: compactChrome ? 'none' : 'translateY(-6px)',
+              '@media (prefers-reduced-motion: reduce)': {
+                transform: 'none',
+              },
+            }}
+          >
             {/* Overline label — sober, uppercase, letter-spaced. */}
             <Typography
               variant="overline"
@@ -515,7 +533,7 @@ export default function PurchaseCreditsModal({
                 letterSpacing: 2,
                 fontSize: { xs: '0.6rem', sm: '0.65rem' },
                 fontWeight: 700,
-                mb: { xs: 1, sm: 1.25 },
+                mb: compactChrome ? 0.5 : { xs: 1, sm: 1.25 },
               }}
             >
               Votre solde
@@ -559,11 +577,15 @@ export default function PurchaseCreditsModal({
                       color: '#fff',
                       fontWeight: 800,
                       letterSpacing: -2,
-                      fontSize: { xs: '2.4rem', sm: '3rem' },
+                      fontSize: compactChrome
+                        ? '2.2rem'
+                        : { xs: '2.4rem', sm: '3rem' },
                       lineHeight: 1,
                     }}
                   >
-                    {availableCredits.toLocaleString('fr-FR')}
+                    {availableCredits === undefined
+                      ? '—'
+                      : availableCredits.toLocaleString('fr-FR')}
                   </Typography>
                 </>
               )}
@@ -575,7 +597,7 @@ export default function PurchaseCreditsModal({
                 fontWeight: 500,
                 letterSpacing: 0.2,
                 fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                mb: { xs: 1.75, sm: 2.25 },
+                mb: compactChrome ? 0.5 : { xs: 1.75, sm: 2.25 },
               }}
             >
               {balanceLoading ? 'crédits disponibles' : creditsLabel}
@@ -585,18 +607,19 @@ export default function PurchaseCreditsModal({
       </Box>
 
       {/* ── BODY (packs grid OR payment flow) ─────────────────────────── */}
-      {/* No internal scroll: the Dialog grows to fit its content. Packs are
-          compact enough to fit in 95vh even on the shortest laptops (720p)
-          and the payment form is fixed-height. On very tall content we
-          rely on the Dialog-level overflow to let the whole modal scroll
-          as a single block — never the body alone. */}
+      {/* The modal is deliberately non-scrollable. The packs switch to a
+          compact layout on phones and short laptop viewports. */}
       <Box
         sx={{
-          px: { xs: 2, sm: 3 },
-          pt: { xs: 2, sm: 3 },
-          pb: 2.5,
+          px: compactPacks ? { xs: 1.25, sm: 2 } : { xs: 2, sm: 3 },
+          pt: compactPacks ? 1.25 : { xs: 2, sm: 3 },
+          pb: compactPacks ? 1.25 : 2.5,
           bgcolor: 'background.paper',
-          overflow: 'visible',
+          overflow: 'hidden',
+          minHeight: 0,
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         {pendingPkg && phase === 'payment' ? (
@@ -644,27 +667,50 @@ export default function PurchaseCreditsModal({
 
             <AnimatePresence mode="wait">
               {packagesLoading || !creditCaptchaConfig.loaded ? (
-                <Grid key="loading" container spacing={2} sx={{ mt: 1.5 }}>
+                <Box
+                  key="loading"
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(3, minmax(0, 1fr))',
+                    },
+                    gridTemplateRows: {
+                      xs: 'repeat(3, minmax(0, 1fr))',
+                      sm: '1fr',
+                    },
+                    gap: compactPacks ? 1 : 2,
+                    mt: compactPacks ? 0.75 : 1.5,
+                    flex: 1,
+                    minHeight: 0,
+                  }}
+                >
                   {[1, 2, 3].map((i) => (
-                    <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
-                      <Box
-                        sx={{
-                          borderRadius: 4,
-                          overflow: 'hidden',
-                          height: 220,
-                        }}
-                      >
-                        <ShimmerBox height={220} borderRadius={16} />
-                      </Box>
-                    </Grid>
+                    <ShimmerBox key={i} height="100%" borderRadius={16} />
                   ))}
-                </Grid>
+                </Box>
               ) : packages && packages.length > 0 ? (
-                <Grid key="packages" container spacing={2} sx={{ mt: 1.5 }}>
+                <Box
+                  key="packages"
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(3, minmax(0, 1fr))',
+                    },
+                    gridTemplateRows: {
+                      xs: 'repeat(3, minmax(0, 1fr))',
+                      sm: '1fr',
+                    },
+                    gap: compactPacks ? 1 : 2,
+                    mt: compactPacks ? 0.75 : 1.5,
+                    flex: 1,
+                    minHeight: 0,
+                  }}
+                >
                   {packages.map((pkg, idx) => (
-                    <Grid
+                    <Box
                       key={pkg.id}
-                      size={{ xs: 12, sm: 6, md: 4 }}
                       component={motion.div}
                       initial={{ opacity: 0, y: 24, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -673,15 +719,18 @@ export default function PurchaseCreditsModal({
                         delay: idx * 0.1,
                         ease: [0.22, 1, 0.36, 1],
                       }}
+                      sx={{ minHeight: 0 }}
                     >
                       <PackageCard
                         pkg={pkg}
                         loading={false}
                         onPurchase={handlePurchase}
+                        compact={compactPacks}
+                        dense={isShortViewport}
                       />
-                    </Grid>
+                    </Box>
                   ))}
-                </Grid>
+                </Box>
               ) : (
                 <Box key="empty" sx={{ textAlign: 'center', py: 6, px: 2 }}>
                   <Typography variant="body2" color="text.secondary">
@@ -710,6 +759,7 @@ export default function PurchaseCreditsModal({
           alignItems: 'center',
           justifyContent: 'center',
           gap: 0.75,
+          flexShrink: 0,
         }}
       >
         <LockIcon sx={{ fontSize: 13, color: 'text.disabled' }} />

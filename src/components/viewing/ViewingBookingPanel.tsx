@@ -1,13 +1,16 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import CalendarExportMenu from '@/components/ui/display/CalendarExportMenu';
 import {
-  getLaravelApiErrorMessage,
   getLaravelNestedApiError,
   getLaravelNestedApiErrorCode,
 } from '@/lib/api-errors';
 import { getEcho, isReverbRealtimeConfigured } from '@/lib/chat/echo';
-import { getSafeErrorMessage } from '@/lib/error-messages';
+import {
+  getSafeErrorMessage,
+  isUnsafeBackendMessage,
+} from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { viewingsService } from '@/services/viewings.service';
 import { gradient, transition } from '@/theme/tokens';
@@ -287,16 +290,20 @@ export default function ViewingBookingPanel({
     onError: (err) => {
       const nested = getLaravelNestedApiError(err);
       if (nested) {
-        setBookingError(nested.message);
-        setBookingErrorHint(
-          nested.hint && nested.hint !== nested.message ? nested.hint : ''
-        );
+        const safeMsg = isUnsafeBackendMessage(nested.message)
+          ? 'Ce créneau n’est pas disponible pour la date demandée.'
+          : nested.message;
+        const safeHint =
+          nested.hint &&
+          nested.hint !== nested.message &&
+          !isUnsafeBackendMessage(nested.hint)
+            ? nested.hint
+            : '';
+        setBookingError(safeMsg);
+        setBookingErrorHint(safeHint);
       } else {
         setBookingError(
-          getLaravelApiErrorMessage(
-            err,
-            getSafeErrorMessage(err, 'Impossible de créer la réservation.')
-          )
+          getSafeErrorMessage(err, 'Impossible de créer la réservation.')
         );
         setBookingErrorHint('');
       }
@@ -855,14 +862,12 @@ export default function ViewingBookingPanel({
         />
 
         {bookingError && (
-          <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-            {bookingError}
-            {bookingErrorHint ? (
-              <Typography variant="body2" sx={{ mt: 1, opacity: 0.92 }}>
-                {bookingErrorHint}
-              </Typography>
-            ) : null}
-          </Alert>
+          <AppAlert
+            severity="error"
+            message={bookingError}
+            hint={bookingErrorHint || undefined}
+            sx={{ mb: 2 }}
+          />
         )}
 
         <Button
@@ -1560,9 +1565,7 @@ export default function ViewingBookingPanel({
           )}
 
           {cancelError && (
-            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-              {cancelError}
-            </Alert>
+            <AppAlert severity="error" message={cancelError} sx={{ mb: 2 }} />
           )}
 
           <Divider sx={{ mb: 2 }} />

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/forms/Button';
 import { Typography } from '@/components/ui/typography/Typography';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { useNavbarState } from '@/hooks/useNavbarState';
+import { buildAuthUrlWithReturnTo } from '@/lib/auth/return-to';
 import {
   khNavbarSpacerMinHeightMd,
   khNavbarSpacerMinHeightXs,
@@ -147,7 +148,9 @@ export default function Navbar() {
                   variant="contained"
                   color="primary"
                   size="small"
-                  onClick={() => router.push('/login')}
+                  onClick={() =>
+                    router.push(buildAuthUrlWithReturnTo('/login', 'client'))
+                  }
                   sx={{
                     borderRadius: '20px',
                     textTransform: 'none',
@@ -402,7 +405,9 @@ export default function Navbar() {
                   variant="contained"
                   color="primary"
                   size="small"
-                  onClick={() => router.push('/login')}
+                  onClick={() =>
+                    router.push(buildAuthUrlWithReturnTo('/login', 'client'))
+                  }
                   sx={{
                     borderRadius: '20px',
                     textTransform: 'none',

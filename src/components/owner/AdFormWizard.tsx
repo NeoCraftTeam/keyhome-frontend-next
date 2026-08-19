@@ -385,6 +385,7 @@ function AdFormWizard({
   const {
     slotProps: citySlotProps,
     renderOption: renderCityOption,
+    renderQuarterOption,
     inputSx: cityInputSx,
   } = useCityAutocompleteConfig();
 
@@ -1186,6 +1187,7 @@ function AdFormWizard({
                     onQuarterChange={handleQuarterChange}
                     citySlotProps={citySlotProps}
                     renderCityOption={renderCityOption}
+                    renderQuarterOption={renderQuarterOption}
                     cityInputSx={cityInputSx}
                     hideTypeSelector
                   />

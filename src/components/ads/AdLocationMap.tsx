@@ -29,7 +29,7 @@ interface Props {
   /** ORS GeoJSON route — when provided replaces the straight-line with the real road */
   routeGeojson?: GeoJSON.FeatureCollection | null;
   /**
-   * Road-trip summary from ORS (driving-car). When provided, its distance
+   * Route summary from ORS for the currently selected transport profile. When provided, its distance
    * drives the status pill and the in-map distance label; the haversine
    * (`distanceKm`) computed below is demoted to a "à vol d'oiseau" caveat.
    */
@@ -243,11 +243,11 @@ export default function AdLocationMap({
     const km = haversineDistance(
       userLocation.latitude,
       userLocation.longitude,
-      latitude,
-      longitude
+      displayLat,
+      displayLng
     );
     return Number.isFinite(km) ? km : null;
-  }, [userLocation, latitude, longitude]);
+  }, [userLocation, displayLat, displayLng]);
 
   /**
    * The kilometres value that drives the status pill ("À proximité" /
@@ -622,7 +622,7 @@ export default function AdLocationMap({
                     fontWeight={700}
                     sx={{ lineHeight: 1.3 }}
                   >
-                    {roadSummary.duration_label} en voiture
+                    {roadSummary.duration_label} · {roadSummary.profile_label}
                     <Box
                       component="span"
                       sx={{ color: 'text.secondary', fontWeight: 400, ml: 0.5 }}
@@ -712,6 +712,57 @@ export default function AdLocationMap({
           aria-label={`Carte de localisation du ${adMarkerLabel.toLowerCase()}`}
           sx={{ width: '100%', height: '100%' }}
         />
+
+        {/* Always keep the user-to-property distance visible inside Mapbox.
+            Locked ads use the privacy-safe fuzzy zone, never the exact pin. */}
+        {userLocation && distanceKm !== null && (
+          <Box
+            data-testid="map-distance-chip"
+            sx={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              zIndex: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.75,
+              maxWidth: 'calc(100% - 76px)',
+              px: 1.25,
+              py: 0.75,
+              borderRadius: 2,
+              color: 'text.primary',
+              bgcolor: (theme) =>
+                theme.palette.mode === 'dark'
+                  ? 'rgba(24,24,27,0.92)'
+                  : 'rgba(255,255,255,0.95)',
+              border: '1px solid',
+              borderColor: 'divider',
+              boxShadow: '0 3px 12px rgba(15,23,42,0.16)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <PlaceOutlined
+              aria-hidden
+              sx={{ fontSize: 17, color: PRIMARY_RED, flexShrink: 0 }}
+            />
+            <Typography
+              variant="caption"
+              fontWeight={800}
+              sx={{ lineHeight: 1.2 }}
+            >
+              {isLocked ? '≈ ' : ''}
+              {roadSummary
+                ? roadSummary.distance_label
+                : formatDistance(distanceKm)}{' '}
+              <Box
+                component="span"
+                sx={{ color: 'text.secondary', fontWeight: 500 }}
+              >
+                {isLocked ? 'vers la zone' : 'de vous'}
+              </Box>
+            </Typography>
+          </Box>
+        )}
 
         {/* Style picker overlay — bottom-left, above Mapbox attribution */}
         <Box
@@ -900,7 +951,7 @@ export default function AdLocationMap({
               />
             )}
             <Typography variant="caption" color="text.secondary">
-              {routeGeojson ? 'Itinéraire routier' : 'Trajectoire directe'}
+              {routeGeojson ? 'Itinéraire calculé' : 'Trajectoire directe'}
             </Typography>
           </Box>
         </Box>

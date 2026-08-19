@@ -1,5 +1,7 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import {
   adReportsService,
   AdReportReason,
@@ -15,7 +17,6 @@ import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import {
-  Alert,
   Box,
   Button,
   Chip,
@@ -213,18 +214,7 @@ export default function AdReportModal({
       }
 
       const fallback = "Impossible d'envoyer votre signalement pour le moment.";
-      const rawMessage =
-        (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message ?? fallback;
-      const safePatterns = [
-        'SQLSTATE',
-        'An email must have a "To", "Cc", or "Bcc" header.',
-      ];
-      const shouldMaskMessage = safePatterns.some((pattern) =>
-        rawMessage.includes(pattern)
-      );
-      const message = shouldMaskMessage ? fallback : rawMessage;
-      onServerErrorChange(message);
+      onServerErrorChange(getSafeErrorMessage(error, fallback));
     } finally {
       onSubmittingChange(false);
     }
@@ -584,9 +574,11 @@ export default function AdReportModal({
 
           <Box sx={{ mt: 'auto', pt: 2.5 }}>
             {serverError && (
-              <Alert severity="error" sx={{ mb: 1.5 }}>
-                {serverError}
-              </Alert>
+              <AppAlert
+                severity="error"
+                message={serverError}
+                sx={{ mb: 1.5 }}
+              />
             )}
             <Divider />
             <Box

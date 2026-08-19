@@ -1,6 +1,6 @@
 'use client';
 
-import { getLaravelApiErrorMessage } from '@/lib/api-errors';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { openAdPlacardePreview } from '@/lib/owner/owner-placarde-preview';
 import { ownerService } from '@/services/owner.service';
 import { brandAgent, neutral, shadow, transition } from '@/theme/tokens';
@@ -152,7 +152,7 @@ export default function QrCodeDialog({
       openPdfPreview(blob, 'carte-visite-keyhome.pdf');
     } catch (err) {
       notify(
-        getLaravelApiErrorMessage(err, 'Impossible de générer le PDF.'),
+        getSafeErrorMessage(err, 'Impossible de générer le PDF.'),
         'error'
       );
     } finally {
@@ -335,7 +335,7 @@ export default function QrCodeDialog({
                   variant="body2"
                   textAlign="center"
                 >
-                  {getLaravelApiErrorMessage(
+                  {getSafeErrorMessage(
                     error,
                     'Le QR code n\u2019a pas pu \u00eatre charg\u00e9.'
                   )}

@@ -6,7 +6,7 @@
 // - Debounced (default 5000ms)
 // - Provides: savedAt, isSaving, draftId, lastError, clearSavedAt()
 
-import { getLaravelApiErrorMessage } from '@/lib/api-errors';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseServerAutoSaveOptions<T> {
@@ -114,10 +114,7 @@ export function useServerAutoSave<T>({
         setSavedAt(new Date());
         setLastError(null);
       } catch (err) {
-        const msg = getLaravelApiErrorMessage(
-          err,
-          'Échec de la sauvegarde auto.'
-        );
+        const msg = getSafeErrorMessage(err, 'Échec de la sauvegarde auto.');
         setLastError(new Error(msg));
       } finally {
         isPendingRef.current = false;

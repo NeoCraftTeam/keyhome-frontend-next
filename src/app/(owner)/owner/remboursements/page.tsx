@@ -2,6 +2,7 @@
 
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import { paymentsService } from '@/services/payments.service';
 import { PaymentHistoryItem, UserRefund } from '@/types';
 import AccessTime from '@mui/icons-material/AccessTime';
@@ -101,9 +102,9 @@ export default function OwnerRemboursementsPage() {
       setReason('');
       queryClient.invalidateQueries({ queryKey: ['owner-refunds'] });
     },
-    onError: (err: { response?: { data?: { message?: string } } }) => {
+    onError: (err: unknown) => {
       setSnackbar({
-        msg: err?.response?.data?.message ?? 'Une erreur est survenue.',
+        msg: getSafeErrorMessage(err, 'Une erreur est survenue.'),
         ok: false,
       });
     },

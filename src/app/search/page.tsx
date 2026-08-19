@@ -134,7 +134,8 @@ function SearchContent() {
   const theme = useTheme();
   const {
     slotProps: citySlotProps,
-    renderOption: renderCityOption,
+    renderOptionWithTrailing: renderCityOptionWithTrailing,
+    renderQuarterOption,
     renderOptionFreeSolo,
     inputSx: cityInputSx,
   } = useCityAutocompleteConfig();
@@ -564,7 +565,8 @@ function SearchContent() {
       total={total}
       onClose={() => setMoreFiltersOpen(false)}
       citySlotProps={citySlotProps}
-      renderCityOption={renderCityOption}
+      renderCityOption={renderCityOptionWithTrailing}
+      renderQuarterOption={renderQuarterOption}
     />
   );
 

@@ -10,6 +10,7 @@ import {
   getOAuthSignUpPath,
   isAgentRegistrationIntent,
 } from '@/lib/auth/oauth-redirect';
+import { consumeReturnTo } from '@/lib/auth/return-to';
 import { OWNER_LOGO_SRC } from '@/lib/owner/owner-auth-assets';
 import { brandAgent } from '@/theme/tokens';
 import { useClerk, useAuth as useClerkAuth, useSignUp } from '@clerk/nextjs';
@@ -82,14 +83,15 @@ export default function SSOCallbackPage() {
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
 
-    const fallbackPath = isAgentIntentRef.current
-      ? '/owner/dashboard'
-      : '/home';
+    const panelContext = isAgentIntentRef.current ? 'owner' : 'client';
     timeoutRef.current = setTimeout(() => {
       console.warn(
         '[sso-callback] AuthProvider routing timed out — forcing fallback'
       );
-      router.replace(fallbackPath);
+      // Resolved at fire time, not effect time: AuthProvider may have stored a
+      // destination in between. `consumeReturnTo` clears the key so the value
+      // cannot be replayed on a later navigation.
+      router.replace(consumeReturnTo(panelContext));
     }, 8000);
 
     return () => {

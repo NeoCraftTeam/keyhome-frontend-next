@@ -22,17 +22,24 @@ export default function PackageCard({
   loading,
   onPurchase,
   wouldBeEnough,
+  compact = false,
+  dense = false,
 }: {
   pkg: PointPackage;
   loading: boolean;
   onPurchase: (pkg: PointPackage) => void;
   wouldBeEnough?: boolean;
+  compact?: boolean;
+  dense?: boolean;
 }) {
   const theme = useTheme();
   const isPopular = pkg.is_popular;
   const isPremium =
     !isPopular && !wouldBeEnough && (pkg.points_awarded ?? 0) >= 100;
   const isDark = theme.palette.mode === 'dark';
+  const discount = Math.round(
+    (1 - pkg.price / (pkg.points_awarded * 100)) * 100
+  );
 
   const gradient = wouldBeEnough
     ? `linear-gradient(135deg, ${theme.palette.success.main} 0%, #1B5E20 100%)`
@@ -60,7 +67,7 @@ export default function PackageCard({
       onClick={() => !loading && onPurchase(pkg)}
       sx={{
         position: 'relative',
-        borderRadius: 4,
+        borderRadius: compact ? 2.5 : 4,
         overflow: 'hidden',
         width: '100%',
         display: 'flex',
@@ -93,8 +100,10 @@ export default function PackageCard({
                 left: '130%',
               }
             : {},
+        height: '100%',
+        minHeight: 0,
         '&:hover': {
-          transform: 'translateY(-5px) scale(1.02)',
+          transform: compact ? 'none' : 'translateY(-3px)',
           boxShadow: `0 20px 56px ${glowColor}`,
         },
         '&:active': { transform: 'scale(0.98)' },
@@ -126,12 +135,12 @@ export default function PackageCard({
         }}
       />
 
-      {/* Corner ribbon for popular package */}
+      {/* Original diagonal marker: kept separate from the discount chip. */}
       {isPopular && (
         <Box
           sx={{
             position: 'absolute',
-            top: 16,
+            top: compact ? 10 : 16,
             right: -24,
             width: 90,
             bgcolor: 'rgba(255,255,255,0.28)',
@@ -160,14 +169,22 @@ export default function PackageCard({
       {/* Badge row */}
       <Box
         sx={{
-          px: 2,
-          pt: 2,
+          px: compact ? 1.5 : 2,
+          pt: compact ? 1.25 : dense ? 1.5 : 2,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: 1,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.75,
+            minWidth: 0,
+          }}
+        >
           {wouldBeEnough ? (
             <CheckCircleRounded
               sx={{ fontSize: 18, color: 'rgba(255,255,255,0.95)' }}
@@ -191,6 +208,7 @@ export default function PackageCard({
               textTransform: 'uppercase',
               letterSpacing: 1,
               fontSize: '0.62rem',
+              lineHeight: 1.25,
             }}
           >
             {wouldBeEnough
@@ -203,27 +221,38 @@ export default function PackageCard({
                     : 'Starter'))}
           </Typography>
         </Box>
-        {pkg.points_awarded > 10 && !wouldBeEnough && (
-          <Chip
-            label={`-${Math.round((1 - pkg.price / (pkg.points_awarded * 100)) * 100)}%`}
-            size="small"
-            sx={{
-              bgcolor: 'rgba(255,255,255,0.18)',
-              color: neutral.white,
-              fontWeight: 800,
-              fontSize: '0.65rem',
-              height: 20,
-            }}
-          />
-        )}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 0.5,
+            flexShrink: 0,
+          }}
+        >
+          {pkg.points_awarded > 10 && !wouldBeEnough && discount > 0 && (
+            <Chip
+              label={`−${discount}%`}
+              size="small"
+              sx={{
+                bgcolor: 'rgba(255,255,255,0.18)',
+                color: neutral.white,
+                fontWeight: 800,
+                fontSize: '0.65rem',
+                height: 22,
+                mr: isPopular ? 5 : 0,
+              }}
+            />
+          )}
+        </Box>
       </Box>
 
       {/* Main content */}
       <Box
         sx={{
-          px: 2,
-          pt: 1.5,
-          pb: 2,
+          px: compact ? 1.5 : 2,
+          pt: compact ? 0.75 : dense ? 0.75 : 1.25,
+          pb: compact ? 1.25 : dense ? 1 : 1.5,
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
@@ -236,19 +265,31 @@ export default function PackageCard({
             color: neutral.white,
             letterSpacing: -0.3,
             lineHeight: 1.1,
-            mb: 0.5,
+            mb: compact || dense ? 0.25 : 0.5,
+            fontSize: compact ? '0.95rem' : undefined,
+            overflowWrap: 'anywhere',
           }}
         >
           {pkg.name}
         </Typography>
 
         <Box
-          sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mb: 1.5 }}
+          sx={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 0.5,
+            mb: compact ? 0.5 : dense ? 0.75 : 1.5,
+          }}
         >
           <Typography
             variant="h4"
             fontWeight={900}
-            sx={{ color: neutral.white, letterSpacing: -1, lineHeight: 1 }}
+            sx={{
+              color: neutral.white,
+              letterSpacing: -1,
+              lineHeight: 1,
+              fontSize: compact ? '1.45rem' : undefined,
+            }}
           >
             {pkg.points_awarded}
           </Typography>
@@ -270,9 +311,10 @@ export default function PackageCard({
             variant="body2"
             sx={{
               color: 'rgba(255,255,255,0.7)',
-              fontSize: '0.8rem',
-              lineHeight: 1.4,
-              mb: 1.5,
+              fontSize: compact ? '0.8rem' : dense ? '0.75rem' : '0.8rem',
+              lineHeight: compact ? 1.35 : dense ? 1.35 : 1.5,
+              mb: compact ? 0.75 : dense ? 0.75 : 1.25,
+              overflowWrap: 'anywhere',
             }}
           >
             {pkg.description}
@@ -281,7 +323,13 @@ export default function PackageCard({
 
         {pkg.features && pkg.features.length > 0 && (
           <Box
-            sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mb: 2 }}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: compact ? 0.45 : dense ? 0.35 : 0.6,
+              mb: compact ? 0.75 : dense ? 0.75 : 1.25,
+              minHeight: 0,
+            }}
           >
             {pkg.features.map((feature, idx) => (
               <Box
@@ -290,7 +338,7 @@ export default function PackageCard({
               >
                 <CheckCircleRounded
                   sx={{
-                    fontSize: 14,
+                    fontSize: compact ? 11 : dense ? 12 : 14,
                     mt: 0.1,
                     flexShrink: 0,
                     color: 'rgba(255,255,255,0.85)',
@@ -300,8 +348,13 @@ export default function PackageCard({
                   variant="caption"
                   sx={{
                     color: 'rgba(255,255,255,0.75)',
-                    fontSize: '0.75rem',
-                    lineHeight: 1.3,
+                    fontSize: compact
+                      ? '0.75rem'
+                      : dense
+                        ? '0.72rem'
+                        : '0.78rem',
+                    lineHeight: compact ? 1.25 : dense ? 1.25 : 1.4,
+                    overflowWrap: 'anywhere',
                   }}
                 >
                   {feature}
@@ -315,7 +368,7 @@ export default function PackageCard({
         <Box
           sx={{
             mt: 'auto',
-            pt: 1.5,
+            pt: compact ? 0.75 : dense ? 0.75 : 1.5,
             borderTop: '1px solid rgba(255,255,255,0.1)',
             display: 'flex',
             alignItems: 'center',
@@ -365,9 +418,10 @@ export default function PackageCard({
               borderRadius: 99,
               textTransform: 'none',
               fontWeight: 800,
-              fontSize: '0.8rem',
-              px: 2,
-              py: 0.65,
+              fontSize: compact ? '0.72rem' : '0.8rem',
+              px: compact ? 1.5 : 2,
+              py: compact ? 0.5 : 0.65,
+              minHeight: compact ? 36 : undefined,
               bgcolor:
                 isPopular || wouldBeEnough
                   ? 'rgba(255,255,255,0.95)'

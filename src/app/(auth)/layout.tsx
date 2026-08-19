@@ -2,6 +2,7 @@
 
 import AppLoader from '@/components/ui/feedback/AppLoader';
 import SplashTransition from '@/components/ui/overlay/SplashTransition';
+import { consumeReturnTo } from '@/lib/auth/return-to';
 import { useAuth } from '@/providers/AuthProvider';
 import { brandAgent } from '@/theme/tokens';
 import { Box } from '@mui/material';
@@ -82,15 +83,11 @@ export default function AuthLayout({
       if (wasGuestRef.current) {
         return;
       }
-      const returnTo = sessionStorage.getItem('kh_redirect_after_login');
-      if (returnTo) {
-        sessionStorage.removeItem('kh_redirect_after_login');
-        router.replace(returnTo);
-      } else if (user?.role === 'agent') {
-        router.replace('/owner/dashboard');
-      } else {
-        router.replace('/home');
-      }
+      // Read from the key matching the user's own space, so an agent landing
+      // here is never sent to a stale client destination.
+      router.replace(
+        consumeReturnTo(user?.role === 'agent' ? 'owner' : 'client')
+      );
     }
   }, [
     isAuthenticated,

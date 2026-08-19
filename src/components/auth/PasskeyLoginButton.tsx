@@ -7,6 +7,7 @@ import {
   persistOwnerToken,
   setRoleCookie,
 } from '@/lib/auth/auth-session';
+import { clearReturnTo, consumeReturnTo } from '@/lib/auth/return-to';
 import { mayAccessOwnerPanel } from '@/lib/owner/owner-panel-access';
 import { useAuth } from '@/providers/AuthProvider';
 import { UserRole } from '@/types';
@@ -62,14 +63,14 @@ export default function PasskeyLoginButton({
         return;
       }
       if (!mayAccessOwnerPanel(user.role)) {
-        sessionStorage.removeItem('kh_owner_redirect');
+        clearReturnTo('owner');
         router.replace('/owner/login');
         return;
       }
     } else {
       const isClientRole = user.role === UserRole.CUSTOMER;
       if (!isClientRole) {
-        sessionStorage.removeItem('kh_redirect_after_login');
+        clearReturnTo('client');
         router.replace('/login');
         return;
       }
@@ -85,23 +86,9 @@ export default function PasskeyLoginButton({
 
     setUser(user);
 
-    if (loginContext === 'owner') {
-      const returnTo = sessionStorage.getItem('kh_owner_redirect');
-      if (returnTo) {
-        sessionStorage.removeItem('kh_owner_redirect');
-        router.replace(returnTo);
-      } else {
-        router.replace('/owner/dashboard');
-      }
-    } else {
-      const returnTo = sessionStorage.getItem('kh_redirect_after_login');
-      if (returnTo) {
-        sessionStorage.removeItem('kh_redirect_after_login');
-        router.replace(returnTo);
-      } else {
-        router.replace('/home');
-      }
-    }
+    router.replace(
+      consumeReturnTo(loginContext === 'owner' ? 'owner' : 'client')
+    );
   };
 
   return (

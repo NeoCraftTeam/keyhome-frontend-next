@@ -5,7 +5,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { creditsService } from '@/services/credits.service';
 import Toll from '@mui/icons-material/Toll';
 import WarningAmberRounded from '@mui/icons-material/WarningAmberRounded';
-import { Box, Skeleton, Tooltip, Typography } from '@mui/material';
+import { ButtonBase, Skeleton, Tooltip, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
@@ -22,15 +22,26 @@ export default function CreditsWidget() {
   const [modalOpen, setModalOpen] = useState(false);
   const [bouncing, setBouncing] = useState(false);
 
-  const { data: balance, isLoading: balanceLoading } = useQuery({
+  const {
+    data: balance,
+    isLoading: balanceLoading,
+    isFetching: balanceFetching,
+    refetch: refetchBalance,
+  } = useQuery({
     queryKey: ['credits-balance'],
     queryFn: () => creditsService.getBalance(),
     refetchInterval: (query) =>
       query.state.status === 'error' ? false : 30_000,
     staleTime: 15_000,
     enabled: isAuthenticated,
-    retry: false,
+    retry: 1,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
+
+  // Auth already carries the persisted balance. Use it while the dedicated
+  // endpoint synchronises so the navbar never flashes a misleading zero.
+  const displayedBalance = balance ?? user?.point_balance;
 
   // Determine if we should bounce on mount
   useEffect(() => {
@@ -75,7 +86,7 @@ export default function CreditsWidget() {
     return () => window.removeEventListener('kh:open-credits-modal', handler);
   }, []);
 
-  const isLowCredit = !balanceLoading && balance !== undefined && balance <= 3;
+  const isLowCredit = displayedBalance !== undefined && displayedBalance <= 3;
 
   const handleClick = () => {
     // Stop bouncing permanently
@@ -85,11 +96,13 @@ export default function CreditsWidget() {
       sessionStorage.removeItem('kh_credits_bouncing');
     }
     setModalOpen(true);
+    void refetchBalance();
   };
 
   const pill = (
-    <Box
+    <ButtonBase
       onClick={handleClick}
+      aria-label={`Solde de crédits : ${displayedBalance ?? 'chargement'}. Ouvrir les packs`}
       sx={{
         display: 'flex',
         alignItems: 'center',
@@ -147,7 +160,7 @@ export default function CreditsWidget() {
       ) : (
         <Toll sx={{ fontSize: 15, color: 'primary.main' }} />
       )}
-      {balanceLoading ? (
+      {(balanceLoading || balanceFetching) && displayedBalance === undefined ? (
         <Skeleton width={28} height={14} sx={{ borderRadius: 1 }} />
       ) : (
         <Typography
@@ -160,10 +173,12 @@ export default function CreditsWidget() {
             fontSize: '0.82rem',
           }}
         >
-          {(balance ?? 0).toLocaleString('fr-FR')}
+          {displayedBalance === undefined
+            ? '—'
+            : displayedBalance.toLocaleString('fr-FR')}
         </Typography>
       )}
-    </Box>
+    </ButtonBase>
   );
 
   return (

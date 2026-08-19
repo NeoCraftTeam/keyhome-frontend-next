@@ -62,6 +62,36 @@ describe('citiesService', () => {
       await citiesService.list();
       expect(mockGet).toHaveBeenCalledWith('/cities', { params: undefined });
     });
+
+    it('deduplicates equivalent OSM city representations in autocomplete results', async () => {
+      mockGet.mockResolvedValue({
+        data: {
+          data: [
+            {
+              id: 'node-bremen',
+              name: 'Bremen',
+              admin_area: 'Bremen',
+              country_code: 'DE',
+              place_type: 'city',
+            },
+            {
+              id: 'relation-bremen',
+              name: 'Bremen',
+              admin_area: 'Bremen',
+              country_code: 'DE',
+              place_type: 'city',
+            },
+          ],
+          meta: {},
+          links: {},
+        },
+      });
+
+      const result = await citiesService.list({ q: 'Bremen' });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe('node-bremen');
+    });
   });
 
   describe('show', () => {

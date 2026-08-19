@@ -1,5 +1,6 @@
 'use client';
 
+import { consumeReturnTo } from '@/lib/auth/return-to';
 import { useAuth } from '@/providers/AuthProvider';
 import { useClerk } from '@clerk/nextjs';
 import type {
@@ -70,22 +71,26 @@ export function GoogleOneTap() {
           await clerk.setActive({ session: res.createdSessionId });
           if (process.env.NODE_ENV === 'development')
             console.log('[GoogleOneTap] 4 — setActive OK');
-          window.location.href = '/home';
+          // One Tap is client-only (never rendered on /owner/login), so the
+          // destination always comes from the client key. Consuming it here is
+          // safe: we navigate straight to it, so no later hop needs the value.
+          window.location.href = consumeReturnTo('client');
           return;
         }
 
         if (process.env.NODE_ENV === 'development')
           console.warn('[GoogleOneTap] non-complete status, using fallback');
+        const fallbackDestination = consumeReturnTo('client');
         await clerk.handleGoogleOneTapCallback(
           res,
           {
-            signInFallbackRedirectUrl: '/home',
-            signUpFallbackRedirectUrl: '/home',
+            signInFallbackRedirectUrl: fallbackDestination,
+            signUpFallbackRedirectUrl: fallbackDestination,
           },
           async (to: string) => {
             if (process.env.NODE_ENV === 'development')
               console.log('[GoogleOneTap] fallback navigate to:', to);
-            window.location.href = to || '/home';
+            window.location.href = to || fallbackDestination;
           }
         );
       } catch (err) {

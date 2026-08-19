@@ -45,6 +45,10 @@ interface AdFormLocationProps {
     props: React.HTMLAttributes<HTMLLIElement>,
     option: City
   ) => React.ReactNode;
+  renderQuarterOption: (
+    props: React.HTMLAttributes<HTMLLIElement>,
+    option: Quarter
+  ) => React.ReactNode;
   cityInputSx: object;
   /** Hide the ad-type selector (used by wizard which has its own Step 1). */
   hideTypeSelector?: boolean;
@@ -76,6 +80,7 @@ export default function AdFormLocation({
   onQuarterCreate,
   citySlotProps,
   renderCityOption,
+  renderQuarterOption,
   cityInputSx,
   hideTypeSelector = false,
 }: AdFormLocationProps) {
@@ -215,12 +220,7 @@ export default function AdFormLocation({
                   </li>
                 );
               }
-              const q = opt as Quarter;
-              return (
-                <li {...props} key={q.id}>
-                  {q.name} {q.city_name ? `(${q.city_name})` : ''}
-                </li>
-              );
+              return renderQuarterOption(props, opt as Quarter);
             }}
             renderInput={(params) => (
               <TextField
@@ -233,6 +233,7 @@ export default function AdFormLocation({
                 }
                 error={!!errors.quarter_id}
                 helperText={errors.quarter_id}
+                sx={cityInputSx}
                 slotProps={{
                   input: {
                     ...params.InputProps,

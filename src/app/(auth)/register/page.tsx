@@ -19,6 +19,7 @@ import {
   writeStoredRegisterAccountRole,
   writeStoredRegisterLock,
 } from '@/lib/auth/register-intent';
+import { adoptReturnToFromQuery, RETURN_TO_PARAM } from '@/lib/auth/return-to';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { useTurnstileEmailSubmitReady } from '@/hooks/useTurnstileEmailSubmitReady';
@@ -145,7 +146,18 @@ export default function RegisterPage() {
   useLayoutEffect(() => {
     const hasIntent = registerUrlHasRoleIntent(searchParams);
     const hasLock = registerUrlHasRoleLock(searchParams);
-    if (!hasIntent && !hasLock) return;
+    const redirectParam = searchParams.get(RETURN_TO_PARAM);
+
+    // Persist `?redirect=` to sessionStorage BEFORE the query string is
+    // stripped below. Without this, an anonymous visitor sent to
+    // `/register?redirect=/ads/foo` from a protected action loses the
+    // destination and lands on `/home` after finalizeAuth. `finalizeAuth`
+    // already consumes the stored value; we just have to capture it here.
+    if (redirectParam) {
+      adoptReturnToFromQuery('client', redirectParam);
+    }
+
+    if (!hasIntent && !hasLock && !redirectParam) return;
 
     if (hasIntent) {
       const resolved = deriveRegisterRoleFromQuery(
