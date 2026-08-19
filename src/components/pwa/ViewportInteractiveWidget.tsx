@@ -3,10 +3,15 @@
 import { useEffect } from 'react';
 
 /**
- * `interactive-widget=resizes-content` keeps the visual viewport in sync with the
- * on-screen keyboard on Chromium. Safari/WebKit log a console warning and ignore
- * the key if it appears in the initial viewport meta, so we omit it from
- * `export const viewport` and apply it here only for non-Safari browsers.
+ * `interactive-widget=resizes-visual` keeps the layout viewport stable when the
+ * on-screen keyboard opens (Chromium 108+). The page does NOT resize — only the
+ * visual viewport shrinks — so the navbar/bottom-nav stay fixed like a native
+ * messenger (WhatsApp/Messenger). The chat input is lifted via
+ * `useVisualViewportInset()` + `translateY` instead of a layout resize.
+ * Safari/WebKit would warn on an unknown viewport key, so we apply it only
+ * on non-Safari browsers; iOS already handles this via `interactive-widget`
+ * + visualViewport API.
+ * See plan iridescent-exploring-metcalfe — B.1 viewport & hauteur stable.
  */
 export default function ViewportInteractiveWidget(): null {
   useEffect(() => {
@@ -32,8 +37,8 @@ export default function ViewportInteractiveWidget(): null {
     meta.setAttribute(
       'content',
       content.includes(',') || content.length > 0
-        ? `${content}, interactive-widget=resizes-content`
-        : 'interactive-widget=resizes-content'
+        ? `${content}, interactive-widget=resizes-visual`
+        : 'interactive-widget=resizes-visual'
     );
   }, []);
 
