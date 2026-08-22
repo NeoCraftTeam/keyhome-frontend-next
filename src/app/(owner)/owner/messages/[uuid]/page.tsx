@@ -1,17 +1,17 @@
-'use client';
+import type { Metadata } from 'next';
 
-import { OwnerChatBox } from '@/components/chat/KeyHomeChatBox';
-import { use } from 'react';
-
-interface PageProps {
-  params: Promise<{ uuid: string }>;
-}
+export const metadata: Metadata = {
+  title: 'Conversation',
+  robots: { index: false, follow: false },
+};
 
 /**
- * /owner/messages/[uuid] — Deep link into a specific owner conversation.
+ * /owner/messages/[uuid] — coquille. Le shell persistant
+ * (owner/messages/layout.tsx → ChatShell variant="owner") lit l'uuid via le
+ * segment de route et le brouillon éventuel via `?draft=`. Aucune UI ici : la
+ * navigation vers une conversation ne remonte ni la liste ni le WebSocket
+ * (comportement WhatsApp Web).
  */
-export default function OwnerConversationPage({ params }: PageProps) {
-  const { uuid } = use(params);
-
-  return <OwnerChatBox initialActiveConversationId={uuid} />;
+export default function OwnerConversationPage() {
+  return null;
 }
