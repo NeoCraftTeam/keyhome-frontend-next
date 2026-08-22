@@ -162,7 +162,6 @@ export function ChatWindow({
   const {
     messages,
     isLoading,
-    isFetching,
     isMessagesError,
     refetchMessages,
     hasMore,
@@ -631,7 +630,6 @@ export function ChatWindow({
       {/* All animation keyframes — defined once, always in DOM */}
       <style>{`
         @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-        @keyframes fetchSlide{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
         @keyframes msgIn{from{opacity:0;transform:translateY(10px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
         @media (prefers-reduced-motion: reduce) {
           [data-kh-chat-skeleton] { animation: none !important; }
@@ -796,25 +794,13 @@ export function ChatWindow({
             </div>
           ) : (
             <>
-              {/* Subtle background-refresh indicator */}
-              {isFetching && (
-                <div className="flex justify-center py-1.5">
-                  <div
-                    className="h-1 w-20 rounded-full overflow-hidden"
-                    style={{ backgroundColor: `${theme.accent}15` }}
-                  >
-                    <div
-                      className="h-full w-1/2 rounded-full"
-                      data-kh-chat-skeleton
-                      style={{
-                        backgroundColor: theme.accent,
-                        animation:
-                          'fetchSlide 1s cubic-bezier(0.22, 1, 0.36, 1) infinite alternate',
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
+              {/*
+                No background-refresh indicator here: this branch only renders
+                once messages are present, and silent revalidation must stay
+                invisible when data is already shown (WhatsApp-Web behaviour).
+                The first-fetch-without-cache wait is covered by the `isLoading`
+                skeleton above.
+              */}
 
               {/* Virtualized message list */}
               <div

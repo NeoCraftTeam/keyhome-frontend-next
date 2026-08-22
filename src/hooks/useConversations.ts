@@ -40,7 +40,10 @@ export function useConversations(): {
     staleTime: 30_000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: true,
-    refetchOnMount: 'always',
+    // `true` (not `'always'`): revalidate on mount only when stale. With the
+    // persistent shell + WS keeping the list fresh, `'always'` refired a fetch
+    // on every mount → an `isFetching` flash against already-warm data.
+    refetchOnMount: true,
   });
 
   const { data: unread } = useQuery({

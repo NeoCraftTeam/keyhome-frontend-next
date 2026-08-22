@@ -19,6 +19,22 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => nav.params,
 }));
 
+const restoring = vi.hoisted(() => ({ value: false }));
+
+vi.mock('@tanstack/react-query', async (importActual) => ({
+  ...(await importActual<typeof import('@tanstack/react-query')>()),
+  useIsRestoring: () => restoring.value,
+}));
+
+const scaffold = vi.hoisted(() => ({ variant: null as string | null }));
+
+vi.mock('@/components/chat/ChatShellScaffold', () => ({
+  default: (props: { variant: string }) => {
+    scaffold.variant = props.variant;
+    return <div data-testid="shell-scaffold" />;
+  },
+}));
+
 interface CapturedProps {
   activeConversationId?: string;
   initialDraft?: string;
@@ -49,6 +65,8 @@ describe('ChatShell', () => {
     nav.params = new URLSearchParams();
     captured.client = null;
     captured.owner = null;
+    restoring.value = false;
+    scaffold.variant = null;
   });
 
   afterEach(cleanup);
@@ -87,5 +105,38 @@ describe('ChatShell', () => {
     expect(captured.owner?.initialDraft).toBe('Salut');
     // La boîte visiteur ne doit pas être montée en même temps.
     expect(screen.queryByTestId('client-box')).toBeNull();
+  });
+
+  it('rend le scaffold pendant la restauration du cache sans monter la boîte', () => {
+    restoring.value = true;
+    nav.segment = 'abc-123';
+    render(<ChatShell />);
+
+    expect(screen.getByTestId('shell-scaffold')).toBeInTheDocument();
+    expect(scaffold.variant).toBe('client');
+    expect(screen.queryByTestId('client-box')).toBeNull();
+  });
+
+  it('rend le scaffold owner pendant la restauration', () => {
+    restoring.value = true;
+    render(<ChatShell variant="owner" />);
+
+    expect(screen.getByTestId('shell-scaffold')).toBeInTheDocument();
+    expect(scaffold.variant).toBe('owner');
+    expect(screen.queryByTestId('owner-box')).toBeNull();
+  });
+
+  it('affiche le scaffold puis le contenu une fois la restauration terminée', () => {
+    restoring.value = true;
+    const { rerender } = render(<ChatShell />);
+
+    expect(screen.getByTestId('shell-scaffold')).toBeInTheDocument();
+    expect(screen.queryByTestId('client-box')).toBeNull();
+
+    restoring.value = false;
+    rerender(<ChatShell />);
+
+    expect(screen.getByTestId('client-box')).toBeInTheDocument();
+    expect(screen.queryByTestId('shell-scaffold')).toBeNull();
   });
 });
