@@ -942,6 +942,7 @@ export function ChatWindow({
         onCancelReply={() => setReplyTo(null)}
         disabled={isLoading || conversation.status === 'archived'}
         theme={theme}
+        conversationUuid={conversation.uuid}
         initialDraft={initialDraft}
       />
     </div>

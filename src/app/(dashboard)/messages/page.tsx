@@ -1,4 +1,3 @@
-import { KeyHomeChatBox } from '@/components/chat/KeyHomeChatBox';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -8,8 +7,10 @@ export const metadata: Metadata = {
 };
 
 /**
- * /messages — MUI X ChatBox handles conversation list + thread layout.
+ * /messages — coquille. La liste et le fil sont rendus par le shell persistant
+ * (messages/layout.tsx → ChatShell), qui lit le segment de route pour savoir
+ * quelle conversation afficher. Cette page ne porte que la route + ses métadonnées.
  */
 export default function MessagesPage() {
-  return <KeyHomeChatBox backHref="/home" />;
+  return null;
 }

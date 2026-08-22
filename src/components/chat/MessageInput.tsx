@@ -6,6 +6,7 @@ import { CLIENT_THEME } from './chat-theme';
 import { ReplyPreview } from './ReplyPreview';
 import { VoiceRecorder } from './VoiceRecorder';
 import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
+import { useChatDraft } from '@/hooks/useChatDrafts';
 import { Check, FileText, Mic, Paperclip, Send, X } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -44,7 +45,9 @@ interface MessageInputProps {
   onCancelReply: () => void;
   disabled?: boolean;
   theme?: ChatTheme;
-  /** Pre-filled text (e.g. coming from the ad detail page). Only applied on first mount. */
+  /** Conversation uuid — clé du brouillon persistant (survit au switch de conv). */
+  conversationUuid: string;
+  /** Pre-filled text (e.g. coming from the ad detail page). Seeds the draft only if empty. */
   initialDraft?: string;
 }
 
@@ -67,9 +70,12 @@ export function MessageInput({
   onCancelReply,
   disabled = false,
   theme = CLIENT_THEME,
+  conversationUuid,
   initialDraft = '',
 }: MessageInputProps) {
-  const [body, setBody] = useState(initialDraft);
+  // Draft persists in a module-level store keyed by conversation uuid, so the
+  // in-progress text survives ChatWindow remounts when switching conversations.
+  const [body, setBody] = useChatDraft(conversationUuid, initialDraft);
   const [isSending, setIsSending] = useState(false);
 
   // Multi-attachment compose state — up to MAX_ATTACHMENTS_PER_MESSAGE.
@@ -95,15 +101,18 @@ export function MessageInput({
     []
   );
 
-  // When a draft is pre-filled, resize the textarea and place cursor at the end.
+  // On mount, size the textarea to fit any restored/seeded draft. Only pull
+  // focus (and place the cursor) when the draft was seeded from ?draft= — an
+  // explicit "start composing" intent — not when merely restoring a saved draft.
   useEffect(() => {
-    if (!initialDraft) return;
     const el = textareaRef.current;
-    if (!el) return;
+    if (!el || !body) return;
     el.style.height = 'auto';
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-    el.focus();
-    el.setSelectionRange(el.value.length, el.value.length);
+    if (initialDraft) {
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -180,7 +189,15 @@ export function MessageInput({
     } finally {
       setIsSending(false);
     }
-  }, [body, isSending, onSend, replyTo?.uuid, pending, clearAllPending]);
+  }, [
+    body,
+    setBody,
+    isSending,
+    onSend,
+    replyTo?.uuid,
+    pending,
+    clearAllPending,
+  ]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {

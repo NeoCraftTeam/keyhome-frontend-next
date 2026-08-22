@@ -1,28 +1,16 @@
-'use client';
+import type { Metadata } from 'next';
 
-import { KeyHomeChatBox } from '@/components/chat/KeyHomeChatBox';
-import { use } from 'react';
-import { useSearchParams } from 'next/navigation';
-
-interface PageProps {
-  params: Promise<{ uuid: string }>;
-}
+export const metadata: Metadata = {
+  title: 'Conversation',
+  robots: { index: false, follow: false },
+};
 
 /**
- * /messages/[uuid] — Deep link into a specific conversation.
- * ChatBox handles the full layout (list + thread).
- * Accepts ?draft= to pre-fill the message input (used by the ad detail CTA).
+ * /messages/[uuid] — coquille. Le shell persistant (messages/layout.tsx →
+ * ChatShell) lit l'uuid via le segment de route et le brouillon éventuel via
+ * `?draft=`. Aucune UI ici : la navigation vers une conversation ne remonte
+ * ni la liste ni le WebSocket (comportement WhatsApp Web).
  */
-export default function ConversationPage({ params }: PageProps) {
-  const { uuid } = use(params);
-  const searchParams = useSearchParams();
-  const initialDraft = searchParams.get('draft') ?? undefined;
-
-  return (
-    <KeyHomeChatBox
-      initialActiveConversationId={uuid}
-      initialDraft={initialDraft}
-      backHref="/home"
-    />
-  );
+export default function ConversationPage() {
+  return null;
 }

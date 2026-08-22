@@ -11,7 +11,7 @@ import { useConversations } from '@/hooks/useConversations';
 import { fetchConversation } from '@/lib/chat/chat-api';
 import { useOwnerTheme } from '@/providers/OwnerThemeProvider';
 import { useThemeMode } from '@/providers/ThemeProvider';
-import { CircularProgress, useMediaQuery, useTheme } from '@mui/material';
+import { useMediaQuery, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { MessageSquare } from 'lucide-react';
 import Image from 'next/image';
@@ -24,7 +24,13 @@ const SIDEBAR_W = 320;
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 interface KeyHomeChatBoxProps {
-  /** Pre-select a conversation (e.g. from /messages/[uuid]) */
+  /**
+   * Active conversation (controlled — from the /messages/[uuid] URL segment).
+   * Re-read on every render so switching conversations swaps the thread pane
+   * without remounting the list or the shell.
+   */
+  activeConversationId?: string;
+  /** @deprecated alias de `activeConversationId`, conservé le temps de migrer les appelants. */
   initialActiveConversationId?: string;
   /** Visual theme — defaults to client pink */
   theme?: ChatTheme;
@@ -32,7 +38,7 @@ interface KeyHomeChatBoxProps {
   basePath?: string;
   /** Back button href shown in the conversation list header */
   backHref?: string;
-  /** Pre-filled draft text for the message input (applied once on mount). */
+  /** Pre-filled draft text for the message input (seeds the draft if empty). */
   initialDraft?: string;
 }
 
@@ -96,11 +102,76 @@ function ChatEmptyState({ theme }: { theme: ChatTheme }) {
   );
 }
 
-// ─── Spinner helper ──────────────────────────────────────────────────────────
-function ChatLoadingState({ theme }: { theme: ChatTheme }) {
+// ─── Thread scaffold ─────────────────────────────────────────────────────────
+/**
+ * Squelette du fil (header + bulles + barre de saisie) affiché pendant la
+ * résolution d'une conversation en deep-link, à la place d'un spinner centré.
+ * Dimensionné comme le rendu final → aucun layout shift façon WhatsApp Web.
+ */
+function ChatThreadScaffold({ theme }: { theme: ChatTheme }) {
+  const bubble = (mine: boolean, width: number, key: number) => (
+    <div
+      key={key}
+      className="flex"
+      style={{ justifyContent: mine ? 'flex-end' : 'flex-start' }}
+    >
+      <div
+        className="rounded-2xl animate-pulse"
+        style={{
+          width,
+          height: 34,
+          backgroundColor: mine ? theme.accentLight : theme.inputBg,
+        }}
+      />
+    </div>
+  );
+
   return (
-    <div className="flex flex-1 items-center justify-center min-h-0">
-      <CircularProgress size={28} sx={{ color: theme.accent }} />
+    <div
+      className="flex flex-1 flex-col min-h-0 overflow-hidden"
+      style={{ backgroundColor: theme.chatBg }}
+      aria-busy="true"
+    >
+      {/* Header skeleton */}
+      <div
+        className="flex items-center gap-3 px-4 py-3 shrink-0"
+        style={{ borderBottom: `1px solid ${theme.glassBorder}` }}
+      >
+        <div
+          className="h-10 w-10 rounded-full animate-pulse"
+          style={{ backgroundColor: theme.inputBg }}
+        />
+        <div className="flex flex-col gap-1.5">
+          <div
+            className="h-3 w-32 rounded animate-pulse"
+            style={{ backgroundColor: theme.inputBg }}
+          />
+          <div
+            className="h-2.5 w-20 rounded animate-pulse"
+            style={{ backgroundColor: theme.inputBg }}
+          />
+        </div>
+      </div>
+
+      {/* Bubble skeletons */}
+      <div className="flex flex-1 flex-col gap-3 px-4 py-4 overflow-hidden">
+        {bubble(false, 180, 0)}
+        {bubble(true, 120, 1)}
+        {bubble(false, 220, 2)}
+        {bubble(true, 90, 3)}
+        {bubble(false, 150, 4)}
+      </div>
+
+      {/* Input bar skeleton */}
+      <div
+        className="shrink-0 px-3 py-2.5"
+        style={{ borderTop: `1px solid ${theme.glassBorder}` }}
+      >
+        <div
+          className="h-[42px] w-full rounded-2xl animate-pulse"
+          style={{ backgroundColor: theme.inputBg }}
+        />
+      </div>
     </div>
   );
 }
@@ -113,6 +184,10 @@ function ChatLoadingState({ theme }: { theme: ChatTheme }) {
  * - Desktop (≥ md): fixed 320 px sidebar (ConversationList) + flex-1 thread (ChatWindow).
  * - Mobile (< md): full-screen list OR full-screen window depending on active UUID.
  *
+ * `activeConversationId` is controlled: it comes from the URL segment via the
+ * persistent messages layout, so switching conversations swaps only the thread
+ * pane (keyed by uuid) — the list and the shell never remount.
+ *
  * Why NOT @mui/x-chat ChatBox:
  * - MUI X Chat is designed for AI/LLM streaming responses. sendMessage must return
  *   a ReadableStream of tokens. For P2P this stream is always empty, which causes
@@ -120,12 +195,16 @@ function ChatLoadingState({ theme }: { theme: ChatTheme }) {
  *   produces broken UI states. The custom stack avoids this entirely.
  */
 export function KeyHomeChatBox({
+  activeConversationId,
   initialActiveConversationId,
   theme: themeProp,
   basePath = '/messages',
   backHref,
   initialDraft,
 }: KeyHomeChatBoxProps) {
+  // Controlled prop wins; fall back to the deprecated alias for un-migrated callers.
+  const activeId = activeConversationId ?? initialActiveConversationId;
+
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const { mode } = useThemeMode();
@@ -137,62 +216,51 @@ export function KeyHomeChatBox({
   // Try to resolve the active conversation from the TanStack cache first.
   const cachedConversation = useMemo(
     () =>
-      initialActiveConversationId
-        ? conversations.find((c) => c.uuid === initialActiveConversationId)
-        : undefined,
-    [conversations, initialActiveConversationId]
+      activeId ? conversations.find((c) => c.uuid === activeId) : undefined,
+    [conversations, activeId]
   );
 
   // Fallback: fetch directly when deep-linking to /messages/[uuid] before the
   // conversation list has loaded (e.g. fresh page load or browser back/forward).
-  const { data: fetchedConversation, isLoading: fetchLoading } = useQuery({
-    queryKey: ['conversation-single', initialActiveConversationId],
-    queryFn: () => fetchConversation(initialActiveConversationId!),
-    enabled:
-      !!initialActiveConversationId && !cachedConversation && !convLoading,
+  const { data: fetchedConversation, isError: fetchError } = useQuery({
+    queryKey: ['conversation-single', activeId],
+    queryFn: () => fetchConversation(activeId!),
+    enabled: !!activeId && !cachedConversation && !convLoading,
     staleTime: 5 * 60 * 1000,
   });
 
   const activeConversation = cachedConversation ?? fetchedConversation;
-  const isLoadingActive =
-    !!initialActiveConversationId && !activeConversation && fetchLoading;
+  // Show the thread scaffold whenever a conversation is targeted but not yet
+  // resolved — while the list loads OR the fallback fetch runs. On fetch error
+  // (unreachable deep-link) we fall back to the list/empty-state instead.
+  const showScaffold = !!activeId && !activeConversation && !fetchError;
 
   // ─── Mobile layout: list OR window full-screen ───────────────────────────
-  if (isMobile) {
-    let mobileContent: React.ReactNode;
-    if (initialActiveConversationId) {
-      if (isLoadingActive) {
-        mobileContent = <ChatLoadingState theme={theme} />;
-      } else if (activeConversation) {
-        mobileContent = (
-          <ChatWindow
-            conversation={activeConversation}
-            backHref={basePath}
-            theme={theme}
-            initialDraft={initialDraft}
-          />
-        );
-      } else {
-        mobileContent = (
-          <ConversationList
-            activeUuid={initialActiveConversationId}
-            basePath={basePath}
-            theme={theme}
-            backHref={backHref}
-          />
-        );
-      }
-    } else {
-      mobileContent = (
-        <ConversationList
-          activeUuid={initialActiveConversationId}
-          basePath={basePath}
-          theme={theme}
-          backHref={backHref}
-        />
-      );
-    }
+  let mobileContent: React.ReactNode;
+  if (activeConversation) {
+    mobileContent = (
+      <ChatWindow
+        key={activeConversation.uuid}
+        conversation={activeConversation}
+        backHref={basePath}
+        theme={theme}
+        initialDraft={initialDraft}
+      />
+    );
+  } else if (showScaffold) {
+    mobileContent = <ChatThreadScaffold theme={theme} />;
+  } else {
+    mobileContent = (
+      <ConversationList
+        activeUuid={activeId}
+        basePath={basePath}
+        theme={theme}
+        backHref={backHref}
+      />
+    );
+  }
 
+  if (isMobile) {
     return (
       <div className="absolute inset-0 flex flex-col overflow-hidden">
         {mobileContent}
@@ -212,7 +280,7 @@ export function KeyHomeChatBox({
         }}
       >
         <ConversationList
-          activeUuid={initialActiveConversationId}
+          activeUuid={activeId}
           basePath={basePath}
           theme={theme}
           backHref={backHref}
@@ -221,15 +289,16 @@ export function KeyHomeChatBox({
 
       {/* Thread pane */}
       <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
-        {isLoadingActive ? (
-          <ChatLoadingState theme={theme} />
-        ) : activeConversation ? (
+        {activeConversation ? (
           <ChatWindow
+            key={activeConversation.uuid}
             conversation={activeConversation}
             theme={theme}
             backHref={basePath}
             initialDraft={initialDraft}
           />
+        ) : showScaffold ? (
+          <ChatThreadScaffold theme={theme} />
         ) : (
           <ChatEmptyState theme={theme} />
         )}
@@ -243,15 +312,21 @@ export function KeyHomeChatBox({
  * Automatically switches to OWNER_DARK_THEME when global dark mode is active.
  */
 export function OwnerChatBox({
+  activeConversationId,
   initialActiveConversationId,
+  initialDraft,
 }: {
+  activeConversationId?: string;
+  /** @deprecated alias de `activeConversationId`. */
   initialActiveConversationId?: string;
+  initialDraft?: string;
 }) {
   const { mode } = useOwnerTheme();
   const ownerTheme = mode === 'dark' ? OWNER_DARK_THEME : OWNER_THEME;
   return (
     <KeyHomeChatBox
-      initialActiveConversationId={initialActiveConversationId}
+      activeConversationId={activeConversationId ?? initialActiveConversationId}
+      initialDraft={initialDraft}
       theme={ownerTheme}
       basePath="/owner/messages"
       backHref="/owner/dashboard"
