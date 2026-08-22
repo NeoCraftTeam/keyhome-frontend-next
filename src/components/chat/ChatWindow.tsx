@@ -27,7 +27,14 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -213,6 +220,14 @@ export function ChatWindow({
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAtBottomRef = useRef(true);
+  // Auto-pagination: an in-flight guard so the scroll handler never fires a
+  // second load (runaway chain) while one is pending, plus the scroll metrics
+  // captured just before a prepend so we can re-anchor the viewport after it.
+  const isLoadingMoreRef = useRef(false);
+  const prependAnchorRef = useRef<{
+    scrollHeight: number;
+    scrollTop: number;
+  } | null>(null);
   // Track which message UUIDs were present on initial load — only new ones animate
   const initialMsgIdsRef = useRef<Set<string> | null>(null);
   const initialLoadDoneRef = useRef(false);
@@ -320,6 +335,27 @@ export function ChatWindow({
     overscan: 12,
   });
 
+  // Pull the previous page of messages, keeping the manual "Messages
+  // précédents" button as an accessible fallback. We snapshot the scroll
+  // metrics before the prepend; a layout effect below restores the position so
+  // the viewport stays anchored (WhatsApp-style) instead of jumping to the top.
+  const triggerLoadMore = useCallback(async () => {
+    const el = listRef.current;
+    if (!el || !hasMore || isLoadingMoreRef.current) {
+      return;
+    }
+    isLoadingMoreRef.current = true;
+    prependAnchorRef.current = {
+      scrollHeight: el.scrollHeight,
+      scrollTop: el.scrollTop,
+    };
+    try {
+      await loadMore();
+    } finally {
+      isLoadingMoreRef.current = false;
+    }
+  }, [hasMore, loadMore]);
+
   // Track scroll position + compute sticky date label from the first visible item.
   // We walk the virtual items, find the first one whose offset is below the
   // current scrollTop, then look back to the most recent separator. This gives
@@ -333,6 +369,15 @@ export function ChatWindow({
     isAtBottomRef.current = nearBottom;
     setShowScrollBtn(!nearBottom);
     if (nearBottom) setNewMsgCount(0);
+
+    // Near the top (within ~1 viewport) of a scrollable list → auto-load the
+    // previous page. The `isScrollable` check avoids firing on short threads
+    // that don't fill the screen (there, the fallback button covers it), and
+    // the in-flight ref inside `triggerLoadMore` blocks a runaway chain.
+    const isScrollable = el.scrollHeight > el.clientHeight;
+    if (hasMore && isScrollable && el.scrollTop < el.clientHeight) {
+      void triggerLoadMore();
+    }
 
     const virtualItems = virtualizer.getVirtualItems();
     if (virtualItems.length === 0) {
@@ -356,7 +401,7 @@ export function ChatWindow({
     setIsScrolling(true);
     if (scrollIdleTimerRef.current) clearTimeout(scrollIdleTimerRef.current);
     scrollIdleTimerRef.current = setTimeout(() => setIsScrolling(false), 800);
-  }, [flatItems, virtualizer]);
+  }, [flatItems, virtualizer, hasMore, triggerLoadMore]);
 
   // Cleanup the idle timer on unmount
   useEffect(
@@ -391,6 +436,28 @@ export function ChatWindow({
   useEffect(() => {
     markAsRead();
   }, [markAsRead]);
+
+  // After a history prepend: restore the scroll position and fold the fetched
+  // messages into the "known" set. Runs (as a layout effect, before paint) ahead
+  // of the passive auto-scroll effect below, so the older messages we just
+  // pulled are never mistaken for freshly-arrived ones by the unread counter,
+  // and the viewport never flashes to the top. The virtualizer then corrects
+  // any estimate-vs-measured drift of the prepended rows on its own.
+  useLayoutEffect(() => {
+    const anchor = prependAnchorRef.current;
+    if (!anchor) return;
+    prependAnchorRef.current = null;
+
+    const el = listRef.current;
+    if (el) {
+      const delta = el.scrollHeight - anchor.scrollHeight;
+      if (delta > 0) el.scrollTop = anchor.scrollTop + delta;
+    }
+
+    if (initialMsgIdsRef.current) {
+      for (const m of messages) initialMsgIdsRef.current.add(m.uuid);
+    }
+  }, [messages]);
 
   // Auto-scroll + new-message counter
   useEffect(() => {

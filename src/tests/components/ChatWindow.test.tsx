@@ -1,6 +1,6 @@
 import type { Conversation, Message } from '@/types/chat';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -163,5 +163,151 @@ describe('ChatWindow — indicateurs de chargement', () => {
     const { container } = renderWindow();
 
     expect(container.querySelector('[data-kh-chat-skeleton]')).not.toBeNull();
+  });
+});
+
+/**
+ * Auto-pagination — la remontée déclenche `loadMore()` près du haut d'une liste
+ * défilable, sans jamais redéclencher tant qu'un chargement est en cours (le
+ * bouton « Messages précédents » restant le repli accessible).
+ *
+ * jsdom n'a pas de layout : on injecte scrollHeight/clientHeight/scrollTop sur
+ * le conteneur défilant puis on émet l'événement `scroll`.
+ */
+function defineScrollMetrics(
+  el: HTMLElement,
+  metrics: { scrollHeight: number; clientHeight: number; scrollTop: number }
+): void {
+  Object.defineProperty(el, 'scrollHeight', {
+    configurable: true,
+    value: metrics.scrollHeight,
+  });
+  Object.defineProperty(el, 'clientHeight', {
+    configurable: true,
+    value: metrics.clientHeight,
+  });
+  Object.defineProperty(el, 'scrollTop', {
+    configurable: true,
+    writable: true,
+    value: metrics.scrollTop,
+  });
+}
+
+function getScroller(container: HTMLElement): HTMLElement {
+  const el = container.querySelector('.overflow-y-auto');
+  if (!el) throw new Error('conteneur défilant introuvable');
+  return el as HTMLElement;
+}
+
+describe('ChatWindow — auto-pagination', () => {
+  afterEach(cleanup);
+
+  it('déclenche loadMore à proximité du haut d’une liste défilable', () => {
+    // Promesse jamais résolue → le garde-fou « en cours » reste actif.
+    const loadMore = vi.fn(() => new Promise<void>(() => {}));
+    chatState.current = buildState({
+      messages: [message],
+      hasMore: true,
+      loadMore,
+    });
+
+    const { container } = renderWindow();
+    const scroller = getScroller(container);
+    defineScrollMetrics(scroller, {
+      scrollHeight: 1000,
+      clientHeight: 500,
+      scrollTop: 100,
+    });
+
+    fireEvent.scroll(scroller);
+
+    expect(loadMore).toHaveBeenCalledTimes(1);
+  });
+
+  it('ne redéclenche pas loadMore tant que le chargement est en cours', () => {
+    const loadMore = vi.fn(() => new Promise<void>(() => {}));
+    chatState.current = buildState({
+      messages: [message],
+      hasMore: true,
+      loadMore,
+    });
+
+    const { container } = renderWindow();
+    const scroller = getScroller(container);
+    defineScrollMetrics(scroller, {
+      scrollHeight: 1000,
+      clientHeight: 500,
+      scrollTop: 100,
+    });
+
+    fireEvent.scroll(scroller);
+    fireEvent.scroll(scroller);
+    fireEvent.scroll(scroller);
+
+    expect(loadMore).toHaveBeenCalledTimes(1);
+  });
+
+  it('ne déclenche pas loadMore loin du haut', () => {
+    const loadMore = vi.fn(() => new Promise<void>(() => {}));
+    chatState.current = buildState({
+      messages: [message],
+      hasMore: true,
+      loadMore,
+    });
+
+    const { container } = renderWindow();
+    const scroller = getScroller(container);
+    defineScrollMetrics(scroller, {
+      scrollHeight: 1000,
+      clientHeight: 500,
+      scrollTop: 800,
+    });
+
+    fireEvent.scroll(scroller);
+
+    expect(loadMore).not.toHaveBeenCalled();
+  });
+
+  it('ne déclenche pas loadMore quand il n’y a plus de page (hasMore=false)', () => {
+    const loadMore = vi.fn(() => new Promise<void>(() => {}));
+    chatState.current = buildState({
+      messages: [message],
+      hasMore: false,
+      loadMore,
+    });
+
+    const { container } = renderWindow();
+    const scroller = getScroller(container);
+    defineScrollMetrics(scroller, {
+      scrollHeight: 1000,
+      clientHeight: 500,
+      scrollTop: 100,
+    });
+
+    fireEvent.scroll(scroller);
+
+    expect(loadMore).not.toHaveBeenCalled();
+  });
+
+  it('ne déclenche pas loadMore sur une liste non défilable (thread court)', () => {
+    const loadMore = vi.fn(() => new Promise<void>(() => {}));
+    chatState.current = buildState({
+      messages: [message],
+      hasMore: true,
+      loadMore,
+    });
+
+    const { container } = renderWindow();
+    const scroller = getScroller(container);
+    // scrollHeight <= clientHeight → rien à faire défiler.
+    defineScrollMetrics(scroller, {
+      scrollHeight: 400,
+      clientHeight: 500,
+      scrollTop: 0,
+    });
+
+    fireEvent.scroll(scroller);
+
+    expect(loadMore).not.toHaveBeenCalled();
   });
 });

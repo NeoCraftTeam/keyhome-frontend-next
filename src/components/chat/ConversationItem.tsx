@@ -231,15 +231,23 @@ export function ConversationItem({
 
   const initial = participant?.name?.charAt(0).toUpperCase() ?? '?';
 
+  const href = `${basePath}/${conversation.uuid}`;
+
   const warmCache = useCallback(() => {
+    // Warm the Next route segment (RSC) so the thread pane paints instantly on
+    // arrival. `router.prefetch` is deduped internally, so it's safe on repeat.
+    router.prefetch(href);
+    // Warm the message-query cache once so the thread already has data.
     if (prefetchedRef.current || !user?.id) return;
     prefetchedRef.current = true;
     prefetchChatMessages(queryClient, user.id, conversation.uuid);
-  }, [queryClient, conversation.uuid, user]);
+  }, [router, href, queryClient, conversation.uuid, user]);
 
   const navigate = useCallback(() => {
-    router.push(`${basePath}/${conversation.uuid}`);
-  }, [router, basePath, conversation.uuid]);
+    // `scroll: false` keeps the persistent shell anchored — only the thread
+    // pane swaps, no scroll-to-top flash on navigation.
+    router.push(href, { scroll: false });
+  }, [router, href]);
 
   return (
     <div
