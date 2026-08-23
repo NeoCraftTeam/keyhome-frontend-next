@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import mapboxgl from 'mapbox-gl';
-import { type RefObject, useState, useCallback } from 'react';
+import { type RefObject, useState, useCallback, useEffect } from 'react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -93,6 +93,27 @@ export default function IsochroneFilter({ mapRef }: Props) {
     if (map) removeLayers(map);
     setActive(false);
     setError(null);
+  }, [mapRef]);
+
+  // We don't own the map — it's passed in via `mapRef`. Remove the source +
+  // layers we added when this control unmounts while the parent map is still
+  // alive (child effects tear down before the parent's `map.remove()`), so an
+  // isochrone drawn here never lingers as an orphaned layer on a reused map.
+  // `removeLayers` is guarded, so this is a no-op when nothing was drawn.
+  useEffect(() => {
+    return () => {
+      // Intentionally read the ref lazily at unmount, NOT a mount-time snapshot:
+      // the parent may set the map asynchronously after this child mounts, so a
+      // snapshot could be null and skip the cleanup we need.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const map = mapRef.current;
+      if (!map) return;
+      try {
+        removeLayers(map);
+      } catch {
+        // The parent may have already destroyed the map — nothing to clean.
+      }
+    };
   }, [mapRef]);
 
   const compute = useCallback(async () => {
