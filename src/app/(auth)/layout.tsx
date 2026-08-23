@@ -1,19 +1,12 @@
 'use client';
 
 import AppLoader from '@/components/ui/feedback/AppLoader';
-import SplashTransition from '@/components/ui/overlay/SplashTransition';
 import { consumeReturnTo } from '@/lib/auth/return-to';
 import { useAuth } from '@/providers/AuthProvider';
 import { brandAgent } from '@/theme/tokens';
 import { Box } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-/** Minimum time (ms) the splash screen is visible — feels intentional, not like a flash. */
-const SPLASH_DURATION = 1400;
-
-/** Session key to track whether the user has already seen the auth splash this session */
-const SPLASH_SEEN_KEY = 'kh_auth_splash_seen';
+import { useEffect, useRef, useState } from 'react';
 
 /** Pages that must always render even when isAuthenticated is true (post-registration). */
 const VERIFICATION_PATHS = new Set(['/verify-email', '/verify-otp']);
@@ -27,20 +20,8 @@ export default function AuthLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  /**
-   * showSplash controls the SplashTransition overlay.
-   * We show it on very first auth-group visit per session, but skip it
-   * for subsequent intra-auth navigations (login↔register, verify-email, etc.)
-   * to keep the flow snappy.
-   *
-   * IMPORTANT: never read sessionStorage during render — the server has no
-   * sessionStorage so the server always gets `false` while the client may get
-   * `true`, which causes a hydration mismatch.  Always default to `false` and
-   * update the value inside useEffect (client-only, post-hydration).
-   */
-  const [showSplash, setShowSplash] = useState(false);
-  const [isAgentSplash, setIsAgentSplash] = useState(false);
-  const mountedRef = useRef(false);
+  /** Agent registration flow tints the loader with the agent brand colour. */
+  const [isAgentContext, setIsAgentContext] = useState(false);
   /**
    * Tracks whether this layout observed a resolved-guest state
    * (isLoading=false + isAuthenticated=false) before the user became
@@ -55,14 +36,9 @@ export default function AuthLayout({
   const isVerificationPath = VERIFICATION_PATHS.has(pathname ?? '');
 
   useEffect(() => {
-    const alreadySeen = sessionStorage.getItem(SPLASH_SEEN_KEY) === '1';
-    if (!alreadySeen) {
-      setShowSplash(true);
-    }
-    setIsAgentSplash(
+    setIsAgentContext(
       sessionStorage.getItem('kh_registration_intent') === 'agent'
     );
-    // Run once after hydration to decide whether to show the splash
   }, []);
 
   // Track resolved-guest state so the redirect effect below can tell the
@@ -73,13 +49,13 @@ export default function AuthLayout({
     }
   }, [isLoading, isAuthenticated]);
 
-  // Redirect authenticated users but only after the splash is done.
-  // Never redirect from verification paths — those need to stay visible
-  // even if the AuthProvider briefly reports isAuthenticated=true.
-  // Skip when wasGuestRef is true: login() already called router.replace()
-  // and a second navigation here would override the correct returnTo target.
+  // Redirect authenticated users away from auth pages. Never redirect from
+  // verification paths — those need to stay visible even if the AuthProvider
+  // briefly reports isAuthenticated=true. Skip when wasGuestRef is true:
+  // login() already called router.replace() and a second navigation here
+  // would override the correct returnTo target.
   useEffect(() => {
-    if (!isLoading && isAuthenticated && !showSplash && !isVerificationPath) {
+    if (!isLoading && isAuthenticated && !isVerificationPath) {
       if (wasGuestRef.current) {
         return;
       }
@@ -89,46 +65,10 @@ export default function AuthLayout({
         consumeReturnTo(user?.role === 'agent' ? 'owner' : 'client')
       );
     }
-  }, [
-    isAuthenticated,
-    isLoading,
-    showSplash,
-    isVerificationPath,
-    user,
-    router,
-  ]);
+  }, [isAuthenticated, isLoading, isVerificationPath, user, router]);
 
-  const handleSplashComplete = useCallback(() => {
-    sessionStorage.setItem(SPLASH_SEEN_KEY, '1');
-    setShowSplash(false);
-    mountedRef.current = true;
-  }, []);
-
-  // Show splash only on first auth-group visit this session
-  if (showSplash) {
-    return (
-      <>
-        <SplashTransition
-          duration={SPLASH_DURATION}
-          onComplete={handleSplashComplete}
-          accentColor={isAgentSplash ? brandAgent.primary : undefined}
-        />
-        {/* Keep auth subtree mounted in background so it boots during splash */}
-        <Box
-          sx={{
-            visibility: 'hidden',
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: 'none',
-          }}
-        >
-          {children}
-        </Box>
-      </>
-    );
-  }
-
-  // Auth check still running after splash (edge case)
+  // Auth resolution still running: a lightweight loader — never a blocking
+  // splash. The auth form must appear as soon as the state resolves.
   if (isLoading) {
     return (
       <Box
@@ -141,7 +81,7 @@ export default function AuthLayout({
       >
         <AppLoader
           size={48}
-          color={isAgentSplash ? brandAgent.primary : undefined}
+          color={isAgentContext ? brandAgent.primary : undefined}
         />
       </Box>
     );

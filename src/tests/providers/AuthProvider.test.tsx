@@ -477,6 +477,50 @@ describe('AuthProvider', () => {
     });
   });
 
+  describe('client-side navigation', () => {
+    // BUG CATCH: The auth resolution effect used to depend on `pathname`, so
+    // it re-ran on EVERY client-side navigation. On the signed-out (session
+    // cookie / guest) path that meant `setIsExchanging(true)` + a fresh
+    // `/auth/me` round-trip each time — surfacing the full-page <AppLoader>
+    // on every page change. Once the initial session is resolved, a mere
+    // navigation must NOT re-enter loading nor refetch /me. Explicit
+    // revalidation goes through refreshUser(); a real sign-in flips
+    // isSignedIn and re-resolves.
+    it('does not re-enter loading or refetch /me on a pathname change once resolved', async () => {
+      mockAuthService.me.mockResolvedValue(mockUser);
+
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+      const makeTree = () => (
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <AuthConsumer onContext={() => {}} />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      const { rerender } = render(makeTree());
+
+      await waitFor(() => {
+        expect(screen.getByTestId('loading').textContent).toBe('false');
+        expect(screen.getByTestId('authenticated').textContent).toBe('true');
+      });
+
+      const meCallsAfterInitial = mockAuthService.me.mock.calls.length;
+
+      // Simulate a client-side navigation to another route (new element
+      // reference forces a full re-render; usePathname now returns /nearby).
+      await act(async () => {
+        mockPathnameRef.current = '/nearby';
+        rerender(makeTree());
+      });
+
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+      expect(mockAuthService.me.mock.calls.length).toBe(meCallsAfterInitial);
+    });
+  });
+
   describe('legacy token migration', () => {
     // BUG CATCH: Old versions stored tokens in localStorage. If migration
     // doesn't run, users with legacy tokens are logged out after the update.

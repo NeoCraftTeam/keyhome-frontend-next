@@ -25,15 +25,18 @@ function isChatRoute(pathname: string): boolean {
 }
 
 /**
- * Wraps page content in a subtle fade+rise animation on route change.
+ * Wraps page content in a subtle **one-time** entrance fade.
  * Respects prefers-reduced-motion for accessibility.
  *
  * Les routes chat (`/messages`, `/owner/messages`) sont rendues **statiques**
- * (sans `motion.div`) : le shell de conversation doit persister d'un segment à
- * l'autre, façon WhatsApp Web — aucun fondu, aucun remontage. Les autres routes
- * montent un `motion.div` **keyé par le pathname** → remontage à chaque
- * navigation, rejouant le fondu (comportement de l'ancien `template.tsx`, désormais
- * supprimé pour ne pas remonter tout le sous-arbre du chat).
+ * (sans `motion.div`) : le shell de conversation persiste d'un segment à
+ * l'autre, façon WhatsApp Web.
+ *
+ * Les autres routes montent un `motion.div` **non keyé** : le fondu ne joue
+ * qu'au premier montage, puis le conteneur persiste d'une navigation à l'autre
+ * → changement de page **instantané** (aucun remontage du sous-arbre ni fondu
+ * rejoué à chaque navigation). Chaque page reste responsable de sa propre
+ * revalidation de données ; la navigation elle-même ne doit rien recharger.
  */
 export default function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname() ?? '';
@@ -45,7 +48,6 @@ export default function PageTransition({ children }: PageTransitionProps) {
 
   return (
     <motion.div
-      key={pathname}
       initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={

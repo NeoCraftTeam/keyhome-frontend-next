@@ -6,8 +6,9 @@ import { useEffect } from 'react';
  * PageTransition doit :
  *  - rendre les routes chat (/messages, /owner/messages) SANS motion.div
  *    (statique → le sous-arbre persiste, aucun fondu à la navigation) ;
- *  - rendre les autres routes dans un motion.div KEYÉ par le pathname
- *    (remontage à chaque navigation → rejoue le fondu, comme l'ancien template).
+ *  - rendre les autres routes dans un motion.div NON keyé → le fondu ne joue
+ *    qu'au premier montage et le conteneur persiste d'une navigation à l'autre
+ *    (aucun remontage forcé → navigation instantanée).
  */
 
 const pathnameHolder = vi.hoisted(() => ({ value: '/home' }));
@@ -110,7 +111,7 @@ describe('PageTransition', () => {
     expect(container.querySelector('[data-motion="true"]')).not.toBeNull();
   });
 
-  it('remonte les enfants en naviguant entre deux routes hors chat', () => {
+  it('ne remonte PAS les enfants en naviguant entre deux routes hors chat', () => {
     pathnameHolder.value = '/home';
     const { rerender } = render(
       <PageTransition>
@@ -126,7 +127,9 @@ describe('PageTransition', () => {
       </PageTransition>
     );
 
-    expect(mountCount).toBe(2);
+    // Plus de key={pathname} : le motion.div persiste, aucun remontage forcé →
+    // navigation instantanée (le fondu ne joue qu'au premier montage).
+    expect(mountCount).toBe(1);
   });
 
   it('conserve les enfants montés en naviguant dans le chat', () => {

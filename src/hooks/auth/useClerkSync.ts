@@ -77,6 +77,13 @@ export function useClerkSync(
   const authRunRef = useRef(0);
   const pathnameRef = useRef<string | null>(null);
   const clerkExchangeDoneRef = useRef(false);
+  // Marks that the signed-out resolution (Path A: session cookie / guest) has
+  // completed at least once. A plain client-side navigation must NOT re-run the
+  // full resolution — doing so flips isExchanging (→ full-page loader) and
+  // refetches /auth/me on every page change. Reset when Clerk signs in so a
+  // later sign-out triggers a fresh bootstrap. Explicit revalidation (e.g.
+  // after a profile edit) goes through AuthProvider.refreshUser(), not here.
+  const signedOutResolvedRef = useRef(false);
   const clerkGetTokenRef = useRef(getToken);
   clerkGetTokenRef.current = getToken;
 
@@ -131,6 +138,14 @@ export function useClerkSync(
         }
       }
 
+      // Already resolved once: a mere navigation must not re-enter the auth
+      // gate nor refetch /auth/me. Keep the resolved state and bail early.
+      if (signedOutResolvedRef.current) {
+        setIsExchanging(false);
+        setHasResolvedInitialAuth(true);
+        return;
+      }
+
       setIsExchanging(true);
 
       void (async () => {
@@ -151,6 +166,7 @@ export function useClerkSync(
           setRoleCookie(sessionUser.role ?? UserRole.CUSTOMER);
           setToken(null);
           setIsExchanging(false);
+          signedOutResolvedRef.current = true;
           setHasResolvedInitialAuth(true);
           return;
         } catch {
@@ -164,6 +180,7 @@ export function useClerkSync(
           setUserState(null);
           clearRoleCookie();
           setIsExchanging(false);
+          signedOutResolvedRef.current = true;
           setHasResolvedInitialAuth(true);
           return;
         }
@@ -193,6 +210,7 @@ export function useClerkSync(
         } finally {
           if (runId !== authRunRef.current) return;
           setIsExchanging(false);
+          signedOutResolvedRef.current = true;
           setHasResolvedInitialAuth(true);
         }
       })();
@@ -201,6 +219,9 @@ export function useClerkSync(
     }
 
     // ── Path B: Clerk signed-in ──────────────────────────────────────────────
+    // A live Clerk session supersedes any signed-out resolution; clear the
+    // Path A marker so a later sign-out bootstraps the session again.
+    signedOutResolvedRef.current = false;
     const currentPathForClerk = pathnameRef.current ?? '';
     const isOAuthCallback = currentPathForClerk === '/sso-callback';
 

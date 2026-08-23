@@ -11,12 +11,12 @@ export default function AdsTemplate({
 
   return (
     <motion.div
-      initial={shouldReduce ? false : { opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={shouldReduce ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={
         shouldReduce
           ? { duration: 0 }
-          : { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }
+          : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
       }
     >
       {children}
