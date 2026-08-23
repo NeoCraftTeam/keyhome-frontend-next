@@ -141,7 +141,10 @@ export default function HeroSearch({
     borderRadius: 0,
     '& .MuiOutlinedInput-root': {
       borderRadius: 0,
-      fontSize: { xs: '0.9rem', md: '1rem' },
+      // iOS Safari auto-zooms the page when a focused field's font-size is
+      // < 16px. Keep the input at ≥16px (1rem) on mobile so focusing the hero
+      // search never triggers an involuntary zoom; pinch-zoom stays enabled.
+      fontSize: '1rem',
       pr: '14px !important',
       minHeight: { xs: 54, md: 52 },
       color: 'text.primary',

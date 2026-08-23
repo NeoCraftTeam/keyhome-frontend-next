@@ -154,7 +154,7 @@ export function ConversationList({
             onChange={(e) => setSearch(e.target.value)}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
-            className="flex-1 text-sm bg-transparent outline-none"
+            className="flex-1 text-base md:text-sm bg-transparent outline-none"
             style={{ color: theme.textPrimary } as React.CSSProperties}
           />
           {search && (
