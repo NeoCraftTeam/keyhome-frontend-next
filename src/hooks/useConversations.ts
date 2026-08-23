@@ -10,6 +10,16 @@ import { useEffect, useRef } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 
 /**
+ * How many of the most-relevant conversations get their messages warmed on
+ * first list load. Opening any of these is then instant — no cold skeleton,
+ * the WhatsApp feel — because the thread cache is already populated by the
+ * time {@link useChatMessages} mounts. Prefetch is deduped and respects the
+ * 23h message staleTime, so this is a single background burst per session,
+ * not a fetch on every list mount.
+ */
+const PROACTIVE_PREFETCH_COUNT = 8;
+
+/**
  * Conversation list for the Messages UI. Real-time list preview + ordering
  * are kept in sync by {@link ChatNotificationListener} (always mounted in both
  * panels) so the cache stays correct even when this hook is not active.
@@ -73,7 +83,7 @@ export function useConversations(): {
     }
     hasPrefetchedRef.current = true;
     selectConversationsForBackgroundWs(conversations)
-      .slice(0, 3)
+      .slice(0, PROACTIVE_PREFETCH_COUNT)
       .forEach((conv) => {
         prefetchChatMessages(queryClient, user.id, conv.uuid);
       });

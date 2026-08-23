@@ -290,9 +290,11 @@ export function MessageInput({
     !isSending &&
     !disabled;
 
-  // iOS keyboard handling: shrinking visualViewport leaves position-fixed
-  // bars trapped behind the keyboard. We bump the input up by that delta
-  // via translateY so the textarea always stays above the keyboard.
+  // iOS keyboard handling: the conversation pane is now sized to the visual
+  // viewport (see DashboardLayout), so the composer already rides just above
+  // the keyboard — no translateY needed. We still read the inset to drop the
+  // home-indicator padding while the keyboard is open (it would otherwise
+  // leave a gap between the composer and the keyboard).
   const keyboardInset = useVisualViewportInset();
 
   return (
@@ -304,15 +306,8 @@ export function MessageInput({
         WebkitBackdropFilter: 'blur(12px)',
         borderTop: `1px solid ${theme.glassBorder}`,
         boxShadow: theme.isDark ? 'none' : '0 -1px 6px rgba(0,0,0,0.03)',
-        // When the on-screen keyboard is visible, lift the bar above it
-        // (visualViewport-aware). 0 when no keyboard, so desktop is untouched.
-        transform:
-          keyboardInset > 0 ? `translateY(-${keyboardInset}px)` : undefined,
-        transition:
-          keyboardInset === 0
-            ? 'transform 200ms cubic-bezier(0.22,1,0.36,1)'
-            : undefined,
-        // Honour the home indicator only when keyboard is hidden.
+        // Honour the home indicator only when the keyboard is hidden; when it's
+        // open the composer sits at the keyboard's top edge (no safe-area gap).
         paddingBottom:
           keyboardInset > 0 ? 0 : 'env(safe-area-inset-bottom, 0px)',
       }}
@@ -499,7 +494,7 @@ export function MessageInput({
                 ? 'Ajouter une légende…'
                 : 'Écrivez un message…'
             }
-            className="flex-1 resize-none rounded-2xl px-4 py-2.5 text-[14px] outline-none transition-all duration-200 min-h-[42px] max-h-40 overflow-y-auto disabled:opacity-50"
+            className="flex-1 resize-none rounded-2xl px-4 py-2.5 text-[16px] md:text-[14px] outline-none transition-all duration-200 min-h-[42px] max-h-40 overflow-y-auto disabled:opacity-50"
             style={{
               backgroundColor: theme.inputBg,
               color: theme.textPrimary,

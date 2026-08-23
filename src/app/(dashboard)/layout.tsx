@@ -20,6 +20,7 @@ import WelcomeModal from '@/components/ui/overlay/WelcomeModal';
 import { useFcmToken } from '@/hooks/useFcmToken';
 import { useIsStandalone } from '@/hooks/useIsStandalone';
 import { useUserLocation } from '@/hooks/useUserLocation';
+import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { buildAuthUrlWithReturnTo } from '@/lib/auth/return-to';
 import { isLikelyIosWebKit } from '@/lib/ios-environment';
 import { PWA_BOTTOM_NAV_INNER_HEIGHT_PX } from '@/lib/pwaBottomNavConstants';
@@ -156,10 +157,21 @@ export default function DashboardLayout({
   const isConversationPage = /^\/messages\/[^/]+/.test(pathname ?? '');
   const isMessagesPage = pathname?.startsWith('/messages') ?? false;
   const hideNavForChat = isMobile && isConversationPage;
+  // Hide the global top Navbar across the whole mobile Messages section
+  // (list + conversation) so the chat's own header is the single top bar —
+  // no cramped double header on the list. BottomNav still shows on the list;
+  // only the immersive conversation view hides both bars.
+  const hideTopNav = isMobile && isMessagesPage;
+  // Immersive conversation view: size the chat pane to the visual viewport so
+  // the iOS keyboard shrinks the band (header stays pinned, composer rides the
+  // keyboard) instead of shoving a full-height fixed layer off-screen. Only
+  // tracked while immersive so other routes don't re-render on scroll/resize.
+  const chatViewport = useVisualViewport(hideNavForChat);
 
   // Mobile chat (non‑iOS): lock root scroll so the keyboard does not shift the
-  // shell. iOS uses `interactive-widget: resizes-content` — a fixed html/body
-  // fights that and makes the whole page jump (see owner + root viewport).
+  // shell. iOS is handled differently — the conversation pane is sized to the
+  // visual viewport (see `chatViewport`), so a fixed html/body would fight
+  // that and make the whole page jump. iOS therefore gets no lock here.
   useEffect(() => {
     if (!hideNavForChat) return;
     if (isLikelyIosWebKit()) {
@@ -300,7 +312,7 @@ export default function DashboardLayout({
         {isAuthenticated && <CreditsRealtimeListener />}
         {isAuthenticated && <ChatNotificationListener accentColor="#F6475F" />}
         {isAuthenticated && <NotificationsRealtimeListener />}
-        {!hideNavForChat && <Navbar />}
+        {!hideTopNav && <Navbar />}
         <Box
           sx={{
             flex: 1,
@@ -325,12 +337,23 @@ export default function DashboardLayout({
           {isMessagesPage ? (
             <Box
               sx={{
-                // `fixed` (not absolute) on the chat detail page anchors the
-                // chat to the visual viewport on iOS so the focused input
-                // doesn't drag the layout. On larger screens (where there is
-                // no immersive nav-hide), absolute is enough.
+                // Immersive conversation view: pin to the visual viewport so
+                // the iOS keyboard shrinks the pane (header stays put, composer
+                // rides the keyboard) instead of pushing a full-height fixed
+                // layer off-screen. Pre-hydration / no visualViewport → fall
+                // back to the layout viewport. Elsewhere (desktop split view)
+                // absolute inset:0 is enough.
                 position: hideNavForChat ? 'fixed' : 'absolute',
-                inset: 0,
+                left: 0,
+                right: 0,
+                ...(hideNavForChat
+                  ? {
+                      top: chatViewport ? `${chatViewport.offsetTop}px` : 0,
+                      height: chatViewport
+                        ? `${chatViewport.height}px`
+                        : '100dvh',
+                    }
+                  : { top: 0, bottom: 0 }),
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
