@@ -662,7 +662,7 @@ export default function HomePage() {
                             animation: `fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) ${idx * 0.03}s both`,
                           }}
                         >
-                          <AdCard ad={ad} />
+                          <AdCard ad={ad} priority={idx < 4} />
                         </Grid>
                       ))}
                 </Grid>
@@ -1016,7 +1016,7 @@ export default function HomePage() {
                             animation: `fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1) ${idx * 0.03}s both`,
                           }}
                         >
-                          <AdCard ad={ad} />
+                          <AdCard ad={ad} priority={idx < 4} />
                         </Grid>
                       ))}
                 </Grid>

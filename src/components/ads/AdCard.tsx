@@ -114,6 +114,14 @@ interface AdCardProps {
   showDistance?: boolean;
   /** Override Next.js Image `sizes` — use `"220px"` in horizontal carousels (gap #5 audit). */
   imageSizes?: string;
+  /**
+   * Eagerly preload the first image with `priority` + `fetchPriority="high"`.
+   * Set ONLY for the handful of above-the-fold cards that can be the LCP
+   * (e.g. `priority={idx < 4}`). Left `false`, the card lazy-loads its image,
+   * so a grid of 20+ cards no longer fires 20+ competing high-priority image
+   * preloads that starve the real LCP element.
+   */
+  priority?: boolean;
 }
 
 /**
@@ -122,7 +130,12 @@ interface AdCardProps {
  *  - Clean typography directly below image, no wrapper box
  *  - Price on its own line, features compact row above it
  */
-function AdCard({ ad, showDistance, imageSizes }: AdCardProps) {
+function AdCard({
+  ad,
+  showDistance,
+  imageSizes,
+  priority = false,
+}: AdCardProps) {
   const router = useRouter();
   const [currentImage, setCurrentImage] = useState(0);
   const { isFavorite: checkFav, toggleFavorite: toggleFav } = useFavorites();
@@ -363,8 +376,10 @@ function AdCard({ ad, showDistance, imageSizes }: AdCardProps) {
                       imageSizes ??
                       '(max-width: 600px) 50vw, (max-width: 960px) 33vw, 25vw'
                     }
-                    priority={currentImage === 0}
-                    fetchPriority={currentImage === 0 ? 'high' : 'auto'}
+                    priority={priority && currentImage === 0}
+                    fetchPriority={
+                      priority && currentImage === 0 ? 'high' : 'auto'
+                    }
                     placeholder="blur"
                     blurDataURL={BLUR_DATA_URL}
                     style={{ objectFit: 'cover' }}
@@ -891,5 +906,6 @@ export default memo(
     prev.ad.id === next.ad.id &&
     prev.ad.updated_at === next.ad.updated_at &&
     prev.showDistance === next.showDistance &&
-    prev.imageSizes === next.imageSizes
+    prev.imageSizes === next.imageSizes &&
+    prev.priority === next.priority
 );

@@ -452,7 +452,7 @@ const SearchResultsList = memo(function SearchResultsList({
                         scale: { duration: 0.15 },
                       }}
                     >
-                      <AdCard ad={ad} />
+                      <AdCard ad={ad} priority={idx < 4} />
                     </motion.div>
                   </Grid>
                 ))}

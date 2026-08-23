@@ -504,11 +504,9 @@ body {
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  .skeleton-shimmer {
-    background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
-    background-size: 200% 100%;
-  }
+html[data-kh-theme='dark'] .skeleton-shimmer {
+  background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
+  background-size: 200% 100%;
 }
 
 /* ===== Thin auto-hiding scrollbar ===== */
@@ -548,18 +546,16 @@ body {
   background: rgba(0, 0, 0, 0.32);
 }
 
-@media (prefers-color-scheme: dark) {
-  *:hover {
-    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
-  }
+html[data-kh-theme='dark'] *:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
 
-  *:hover::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.18);
-  }
+html[data-kh-theme='dark'] *:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
 
-  *:hover::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
+html[data-kh-theme='dark'] *:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* ===== Mapbox GL overrides ===== */
@@ -597,13 +593,11 @@ body {
     background: #717171;
   }
 
-  @media (prefers-color-scheme: dark) {
-    ::-webkit-scrollbar-thumb {
-      background: #555;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #777;
-    }
+  html[data-kh-theme='dark'] ::-webkit-scrollbar-thumb {
+    background: #555;
+  }
+  html[data-kh-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+    background: #777;
   }
 }
 

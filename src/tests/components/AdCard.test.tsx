@@ -121,10 +121,13 @@ const mockAd: Ad = {
   location: { latitude: 3.87, longitude: 11.52 },
 } as unknown as Ad;
 
-function renderAdCard(ad = mockAd) {
+function renderAdCard(
+  ad = mockAd,
+  props: Partial<React.ComponentProps<typeof AdCard>> = {}
+) {
   return render(
     <ThemeProvider theme={theme}>
-      <AdCard ad={ad} />
+      <AdCard ad={ad} {...props} />
     </ThemeProvider>
   );
 }
@@ -285,6 +288,20 @@ describe('AdCard', () => {
 
     it('card renders without crash when keyscore = 0', () => {
       expect(() => renderAdCard({ ...mockAd, keyscore: 0 })).not.toThrow();
+    });
+  });
+
+  describe('image priority (LCP gating)', () => {
+    it('lazy-loads the image by default so a grid does not fire N competing high-priority preloads', () => {
+      renderAdCard();
+      const img = screen.getAllByRole('img')[0];
+      expect(img).not.toHaveAttribute('data-priority');
+    });
+
+    it('preloads the first image when priority is set (above-the-fold cards)', () => {
+      renderAdCard(mockAd, { priority: true });
+      const img = screen.getAllByRole('img')[0];
+      expect(img).toHaveAttribute('data-priority', 'true');
     });
   });
 });

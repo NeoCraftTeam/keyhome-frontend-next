@@ -3,6 +3,7 @@
 import { closeSnackbar, type CustomContentProps } from 'notistack';
 import { forwardRef } from 'react';
 import { MessageSquare, X } from 'lucide-react';
+import { useTheme } from '@mui/material/styles';
 
 declare module 'notistack' {
   interface VariantOverrides {
@@ -21,6 +22,8 @@ interface ChatToastProps extends CustomContentProps {
 /**
  * Branded chat-message toast (replaces notistack's sky-blue 'info' variant).
  * - `accentColor` drives the entire visual identity (pink for client, teal for owner).
+ * - Surface + text follow the active MUI theme (`background.paper` / `text.primary`)
+ *   so the toast is readable in dark mode instead of staying a white card.
  * - Clickable surface navigates to the conversation; "X" button dismisses.
  *
  * Idempotent: pass any hex/rgb color via the `accentColor` prop.
@@ -29,6 +32,7 @@ const ChatToast = forwardRef<HTMLDivElement, ChatToastProps>(function ChatToast(
   { id, message, accentColor, onClick },
   ref
 ) {
+  const theme = useTheme();
   return (
     <div
       ref={ref}
@@ -44,8 +48,8 @@ const ChatToast = forwardRef<HTMLDivElement, ChatToastProps>(function ChatToast(
         maxWidth: 420,
         padding: '12px 14px 12px 12px',
         borderRadius: 14,
-        backgroundColor: '#ffffff',
-        color: '#1a1a1a',
+        backgroundColor: theme.palette.background.paper,
+        color: theme.palette.text.primary,
         boxShadow: `0 8px 28px rgba(0,0,0,0.14), 0 0 0 1px ${accentColor}30`,
         borderLeft: `4px solid ${accentColor}`,
         fontFamily: 'inherit',
