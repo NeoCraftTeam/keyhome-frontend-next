@@ -3,7 +3,7 @@
 import DashboardHeroStatCard from '@/components/owner/dashboard/DashboardHeroStatCard';
 import MarketPriceWidget from '@/components/owner/dashboard/MarketPriceWidget';
 import OwnerTopAdsTable from '@/components/owner/dashboard/OwnerTopAdsTable';
-import OwnerViewsFavoritesAreaChart from '@/components/owner/dashboard/OwnerViewsFavoritesAreaChart';
+import dynamic from 'next/dynamic';
 import ProfileCompletionCard from '@/components/owner/dashboard/ProfileCompletionCard';
 import RankEstimateWidget from '@/components/owner/dashboard/RankEstimateWidget';
 import AppTour from '@/components/ui/display/AppTour';
@@ -61,6 +61,24 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
+
+/**
+ * Views/favorites area chart pulls in recharts; load it lazily (client-only)
+ * so the charting library stays out of the dashboard's initial bundle. The
+ * placeholder mirrors the analytics-loading skeleton so there's no reflow.
+ */
+const OwnerViewsFavoritesAreaChart = dynamic(
+  () => import('@/components/owner/dashboard/OwnerViewsFavoritesAreaChart'),
+  {
+    ssr: false,
+    loading: () => (
+      <ShimmerBox
+        width="100%"
+        sx={{ borderRadius: '16px', height: { xs: 220, sm: 280, md: 320 } }}
+      />
+    ),
+  }
+);
 
 /** Vibrant accent colors for dashboard cards (owner palette only) */
 const TEAL = brandAgent.primary;

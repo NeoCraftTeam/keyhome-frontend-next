@@ -1,6 +1,6 @@
 'use client';
 
-import MiniMetricSparkline from '@/components/owner/dashboard/MiniMetricSparkline';
+import dynamic from 'next/dynamic';
 import { ShimmerBox } from '@/components/ui/feedback/ShimmerCard';
 import { useCountUp } from '@/hooks/useCountUp';
 import {
@@ -9,6 +9,16 @@ import {
 } from '@mui/icons-material';
 import { Box, Card, CardContent, Chip, Typography } from '@mui/material';
 import { neutral } from '@/theme/tokens';
+
+/**
+ * Sparkline pulls in recharts; load it lazily (client-only) so the charting
+ * library stays out of the dashboard's initial bundle. The 36px placeholder
+ * matches MiniMetricSparkline's own empty-state height to avoid reflow.
+ */
+const MiniMetricSparkline = dynamic(
+  () => import('@/components/owner/dashboard/MiniMetricSparkline'),
+  { ssr: false, loading: () => <Box sx={{ width: '100%', height: 36 }} /> }
+);
 
 /** Animated value display – uses count-up when `numericValue` is provided. */
 function AnimatedValue({

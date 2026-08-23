@@ -102,12 +102,6 @@ importers:
       '@vercel/speed-insights':
         specifier: ^2.0.0
         version: 2.0.0(next@16.2.6(@babel/core@7.29.0(supports-color@8.1.1))(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-macros@3.1.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)
-      add-to-calendar-button:
-        specifier: ^2.14.0
-        version: 2.14.0
-      add-to-calendar-button-react:
-        specifier: ^2.14.0
-        version: 2.14.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       axios:
         specifier: ^1.15.1
         version: 1.16.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
@@ -3303,17 +3297,6 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  add-to-calendar-button-react@2.14.0:
-    resolution: {integrity: sha512-E2in5/301mBt7RWsLzlqUvyUmnsmcOItY1/TzLuHlmZ2Q6u1shyq9N0Ic+DdrcrGTVKK83U0cNd+bga9yCZruQ==}
-    engines: {node: '>=18.17.0', npm: '>=9.6.7'}
-    peerDependencies:
-      react: '>=18.0.0'
-      react-dom: '>=18.0.0'
-
-  add-to-calendar-button@2.14.0:
-    resolution: {integrity: sha512-2zVz1xm1AoaGKdZrRHIBNfB3fDL3xpfyRy8uUDJzzCp0b5zBJlmrv6zaJ7PO2XciJIaQvg3wvdWkiJ2LJ/P4gQ==}
-    engines: {node: '>=18.17.0', npm: '>=9.6.7'}
-
   agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
     engines: {node: '>= 6.0.0'}
@@ -4060,6 +4043,7 @@ packages:
   eslint@9.39.2:
     resolution: {integrity: sha512-LEyamqS7W5HB3ujJyvi0HQK/dtVINZvd5mAAp9eT5S/ujByGjiZLCzPcHVzuXbpJDJF/cxwHlfceVUDZ2lnSTw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -5994,10 +5978,6 @@ packages:
 
   three@0.183.2:
     resolution: {integrity: sha512-di3BsL2FEQ1PA7Hcvn4fyJOlxRRgFYBpMTcyOgkwJIaDOdJMebEFPA+t98EvjuljDx4hNulAGwF6KIjtwI5jgQ==}
-
-  timezones-ical-library@2.2.0:
-    resolution: {integrity: sha512-D8pKEBzYnCAGZSEyinMZqh2yTc7ZJqonXtNkpTzhPuJlkJjPEUJOXBs7ExeHcHGBaGpaJRTye5t0mLR20BeklA==}
-    engines: {node: '>=22.18.0', npm: '>=10.9.3'}
 
   tiny-invariant@1.3.3:
     resolution: {integrity: sha512-+FbBPE1o9QAYvviau/qC5SE3caw21q3xkvWKBtja5vgqOWIHHJ3ioaq1VPfn/Szqctz2bU/oYeKd9/z5BL+PVg==}
@@ -9552,16 +9532,6 @@ snapshots:
 
   acorn@8.16.0: {}
 
-  add-to-calendar-button-react@2.14.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
-    dependencies:
-      add-to-calendar-button: 2.14.0
-      react: 19.2.3
-      react-dom: 19.2.3(react@19.2.3)
-
-  add-to-calendar-button@2.14.0:
-    dependencies:
-      timezones-ical-library: 2.2.0
-
   agent-base@6.0.2(supports-color@8.1.1):
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
@@ -12744,8 +12714,6 @@ snapshots:
   three@0.179.1: {}
 
   three@0.183.2: {}
-
-  timezones-ical-library@2.2.0: {}
 
   tiny-invariant@1.3.3: {}
 

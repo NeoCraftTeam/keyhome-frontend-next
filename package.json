@@ -50,8 +50,6 @@
     "@tiptap/starter-kit": "^3.22.5",
     "@vercel/analytics": "^1.6.1",
     "@vercel/speed-insights": "^2.0.0",
-    "add-to-calendar-button": "^2.14.0",
-    "add-to-calendar-button-react": "^2.14.0",
     "axios": "^1.15.1",
     "browser-image-compression": "^2.0.2",
     "date-fns": "^4.1.0",

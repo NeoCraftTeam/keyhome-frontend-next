@@ -1,5 +1,10 @@
 import { absoluteAssetUrl, absoluteUrl } from '@/lib/site-url';
 import { buildHreflangAlternates } from '@/i18n/routing';
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import AdDetailClient from './AdDetailClient';
@@ -235,13 +240,24 @@ export default async function AdDetailPage({
     };
   }
 
+  // Prime the client's React Query cache with the (anonymous) ad we already
+  // fetched server-side, under the guest query key ['ad', slug, false]. Guests
+  // and crawlers then render instantly with no client fetch waterfall.
+  // Authenticated users query key ['ad', slug, true] and still fetch their
+  // personalised, unlock-aware projection with their token — they never read
+  // this guest entry, so locked content can't leak into an authed session.
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(['ad', slug, false], ad);
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
-      <AdDetailClient />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <AdDetailClient />
+      </HydrationBoundary>
     </>
   );
 }

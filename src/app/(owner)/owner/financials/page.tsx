@@ -42,15 +42,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import FadeIn from '@/components/ui/layout/FadeIn';
-import { brandAgent, neutral, semantic } from '@/theme/tokens';
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip as RechartsTooltip,
-  Legend,
-} from 'recharts';
+import dynamic from 'next/dynamic';
 
 const EXPENSE_CATEGORIES: { value: Expense['category']; label: string }[] = [
   { value: 'maintenance', label: 'Maintenance' },
@@ -61,14 +53,13 @@ const EXPENSE_CATEGORIES: { value: Expense['category']; label: string }[] = [
   { value: 'other', label: 'Autre' },
 ];
 
-const PIE_COLORS = [
-  brandAgent.primary,
-  semantic.warning,
-  semantic.indigo,
-  brandAgent.accent,
-  semantic.successBright,
-  neutral.slate400,
-];
+const ExpensesByCategoryChart = dynamic(
+  () => import('./ExpensesByCategoryChart'),
+  {
+    ssr: false,
+    loading: () => <Box sx={{ width: '100%', height: '100%' }} />,
+  }
+);
 
 const EMPTY_FORM: ExpensePayload = {
   amount: 0,
@@ -349,33 +340,10 @@ export default function OwnerFinancialsPage() {
                   Dépenses par catégorie
                 </Typography>
                 <Box sx={{ height: 280, mt: 2 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {pieData.map((_, index) => (
-                          <Cell
-                            key={index}
-                            fill={PIE_COLORS[index % PIE_COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip
-                        formatter={(value) => [
-                          formatCurrency(Number(value ?? 0)),
-                          '',
-                        ]}
-                      />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <ExpensesByCategoryChart
+                    data={pieData}
+                    formatValue={formatCurrency}
+                  />
                 </Box>
               </CardContent>
             </Card>
