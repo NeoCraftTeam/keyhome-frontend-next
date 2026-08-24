@@ -2,11 +2,12 @@
 
 export const dynamic = 'force-dynamic';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import AppLoader from '@/components/ui/feedback/AppLoader';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { Alert, Box, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
@@ -95,9 +96,7 @@ function OAuthCallbackContent() {
 
       {error ? (
         <Box sx={{ maxWidth: 400, width: '100%', textAlign: 'center' }}>
-          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-            {error}
-          </Alert>
+          <AppAlert severity="error" message={error} sx={{ mb: 3 }} />
           <Typography variant="body2" color="text.secondary">
             Redirection vers la connexion…
           </Typography>

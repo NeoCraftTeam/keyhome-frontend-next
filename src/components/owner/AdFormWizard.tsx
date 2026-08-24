@@ -1,6 +1,7 @@
 'use client';
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import ImageLightbox from '@/components/ui/overlay/ImageLightbox';
 import { useServerAutoSave } from '@/hooks/useServerAutoSave';
 import { useStreamingEnhance } from '@/hooks/useStreamingEnhance';
@@ -22,7 +23,6 @@ import PublishIcon from '@mui/icons-material/Publish';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -30,7 +30,6 @@ import {
   Drawer,
   Fab,
   IconButton,
-  Snackbar,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -1570,16 +1569,14 @@ function AdFormWizard({
         </Box>
 
         {/* AI enhance error snackbar */}
-        <Snackbar
+        <KhSnackbar
           open={!!enhanceError}
-          autoHideDuration={5000}
+          message={enhanceError}
+          severity="error"
           onClose={() => setEnhanceError(null)}
+          duration={5000}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert severity="error" onClose={() => setEnhanceError(null)}>
-            {enhanceError}
-          </Alert>
-        </Snackbar>
+        />
       </Box>
 
       <Box

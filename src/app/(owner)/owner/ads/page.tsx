@@ -6,7 +6,9 @@ import PublishingOverlay from '@/components/owner/PublishingOverlay';
 import PrivateOwnerNoteDialog from '@/components/owner/PrivateOwnerNoteDialog';
 import ShareAdButtons from '@/components/owner/ShareAdButtons';
 import { useConfirm } from '@/components/ui/overlay/ConfirmDialog';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import EmptyState from '@/components/ui/feedback/EmptyState';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { ShimmerBox } from '@/components/ui/feedback/ShimmerCard';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -32,7 +34,6 @@ import {
   Visibility as VisibleIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Avatar,
   AvatarGroup,
   Box,
@@ -49,7 +50,6 @@ import {
   MenuItem,
   Paper,
   Select,
-  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -696,9 +696,8 @@ export default function OwnerAdsPage() {
           </Box>
         ) : isError ? (
           <Box sx={{ p: 3 }}>
-            <Alert
+            <AppAlert
               severity="error"
-              sx={{ borderRadius: 2 }}
               action={
                 <Button
                   color="inherit"
@@ -714,14 +713,9 @@ export default function OwnerAdsPage() {
                   Réessayer
                 </Button>
               }
-            >
-              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                Impossible de charger vos annonces
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Vérifiez votre connexion réseau, puis réessayez.
-              </Typography>
-            </Alert>
+              title="Impossible de charger vos annonces"
+              message="Vérifiez votre connexion réseau, puis réessayez."
+            />
           </Box>
         ) : ads.length === 0 ? (
           <EmptyState
@@ -1208,23 +1202,13 @@ export default function OwnerAdsPage() {
         adTitle={privateNoteAd?.title}
         onClose={() => setPrivateNoteAd(null)}
       />
-      <Snackbar
+      <KhSnackbar
         open={!!boostFeedback}
-        autoHideDuration={4500}
+        message={boostFeedback?.message ?? null}
+        severity={boostFeedback?.severity ?? 'success'}
         onClose={() => setBoostFeedback(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {boostFeedback ? (
-          <Alert
-            severity={boostFeedback.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-            onClose={() => setBoostFeedback(null)}
-          >
-            {boostFeedback.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+        duration={4500}
+      />
       {boostDialogAd && (
         <BoostPurchaseDialog
           open={!!boostDialogAd}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useClerk } from '@clerk/nextjs';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { isUnsafeBackendMessage } from '@/lib/error-messages';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Facebook from '@mui/icons-material/Facebook';
@@ -8,7 +9,6 @@ import GitHub from '@mui/icons-material/GitHub';
 import Google from '@mui/icons-material/Google';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import {
-  Alert,
   Avatar,
   Box,
   Button,
@@ -287,22 +287,20 @@ export default function LinkedAccountsCard({
 
         {/* ── Messages de feedback ── */}
         {error && (
-          <Alert
+          <AppAlert
             severity="error"
             onClose={() => setError('')}
-            sx={{ mx: 2, mb: 1, borderRadius: 2, fontSize: '0.78rem' }}
-          >
-            {error}
-          </Alert>
+            sx={{ mx: 2, mb: 1 }}
+            message={error}
+          />
         )}
         {successMessage && (
-          <Alert
+          <AppAlert
             severity="success"
             onClose={() => setSuccessMessage('')}
-            sx={{ mx: 2, mb: 1, borderRadius: 2, fontSize: '0.78rem' }}
-          >
-            {successMessage}
-          </Alert>
+            sx={{ mx: 2, mb: 1 }}
+            message={successMessage}
+          />
         )}
 
         <Divider />

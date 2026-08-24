@@ -4,6 +4,7 @@ import PasskeyLoginButton from '@/components/auth/PasskeyLoginButton';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import TurnstileConfigAlert from '@/components/auth/TurnstileConfigAlert';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { useTurnstileEmailSubmitReady } from '@/hooks/useTurnstileEmailSubmitReady';
@@ -30,7 +31,6 @@ import EmailIcon from '@mui/icons-material/Email';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -273,13 +273,12 @@ export default function OwnerLoginPage() {
 
           {error && (
             <FadeIn direction="none" duration={0.3}>
-              <Alert
+              <AppAlert
                 severity="error"
                 id="owner-login-error"
-                sx={{ mb: 2, borderRadius: 2 }}
-              >
-                {error}
-              </Alert>
+                message={error}
+                sx={{ mb: 2 }}
+              />
             </FadeIn>
           )}
 

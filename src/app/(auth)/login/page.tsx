@@ -4,6 +4,7 @@ import PasskeyLoginButton from '@/components/auth/PasskeyLoginButton';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import { GoogleOneTap } from '@/components/auth/GoogleOneTap';
 import TurnstileConfigAlert from '@/components/auth/TurnstileConfigAlert';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { useLandingStats } from '@/hooks/useLandingStats';
@@ -18,7 +19,6 @@ import EmailIcon from '@mui/icons-material/Email';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -283,13 +283,12 @@ export default function LoginPage() {
 
           {error && (
             <FadeIn direction="none" duration={0.3}>
-              <Alert
+              <AppAlert
                 severity="error"
                 id="login-error"
-                sx={{ mb: 2, borderRadius: 2 }}
-              >
-                {error}
-              </Alert>
+                message={error}
+                sx={{ mb: 2 }}
+              />
             </FadeIn>
           )}
 

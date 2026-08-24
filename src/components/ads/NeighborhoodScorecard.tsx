@@ -1,6 +1,7 @@
 'use client';
 
 import { adsService } from '@/services/ads.service';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import DirectionsBus from '@mui/icons-material/DirectionsBus';
 import DirectionsWalk from '@mui/icons-material/DirectionsWalk';
 import Info from '@mui/icons-material/Info';
@@ -11,7 +12,7 @@ import Restaurant from '@mui/icons-material/Restaurant';
 import School from '@mui/icons-material/School';
 import Storefront from '@mui/icons-material/Storefront';
 import WarningAmberRounded from '@mui/icons-material/WarningAmberRounded';
-import { Alert, Box, Chip, Skeleton, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, Skeleton, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -420,14 +421,14 @@ export default function NeighborhoodScorecard({ adId, onUnavailable }: Props) {
       {scorecard && (
         <>
           {scorecard.ors_used === false && (
-            <Alert severity="info" sx={{ mb: 2 }}>
+            <AppAlert severity="info" sx={{ mb: 2 }}>
               <Typography variant="body2">
                 Distances en <strong>ligne droite</strong> (approximation). Les
                 distances <strong>à pied réelles</strong> utilisent
                 OpenRouteService — ajoutez <code>ORS_API_KEY</code> sur
                 l&apos;API backend.
               </Typography>
-            </Alert>
+            </AppAlert>
           )}
 
           {/* Global score row */}

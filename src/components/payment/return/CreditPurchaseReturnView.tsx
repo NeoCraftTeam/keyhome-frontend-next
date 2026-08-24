@@ -2,6 +2,7 @@
 
 import PendingPaymentMessage from '@/components/payment/return/PendingPaymentMessage';
 import VerifyingView from '@/components/payment/return/VerifyingView';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import {
   isGatewayRedirectCancelled,
@@ -18,14 +19,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import HourglassIcon from '@mui/icons-material/HourglassEmpty';
 import LoginIcon from '@mui/icons-material/Login';
 import Toll from '@mui/icons-material/Toll';
-import {
-  Alert,
-  Box,
-  Button,
-  LinearProgress,
-  Paper,
-  Typography,
-} from '@mui/material';
+import { Box, Button, LinearProgress, Paper, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -218,14 +212,11 @@ export default function CreditPurchaseReturnView(): ReactElement {
             <Typography variant="h5" fontWeight={700} gutterBottom>
               Paiement confirmé
             </Typography>
-            <Alert
+            <AppAlert
               severity="info"
-              sx={{ textAlign: 'left', mb: 2.5, borderRadius: 2 }}
-            >
-              Votre session a expiré pendant le paiement. Vos crédits ont bien
-              été ajoutés à votre compte par notre système — reconnectez-vous
-              pour les voir et continuer.
-            </Alert>
+              sx={{ textAlign: 'left', mb: 2.5 }}
+              message="Votre session a expiré pendant le paiement. Vos crédits ont bien été ajoutés à votre compte par notre système — reconnectez-vous pour les voir et continuer."
+            />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               <Button
                 variant="contained"

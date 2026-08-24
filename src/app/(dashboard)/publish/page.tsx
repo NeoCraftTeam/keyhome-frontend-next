@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { buildAuthUrlWithReturnTo } from '@/lib/auth/return-to';
 import { useAuth } from '@/providers/AuthProvider';
 import { brand } from '@/theme/tokens';
@@ -22,7 +23,6 @@ import LocationOn from '@mui/icons-material/LocationOn';
 import MyLocation from '@mui/icons-material/MyLocation';
 import Wifi from '@mui/icons-material/Wifi';
 import {
-  Alert,
   Box,
   Button,
   Chip,
@@ -830,10 +830,11 @@ export default function PublishPage() {
             </Grid>
 
             {images.length === 0 && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                Au moins 1 photo est requise. Les annonces avec 5+ photos
-                reçoivent 3× plus de contacts.
-              </Alert>
+              <AppAlert
+                severity="info"
+                sx={{ mt: 2 }}
+                message="Au moins 1 photo est requise. Les annonces avec 5+ photos reçoivent 3× plus de contacts."
+              />
             )}
           </Box>
         )}
@@ -907,9 +908,12 @@ export default function PublishPage() {
             )}
 
             {error && (
-              <Alert severity="error" id="publish-error" sx={{ mt: 3 }}>
-                {error}
-              </Alert>
+              <AppAlert
+                severity="error"
+                id="publish-error"
+                message={error}
+                sx={{ mt: 3 }}
+              />
             )}
           </Box>
         )}

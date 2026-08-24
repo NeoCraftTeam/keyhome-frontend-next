@@ -1,5 +1,6 @@
 'use client';
 
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import {
@@ -18,7 +19,6 @@ import {
   Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -35,7 +35,6 @@ import {
   MenuItem,
   Select,
   Skeleton,
-  Snackbar,
   TextField,
   Typography,
 } from '@mui/material';
@@ -818,21 +817,13 @@ export default function OwnerAvailabilityPage() {
           </DialogActions>
         </Dialog>
 
-        <Snackbar
+        <KhSnackbar
           open={!!snackbar}
-          autoHideDuration={4000}
+          message={snackbar?.message ?? null}
+          severity={snackbar?.severity ?? 'success'}
           onClose={() => setSnackbar(null)}
-        >
-          {snackbar ? (
-            <Alert
-              onClose={() => setSnackbar(null)}
-              severity={snackbar.severity}
-              sx={{ borderRadius: 2 }}
-            >
-              {snackbar.message}
-            </Alert>
-          ) : undefined}
-        </Snackbar>
+          duration={4000}
+        />
       </Container>
     </LocalizationProvider>
   );

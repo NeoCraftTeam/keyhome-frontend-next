@@ -6,6 +6,7 @@ import PaymentMethodSelector from '@/components/payment/PaymentMethodSelector';
 import SavedCardPicker from '@/components/payment/SavedCardPicker';
 import StripeConfirmStep from '@/components/payment/StripeConfirmStep';
 import VerifyingView from '@/components/payment/return/VerifyingView';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { usePayment } from '@/hooks/usePayment';
 import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import {
@@ -30,7 +31,6 @@ import ErrorIcon from '@mui/icons-material/Error';
 import ShieldOutlined from '@mui/icons-material/ShieldOutlined';
 import Toll from '@mui/icons-material/Toll';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -657,10 +657,10 @@ export default function PaymentFlow({
             </Box>
           ) : (
             <Box sx={{ mb: 2, width: '100%' }}>
-              <Alert severity="warning" sx={{ borderRadius: 2 }}>
-                La clé publique Turnstile est indisponible. Vérifiez la
-                configuration du backend et rechargez la page.
-              </Alert>
+              <AppAlert
+                severity="warning"
+                message="La clé publique Turnstile est indisponible. Vérifiez la configuration du backend et rechargez la page."
+              />
             </Box>
           )}
 

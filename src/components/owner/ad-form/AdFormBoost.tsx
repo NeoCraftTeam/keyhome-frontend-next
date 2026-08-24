@@ -1,6 +1,7 @@
 import BoostIcon from '@mui/icons-material/RocketLaunch';
-import { Alert, Box, Paper, Typography } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { brandAgent } from '@/theme/tokens';
 import { sectionSx } from './types';
 
@@ -27,11 +28,11 @@ export default function AdFormBoost() {
         n&apos;est nécessaire côté bailleur.
       </Typography>
 
-      <Alert severity="info" sx={{ borderRadius: 2 }}>
+      <AppAlert severity="info">
         Une fois l&apos;annonce publiée, ouvrez <strong>Mes annonces</strong>,
         menu <strong>⋮</strong>, puis <strong>Booster cette annonce</strong>.
         Vous choisissez un plan et payez directement.
-      </Alert>
+      </AppAlert>
     </Paper>
   );
 }

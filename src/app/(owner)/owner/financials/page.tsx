@@ -1,5 +1,6 @@
 'use client';
 
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import RentPaymentsSection from '@/components/owner/financials/RentPaymentsSection';
 import {
@@ -13,7 +14,6 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -32,7 +32,6 @@ import {
   Pagination,
   Select,
   Skeleton,
-  Snackbar,
   Stack,
   TextField,
   Tooltip,
@@ -654,21 +653,14 @@ export default function OwnerFinancialsPage() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <KhSnackbar
         open={Boolean(snackbar)}
-        autoHideDuration={4000}
+        message={snackbar?.message ?? null}
+        severity={snackbar?.severity ?? 'success'}
         onClose={() => setSnackbar(null)}
+        duration={4000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          variant="filled"
-          severity={snackbar?.severity}
-          onClose={() => setSnackbar(null)}
-          sx={{ borderRadius: 2 }}
-        >
-          {snackbar?.message}
-        </Alert>
-      </Snackbar>
+      />
     </Container>
   );
 }

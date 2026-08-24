@@ -1,6 +1,7 @@
 'use client';
 
 import { Price } from '@/components/ui/typography/Price';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { estimatorService } from '@/services/estimator.service';
@@ -10,7 +11,6 @@ import TrendingDown from '@mui/icons-material/TrendingDown';
 import TrendingFlat from '@mui/icons-material/TrendingFlat';
 import TrendingUp from '@mui/icons-material/TrendingUp';
 import {
-  Alert,
   Autocomplete,
   Box,
   Button,
@@ -223,23 +223,19 @@ function RentEstimatorWidget() {
         >
           <Divider sx={{ my: 3 }} />
           {data.type_scope_matched === false && (
-            <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
-              Peu d&apos;annonces pour ce type dans cette ville :
-              l&apos;estimation s&apos;appuie sur l&apos;ensemble des locations
-              publiées dans la ville.
-            </Alert>
+            <AppAlert
+              severity="warning"
+              message="Peu d'annonces pour ce type dans cette ville : l'estimation s'appuie sur l'ensemble des locations publiées dans la ville."
+              sx={{ mb: 2 }}
+            />
           )}
           {data.is_unreliable && (
-            <Alert
+            <AppAlert
               severity="info"
-              sx={{ mb: 2, borderRadius: 2 }}
+              message={`Estimation indicative — calculée sur seulement ${data.sample_count} annonce${data.sample_count > 1 ? 's' : ''}. La fourchette peut être biaisée par un cas atypique.`}
+              sx={{ mb: 2 }}
               role="status"
-            >
-              Estimation indicative — calculée sur seulement {data.sample_count}{' '}
-              annonce
-              {data.sample_count > 1 ? 's' : ''}. La fourchette peut être
-              biaisée par un cas atypique.
-            </Alert>
+            />
           )}
           <Typography variant="subtitle2" color="text.secondary" mb={2}>
             Fourchette estimée pour <strong>{surface} m²</strong> à{' '}
@@ -324,9 +320,12 @@ function RentEstimatorWidget() {
       {data?.error && (
         // `role="alert"` so SR users hear "no data" immediately —
         // they wouldn't otherwise know the click did anything.
-        <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }} role="alert">
-          {data.error}
-        </Alert>
+        <AppAlert
+          severity="info"
+          message={data.error}
+          sx={{ mt: 2 }}
+          role="alert"
+        />
       )}
     </Paper>
   );

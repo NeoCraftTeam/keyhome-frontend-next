@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import ProfileCompletionCard from '@/components/owner/dashboard/ProfileCompletionCard';
 import RankEstimateWidget from '@/components/owner/dashboard/RankEstimateWidget';
 import AppTour from '@/components/ui/display/AppTour';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import EmptyState from '@/components/ui/feedback/EmptyState';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import SectionBoundary from '@/components/ui/layout/SectionBoundary';
@@ -43,7 +44,6 @@ import {
   WavingHand as WavingHandIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Avatar,
   Box,
   Button,
@@ -921,9 +921,9 @@ export default function OwnerDashboardPage() {
         {tab === 1 && (
           <SectionBoundary title="Analytique">
             {analyticsQueryError ? (
-              <Alert
+              <AppAlert
                 severity="error"
-                sx={{ mb: 3, borderRadius: 2 }}
+                sx={{ mb: 3 }}
                 action={
                   <Button
                     color="inherit"
@@ -946,7 +946,7 @@ export default function OwnerDashboardPage() {
                 <Typography variant="body2" color="text.secondary">
                   Vérifiez votre connexion internet, puis réessayez.
                 </Typography>
-              </Alert>
+              </AppAlert>
             ) : null}
             {/* Area chart */}
             <Card

@@ -1,5 +1,6 @@
 'use client';
 
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { useThemeMode } from '@/providers/ThemeProvider';
 import { brand } from '@/theme/tokens';
@@ -17,7 +18,6 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Alert,
   Box,
   Button,
   Chip,
@@ -25,7 +25,6 @@ import {
   Grid,
   IconButton,
   InputAdornment,
-  Snackbar,
   TextField,
   Typography,
   useMediaQuery,
@@ -1329,28 +1328,13 @@ export default function AidePage() {
           </Typography>
         </Container>
       </Box>
-      <Snackbar
+      <KhSnackbar
         open={guideOpen}
-        autoHideDuration={4000}
+        message="Ce guide arrive bientôt — consultez notre FAQ pour une réponse immédiate."
+        severity="info"
         onClose={() => setGuideOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setGuideOpen(false)}
-          severity="info"
-          variant="filled"
-          sx={{
-            borderRadius: '14px',
-            bgcolor: NAVY,
-            color: '#fff',
-            fontWeight: 500,
-            '& .MuiAlert-icon': { color: BRAND },
-          }}
-        >
-          Ce guide arrive bientôt — consultez notre FAQ pour une réponse
-          immédiate.
-        </Alert>
-      </Snackbar>
+        duration={4000}
+      />
     </Box>
   );
 }

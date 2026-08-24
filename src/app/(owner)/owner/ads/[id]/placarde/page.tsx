@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { isLikelyIosWebKit } from '@/lib/ios-environment';
 import { ownerService } from '@/services/owner.service';
@@ -7,7 +8,6 @@ import { brandAgent, neutral } from '@/theme/tokens';
 import DownloadIcon from '@mui/icons-material/Download';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -147,9 +147,11 @@ export default function AdPlacardePreviewPage() {
             zIndex: 2,
           }}
         >
-          <Alert severity="error" sx={{ maxWidth: 480, width: '100%' }}>
-            {error}
-          </Alert>
+          <AppAlert
+            severity="error"
+            message={error}
+            sx={{ maxWidth: 480, width: '100%' }}
+          />
         </Box>
       )}
 

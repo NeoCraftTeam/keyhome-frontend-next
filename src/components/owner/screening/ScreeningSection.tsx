@@ -1,5 +1,6 @@
 'use client';
 
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import {
   ownerScreeningService,
@@ -14,7 +15,6 @@ import {
   FactCheck as ReviewIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -29,7 +29,6 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  Snackbar,
   Stack,
   TextField,
   Tooltip,
@@ -475,20 +474,14 @@ export default function ScreeningSection({
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <KhSnackbar
         open={Boolean(snackbar)}
-        autoHideDuration={4000}
+        message={snackbar?.message ?? null}
+        severity={snackbar?.severity ?? 'success'}
         onClose={() => setSnackbar(null)}
+        duration={4000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar?.severity}
-          onClose={() => setSnackbar(null)}
-          sx={{ borderRadius: 2 }}
-        >
-          {snackbar?.message}
-        </Alert>
-      </Snackbar>
+      />
     </Card>
   );
 }

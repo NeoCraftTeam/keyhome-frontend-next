@@ -1,6 +1,7 @@
 'use client';
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import WelcomeOverlay from '@/components/ui/overlay/WelcomeOverlay';
 import { trackSignUp } from '@/lib/analytics/track-events';
@@ -14,7 +15,6 @@ import { authService } from '@/services/auth.service';
 import { brandAgent, neutral } from '@/theme/tokens';
 import { ArrowBack, Refresh as RefreshIcon } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -439,14 +439,14 @@ export default function OwnerVerifyOtpPage() {
             </Box>
 
             {error && (
-              <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }}>
-                {error}
-              </Alert>
+              <AppAlert severity="error" message={error} sx={{ mb: 3 }} />
             )}
             {resendMessage && (
-              <Alert severity="success" sx={{ mb: 3, borderRadius: '12px' }}>
-                {resendMessage}
-              </Alert>
+              <AppAlert
+                severity="success"
+                message={resendMessage}
+                sx={{ mb: 3 }}
+              />
             )}
 
             <Button

@@ -1,5 +1,6 @@
 'use client';
 
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import LeaseLifecycleMenu from '@/components/owner/leases/LeaseLifecycleMenu';
 import LeaseStatusChip from '@/components/owner/leases/LeaseStatusChip';
@@ -21,7 +22,6 @@ import {
   Visibility as ViewIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -37,7 +37,6 @@ import {
   IconButton,
   Pagination,
   Skeleton,
-  Snackbar,
   Stack,
   TextField,
   Tooltip,
@@ -878,22 +877,13 @@ export default function OwnerLeaseContractsPage() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <KhSnackbar
         open={!!snackbar}
-        autoHideDuration={4000}
+        message={snackbar?.message ?? null}
+        severity={snackbar?.severity ?? 'success'}
         onClose={() => setSnackbar(null)}
-      >
-        {snackbar ? (
-          <Alert
-            variant="filled"
-            onClose={() => setSnackbar(null)}
-            severity={snackbar.severity}
-            sx={{ borderRadius: 2 }}
-          >
-            {snackbar.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+        duration={4000}
+      />
     </Container>
   );
 }

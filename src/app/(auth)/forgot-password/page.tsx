@@ -1,12 +1,12 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
 import { gradient } from '@/theme/tokens';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -80,20 +80,17 @@ export default function ForgotPasswordPage() {
 
         {error && (
           <FadeIn direction="none" duration={0.3}>
-            <Alert
+            <AppAlert
               severity="error"
               id="forgot-password-error"
-              sx={{ mb: 2, borderRadius: 2 }}
-            >
-              {error}
-            </Alert>
+              message={error}
+              sx={{ mb: 2 }}
+            />
           </FadeIn>
         )}
         {success && (
           <FadeIn direction="none" duration={0.3}>
-            <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>
-              {success}
-            </Alert>
+            <AppAlert severity="success" message={success} sx={{ mb: 2 }} />
           </FadeIn>
         )}
 

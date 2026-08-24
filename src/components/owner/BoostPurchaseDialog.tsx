@@ -1,6 +1,7 @@
 'use client';
 
 import PaymentFlow from '@/components/payment/PaymentFlow';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { formatPrice } from '@/lib/constants';
 import {
   ownerAdsService,
@@ -11,7 +12,6 @@ import { PaymentType } from '@/types';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import {
-  Alert,
   Box,
   Button,
   Chip,
@@ -174,13 +174,15 @@ export default function BoostPurchaseDialog({
                 <CircularProgress size={32} />
               </Box>
             ) : isError ? (
-              <Alert severity="error" sx={{ borderRadius: 2 }}>
-                Impossible de charger les plans de boost. Réessayez.
-              </Alert>
+              <AppAlert
+                severity="error"
+                message="Impossible de charger les plans de boost. Réessayez."
+              />
             ) : plans.length === 0 ? (
-              <Alert severity="info" sx={{ borderRadius: 2 }}>
-                Aucun plan de boost disponible pour le moment.
-              </Alert>
+              <AppAlert
+                severity="info"
+                message="Aucun plan de boost disponible pour le moment."
+              />
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {plans.map((plan) => (

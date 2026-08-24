@@ -1,6 +1,6 @@
 'use client';
 
-import { Alert, AlertTitle } from '@mui/material';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 
 /**
  * User-facing notice when the anti-bot check cannot complete.
@@ -92,9 +92,6 @@ export default function TurnstileConfigAlert({
   }
 
   return (
-    <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
-      <AlertTitle sx={{ fontWeight: 700 }}>{title}</AlertTitle>
-      {body}
-    </Alert>
+    <AppAlert severity="warning" title={title} message={body} sx={{ mb: 2 }} />
   );
 }

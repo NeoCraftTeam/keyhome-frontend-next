@@ -1,5 +1,6 @@
 'use client';
 
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import {
   COMPARATOR_MAX_ITEMS,
   useComparator,
@@ -7,13 +8,11 @@ import {
 import Close from '@mui/icons-material/Close';
 import CompareArrows from '@mui/icons-material/CompareArrows';
 import {
-  Alert,
   Avatar,
   Box,
   Button,
   IconButton,
   Paper,
-  Snackbar,
   Tooltip,
   Typography,
   useMediaQuery,
@@ -161,22 +160,14 @@ export default function ComparatorBar() {
       </AnimatePresence>
 
       {/* Max reached snackbar — le tableau comparatif s'affiche uniquement sur /comparaisons */}
-      <Snackbar
+      <KhSnackbar
         open={maxReached}
-        autoHideDuration={3000}
+        message={`Vous ne pouvez pas comparer plus de ${COMPARATOR_MAX_ITEMS} biens à la fois.`}
+        severity="warning"
         onClose={clearMaxReached}
+        duration={3000}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={clearMaxReached}
-          severity="warning"
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          Vous ne pouvez pas comparer plus de {COMPARATOR_MAX_ITEMS} biens à la
-          fois.
-        </Alert>
-      </Snackbar>
+      />
     </MotionConfig>
   );
 }

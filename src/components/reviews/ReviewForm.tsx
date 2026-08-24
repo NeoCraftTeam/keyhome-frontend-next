@@ -1,10 +1,10 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { reviewsService } from '@/services/reviews.service';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -63,15 +63,10 @@ export default function ReviewForm({
     return (
       <Box sx={{ mt: 3 }}>
         <Divider sx={{ mb: 3 }} />
-        <Alert
+        <AppAlert
           severity="info"
-          sx={{
-            borderRadius: 2,
-            '& .MuiAlert-message': { fontSize: '0.9rem' },
-          }}
-        >
-          Connectez-vous pour laisser un avis sur cette annonce.
-        </Alert>
+          message="Connectez-vous pour laisser un avis sur cette annonce."
+        />
       </Box>
     );
   }
@@ -86,15 +81,10 @@ export default function ReviewForm({
     return (
       <Box sx={{ mt: 3 }}>
         <Divider sx={{ mb: 3 }} />
-        <Alert
+        <AppAlert
           severity="success"
-          sx={{
-            borderRadius: 2,
-            '& .MuiAlert-icon': { fontSize: 22 },
-          }}
-        >
-          Merci ! Votre avis a bien été enregistré.
-        </Alert>
+          message="Merci ! Votre avis a bien été enregistré."
+        />
       </Box>
     );
   }
@@ -175,12 +165,14 @@ export default function ReviewForm({
 
       {/* Error feedback */}
       {mutation.isError && (
-        <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-          {getSafeErrorMessage(
+        <AppAlert
+          severity="error"
+          sx={{ mb: 2 }}
+          message={getSafeErrorMessage(
             mutation.error,
             'Une erreur est survenue. Veuillez réessayer.'
           )}
-        </Alert>
+        />
       )}
 
       {/* Submit button */}

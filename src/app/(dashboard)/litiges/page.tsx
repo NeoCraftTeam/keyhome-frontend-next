@@ -1,6 +1,7 @@
 'use client';
 
 import OpenDisputeDialog from '@/components/disputes/OpenDisputeDialog';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { useAuth } from '@/providers/AuthProvider';
@@ -14,7 +15,6 @@ import Gavel from '@mui/icons-material/Gavel';
 import HourglassEmpty from '@mui/icons-material/HourglassEmpty';
 import RateReview from '@mui/icons-material/RateReview';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -24,7 +24,6 @@ import {
   Container,
   Pagination,
   Skeleton,
-  Snackbar,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
@@ -246,20 +245,13 @@ export default function LitigesPage() {
         }}
       />
 
-      <Snackbar
+      <KhSnackbar
         open={!!snackbar}
-        autoHideDuration={5000}
+        message={snackbar?.msg ?? null}
+        severity={snackbar?.ok ? 'success' : 'error'}
         onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar?.ok ? 'success' : 'error'}
-          onClose={() => setSnackbar(null)}
-          variant="filled"
-        >
-          {snackbar?.msg}
-        </Alert>
-      </Snackbar>
+        duration={5000}
+      />
     </Container>
   );
 }

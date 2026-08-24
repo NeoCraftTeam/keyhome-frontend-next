@@ -1,6 +1,7 @@
 'use client';
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import WelcomeOverlay from '@/components/ui/overlay/WelcomeOverlay';
 import { trackSignUp } from '@/lib/analytics/track-events';
@@ -12,7 +13,6 @@ import { User } from '@/types';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -475,20 +475,21 @@ export default function VerifyOtpPage() {
 
               {error && (
                 <FadeIn direction="none" duration={0.3}>
-                  <Alert
+                  <AppAlert
                     severity="error"
                     id="verify-otp-error"
-                    sx={{ mb: 2, borderRadius: 2 }}
-                  >
-                    {error}
-                  </Alert>
+                    message={error}
+                    sx={{ mb: 2 }}
+                  />
                 </FadeIn>
               )}
               {resendMessage && (
                 <FadeIn direction="none" duration={0.3}>
-                  <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>
-                    {resendMessage}
-                  </Alert>
+                  <AppAlert
+                    severity="success"
+                    message={resendMessage}
+                    sx={{ mb: 2 }}
+                  />
                 </FadeIn>
               )}
 

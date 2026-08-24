@@ -1,5 +1,6 @@
 'use client';
 
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import {
   ownerService,
@@ -13,7 +14,6 @@ import {
   PeopleAlt as PeopleAltIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -29,7 +29,6 @@ import {
   IconButton,
   Pagination,
   Skeleton,
-  Snackbar,
   Stack,
   TextField,
   Tooltip,
@@ -473,20 +472,14 @@ export default function OwnerTenantsPage() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <KhSnackbar
         open={Boolean(snackbar)}
-        autoHideDuration={4000}
+        message={snackbar?.message ?? null}
+        severity={snackbar?.severity ?? 'success'}
         onClose={() => setSnackbar(null)}
+        duration={4000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar?.severity}
-          onClose={() => setSnackbar(null)}
-          sx={{ borderRadius: 2 }}
-        >
-          {snackbar?.message}
-        </Alert>
-      </Snackbar>
+      />
     </Container>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import {
   ownerService,
   type LeaseContract,
@@ -13,7 +14,6 @@ import {
   Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -255,10 +255,10 @@ export default function SignPage() {
         </Box>
       ) : (
         <Stack spacing={2}>
-          <Alert severity="info">
-            Lisez attentivement les détails du contrat ci-dessus avant de
-            signer.
-          </Alert>
+          <AppAlert
+            severity="info"
+            message="Lisez attentivement les détails du contrat ci-dessus avant de signer."
+          />
           <Typography
             variant="caption"
             color="text.secondary"
@@ -358,14 +358,18 @@ export default function SignPage() {
                   : 'Recevoir le code par e-mail'}
               </Button>
               {sendSignOtpMutation.isSuccess && (
-                <Alert severity="success" sx={{ mt: 1 }}>
-                  Code envoyé. Vérifiez votre boîte e-mail.
-                </Alert>
+                <AppAlert
+                  severity="success"
+                  sx={{ mt: 1 }}
+                  message="Code envoyé. Vérifiez votre boîte e-mail."
+                />
               )}
               {sendSignOtpMutation.isError && (
-                <Alert severity="error" sx={{ mt: 1 }}>
-                  Impossible d&apos;envoyer le code. Réessayez dans un instant.
-                </Alert>
+                <AppAlert
+                  severity="error"
+                  sx={{ mt: 1 }}
+                  message="Impossible d'envoyer le code. Réessayez dans un instant."
+                />
               )}
               <TextField
                 label="Code à 6 chiffres"

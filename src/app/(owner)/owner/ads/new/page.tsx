@@ -4,6 +4,8 @@ import type { AdFormValues } from '@/components/owner/AdFormWizard';
 import AdFormWizard, { type TourScene } from '@/components/owner/AdFormWizard';
 import MarkdownBioEditor from '@/components/owner/MarkdownBioEditor';
 import PublishingOverlay from '@/components/owner/PublishingOverlay';
+import AppAlert from '@/components/ui/feedback/AppAlert';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PhoneField from '@/components/ui/forms/PhoneField';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -29,7 +31,6 @@ import LocationOn from '@mui/icons-material/LocationOn';
 import Person from '@mui/icons-material/Person';
 import Phone from '@mui/icons-material/Phone';
 import {
-  Alert,
   Autocomplete,
   Box,
   Button,
@@ -687,9 +688,11 @@ export default function OwnerNewAdPage() {
           </Grid>
 
           {profileSaveError && (
-            <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
-              {profileSaveError}
-            </Alert>
+            <AppAlert
+              severity="error"
+              message={profileSaveError}
+              sx={{ mt: 2 }}
+            />
           )}
         </Box>
 
@@ -848,20 +851,13 @@ export default function OwnerNewAdPage() {
       </Dialog>
 
       {/* Draft save feedback */}
-      <Snackbar
+      <KhSnackbar
         open={!!draftSnackbar}
-        autoHideDuration={4000}
+        message={draftSnackbar?.message ?? null}
+        severity={draftSnackbar?.severity ?? 'success'}
         onClose={() => setDraftSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={draftSnackbar?.severity ?? 'success'}
-          onClose={() => setDraftSnackbar(null)}
-          variant="filled"
-        >
-          {draftSnackbar?.message}
-        </Alert>
-      </Snackbar>
+        duration={4000}
+      />
     </>
   );
 }

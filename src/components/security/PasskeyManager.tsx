@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import EmptyState from '@/components/ui/feedback/EmptyState';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
@@ -13,7 +14,6 @@ import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import Key from '@mui/icons-material/Key';
 import Refresh from '@mui/icons-material/Refresh';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -112,10 +112,13 @@ export default function PasskeyManager({
               Passkeys
             </Typography>
           </Stack>
-          <Alert severity="info" sx={{ borderRadius: 2 }}>
-            {unsupportedReason ??
-              'Les passkeys ne sont pas disponibles dans cet environnement.'}
-          </Alert>
+          <AppAlert
+            severity="info"
+            message={
+              unsupportedReason ??
+              'Les passkeys ne sont pas disponibles dans cet environnement.'
+            }
+          />
         </CardContent>
       </Card>
     );
@@ -228,9 +231,9 @@ export default function PasskeyManager({
           </Typography>
 
           {isError && (
-            <Alert
+            <AppAlert
               severity="error"
-              sx={{ mb: 2, borderRadius: 2 }}
+              sx={{ mb: 2 }}
               action={
                 <Button
                   color="inherit"
@@ -241,9 +244,8 @@ export default function PasskeyManager({
                   Réessayer
                 </Button>
               }
-            >
-              {listErrorMessage}
-            </Alert>
+              message={listErrorMessage}
+            />
           )}
 
           {/* ── Add form ── */}

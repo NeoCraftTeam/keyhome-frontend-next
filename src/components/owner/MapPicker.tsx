@@ -1,11 +1,11 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { MAPBOX_TOKEN } from '@/lib/constants';
 import { brandAgent, neutral, shadow } from '@/theme/tokens';
 import GpsIcon from '@mui/icons-material/MyLocation';
 import SearchIcon from '@mui/icons-material/Search';
 import {
-  Alert,
   Box,
   CircularProgress,
   IconButton,
@@ -213,9 +213,10 @@ export default function MapPicker({
 
   if (!MAPBOX_TOKEN) {
     return (
-      <Alert severity="warning" sx={{ borderRadius: 2 }}>
-        Token Mapbox manquant. Configurez NEXT_PUBLIC_MAPBOX_TOKEN.
-      </Alert>
+      <AppAlert
+        severity="warning"
+        message="Token Mapbox manquant. Configurez NEXT_PUBLIC_MAPBOX_TOKEN."
+      />
     );
   }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import EmptyState from '@/components/ui/feedback/EmptyState';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import api from '@/lib/api';
 import { loginHistoryKeys, sessionsKeys } from '@/lib/query-keys';
@@ -25,7 +26,6 @@ import {
   TabletMac as TabletMacIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -40,7 +40,6 @@ import {
   Grid,
   Pagination,
   Skeleton,
-  Snackbar,
   Stack,
   Typography,
 } from '@mui/material';
@@ -630,21 +629,14 @@ export default function OwnerSecurityPage() {
       </Dialog>
 
       {/* ─── Snackbar ─── */}
-      <Snackbar
+      <KhSnackbar
         open={Boolean(snackbar)}
-        autoHideDuration={4000}
+        message={snackbar?.message ?? null}
+        severity={snackbar?.severity ?? 'success'}
         onClose={() => setSnackbar(null)}
+        duration={4000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          variant="filled"
-          onClose={() => setSnackbar(null)}
-          severity={snackbar?.severity}
-          sx={{ borderRadius: 2 }}
-        >
-          {snackbar?.message}
-        </Alert>
-      </Snackbar>
+      />
     </Container>
   );
 }

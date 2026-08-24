@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   searchAlertsService,
@@ -9,7 +10,6 @@ import NotificationsActive from '@mui/icons-material/NotificationsActive';
 import NotificationsNone from '@mui/icons-material/NotificationsNone';
 import type { SxProps, Theme } from '@mui/material';
 import {
-  Alert,
   Box,
   Button,
   Chip,
@@ -146,13 +146,12 @@ export default function SearchAlertButton({
         </DialogTitle>
         <DialogContent>
           {errorMessage && !saved && (
-            <Alert
+            <AppAlert
               severity="error"
               onClose={() => setErrorMessage(null)}
+              message={errorMessage}
               sx={{ mb: 2 }}
-            >
-              {errorMessage}
-            </Alert>
+            />
           )}
           {saved ? (
             <Box textAlign="center" py={3}>

@@ -1,5 +1,6 @@
 'use client';
 
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import {
   ownerService,
   type RentPayment,
@@ -12,7 +13,6 @@ import {
   Payments as PaymentsIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -30,7 +30,6 @@ import {
   Pagination,
   Select,
   Skeleton,
-  Snackbar,
   Stack,
   TextField,
   Tooltip,
@@ -569,20 +568,14 @@ export default function RentPaymentsSection({
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <KhSnackbar
         open={Boolean(snackbar)}
-        autoHideDuration={4000}
+        message={snackbar?.message ?? null}
+        severity={snackbar?.severity ?? 'success'}
         onClose={() => setSnackbar(null)}
+        duration={4000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar?.severity}
-          onClose={() => setSnackbar(null)}
-          sx={{ borderRadius: 2 }}
-        >
-          {snackbar?.message}
-        </Alert>
-      </Snackbar>
+      />
     </>
   );
 }

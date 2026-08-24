@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { supportService } from '@/services/support.service';
 import { brand, gradient } from '@/theme/tokens';
@@ -13,7 +14,6 @@ import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import SendIcon from '@mui/icons-material/Send';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import {
-  Alert,
   Box,
   Button,
   Chip,
@@ -510,13 +510,12 @@ export default function ContactPage() {
 
                     {/* Submission error */}
                     {submitError && currentStep === 'message' && (
-                      <Alert
+                      <AppAlert
                         severity="error"
                         icon={<ErrorOutlineIcon />}
-                        sx={{ mt: 3, borderRadius: 2.5 }}
-                      >
-                        {submitError}
-                      </Alert>
+                        sx={{ mt: 3 }}
+                        message={submitError}
+                      />
                     )}
 
                     {/* Footer: hint + primary button */}

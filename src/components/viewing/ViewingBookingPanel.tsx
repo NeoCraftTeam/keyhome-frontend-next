@@ -33,7 +33,6 @@ import Forum from '@mui/icons-material/Forum';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
 import Refresh from '@mui/icons-material/Refresh';
 import {
-  Alert,
   Box,
   Button,
   Chip,
@@ -927,17 +926,12 @@ export default function ViewingBookingPanel({
             : ''}
         </Typography>
 
-        <Alert
+        <AppAlert
           icon={false}
           severity="success"
-          sx={{ mt: 2, mb: 2, borderRadius: 2, textAlign: 'left' }}
-        >
-          <Typography variant="body2">
-            Votre créneau est retenu pendant 24h. Le propriétaire vous
-            contactera pour confirmer la visite. Assurez-vous d&apos;être
-            joignable sur votre numéro enregistré.
-          </Typography>
-        </Alert>
+          sx={{ mt: 2, mb: 2, textAlign: 'left' }}
+          message="Votre créneau est retenu pendant 24h. Le propriétaire vous contactera pour confirmer la visite. Assurez-vous d'être joignable sur votre numéro enregistré."
+        />
 
         {selectedDate && selectedSlot && (
           <Box sx={{ mb: 1.5 }}>
@@ -1045,9 +1039,9 @@ export default function ViewingBookingPanel({
     if (myResError) {
       return (
         <Box sx={{ py: 2 }}>
-          <Alert
+          <AppAlert
             severity="error"
-            sx={{ borderRadius: 2, mb: 2 }}
+            sx={{ mb: 2 }}
             action={
               <Button
                 color="inherit"
@@ -1059,14 +1053,9 @@ export default function ViewingBookingPanel({
                 Réessayer
               </Button>
             }
-          >
-            <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-              Impossible de charger vos réservations
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Vérifiez votre connexion puis réessayez.
-            </Typography>
-          </Alert>
+            title="Impossible de charger vos réservations"
+            message="Vérifiez votre connexion puis réessayez."
+          />
         </Box>
       );
     }
@@ -1254,20 +1243,14 @@ export default function ViewingBookingPanel({
                       </Box>
                     )}
                     {r.landlord_notes && (
-                      <Alert
+                      <AppAlert
                         severity="info"
                         icon={false}
-                        sx={{
-                          mt: 1,
-                          py: 0.5,
-                          px: 1,
-                          fontSize: '0.75rem',
-                          borderRadius: 1.5,
-                        }}
+                        sx={{ mt: 1, py: 0.5, px: 1 }}
                       >
                         <strong>Note du propriétaire :</strong>{' '}
                         {r.landlord_notes}
-                      </Alert>
+                      </AppAlert>
                     )}
                     {r.cancellation_reason && (
                       <Typography

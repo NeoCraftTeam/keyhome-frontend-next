@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { usePasskeyLogin } from '@/hooks/usePasskey';
 import { AUTH_PANEL_UNAVAILABLE_MESSAGE } from '@/lib/auth/auth-api-errors';
 import {
@@ -13,7 +14,6 @@ import { useAuth } from '@/providers/AuthProvider';
 import { UserRole } from '@/types';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -109,10 +109,14 @@ export default function PasskeyLoginButton({
       </Divider>
 
       {!supported ? (
-        <Alert severity="info" sx={{ borderRadius: 2, fontSize: '0.875rem' }}>
-          {unsupportedReason ??
-            'Les passkeys ne sont pas disponibles dans cet environnement.'}
-        </Alert>
+        <AppAlert
+          severity="info"
+          message={
+            unsupportedReason ??
+            'Les passkeys ne sont pas disponibles dans cet environnement.'
+          }
+          sx={{ fontSize: '0.875rem' }}
+        />
       ) : (
         <>
           <Button
@@ -193,13 +197,12 @@ export default function PasskeyLoginButton({
           </Button>
 
           {error && (
-            <Alert
+            <AppAlert
               severity="error"
               onClose={clearError}
-              sx={{ mt: 1.5, borderRadius: 2, fontSize: '0.8rem' }}
-            >
-              {error}
-            </Alert>
+              message={error}
+              sx={{ mt: 1.5, fontSize: '0.8rem' }}
+            />
           )}
         </>
       )}

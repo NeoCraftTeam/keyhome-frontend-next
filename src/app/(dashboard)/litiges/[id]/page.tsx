@@ -1,5 +1,7 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { useAuth } from '@/providers/AuthProvider';
@@ -16,7 +18,6 @@ import HourglassEmpty from '@mui/icons-material/HourglassEmpty';
 import InsertDriveFile from '@mui/icons-material/InsertDriveFile';
 import RateReview from '@mui/icons-material/RateReview';
 import {
-  Alert,
   Avatar,
   Box,
   Button,
@@ -31,7 +32,6 @@ import {
   Link as MuiLink,
   Select,
   Skeleton,
-  Snackbar,
   Stack,
   Step,
   StepLabel,
@@ -39,7 +39,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
 /* ------------------------------------------------------------------ */
@@ -115,7 +115,6 @@ const EVIDENCE_TYPE_OPTIONS: { value: DisputeEvidenceType; label: string }[] = [
 export default function DisputeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [evidenceType, setEvidenceType] =
     useState<DisputeEvidenceType>('photo');
@@ -163,7 +162,7 @@ export default function DisputeDetailPage() {
   if (!dispute) {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
-        <Alert severity="error">Litige introuvable.</Alert>
+        <AppAlert severity="error" message="Litige introuvable." />
       </Container>
     );
   }
@@ -344,9 +343,11 @@ export default function DisputeDetailPage() {
                     >
                       Note de résolution
                     </Typography>
-                    <Alert severity="info" sx={{ mt: 0.5, borderRadius: 1.5 }}>
-                      {dispute.resolution_note}
-                    </Alert>
+                    <AppAlert
+                      severity="info"
+                      sx={{ mt: 0.5 }}
+                      message={dispute.resolution_note}
+                    />
                   </Box>
                 </>
               )}
@@ -502,10 +503,9 @@ export default function DisputeDetailPage() {
 
         {/* Closed banner */}
         {!dispute.is_open && (
-          <Alert
+          <AppAlert
             severity={dispute.status === 'rejected' ? 'error' : 'success'}
             icon={dispute.status === 'rejected' ? <ErrorOutline /> : <Gavel />}
-            sx={{ borderRadius: 2, fontWeight: 600 }}
           >
             Ce litige est clos — {statusCfg.label.toLowerCase()}.
             {dispute.resolved_at &&
@@ -517,24 +517,17 @@ export default function DisputeDetailPage() {
                   year: 'numeric',
                 }
               )}.`}
-          </Alert>
+          </AppAlert>
         )}
       </FadeIn>
 
-      <Snackbar
+      <KhSnackbar
         open={!!snackbar}
-        autoHideDuration={5000}
+        message={snackbar?.msg ?? null}
+        severity={snackbar?.ok ? 'success' : 'error'}
         onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar?.ok ? 'success' : 'error'}
-          onClose={() => setSnackbar(null)}
-          variant="filled"
-        >
-          {snackbar?.msg}
-        </Alert>
-      </Snackbar>
+        duration={5000}
+      />
     </Container>
   );
 }

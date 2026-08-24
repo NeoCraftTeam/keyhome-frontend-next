@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { ownerService } from '@/services/owner.service';
 import {
   AutoAwesome as AiIcon,
@@ -7,7 +8,7 @@ import {
   TrendingFlat as OkIcon,
   TrendingUp as HighIcon,
 } from '@mui/icons-material';
-import { Alert, Box, Chip, Paper, Skeleton, Typography } from '@mui/material';
+import { Box, Chip, Paper, Skeleton, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import type { AdFormValues } from './types';
 import { sectionSx } from './types';
@@ -147,9 +148,11 @@ export default function AdFormPriceAdvisor({
           )}
 
           {!hasPrice && (
-            <Alert severity="info" variant="outlined" sx={{ mt: 0.5 }}>
-              Entrez un prix pour le comparer au marché.
-            </Alert>
+            <AppAlert
+              severity="info"
+              message="Entrez un prix pour le comparer au marché."
+              sx={{ mt: 0.5 }}
+            />
           )}
         </Box>
       ) : (

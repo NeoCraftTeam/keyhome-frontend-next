@@ -1,9 +1,10 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { brandAgent, gradient, shadow } from '@/theme/tokens';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { Alert, Box, Button, Container, Typography } from '@mui/material';
+import { Box, Button, Container, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 export default function OwnerSegmentError({
@@ -29,19 +30,16 @@ export default function OwnerSegmentError({
         }}
       >
         {!isOnline && (
-          <Alert
+          <AppAlert
             severity="warning"
-            role="status"
+            message="Connexion réseau indisponible. Vérifiez votre Wi‑Fi ou données mobiles, puis réessayez."
             sx={{
               mb: 2,
               width: '100%',
               maxWidth: 440,
               textAlign: 'left',
             }}
-          >
-            Connexion réseau indisponible. Vérifiez votre Wi‑Fi ou données
-            mobiles, puis réessayez.
-          </Alert>
+          />
         )}
         <Box
           sx={{

@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { isImplicitDialogDismissReason } from '@/lib/dialog-dismiss';
 import { getStripePromise } from '@/lib/payment/stripe';
 import { paymentsService } from '@/services/payments.service';
@@ -11,7 +12,6 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -199,13 +199,12 @@ export default function SavedCardsManager({
       </Box>
 
       {errorMessage && (
-        <Alert
+        <AppAlert
           severity="error"
           sx={{ mb: 2 }}
           onClose={() => setErrorMessage(null)}
-        >
-          {errorMessage}
-        </Alert>
+          message={errorMessage}
+        />
       )}
 
       {isLoading && (
@@ -215,7 +214,7 @@ export default function SavedCardsManager({
       )}
 
       {isError && (
-        <Alert
+        <AppAlert
           severity="warning"
           sx={{ mb: 2 }}
           action={
@@ -223,9 +222,8 @@ export default function SavedCardsManager({
               Réessayer
             </Button>
           }
-        >
-          Impossible de récupérer vos cartes enregistrées pour le moment.
-        </Alert>
+          message="Impossible de récupérer vos cartes enregistrées pour le moment."
+        />
       )}
 
       {!isLoading && !isError && cards && cards.length === 0 && (
@@ -471,7 +469,7 @@ function AddCardDialog({
           </Box>
         )}
 
-        {setupError && <Alert severity="error">{setupError}</Alert>}
+        {setupError && <AppAlert severity="error" message={setupError} />}
 
         {clientSecret && (
           <Elements
@@ -577,11 +575,7 @@ function AddCardForm({
         />
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 1.5 }}>
-          {error}
-        </Alert>
-      )}
+      {error && <AppAlert severity="error" sx={{ mb: 1.5 }} message={error} />}
 
       <Box sx={{ display: 'flex', gap: 1.5 }}>
         <Button

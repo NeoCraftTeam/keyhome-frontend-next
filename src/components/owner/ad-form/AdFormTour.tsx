@@ -7,7 +7,6 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Alert,
   Box,
   Button,
   IconButton,
@@ -17,6 +16,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import type { Ad, TourHotspot } from '@/types';
 import type { TourScene } from './types';
 
@@ -98,7 +98,7 @@ export default function AdFormTour({
           </AccordionSummary>
           <AccordionDetails>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Alert severity="success" sx={{ borderRadius: 2 }}>
+              <AppAlert severity="success">
                 <Typography variant="body2" fontWeight={600} gutterBottom>
                   🤖 Android — Google Camera (Recommandé)
                 </Typography>
@@ -119,9 +119,9 @@ export default function AdFormTour({
                     <strong>lentement</strong> à 360°
                   </li>
                 </Typography>
-              </Alert>
+              </AppAlert>
 
-              <Alert severity="info" sx={{ borderRadius: 2 }}>
+              <AppAlert severity="info">
                 <Typography
                   variant="body2"
                   fontWeight={600}
@@ -143,9 +143,9 @@ export default function AdFormTour({
                     l&apos;App Store
                   </li>
                 </Typography>
-              </Alert>
+              </AppAlert>
 
-              <Alert severity="warning" sx={{ borderRadius: 2 }}>
+              <AppAlert severity="warning">
                 <Typography
                   variant="body2"
                   fontWeight={600}
@@ -170,18 +170,18 @@ export default function AdFormTour({
                     <strong>30 Mo</strong>
                   </li>
                 </Typography>
-              </Alert>
+              </AppAlert>
             </Box>
           </AccordionDetails>
         </Accordion>
 
         {/* Existing tour indicator */}
         {ad?.has_3d_tour && tourScenes.length === 0 && (
-          <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
-            Ce bien possède déjà un tour 3D avec {ad.tour_scenes_count ?? '?'}{' '}
-            scènes. Ajoutez de nouvelles scènes ci-dessous pour les ajouter au
-            tour existant.
-          </Alert>
+          <AppAlert
+            severity="info"
+            message={`Ce bien possède déjà un tour 3D avec ${ad.tour_scenes_count ?? '?'} scènes. Ajoutez de nouvelles scènes ci-dessous pour les ajouter au tour existant.`}
+            sx={{ mb: 2 }}
+          />
         )}
 
         {/* Scene list */}

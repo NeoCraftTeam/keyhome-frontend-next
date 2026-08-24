@@ -4,6 +4,7 @@ import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import TurnstileConfigAlert from '@/components/auth/TurnstileConfigAlert';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PhoneField from '@/components/ui/forms/PhoneField';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
@@ -46,7 +47,6 @@ import PersonOutline from '@mui/icons-material/PersonOutline';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
-  Alert,
   Autocomplete,
   Box,
   Button,
@@ -600,13 +600,12 @@ export default function RegisterPage() {
 
               {error && (
                 <FadeIn direction="none" duration={0.3}>
-                  <Alert
+                  <AppAlert
                     severity="error"
                     id="register-error"
-                    sx={{ mb: 2, borderRadius: 2 }}
-                  >
-                    {error}
-                  </Alert>
+                    message={error}
+                    sx={{ mb: 2 }}
+                  />
                 </FadeIn>
               )}
 

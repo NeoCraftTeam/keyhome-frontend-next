@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import {
   ownerAdsService,
@@ -7,7 +8,6 @@ import {
 } from '@/services/owner/owner-ads.service';
 import LockOutlined from '@mui/icons-material/LockOutlined';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -102,10 +102,10 @@ export default function PrivateOwnerNoteDialog({
             />
             {delegated && (
               <>
-                <Alert severity="info">
-                  Conservez ici les coordonnées du propriétaire réel afin de les
-                  retrouver lorsqu’un prospect vous contacte.
-                </Alert>
+                <AppAlert
+                  severity="info"
+                  message="Conservez ici les coordonnées du propriétaire réel afin de les retrouver lorsqu’un prospect vous contacte."
+                />
                 <TextField
                   required
                   label="Nom du propriétaire réel"
@@ -151,14 +151,15 @@ export default function PrivateOwnerNoteDialog({
                 />
               </>
             )}
-            {feedback && <Alert severity="success">{feedback}</Alert>}
+            {feedback && <AppAlert severity="success" message={feedback} />}
             {save.isError && (
-              <Alert severity="error">
-                {getSafeErrorMessage(
+              <AppAlert
+                severity="error"
+                message={getSafeErrorMessage(
                   save.error,
                   'Impossible d’enregistrer la note.'
                 )}
-              </Alert>
+              />
             )}
           </Box>
         )}

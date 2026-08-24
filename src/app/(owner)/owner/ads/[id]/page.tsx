@@ -9,6 +9,8 @@ import {
   mapAdToFormValues,
   normalizeAdFormValues,
 } from '@/components/owner/ad-form/types';
+import AppAlert from '@/components/ui/feedback/AppAlert';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { adsService } from '@/services/ads.service';
@@ -25,7 +27,6 @@ import TourIcon from '@mui/icons-material/ViewInAr';
 import VisibleIcon from '@mui/icons-material/Visibility';
 import HiddenIcon from '@mui/icons-material/VisibilityOff';
 import {
-  Alert,
   Box,
   Button,
   ButtonGroup,
@@ -42,7 +43,6 @@ import {
   MenuItem,
   Select,
   Skeleton,
-  Snackbar,
   TextField,
   Typography,
 } from '@mui/material';
@@ -587,9 +587,8 @@ export default function OwnerAdEditPage() {
   if (error || !ad) {
     return (
       <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Alert
+        <AppAlert
           severity="error"
-          sx={{ borderRadius: 2 }}
           action={
             <Button
               color="inherit"
@@ -599,9 +598,8 @@ export default function OwnerAdEditPage() {
               Retour
             </Button>
           }
-        >
-          Annonce introuvable ou erreur de chargement.
-        </Alert>
+          message="Annonce introuvable ou erreur de chargement."
+        />
       </Container>
     );
   }
@@ -830,7 +828,7 @@ export default function OwnerAdEditPage() {
 
       {/* ═══ Success/Error feedback ═══ */}
       {updateMutation.isSuccess && (
-        <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
+        <AppAlert severity="success" sx={{ mb: 3 }}>
           Annonce mise à jour avec succès.
           <Button
             size="small"
@@ -848,14 +846,14 @@ export default function OwnerAdEditPage() {
           >
             Aperçu public (nouvel onglet)
           </Button>
-        </Alert>
+        </AppAlert>
       )}
 
       {/* ═══ Draft Banner ═══ */}
       {isDraft && (
-        <Alert
+        <AppAlert
           severity="info"
-          sx={{ borderRadius: 2, mb: 3 }}
+          sx={{ mb: 3 }}
           action={
             <Button
               color="inherit"
@@ -871,14 +869,14 @@ export default function OwnerAdEditPage() {
           Cette annonce est un <strong>brouillon</strong>. Complétez les
           informations et publiez-la pour qu&apos;elle soit soumise à
           validation.
-        </Alert>
+        </AppAlert>
       )}
 
       {/* ═══ Pending-edit Banner (non-DRAFT ads with unsaved changes) ═══ */}
       {!isDraft && ad.draft_payload && (
-        <Alert
+        <AppAlert
           severity="warning"
-          sx={{ borderRadius: 2, mb: 3 }}
+          sx={{ mb: 3 }}
           action={
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
@@ -910,7 +908,7 @@ export default function OwnerAdEditPage() {
           Vous avez des <strong>modifications non publiées</strong>.
           Appliquez-les pour les rendre visibles, ou annulez pour revenir à la
           version actuelle.
-        </Alert>
+        </AppAlert>
       )}
 
       {/* ═══ Form ═══ */}
@@ -1537,22 +1535,13 @@ export default function OwnerAdEditPage() {
       </Dialog>
 
       {/* ═══ Snackbar ═══ */}
-      <Snackbar
+      <KhSnackbar
         open={!!snackbar}
-        autoHideDuration={4000}
+        message={snackbar?.message ?? null}
+        severity={snackbar?.severity ?? 'success'}
         onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {snackbar ? (
-          <Alert
-            onClose={() => setSnackbar(null)}
-            severity={snackbar.severity}
-            sx={{ borderRadius: 2, fontWeight: 600 }}
-          >
-            {snackbar.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+        duration={4000}
+      />
     </Container>
   );
 }

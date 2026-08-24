@@ -2,6 +2,7 @@
 
 import OwnerPushNotificationCard from '@/components/owner/OwnerPushNotificationCard';
 import LinkedAccountsCard from '@/components/settings/LinkedAccountsCard';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { useAuth } from '@/providers/AuthProvider';
@@ -18,7 +19,6 @@ import {
   SettingsBrightness as SettingsBrightnessIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -34,7 +34,6 @@ import {
   FormControlLabel,
   Grid,
   List,
-  Snackbar,
   Stack,
   Switch,
   ToggleButton,
@@ -423,20 +422,14 @@ export default function OwnerParametresPage() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <KhSnackbar
         open={Boolean(prefSnackbar)}
-        autoHideDuration={4000}
+        message={prefSnackbar?.message ?? null}
+        severity={prefSnackbar?.severity ?? 'success'}
         onClose={() => setPrefSnackbar(null)}
+        duration={4000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={prefSnackbar?.severity}
-          onClose={() => setPrefSnackbar(null)}
-          sx={{ borderRadius: 2 }}
-        >
-          {prefSnackbar?.message}
-        </Alert>
-      </Snackbar>
+      />
     </Container>
   );
 }

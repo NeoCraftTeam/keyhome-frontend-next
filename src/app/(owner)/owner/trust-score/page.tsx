@@ -1,6 +1,7 @@
 'use client';
 
 import api from '@/lib/api';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import CheckCircle from '@mui/icons-material/CheckCircle';
@@ -8,7 +9,6 @@ import Info from '@mui/icons-material/Info';
 import LightbulbOutlined from '@mui/icons-material/LightbulbOutlined';
 import Shield from '@mui/icons-material/Shield';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -414,9 +414,10 @@ export default function OwnerTrustScorePage() {
           )}
         </Stack>
       ) : (
-        <Alert severity="info">
-          Aucun score calculé. Activez le score de confiance pour commencer.
-        </Alert>
+        <AppAlert
+          severity="info"
+          message="Aucun score calculé. Activez le score de confiance pour commencer."
+        />
       )}
     </Container>
   );

@@ -1,6 +1,8 @@
 'use client';
 
 import CalendarExportMenu from '@/components/ui/display/CalendarExportMenu';
+import AppAlert from '@/components/ui/feedback/AppAlert';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -24,7 +26,6 @@ import {
   AccessTime as TimeIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -43,7 +44,6 @@ import {
   Pagination,
   Select,
   Skeleton,
-  Snackbar,
   Stack,
   TextField,
   Tooltip,
@@ -463,9 +463,9 @@ export default function OwnerViewingsPage() {
           ))}
         </Box>
       ) : isError ? (
-        <Alert
+        <AppAlert
           severity="error"
-          sx={{ borderRadius: 2, py: 2 }}
+          sx={{ py: 2 }}
           action={
             <Button
               color="inherit"
@@ -485,7 +485,7 @@ export default function OwnerViewingsPage() {
             Vérifiez votre connexion, puis réessayez. Si le problème persiste,
             contactez le support.
           </Typography>
-        </Alert>
+        </AppAlert>
       ) : reservations.length === 0 ? (
         /* Empty state */
         <Card
@@ -1019,14 +1019,14 @@ export default function OwnerViewingsPage() {
                         )}
 
                         {r.cancellation_reason && (
-                          <Alert severity="error" sx={{ borderRadius: 2 }}>
+                          <AppAlert severity="error">
                             <Typography variant="body2" fontWeight={600}>
                               Motif d&apos;annulation :
                             </Typography>
                             <Typography variant="body2">
                               {r.cancellation_reason}
                             </Typography>
-                          </Alert>
+                          </AppAlert>
                         )}
                       </Box>
                     </Collapse>
@@ -1326,21 +1326,14 @@ export default function OwnerViewingsPage() {
       </Dialog>
 
       {/* ── Snackbar ── */}
-      <Snackbar
+      <KhSnackbar
         open={snackbar.open}
-        autoHideDuration={4000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        duration={4000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-          severity={snackbar.severity}
-          variant="filled"
-          sx={{ borderRadius: 2, fontWeight: 600 }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
     </Container>
   );
 }

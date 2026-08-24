@@ -7,6 +7,7 @@ import SavedCardsManager from '@/components/payment/SavedCardsManager';
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
 import PasskeyManager from '@/components/security/PasskeyManager';
 import FadeIn from '@/components/ui/layout/FadeIn';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import PasswordStrengthBar from '@/components/ui/forms/PasswordStrengthBar';
@@ -39,7 +40,6 @@ import {
   VisibilityOff,
 } from '@mui/icons-material';
 import {
-  Alert,
   Autocomplete,
   Avatar,
   Box,
@@ -940,9 +940,10 @@ export default function OwnerProfilePage() {
             <CircularProgress />
           </Box>
         ) : !activeSurvey ? (
-          <Alert severity="info" sx={{ borderRadius: 2 }}>
-            Aucun sondage en cours pour le moment. Revenez bientôt&nbsp;!
-          </Alert>
+          <AppAlert
+            severity="info"
+            message={'Aucun sondage en cours pour le moment. Revenez bientôt !'}
+          />
         ) : surveyAnsweredData?.has_answered ? (
           <Box
             sx={{

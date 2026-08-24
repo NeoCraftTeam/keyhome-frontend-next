@@ -1,10 +1,10 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import NotifyIcon from '@mui/icons-material/NotificationsActive';
 import NotifyOffIcon from '@mui/icons-material/NotificationsOff';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -41,10 +41,11 @@ export default function OwnerPushNotificationCard() {
           >
             Notifications
           </Typography>
-          <Alert severity="info" sx={{ mt: 1, borderRadius: 2 }}>
-            Les notifications push ne sont pas disponibles sur ce navigateur ou
-            la clé VAPID n’est pas configurée (NEXT_PUBLIC_VAPID_PUBLIC_KEY).
-          </Alert>
+          <AppAlert
+            severity="info"
+            message="Les notifications push ne sont pas disponibles sur ce navigateur ou la clé VAPID n’est pas configurée (NEXT_PUBLIC_VAPID_PUBLIC_KEY)."
+            sx={{ mt: 1 }}
+          />
         </CardContent>
       </Card>
     );
@@ -123,11 +124,11 @@ export default function OwnerPushNotificationCard() {
                 Activer les notifications
               </Button>
               {permission === 'denied' && (
-                <Alert severity="warning" sx={{ mt: 2, borderRadius: 2 }}>
-                  Les notifications sont bloquées dans les réglages du
-                  navigateur. Autorisez KeyHome pour cette origine, puis
-                  réessayez.
-                </Alert>
+                <AppAlert
+                  severity="warning"
+                  message="Les notifications sont bloquées dans les réglages du navigateur. Autorisez KeyHome pour cette origine, puis réessayez."
+                  sx={{ mt: 2 }}
+                />
               )}
             </Box>
           )}

@@ -16,7 +16,9 @@ import ContactChatButton from '@/components/chat/ContactChatButton';
 import ReviewForm from '@/components/reviews/ReviewForm';
 import ReviewsSection from '@/components/reviews/ReviewsSection';
 import TrustScoreBadge from '@/components/trust/TrustScoreBadge';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import AppLoader from '@/components/ui/feedback/AppLoader';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import ImageLightbox from '@/components/ui/overlay/ImageLightbox';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
@@ -71,7 +73,6 @@ import ViewInAr from '@mui/icons-material/ViewInAr';
 import Visibility from '@mui/icons-material/Visibility';
 import WhatsApp from '@mui/icons-material/WhatsApp';
 import {
-  Alert,
   Avatar,
   Box,
   Button,
@@ -2848,9 +2849,7 @@ function AdDetailContent() {
           )}
 
           {paymentError && (
-            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-              {paymentError}
-            </Alert>
+            <AppAlert severity="error" sx={{ mb: 2 }} message={paymentError} />
           )}
 
           {/* Animated state transitions */}
@@ -2956,10 +2955,10 @@ function AdDetailContent() {
                   </Box>
                 ) : confirmStep ? (
                   <>
-                    <Alert
+                    <AppAlert
                       severity="info"
                       icon={false}
-                      sx={{ mb: 2.5, borderRadius: 2, textAlign: 'left' }}
+                      sx={{ mb: 2.5, textAlign: 'left' }}
                     >
                       <Typography variant="body2" fontWeight={600} gutterBottom>
                         Confirmer le déverrouillage
@@ -2974,7 +2973,7 @@ function AdDetailContent() {
                         seront déduits de votre solde. Cette action est
                         irréversible.
                       </Typography>
-                    </Alert>
+                    </AppAlert>
                     <Box
                       sx={{
                         display: 'flex',
@@ -3215,34 +3214,18 @@ function AdDetailContent() {
         />
       )}
 
-      {/* Snackbar — green Alert variant for unlock success, default dark for all others */}
+      {/* Snackbar — green KhSnackbar for unlock success, neutral dark toast for all others */}
       {snackbarSuccess ? (
-        <Snackbar
+        <KhSnackbar
           open={!!snackbar}
-          autoHideDuration={4000}
+          message={snackbar || null}
+          severity="success"
           onClose={() => {
             setSnackbar('');
             setSnackbarSuccess(false);
           }}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert
-            onClose={() => {
-              setSnackbar('');
-              setSnackbarSuccess(false);
-            }}
-            severity="success"
-            variant="filled"
-            sx={{
-              minWidth: 280,
-              borderRadius: 2,
-              fontWeight: 600,
-              fontSize: '0.9rem',
-            }}
-          >
-            {snackbar}
-          </Alert>
-        </Snackbar>
+          duration={4000}
+        />
       ) : (
         <Snackbar
           open={!!snackbar}

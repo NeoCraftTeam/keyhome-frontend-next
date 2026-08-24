@@ -1,12 +1,12 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { usersService } from '@/services/users.service';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -145,9 +145,7 @@ export default function DeleteAccountModal({
         />
 
         {error && (
-          <Alert severity="error" sx={{ mt: 1.5, borderRadius: 2 }}>
-            {error}
-          </Alert>
+          <AppAlert severity="error" message={error} sx={{ mt: 1.5 }} />
         )}
       </DialogContent>
 

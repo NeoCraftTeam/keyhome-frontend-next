@@ -18,6 +18,7 @@
  * an ad detail page → skips steps 1 and 2).
  */
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { fetchConversations } from '@/lib/chat/chat-api';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { disputesService } from '@/services/disputes.service';
@@ -34,7 +35,6 @@ import ChatBubbleOutline from '@mui/icons-material/ChatBubbleOutline';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import HelpOutline from '@mui/icons-material/HelpOutline';
 import {
-  Alert,
   Avatar,
   Box,
   Button,
@@ -318,7 +318,7 @@ export default function OpenDisputeDialog({
               inputMode="numeric"
             />
 
-            {error && <Alert severity="error">{error}</Alert>}
+            {error && <AppAlert severity="error" message={error} />}
           </Stack>
         )}
       </DialogContent>
@@ -396,14 +396,10 @@ function ContextStep({ onPick }: { onPick: (kind: ContextKind) => void }) {
           </CardActionArea>
         </Card>
       ))}
-      <Alert
-        severity="info"
-        icon={<HelpOutline />}
-        sx={{ mt: 1, borderRadius: 1.5 }}
-      >
+      <AppAlert severity="info" icon={<HelpOutline />} sx={{ mt: 1 }}>
         Aucun de ces cas ne s&apos;applique ? Contactez d&apos;abord le support
         depuis <strong>Aide &amp; FAQ</strong>.
-      </Alert>
+      </AppAlert>
     </Stack>
   );
 }

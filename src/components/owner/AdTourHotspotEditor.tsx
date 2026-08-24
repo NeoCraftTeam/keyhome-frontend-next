@@ -6,7 +6,6 @@ import HotspotIcon from '@mui/icons-material/MyLocation';
 import PlaceIcon from '@mui/icons-material/TouchApp';
 import PreviewIcon from '@mui/icons-material/Visibility';
 import {
-  Alert,
   Box,
   Button,
   Chip,
@@ -24,6 +23,7 @@ import {
 import { alpha } from '@mui/material/styles';
 import dynamic from 'next/dynamic';
 import { useCallback, useState } from 'react';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import type { TourHotspot } from '@/types';
 import { brandAgent } from '@/theme/tokens';
 
@@ -201,12 +201,12 @@ export default function AdTourHotspotEditor({
       </Box>
 
       {otherScenes.length === 0 && scene.hotspots.length === 0 && (
-        <Alert severity="info" sx={{ borderRadius: 2, mb: 1.5 }}>
+        <AppAlert severity="info" sx={{ mb: 1.5 }}>
           <Typography variant="body2">
             Ajoutez au moins 2 pièces pour pouvoir créer des liens de navigation
             entre elles.
           </Typography>
-        </Alert>
+        </AppAlert>
       )}
 
       {/* Panorama Viewer — monté uniquement quand ouvert pour éviter blocages */}
@@ -224,9 +224,9 @@ export default function AdTourHotspotEditor({
             />
           )}
           {placingMode && placingIndex !== null && (
-            <Alert
+            <AppAlert
               severity="info"
-              sx={{ mt: 1, borderRadius: 2 }}
+              sx={{ mt: 1 }}
               action={
                 <Button
                   size="small"
@@ -248,7 +248,7 @@ export default function AdTourHotspotEditor({
                   `${'\u0023'}${placingIndex + 1}`}
                 &quot;.
               </Typography>
-            </Alert>
+            </AppAlert>
           )}
         </Box>
       </Collapse>

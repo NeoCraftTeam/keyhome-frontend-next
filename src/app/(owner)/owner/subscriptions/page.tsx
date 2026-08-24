@@ -1,5 +1,7 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import {
   subscriptionsService,
@@ -17,7 +19,6 @@ import {
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -33,7 +34,6 @@ import {
   Divider,
   Grid,
   Skeleton,
-  Snackbar,
   Stack,
   Switch,
   TextField,
@@ -566,7 +566,7 @@ export default function OwnerSubscriptionsPage() {
       </FadeIn>
 
       {subscriptionsLoadFailed && (
-        <Alert
+        <AppAlert
           severity="error"
           sx={{ mb: 3 }}
           action={
@@ -579,11 +579,12 @@ export default function OwnerSubscriptionsPage() {
               Réessayer
             </Button>
           }
-        >
-          {!isOnline
-            ? 'Vous semblez hors ligne. Reconnectez-vous au réseau puis réessayez.'
-            : 'Impossible de charger vos abonnements pour le moment.'}
-        </Alert>
+          message={
+            !isOnline
+              ? 'Vous semblez hors ligne. Reconnectez-vous au réseau puis réessayez.'
+              : 'Impossible de charger vos abonnements pour le moment.'
+          }
+        />
       )}
 
       <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
@@ -737,22 +738,14 @@ export default function OwnerSubscriptionsPage() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <KhSnackbar
         open={!!snackbar}
-        autoHideDuration={5000}
+        message={snackbar?.message ?? null}
+        severity={snackbar?.severity ?? 'success'}
         onClose={() => setSnackbar(null)}
+        duration={5000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {snackbar ? (
-          <Alert
-            severity={snackbar.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      />
     </Container>
   );
 }

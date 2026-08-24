@@ -1,6 +1,7 @@
 'use client';
 
 import PendingPaymentMessage from '@/components/payment/return/PendingPaymentMessage';
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import AppLoader from '@/components/ui/feedback/AppLoader';
 import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import {
@@ -18,7 +19,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import HomeIcon from '@mui/icons-material/Home';
 import HourglassIcon from '@mui/icons-material/HourglassEmpty';
 import LoginIcon from '@mui/icons-material/Login';
-import { Alert, Box, Button, Paper, Typography } from '@mui/material';
+import { Box, Button, Paper, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -240,13 +241,11 @@ export default function OwnerFlowPaymentReturnView({
             <Typography variant="h5" fontWeight={700} gutterBottom>
               Paiement confirmé
             </Typography>
-            <Alert
+            <AppAlert
               severity="info"
-              sx={{ textAlign: 'left', mb: 2.5, borderRadius: 2 }}
-            >
-              Votre session a expiré pendant le paiement. Reconnectez-vous
-              depuis l&apos;espace bailleur pour voir la mise à jour.
-            </Alert>
+              sx={{ textAlign: 'left', mb: 2.5 }}
+              message="Votre session a expiré pendant le paiement. Reconnectez-vous depuis l'espace bailleur pour voir la mise à jour."
+            />
             <Button
               variant="contained"
               size="large"

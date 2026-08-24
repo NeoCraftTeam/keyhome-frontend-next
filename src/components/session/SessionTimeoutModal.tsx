@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import {
   Dialog,
   DialogTitle,
@@ -10,7 +11,6 @@ import {
   Box,
   CircularProgress,
   LinearProgress,
-  Alert,
   Collapse,
 } from '@mui/material';
 import TimerOffIcon from '@mui/icons-material/TimerOff';
@@ -133,10 +133,10 @@ export default function SessionTimeoutModal({
 
       <DialogContent sx={{ textAlign: 'center', pt: 1.5 }}>
         <Collapse in={refreshError} unmountOnExit>
-          <Alert
+          <AppAlert
             severity="error"
             icon={<ErrorOutlineIcon fontSize="small" />}
-            sx={{ mb: 2, borderRadius: 2, textAlign: 'left' }}
+            sx={{ mb: 2, textAlign: 'left' }}
           >
             <Typography variant="body2" fontWeight={600}>
               Session expirée
@@ -144,7 +144,7 @@ export default function SessionTimeoutModal({
             <Typography variant="caption" color="text.secondary">
               Votre session a expiré. Redirection vers la page de connexion…
             </Typography>
-          </Alert>
+          </AppAlert>
         </Collapse>
 
         <Collapse in={!refreshError} unmountOnExit>

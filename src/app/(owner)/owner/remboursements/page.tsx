@@ -1,5 +1,6 @@
 'use client';
 
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -11,7 +12,6 @@ import ErrorOutline from '@mui/icons-material/ErrorOutline';
 import HourglassEmpty from '@mui/icons-material/HourglassEmpty';
 import ReceiptLong from '@mui/icons-material/ReceiptLong';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -27,7 +27,6 @@ import {
   Pagination,
   Select,
   Skeleton,
-  Snackbar,
   Stack,
   TextField,
   Typography,
@@ -357,20 +356,14 @@ export default function OwnerRemboursementsPage() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <KhSnackbar
         open={!!snackbar}
-        autoHideDuration={5000}
+        message={snackbar?.msg ?? null}
+        severity={snackbar?.ok ? 'success' : 'error'}
         onClose={() => setSnackbar(null)}
+        duration={5000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar?.ok ? 'success' : 'error'}
-          onClose={() => setSnackbar(null)}
-          variant="filled"
-        >
-          {snackbar?.msg}
-        </Alert>
-      </Snackbar>
+      />
     </Container>
   );
 }

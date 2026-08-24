@@ -1,5 +1,6 @@
 'use client';
 
+import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { ownerService, type LeaseContract } from '@/services/owner.service';
 import {
@@ -9,7 +10,6 @@ import {
   Refresh as RenewIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
   Button,
   CircularProgress,
   Dialog,
@@ -22,7 +22,6 @@ import {
   ListItemText,
   Menu,
   MenuItem,
-  Snackbar,
   Stack,
   TextField,
 } from '@mui/material';
@@ -340,20 +339,14 @@ export default function LeaseLifecycleMenu({
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <KhSnackbar
         open={Boolean(snackbar)}
-        autoHideDuration={4000}
+        message={snackbar?.message ?? null}
+        severity={snackbar?.severity ?? 'success'}
         onClose={() => setSnackbar(null)}
+        duration={4000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar?.severity}
-          onClose={() => setSnackbar(null)}
-          sx={{ borderRadius: 2 }}
-        >
-          {snackbar?.message}
-        </Alert>
-      </Snackbar>
+      />
     </>
   );
 }

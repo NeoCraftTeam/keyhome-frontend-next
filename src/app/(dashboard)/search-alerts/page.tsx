@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import { EmptyState } from '@/components/ui/feedback/EmptyState';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { useAuth } from '@/providers/AuthProvider';
@@ -16,7 +17,6 @@ import NotificationsActive from '@mui/icons-material/NotificationsActive';
 import NotificationsNone from '@mui/icons-material/NotificationsNone';
 import SearchIcon from '@mui/icons-material/Search';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -283,11 +283,7 @@ export default function SearchAlertsPage() {
         </Box>
 
         {/* Info banner */}
-        <Alert
-          severity="info"
-          icon={<NotificationsActive />}
-          sx={{ mb: 3, borderRadius: 2 }}
-        >
+        <AppAlert severity="info" icon={<NotificationsActive />} sx={{ mb: 3 }}>
           <Typography variant="body2">
             Recevez une alerte dès qu&apos;une annonce correspond à vos critères
             (notification dans l&apos;app, push si activé, et e-mail si vous le
@@ -297,7 +293,7 @@ export default function SearchAlertsPage() {
             </strong>{' '}
             alertes actives.
           </Typography>
-        </Alert>
+        </AppAlert>
 
         {/* Loading */}
         <Box aria-live="polite" aria-atomic="true">

@@ -1,5 +1,6 @@
 'use client';
 
+import AppAlert from '@/components/ui/feedback/AppAlert';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { viewingsService } from '@/services/viewings.service';
@@ -14,7 +15,6 @@ import HourglassTop from '@mui/icons-material/HourglassTop';
 import OpenInNew from '@mui/icons-material/OpenInNew';
 import Schedule from '@mui/icons-material/Schedule';
 import {
-  Alert,
   Avatar,
   Box,
   Button,
@@ -573,16 +573,18 @@ export default function MyReservationsPage() {
             ))}
           </Box>
         ) : isError ? (
-          <Alert
+          <AppAlert
             severity="error"
             action={
               <Button size="small" onClick={() => refetch()}>
                 Réessayer
               </Button>
             }
-          >
-            {getSafeErrorMessage(error, 'Impossible de charger vos visites.')}
-          </Alert>
+            message={getSafeErrorMessage(
+              error,
+              'Impossible de charger vos visites.'
+            )}
+          />
         ) : sortedFiltered.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <CalendarMonth
@@ -666,12 +668,14 @@ export default function MyReservationsPage() {
                 sx={{ mt: 2 }}
               />
               {cancelMutation.isError && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  {getSafeErrorMessage(
+                <AppAlert
+                  severity="error"
+                  sx={{ mt: 2 }}
+                  message={getSafeErrorMessage(
                     cancelMutation.error,
                     "Impossible d'annuler la visite."
                   )}
-                </Alert>
+                />
               )}
             </>
           )}
