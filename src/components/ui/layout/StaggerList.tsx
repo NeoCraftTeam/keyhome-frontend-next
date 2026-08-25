@@ -1,10 +1,10 @@
 'use client';
 
 import { motion, useInView, useReducedMotion } from 'framer-motion';
-import { useRef } from 'react';
+import { Children, isValidElement, useRef } from 'react';
 
 interface StaggerListProps {
-  children: React.ReactNode[];
+  children: React.ReactNode;
   /** Delay between each item (seconds) */
   stagger?: number;
   /** y-offset to animate from */
@@ -64,8 +64,12 @@ export default function StaggerList({
       initial="hidden"
       animate={isInView ? 'visible' : 'hidden'}
     >
-      {children.map((child, i) => (
-        <motion.div key={i} variants={itemVariants} style={{ height: '100%' }}>
+      {Children.toArray(children).map((child, i) => (
+        <motion.div
+          key={isValidElement(child) ? (child.key ?? i) : i}
+          variants={itemVariants}
+          style={{ height: '100%' }}
+        >
           {child}
         </motion.div>
       ))}

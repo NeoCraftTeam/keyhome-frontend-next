@@ -30,6 +30,7 @@ export default function SplashTransition({
   useEffect(() => {
     const startTime = performance.now();
     let raf: number;
+    let fadeTimeout: ReturnType<typeof setTimeout> | undefined;
 
     const tick = (now: number) => {
       const elapsed = now - startTime;
@@ -41,7 +42,7 @@ export default function SplashTransition({
       } else {
         // Start fade-out, then notify parent
         setFading(true);
-        setTimeout(() => {
+        fadeTimeout = setTimeout(() => {
           if (!calledRef.current) {
             calledRef.current = true;
             onComplete();
@@ -51,7 +52,13 @@ export default function SplashTransition({
     };
 
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      if (fadeTimeout) {
+        clearTimeout(fadeTimeout);
+      }
+    };
   }, [duration, onComplete]);
 
   return (

@@ -139,7 +139,10 @@ export const baseTheme = {
           borderRadius: 20,
           fontWeight: 600,
           fontSize: '0.75rem',
-          transition: 'all 0.2s ease',
+          // Scoped to the props chips actually change on state — avoids the
+          // repaint/reflow cost of `transition: all` on every chip.
+          transition:
+            'background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease',
         },
       },
     },
@@ -237,7 +240,10 @@ export const baseTheme = {
     },
     MuiPaginationItem: {
       styleOverrides: {
-        root: { transition: 'all 0.2s ease' },
+        root: {
+          transition:
+            'background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease',
+        },
       },
     },
     MuiAccordion: {

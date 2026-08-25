@@ -150,6 +150,25 @@ export default function TourViewer({ tourConfig, onClose }: TourViewerProps) {
   const initViewer = useCallback(async () => {
     if (!containerRef.current || !tourConfig.scenes?.length) return;
 
+    // A retry can call this while a previous attempt left a viewer, pitch-clamp
+    // listener, or safety timer alive. Tear everything down first so we never
+    // leak a second WebGL context or stack duplicate handlers.
+    if (safetyTimerRef.current) {
+      clearTimeout(safetyTimerRef.current);
+      safetyTimerRef.current = null;
+    }
+    if (viewerRef.current) {
+      pitchClampDetachRef.current?.();
+      pitchClampDetachRef.current = null;
+      try {
+        viewerRef.current.destroy();
+      } catch {
+        // ignore
+      }
+      viewerRef.current = null;
+      virtualTourRef.current = null;
+    }
+
     try {
       // Dynamic imports to avoid SSR issues
       const [

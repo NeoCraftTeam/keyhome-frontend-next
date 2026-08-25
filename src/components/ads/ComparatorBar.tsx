@@ -33,130 +33,133 @@ export default function ComparatorBar() {
     router.push('/comparaisons');
   };
 
-  if (items.length === 0 || pathname === '/comparaisons') {
-    return null;
-  }
+  const showBar = items.length > 0 && pathname !== '/comparaisons';
 
   return (
     <MotionConfig reducedMotion="user">
-      {/* Floating bar — always visible when items selected */}
+      {/* Floating bar — rendered as a conditional child of AnimatePresence so
+          removing the last item (or navigating to /comparaisons) plays the
+          slide-out exit instead of unmounting the tree instantly. */}
       <AnimatePresence>
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-          style={{
-            position: 'fixed',
-            bottom: isMobile ? 72 : 24,
-            left: 0,
-            right: 0,
-            display: 'flex',
-            justifyContent: 'center',
-            zIndex: 1200,
-            pointerEvents: 'none',
-            padding: isMobile ? '0 8px' : 0,
-          }}
-        >
-          <Box sx={{ pointerEvents: 'auto', maxWidth: '100%' }}>
-            <Paper
-              elevation={12}
-              sx={{
-                px: { xs: 1.5, sm: 2.5 },
-                py: 1.25,
-                borderRadius: 99,
-                display: 'flex',
-                alignItems: 'center',
-                gap: { xs: 0.75, sm: 1.5 },
-                bgcolor: 'background.paper',
-                border: '2px solid',
-                borderColor: 'primary.main',
-                boxShadow: '0 8px 32px rgba(246,71,95,0.18)',
-                maxWidth: '100%',
-                overflow: 'hidden',
-              }}
-            >
-              <CompareArrows
-                color="primary"
-                sx={{ fontSize: { xs: 16, sm: 20 }, flexShrink: 0 }}
-              />
-              <Typography
-                fontWeight={700}
-                fontSize={{ xs: 11, sm: 13 }}
-                sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-              >
-                {items.length} bien{items.length > 1 ? 's' : ''}
-              </Typography>
-
-              {/* Avatars */}
-              <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
-                {items.map((ad) => (
-                  <Tooltip key={ad.id} title={`Retirer : ${ad.title}`}>
-                    <Box
-                      sx={{ position: 'relative', cursor: 'pointer' }}
-                      onClick={() => remove(ad.id)}
-                    >
-                      <Avatar
-                        src={ad.images?.[0]?.thumb}
-                        sx={{
-                          width: { xs: 24, sm: 30 },
-                          height: { xs: 24, sm: 30 },
-                          border: '2px solid white',
-                        }}
-                      >
-                        {ad.title[0]}
-                      </Avatar>
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: -3,
-                          right: -3,
-                          width: 13,
-                          height: 13,
-                          borderRadius: '50%',
-                          bgcolor: 'error.main',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Close sx={{ fontSize: 9, color: 'white' }} />
-                      </Box>
-                    </Box>
-                  </Tooltip>
-                ))}
-              </Box>
-
-              <Button
-                variant="contained"
-                size="small"
-                onClick={handleOpenComparator}
-                disabled={items.length < 2}
+        {showBar && (
+          <motion.div
+            key="comparator-bar"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+            style={{
+              position: 'fixed',
+              bottom: isMobile ? 72 : 24,
+              left: 0,
+              right: 0,
+              display: 'flex',
+              justifyContent: 'center',
+              zIndex: 1200,
+              pointerEvents: 'none',
+              padding: isMobile ? '0 8px' : 0,
+            }}
+          >
+            <Box sx={{ pointerEvents: 'auto', maxWidth: '100%' }}>
+              <Paper
+                elevation={12}
                 sx={{
+                  px: { xs: 1.5, sm: 2.5 },
+                  py: 1.25,
                   borderRadius: 99,
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  px: { xs: 1.5, sm: 2 },
-                  fontSize: { xs: '0.7rem', sm: '0.8125rem' },
-                  background: gradient.primary,
-                  '&:hover': { background: gradient.primaryHover },
-                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: { xs: 0.75, sm: 1.5 },
+                  bgcolor: 'background.paper',
+                  border: '2px solid',
+                  borderColor: 'primary.main',
+                  boxShadow: '0 8px 32px rgba(246,71,95,0.18)',
+                  maxWidth: '100%',
+                  overflow: 'hidden',
                 }}
               >
-                Comparer
-              </Button>
+                <CompareArrows
+                  color="primary"
+                  sx={{ fontSize: { xs: 16, sm: 20 }, flexShrink: 0 }}
+                />
+                <Typography
+                  fontWeight={700}
+                  fontSize={{ xs: 11, sm: 13 }}
+                  sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                >
+                  {items.length} bien{items.length > 1 ? 's' : ''}
+                </Typography>
 
-              <IconButton
-                size="small"
-                onClick={clear}
-                aria-label="Vider la comparaison"
-                sx={{ color: 'text.disabled', flexShrink: 0 }}
-              >
-                <Close fontSize="small" />
-              </IconButton>
-            </Paper>
-          </Box>
-        </motion.div>
+                {/* Avatars */}
+                <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+                  {items.map((ad) => (
+                    <Tooltip key={ad.id} title={`Retirer : ${ad.title}`}>
+                      <Box
+                        sx={{ position: 'relative', cursor: 'pointer' }}
+                        onClick={() => remove(ad.id)}
+                      >
+                        <Avatar
+                          src={ad.images?.[0]?.thumb}
+                          sx={{
+                            width: { xs: 24, sm: 30 },
+                            height: { xs: 24, sm: 30 },
+                            border: '2px solid white',
+                          }}
+                        >
+                          {ad.title[0]}
+                        </Avatar>
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: -3,
+                            right: -3,
+                            width: 13,
+                            height: 13,
+                            borderRadius: '50%',
+                            bgcolor: 'error.main',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Close sx={{ fontSize: 9, color: 'white' }} />
+                        </Box>
+                      </Box>
+                    </Tooltip>
+                  ))}
+                </Box>
+
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleOpenComparator}
+                  disabled={items.length < 2}
+                  sx={{
+                    borderRadius: 99,
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    px: { xs: 1.5, sm: 2 },
+                    fontSize: { xs: '0.7rem', sm: '0.8125rem' },
+                    background: gradient.primary,
+                    '&:hover': { background: gradient.primaryHover },
+                    flexShrink: 0,
+                  }}
+                >
+                  Comparer
+                </Button>
+
+                <IconButton
+                  size="small"
+                  onClick={clear}
+                  aria-label="Vider la comparaison"
+                  sx={{ color: 'text.disabled', flexShrink: 0 }}
+                >
+                  <Close fontSize="small" />
+                </IconButton>
+              </Paper>
+            </Box>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Max reached snackbar — le tableau comparatif s'affiche uniquement sur /comparaisons */}

@@ -64,7 +64,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -86,6 +86,7 @@ export default function OwnerAdsPage() {
   const confirm = useConfirm();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const shouldReduce = useReducedMotion();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchInput, setSearchInput] = useState('');
@@ -833,13 +834,17 @@ export default function OwnerAdsPage() {
                         key={ad.id}
                         hover
                         layout={false}
-                        initial={{ opacity: 0, x: -10 }}
+                        initial={shouldReduce ? false : { opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{
-                          delay: Math.min(rowIndex * 0.04, 0.45),
-                          duration: 0.32,
-                          ease: [0.22, 1, 0.36, 1],
-                        }}
+                        transition={
+                          shouldReduce
+                            ? { duration: 0 }
+                            : {
+                                delay: Math.min(rowIndex * 0.04, 0.45),
+                                duration: 0.32,
+                                ease: [0.22, 1, 0.36, 1],
+                              }
+                        }
                         sx={{
                           cursor: 'pointer',
                           '&:hover': { bgcolor: 'action.hover' },

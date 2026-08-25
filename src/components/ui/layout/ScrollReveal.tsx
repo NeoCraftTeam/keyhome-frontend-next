@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useInView, useReducedMotion } from 'framer-motion';
-import { ReactNode, useRef } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 
 interface ScrollRevealProps {
   children: ReactNode;
@@ -34,12 +34,29 @@ export default function ScrollReveal({
   const isInView = useInView(ref, { once, amount: 0.15 });
   const shouldReduce = useReducedMotion();
 
+  // Safety net: if the viewport-rooted observer never reports the element in
+  // view (a short element parked at a viewport edge, or one nested inside an
+  // overflow container the observer can't see), reveal it anyway after a beat
+  // so content is never permanently stuck at opacity:0. Guarded to `once`
+  // reveals — a re-triggering (`once={false}`) reveal intentionally re-hides.
+  const [forceVisible, setForceVisible] = useState(false);
+  useEffect(() => {
+    if (!once || isInView) {
+      return;
+    }
+    const id = window.setTimeout(() => setForceVisible(true), 1200);
+
+    return () => window.clearTimeout(id);
+  }, [once, isInView]);
+
+  const revealed = isInView || forceVisible;
+
   return (
     <motion.div
       ref={ref}
       initial={shouldReduce ? false : { opacity: 0, y: yOffset }}
       animate={
-        isInView
+        revealed
           ? { opacity: 1, y: 0 }
           : shouldReduce
             ? {}

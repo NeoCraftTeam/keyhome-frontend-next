@@ -199,9 +199,9 @@ export default function ProgressiveContactForm() {
                 {/* Progress Line */}
                 <div className="h-1 bg-primary/5">
                   <motion.div
-                    className="h-full bg-primary"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${getProgressPercentage()}%` }}
+                    className="h-full w-full origin-left bg-primary"
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: getProgressPercentage() / 100 }}
                     transition={{
                       duration: 1,
                       ease: [0.16, 1, 0.3, 1] as const,

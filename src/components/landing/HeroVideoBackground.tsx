@@ -85,6 +85,8 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
 
   const activeSlotRef = useRef<0 | 1>(0);
   const leadIndexRef = useRef(0);
+  /** Tracks the in-flight crossfade swap so it can be cancelled on unmount. */
+  const crossfadeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     activeSlotRef.current = activeSlot;
@@ -93,6 +95,16 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
   useEffect(() => {
     leadIndexRef.current = leadIndex;
   }, [leadIndex]);
+
+  // Cancel any in-flight crossfade swap if the component unmounts mid-fade,
+  // so the deferred setState batch never runs on an unmounted tree.
+  useEffect(() => {
+    return () => {
+      if (crossfadeTimerRef.current !== null) {
+        clearTimeout(crossfadeTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleVideoCanPlay = useCallback(() => {
     setVideoReady(true);
@@ -166,7 +178,10 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
       setCrossfadeTo(incoming);
       setIsCrossfading(true);
 
-      window.setTimeout(() => {
+      if (crossfadeTimerRef.current !== null) {
+        clearTimeout(crossfadeTimerRef.current);
+      }
+      crossfadeTimerRef.current = window.setTimeout(() => {
         const oldSlot = endedSlot;
         const oldEl = slotElement(
           oldSlot,
@@ -179,6 +194,7 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
         setLeadIndex(nextIdx);
         setIsCrossfading(false);
         setCrossfadeTo(null);
+        crossfadeTimerRef.current = null;
       }, CROSSFADE_MS);
     },
     [videoError]

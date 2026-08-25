@@ -16,7 +16,9 @@ const StyledCard = styled(MuiCard)<CardProps>(({ theme }) => {
     borderRadius: radius.md,
     boxShadow: 'none',
     border: `1px solid ${theme.palette.divider}`,
-    transition: transition.base,
+    // Property-scoped (transform / box-shadow / border-color) — avoids the
+    // layout-thrash of `transition: all` and matches the hover changes below.
+    transition: transition.polish,
     backgroundColor: theme.palette.background.paper,
     backgroundImage: 'none',
     overflow: 'hidden',
@@ -30,9 +32,6 @@ const StyledCard = styled(MuiCard)<CardProps>(({ theme }) => {
         ? theme.palette.primary.main
         : theme.palette.divider,
     },
-
-    // Smooth rendering for transform
-    willChange: 'transform, box-shadow',
   };
 });
 

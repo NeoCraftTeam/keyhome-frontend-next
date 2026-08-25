@@ -1,7 +1,7 @@
 'use client';
 
 import { gradient } from '@/theme/tokens';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 
@@ -53,15 +53,23 @@ export function PageTransitionLink({
  */
 export function PageTransitionOverlay() {
   const router = useRouter();
+  const shouldReduce = useReducedMotion();
   const [active, setActive] = useState(false);
   const [target, setTarget] = useState('');
 
   // Register global setters so PageTransitionLink can trigger this overlay.
   // useEffect keeps the assignment out of the render phase (react-hooks/globals).
+  // Clear them on unmount so a stale setter from an unmounted overlay is never
+  // invoked (React would warn and no-op).
   useEffect(() => {
     _setActive = setActive;
     _setTarget = setTarget;
-  });
+
+    return () => {
+      _setActive = null;
+      _setTarget = null;
+    };
+  }, []);
 
   return (
     <AnimatePresence>
@@ -72,7 +80,11 @@ export function PageTransitionOverlay() {
             key="curtain-fill"
             initial={{ scaleY: 0, originY: 1 }}
             animate={{ scaleY: 1 }}
-            transition={{ duration: 0.45, ease: [0.76, 0, 0.24, 1] }}
+            transition={
+              shouldReduce
+                ? { duration: 0 }
+                : { duration: 0.45, ease: [0.76, 0, 0.24, 1] }
+            }
             onAnimationComplete={() => {
               if (target.startsWith('http')) {
                 window.location.href = target;
@@ -92,9 +104,11 @@ export function PageTransitionOverlay() {
           {/* Logo + spinner centered on top of curtain */}
           <motion.div
             key="curtain-logo"
-            initial={{ opacity: 0, scale: 0.85 }}
+            initial={shouldReduce ? false : { opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.25, delay: 0.2 }}
+            transition={
+              shouldReduce ? { duration: 0 } : { duration: 0.25, delay: 0.2 }
+            }
             style={{
               position: 'fixed',
               inset: 0,
@@ -109,12 +123,16 @@ export function PageTransitionOverlay() {
           >
             {/* Pulsing ring */}
             <motion.div
-              animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
-              transition={{
-                repeat: Infinity,
-                duration: 1.2,
-                ease: 'easeInOut',
-              }}
+              animate={
+                shouldReduce
+                  ? { scale: 1, opacity: 0.8 }
+                  : { scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }
+              }
+              transition={
+                shouldReduce
+                  ? { duration: 0 }
+                  : { repeat: Infinity, duration: 1.2, ease: 'easeInOut' }
+              }
               style={{
                 width: 72,
                 height: 72,
@@ -149,13 +167,21 @@ export function PageTransitionOverlay() {
               {[0, 1, 2].map((i) => (
                 <motion.div
                   key={i}
-                  animate={{ y: [0, -8, 0], opacity: [0.5, 1, 0.5] }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 0.75,
-                    delay: i * 0.15,
-                    ease: 'easeInOut',
-                  }}
+                  animate={
+                    shouldReduce
+                      ? { y: 0, opacity: 0.8 }
+                      : { y: [0, -8, 0], opacity: [0.5, 1, 0.5] }
+                  }
+                  transition={
+                    shouldReduce
+                      ? { duration: 0 }
+                      : {
+                          repeat: Infinity,
+                          duration: 0.75,
+                          delay: i * 0.15,
+                          ease: 'easeInOut',
+                        }
+                  }
                   style={{
                     width: 7,
                     height: 7,

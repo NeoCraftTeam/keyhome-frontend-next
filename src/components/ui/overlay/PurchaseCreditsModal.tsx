@@ -29,7 +29,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -62,6 +62,7 @@ export default function PurchaseCreditsModal({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const pathname = usePathname();
+  const shouldReduce = useReducedMotion();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isShortViewport = useMediaQuery('(max-height:760px)');
@@ -712,13 +713,21 @@ export default function PurchaseCreditsModal({
                     <Box
                       key={pkg.id}
                       component={motion.div}
-                      initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                      initial={
+                        shouldReduce
+                          ? false
+                          : { opacity: 0, y: 24, scale: 0.96 }
+                      }
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{
-                        duration: 0.38,
-                        delay: idx * 0.1,
-                        ease: [0.22, 1, 0.36, 1],
-                      }}
+                      transition={
+                        shouldReduce
+                          ? { duration: 0 }
+                          : {
+                              duration: 0.38,
+                              delay: idx * 0.1,
+                              ease: [0.22, 1, 0.36, 1],
+                            }
+                      }
                       sx={{ minHeight: 0 }}
                     >
                       <PackageCard

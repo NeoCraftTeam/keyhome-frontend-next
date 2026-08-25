@@ -74,7 +74,8 @@ export default function StickyPropertyBar({
     : 'Contacter';
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
-    setIsVisible(latest > 300);
+    const next = latest > 300;
+    setIsVisible((prev) => (prev === next ? prev : next));
   });
 
   return (

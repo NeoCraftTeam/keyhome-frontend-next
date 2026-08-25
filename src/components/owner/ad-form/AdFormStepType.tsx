@@ -8,7 +8,7 @@ import StoreIcon from '@mui/icons-material/Store';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import { Box, Chip, Paper, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
 import { neutral } from '@/theme/tokens';
 import {
@@ -91,6 +91,8 @@ export default function AdFormStepType({
   onTypeIdChange,
   errors,
 }: AdFormStepTypeProps) {
+  const shouldReduce = useReducedMotion();
+
   const activeCategoryConfig: AdTypeCategoryConfig | undefined =
     AD_TYPE_CATEGORIES.find((c) => c.id === selectedCategory);
 
@@ -136,10 +138,10 @@ export default function AdFormStepType({
               component={motion.div}
               custom={i}
               variants={fadeIn}
-              initial="hidden"
+              initial={shouldReduce ? false : 'hidden'}
               animate="visible"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={shouldReduce ? undefined : { scale: 1.03 }}
+              whileTap={shouldReduce ? undefined : { scale: 0.97 }}
               onClick={() => onTransactionTypeChange(tx.value)}
               sx={{
                 flex: 1,
@@ -225,10 +227,14 @@ export default function AdFormStepType({
               component={motion.div}
               custom={i}
               variants={fadeIn}
-              initial="hidden"
+              initial={shouldReduce ? false : 'hidden'}
               animate="visible"
-              whileHover={unavailable ? undefined : { scale: 1.03 }}
-              whileTap={unavailable ? undefined : { scale: 0.97 }}
+              whileHover={
+                unavailable || shouldReduce ? undefined : { scale: 1.03 }
+              }
+              whileTap={
+                unavailable || shouldReduce ? undefined : { scale: 0.97 }
+              }
               onClick={() => handleCategorySelect(cat)}
               sx={{
                 position: 'relative',
@@ -303,7 +309,7 @@ export default function AdFormStepType({
             component={motion.div}
             key={activeCategoryConfig.id}
             variants={chipRow}
-            initial="hidden"
+            initial={shouldReduce ? false : 'hidden'}
             animate="visible"
             exit="exit"
             sx={{ mt: 3, overflow: 'hidden' }}

@@ -38,7 +38,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
@@ -163,6 +163,18 @@ export default function PaymentFlow({
   // Formatted in the user's display currency (CHF, EUR, XAF…) — passed to
   // StripeConfirmStep so the button never shows the backend-converted EUR total.
   const amountLabel = formatAmount(_amount);
+
+  // This flow renders inside a portalled dialog that may sit outside the
+  // page-level <MotionConfig reducedMotion="user">, so guard the step slide
+  // locally: render each step at its settled state with no slide/fade.
+  const shouldReduce = useReducedMotion();
+  const stepMotion = shouldReduce
+    ? {
+        initial: false as const,
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0 },
+      }
+    : STEP_MOTION;
 
   const [step, setStep] = useState<Step>('select-method');
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(
@@ -556,7 +568,7 @@ export default function PaymentFlow({
         : '';
 
     return (
-      <motion.div key="credit-turnstile" {...STEP_MOTION}>
+      <motion.div key="credit-turnstile" {...stepMotion}>
         <Box
           sx={{
             display: 'flex',
@@ -714,7 +726,7 @@ export default function PaymentFlow({
 
   if (step === 'select-method') {
     return (
-      <motion.div key="select-method" {...STEP_MOTION}>
+      <motion.div key="select-method" {...stepMotion}>
         <Box>
           <Typography
             variant="overline"
@@ -784,7 +796,7 @@ export default function PaymentFlow({
     const isUsingProfilePhone = Boolean(profilePhone && phone === profilePhone);
 
     return (
-      <motion.div key="enter-phone" {...STEP_MOTION}>
+      <motion.div key="enter-phone" {...stepMotion}>
         <Box>
           <Typography
             variant="overline"
@@ -885,7 +897,7 @@ export default function PaymentFlow({
 
   if (step === 'loading') {
     return (
-      <motion.div key="loading" {...STEP_MOTION}>
+      <motion.div key="loading" {...stepMotion}>
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <CircularProgress sx={{ color: brand.primary, mb: 2 }} size={48} />
           <Typography variant="body1" fontWeight={600}>
@@ -903,7 +915,7 @@ export default function PaymentFlow({
 
   if (step === 'pick-card' && savedCards) {
     return (
-      <motion.div key="pick-card" {...STEP_MOTION}>
+      <motion.div key="pick-card" {...stepMotion}>
         <SavedCardPicker
           cards={savedCards}
           selectedId={selectedSavedCardId}
@@ -923,7 +935,7 @@ export default function PaymentFlow({
     // showing the full Elements form.
     const isReusingSavedCard = selectedSavedCardId !== null;
     return (
-      <motion.div key="stripe-confirm" {...STEP_MOTION}>
+      <motion.div key="stripe-confirm" {...stepMotion}>
         <StripeConfirmStep
           clientSecret={stripeClientSecret}
           paymentConfirmReturnUrl={buildReturnUrlFor(txRef)}
@@ -953,7 +965,7 @@ export default function PaymentFlow({
 
   if (step === 'verifying') {
     return (
-      <motion.div key="verifying" {...STEP_MOTION}>
+      <motion.div key="verifying" {...stepMotion}>
         {/* `VerifyingView` + polling enforce ~4 s minimum dwell so the user
             never sees a sub-second blink between Stripe confirm and success.
             Same component as standalone `/payment/return`. */}
@@ -964,7 +976,7 @@ export default function PaymentFlow({
 
   if (step === 'done-error') {
     return (
-      <motion.div key="done-error" {...STEP_MOTION}>
+      <motion.div key="done-error" {...stepMotion}>
         <Box sx={{ textAlign: 'center', py: 3 }}>
           <Box
             sx={{
@@ -1015,7 +1027,7 @@ export default function PaymentFlow({
   // to dismiss + reopen the dialog.
   const isCreditFlow = pollingVariant === 'credit';
   return (
-    <motion.div key="done-success" {...STEP_MOTION}>
+    <motion.div key="done-success" {...stepMotion}>
       <Box sx={{ textAlign: 'center', py: 3 }}>
         <Box
           sx={{

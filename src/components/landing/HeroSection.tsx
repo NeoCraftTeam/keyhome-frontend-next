@@ -9,7 +9,7 @@ import { useCurrency } from '@/providers/CurrencyProvider';
 import { brand, gradient, semantic } from '@/theme/tokens';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import Search from '@mui/icons-material/Search';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -116,6 +116,7 @@ export default function HeroSection() {
   const { stats, isLoading: statsLoading } = useLandingStats();
   const { currency } = useCurrency();
   const [, startTransition] = useTransition();
+  const shouldReduce = useReducedMotion();
 
   // Skip heavy Three.js canvas on mobile for better LCP / performance
   // null = unmounted (SSR) → treat as desktop to avoid hydration mismatch
@@ -142,6 +143,14 @@ export default function HeroSection() {
 
     const fullText = PLACEHOLDER_EXAMPLES[placeholderIdx];
 
+    // Reduced motion: reveal the full example instantly, skip the typewriter loop.
+    if (shouldReduce) {
+      if (displayedPlaceholder !== fullText) {
+        setDisplayedPlaceholder(fullText);
+      }
+      return;
+    }
+
     if (isTyping) {
       if (displayedPlaceholder.length < fullText.length) {
         const timer = setTimeout(() => {
@@ -166,7 +175,14 @@ export default function HeroSection() {
     // Move to next example
     setPlaceholderIdx((prev) => (prev + 1) % PLACEHOLDER_EXAMPLES.length);
     setIsTyping(true);
-  }, [displayedPlaceholder, isTyping, placeholderIdx, isFocused, query]);
+  }, [
+    displayedPlaceholder,
+    isTyping,
+    placeholderIdx,
+    isFocused,
+    query,
+    shouldReduce,
+  ]);
 
   // Forward-declared ref: filled in by an effect once `handleAISearch` is
   // defined below, so voice-transcript callbacks can fire without taking the
@@ -238,7 +254,7 @@ export default function HeroSection() {
       {isMobile !== true && <HeroVideoBackground isDark={isDark} />}
 
       {/* Canvas2D animated particle overlay — skipped on mobile for better LCP */}
-      {isMobile !== true && <ThreeCanvas />}
+      {isMobile !== true && !shouldReduce && <ThreeCanvas />}
 
       {/* Radial gradient overlay */}
       <div

@@ -23,7 +23,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { motion, useAnimation } from 'framer-motion';
+import { motion, useAnimation, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 
@@ -65,6 +65,7 @@ export default function HeroSearch({
   const [, startTransition] = useTransition();
 
   const aiBoxControls = useAnimation();
+  const shouldReduce = useReducedMotion();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isMultiline, setIsMultiline] = useState(false);
   const prevAiLen = useRef(0);
@@ -83,17 +84,19 @@ export default function HeroSearch({
     const el = inputRef.current;
     if (!isMultiline && el && el.scrollWidth > el.clientWidth) {
       setIsMultiline(true);
-      void aiBoxControls.start({
-        y: [0, -9, 4, -2, 0],
-        transition: { duration: 0.5, ease: 'easeOut' },
-      });
-    } else if (prev === 0) {
+      if (!shouldReduce) {
+        void aiBoxControls.start({
+          y: [0, -9, 4, -2, 0],
+          transition: { duration: 0.5, ease: 'easeOut' },
+        });
+      }
+    } else if (prev === 0 && !shouldReduce) {
       void aiBoxControls.start({
         y: [0, -7, 3, -1.5, 0],
         transition: { duration: 0.55, ease: 'easeOut' },
       });
     }
-  }, [aiQuery, aiBoxControls, isMultiline]);
+  }, [aiQuery, aiBoxControls, isMultiline, shouldReduce]);
 
   const navigateFromParsed = useCallback(
     (parsed: ParsedSearchParams) => {

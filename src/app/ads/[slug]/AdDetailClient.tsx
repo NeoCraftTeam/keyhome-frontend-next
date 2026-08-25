@@ -91,7 +91,7 @@ import {
 } from '@mui/material';
 import type { TransitionProps } from '@mui/material/transitions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
@@ -130,6 +130,7 @@ const MIN_UNLOCK_LOADER_MS = 3200;
 function AdDetailContent() {
   const params = useParams();
   const router = useRouter();
+  const shouldReduce = useReducedMotion();
   const adSlug = params.slug as string;
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -2857,10 +2858,10 @@ function AdDetailContent() {
             {isPaymentLoading ? (
               <motion.div
                 key="loading"
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={shouldReduce ? false : { opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
+                transition={shouldReduce ? { duration: 0 } : { duration: 0.2 }}
               >
                 <Box
                   sx={{
@@ -2886,10 +2887,10 @@ function AdDetailContent() {
                       ? 'confirm'
                       : 'init'
                 }
-                initial={{ opacity: 0, y: 8 }}
+                initial={shouldReduce ? false : { opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18 }}
+                transition={shouldReduce ? { duration: 0 } : { duration: 0.18 }}
               >
                 {/* Show packages when balance is insufficient */}
                 {unlockState?.status === 'insufficient_points' ? (
