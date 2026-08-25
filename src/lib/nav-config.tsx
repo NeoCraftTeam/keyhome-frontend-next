@@ -80,6 +80,11 @@ export const AUTH_DRAWER_QUICK_NAV: DrawerQuickNavEntry[] = [
     icon: <NotificationsActiveIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
   },
   {
+    label: 'Estimer le loyer',
+    href: '/prix-marche',
+    icon: <BarChartIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
+  },
+  {
     label: 'Comparer',
     href: '/comparaisons',
     icon: <CompareArrowsIcon sx={{ fontSize: NAV_LIST_ICON_GLYPH_PX }} />,
