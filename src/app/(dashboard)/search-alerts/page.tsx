@@ -3,12 +3,16 @@
 import AppAlert from '@/components/ui/feedback/AppAlert';
 import { EmptyState } from '@/components/ui/feedback/EmptyState';
 import FadeIn from '@/components/ui/layout/FadeIn';
+import CityAutocomplete from '@/components/ui/navigation/CityAutocomplete';
+import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { useAuth } from '@/providers/AuthProvider';
+import { adTypesService } from '@/services/cities.service';
 import {
   searchAlertsService,
   type SearchAlert,
   type SearchAlertPayload,
 } from '@/services/searchAlerts.service';
+import type { AdType, City } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -17,6 +21,7 @@ import NotificationsActive from '@mui/icons-material/NotificationsActive';
 import NotificationsNone from '@mui/icons-material/NotificationsNone';
 import SearchIcon from '@mui/icons-material/Search';
 import {
+  Autocomplete,
   Box,
   Button,
   Card,
@@ -81,6 +86,11 @@ export default function SearchAlertsPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [previewCount, setPreviewCount] = useState<number | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [selectedType, setSelectedType] = useState<AdType | null>(null);
+
+  const { slotProps: typeSlotProps, inputSx: typeInputSx } =
+    useCityAutocompleteConfig();
 
   const { data: alertsData, isLoading } = useQuery({
     queryKey: [...ALERTS_QK],
@@ -90,6 +100,12 @@ export default function SearchAlertsPage() {
   });
 
   const alerts = alertsData?.data ?? [];
+
+  const { data: adTypes } = useQuery({
+    queryKey: ['adTypes'],
+    queryFn: () => adTypesService.list(),
+    staleTime: 60 * 60 * 1000,
+  });
 
   const createMutation = useMutation({
     mutationFn: (payload: SearchAlertPayload) =>
@@ -133,6 +149,8 @@ export default function SearchAlertsPage() {
   const resetForm = useCallback(() => {
     setEditingAlert(null);
     setForm({});
+    setSelectedCity(null);
+    setSelectedType(null);
     setPreviewCount(null);
   }, []);
 
@@ -184,6 +202,22 @@ export default function SearchAlertsPage() {
     form.has_parking,
   ]);
 
+  // Existing alerts were saved with a free-text type name (no id). Once the
+  // ad types load, upgrade the reconstructed value to the real option so the
+  // Autocomplete matches by id and the preview can filter on type_id.
+  useEffect(() => {
+    if (!editOpen || !adTypes?.length || !selectedType || selectedType.id) {
+      return;
+    }
+    const match = adTypes.find(
+      (t) => t.name.toLowerCase() === selectedType.name.toLowerCase()
+    );
+    if (match) {
+      setSelectedType(match);
+      setForm((f) => ({ ...f, type_id: match.id, type_name: match.name }));
+    }
+  }, [editOpen, adTypes, selectedType]);
+
   const handleOpenCreate = () => {
     setEditingAlert(null);
     setForm({
@@ -191,6 +225,8 @@ export default function SearchAlertsPage() {
       notify_push: true,
       frequency: 'immediate',
     });
+    setSelectedCity(null);
+    setSelectedType(null);
     setPreviewCount(null);
     setEditOpen(true);
   };
@@ -530,25 +566,46 @@ export default function SearchAlertsPage() {
               size="small"
               fullWidth
             />
-            <TextField
+            <CityAutocomplete
+              value={selectedCity}
+              onChange={(city) => {
+                setSelectedCity(city);
+                setForm((f) => ({
+                  ...f,
+                  city_id: city?.id || undefined,
+                  city_name: city?.name || undefined,
+                }));
+              }}
               label="Ville"
-              value={form.city_name ?? ''}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, city_name: e.target.value }))
-              }
-              placeholder="Ex: Douala, Yaoundé"
+              placeholder="Rechercher une ville…"
               size="small"
-              fullWidth
             />
-            <TextField
-              label="Type de bien"
-              value={form.type_name ?? ''}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, type_name: e.target.value }))
-              }
-              placeholder="Ex: Appartement, Maison"
+            <Autocomplete<AdType>
               size="small"
               fullWidth
+              options={adTypes ?? []}
+              forcePopupIcon={false}
+              getOptionLabel={(opt) => opt.name}
+              isOptionEqualToValue={(opt, val) => opt.id === val.id}
+              value={selectedType}
+              onChange={(_, val) => {
+                setSelectedType(val);
+                setForm((f) => ({
+                  ...f,
+                  type_id: val?.id || undefined,
+                  type_name: val?.name || undefined,
+                }));
+              }}
+              noOptionsText="Aucun type"
+              slotProps={typeSlotProps}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Type de bien"
+                  placeholder="Ex: Appartement, Maison"
+                  sx={typeInputSx}
+                />
+              )}
             />
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
