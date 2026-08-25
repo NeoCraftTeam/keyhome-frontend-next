@@ -24,9 +24,12 @@ export default function AdsTopBar() {
         alignItems: 'center',
         px: { xs: 2, sm: 3 },
         height: 56,
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        bgcolor: 'rgba(255,255,255,0.88)',
+        // Frosted glass re-rasterises on every scroll frame; keep the blur on
+        // desktop only and fall back to a more opaque bar on mobile so scroll
+        // stays smooth.
+        backdropFilter: { xs: 'none', md: 'blur(12px)' },
+        WebkitBackdropFilter: { xs: 'none', md: 'blur(12px)' },
+        bgcolor: { xs: 'rgba(255,255,255,0.97)', md: 'rgba(255,255,255,0.88)' },
         borderBottom: '1px solid',
         borderColor: 'divider',
       }}

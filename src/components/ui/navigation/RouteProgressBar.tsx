@@ -88,12 +88,14 @@ export default function RouteProgressBar() {
           <motion.div
             style={{
               height: '100%',
-              width: `${progress}%`,
+              width: '100%',
+              transformOrigin: 'left center',
               background: `linear-gradient(90deg, ${color}, ${colorDark})`,
               borderRadius: '0 2px 2px 0',
               boxShadow: `0 0 8px ${color}80`,
             }}
-            animate={{ width: `${progress}%` }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: progress / 100 }}
             transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
           />
         </motion.div>

@@ -120,7 +120,8 @@ export default function StickyPropertyBar({
           bgcolor: 'background.paper',
           borderRadius: '20px 20px 0 0',
           boxShadow: '0 -8px 32px rgba(0,0,0,0.12)',
-          backdropFilter: 'blur(12px)',
+          // No backdrop-blur: the bar sits on an opaque `background.paper`, so
+          // the blur was invisible yet still forced a per-frame repaint.
         }}
       >
         <Box sx={{ minWidth: 0, flex: 1 }}>

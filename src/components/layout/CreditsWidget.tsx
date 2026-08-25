@@ -124,24 +124,48 @@ export default function CreditsWidget() {
         cursor: 'pointer',
         userSelect: 'none',
         transition: 'all 0.18s',
+        position: 'relative',
+        // The pulsing glow rides on the `opacity` of a ::after layer (a
+        // GPU-composited property) rather than animating `box-shadow` on the
+        // pill itself — the latter forced a full repaint every frame on the
+        // always-mounted navbar, which showed up as jank on mobile.
         ...(isLowCredit && {
-          animation: 'creditsAmberPulse 2s ease-in-out infinite',
-          '@keyframes creditsAmberPulse': {
-            '0%, 100%': { boxShadow: '0 0 0 0 rgba(245,158,11,0.25)' },
-            '50%': { boxShadow: '0 0 8px 3px rgba(245,158,11,0.3)' },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            borderRadius: 'inherit',
+            boxShadow: '0 0 8px 3px rgba(245,158,11,0.3)',
+            opacity: 0,
+            pointerEvents: 'none',
+            animation: 'creditsAmberGlow 2s ease-in-out infinite',
+          },
+          '@keyframes creditsAmberGlow': {
+            '0%, 100%': { opacity: 0 },
+            '50%': { opacity: 1 },
           },
         }),
         ...(!isLowCredit &&
           bouncing && {
             animation:
-              'creditsBounce 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite alternate, creditsGlow 1.5s ease-in-out infinite',
+              'creditsBounce 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite alternate',
             '@keyframes creditsBounce': {
               '0%': { transform: 'translateY(0) scale(1)' },
               '100%': { transform: 'translateY(-4px) scale(1.08)' },
             },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              inset: 0,
+              borderRadius: 'inherit',
+              boxShadow: '0 0 12px 4px rgba(246,71,95,0.35)',
+              opacity: 0,
+              pointerEvents: 'none',
+              animation: 'creditsGlow 1.5s ease-in-out infinite',
+            },
             '@keyframes creditsGlow': {
-              '0%, 100%': { boxShadow: '0 0 0 0 rgba(246,71,95,0.3)' },
-              '50%': { boxShadow: '0 0 12px 4px rgba(246,71,95,0.35)' },
+              '0%, 100%': { opacity: 0 },
+              '50%': { opacity: 1 },
             },
           }),
         '&:hover': {

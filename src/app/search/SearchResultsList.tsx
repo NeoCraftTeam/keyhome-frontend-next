@@ -18,7 +18,7 @@ import {
   Pagination,
   Typography,
 } from '@mui/material';
-import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { memo } from 'react';
 
@@ -435,30 +435,21 @@ const SearchResultsList = memo(function SearchResultsList({
         </Box>
       ) : (
         <>
-          <LayoutGroup id="search-results">
-            <Grid container spacing={1.5}>
-              <AnimatePresence mode="popLayout" initial={false}>
-                {ads.map((ad, idx) => (
-                  <Grid key={ad.id} size={{ xs: 6, lg: 4, xl: 3 }}>
-                    <motion.div
-                      layout
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -8 }}
-                      transition={{
-                        layout: { type: 'spring', stiffness: 350, damping: 30 },
-                        opacity: { duration: 0.2 },
-                        y: { duration: 0.2, delay: Math.min(idx * 0.04, 0.32) },
-                        scale: { duration: 0.15 },
-                      }}
-                    >
-                      <AdCard ad={ad} priority={idx < 4} />
-                    </motion.div>
-                  </Grid>
-                ))}
-              </AnimatePresence>
-            </Grid>
-          </LayoutGroup>
+          <Grid container spacing={1.5}>
+            {ads.map((ad, idx) => (
+              <Grid key={ad.id} size={{ xs: 6, lg: 4, xl: 3 }}>
+                {/* Transform+opacity only — no `layout`/stagger so re-filtering
+                    the grid stays composited (no per-card FLIP reflow on mobile). */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                >
+                  <AdCard ad={ad} priority={idx < 4} />
+                </motion.div>
+              </Grid>
+            ))}
+          </Grid>
 
           {totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>

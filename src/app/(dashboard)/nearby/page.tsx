@@ -547,7 +547,8 @@ export default function NearbyPage() {
                         theme.palette.mode === 'dark'
                           ? 'rgba(30, 30, 30, 0.97)'
                           : 'rgba(255, 255, 255, 0.98)',
-                      backdropFilter: 'blur(12px)',
+                      // Panel bg is ~opaque so the blur added no visible frost,
+                      // only per-frame repaints over the moving map underneath.
                       maxHeight: '42vh',
                       overflowY: 'auto',
                       overflowX: 'hidden',

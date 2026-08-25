@@ -240,8 +240,11 @@ export default function AidePage() {
           size="small"
           aria-label="Retour"
           sx={{
-            bgcolor: 'rgba(255,255,255,0.12)',
-            backdropFilter: 'blur(8px)',
+            bgcolor: {
+              xs: 'rgba(255,255,255,0.22)',
+              md: 'rgba(255,255,255,0.12)',
+            },
+            backdropFilter: { xs: 'none', md: 'blur(8px)' },
             color: '#fff',
             border: '1px solid rgba(255,255,255,0.2)',
             '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' },
@@ -356,8 +359,11 @@ export default function AidePage() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: '16px',
-                    bgcolor: 'rgba(255,255,255,0.07)',
-                    backdropFilter: 'blur(20px)',
+                    bgcolor: {
+                      xs: 'rgba(255,255,255,0.16)',
+                      md: 'rgba(255,255,255,0.07)',
+                    },
+                    backdropFilter: { xs: 'none', md: 'blur(20px)' },
                     border: '1px solid rgba(255,255,255,0.12)',
                     color: '#fff',
                     fontSize: '1rem',
@@ -1111,8 +1117,11 @@ export default function AidePage() {
                 px: 4,
                 py: 1.6,
                 fontSize: '0.95rem',
-                bgcolor: 'rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(10px)',
+                bgcolor: {
+                  xs: 'rgba(255,255,255,0.2)',
+                  md: 'rgba(255,255,255,0.1)',
+                },
+                backdropFilter: { xs: 'none', md: 'blur(10px)' },
                 borderWidth: 1.5,
                 '&:hover': {
                   bgcolor: 'rgba(255,255,255,0.18)',
