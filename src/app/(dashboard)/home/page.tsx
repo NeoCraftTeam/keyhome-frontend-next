@@ -97,6 +97,13 @@ const CATEGORIES = [
   },
 ];
 
+// Auto-load only the first few pages on scroll, then hand control back to the
+// user with an explicit "Charger plus" button. Without this cap the sentinel
+// keeps fetching forever and the footer can never be reached — the feed just
+// grows under the viewport. Three pages (~60 ads) is enough to feel endless
+// while still letting anyone scroll to the bottom of the page.
+const MAX_AUTO_PAGES = 3;
+
 export default function HomePage() {
   const prefersReducedMotion = useReducedMotion();
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -280,15 +287,30 @@ export default function HomePage() {
     [startTransition]
   );
 
-  // IntersectionObserver-driven auto-load. Fires `fetchNextPage()` when the
-  // sentinel enters the viewport (with a 300px buffer for smooth UX).
+  // IntersectionObserver-driven auto-load, capped at MAX_AUTO_PAGES. Fires
+  // `fetchNextPage()` when the sentinel enters the viewport (300px buffer for a
+  // smooth feel). Once the budget is spent the observer stops arming itself, so
+  // the sentinel resolves to a "Charger plus" button and the page finally
+  // bottoms out — letting the footer be reached instead of scrolling forever.
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const [autoLoadedPages, setAutoLoadedPages] = useState(0);
+
+  // A new query identity (category or sort) is a fresh feed — reset the budget.
+  useEffect(() => {
+    setAutoLoadedPages(0);
+  }, [selectedCategory, feedSort]);
+
+  const autoLoadExhausted = autoLoadedPages >= MAX_AUTO_PAGES;
+
   useEffect(() => {
     const node = sentinelRef.current;
-    if (!node || !hasNextPage || isFetchingNextPage) return;
+    if (!node || !hasNextPage || isFetchingNextPage || autoLoadExhausted) {
+      return;
+    }
     const obs = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
+          setAutoLoadedPages((n) => n + 1);
           void fetchNextPage();
         }
       },
@@ -296,7 +318,7 @@ export default function HomePage() {
     );
     obs.observe(node);
     return () => obs.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, autoLoadExhausted]);
 
   return (
     <Box sx={{ pb: { xs: 12, sm: 6 } }}>
@@ -694,15 +716,18 @@ export default function HomePage() {
                       size={28}
                       aria-label="Chargement de plus d'annonces"
                     />
-                  ) : (
+                  ) : autoLoadExhausted ? (
                     <Button
                       variant="outlined"
-                      onClick={() => void fetchNextPage()}
+                      onClick={() => {
+                        setAutoLoadedPages(0);
+                        void fetchNextPage();
+                      }}
                       sx={{ textTransform: 'none', fontWeight: 600 }}
                     >
                       Charger plus d&apos;annonces
                     </Button>
-                  )}
+                  ) : null}
                 </Box>
               )}
             </FadeIn>
@@ -1048,15 +1073,18 @@ export default function HomePage() {
                       size={28}
                       aria-label="Chargement de plus d'annonces"
                     />
-                  ) : (
+                  ) : autoLoadExhausted ? (
                     <Button
                       variant="outlined"
-                      onClick={() => void fetchNextPage()}
+                      onClick={() => {
+                        setAutoLoadedPages(0);
+                        void fetchNextPage();
+                      }}
                       sx={{ textTransform: 'none', fontWeight: 600 }}
                     >
                       Charger plus d&apos;annonces
                     </Button>
-                  )}
+                  ) : null}
                 </Box>
               )}
             </FadeIn>
