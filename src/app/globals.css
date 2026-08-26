@@ -815,6 +815,35 @@ img[data-nimg] {
   gap: 24px;
 }
 
+/* ---- Editorial layouts: features lead banner + landlord split ---- */
+.features-lead {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+.landlord-split {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 56px;
+  align-items: center;
+}
+@media (max-width: 1023px) {
+  .landlord-split {
+    gap: 40px;
+  }
+}
+@media (max-width: 767px) {
+  .features-lead {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+  }
+  .landlord-split {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+}
+
 /* ===== Tablet (640–1023px) ===== */
 @media (max-width: 1023px) {
   .footer-grid {

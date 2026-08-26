@@ -84,21 +84,6 @@ export default function HowItWorksSection() {
           transition={{ duration: 0.7, ease: EASE }}
           style={{ textAlign: 'center', marginBottom: 80 }}
         >
-          <span
-            style={{
-              display: 'inline-block',
-              padding: '5px 14px',
-              borderRadius: 100,
-              background: brand.primaryAlpha10,
-              border: `1px solid ${brand.primaryAlpha30}`,
-              color: brand.primary,
-              fontSize: 13,
-              fontWeight: 600,
-              marginBottom: 20,
-            }}
-          >
-            Comment ça marche
-          </span>
           <h2
             style={{
               fontSize: 'clamp(32px, 5vw, 52px)',

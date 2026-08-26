@@ -1,6 +1,6 @@
 'use client';
 
-import { brand, brandAgent, gradient, semantic } from '@/theme/tokens';
+import { brandAgent, gradient, semantic } from '@/theme/tokens';
 import ArrowForward from '@mui/icons-material/ArrowForward';
 import Dashboard from '@mui/icons-material/Dashboard';
 import PeopleOutline from '@mui/icons-material/PeopleOutline';
@@ -33,8 +33,7 @@ const benefits = [
 ];
 
 export default function LandlordSection() {
-  const { bgAlt, text, textSub, textMuted, surface, border } =
-    useLandingTheme();
+  const { bgAlt, text, textSub, textMuted, border } = useLandingTheme();
 
   return (
     <section
@@ -42,29 +41,28 @@ export default function LandlordSection() {
       className="landing-section-pad"
       style={{ background: bgAlt, transition: 'background 0.4s ease' }}
     >
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        {/* Header */}
+      <div
+        style={{ maxWidth: 1200, margin: '0 auto' }}
+        className="landlord-split"
+      >
+        {/* Left — pitch + CTA */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.7, ease: EASE }}
-          style={{ textAlign: 'center', marginBottom: 64 }}
         >
           <span
             style={{
               display: 'inline-block',
-              padding: '5px 14px',
-              borderRadius: 100,
-              background: brandAgent.primaryAlpha10,
-              border: `1px solid ${brandAgent.primaryAlpha20}`,
+              fontSize: 14,
+              fontWeight: 700,
               color: brandAgent.primary,
-              fontSize: 13,
-              fontWeight: 600,
-              marginBottom: 20,
+              letterSpacing: '0.2px',
+              marginBottom: 14,
             }}
           >
-            Propriétaires & Agents
+            Propriétaires &amp; agents
           </span>
           <h2
             style={{
@@ -72,101 +70,26 @@ export default function LandlordSection() {
               fontWeight: 800,
               color: text,
               letterSpacing: '-1.2px',
-              margin: '0 0 16px',
+              lineHeight: 1.08,
+              margin: '0 0 18px',
               transition: 'color 0.4s ease',
             }}
           >
-            Vous avez un bien à louer ou vendre ?
+            Vous avez un bien
+            <br />à louer ou vendre ?
           </h2>
           <p
             style={{
               fontSize: 17,
               color: textSub,
-              maxWidth: 520,
-              margin: '0 auto',
               lineHeight: 1.6,
+              margin: '0 0 32px',
+              maxWidth: 440,
             }}
           >
             Publiez votre annonce gratuitement et recevez uniquement des
             contacts sérieux. Zéro spam, zéro perte de temps.
           </p>
-        </motion.div>
-
-        {/* Benefits cards */}
-        <ul
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: 24,
-            marginBottom: 48,
-            listStyle: 'none',
-            padding: 0,
-          }}
-        >
-          {benefits.map((b, i) => (
-            <motion.li
-              key={b.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.6, delay: i * 0.1, ease: EASE }}
-              style={{
-                padding: 28,
-                borderRadius: 20,
-                background: surface,
-                border: `1px solid ${border}`,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 16,
-              }}
-            >
-              <div
-                aria-hidden
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: `${b.color}15`,
-                  border: `1px solid ${b.color}30`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <b.icon style={{ fontSize: 22, color: b.color }} />
-              </div>
-              <h3
-                style={{
-                  fontSize: 17,
-                  fontWeight: 700,
-                  color: text,
-                  margin: 0,
-                }}
-              >
-                {b.title}
-              </h3>
-              <p
-                style={{
-                  fontSize: 14,
-                  color: textMuted,
-                  lineHeight: 1.6,
-                  margin: 0,
-                }}
-              >
-                {b.desc}
-              </p>
-            </motion.li>
-          ))}
-        </ul>
-
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: EASE }}
-          style={{ textAlign: 'center' }}
-        >
           <PageTransitionLink
             href="/owner/login"
             style={{ textDecoration: 'none', display: 'inline-block' }}
@@ -174,7 +97,7 @@ export default function LandlordSection() {
             <motion.button
               whileHover={{
                 y: -2,
-                boxShadow: `0 8px 28px ${brand.primaryAlpha40}`,
+                boxShadow: `0 10px 28px ${brandAgent.primaryAlpha25}`,
               }}
               whileTap={{ scale: 0.98 }}
               transition={{ duration: 0.2, ease: EASE }}
@@ -182,15 +105,15 @@ export default function LandlordSection() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 8,
-                background: gradient.primary135,
+                background: gradient.agent,
                 color: '#fff',
                 border: 'none',
                 borderRadius: 12,
                 padding: '14px 28px',
                 fontSize: 15,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: `0 4px 20px ${brand.primaryAlpha30}`,
+                boxShadow: `0 4px 18px ${brandAgent.primaryAlpha20}`,
                 minHeight: 44,
               }}
             >
@@ -199,6 +122,66 @@ export default function LandlordSection() {
             </motion.button>
           </PageTransitionLink>
         </motion.div>
+        {/* Right — benefits as an iconed list */}
+        <motion.ul
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
+          style={{ listStyle: 'none', padding: 0, margin: 0 }}
+        >
+          {benefits.map((b, i) => (
+            <li
+              key={b.title}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 18,
+                padding: '24px 0',
+                borderTop: i === 0 ? 'none' : `1px solid ${border}`,
+              }}
+            >
+              <span
+                aria-hidden
+                style={{
+                  flex: 'none',
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: `${b.color}1A`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <b.icon style={{ fontSize: 22, color: b.color }} />
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3
+                  style={{
+                    fontSize: 17,
+                    fontWeight: 700,
+                    color: text,
+                    margin: '0 0 6px',
+                    letterSpacing: '-0.2px',
+                  }}
+                >
+                  {b.title}
+                </h3>
+                <p
+                  style={{
+                    fontSize: 14.5,
+                    color: textMuted,
+                    lineHeight: 1.6,
+                    margin: 0,
+                  }}
+                >
+                  {b.desc}
+                </p>
+              </div>
+            </li>
+          ))}
+        </motion.ul>
       </div>
     </section>
   );
