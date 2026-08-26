@@ -5,7 +5,6 @@ import AdReportModal from '@/components/ads/AdReportModal';
 import CompareDrawer from '@/components/ads/CompareDrawer';
 import DirectionsPanel from '@/components/ads/DirectionsPanel';
 import KeyScoreBadge from '@/components/ads/KeyScoreBadge';
-import KeyScoreSection from '@/components/ads/KeyScoreSection';
 import NeighborhoodScorecard from '@/components/ads/NeighborhoodScorecard';
 import PropertyAttributes from '@/components/ads/PropertyAttributes';
 import SearchAlertButton from '@/components/ads/SearchAlertButton';
@@ -1780,10 +1779,10 @@ function AdDetailContent() {
                   </>
                 )}
 
-                {/* Neighborhood scorecard (OSM) — only for ads with GPS and when OSM has data */}
+                {/* KeyScore — real neighborhood livability score (OSM). Only for ads with GPS and when OSM has data. */}
                 {ad.location && showScorecardSection && (
                   <>
-                    <SectionBoundary title="Quartier">
+                    <SectionBoundary title="KeyScore">
                       <NeighborhoodScorecard
                         adId={ad.id}
                         onUnavailable={() => setShowScorecardSection(false)}
@@ -2204,12 +2203,6 @@ function AdDetailContent() {
 
                   <SupplementaryInfoCard ad={ad} isLocked={isLocked} mb={2} />
 
-                  {!isLocked && (
-                    <SectionBoundary title="KeyScore">
-                      <KeyScoreSection adId={ad.id} />
-                    </SectionBoundary>
-                  )}
-
                   <Divider sx={{ my: 2 }} />
                   <Button
                     fullWidth
@@ -2613,15 +2606,6 @@ function AdDetailContent() {
                     </Button>
                   </Box>
                 </Paper>
-
-                {/* KeyScore section — only when unlocked */}
-                {!isLocked && (
-                  <Box sx={{ mt: 2 }}>
-                    <SectionBoundary title="KeyScore">
-                      <KeyScoreSection adId={ad.id} />
-                    </SectionBoundary>
-                  </Box>
-                )}
               </Box>
 
               {/* Third column — similar ads sidebar (xl only) */}

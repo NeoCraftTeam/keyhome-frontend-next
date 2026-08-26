@@ -4,6 +4,7 @@ import { adsService } from '@/services/ads.service';
 import AppAlert from '@/components/ui/feedback/AppAlert';
 import DirectionsBus from '@mui/icons-material/DirectionsBus';
 import DirectionsWalk from '@mui/icons-material/DirectionsWalk';
+import EmojiEvents from '@mui/icons-material/EmojiEvents';
 import Info from '@mui/icons-material/Info';
 import LocalHospital from '@mui/icons-material/LocalHospital';
 import LocalPolice from '@mui/icons-material/LocalPolice';
@@ -392,18 +393,18 @@ export default function NeighborhoodScorecard({ adId, onUnavailable }: Props) {
                 : 'rgba(0,0,0,0.05)',
           }}
         >
-          <Storefront sx={{ fontSize: 18, color: 'text.secondary' }} />
+          <EmojiEvents sx={{ fontSize: 20, color: 'text.secondary' }} />
         </Box>
         <Box sx={{ flex: 1 }}>
           <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2 }}>
-            Scorecard de quartier
+            KeyScore
           </Typography>
           <Typography
             variant="caption"
             color="text.secondary"
             sx={{ display: 'block' }}
           >
-            Transport, commerces, santé, éducation — données OpenStreetMap
+            Qualité du quartier · 6 critères réels · données OpenStreetMap
           </Typography>
         </Box>
         <Tooltip

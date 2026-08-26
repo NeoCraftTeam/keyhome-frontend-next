@@ -47,19 +47,6 @@ export interface HeatmapResult {
   price_range: { min: number; max: number };
 }
 
-export interface KeyScoreBreakdownItem {
-  score: number;
-  max: number;
-  label: string;
-  value: string;
-}
-
-export interface KeyScoreResult {
-  score: number;
-  label: string;
-  breakdown: Record<string, KeyScoreBreakdownItem>;
-}
-
 export const estimatorService = {
   estimate: (params: RentEstimateParams): Promise<RentEstimateResult> =>
     api.get('/rent-estimate', { params }).then((r) => r.data),
@@ -70,9 +57,4 @@ export const heatmapService = {
     api
       .get('/price-heatmap', { params: { city_id: cityId, type_id: typeId } })
       .then((r) => r.data),
-};
-
-export const keyScoreService = {
-  get: (adId: string): Promise<KeyScoreResult> =>
-    api.get(`/ads/${adId}/keyscore`).then((r) => r.data),
 };
