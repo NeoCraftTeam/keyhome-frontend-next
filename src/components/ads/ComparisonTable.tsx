@@ -10,6 +10,8 @@ import Check from '@mui/icons-material/Check';
 import Close from '@mui/icons-material/Close';
 import OpenInNew from '@mui/icons-material/OpenInNew';
 import SquareFoot from '@mui/icons-material/SquareFoot';
+import StarRounded from '@mui/icons-material/StarRounded';
+import VerifiedRounded from '@mui/icons-material/VerifiedRounded';
 import {
   Box,
   Button,
@@ -22,406 +24,738 @@ import { alpha } from '@mui/material/styles';
 import { format, isValid, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
+import { Fragment, type ReactNode } from 'react';
 
-interface Criterion {
-  label: string;
-  render: (ad: Ad) => React.ReactNode;
-  bestAdId?: (ads: Ad[]) => string | null;
-  /** Semantic highlight key — resolved to a theme-aware colour at render time. */
-  highlight?: 'success' | 'primary';
+type Better = 'higher' | 'lower';
+
+interface CellContext {
+  isBest: boolean;
 }
 
-const CRITERIA: Criterion[] = [
-  {
-    label: 'Prix / mois',
-    render: (ad: Ad) => (
-      <Typography
-        fontWeight={800}
-        fontSize={15}
-        color="primary.main"
-        component="div"
-      >
-        {ad.price ? <Price amountXAF={ad.price} /> : '—'}
-      </Typography>
-    ),
-    bestAdId: (ads) => {
-      const valid = ads.filter((a) => a.price != null);
-      if (!valid.length) return null;
-      return valid.reduce((best, a) => (a.price! < best.price! ? a : best)).id;
-    },
-    highlight: 'success',
-  },
-  {
-    label: 'Transaction',
-    render: (ad: Ad) => (
-      <Typography variant="body2" fontWeight={600}>
-        {ad.transaction_type === 'vente'
-          ? 'Vente'
-          : ad.transaction_type === 'location'
-            ? 'Location'
-            : '—'}
-      </Typography>
-    ),
-  },
-  {
-    label: 'Surface',
-    render: (ad: Ad) => (
-      <Box display="flex" alignItems="center" gap={0.5} justifyContent="center">
-        <SquareFoot sx={{ fontSize: 15, color: 'text.secondary' }} />
-        <Typography variant="body2">
-          {ad.surface_area ? `${ad.surface_area} m²` : '—'}
-        </Typography>
-      </Box>
-    ),
-    bestAdId: (ads) => {
-      const valid = ads.filter((a) => a.surface_area != null);
-      if (!valid.length) return null;
-      return valid.reduce((best, a) =>
-        a.surface_area! > best.surface_area! ? a : best
-      ).id;
-    },
-    highlight: 'primary',
-  },
-  {
-    label: 'Chambres',
-    render: (ad: Ad) => (
-      <Box display="flex" alignItems="center" gap={0.5} justifyContent="center">
-        <Bed sx={{ fontSize: 15, color: 'text.secondary' }} />
-        <Typography variant="body2">{ad.bedrooms ?? '—'}</Typography>
-      </Box>
-    ),
-    bestAdId: (ads) => {
-      const valid = ads.filter((a) => a.bedrooms != null);
-      if (!valid.length) return null;
-      return valid.reduce((best, a) =>
-        a.bedrooms! > best.bedrooms! ? a : best
-      ).id;
-    },
-    highlight: 'primary',
-  },
-  {
-    label: 'Salles de bain',
-    render: (ad: Ad) => (
-      <Box display="flex" alignItems="center" gap={0.5} justifyContent="center">
-        <Bathtub sx={{ fontSize: 15, color: 'text.secondary' }} />
-        <Typography variant="body2">{ad.bathrooms ?? '—'}</Typography>
-      </Box>
-    ),
-  },
-  {
-    label: 'Parking',
-    render: (ad: Ad) =>
-      ad.has_parking ? (
-        <Chip label="Oui" size="small" color="success" variant="outlined" />
-      ) : (
-        <Chip label="Non" size="small" color="default" variant="outlined" />
-      ),
-  },
-  {
-    label: 'Prix / m²',
-    render: (ad: Ad) => (
-      <Typography variant="body2" fontWeight={600}>
-        {ad.price && ad.surface_area
-          ? `${Math.round(ad.price / ad.surface_area).toLocaleString('fr-FR')} FCFA/m²`
-          : '—'}
-      </Typography>
-    ),
-    bestAdId: (ads) => {
-      const valid = ads.filter(
-        (a) => a.price != null && a.surface_area != null
-      );
-      if (!valid.length) return null;
-      return valid.reduce((best, a) =>
-        a.price! / a.surface_area! < best.price! / best.surface_area! ? a : best
-      ).id;
-    },
-    highlight: 'success',
-  },
-  {
-    label: 'Disponible à partir du',
-    render: (ad: Ad) => {
-      if (!ad.available_from) {
-        return (
-          <Typography variant="caption" color="text.disabled">
-            —
-          </Typography>
-        );
-      }
-      const d = parseISO(ad.available_from);
-      if (!isValid(d)) {
-        return (
-          <Typography variant="caption" color="text.disabled">
-            —
-          </Typography>
-        );
-      }
-      return (
-        <Typography variant="body2">
-          {format(d, 'd MMM yyyy', { locale: fr })}
-        </Typography>
-      );
-    },
-  },
-  {
-    label: 'Durée minimale du bail',
-    render: (ad: Ad) =>
-      ad.minimum_lease_duration ? (
-        <Typography variant="body2">{ad.minimum_lease_duration}</Typography>
-      ) : (
-        <Typography variant="caption" color="text.disabled">
-          —
-        </Typography>
-      ),
-  },
-  {
-    label: 'Visite 360°',
-    render: (ad: Ad) =>
-      ad.has_3d_tour ? (
-        <Chip
-          label="Disponible"
-          size="small"
-          color="success"
-          variant="outlined"
-        />
-      ) : (
-        <Typography variant="caption" color="text.disabled">
-          —
-        </Typography>
-      ),
-  },
-];
+interface Criterion {
+  key: string;
+  label: string | ((ads: Ad[]) => string);
+  icon?: ReactNode;
+  /** Numeric value used to pick the "best" cell; null = not comparable for this ad. */
+  rawValue?: (ad: Ad) => number | null;
+  better?: Better;
+  render: (ad: Ad, ctx: CellContext) => ReactNode;
+  /** Hide the whole row unless at least one ad carries meaningful data. */
+  isRelevant?: (ads: Ad[]) => boolean;
+}
+
+interface CriterionGroup {
+  title: string;
+  criteria: Criterion[];
+}
 
 interface ComparisonTableProps {
   items: Ad[];
-  onRemove: (id: string) => void;
+  onRemove?: (id: string) => void;
   showActions?: boolean;
+}
+
+function toNumber(value: string | number | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  const n =
+    typeof value === 'number'
+      ? value
+      : Number(
+          String(value)
+            .replace(/[^\d.,-]/g, '')
+            .replace(',', '.')
+        );
+  return Number.isFinite(n) ? n : null;
+}
+
+function formatDateValue(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const parsed = parseISO(value);
+  return isValid(parsed) ? format(parsed, 'd MMM yyyy', { locale: fr }) : null;
+}
+
+function renderMuted(text = '—'): ReactNode {
+  return (
+    <Typography
+      component="span"
+      variant="body2"
+      sx={{ color: 'text.disabled' }}
+    >
+      {text}
+    </Typography>
+  );
+}
+
+function renderBool(value: boolean): ReactNode {
+  return value ? (
+    <Chip
+      size="small"
+      icon={<Check sx={{ fontSize: 15 }} />}
+      label="Oui"
+      color="success"
+      variant="outlined"
+      sx={{ fontWeight: 600, '& .MuiChip-icon': { ml: 0.5 } }}
+    />
+  ) : (
+    renderMuted('Non')
+  );
+}
+
+function keyScoreTone(score: number): 'success' | 'warning' | 'error' {
+  if (score >= 70) {
+    return 'success';
+  }
+  if (score >= 45) {
+    return 'warning';
+  }
+  return 'error';
+}
+
+/** Transaction-aware header label: sale vs rent (per-night vs per-month). */
+function priceLabel(ads: Ad[]): string {
+  const hasSale = ads.some((a) => a.transaction_type === 'vente');
+  const hasRent = ads.some((a) => a.transaction_type === 'location');
+  if (hasSale && !hasRent) {
+    return 'Prix de vente';
+  }
+  if (hasRent && !hasSale) {
+    return ads.some((a) => a.price_period === 'jour')
+      ? 'Loyer / nuit'
+      : 'Loyer / mois';
+  }
+  return 'Prix';
+}
+
+const priceCriterion: Criterion = {
+  key: 'price',
+  label: priceLabel,
+  rawValue: (ad) => ad.price,
+  better: 'lower',
+  render: (ad) => {
+    if (ad.price == null) {
+      return renderMuted('Prix non défini');
+    }
+    const suffix =
+      ad.transaction_type === 'location'
+        ? ad.price_period === 'jour'
+          ? ' / nuit'
+          : ' / mois'
+        : '';
+    return (
+      <Box component="span" sx={{ fontWeight: 700 }}>
+        <Price amountXAF={ad.price} />
+        {suffix ? (
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ color: 'text.secondary', fontWeight: 500 }}
+          >
+            {suffix}
+          </Typography>
+        ) : null}
+      </Box>
+    );
+  },
+};
+
+const pricePerSqmCriterion: Criterion = {
+  key: 'price_per_sqm',
+  label: 'Prix / m²',
+  isRelevant: (ads) => ads.some((a) => a.price != null && a.surface_area > 0),
+  rawValue: (ad) =>
+    ad.price != null && ad.surface_area > 0 ? ad.price / ad.surface_area : null,
+  better: 'lower',
+  render: (ad) => {
+    if (ad.price == null || !(ad.surface_area > 0)) {
+      return renderMuted();
+    }
+    return (
+      <Box component="span">
+        <Price amountXAF={Math.round(ad.price / ad.surface_area)} />
+        <Typography
+          component="span"
+          variant="caption"
+          sx={{ color: 'text.secondary' }}
+        >
+          {' '}
+          / m²
+        </Typography>
+      </Box>
+    );
+  },
+};
+
+const surfaceCriterion: Criterion = {
+  key: 'surface',
+  label: 'Surface',
+  icon: <SquareFoot sx={{ fontSize: 16 }} />,
+  isRelevant: (ads) => ads.some((a) => a.surface_area > 0),
+  rawValue: (ad) => (ad.surface_area > 0 ? ad.surface_area : null),
+  better: 'higher',
+  render: (ad) =>
+    ad.surface_area > 0 ? `${ad.surface_area} m²` : renderMuted(),
+};
+
+const typeCriterion: Criterion = {
+  key: 'type',
+  label: 'Type de bien',
+  isRelevant: (ads) => ads.some((a) => Boolean(a.type?.name)),
+  render: (ad) =>
+    ad.type?.name ? (
+      <Typography component="span" variant="body2" sx={{ fontWeight: 500 }}>
+        {ad.type.name}
+      </Typography>
+    ) : (
+      renderMuted()
+    ),
+};
+
+const bedroomsCriterion: Criterion = {
+  key: 'bedrooms',
+  label: 'Chambres',
+  icon: <Bed sx={{ fontSize: 16 }} />,
+  rawValue: (ad) => ad.bedrooms,
+  better: 'higher',
+  render: (ad) => String(ad.bedrooms),
+};
+
+const bathroomsCriterion: Criterion = {
+  key: 'bathrooms',
+  label: 'Salles de bain',
+  icon: <Bathtub sx={{ fontSize: 16 }} />,
+  rawValue: (ad) => ad.bathrooms,
+  better: 'higher',
+  render: (ad) => String(ad.bathrooms),
+};
+
+const parkingCriterion: Criterion = {
+  key: 'parking',
+  label: 'Parking',
+  render: (ad) => renderBool(ad.has_parking),
+};
+
+const quarterCriterion: Criterion = {
+  key: 'location',
+  label: 'Emplacement',
+  isRelevant: (ads) =>
+    ads.some((a) => Boolean(a.quarter?.name || a.quarter?.city_name)),
+  render: (ad) => {
+    const name = ad.quarter?.name;
+    const city = ad.quarter?.city_name;
+    if (!name && !city) {
+      return renderMuted();
+    }
+    return (
+      <Box component="span">
+        {name ? (
+          <Typography component="span" variant="body2" sx={{ fontWeight: 500 }}>
+            {name}
+          </Typography>
+        ) : null}
+        {city ? (
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ display: 'block', color: 'text.secondary' }}
+          >
+            {city}
+          </Typography>
+        ) : null}
+      </Box>
+    );
+  },
+};
+
+const keyScoreCriterion: Criterion = {
+  key: 'keyscore',
+  label: 'KeyScore quartier',
+  isRelevant: (ads) => ads.some((a) => a.keyscore != null),
+  rawValue: (ad) => ad.keyscore ?? null,
+  better: 'higher',
+  render: (ad) => {
+    if (ad.keyscore == null) {
+      return renderMuted('Non calculé');
+    }
+    const tone = keyScoreTone(ad.keyscore);
+    return (
+      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+        <Box
+          component="span"
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            bgcolor: `${tone}.main`,
+          }}
+        />
+        <Typography
+          component="span"
+          sx={{ fontWeight: 700, color: `${tone}.main` }}
+        >
+          {Math.round(ad.keyscore)}
+        </Typography>
+        <Typography
+          component="span"
+          variant="caption"
+          sx={{ color: 'text.secondary' }}
+        >
+          / 100
+        </Typography>
+      </Box>
+    );
+  },
+};
+
+const verifiedCriterion: Criterion = {
+  key: 'verified',
+  label: 'Annonce vérifiée',
+  render: (ad) =>
+    ad.is_verified ? (
+      <Chip
+        size="small"
+        icon={<VerifiedRounded sx={{ fontSize: 15 }} />}
+        label="Vérifiée"
+        color="primary"
+        variant="outlined"
+        sx={{ fontWeight: 600, '& .MuiChip-icon': { ml: 0.5 } }}
+      />
+    ) : (
+      renderMuted('Non vérifiée')
+    ),
+};
+
+const ratingCriterion: Criterion = {
+  key: 'rating',
+  label: 'Note & avis',
+  isRelevant: (ads) => ads.some((a) => (a.rating ?? 0) > 0),
+  rawValue: (ad) => ad.rating ?? null,
+  better: 'higher',
+  render: (ad) => {
+    if (!ad.rating || ad.rating <= 0) {
+      return renderMuted('Aucun avis');
+    }
+    return (
+      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+        <StarRounded sx={{ fontSize: 17, color: 'warning.main' }} />
+        <Typography component="span" sx={{ fontWeight: 700 }}>
+          {ad.rating.toFixed(1)}
+        </Typography>
+        {ad.reviews_count ? (
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ color: 'text.secondary' }}
+          >
+            ({ad.reviews_count})
+          </Typography>
+        ) : null}
+      </Box>
+    );
+  },
+};
+
+const tourCriterion: Criterion = {
+  key: 'tour_360',
+  label: 'Visite 360°',
+  render: (ad) => renderBool(Boolean(ad.has_3d_tour)),
+};
+
+const chargesCriterion: Criterion = {
+  key: 'charges',
+  label: 'Charges',
+  isRelevant: (ads) =>
+    ads.some(
+      (a) =>
+        toNumber(a.charges_montant_forfait) != null ||
+        Boolean(a.detailed_charges) ||
+        Boolean(a.charges_eau || a.charges_electricite || a.charges_autres)
+    ),
+  rawValue: (ad) => toNumber(ad.charges_montant_forfait),
+  better: 'lower',
+  render: (ad) => {
+    const forfait = toNumber(ad.charges_montant_forfait);
+    if (forfait != null) {
+      return (
+        <Box component="span">
+          <Price amountXAF={forfait} />
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ color: 'text.secondary' }}
+          >
+            {' '}
+            / mois
+          </Typography>
+        </Box>
+      );
+    }
+    if (
+      ad.detailed_charges ||
+      ad.charges_eau ||
+      ad.charges_electricite ||
+      ad.charges_autres
+    ) {
+      return (
+        <Typography component="span" variant="body2">
+          Selon consommation
+        </Typography>
+      );
+    }
+    return renderMuted();
+  },
+};
+
+const depositCriterion: Criterion = {
+  key: 'deposit',
+  label: 'Dépôt de garantie',
+  isRelevant: (ads) => ads.some((a) => toNumber(a.deposit_amount) != null),
+  rawValue: (ad) => toNumber(ad.deposit_amount),
+  better: 'lower',
+  render: (ad) => {
+    const amount = toNumber(ad.deposit_amount);
+    return amount != null ? <Price amountXAF={amount} /> : renderMuted();
+  },
+};
+
+const availableFromCriterion: Criterion = {
+  key: 'available_from',
+  label: 'Disponible à partir du',
+  isRelevant: (ads) => ads.some((a) => Boolean(a.available_from)),
+  render: (ad) => {
+    const date = formatDateValue(ad.available_from);
+    if (!date) {
+      return ad.is_currently_available ? (
+        <Typography
+          component="span"
+          variant="body2"
+          sx={{ color: 'success.main', fontWeight: 600 }}
+        >
+          Immédiatement
+        </Typography>
+      ) : (
+        renderMuted()
+      );
+    }
+    return date;
+  },
+};
+
+const minLeaseCriterion: Criterion = {
+  key: 'min_lease',
+  label: 'Durée min. du bail',
+  isRelevant: (ads) => ads.some((a) => Boolean(a.minimum_lease_duration)),
+  render: (ad) =>
+    ad.minimum_lease_duration ? (
+      <Typography component="span" variant="body2">
+        {ad.minimum_lease_duration}
+      </Typography>
+    ) : (
+      renderMuted()
+    ),
+};
+
+function buildAmenityCriteria(slugs: string[]): Criterion[] {
+  return slugs.map((slug) => ({
+    key: `amenity_${slug}`,
+    label: getAttributeLabel(slug),
+    render: (ad: Ad) =>
+      (ad.attributes ?? []).includes(slug) ? (
+        <Check sx={{ fontSize: 18, color: 'success.main' }} />
+      ) : (
+        renderMuted()
+      ),
+  }));
+}
+
+function buildGroups(items: Ad[], amenitySlugs: string[]): CriterionGroup[] {
+  const groups: CriterionGroup[] = [
+    {
+      title: 'Prix & surface',
+      criteria: [priceCriterion, pricePerSqmCriterion, surfaceCriterion],
+    },
+    {
+      title: 'Caractéristiques',
+      criteria: [
+        typeCriterion,
+        bedroomsCriterion,
+        bathroomsCriterion,
+        parkingCriterion,
+      ],
+    },
+    {
+      title: 'Emplacement & KeyScore',
+      criteria: [quarterCriterion, keyScoreCriterion],
+    },
+    {
+      title: 'Confiance',
+      criteria: [verifiedCriterion, ratingCriterion, tourCriterion],
+    },
+    {
+      title: 'Conditions de location',
+      criteria: [
+        chargesCriterion,
+        depositCriterion,
+        availableFromCriterion,
+        minLeaseCriterion,
+      ],
+    },
+  ];
+
+  if (amenitySlugs.length > 0) {
+    groups.push({
+      title: 'Équipements',
+      criteria: buildAmenityCriteria(amenitySlugs),
+    });
+  }
+
+  return groups
+    .map((group) => ({
+      ...group,
+      criteria: group.criteria.filter(
+        (c) => !c.isRelevant || c.isRelevant(items)
+      ),
+    }))
+    .filter((group) => group.criteria.length > 0);
+}
+
+function bestIdsFor(items: Ad[], criterion: Criterion): Set<string> {
+  if (!criterion.rawValue || !criterion.better) {
+    return new Set();
+  }
+  const entries = items
+    .map((ad) => ({ id: ad.id, value: criterion.rawValue!(ad) }))
+    .filter((e): e is { id: string; value: number } => e.value != null);
+  if (entries.length < 2) {
+    return new Set();
+  }
+  const target =
+    criterion.better === 'higher'
+      ? Math.max(...entries.map((e) => e.value))
+      : Math.min(...entries.map((e) => e.value));
+  const winners = entries.filter((e) => e.value === target);
+  if (winners.length === entries.length) {
+    return new Set();
+  }
+  return new Set(winners.map((e) => e.id));
 }
 
 export default function ComparisonTable({
   items,
   onRemove,
-  showActions = true,
+  showActions = false,
 }: ComparisonTableProps) {
-  const router = useRouter();
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
-  const comparatorAttributeSlugs = getComparatorAttributeSlugsForAds(items);
+  const router = useRouter();
 
-  const handleViewAd = (ad: Ad) => {
-    router.push(`/ads/${ad.slug}`);
-  };
+  const amenitySlugs = getComparatorAttributeSlugsForAds(items);
+  const groups = buildGroups(items, amenitySlugs);
+  const columnTemplate = `minmax(148px, 210px) repeat(${items.length}, minmax(172px, 1fr))`;
 
   return (
-    <Box sx={{ width: '100%', overflowX: 'auto' }}>
+    <Box sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: {
-            xs: `100px repeat(${items.length}, minmax(140px, 1fr))`,
-            sm: `180px repeat(${items.length}, 1fr)`,
-          },
-          gap: 0,
-          borderBottom: '2px solid',
-          borderColor: 'divider',
-          bgcolor: isDark ? 'grey.900' : 'grey.50',
-          minWidth: { xs: `${100 + items.length * 140}px`, sm: 'auto' },
+          gridTemplateColumns: columnTemplate,
+          minWidth: 'min-content',
         }}
       >
         <Box
           sx={{
-            p: { xs: 1, sm: 2 },
-            // Mobile horizontal scroll: keep the criterion-label column
-            // visible so the user never loses what each row means.
-            position: { xs: 'sticky', sm: 'static' },
+            position: 'sticky',
             left: 0,
-            zIndex: 2,
-            bgcolor: isDark ? 'grey.900' : 'grey.50',
+            zIndex: 3,
+            bgcolor: 'background.paper',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
           }}
         />
-
-        {items.map((ad) => {
-          const cover = ad.images?.find((i) => i.is_primary) ?? ad.images?.[0];
-          return (
-            <Box
-              key={ad.id}
-              sx={{
-                p: { xs: 1, sm: 2 },
-                borderLeft: '1px solid',
-                borderColor: 'divider',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-              }}
-            >
+        {items.map((ad) => (
+          <Box
+            key={`head-${ad.id}`}
+            sx={{
+              p: 1.5,
+              borderBottom: '1px solid',
+              borderLeft: '1px solid',
+              borderColor: 'divider',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+              position: 'relative',
+            }}
+          >
+            {onRemove ? (
+              <IconButton
+                size="small"
+                aria-label={`Retirer ${ad.title} du comparateur`}
+                onClick={() => onRemove(ad.id)}
+                sx={{
+                  position: 'absolute',
+                  top: 6,
+                  right: 6,
+                  zIndex: 1,
+                  bgcolor: 'background.paper',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+              >
+                <Close sx={{ fontSize: 16 }} />
+              </IconButton>
+            ) : null}
+            {ad.images?.[0]?.thumb ? (
+              <Box
+                component="img"
+                src={ad.images[0].thumb}
+                alt=""
+                sx={{
+                  width: '100%',
+                  height: 92,
+                  objectFit: 'cover',
+                  borderRadius: 2,
+                }}
+              />
+            ) : (
               <Box
                 sx={{
                   width: '100%',
-                  aspectRatio: '16/9',
+                  height: 92,
                   borderRadius: 2,
-                  overflow: 'hidden',
                   bgcolor: 'action.hover',
-                  position: 'relative',
                 }}
-              >
-                {cover && (
-                  <Box
-                    component="img"
-                    src={cover.thumb ?? cover.url}
-                    alt={ad.title}
-                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                )}
-                {showActions && (
-                  <IconButton
-                    size="small"
-                    onClick={() => onRemove(ad.id)}
-                    aria-label={`Retirer ${ad.title} de la comparaison`}
-                    sx={{
-                      position: 'absolute',
-                      top: 4,
-                      right: 4,
-                      bgcolor: 'rgba(0,0,0,0.5)',
-                      color: 'white',
-                      width: 22,
-                      height: 22,
-                      '&:hover': { bgcolor: 'rgba(0,0,0,0.75)' },
-                    }}
-                  >
-                    <Close sx={{ fontSize: 12 }} />
-                  </IconButton>
-                )}
-              </Box>
-
-              <Box sx={{ flex: 1 }}>
-                <Typography
-                  variant="body2"
-                  fontWeight={700}
-                  sx={{ lineHeight: 1.3 }}
-                >
-                  {ad.title}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {ad.quarter?.name}
-                  {ad.quarter?.city_name ? `, ${ad.quarter.city_name}` : ''}
-                </Typography>
-              </Box>
-
+              />
+            )}
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                lineHeight: 1.3,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                minHeight: 34,
+              }}
+            >
+              {ad.title}
+            </Typography>
+            {showActions ? (
               <Button
-                variant="outlined"
                 size="small"
-                endIcon={<OpenInNew sx={{ fontSize: 13 }} />}
-                onClick={() => handleViewAd(ad)}
+                variant="text"
+                endIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+                onClick={() => router.push(`/ads/${ad.slug}`)}
                 sx={{
                   textTransform: 'none',
+                  alignSelf: 'flex-start',
+                  px: 0.5,
                   fontWeight: 600,
-                  borderRadius: 2,
-                  fontSize: 12,
-                  borderColor: 'primary.main',
-                  color: 'primary.main',
-                  '&:hover': { bgcolor: 'primary.50' },
                 }}
               >
                 Voir l&apos;annonce
               </Button>
-            </Box>
-          );
-        })}
-      </Box>
-
-      {[
-        ...CRITERIA,
-        ...(comparatorAttributeSlugs.map((attrSlug) => ({
-          label: getAttributeLabel(attrSlug),
-          render: (ad: Ad) => {
-            const attrs = (ad.attributes ?? []).map((a) => a.toLowerCase());
-            const hit = attrs.includes(attrSlug.toLowerCase());
-            return hit ? (
-              <Check color="success" sx={{ fontSize: 18 }} />
-            ) : (
-              <Typography variant="caption" color="text.disabled">
-                —
-              </Typography>
-            );
-          },
-        })) as Criterion[]),
-      ].map(({ label, render, bestAdId, highlight }, idx) => {
-        const bestId = bestAdId ? bestAdId(items) : null;
-        return (
-          <Box
-            key={label}
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: `100px repeat(${items.length}, minmax(140px, 1fr))`,
-                sm: `180px repeat(${items.length}, 1fr)`,
-              },
-              minWidth: { xs: `${100 + items.length * 140}px`, sm: 'auto' },
-              bgcolor: idx % 2 === 0 ? 'background.paper' : 'action.hover',
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-              '&:last-child': { borderBottom: 'none' },
-            }}
-          >
+            ) : null}
+          </Box>
+        ))}
+        {groups.map((group) => (
+          <Fragment key={group.title}>
             <Box
               sx={{
-                px: { xs: 1.5, sm: 2.5 },
-                py: { xs: 1.25, sm: 1.75 },
-                display: 'flex',
-                alignItems: 'center',
-                // Keep the row label visible while users swipe through
-                // the comparison columns on mobile. Match the row's
-                // alternating background so the sticky pin doesn't
-                // visually float above the adjacent cells.
-                position: { xs: 'sticky', sm: 'static' },
-                left: 0,
-                zIndex: 1,
-                bgcolor: idx % 2 === 0 ? 'background.paper' : 'action.hover',
+                gridColumn: '1 / -1',
+                bgcolor: 'action.hover',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
               }}
             >
               <Typography
-                variant="body2"
-                fontWeight={600}
-                color="text.secondary"
-                fontSize={{ xs: 11, sm: 13 }}
+                variant="overline"
+                sx={{
+                  position: 'sticky',
+                  left: 0,
+                  display: 'inline-block',
+                  px: 2,
+                  py: 0.75,
+                  fontWeight: 700,
+                  color: 'text.secondary',
+                  letterSpacing: 0.5,
+                }}
               >
-                {label}
+                {group.title}
               </Typography>
             </Box>
-
-            {items.map((ad) => {
-              const isHighlighted = bestId !== null && ad.id === bestId;
+            {group.criteria.map((criterion, ci) => {
+              const best = bestIdsFor(items, criterion);
+              const label =
+                typeof criterion.label === 'function'
+                  ? criterion.label(items)
+                  : criterion.label;
+              const zebra = ci % 2 === 1;
               return (
-                <Box
-                  key={ad.id}
-                  sx={{
-                    px: { xs: 1, sm: 2 },
-                    py: { xs: 1.25, sm: 1.75 },
-                    borderLeft: '1px solid',
-                    borderColor: 'divider',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    textAlign: 'center',
-                    bgcolor:
-                      isHighlighted && highlight
-                        ? alpha(
-                            highlight === 'success'
-                              ? theme.palette.success.main
-                              : theme.palette.primary.main,
-                            isDark ? 0.28 : 0.12
-                          )
-                        : undefined,
-                    borderRadius: isHighlighted ? 0.5 : 0,
-                    position: 'relative',
-                  }}
-                >
-                  {render(ad)}
-                </Box>
+                <Fragment key={criterion.key}>
+                  <Box
+                    sx={{
+                      position: 'sticky',
+                      left: 0,
+                      zIndex: 2,
+                      bgcolor: 'background.paper',
+                      borderBottom: '1px solid',
+                      borderRight: '1px solid',
+                      borderColor: 'divider',
+                      p: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.75,
+                    }}
+                  >
+                    {criterion.icon ? (
+                      <Box
+                        sx={{ color: 'text.secondary', display: 'inline-flex' }}
+                      >
+                        {criterion.icon}
+                      </Box>
+                    ) : null}
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 600, color: 'text.secondary' }}
+                    >
+                      {label}
+                    </Typography>
+                  </Box>
+                  {items.map((ad) => {
+                    const isBest = best.has(ad.id);
+                    return (
+                      <Box
+                        key={ad.id}
+                        sx={{
+                          p: 2,
+                          borderBottom: '1px solid',
+                          borderLeft: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: isBest
+                            ? alpha(theme.palette.success.main, 0.1)
+                            : zebra
+                              ? 'action.hover'
+                              : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          fontWeight: isBest ? 700 : 400,
+                        }}
+                      >
+                        {criterion.render(ad, { isBest })}
+                      </Box>
+                    );
+                  })}
+                </Fragment>
               );
             })}
-          </Box>
-        );
-      })}
+          </Fragment>
+        ))}
+      </Box>
     </Box>
   );
 }
