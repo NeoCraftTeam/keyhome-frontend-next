@@ -32,7 +32,6 @@ export default function PasskeyLoginButton({
 }: PasskeyLoginButtonProps) {
   const theme = useTheme();
   const primary = theme.palette.primary.main;
-  const primaryHover = alpha(primary, 0.04);
   const primaryHoverBg = alpha(primary, 0.18);
   const primaryBg = alpha(primary, 0.1);
   const primaryShadow = alpha(primary, 0.12);
@@ -121,23 +120,25 @@ export default function PasskeyLoginButton({
         <>
           <Button
             fullWidth
-            variant="outlined"
+            variant="text"
+            disableRipple
             onClick={() => void handleClick()}
             disabled={isLoading}
             sx={{
               borderRadius: 2.5,
               py: 1.4,
               textTransform: 'none',
-              borderWidth: 2,
-              borderColor: 'divider',
+              border: 'none',
               color: 'text.primary',
+              bgcolor: primaryBg,
               transition: 'all 0.2s',
               '&:hover': {
-                borderColor: primary,
-                borderWidth: 2,
-                bgcolor: primaryHover,
+                border: 'none',
+                bgcolor: primaryHoverBg,
                 boxShadow: `0 2px 12px ${primaryShadow}`,
               },
+              // Keep a keyboard focus ring for accessibility (only shows on
+              // keyboard navigation, never on pointer clicks).
               '&:focus-visible': {
                 outline: `2px solid ${primary}`,
                 outlineOffset: 2,
@@ -156,23 +157,7 @@ export default function PasskeyLoginButton({
               {isLoading ? (
                 <CircularProgress size={22} sx={{ color: primary }} />
               ) : (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 34,
-                    height: 34,
-                    borderRadius: 1.5,
-                    bgcolor: primaryBg,
-                    transition: 'background-color 0.2s',
-                    '.MuiButton-root:hover &': {
-                      bgcolor: primaryHoverBg,
-                    },
-                  }}
-                >
-                  <FingerprintIcon sx={{ fontSize: 20, color: primary }} />
-                </Box>
+                <FingerprintIcon sx={{ fontSize: 26, color: primary }} />
               )}
               <Box sx={{ textAlign: 'left' }}>
                 <Typography variant="body2" fontWeight={600} lineHeight={1.3}>
