@@ -2,6 +2,7 @@
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import WelcomeOverlay from '@/components/ui/overlay/WelcomeOverlay';
 import { trackSignUp } from '@/lib/analytics/track-events';
@@ -12,13 +13,7 @@ import { brandAgent, gradient } from '@/theme/tokens';
 import { User } from '@/types';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  IconButton,
-  Typography,
-} from '@mui/material';
+import { Box, Button, IconButton, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -524,7 +519,7 @@ export default function VerifyOtpPage() {
                   }}
                 >
                   {isSubmitting ? (
-                    <CircularProgress size={24} sx={{ color: '#fff' }} />
+                    <ButtonSpinner size={24} />
                   ) : (
                     'Vérifier le code'
                   )}

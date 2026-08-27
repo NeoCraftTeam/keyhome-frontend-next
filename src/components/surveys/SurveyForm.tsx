@@ -6,10 +6,10 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import {
   Box,
   Button,
-  CircularProgress,
   FormControlLabel,
   IconButton,
   LinearProgress,
@@ -277,11 +277,7 @@ export default function SurveyForm({
               onClick={handleSubmit}
               disabled={!isStepAnswered || isSubmitting}
               startIcon={
-                isSubmitting ? (
-                  <CircularProgress size={18} color="inherit" />
-                ) : (
-                  <SendIcon />
-                )
+                isSubmitting ? <ButtonSpinner size={18} /> : <SendIcon />
               }
               sx={{ borderRadius: 3, fontWeight: 700, px: 4, ...btnSx }}
             >

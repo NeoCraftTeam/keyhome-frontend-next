@@ -2,6 +2,7 @@
 
 import { useClerk } from '@clerk/nextjs';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { isUnsafeBackendMessage } from '@/lib/error-messages';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Facebook from '@mui/icons-material/Facebook';
@@ -14,7 +15,6 @@ import {
   Button,
   Card,
   CardContent,
-  CircularProgress,
   Divider,
   Tooltip,
   Typography,
@@ -378,7 +378,7 @@ export default function LinkedAccountsCard({
                         }
                         startIcon={
                           isProcessing ? (
-                            <CircularProgress size={14} color="inherit" />
+                            <ButtonSpinner size={14} />
                           ) : (
                             <LinkOffIcon sx={{ fontSize: 16 }} />
                           )
@@ -411,11 +411,7 @@ export default function LinkedAccountsCard({
                       boxShadow: 'none',
                     }}
                   >
-                    {isProcessing ? (
-                      <CircularProgress size={14} color="inherit" />
-                    ) : (
-                      'Lier'
-                    )}
+                    {isProcessing ? <ButtonSpinner size={14} /> : 'Lier'}
                   </Button>
                 )}
               </Box>

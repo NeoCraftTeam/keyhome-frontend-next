@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import CalendarExportMenu from '@/components/ui/display/CalendarExportMenu';
 import {
   getLaravelNestedApiError,
@@ -882,11 +883,7 @@ export default function ViewingBookingPanel({
           }}
           disabled={isCreating}
           startIcon={
-            isCreating ? (
-              <CircularProgress size={16} color="inherit" />
-            ) : (
-              <EventAvailable />
-            )
+            isCreating ? <ButtonSpinner size={16} /> : <EventAvailable />
           }
           sx={{
             py: 1.5,
@@ -1570,11 +1567,7 @@ export default function ViewingBookingPanel({
               color="error"
               onClick={() => cancelReservation()}
               disabled={isCancelling}
-              startIcon={
-                isCancelling ? (
-                  <CircularProgress size={14} color="inherit" />
-                ) : undefined
-              }
+              startIcon={isCancelling ? <ButtonSpinner size={14} /> : undefined}
               sx={{
                 textTransform: 'none',
                 fontWeight: 600,

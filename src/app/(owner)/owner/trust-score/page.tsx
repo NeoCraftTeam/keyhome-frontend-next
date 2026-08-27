@@ -2,6 +2,7 @@
 
 import api from '@/lib/api';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import CheckCircle from '@mui/icons-material/CheckCircle';
@@ -179,7 +180,7 @@ export default function OwnerTrustScorePage() {
             }}
           >
             {consentMutation.isPending ? (
-              <CircularProgress size={20} color="inherit" />
+              <ButtonSpinner size={20} />
             ) : (
               'Activer mon score'
             )}

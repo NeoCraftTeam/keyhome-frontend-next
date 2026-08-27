@@ -15,11 +15,11 @@ import { useCurrency } from '@/providers/CurrencyProvider';
 import type { PaymentHistoryItem } from '@/types';
 import PdfIcon from '@mui/icons-material/PictureAsPdf';
 import Toll from '@mui/icons-material/Toll';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Divider,
   IconButton,
   LinearProgress,
@@ -123,11 +123,7 @@ const PaymentHistoryClassicExportBar = memo(
               variant="contained"
               size="small"
               startIcon={
-                isExporting ? (
-                  <CircularProgress size={14} color="inherit" />
-                ) : (
-                  <PdfIcon />
-                )
+                isExporting ? <ButtonSpinner size={14} /> : <PdfIcon />
               }
               onClick={onExportPdf}
               disabled={isExporting || totalRows === 0}
@@ -239,7 +235,7 @@ const ClassicMobilePaymentCard = memo(function ClassicMobilePaymentCard({
               sx={{ color: '#F6475F' }}
             >
               {receiptBusyId === item.id ? (
-                <CircularProgress size={18} color="inherit" />
+                <ButtonSpinner size={18} />
               ) : (
                 <PdfIcon fontSize="small" />
               )}
@@ -371,7 +367,7 @@ const ClassicDesktopRow = memo(function ClassicDesktopRow({
             sx={{ color: '#F6475F' }}
           >
             {receiptBusyId === item.id ? (
-              <CircularProgress size={18} />
+              <ButtonSpinner size={18} />
             ) : (
               <PdfIcon fontSize="small" />
             )}

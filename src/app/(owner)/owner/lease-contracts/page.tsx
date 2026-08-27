@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import LeaseLifecycleMenu from '@/components/owner/leases/LeaseLifecycleMenu';
@@ -692,11 +693,7 @@ export default function OwnerLeaseContractsPage() {
               <Button
                 size="small"
                 startIcon={
-                  enhancingConditions ? (
-                    <CircularProgress size={14} />
-                  ) : (
-                    <AiIcon />
-                  )
+                  enhancingConditions ? <ButtonSpinner size={14} /> : <AiIcon />
                 }
                 onClick={async () => {
                   const prev = editForm.special_conditions;
@@ -742,11 +739,7 @@ export default function OwnerLeaseContractsPage() {
               size="small"
               variant="text"
               startIcon={
-                summarizingContract ? (
-                  <CircularProgress size={14} />
-                ) : (
-                  <AiIcon />
-                )
+                summarizingContract ? <ButtonSpinner size={14} /> : <AiIcon />
               }
               onClick={async () => {
                 setSummarizingContract(true);

@@ -1,10 +1,11 @@
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { Button } from '@/components/ui/forms/Button';
 import { TextField } from '@/components/ui/forms/TextField';
 import { Typography } from '@/components/ui/typography/Typography';
 import AiIcon from '@mui/icons-material/AutoAwesome';
 import HomeIcon from '@mui/icons-material/Home';
 import UndoIcon from '@mui/icons-material/Undo';
-import { Box, CircularProgress, Paper, Tooltip } from '@mui/material';
+import { Box, Paper, Tooltip } from '@mui/material';
 import type { AdFormValues, UpdateFn } from './types';
 import { sectionSx, sectionTitleSx } from './types';
 
@@ -79,7 +80,7 @@ export default function AdFormBasicInfo({
               variant="text"
               color="primary"
               startIcon={
-                enhancingTitle ? <CircularProgress size={14} /> : <AiIcon />
+                enhancingTitle ? <ButtonSpinner size={14} /> : <AiIcon />
               }
               onClick={onEnhanceTitle}
               disabled={enhancingTitle}
@@ -147,9 +148,7 @@ export default function AdFormBasicInfo({
               size="small"
               variant="text"
               color="primary"
-              startIcon={
-                enhancing ? <CircularProgress size={14} /> : <AiIcon />
-              }
+              startIcon={enhancing ? <ButtonSpinner size={14} /> : <AiIcon />}
               onClick={onEnhance}
               disabled={enhancing}
               sx={{ textTransform: 'none', fontSize: '0.75rem', px: 1 }}
@@ -162,9 +161,7 @@ export default function AdFormBasicInfo({
               size="small"
               variant="text"
               color="primary"
-              startIcon={
-                generating ? <CircularProgress size={14} /> : <AiIcon />
-              }
+              startIcon={generating ? <ButtonSpinner size={14} /> : <AiIcon />}
               onClick={onGenerate}
               disabled={generating}
               sx={{ textTransform: 'none', fontSize: '0.75rem', px: 1 }}

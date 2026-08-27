@@ -17,6 +17,7 @@ import ReviewsSection from '@/components/reviews/ReviewsSection';
 import TrustScoreBadge from '@/components/trust/TrustScoreBadge';
 import AppAlert from '@/components/ui/feedback/AppAlert';
 import AppLoader from '@/components/ui/feedback/AppLoader';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import ImageLightbox from '@/components/ui/overlay/ImageLightbox';
@@ -76,7 +77,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Container,
   Dialog,
   Divider,
@@ -1050,7 +1050,7 @@ function AdDetailContent() {
                 disabled={isPrintPdfLoading}
                 startIcon={
                   isPrintPdfLoading ? (
-                    <CircularProgress size={14} sx={{ color: 'inherit' }} />
+                    <ButtonSpinner size={14} />
                   ) : (
                     <PrintIcon sx={{ fontSize: 16 }} />
                   )
@@ -1157,7 +1157,7 @@ function AdDetailContent() {
                   disabled={isPrintPdfLoading}
                   startIcon={
                     isPrintPdfLoading ? (
-                      <CircularProgress size={14} sx={{ color: 'inherit' }} />
+                      <ButtonSpinner size={14} />
                     ) : (
                       <PrintIcon sx={{ fontSize: 16 }} />
                     )

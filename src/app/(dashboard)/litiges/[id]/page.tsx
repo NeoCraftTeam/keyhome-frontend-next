@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
@@ -24,7 +25,6 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   Container,
   Divider,
   LinearProgress,
@@ -481,7 +481,7 @@ export default function DisputeDetailPage() {
                     size="small"
                     startIcon={
                       uploadMutation.isPending ? (
-                        <CircularProgress size={14} color="inherit" />
+                        <ButtonSpinner size={14} />
                       ) : (
                         <CloudUpload />
                       )

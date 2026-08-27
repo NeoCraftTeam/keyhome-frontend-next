@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import VoiceSearchButton from '@/components/search/VoiceSearchButton';
 import api from '@/lib/api';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
@@ -268,7 +269,7 @@ export default function HeroSearch({
               }}
             >
               {geolocating ? (
-                <CircularProgress size={18} color="primary" />
+                <ButtonSpinner size={18} color="primary.main" />
               ) : (
                 <MyLocationIcon sx={{ fontSize: 20 }} />
               )}

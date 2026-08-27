@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
@@ -17,7 +18,6 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   Container,
   Dialog,
   DialogActions,
@@ -346,9 +346,7 @@ export default function OwnerRemboursementsPage() {
             onClick={() => requestMutation.mutate()}
             sx={{ textTransform: 'none', fontWeight: 700 }}
             startIcon={
-              requestMutation.isPending ? (
-                <CircularProgress size={14} color="inherit" />
-              ) : null
+              requestMutation.isPending ? <ButtonSpinner size={14} /> : null
             }
           >
             Envoyer

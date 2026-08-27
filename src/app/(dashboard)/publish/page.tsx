@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { buildAuthUrlWithReturnTo } from '@/lib/auth/return-to';
 import { useAuth } from '@/providers/AuthProvider';
 import { brand } from '@/theme/tokens';
@@ -26,7 +27,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Container,
   FormControlLabel,
   Grid,
@@ -947,13 +947,7 @@ export default function PublishPage() {
             onClick={handleSubmit}
             disabled={submitting}
             size="large"
-            startIcon={
-              submitting ? (
-                <CircularProgress size={18} color="inherit" />
-              ) : (
-                <Check />
-              )
-            }
+            startIcon={submitting ? <ButtonSpinner size={18} /> : <Check />}
           >
             {submitting ? 'Publication...' : "Publier l'annonce"}
           </Button>

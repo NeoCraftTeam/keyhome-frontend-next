@@ -1,14 +1,8 @@
 'use client';
 
 import { PublicSurvey, SurveyAnswerPayload } from '@/types';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  LinearProgress,
-  Typography,
-  Paper,
-} from '@mui/material';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
+import { Box, Button, LinearProgress, Typography, Paper } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SendIcon from '@mui/icons-material/Send';
@@ -257,11 +251,7 @@ export default function SurveyStepper({
             <Button
               variant="contained"
               endIcon={
-                isSubmitting ? (
-                  <CircularProgress size={18} color="inherit" />
-                ) : (
-                  <SendIcon />
-                )
+                isSubmitting ? <ButtonSpinner size={18} /> : <SendIcon />
               }
               onClick={handleSubmit}
               disabled={!isAnswered() || isSubmitting}

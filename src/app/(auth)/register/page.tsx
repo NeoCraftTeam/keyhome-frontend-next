@@ -5,6 +5,7 @@ import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import TurnstileConfigAlert from '@/components/auth/TurnstileConfigAlert';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PhoneField from '@/components/ui/forms/PhoneField';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
@@ -993,7 +994,7 @@ export default function RegisterPage() {
                         sx={containedGradientSx}
                       >
                         {isCheckingEmail ? (
-                          <CircularProgress size={22} sx={{ color: '#fff' }} />
+                          <ButtonSpinner size={22} />
                         ) : (
                           'Continuer'
                         )}
@@ -1272,7 +1273,7 @@ export default function RegisterPage() {
                         sx={containedGradientSx}
                       >
                         {isSubmitting ? (
-                          <CircularProgress size={24} sx={{ color: '#fff' }} />
+                          <ButtonSpinner size={24} />
                         ) : (
                           "S'inscrire"
                         )}

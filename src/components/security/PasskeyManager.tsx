@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import EmptyState from '@/components/ui/feedback/EmptyState';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
@@ -19,7 +20,6 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -293,7 +293,7 @@ export default function PasskeyManager({
                     variant="contained"
                     startIcon={
                       isRegistering ? (
-                        <CircularProgress size={16} color="inherit" />
+                        <ButtonSpinner size={16} />
                       ) : (
                         <FingerprintIcon />
                       )

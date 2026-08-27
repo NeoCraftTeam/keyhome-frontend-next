@@ -2,6 +2,7 @@
 
 import { Price } from '@/components/ui/typography/Price';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { estimatorService } from '@/services/estimator.service';
@@ -199,13 +200,7 @@ function RentEstimatorWidget() {
           variant="contained"
           onClick={handleEstimate}
           disabled={!canEstimate}
-          startIcon={
-            isFetching ? (
-              <CircularProgress size={16} color="inherit" />
-            ) : (
-              <Calculate />
-            )
-          }
+          startIcon={isFetching ? <ButtonSpinner size={16} /> : <Calculate />}
           fullWidth
           sx={{ py: 1.25, fontWeight: 700 }}
         >

@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
@@ -237,11 +238,7 @@ export default function CompleteOAuthProfileDialog({
               '&:hover': { background: gradient.primaryHover },
             }}
           >
-            {isSubmitting ? (
-              <CircularProgress size={22} color="inherit" />
-            ) : (
-              'Créer mon compte'
-            )}
+            {isSubmitting ? <ButtonSpinner size={22} /> : 'Créer mon compte'}
           </Button>
         </Box>
       </DialogContent>

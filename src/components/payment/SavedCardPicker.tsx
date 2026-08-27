@@ -4,13 +4,8 @@ import { brand } from '@/theme/tokens';
 import type { StripePaymentMethod } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Radio,
-  Typography,
-} from '@mui/material';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
+import { Box, Button, Radio, Typography } from '@mui/material';
 
 interface SavedCardPickerProps {
   /** Saved cards as returned by `GET /payments/stripe/payment-methods`. */
@@ -283,14 +278,7 @@ export default function SavedCardPicker({
             },
           }}
         >
-          {isSubmitting ? (
-            <CircularProgress
-              size={20}
-              sx={{ color: 'rgba(255,255,255,0.5)' }}
-            />
-          ) : (
-            'Payer maintenant'
-          )}
+          {isSubmitting ? <ButtonSpinner size={20} /> : 'Payer maintenant'}
         </Button>
       </Box>
     </Box>

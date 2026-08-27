@@ -6,6 +6,7 @@ import { getStripePromise, isStripeModeMismatch } from '@/lib/payment/stripe';
 import { readCheckoutSessionTotalAmount } from '@/lib/payment/stripe-checkout-total';
 import { brand } from '@/theme/tokens';
 import ErrorIcon from '@mui/icons-material/Error';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import {
   Box,
   Button,
@@ -574,10 +575,7 @@ function CheckoutConfirmInner({
           }}
         >
           {submitting ? (
-            <CircularProgress
-              size={20}
-              sx={{ color: 'rgba(255,255,255,0.5)' }}
-            />
+            <ButtonSpinner size={20} />
           ) : amountLabel ? (
             `Payer ${amountLabel}`
           ) : checkoutTotalAmount !== null ? (
@@ -1028,10 +1026,7 @@ function StripeConfirmInner({
           }}
         >
           {submitting ? (
-            <CircularProgress
-              size={20}
-              sx={{ color: 'rgba(255,255,255,0.5)' }}
-            />
+            <ButtonSpinner size={20} />
           ) : isReusing ? (
             'Confirmer le paiement'
           ) : (

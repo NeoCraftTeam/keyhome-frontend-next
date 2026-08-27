@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { geoService, type OrsProfile } from '@/services/geo.service';
 import AccessTime from '@mui/icons-material/AccessTime';
 import Close from '@mui/icons-material/Close';
@@ -10,7 +11,6 @@ import Accessible from '@mui/icons-material/Accessible';
 import RadioButtonChecked from '@mui/icons-material/RadioButtonChecked';
 import {
   Box,
-  CircularProgress,
   Collapse,
   IconButton,
   Slider,
@@ -315,7 +315,7 @@ export default function IsochroneFilter({ mapRef }: Props) {
               }}
             >
               {loading ? (
-                <CircularProgress size={12} sx={{ color: '#fff' }} />
+                <ButtonSpinner size={12} color="#fff" />
               ) : (
                 <AccessTime sx={{ fontSize: 13 }} />
               )}

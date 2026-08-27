@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import {
   ownerService,
@@ -17,7 +18,6 @@ import {
   Button,
   Card,
   CardContent,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -514,7 +514,7 @@ export default function RentPaymentsSection({
               !form.received_at
             }
             startIcon={
-              createMutation.isPending ? <CircularProgress size={16} /> : null
+              createMutation.isPending ? <ButtonSpinner size={16} /> : null
             }
             sx={{ borderRadius: 2 }}
           >
@@ -559,7 +559,7 @@ export default function RentPaymentsSection({
             variant="contained"
             disabled={deleteMutation.isPending}
             startIcon={
-              deleteMutation.isPending ? <CircularProgress size={16} /> : null
+              deleteMutation.isPending ? <ButtonSpinner size={16} /> : null
             }
             sx={{ borderRadius: 2 }}
           >

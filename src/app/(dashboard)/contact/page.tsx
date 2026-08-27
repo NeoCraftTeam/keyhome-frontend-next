@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { supportService } from '@/services/support.service';
 import { brand, gradient } from '@/theme/tokens';
@@ -17,7 +18,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Container,
   IconButton,
   InputBase,
@@ -556,11 +556,7 @@ export default function ContactPage() {
                           disabled={!stepValid || isSubmitting}
                           startIcon={
                             isSubmitting ? (
-                              <CircularProgress
-                                size={18}
-                                thickness={5}
-                                sx={{ color: 'inherit' }}
-                              />
+                              <ButtonSpinner size={18} />
                             ) : (
                               <SendIcon />
                             )

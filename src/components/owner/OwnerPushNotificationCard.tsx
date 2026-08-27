@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import NotifyIcon from '@mui/icons-material/NotificationsActive';
 import NotifyOffIcon from '@mui/icons-material/NotificationsOff';
@@ -9,7 +10,6 @@ import {
   Button,
   Card,
   CardContent,
-  CircularProgress,
   List,
   ListItemButton,
   ListItemIcon,
@@ -91,7 +91,7 @@ export default function OwnerPushNotificationCard() {
               sx={{ borderRadius: 1, mx: 1, mb: 1 }}
             >
               <ListItemIcon sx={{ color: 'error.main' }}>
-                {busy ? <CircularProgress size={22} /> : <NotifyOffIcon />}
+                {busy ? <ButtonSpinner size={22} /> : <NotifyOffIcon />}
               </ListItemIcon>
               <ListItemText
                 primary="Désactiver les notifications"
@@ -103,13 +103,7 @@ export default function OwnerPushNotificationCard() {
               <Button
                 variant="contained"
                 fullWidth
-                startIcon={
-                  busy ? (
-                    <CircularProgress size={18} color="inherit" />
-                  ) : (
-                    <NotifyIcon />
-                  )
-                }
+                startIcon={busy ? <ButtonSpinner size={18} /> : <NotifyIcon />}
                 disabled={busy}
                 onClick={async () => {
                   setBusy(true);

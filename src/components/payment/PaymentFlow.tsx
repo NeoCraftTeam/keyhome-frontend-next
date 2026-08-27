@@ -7,6 +7,7 @@ import SavedCardPicker from '@/components/payment/SavedCardPicker';
 import StripeConfirmStep from '@/components/payment/StripeConfirmStep';
 import VerifyingView from '@/components/payment/return/VerifyingView';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { usePayment } from '@/hooks/usePayment';
 import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import {
@@ -777,14 +778,7 @@ export default function PaymentFlow({
                 },
               }}
             >
-              {isLoading ? (
-                <CircularProgress
-                  size={22}
-                  sx={{ color: 'rgba(255,255,255,0.5)' }}
-                />
-              ) : (
-                'Continuer'
-              )}
+              {isLoading ? <ButtonSpinner size={22} /> : 'Continuer'}
             </Button>
           </Box>
         </Box>
@@ -880,14 +874,7 @@ export default function PaymentFlow({
                 },
               }}
             >
-              {isLoading ? (
-                <CircularProgress
-                  size={20}
-                  sx={{ color: 'rgba(255,255,255,0.5)' }}
-                />
-              ) : (
-                'Payer maintenant'
-              )}
+              {isLoading ? <ButtonSpinner size={20} /> : 'Payer maintenant'}
             </Button>
           </Box>
         </Box>

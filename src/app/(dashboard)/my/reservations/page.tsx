@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { viewingsService } from '@/services/viewings.service';
@@ -19,7 +20,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Container,
   Dialog,
   DialogActions,
@@ -699,7 +699,7 @@ export default function MyReservationsPage() {
             sx={{ textTransform: 'none', fontWeight: 700 }}
           >
             {cancelMutation.isPending ? (
-              <CircularProgress size={18} color="inherit" />
+              <ButtonSpinner size={18} />
             ) : (
               "Confirmer l'annulation"
             )}

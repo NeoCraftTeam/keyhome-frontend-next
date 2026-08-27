@@ -5,6 +5,7 @@ import AdFormWizard, { type TourScene } from '@/components/owner/AdFormWizard';
 import MarkdownBioEditor from '@/components/owner/MarkdownBioEditor';
 import PublishingOverlay from '@/components/owner/PublishingOverlay';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PhoneField from '@/components/ui/forms/PhoneField';
@@ -35,7 +36,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Container,
   Dialog,
   DialogActions,
@@ -720,11 +720,7 @@ export default function OwnerNewAdPage() {
               isSavingProfile || !profileForm.firstname || !profileForm.lastname
             }
             startIcon={
-              isSavingProfile ? (
-                <CircularProgress size={16} sx={{ color: 'inherit' }} />
-              ) : (
-                <CheckCircle />
-              )
+              isSavingProfile ? <ButtonSpinner size={16} /> : <CheckCircle />
             }
             sx={{
               textTransform: 'none',
@@ -780,7 +776,7 @@ export default function OwnerNewAdPage() {
         PaperProps={{ sx: { borderRadius: 3, p: 0.5 } }}
       >
         <DialogTitle sx={{ fontWeight: 700, pb: 0.5 }}>
-          🎉 Annonce créée avec succès !
+          Annonce créée avec succès
         </DialogTitle>
         <DialogContent>
           <Box

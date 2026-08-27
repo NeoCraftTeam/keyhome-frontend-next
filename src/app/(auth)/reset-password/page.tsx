@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
@@ -123,11 +124,7 @@ function ResetPasswordForm() {
               '&:active': { transform: 'scale(0.97)' },
             }}
           >
-            {isSubmitting ? (
-              <CircularProgress size={24} sx={{ color: '#fff' }} />
-            ) : (
-              'Réinitialiser'
-            )}
+            {isSubmitting ? <ButtonSpinner size={24} /> : 'Réinitialiser'}
           </Button>
         </Box>
       </FadeIn>

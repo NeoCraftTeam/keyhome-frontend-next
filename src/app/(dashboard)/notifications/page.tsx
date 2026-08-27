@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import SearchAlertDigestCard from '@/components/notifications/SearchAlertDigestCard';
 import {
@@ -222,7 +223,7 @@ export default function NotificationsPage() {
               size="small"
               startIcon={
                 markAllMutation.isPending ? (
-                  <CircularProgress size={14} color="inherit" />
+                  <ButtonSpinner size={14} />
                 ) : (
                   <DoneAllIcon />
                 )

@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import {
   ownerService,
   type LeaseContract,
@@ -408,7 +409,7 @@ export default function SignPage() {
             }
             startIcon={
               signMutation.isPending ? (
-                <CircularProgress size={16} />
+                <ButtonSpinner size={16} />
               ) : (
                 <CheckCircleIcon />
               )

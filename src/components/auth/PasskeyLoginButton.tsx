@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { usePasskeyLogin } from '@/hooks/usePasskey';
 import { AUTH_PANEL_UNAVAILABLE_MESSAGE } from '@/lib/auth/auth-api-errors';
 import {
@@ -13,13 +14,7 @@ import { mayAccessOwnerPanel } from '@/lib/owner/owner-panel-access';
 import { useAuth } from '@/providers/AuthProvider';
 import { UserRole } from '@/types';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Divider,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Divider, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useRouter } from 'next/navigation';
 
@@ -155,7 +150,7 @@ export default function PasskeyLoginButton({
               }}
             >
               {isLoading ? (
-                <CircularProgress size={22} sx={{ color: primary }} />
+                <ButtonSpinner size={22} color={primary} />
               ) : (
                 <FingerprintIcon sx={{ fontSize: 26, color: primary }} />
               )}

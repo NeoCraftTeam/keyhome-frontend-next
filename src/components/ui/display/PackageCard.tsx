@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { Price } from '@/components/ui/typography/Price';
 import { neutral } from '@/theme/tokens';
 import type { PointPackage } from '@/types';
@@ -8,14 +9,7 @@ import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
 import LocalFireDepartment from '@mui/icons-material/LocalFireDepartment';
 import Toll from '@mui/icons-material/Toll';
 import WorkspacePremium from '@mui/icons-material/WorkspacePremium';
-import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Typography,
-  useTheme,
-} from '@mui/material';
+import { Box, Button, Chip, Typography, useTheme } from '@mui/material';
 
 export default function PackageCard({
   pkg,
@@ -441,7 +435,7 @@ export default function PackageCard({
             }}
           >
             {loading ? (
-              <CircularProgress size={14} sx={{ color: 'inherit' }} />
+              <ButtonSpinner size={14} />
             ) : wouldBeEnough ? (
               'Débloquer maintenant'
             ) : (

@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   searchAlertsService,
@@ -13,7 +14,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -312,7 +312,7 @@ export default function SearchAlertButton({
               disabled={createMutation.isPending}
               startIcon={
                 createMutation.isPending ? (
-                  <CircularProgress size={16} color="inherit" />
+                  <ButtonSpinner size={16} />
                 ) : (
                   <NotificationsActive />
                 )

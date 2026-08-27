@@ -1,12 +1,13 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { captureReturnTo } from '@/lib/auth/return-to';
 import { findOrCreateConversation } from '@/lib/chat/chat-api';
 import { ensureCsrfCookie, resetCsrfState } from '@/lib/api';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { Box, Button, CircularProgress } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { isAxiosError } from 'axios';
@@ -202,11 +203,7 @@ export default function ContactChatButton({
         onClick={() => void handleClick()}
         disabled={loading}
         startIcon={
-          loading ? (
-            <CircularProgress size={18} color="inherit" />
-          ) : (
-            <ChatBubbleOutlineIcon />
-          )
+          loading ? <ButtonSpinner size={18} /> : <ChatBubbleOutlineIcon />
         }
         sx={{
           textTransform: 'none',

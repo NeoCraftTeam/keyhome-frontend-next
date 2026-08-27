@@ -1,13 +1,13 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { MAPBOX_TOKEN } from '@/lib/constants';
 import { brandAgent, neutral, shadow } from '@/theme/tokens';
 import GpsIcon from '@mui/icons-material/MyLocation';
 import SearchIcon from '@mui/icons-material/Search';
 import {
   Box,
-  CircularProgress,
   IconButton,
   InputAdornment,
   TextField,
@@ -250,7 +250,7 @@ export default function MapPicker({
                     }}
                   >
                     {searching ? (
-                      <CircularProgress size={18} />
+                      <ButtonSpinner size={18} />
                     ) : (
                       <SearchIcon fontSize="small" />
                     )}
@@ -273,7 +273,7 @@ export default function MapPicker({
             }}
           >
             {geolocating ? (
-              <CircularProgress size={20} />
+              <ButtonSpinner size={20} />
             ) : (
               <GpsIcon fontSize="small" />
             )}

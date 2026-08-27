@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import {
@@ -366,7 +367,7 @@ export default function ScreeningSection({
               formDocs.length === 0
             }
             startIcon={
-              createMutation.isPending ? <CircularProgress size={16} /> : null
+              createMutation.isPending ? <ButtonSpinner size={16} /> : null
             }
             sx={{ borderRadius: 2 }}
           >
@@ -465,7 +466,7 @@ export default function ScreeningSection({
             color={reviewDecision === 'rejected' ? 'error' : 'primary'}
             disabled={reviewMutation.isPending}
             startIcon={
-              reviewMutation.isPending ? <CircularProgress size={16} /> : null
+              reviewMutation.isPending ? <ButtonSpinner size={16} /> : null
             }
             sx={{ borderRadius: 2 }}
           >

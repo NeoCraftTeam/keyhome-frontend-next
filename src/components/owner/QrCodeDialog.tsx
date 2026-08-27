@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { openAdPlacardePreview } from '@/lib/owner/owner-placarde-preview';
 import { ownerService } from '@/services/owner.service';
@@ -454,16 +455,7 @@ export default function QrCodeDialog({
                     fullWidth
                     startIcon={
                       busy === 'card' ? (
-                        <CircularProgress
-                          size={16}
-                          sx={{
-                            color:
-                              variant === 'ad'
-                                ? 'primary.main'
-                                : 'primary.contrastText',
-                          }}
-                          aria-hidden
-                        />
+                        <ButtonSpinner size={16} />
                       ) : (
                         <PdfIcon fontSize="small" aria-hidden />
                       )

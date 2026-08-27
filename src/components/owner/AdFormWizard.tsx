@@ -1,6 +1,7 @@
 'use client';
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import ImageLightbox from '@/components/ui/overlay/ImageLightbox';
 import { useServerAutoSave } from '@/hooks/useServerAutoSave';
@@ -25,7 +26,6 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Box,
   Button,
-  CircularProgress,
   Collapse,
   Drawer,
   Fab,
@@ -1300,7 +1300,7 @@ function AdFormWizard({
                         disabled={isSavingStep || isApplyingEditDraft}
                         startIcon={
                           isSavingStep ? (
-                            <CircularProgress size={14} />
+                            <ButtonSpinner size={14} />
                           ) : stepSavedAt ? (
                             <CheckCircleOutlined
                               sx={{ color: 'success.main', fontSize: 16 }}
@@ -1359,7 +1359,7 @@ function AdFormWizard({
                               disabled={isSubmitting || isSavingDraft}
                               startIcon={
                                 isAutoSaving || isSavingDraft ? (
-                                  <CircularProgress size={14} />
+                                  <ButtonSpinner size={14} />
                                 ) : autoSaveError ? (
                                   <SaveOutlined
                                     sx={{ color: 'warning.main', fontSize: 16 }}
@@ -1499,7 +1499,7 @@ function AdFormWizard({
                       onClick={onApplyEditDraft}
                       startIcon={
                         isApplyingEditDraft ? (
-                          <CircularProgress size={16} />
+                          <ButtonSpinner size={16} />
                         ) : (
                           <PublishIcon />
                         )
@@ -1520,7 +1520,7 @@ function AdFormWizard({
                       disabled={isSubmitting || isSavingDraft}
                       startIcon={
                         isSubmitting ? (
-                          <CircularProgress size={16} />
+                          <ButtonSpinner size={16} />
                         ) : (
                           <PublishIcon />
                         )

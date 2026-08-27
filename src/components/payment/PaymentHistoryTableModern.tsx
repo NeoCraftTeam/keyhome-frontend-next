@@ -12,6 +12,7 @@ import { paymentKeys } from '@/lib/query-keys';
 import { paymentsService } from '@/services/payments.service';
 import { useCurrency } from '@/providers/CurrencyProvider';
 import type { PaymentHistoryItem } from '@/types';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import DateIcon from '@mui/icons-material/DateRange';
 import PdfIcon from '@mui/icons-material/PictureAsPdf';
 import ReceiptIcon from '@mui/icons-material/Receipt';
@@ -22,7 +23,6 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   Divider,
   IconButton,
   LinearProgress,
@@ -151,7 +151,7 @@ const ModernMobilePaymentCard = memo(function ModernMobilePaymentCard({
                 aria-label="Télécharger le reçu"
               >
                 {receiptBusyId === item.id ? (
-                  <CircularProgress size={18} />
+                  <ButtonSpinner size={18} />
                 ) : (
                   <PdfIcon fontSize="small" />
                 )}
@@ -311,7 +311,7 @@ const ModernDesktopRow = memo(function ModernDesktopRow({
             sx={{ color: '#F6475F' }}
           >
             {receiptBusyId === item.id ? (
-              <CircularProgress size={18} />
+              <ButtonSpinner size={18} />
             ) : (
               <PdfIcon fontSize="small" />
             )}
@@ -437,11 +437,7 @@ export default function PaymentHistoryTableModern({
                 variant="contained"
                 size="small"
                 startIcon={
-                  isExporting ? (
-                    <CircularProgress size={14} color="inherit" />
-                  ) : (
-                    <PdfIcon />
-                  )
+                  isExporting ? <ButtonSpinner size={14} /> : <PdfIcon />
                 }
                 onClick={handleDownloadAll}
                 disabled={isExporting || totalRows === 0}
@@ -594,11 +590,7 @@ export default function PaymentHistoryTableModern({
             <Button
               variant="contained"
               startIcon={
-                isExporting ? (
-                  <CircularProgress size={14} color="inherit" />
-                ) : (
-                  <PdfIcon />
-                )
+                isExporting ? <ButtonSpinner size={14} /> : <PdfIcon />
               }
               onClick={handleDownloadAll}
               disabled={isExporting || totalRows === 0}

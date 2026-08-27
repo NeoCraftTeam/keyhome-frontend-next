@@ -5,6 +5,7 @@ import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import TurnstileConfigAlert from '@/components/auth/TurnstileConfigAlert';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { useTurnstileEmailSubmitReady } from '@/hooks/useTurnstileEmailSubmitReady';
@@ -33,7 +34,6 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
   Box,
   Button,
-  CircularProgress,
   Collapse,
   Divider,
   IconButton,
@@ -388,14 +388,7 @@ export default function OwnerLoginPage() {
                   '&:active': { transform: 'scale(0.97)' },
                 }}
               >
-                {isSubmitting ? (
-                  <CircularProgress
-                    size={24}
-                    sx={{ color: 'primary.contrastText' }}
-                  />
-                ) : (
-                  'Se connecter'
-                )}
+                {isSubmitting ? <ButtonSpinner size={24} /> : 'Se connecter'}
               </Button>
             </Box>
           </FadeIn>

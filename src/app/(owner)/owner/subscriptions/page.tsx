@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import {
@@ -24,7 +25,6 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   Container,
   Dialog,
   DialogActions,
@@ -409,7 +409,7 @@ function PlanCard({
           }
           onClick={onSelect}
           sx={{ mt: 3, borderRadius: 2, fontWeight: 600 }}
-          startIcon={isProcessing ? <CircularProgress size={16} /> : undefined}
+          startIcon={isProcessing ? <ButtonSpinner size={16} /> : undefined}
         >
           {isCurrent
             ? 'Plan actuel'

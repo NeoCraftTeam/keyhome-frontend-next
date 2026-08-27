@@ -5,6 +5,7 @@ import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import { GoogleOneTap } from '@/components/auth/GoogleOneTap';
 import TurnstileConfigAlert from '@/components/auth/TurnstileConfigAlert';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { useLandingStats } from '@/hooks/useLandingStats';
@@ -21,7 +22,6 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
   Box,
   Button,
-  CircularProgress,
   Divider,
   IconButton,
   InputAdornment,
@@ -377,11 +377,7 @@ export default function LoginPage() {
                   '&:active': { transform: 'scale(0.97)' },
                 }}
               >
-                {isSubmitting ? (
-                  <CircularProgress size={24} sx={{ color: '#fff' }} />
-                ) : (
-                  'Se connecter'
-                )}
+                {isSubmitting ? <ButtonSpinner size={24} /> : 'Se connecter'}
               </Button>
             </Box>
           </FadeIn>

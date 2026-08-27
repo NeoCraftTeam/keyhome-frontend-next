@@ -7,6 +7,7 @@ import { paymentsService } from '@/services/payments.service';
 import { brand } from '@/theme/tokens';
 import type { StripePaymentMethod } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import StarIcon from '@mui/icons-material/Star';
@@ -342,10 +343,7 @@ export default function SavedCardsManager({
                         sx={{ color: '#D32F2F' }}
                       >
                         {isDeleting ? (
-                          <CircularProgress
-                            size={16}
-                            sx={{ color: '#D32F2F' }}
-                          />
+                          <ButtonSpinner size={16} color="error.main" />
                         ) : (
                           <DeleteOutlineIcon fontSize="small" />
                         )}
@@ -459,7 +457,7 @@ function AddCardDialog({
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           {
-            "Votre carte sera enregistrée en toute sécurité chez Stripe. Aucune somme ne sera prélevée à l'enregistrement."
+            "Votre carte sera enregistrée en toute sécurité. Aucune somme ne sera prélevée à l'enregistrement."
           }
         </Typography>
 
@@ -600,14 +598,7 @@ function AddCardForm({
             '&:hover': { bgcolor: accentHover },
           }}
         >
-          {submitting ? (
-            <CircularProgress
-              size={20}
-              sx={{ color: 'rgba(255,255,255,0.5)' }}
-            />
-          ) : (
-            'Enregistrer la carte'
-          )}
+          {submitting ? <ButtonSpinner size={20} /> : 'Enregistrer la carte'}
         </Button>
       </Box>
     </Box>

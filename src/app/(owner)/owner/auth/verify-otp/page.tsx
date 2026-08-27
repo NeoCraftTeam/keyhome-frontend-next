@@ -2,6 +2,7 @@
 
 import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import WelcomeOverlay from '@/components/ui/overlay/WelcomeOverlay';
 import { trackSignUp } from '@/lib/analytics/track-events';
@@ -472,7 +473,7 @@ export default function OwnerVerifyOtpPage() {
               }}
             >
               {isSubmitting ? (
-                <CircularProgress size={24} color="inherit" />
+                <ButtonSpinner size={24} />
               ) : (
                 'Confirmer et accéder au Dashboard'
               )}

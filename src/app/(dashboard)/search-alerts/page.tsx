@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { EmptyState } from '@/components/ui/feedback/EmptyState';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import CityAutocomplete from '@/components/ui/navigation/CityAutocomplete';
@@ -824,11 +825,7 @@ export default function SearchAlertsPage() {
             onClick={handleSave}
             disabled={isSaving}
             startIcon={
-              isSaving ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <NotificationsActive />
-              )
+              isSaving ? <ButtonSpinner size={16} /> : <NotificationsActive />
             }
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
@@ -865,7 +862,7 @@ export default function SearchAlertsPage() {
             disabled={deleteMutation.isPending}
             startIcon={
               deleteMutation.isPending ? (
-                <CircularProgress size={16} color="inherit" />
+                <ButtonSpinner size={16} />
               ) : (
                 <DeleteIcon />
               )

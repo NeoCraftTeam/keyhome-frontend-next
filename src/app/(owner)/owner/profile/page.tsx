@@ -8,6 +8,7 @@ import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
 import PasskeyManager from '@/components/security/PasskeyManager';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import PasswordStrengthBar from '@/components/ui/forms/PasswordStrengthBar';
@@ -715,13 +716,7 @@ export default function OwnerProfilePage() {
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <Button
               variant="contained"
-              startIcon={
-                isSaving ? (
-                  <CircularProgress size={16} sx={{ color: neutral.white }} />
-                ) : (
-                  <SaveIcon />
-                )
-              }
+              startIcon={isSaving ? <ButtonSpinner size={16} /> : <SaveIcon />}
               onClick={handleSaveProfile}
               disabled={isSaving}
               sx={primaryButtonSx}
@@ -883,7 +878,7 @@ export default function OwnerProfilePage() {
             sx={primaryButtonSx}
           >
             {isChangingPassword ? (
-              <CircularProgress size={20} sx={{ color: neutral.white }} />
+              <ButtonSpinner size={20} />
             ) : (
               'Modifier le mot de passe'
             )}

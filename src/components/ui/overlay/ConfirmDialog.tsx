@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { brandAgent } from '@/theme/tokens';
 import WarningIcon from '@mui/icons-material/Warning';
 import {
@@ -9,7 +10,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  CircularProgress,
 } from '@mui/material';
 import {
   createContext,
@@ -146,7 +146,7 @@ export function ConfirmDialogProvider({
             }}
           >
             {loading ? (
-              <CircularProgress size={20} color="inherit" />
+              <ButtonSpinner size={20} />
             ) : (
               (options?.confirmLabel ?? 'Confirmer')
             )}

@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { usersService } from '@/services/users.service';
@@ -9,7 +10,6 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Box,
   Button,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -164,11 +164,7 @@ export default function DeleteAccountModal({
           variant="contained"
           color={isOwner ? 'primary' : 'error'}
           startIcon={
-            isDeleting ? (
-              <CircularProgress size={16} color="inherit" />
-            ) : (
-              <DeleteForeverIcon />
-            )
+            isDeleting ? <ButtonSpinner size={16} /> : <DeleteForeverIcon />
           }
           sx={{
             textTransform: 'none',

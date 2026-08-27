@@ -10,6 +10,7 @@ import {
   normalizeAdFormValues,
 } from '@/components/owner/ad-form/types';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
@@ -31,7 +32,6 @@ import {
   Button,
   ButtonGroup,
   Chip,
-  CircularProgress,
   Container,
   Dialog,
   DialogActions,
@@ -761,7 +761,7 @@ export default function OwnerAdEditPage() {
                   disabled={publishDraftMutation.isPending}
                   startIcon={
                     publishDraftMutation.isPending ? (
-                      <CircularProgress size={16} />
+                      <ButtonSpinner size={16} />
                     ) : null
                   }
                   sx={{
@@ -1164,11 +1164,7 @@ export default function OwnerAdEditPage() {
               <Button
                 size="small"
                 startIcon={
-                  enhancingConditions ? (
-                    <CircularProgress size={14} />
-                  ) : (
-                    <AiIcon />
-                  )
+                  enhancingConditions ? <ButtonSpinner size={14} /> : <AiIcon />
                 }
                 onClick={async () => {
                   const prev = contractForm.special_conditions;
@@ -1222,11 +1218,7 @@ export default function OwnerAdEditPage() {
               size="small"
               variant="text"
               startIcon={
-                summarizingContract ? (
-                  <CircularProgress size={14} />
-                ) : (
-                  <AiIcon />
-                )
+                summarizingContract ? <ButtonSpinner size={14} /> : <AiIcon />
               }
               onClick={async () => {
                 setSummarizingContract(true);

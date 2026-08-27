@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { ownerService, type LeaseContract } from '@/services/owner.service';
@@ -11,7 +12,6 @@ import {
 } from '@mui/icons-material';
 import {
   Button,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -235,7 +235,7 @@ export default function LeaseLifecycleMenu({
             variant="contained"
             disabled={renewMutation.isPending || extendMonths < 1}
             startIcon={
-              renewMutation.isPending ? <CircularProgress size={16} /> : null
+              renewMutation.isPending ? <ButtonSpinner size={16} /> : null
             }
             sx={{ borderRadius: 2 }}
           >
@@ -287,9 +287,7 @@ export default function LeaseLifecycleMenu({
             color="error"
             disabled={terminateMutation.isPending || reason.trim().length < 3}
             startIcon={
-              terminateMutation.isPending ? (
-                <CircularProgress size={16} />
-              ) : null
+              terminateMutation.isPending ? <ButtonSpinner size={16} /> : null
             }
             sx={{ borderRadius: 2 }}
           >
@@ -330,7 +328,7 @@ export default function LeaseLifecycleMenu({
             variant="contained"
             disabled={archiveMutation.isPending}
             startIcon={
-              archiveMutation.isPending ? <CircularProgress size={16} /> : null
+              archiveMutation.isPending ? <ButtonSpinner size={16} /> : null
             }
             sx={{ borderRadius: 2 }}
           >

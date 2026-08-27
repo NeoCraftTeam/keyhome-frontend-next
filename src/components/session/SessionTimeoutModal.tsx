@@ -1,6 +1,7 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import {
   Dialog,
   DialogTitle,
@@ -190,7 +191,7 @@ export default function SessionTimeoutModal({
         >
           {extending ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CircularProgress size={16} color="inherit" thickness={4} />
+              <ButtonSpinner size={16} />
               Prolongation…
             </Box>
           ) : (

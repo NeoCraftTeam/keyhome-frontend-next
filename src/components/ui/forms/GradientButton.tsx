@@ -1,10 +1,7 @@
 'use client';
 
-import {
-  Button as MuiButton,
-  type ButtonProps,
-  CircularProgress,
-} from '@mui/material';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
+import { Button as MuiButton, type ButtonProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
   gradient as gradientTokens,
@@ -97,11 +94,7 @@ export function GradientButton({
       sx={sx}
       {...props}
     >
-      {loading ? (
-        <CircularProgress size={20} sx={{ color: 'rgba(255,255,255,0.85)' }} />
-      ) : (
-        children
-      )}
+      {loading ? <ButtonSpinner size={20} /> : children}
     </StyledButton>
   );
 }

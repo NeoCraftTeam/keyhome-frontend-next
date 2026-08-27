@@ -1,20 +1,13 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { OWNER_LOGO_SRC } from '@/lib/owner/owner-auth-assets';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
-import { neutral } from '@/theme/tokens';
 import ArrowBack from '@mui/icons-material/ArrowBack';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Link,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Link, TextField, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -113,11 +106,7 @@ export default function OwnerForgotPasswordPage() {
                 '&:active': { transform: 'scale(0.97)' },
               }}
             >
-              {isSubmitting ? (
-                <CircularProgress size={24} sx={{ color: neutral.white }} />
-              ) : (
-                'Envoyer le lien'
-              )}
+              {isSubmitting ? <ButtonSpinner size={24} /> : 'Envoyer le lien'}
             </Button>
           </Box>
         </FadeIn>

@@ -7,6 +7,7 @@ import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
 import PasskeyManager from '@/components/security/PasskeyManager';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import PasswordStrengthBar from '@/components/ui/forms/PasswordStrengthBar';
@@ -612,9 +613,7 @@ export default function ProfilePage() {
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               variant="contained"
-              startIcon={
-                isSaving ? <CircularProgress size={16} /> : <SaveIcon />
-              }
+              startIcon={isSaving ? <ButtonSpinner size={16} /> : <SaveIcon />}
               onClick={handleSaveProfile}
               disabled={isSaving}
               sx={{
@@ -831,7 +830,7 @@ export default function ProfilePage() {
             }}
           >
             {isChangingPassword ? (
-              <CircularProgress size={20} sx={{ color: '#fff' }} />
+              <ButtonSpinner size={20} />
             ) : (
               'Modifier le mot de passe'
             )}

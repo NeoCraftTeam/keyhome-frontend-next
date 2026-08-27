@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import RentPaymentsSection from '@/components/owner/financials/RentPaymentsSection';
@@ -18,7 +19,6 @@ import {
   Button,
   Card,
   CardContent,
-  CircularProgress,
   Container,
   Dialog,
   DialogActions,
@@ -596,7 +596,7 @@ export default function OwnerFinancialsPage() {
             }
             startIcon={
               createExpenseMutation.isPending ? (
-                <CircularProgress size={16} />
+                <ButtonSpinner size={16} />
               ) : null
             }
             sx={{ borderRadius: 2 }}
@@ -643,7 +643,7 @@ export default function OwnerFinancialsPage() {
             disabled={deleteExpenseMutation.isPending}
             startIcon={
               deleteExpenseMutation.isPending ? (
-                <CircularProgress size={16} />
+                <ButtonSpinner size={16} />
               ) : null
             }
             sx={{ borderRadius: 2 }}

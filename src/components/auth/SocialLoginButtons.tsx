@@ -1,6 +1,7 @@
 'use client';
 
 /** OAuth icon row from `getConfiguredOAuthProviders()` (GitHub shown unless opted out via env). */
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { getConfiguredOAuthProviders } from '@/lib/auth/oauth-providers';
 import { useAuth } from '@/providers/AuthProvider';
 import { OAuthProvider } from '@/services/auth.service';
@@ -8,14 +9,7 @@ import { brand } from '@/theme/tokens';
 import Facebook from '@mui/icons-material/Facebook';
 import GitHub from '@mui/icons-material/GitHub';
 import Google from '@mui/icons-material/Google';
-import {
-  Box,
-  CircularProgress,
-  Divider,
-  IconButton,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, Divider, IconButton, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
 
 interface SocialLoginButtonsProps {
@@ -116,7 +110,7 @@ export default function SocialLoginButtons({
                 }}
               >
                 {isLoading ? (
-                  <CircularProgress size={24} sx={{ color: '#ffffff' }} />
+                  <ButtonSpinner size={24} color="#fff" />
                 ) : (
                   config.icon
                 )}

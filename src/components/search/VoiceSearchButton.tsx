@@ -1,8 +1,9 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
-import { Box, CircularProgress, Tooltip } from '@mui/material';
+import { Box, Tooltip } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
@@ -289,10 +290,7 @@ export default function VoiceSearchButton({
           }}
         >
           {isProcessing ? (
-            <CircularProgress
-              size={size * 0.55}
-              sx={{ color: 'primary.main' }}
-            />
+            <ButtonSpinner size={size * 0.55} color="primary.main" />
           ) : isListening ? (
             <StopIcon sx={{ fontSize: size * 0.6, color: 'error.main' }} />
           ) : (

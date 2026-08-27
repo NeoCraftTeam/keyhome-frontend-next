@@ -1,13 +1,13 @@
 'use client';
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { reviewsService } from '@/services/reviews.service';
 import {
   Box,
   Button,
-  CircularProgress,
   Collapse,
   Divider,
   Rating,
@@ -194,11 +194,7 @@ export default function ReviewForm({
           mb: { xs: 2, md: 0 },
           maxWidth: { md: 'fit-content' },
         }}
-        startIcon={
-          mutation.isPending ? (
-            <CircularProgress size={18} color="inherit" />
-          ) : null
-        }
+        startIcon={mutation.isPending ? <ButtonSpinner size={18} /> : null}
       >
         {mutation.isPending ? 'Envoi...' : 'Publier mon avis'}
       </Button>

@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import {
   geoService,
@@ -431,7 +432,7 @@ export default function DirectionsPanel({
                 transition: 'opacity 0.2s',
               }}
             >
-              {loading && <CircularProgress size={10} sx={{ color: '#fff' }} />}
+              {loading && <ButtonSpinner size={10} color="#fff" />}
               Calculer
             </Box>
           </Box>

@@ -19,6 +19,7 @@
  */
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { fetchConversations } from '@/lib/chat/chat-api';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { disputesService } from '@/services/disputes.service';
@@ -40,7 +41,6 @@ import {
   Button,
   Card,
   CardActionArea,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -334,9 +334,7 @@ export default function OpenDisputeDialog({
             onClick={handleSubmit}
             sx={{ textTransform: 'none', fontWeight: 700 }}
             startIcon={
-              createMutation.isPending ? (
-                <CircularProgress size={14} color="inherit" />
-              ) : null
+              createMutation.isPending ? <ButtonSpinner size={14} /> : null
             }
           >
             Ouvrir le litige

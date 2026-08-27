@@ -1,5 +1,6 @@
 'use client';
 
+import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import {
@@ -18,7 +19,6 @@ import {
   Button,
   Card,
   CardContent,
-  CircularProgress,
   Container,
   Dialog,
   DialogActions,
@@ -425,7 +425,7 @@ export default function OwnerTenantsPage() {
             onClick={handleSubmit}
             variant="contained"
             disabled={isPending || !form.name.trim()}
-            startIcon={isPending ? <CircularProgress size={16} /> : null}
+            startIcon={isPending ? <ButtonSpinner size={16} /> : null}
             sx={{ borderRadius: 2 }}
           >
             {editingTenant ? 'Enregistrer' : 'Ajouter'}
@@ -463,7 +463,7 @@ export default function OwnerTenantsPage() {
             variant="contained"
             disabled={deleteMutation.isPending}
             startIcon={
-              deleteMutation.isPending ? <CircularProgress size={16} /> : null
+              deleteMutation.isPending ? <ButtonSpinner size={16} /> : null
             }
             sx={{ borderRadius: 2 }}
           >
