@@ -18,13 +18,25 @@ interface AdFormFeaturesProps {
   values: AdFormValues;
   update: UpdateFn;
   errors: Record<string, string>;
+  /**
+   * Fields hidden for the current category (e.g. a `terrain` has no
+   * bedrooms/bathrooms/parking). `adresse`, `price` and `surface_area`
+   * are always shown — they live here and are required for every category.
+   */
+  hiddenFields?: Set<string>;
 }
 
 export default function AdFormFeatures({
   values,
   update,
   errors,
+  hiddenFields,
 }: AdFormFeaturesProps) {
+  const showBedrooms = !hiddenFields?.has('bedrooms');
+  const showBathrooms = !hiddenFields?.has('bathrooms');
+  const showParking = !hiddenFields?.has('has_parking');
+  const surfaceCols = showBedrooms || showBathrooms ? 4 : 12;
+
   return (
     <Paper elevation={0} sx={sectionSx}>
       <Typography variant="subtitle1" sx={sectionTitleSx}>
@@ -68,7 +80,7 @@ export default function AdFormFeatures({
         </Grid>
 
         {/* Surface / Chambres / Salles de bain */}
-        <Grid size={{ xs: 12, sm: 4 }}>
+        <Grid size={{ xs: 12, sm: surfaceCols }}>
           <TextField
             fullWidth
             size="medium"
@@ -84,46 +96,52 @@ export default function AdFormFeatures({
             }}
           />
         </Grid>
-        <Grid size={{ xs: 6, sm: 4 }}>
-          <TextField
-            fullWidth
-            size="medium"
-            label="Chambres"
-            type="number"
-            inputProps={{ min: 0, inputMode: 'numeric' }}
-            value={values.bedrooms}
-            onChange={(e) => update('bedrooms', e.target.value)}
-            error={!!errors.bedrooms}
-            helperText={errors.bedrooms}
-          />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4 }}>
-          <TextField
-            fullWidth
-            size="medium"
-            label="Salles de bain"
-            type="number"
-            inputProps={{ min: 0, inputMode: 'numeric' }}
-            value={values.bathrooms}
-            onChange={(e) => update('bathrooms', e.target.value)}
-            error={!!errors.bathrooms}
-            helperText={errors.bathrooms}
-          />
-        </Grid>
+        {showBedrooms && (
+          <Grid size={{ xs: 6, sm: 4 }}>
+            <TextField
+              fullWidth
+              size="medium"
+              label="Chambres"
+              type="number"
+              inputProps={{ min: 0, inputMode: 'numeric' }}
+              value={values.bedrooms}
+              onChange={(e) => update('bedrooms', e.target.value)}
+              error={!!errors.bedrooms}
+              helperText={errors.bedrooms}
+            />
+          </Grid>
+        )}
+        {showBathrooms && (
+          <Grid size={{ xs: 6, sm: 4 }}>
+            <TextField
+              fullWidth
+              size="medium"
+              label="Salles de bain"
+              type="number"
+              inputProps={{ min: 0, inputMode: 'numeric' }}
+              value={values.bathrooms}
+              onChange={(e) => update('bathrooms', e.target.value)}
+              error={!!errors.bathrooms}
+              helperText={errors.bathrooms}
+            />
+          </Grid>
+        )}
 
         {/* Parking */}
-        <Grid size={{ xs: 12 }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={values.has_parking}
-                onChange={(e) => update('has_parking', e.target.checked)}
-                color="primary"
-              />
-            }
-            label="Parking"
-          />
-        </Grid>
+        {showParking && (
+          <Grid size={{ xs: 12 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={values.has_parking}
+                  onChange={(e) => update('has_parking', e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Parking"
+            />
+          </Grid>
+        )}
 
         {/* Période — below Parking, only for location */}
         {values.transaction_type === 'location' && (

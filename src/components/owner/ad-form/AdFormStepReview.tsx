@@ -18,6 +18,7 @@ import {
   AdTypeCategory,
   TRANSACTION_TYPES,
   getCategoryById,
+  type AdFormStepKey,
 } from './ad-type-categories';
 import type { AdFormValues } from './types';
 import { isAdFormTextEmpty, sectionSx, sectionTitleSx } from './types';
@@ -35,7 +36,7 @@ interface AdFormStepReviewProps {
   hasPdf: boolean;
   selectedCategory: AdTypeCategory | null;
   adTypes: Array<{ id: string; name: string; desc: string }>;
-  onGoToStep: (step: number) => void;
+  onGoToStep: (step: AdFormStepKey) => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -80,8 +81,8 @@ const Placeholder = () => (
 interface SectionProps {
   icon: React.ReactNode;
   title: string;
-  step: number;
-  onGoToStep: (step: number) => void;
+  step: AdFormStepKey;
+  onGoToStep: (step: AdFormStepKey) => void;
   children: React.ReactNode;
 }
 
@@ -220,7 +221,7 @@ export default function AdFormStepReview({
       <Section
         icon={<CategoryIcon sx={{ color: 'primary.main', fontSize: 22 }} />}
         title="Type & Transaction"
-        step={0}
+        step="type"
         onGoToStep={onGoToStep}
       >
         <KVGrid>
@@ -246,7 +247,7 @@ export default function AdFormStepReview({
       <Section
         icon={<InfoIcon sx={{ color: 'primary.main', fontSize: 22 }} />}
         title="Informations de base"
-        step={1}
+        step="infos"
         onGoToStep={onGoToStep}
       >
         <KVGrid>
@@ -267,7 +268,7 @@ export default function AdFormStepReview({
       <Section
         icon={<PhotoCameraIcon sx={{ color: 'primary.main', fontSize: 22 }} />}
         title="Photos"
-        step={1}
+        step="infos"
         onGoToStep={onGoToStep}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -293,7 +294,7 @@ export default function AdFormStepReview({
       <Section
         icon={<LocationOnIcon sx={{ color: 'primary.main', fontSize: 22 }} />}
         title="Détails"
-        step={2}
+        step="details"
         onGoToStep={onGoToStep}
       >
         <KVGrid>
@@ -347,7 +348,7 @@ export default function AdFormStepReview({
         <Section
           icon={<GavelIcon sx={{ color: 'primary.main', fontSize: 22 }} />}
           title="Équipements & Conditions"
-          step={3}
+          step="equipment"
           onGoToStep={onGoToStep}
         >
           <KVGrid>
@@ -386,7 +387,7 @@ export default function AdFormStepReview({
       <Section
         icon={<MapIcon sx={{ color: 'primary.main', fontSize: 22 }} />}
         title="Médias & Localisation"
-        step={4}
+        step="media"
         onGoToStep={onGoToStep}
       >
         <KVGrid>

@@ -101,6 +101,7 @@ export const AD_TYPE_CATEGORIES: AdTypeCategoryConfig[] = [
       'bedrooms',
       'bathrooms',
       'has_parking',
+      'attributes',
       'deposit_amount',
       'minimum_lease_duration',
       'charges_forfaitaires',
@@ -172,3 +173,50 @@ export const TRANSACTION_TYPES = [
     description: 'Mise en vente',
   },
 ] as const;
+
+/* ------------------------------------------------------------------ */
+/*  Wizard steps — dynamic per category                                */
+/* ------------------------------------------------------------------ */
+
+export type AdFormStepKey =
+  | 'type'
+  | 'infos'
+  | 'details'
+  | 'equipment'
+  | 'media'
+  | 'review';
+
+export interface AdFormStepDef {
+  key: AdFormStepKey;
+  label: string;
+}
+
+const ALL_AD_FORM_STEPS: AdFormStepDef[] = [
+  { key: 'type', label: 'Type' },
+  { key: 'infos', label: 'Infos' },
+  { key: 'details', label: 'Détails' },
+  { key: 'equipment', label: 'Conditions' },
+  { key: 'media', label: 'Médias' },
+  { key: 'review', label: 'Résumé' },
+];
+
+/**
+ * Returns the ordered list of wizard steps for a given category.
+ *
+ * The "equipment" step (amenities + rental conditions) is dropped when the
+ * category hides both `attributes` and `deposit_amount` — e.g. a `terrain`
+ * has neither amenities nor a lease, so forcing the owner through an empty
+ * step is pointless (and previously stalled navigation).
+ */
+export function getAdFormSteps(
+  category: AdTypeCategory | null
+): AdFormStepDef[] {
+  const config = category ? getCategoryById(category) : undefined;
+  const hidden = new Set(config?.hiddenFields ?? []);
+  const hasEquipmentStep =
+    !hidden.has('attributes') || !hidden.has('deposit_amount');
+
+  return ALL_AD_FORM_STEPS.filter((step) =>
+    step.key === 'equipment' ? hasEquipmentStep : true
+  );
+}

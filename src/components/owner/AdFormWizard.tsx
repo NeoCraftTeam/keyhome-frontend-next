@@ -48,8 +48,10 @@ import {
 } from './ad-form';
 import {
   AdTypeCategory,
+  getAdFormSteps,
   getCategoryById,
   getCategoryForAdType,
+  type AdFormStepKey,
 } from './ad-form/ad-type-categories';
 import AdFormPriceAdvisor from './ad-form/AdFormPriceAdvisor';
 import AdFormStepReview from './ad-form/AdFormStepReview';
@@ -64,19 +66,6 @@ import AdFormLivePreview from './AdFormLivePreview';
 import ListingQualityBar from './ListingQualityBar';
 
 export type { AdFormValues, TourScene } from './ad-form/types';
-
-/* ------------------------------------------------------------------ */
-/*  Step definitions                                                    */
-/* ------------------------------------------------------------------ */
-
-const BASE_STEP_LABELS = [
-  'Type',
-  'Infos',
-  'Détails',
-  'Conditions',
-  'Médias',
-  'Résumé',
-];
 
 /* ------------------------------------------------------------------ */
 /*  Props                                                               */
@@ -485,14 +474,23 @@ function AdFormWizard({
     : undefined;
   const hiddenFields = new Set(categoryConfig?.hiddenFields ?? []);
 
-  /* Dynamic step labels — adapt Step 3 label based on category */
-  const STEP_LABELS = useMemo(() => {
-    const labels = [...BASE_STEP_LABELS];
-    if (selectedCategory === AdTypeCategory.TERRAIN) {
-      labels[3] = 'Équipements';
-    }
-    return labels;
-  }, [selectedCategory]);
+  /* Dynamic wizard steps — vary by category. A `terrain` has neither
+   * amenities nor a lease, so its "equipment" step is dropped entirely
+   * (see getAdFormSteps). Everything below keys off the step *key*, never
+   * a hard-coded numeric index, so adding/removing a step stays safe. */
+  const steps = useMemo(
+    () => getAdFormSteps(selectedCategory),
+    [selectedCategory]
+  );
+  const STEP_LABELS = useMemo(() => steps.map((s) => s.label), [steps]);
+  const currentStepKey: AdFormStepKey | undefined = steps[activeStep]?.key;
+
+  /* Keep activeStep in range when the step list shrinks (e.g. switching to
+   * terrain removes the equipment step). Category can only change on the
+   * first step, so in practice this just guards against out-of-bounds. */
+  useEffect(() => {
+    setActiveStep((prev) => Math.min(prev, steps.length - 1));
+  }, [steps.length]);
 
   /* ── Lightbox images ── */
   const lightboxImages = useMemo<AdImage[]>(
@@ -785,8 +783,8 @@ function AdFormWizard({
   const validateStep = (step: number): boolean => {
     const e: Record<string, string> = {};
 
-    switch (step) {
-      case 0: {
+    switch (steps[step]?.key) {
+      case 'type': {
         // Type & Transaction
         if (!values.transaction_type)
           e.transaction_type = 'Veuillez choisir le type de transaction.';
@@ -795,7 +793,7 @@ function AdFormWizard({
           e.type_id = "Veuillez préciser le type d'annonce.";
         break;
       }
-      case 1: {
+      case 'infos': {
         // Basic info + photos
         if (isAdFormTextEmpty(values.title))
           e.title = 'Le titre est obligatoire.';
@@ -810,7 +808,7 @@ function AdFormWizard({
           e.images = 'Veuillez ajouter au moins 4 photos pour continuer.';
         break;
       }
-      case 2: {
+      case 'details': {
         // Details — type-specific
         if (!hiddenFields.has('adresse') && isAdFormTextEmpty(values.adresse))
           e.adresse = "L'adresse est obligatoire.";
@@ -831,11 +829,11 @@ function AdFormWizard({
         if (!values.quarter_id) e.quarter_id = 'Le quartier est obligatoire.';
         break;
       }
-      case 3: {
+      case 'equipment': {
         // Equipment & Conditions — optional, no required validation
         break;
       }
-      case 4: {
+      case 'media': {
         // Media & Map — validate tour scenes if any
         tourScenes.forEach((scene, i) => {
           if (!scene.title.trim())
@@ -918,16 +916,25 @@ function AdFormWizard({
     if (Object.keys(allErrors).length > 0) {
       // Jump to the first step with an error
       const errorFields = Object.keys(allErrors);
-      const stepFieldMap: Record<number, string[]> = {
-        0: ['transaction_type', 'type_id'],
-        1: ['title', 'description', 'images'],
-        2: ['adresse', 'price', 'surface_area', 'quarter_id'],
-        4: errorFields.filter((f) => f.startsWith('tour_scene_')),
-      };
-      for (const [step, fields] of Object.entries(stepFieldMap)) {
+      const stepKeyFieldMap: { key: AdFormStepKey; fields: string[] }[] = [
+        { key: 'type', fields: ['transaction_type', 'type_id'] },
+        { key: 'infos', fields: ['title', 'description', 'images'] },
+        {
+          key: 'details',
+          fields: ['adresse', 'price', 'surface_area', 'quarter_id'],
+        },
+        {
+          key: 'media',
+          fields: errorFields.filter((f) => f.startsWith('tour_scene_')),
+        },
+      ];
+      for (const { key, fields } of stepKeyFieldMap) {
         if (fields.some((f) => errorFields.includes(f))) {
-          setActiveStep(Number(step));
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          const idx = steps.findIndex((s) => s.key === key);
+          if (idx >= 0) {
+            setActiveStep(idx);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
           break;
         }
       }
@@ -948,8 +955,10 @@ function AdFormWizard({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const goToStep = (step: number) => {
-    setActiveStep(step);
+  const goToStep = (key: AdFormStepKey) => {
+    const idx = steps.findIndex((s) => s.key === key);
+    if (idx < 0) return;
+    setActiveStep(idx);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1042,7 +1051,7 @@ function AdFormWizard({
   };
 
   /* ── Determine if a step is the last real step ── */
-  const isReviewStep = activeStep === 5;
+  const isReviewStep = currentStepKey === 'review';
 
   /* ── Existing images count ── */
   const existingImageCount = (ad?.images?.length ?? 0) - imagesToDelete.length;
@@ -1052,7 +1061,7 @@ function AdFormWizard({
     ad?.images?.filter((img) => !imagesToDelete.includes(img.id)).length ?? 0;
   const totalImageCount = images.length + existingVisibleCount;
   const nextDisabled =
-    isSubmitting || (activeStep === 1 && totalImageCount < 4);
+    isSubmitting || (currentStepKey === 'infos' && totalImageCount < 4);
 
   /* ================================================================== */
   /*  RENDER                                                             */
@@ -1105,8 +1114,8 @@ function AdFormWizard({
                 />
               )}
 
-              {/* ══════════════════ Step 0: Type ══════════════════ */}
-              <Collapse in={activeStep === 0} unmountOnExit>
+              {/* ══════════════════ Step: Type ══════════════════ */}
+              <Collapse in={currentStepKey === 'type'} unmountOnExit>
                 <AdFormStepType
                   selectedCategory={selectedCategory}
                   selectedTransactionType={values.transaction_type}
@@ -1119,8 +1128,8 @@ function AdFormWizard({
                 />
               </Collapse>
 
-              {/* ══════════════════ Step 1: Basic Info + Photos ══════════════════ */}
-              <Collapse in={activeStep === 1} unmountOnExit>
+              {/* ══════════════════ Step: Basic Info + Photos ══════════════════ */}
+              <Collapse in={currentStepKey === 'infos'} unmountOnExit>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <AdFormBasicInfo
                     values={values}
@@ -1164,8 +1173,8 @@ function AdFormWizard({
                 </Box>
               </Collapse>
 
-              {/* ══════════════════ Step 2: Details ══════════════════ */}
-              <Collapse in={activeStep === 2} unmountOnExit>
+              {/* ══════════════════ Step: Details ══════════════════ */}
+              <Collapse in={currentStepKey === 'details'} unmountOnExit>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <AdFormLocation
                     values={values}
@@ -1190,18 +1199,17 @@ function AdFormWizard({
                     cityInputSx={cityInputSx}
                     hideTypeSelector
                   />
-                  {!hiddenFields.has('bedrooms') && (
-                    <AdFormFeatures
-                      values={values}
-                      update={update}
-                      errors={errors}
-                    />
-                  )}
+                  <AdFormFeatures
+                    values={values}
+                    update={update}
+                    errors={errors}
+                    hiddenFields={hiddenFields}
+                  />
                 </Box>
               </Collapse>
 
-              {/* ══════════════════ Step 3: Equipment & Conditions ══════════════════ */}
-              <Collapse in={activeStep === 3} unmountOnExit>
+              {/* ══════════════════ Step: Equipment & Conditions ══════════════════ */}
+              <Collapse in={currentStepKey === 'equipment'} unmountOnExit>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   {!hiddenFields.has('attributes') && (
                     <AdFormEquipment
@@ -1227,8 +1235,8 @@ function AdFormWizard({
                 </Box>
               </Collapse>
 
-              {/* ══════════════════ Step 4: Media & Location ══════════════════ */}
-              <Collapse in={activeStep === 4} unmountOnExit>
+              {/* ══════════════════ Step: Media & Location ══════════════════ */}
+              <Collapse in={currentStepKey === 'media'} unmountOnExit>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <AdFormTour
                     tourScenes={tourScenes}
@@ -1247,8 +1255,8 @@ function AdFormWizard({
                 </Box>
               </Collapse>
 
-              {/* ══════════════════ Step 5: Review ══════════════════ */}
-              <Collapse in={activeStep === 5} unmountOnExit>
+              {/* ══════════════════ Step: Review ══════════════════ */}
+              <Collapse in={currentStepKey === 'review'} unmountOnExit>
                 <AdFormStepReview
                   values={values}
                   imageCount={images.length}
