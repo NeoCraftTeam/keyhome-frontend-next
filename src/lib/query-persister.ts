@@ -8,21 +8,31 @@ import type {
 import { decryptFromCache, encryptForCache } from '@/lib/query-cache-crypto';
 
 /**
- * Persister du cache chat (modèle WhatsApp Web) : snapshots TanStack
+ * Persister du cache local (modèle WhatsApp Web) : snapshots TanStack
  * Query chiffrés (AES-GCM, clé non-extractible en IndexedDB) dans
- * localStorage, écriture throttlée à 1 s. Limité aux racines du chat —
- * inbox, fils, compteur non-lu — pour un affichage INSTANTANÉ au
- * chargement de la page, puis resync en arrière-plan.
+ * localStorage, écriture throttlée à 1 s. Limité à une liste blanche de
+ * racines de queryKey — chat (inbox, fils, compteur non-lu) et le feed
+ * d'annonces de l'accueil — pour un affichage INSTANTANÉ au rechargement
+ * de la page (plus de skeleton qui clignote), puis resync en tâche de
+ * fond. Le feed est borné (20/page, auto-load plafonné côté page) ; la
+ * recherche (`search` / `search-map-all`, 200 annonces par requête)
+ * reste HORS liste pour ne pas gonfler le blob partagé et risquer
+ * d'évincer le snapshot chat au quota localStorage.
  */
 
 export const CHAT_CACHE_STORAGE_KEY = 'kh-chat-cache-v1';
 export const CHAT_CACHE_BUSTER = 'kh-web-chat-v1';
 
-/** Racines de queryKey persistées — chat uniquement. */
+/**
+ * Racines de queryKey persistées. Ajouter une racine ici la rend
+ * disponible hors-ligne / au rechargement — vérifier d'abord qu'elle
+ * n'accumule pas de gros volumes (cf. exclusion `search*` ci-dessus).
+ */
 const PERSISTED_ROOTS = new Set([
   'conversations',
   'chat-messages',
   'chat-unread',
+  'ads-feed',
 ]);
 
 /**

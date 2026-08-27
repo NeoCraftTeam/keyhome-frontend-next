@@ -41,11 +41,17 @@ function fakeClient(marker: string): PersistedClient {
   } as unknown as PersistedClient;
 }
 
-describe('shouldPersistQuery — whitelist chat uniquement', () => {
+describe('shouldPersistQuery — whitelist chat + feed accueil', () => {
   it.each([
     [['conversations', 1], true],
     [['chat-messages', 1, 'uuid-1'], true],
     [['chat-unread', 1], true],
+    // Feed d'annonces de l'accueil : persisté pour un rechargement instantané.
+    [['ads-feed', '', [], 'recent'], true],
+    // Recherche : HORS liste à dessein (200 annonces/requête → risque quota
+    // sur le blob partagé, évincerait le snapshot chat). Voir query-persister.ts.
+    [['search', 'yaoundé'], false],
+    [['search-map-all'], false],
     [['credits-balance'], false],
     [['payments', 'history'], false],
     [['ads', 'list'], false],
