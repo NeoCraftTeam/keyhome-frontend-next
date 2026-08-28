@@ -8,13 +8,19 @@ import Portal from '@mui/material/Portal';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 
+import { brandAgent } from '@/theme/tokens';
+
 interface PublishingOverlayProps {
   open: boolean;
   title?: string;
   subtitle?: string;
   /** MUI SvgIcon component to display. Defaults to CloudUploadOutlined. */
   Icon?: SvgIconComponent;
-  /** Accent colour for icon background, progress bar and icon. Defaults to #F6475F. */
+  /**
+   * Accent colour for icon background, progress bar and icon. Defaults to the
+   * owner teal (`brandAgent.primary`) — this is an owner-panel component, so it
+   * must never fall back to the visitor coral brand.
+   */
   accentColor?: string;
 }
 
@@ -23,7 +29,7 @@ export default function PublishingOverlay({
   title = 'En cours de publication…',
   subtitle = 'Ne quittez pas cette page — votre annonce est en cours de soumission.',
   Icon = CloudUploadOutlined,
-  accentColor = '#F6475F',
+  accentColor = brandAgent.primary,
 }: PublishingOverlayProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
