@@ -15,7 +15,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { UserRole } from '@/types';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import { Box, Button, Divider, Typography } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import { useRouter } from 'next/navigation';
 
 interface PasskeyLoginButtonProps {
@@ -27,9 +27,6 @@ export default function PasskeyLoginButton({
 }: PasskeyLoginButtonProps) {
   const theme = useTheme();
   const primary = theme.palette.primary.main;
-  const primaryHoverBg = alpha(primary, 0.18);
-  const primaryBg = alpha(primary, 0.1);
-  const primaryShadow = alpha(primary, 0.12);
 
   const {
     supported,
@@ -124,13 +121,14 @@ export default function PasskeyLoginButton({
               py: 1.4,
               textTransform: 'none',
               border: 'none',
+              boxShadow: 'none',
               color: 'text.primary',
-              bgcolor: primaryBg,
-              transition: 'all 0.2s',
+              bgcolor: 'transparent',
+              transition: 'background-color 0.2s',
               '&:hover': {
                 border: 'none',
-                bgcolor: primaryHoverBg,
-                boxShadow: `0 2px 12px ${primaryShadow}`,
+                boxShadow: 'none',
+                bgcolor: 'action.hover',
               },
               // Keep a keyboard focus ring for accessibility (only shows on
               // keyboard navigation, never on pointer clicks).
@@ -154,25 +152,11 @@ export default function PasskeyLoginButton({
               ) : (
                 <FingerprintIcon sx={{ fontSize: 26, color: primary }} />
               )}
-              <Box sx={{ textAlign: 'left' }}>
-                <Typography variant="body2" fontWeight={600} lineHeight={1.3}>
-                  {isLoading
-                    ? 'Vérification en cours…'
-                    : 'Se connecter avec une Passkey'}
-                </Typography>
-                {!isLoading && (
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'text.secondary',
-                      fontSize: '0.68rem',
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    Empreinte, Face ID ou clé de sécurité
-                  </Typography>
-                )}
-              </Box>
+              <Typography variant="body2" fontWeight={600} lineHeight={1.3}>
+                {isLoading
+                  ? 'Vérification en cours…'
+                  : 'Se connecter avec une Passkey'}
+              </Typography>
             </Box>
           </Button>
 
