@@ -19,6 +19,10 @@ import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
 import { citiesService } from '@/services/cities.service';
 import { ownerService } from '@/services/owner.service';
+import {
+  ownerAdsService,
+  type PrivateOwnerNote,
+} from '@/services/owner/owner-ads.service';
 import { usersService } from '@/services/users.service';
 import { neutral, semantic, shadow, transition } from '@/theme/tokens';
 import ArrowBack from '@mui/icons-material/ArrowBack';
@@ -301,12 +305,14 @@ export default function OwnerNewAdPage() {
       tourScenes,
       propertyConditionPdf,
       idempotencyKey,
+      privateOwnerNote,
     }: {
       values: AdFormValues;
       images: File[];
       tourScenes?: TourScene[];
       propertyConditionPdf?: File | null;
       idempotencyKey?: string;
+      privateOwnerNote?: PrivateOwnerNote;
     }) => {
       const formData = buildAdFormData(values, images, { idempotencyKey });
 
@@ -353,6 +359,21 @@ export default function OwnerNewAdPage() {
         await adsService.publishDraft(ad.id);
       }
 
+      // Persist the private "advertiser ≠ owner" note now that the ad has an id.
+      // Best-effort: a note failure must not discard a successfully-created ad —
+      // the owner can always re-enter it from the ads list.
+      if (privateOwnerNote && !privateOwnerNote.is_property_owner) {
+        try {
+          await ownerAdsService.savePrivateOwnerNote(ad.id, privateOwnerNote);
+        } catch {
+          setDraftSnackbar({
+            message:
+              'Annonce créée, mais la note privée n’a pas pu être enregistrée. Réessayez depuis vos annonces.',
+            severity: 'error',
+          });
+        }
+      }
+
       return ad;
     },
     onSuccess: () => {
@@ -384,6 +405,7 @@ export default function OwnerNewAdPage() {
         tourScenes?: TourScene[];
         propertyConditionPdf?: File | null;
         idempotencyKey?: string;
+        privateOwnerNote?: PrivateOwnerNote;
       }
     ) => {
       await createMutation.mutateAsync({
@@ -392,6 +414,7 @@ export default function OwnerNewAdPage() {
         tourScenes: options?.tourScenes,
         propertyConditionPdf: options?.propertyConditionPdf,
         idempotencyKey: options?.idempotencyKey,
+        privateOwnerNote: options?.privateOwnerNote,
       });
     },
     [createMutation.mutateAsync]

@@ -1,5 +1,8 @@
 'use client';
 
+import PrivateOwnerNoteFields, {
+  EMPTY_PRIVATE_OWNER_NOTE,
+} from '@/components/owner/PrivateOwnerNoteFields';
 import AppAlert from '@/components/ui/feedback/AppAlert';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import {
@@ -15,22 +18,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
-  Switch,
-  TextField,
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-
-const EMPTY: PrivateOwnerNote = {
-  is_property_owner: true,
-  owner_name: '',
-  owner_address: '',
-  owner_phone: '',
-  owner_email: '',
-  notes: '',
-};
 
 interface Props {
   adId: string | null;
@@ -44,7 +35,7 @@ export default function PrivateOwnerNoteDialog({
   onClose,
 }: Props) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState<PrivateOwnerNote>(EMPTY);
+  const [form, setForm] = useState<PrivateOwnerNote>(EMPTY_PRIVATE_OWNER_NOTE);
   const [feedback, setFeedback] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ['private-owner-note', adId],
@@ -53,7 +44,9 @@ export default function PrivateOwnerNoteDialog({
   });
 
   useEffect(() => {
-    if (query.data !== undefined) setForm(query.data ?? EMPTY);
+    if (query.data !== undefined) {
+      setForm(query.data ?? EMPTY_PRIVATE_OWNER_NOTE);
+    }
   }, [query.data]);
 
   const save = useMutation({
@@ -63,9 +56,6 @@ export default function PrivateOwnerNoteDialog({
       setFeedback('Note privée enregistrée.');
     },
   });
-
-  const update = (field: keyof PrivateOwnerNote, value: string | boolean) =>
-    setForm((current) => ({ ...current, [field]: value }));
 
   const delegated = !form.is_property_owner;
 
@@ -91,66 +81,7 @@ export default function PrivateOwnerNoteDialog({
           </Box>
         ) : (
           <Box sx={{ display: 'grid', gap: 2 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={form.is_property_owner}
-                  onChange={(_, value) => update('is_property_owner', value)}
-                />
-              }
-              label="Je suis le propriétaire réel de ce bien"
-            />
-            {delegated && (
-              <>
-                <AppAlert
-                  severity="info"
-                  message="Conservez ici les coordonnées du propriétaire réel afin de les retrouver lorsqu’un prospect vous contacte."
-                />
-                <TextField
-                  required
-                  label="Nom du propriétaire réel"
-                  value={form.owner_name ?? ''}
-                  onChange={(e) => update('owner_name', e.target.value)}
-                  inputProps={{ maxLength: 150 }}
-                />
-                <TextField
-                  label="Adresse"
-                  value={form.owner_address ?? ''}
-                  onChange={(e) => update('owner_address', e.target.value)}
-                  inputProps={{ maxLength: 500 }}
-                />
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                    gap: 2,
-                  }}
-                >
-                  <TextField
-                    label="Téléphone"
-                    value={form.owner_phone ?? ''}
-                    onChange={(e) => update('owner_phone', e.target.value)}
-                    inputProps={{ maxLength: 40 }}
-                  />
-                  <TextField
-                    type="email"
-                    label="Adresse e-mail"
-                    value={form.owner_email ?? ''}
-                    onChange={(e) => update('owner_email', e.target.value)}
-                    inputProps={{ maxLength: 254 }}
-                  />
-                </Box>
-                <TextField
-                  multiline
-                  minRows={3}
-                  label="Notes personnelles"
-                  placeholder="Mandat, disponibilité, consignes de contact…"
-                  value={form.notes ?? ''}
-                  onChange={(e) => update('notes', e.target.value)}
-                  inputProps={{ maxLength: 3000 }}
-                />
-              </>
-            )}
+            <PrivateOwnerNoteFields value={form} onChange={setForm} />
             {feedback && <AppAlert severity="success" message={feedback} />}
             {save.isError && (
               <AppAlert

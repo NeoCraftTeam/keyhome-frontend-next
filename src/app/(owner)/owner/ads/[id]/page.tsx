@@ -16,6 +16,10 @@ import FadeIn from '@/components/ui/layout/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { adsService } from '@/services/ads.service';
 import { ownerService } from '@/services/owner.service';
+import {
+  ownerAdsService,
+  type PrivateOwnerNote,
+} from '@/services/owner/owner-ads.service';
 import { AdStatus } from '@/types';
 import BackIcon from '@mui/icons-material/ArrowBack';
 import AiIcon from '@mui/icons-material/AutoAwesome';
@@ -88,6 +92,12 @@ export default function OwnerAdEditPage() {
   } = useQuery({
     queryKey: ['ad', id],
     queryFn: () => adsService.show(id),
+    enabled: !!id,
+  });
+
+  const privateOwnerNoteQuery = useQuery({
+    queryKey: ['private-owner-note', id],
+    queryFn: () => ownerAdsService.getPrivateOwnerNote(id),
     enabled: !!id,
   });
 
@@ -494,6 +504,7 @@ export default function OwnerAdEditPage() {
         imagesToDelete?: number[];
         tourScenes?: TourScene[];
         propertyConditionPdf?: File | null;
+        privateOwnerNote?: PrivateOwnerNote;
       }
     ) => {
       // Save the update first
@@ -508,8 +519,34 @@ export default function OwnerAdEditPage() {
       if (ad?.status === AdStatus.DRAFT) {
         await publishDraftMutation.mutateAsync();
       }
+      // Best-effort: persist the private "advertiser ≠ owner" note. Only act
+      // once the note query has settled so an unresolved query never clobbers
+      // an existing note with a blank one; skip when there is nothing to store.
+      if (privateOwnerNoteQuery.data !== undefined) {
+        const note = options?.privateOwnerNote;
+        const hadNote = !!privateOwnerNoteQuery.data;
+        if (note && (!note.is_property_owner || hadNote)) {
+          try {
+            const saved = await ownerAdsService.savePrivateOwnerNote(id, note);
+            queryClient.setQueryData(['private-owner-note', id], saved);
+          } catch {
+            setSnackbar({
+              message:
+                'Annonce mise à jour, mais la note privée n’a pas pu être enregistrée. Réessayez depuis vos annonces.',
+              severity: 'error',
+            });
+          }
+        }
+      }
     },
-    [updateMutation.mutateAsync, publishDraftMutation.mutateAsync, ad?.status]
+    [
+      updateMutation.mutateAsync,
+      publishDraftMutation.mutateAsync,
+      ad?.status,
+      privateOwnerNoteQuery.data,
+      id,
+      queryClient,
+    ]
   );
 
   const handleSaveDraft = useCallback(
@@ -915,6 +952,7 @@ export default function OwnerAdEditPage() {
       <AdFormWizard
         initialData={initialData}
         ad={ad}
+        initialPrivateOwnerNote={privateOwnerNoteQuery.data}
         onSubmit={handleSubmit}
         onSaveDraft={isDraft ? handleSaveDraft : undefined}
         onCancel={() => router.push('/owner/ads')}

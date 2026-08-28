@@ -65,6 +65,9 @@ import {
 } from './ad-form/types';
 import AdFormLivePreview from './AdFormLivePreview';
 import ListingQualityBar from './ListingQualityBar';
+import PrivateOwnerNoteSection from './PrivateOwnerNoteSection';
+import { EMPTY_PRIVATE_OWNER_NOTE } from './PrivateOwnerNoteFields';
+import type { PrivateOwnerNote } from '@/services/owner/owner-ads.service';
 
 export type { AdFormValues, TourScene } from './ad-form/types';
 
@@ -75,6 +78,8 @@ export type { AdFormValues, TourScene } from './ad-form/types';
 interface AdFormWizardProps {
   initialData?: Partial<AdFormValues> | null;
   ad?: Ad | null;
+  /** Preloaded private owner note (edit flow); undefined while loading, null when none. */
+  initialPrivateOwnerNote?: PrivateOwnerNote | null;
   onSubmit: (
     values: AdFormValues,
     images: File[],
@@ -82,6 +87,7 @@ interface AdFormWizardProps {
       imagesToDelete?: number[];
       tourScenes?: TourScene[];
       propertyConditionPdf?: File | null;
+      privateOwnerNote?: PrivateOwnerNote;
     }
   ) => Promise<void>;
   onBeforeSubmit?: (values: AdFormValues) => Promise<boolean>;
@@ -138,6 +144,7 @@ interface AdFormWizardProps {
 function AdFormWizard({
   initialData,
   ad,
+  initialPrivateOwnerNote,
   onSubmit,
   onBeforeSubmit,
   onSaveDraft,
@@ -175,6 +182,28 @@ function AdFormWizard({
     seededFromInitialDataRef.current = seedKey;
     setValues(normalizeAdFormValues(initialData));
   }, [ad?.id, initialData]);
+
+  /* ── Private "advertiser ≠ owner" note ──
+   * Kept in local state, deliberately separate from AdFormValues so it never
+   * pollutes the text-only autosave payload. Persisted by the parent page via
+   * the dedicated encrypted endpoint once the ad id exists. */
+  const [privateOwnerNote, setPrivateOwnerNote] = useState<PrivateOwnerNote>(
+    EMPTY_PRIVATE_OWNER_NOTE
+  );
+  const seededNoteRef = useRef(false);
+  useEffect(() => {
+    if (seededNoteRef.current || initialPrivateOwnerNote === undefined) {
+      return;
+    }
+    seededNoteRef.current = true;
+    if (initialPrivateOwnerNote) {
+      setPrivateOwnerNote({
+        ...EMPTY_PRIVATE_OWNER_NOTE,
+        ...initialPrivateOwnerNote,
+      });
+    }
+  }, [initialPrivateOwnerNote]);
+
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
@@ -1087,6 +1116,7 @@ function AdFormWizard({
         imagesToDelete: imagesToDelete.length > 0 ? imagesToDelete : undefined,
         tourScenes: tourScenes.length > 0 ? tourScenes : undefined,
         propertyConditionPdf,
+        privateOwnerNote,
       });
       clearDraft();
     } catch {
@@ -1249,6 +1279,13 @@ function AdFormWizard({
                     errors={errors}
                     hiddenFields={hiddenFields}
                   />
+                  {!editDraftMode && (
+                    <PrivateOwnerNoteSection
+                      value={privateOwnerNote}
+                      onChange={setPrivateOwnerNote}
+                      defaultExpanded={!privateOwnerNote.is_property_owner}
+                    />
+                  )}
                 </Box>
               </Collapse>
 
