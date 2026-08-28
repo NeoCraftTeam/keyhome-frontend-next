@@ -50,7 +50,11 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from '@tanstack/react-query';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
@@ -245,27 +249,47 @@ export default function HomePage() {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: ['ads-feed', selectedCategory, recommendedIds, feedSort],
+    // `recommendedIds` is deliberately kept OUT of the query key. It is empty
+    // on boot and only populates once the separate ['recommendations'] query
+    // resolves; including it would shift the key mid-load and make a hard
+    // reload miss the persisted cache (skeleton + full refetch). De-duplication
+    // against the recommendations strip is done at render time (see `ads`),
+    // which lets the key stay stable so the persisted feed restores instantly.
+    queryKey: ['ads-feed', selectedCategory, feedSort],
     queryFn: ({ pageParam }) =>
       adsService.feed({
         cursor: pageParam ?? undefined,
         per_page: 20,
         type: selectedCategory || undefined,
         sort: feedSort,
-        exclude_ids: recommendedIds.length > 0 ? recommendedIds : undefined,
       }),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.meta.next_cursor,
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
+    // Keep the ads currently on screen visible while a new query (category or
+    // sort switch, or a background revalidation) loads, instead of dropping
+    // back to skeletons once there is data to show.
+    placeholderData: keepPreviousData,
   });
 
   // Dedupe by id: a cursor feed ordered by boost_score/recency can return the
   // same ad on two adjacent pages, and flattening the infinite-query pages would
   // then render duplicate `key={ad.id}` values (React duplicate-key warnings).
+  // Ads already surfaced in the "Recommandé pour vous" strip are dropped from
+  // the main grid so they are not shown twice. This is the render-time
+  // equivalent of the former `exclude_ids` request param; moving it here lets
+  // the feed query key stay independent of `recommendedIds` (see above).
+  const recommendedIdSet = useMemo(
+    () => new Set(recommendedIds),
+    [recommendedIds]
+  );
   const ads = useMemo(
-    () => dedupeById(adsData?.pages.flatMap((p) => p.data) ?? []),
-    [adsData]
+    () =>
+      dedupeById(adsData?.pages.flatMap((p) => p.data) ?? []).filter(
+        (ad) => !recommendedIdSet.has(String(ad.id))
+      ),
+    [adsData, recommendedIdSet]
   );
 
   // Gap #3: compteur approx depuis la 1ère page
@@ -275,8 +299,12 @@ export default function HomePage() {
   useScrollRestoration('/home', ads.length > 0 || isError);
 
   const skeletonCount = isMobile ? 4 : 12;
+  // Skeleton only when there is genuinely nothing to display yet. Once the
+  // persisted (or placeholder) feed is available, a background revalidation
+  // stays silent — surfaced by the "Mise à jour…" hint — instead of
+  // collapsing the grid back to skeletons on every reload or key switch.
   const showShimmer =
-    isLoading || (isFetching && ads.length === 0) || isPending;
+    ads.length === 0 && (isLoading || isFetching || isPending);
 
   const handleCategoryChange = useCallback(
     (val: string) => {
