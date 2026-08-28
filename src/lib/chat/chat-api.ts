@@ -108,6 +108,25 @@ export async function fetchMessages(
 }
 
 /**
+ * Fetch messages created at or after a UTC ISO8601 timestamp (oldest-first).
+ *
+ * WhatsApp Web-style incremental sync: the client keeps its cached history
+ * visible and pulls only the messages newer than the latest one it already
+ * holds. The server marks the thread read on this path (like the first
+ * history page). `has_more` signals a long-absence catch-up — re-request from
+ * the newest received `created_at` until it clears.
+ */
+export async function fetchMessagesAfter(
+  uuid: string,
+  after: string
+): Promise<MessageHistoryResponse> {
+  const res: AxiosResponse = await api.get(`/conversations/${uuid}/messages`, {
+    params: { after },
+  });
+  return res.data as MessageHistoryResponse;
+}
+
+/**
  * Send a text message (with optional reply and attachments), or a client-sealed E2EE payload.
  */
 export async function sendMessage(

@@ -149,11 +149,13 @@ describe('ChatWindow — indicateurs de chargement', () => {
 
     // On est bien dans la branche « messages affichés » (input présent)…
     expect(getByTestId('message-input')).toBeInTheDocument();
-    // …et pourtant aucune barre/squelette de chargement n'est rendue.
-    expect(container.querySelector('[data-kh-chat-skeleton]')).toBeNull();
+    // …et pourtant aucun loader de chargement n'est rendu.
+    expect(
+      container.querySelector('[aria-label="Chargement des messages"]')
+    ).toBeNull();
   });
 
-  it('garde le squelette au tout premier fetch sans cache (isLoading)', () => {
+  it('montre un loader discret au tout premier fetch sans cache (isLoading)', () => {
     chatState.current = buildState({
       messages: [],
       isLoading: true,
@@ -162,7 +164,10 @@ describe('ChatWindow — indicateurs de chargement', () => {
 
     const { container } = renderWindow();
 
-    expect(container.querySelector('[data-kh-chat-skeleton]')).not.toBeNull();
+    // Plus de fausse liste de bulles-squelette : un unique spinner « cold sync ».
+    expect(
+      container.querySelector('[aria-label="Chargement des messages"]')
+    ).not.toBeNull();
   });
 });
 

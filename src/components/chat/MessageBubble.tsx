@@ -558,34 +558,20 @@ export function MessageBubble({
                     isOwnerPanel={theme.isOwnerPanel}
                   />
                 ) : message.is_client_sealed ? (
-                  message.decryption_failed ? (
-                    // E2EE désactivé par défaut depuis mai 2026 — ce libellé n'est
-                    // affiché que pour les anciens messages sealed (historique)
-                    // ouverts depuis un appareil qui n'a pas la clé privée locale.
-                    // Tous les nouveaux messages sont chiffrés côté serveur et
-                    // lisibles depuis n'importe quel appareil.
-                    <span
-                      className="text-[13px] opacity-90 italic"
-                      style={{
-                        color: isOwn ? 'rgba(255,255,255,0.9)' : undefined,
-                      }}
-                      title="Message envoyé depuis un ancien appareil avec un chiffrement local. Indisponible ici."
-                    >
-                      Message d&apos;un ancien appareil (non lisible ici)
-                    </span>
-                  ) : (
-                    // Transitional state for sealed messages still being decrypted
-                    // (rare with E2EE off, but kept for robustness during the
-                    // historic-message decryption pass).
-                    <span
-                      className="text-[13px] opacity-80 italic"
-                      style={{
-                        color: isOwn ? 'rgba(255,255,255,0.85)' : undefined,
-                      }}
-                    >
-                      🔐 Déchiffrement du message…
-                    </span>
-                  )
+                  // Legacy client-sealed messages (E2EE, off by default since
+                  // May 2026). They are unrecoverable server-side, so there is
+                  // no "decrypting…" step to wait on — show a static, honest
+                  // label and keep the message visible (it must never vanish).
+                  // New messages are server-encrypted and readable everywhere.
+                  <span
+                    className="text-[13px] opacity-90 italic"
+                    style={{
+                      color: isOwn ? 'rgba(255,255,255,0.9)' : undefined,
+                    }}
+                    title="Message envoyé depuis un ancien appareil avec un chiffrement local. Indisponible ici."
+                  >
+                    Message d&apos;un ancien appareil (non lisible ici)
+                  </span>
                 ) : null}
               </div>
             </>

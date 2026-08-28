@@ -30,7 +30,7 @@ import { useMarkAsRead } from '@/hooks/chat/useMarkAsRead';
 import { useEchoConnectionState } from '@/lib/chat/echo';
 import { useAuth } from '@/providers/AuthProvider';
 import type { Conversation, Message, MessageAttachment } from '@/types/chat';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { DeviceType } from './usePresence';
 import { usePresence } from './usePresence';
 import { useTypingIndicator } from './useTypingIndicator';
@@ -92,9 +92,23 @@ export function useChat(
     hasMore,
     refetch,
     loadMore,
+    syncDelta,
     updateCache,
     messagesRef,
   } = useChatMessages(userId, conversationUuid);
+
+  // Delta-sync on realtime reconnect: after the socket drops and comes back,
+  // pull the messages missed during the gap (WhatsApp Web behaviour). The
+  // transition guard fires only on connected-after-a-break, not the first
+  // connect (the initial cache bootstrap in useChatMessages covers that).
+  const prevConnectionStateRef = useRef(connectionState);
+  useEffect(() => {
+    const prev = prevConnectionStateRef.current;
+    prevConnectionStateRef.current = connectionState;
+    if (connectionState === 'connected' && prev !== 'connected') {
+      void syncDelta();
+    }
+  }, [connectionState, syncDelta]);
 
   const { markAsRead } = useMarkAsRead(conversationUuid, user);
 

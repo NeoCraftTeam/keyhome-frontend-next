@@ -82,55 +82,19 @@ function DateSeparator({ date, theme }: { date: string; theme: ChatTheme }) {
   );
 }
 
-const SKELETON_WIDTHS = [
-  '52%',
-  '38%',
-  '60%',
-  '45%',
-  '55%',
-  '35%',
-  '42%',
-  '58%',
-];
-
-function MessageSkeleton({
-  align,
-  index,
-  theme,
-}: {
-  align: 'left' | 'right';
-  index: number;
-  theme: { accent: string; shimmer: string };
-}) {
-  const isRight = align === 'right';
+/** Discreet single spinner shown only during a cold full sync (empty cache). */
+function ColdSyncLoader({ theme }: { theme: ChatTheme }) {
   return (
     <div
-      className={`flex items-end gap-2 ${isRight ? 'flex-row-reverse' : 'flex-row'} mt-2`}
-      data-kh-chat-skeleton
+      className="flex-1 flex items-center justify-center py-10"
+      role="status"
+      aria-label="Chargement des messages"
     >
-      {!isRight && (
-        <div
-          className="h-[30px] w-[30px] rounded-full shrink-0"
-          data-kh-chat-skeleton
-          style={{
-            background: `linear-gradient(110deg, #ececec 30%, ${theme.shimmer} 50%, #ececec 70%)`,
-            backgroundSize: '200% 100%',
-            animation: 'shimmer 1.5s cubic-bezier(0.22, 1, 0.36, 1) infinite',
-          }}
-        />
-      )}
       <div
-        className={`rounded-[18px] ${isRight ? 'rounded-br-[6px]' : 'rounded-bl-[6px]'}`}
-        data-kh-chat-skeleton
+        className="h-6 w-6 rounded-full animate-spin"
         style={{
-          width: SKELETON_WIDTHS[index % SKELETON_WIDTHS.length],
-          height: 42,
-          background: isRight
-            ? `linear-gradient(110deg, ${theme.accent}15 30%, ${theme.accent}08 50%, ${theme.accent}15 70%)`
-            : 'linear-gradient(110deg, #f0f0f0 30%, #fafafa 50%, #f0f0f0 70%)',
-          backgroundSize: '200% 100%',
-          animation: 'shimmer 1.5s cubic-bezier(0.22, 1, 0.36, 1) infinite',
-          animationDelay: `${index * 0.1}s`,
+          border: `2px solid ${theme.accent}33`,
+          borderTopColor: theme.accent,
         }}
       />
     </div>
@@ -696,11 +660,7 @@ export function ChatWindow({
       {/* Messages */}
       {/* All animation keyframes — defined once, always in DOM */}
       <style>{`
-        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
         @keyframes msgIn{from{opacity:0;transform:translateY(10px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @media (prefers-reduced-motion: reduce) {
-          [data-kh-chat-skeleton] { animation: none !important; }
-        }
       `}</style>
 
       {/* ── Messages area: fixed watermark + scrollable list ───────── */}
@@ -767,16 +727,7 @@ export function ChatWindow({
           className="absolute inset-0 overflow-y-auto px-4 py-3 flex flex-col gap-0.5 overscroll-contain"
         >
           {isLoading ? (
-            <div className="flex-1 flex flex-col px-2 py-6 gap-0.5">
-              {[0, 1, 0, 1, 0, 1, 1, 0].map((side, i) => (
-                <MessageSkeleton
-                  key={i}
-                  align={side ? 'right' : 'left'}
-                  index={i}
-                  theme={theme}
-                />
-              ))}
-            </div>
+            <ColdSyncLoader theme={theme} />
           ) : isMessagesError ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 pb-10 px-6 text-center max-w-sm mx-auto">
               <AlertCircle
