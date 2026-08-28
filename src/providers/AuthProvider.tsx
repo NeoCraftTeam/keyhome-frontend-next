@@ -19,9 +19,11 @@ import {
   persistOwnerToken,
 } from '@/lib/auth/auth-session';
 import { syncChatE2eePublicKeyWithServer } from '@/lib/chat/chat-e2ee-identity';
+import { mayAccessOwnerPanel } from '@/lib/owner/owner-panel-access';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
+import { usePathname } from 'next/navigation';
 import {
   createContext,
   useCallback,
@@ -80,7 +82,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
 
   // ── Session state ─────────────────────────────────────────────
-  const [user, setUserState] = useState<User | null>(null);
+  // Multi-panel isolation: a single browser can hold BOTH an owner and a client
+  // login at once. Each role gets its own slot; the panel-scoped `user` below
+  // surfaces only the slot matching the current route, so an owner profile can
+  // never appear on the client panel (and vice-versa). The backend enforces the
+  // same isolation at the API layer via PreferBearerOverSession.
+  const [ownerUser, setOwnerUser] = useState<User | null>(null);
+  const [clientUser, setClientUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isExchanging, setIsExchanging] = useState(false);
   const [hasResolvedInitialAuth, setHasResolvedInitialAuth] = useState(false);
@@ -88,9 +96,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const authRunRef = useRef(0);
   const userRef = useRef<User | null>(null);
 
+  // Route a resolved user into its role's slot; clear BOTH on sign-out. Every
+  // null caller (logout, 401 listener, refresh failure) also wipes both Bearer
+  // tokens, so the display must clear in lockstep. Stable identity — it closes
+  // over only pure state setters and a pure import.
+  const setUserState = useCallback((next: User | null): void => {
+    if (next === null) {
+      setOwnerUser(null);
+      setClientUser(null);
+      return;
+    }
+    if (mayAccessOwnerPanel(next.role)) {
+      setOwnerUser(next);
+    } else {
+      setClientUser(next);
+    }
+  }, []);
+
+  // Panel-scoped view: the owner panel sees the owner slot, everyone else the
+  // client slot. This is what the whole app reads through `useAuth().user`.
+  const pathname = usePathname();
+  const isOwnerPanel = (pathname ?? '').startsWith('/owner');
+  const user = isOwnerPanel ? ownerUser : clientUser;
+
+  // "Any logged-in user" drives the cross-panel concerns that must fire
+  // regardless of the active panel: OAuth-callback detection (userRef) and the
+  // 401 listener's "is anyone signed in?" guard.
+  const anyUser = ownerUser ?? clientUser;
+
   useEffect(() => {
-    userRef.current = user;
-  }, [user]);
+    userRef.current = anyUser;
+  }, [anyUser]);
 
   const clearSession = useCallback(() => {
     queryClient.clear();
@@ -108,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userRef,
   });
 
-  use401Listener(user, setToken, setUserState);
+  use401Listener(anyUser, setToken, setUserState);
 
   // ── Auth actions (login / logout / OAuth / refresh) ──────────
   const {

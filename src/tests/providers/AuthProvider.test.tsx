@@ -1,4 +1,4 @@
-import { UserRole } from '@/types';
+import { User, UserRole } from '@/types';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
@@ -317,6 +317,9 @@ describe('AuthProvider', () => {
     // BUG CATCH: Owner login must redirect to /owner/dashboard.
     // If it redirects to /home, agents land on the customer-facing panel.
     it('sets user and redirects to /owner/dashboard', async () => {
+      // Owner login happens in the owner context; the panel-scoped `user` only
+      // surfaces the agent on an /owner route (multi-panel isolation).
+      mockPathnameRef.current = '/owner/login';
       mockAuthService.login.mockResolvedValue({
         token: 'owner-token',
         user: { ...mockUser, role: UserRole.AGENT },
@@ -385,6 +388,9 @@ describe('AuthProvider', () => {
     // cookies with a non-root path aren't visible via document.cookie,
     // so we verify the auth state resolved with the correct role instead.
     it('authenticates agent users and sets role state', async () => {
+      // Agent must resolve on an /owner route — the panel-scoped `user` hides
+      // an agent from the client panel (multi-panel isolation).
+      mockPathnameRef.current = '/owner/dashboard';
       mockAuthService.me.mockResolvedValue({
         ...mockUser,
         role: UserRole.AGENT,
@@ -542,6 +548,98 @@ describe('AuthProvider', () => {
       expect(localStorage.getItem('kh_sanctum_token')).toBeNull();
       expect(localStorage.getItem('kh_sanctum_token_client')).toBeNull();
       expect(localStorage.getItem('kh_sanctum_token_owner')).toBeNull();
+    });
+  });
+
+  describe('multi-panel session isolation', () => {
+    // BUG CATCH: A single browser can hold both an owner and a client login.
+    // The panel-scoped `user` must NEVER surface an owner on the client panel.
+    // On a hard reload of the client panel while the shared session cookie
+    // holds an owner, the owner resolves into the owner slot and the client
+    // panel stays signed-out ("dernier rôle persiste"), never leaking.
+    it('never surfaces an owner session on the client panel', async () => {
+      mockPathnameRef.current = '/';
+      mockAuthService.me.mockResolvedValue({
+        ...mockUser,
+        role: UserRole.AGENT,
+        firstname: 'Ownername',
+      });
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('loading').textContent).toBe('false');
+      });
+      expect(screen.getByTestId('user').textContent).toBe('none');
+      expect(screen.getByTestId('authenticated').textContent).toBe('false');
+    });
+
+    // BUG CATCH: The mirror case — an owner session on the owner panel must
+    // resolve normally. If the role-aware slot routing were wrong, owners
+    // would be locked out of their own panel.
+    it('surfaces the owner session on the owner panel', async () => {
+      mockPathnameRef.current = '/owner/dashboard';
+      mockAuthService.me.mockResolvedValue({
+        ...mockUser,
+        role: UserRole.AGENT,
+        firstname: 'Ownername',
+      });
+
+      const { getContext } = await renderAndWaitForAuth('authenticated');
+
+      expect(screen.getByTestId('user').textContent).toBe('Ownername');
+      expect(getContext().user?.role).toBe(UserRole.AGENT);
+    });
+
+    // BUG CATCH: With BOTH sessions live, each panel must see only its own
+    // user. The owner login must not overwrite the client's displayed profile,
+    // and switching panels must swap which user is visible.
+    it('keeps owner and client sessions isolated per panel when both are signed in', async () => {
+      mockPathnameRef.current = '/';
+      mockAuthService.me.mockResolvedValue(mockUser);
+
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+      let ctx: ReturnType<typeof useAuth> | null = null;
+      const makeTree = () => (
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <AuthConsumer
+              onContext={(c) => {
+                ctx = c;
+              }}
+            />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      const { rerender } = render(makeTree());
+      await waitFor(() => {
+        expect(screen.getByTestId('authenticated').textContent).toBe('true');
+      });
+      expect(screen.getByTestId('user').textContent).toBe('Jean');
+
+      // An owner signs in on the same browser — routed to the owner slot.
+      act(() => {
+        ctx!.setUser({
+          ...mockUser,
+          role: UserRole.AGENT,
+          firstname: 'Owner',
+        } as User);
+      });
+
+      // Client panel still shows the client: the owner did not bleed in.
+      expect(screen.getByTestId('user').textContent).toBe('Jean');
+
+      // Navigate to the owner panel: now the owner shows, the client is hidden.
+      await act(async () => {
+        mockPathnameRef.current = '/owner/dashboard';
+        rerender(makeTree());
+      });
+      await waitFor(() => {
+        expect(screen.getByTestId('user').textContent).toBe('Owner');
+      });
     });
   });
 });
