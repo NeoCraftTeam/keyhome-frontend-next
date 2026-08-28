@@ -53,6 +53,7 @@ import {
   getCategoryForAdType,
   type AdFormStepKey,
 } from './ad-form/ad-type-categories';
+import { scrollToFirstInvalidField } from './ad-form/scrollToFirstInvalidField';
 import AdFormPriceAdvisor from './ad-form/AdFormPriceAdvisor';
 import AdFormStepReview from './ad-form/AdFormStepReview';
 import AdFormStepType from './ad-form/AdFormStepType';
@@ -185,6 +186,7 @@ function AdFormWizard({
   );
   const [originalTitle, setOriginalTitle] = useState<string | null>(null);
   const [enhanceError, setEnhanceError] = useState<string | null>(null);
+  const [stepError, setStepError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [propertyConditionPdf, setPropertyConditionPdf] = useState<File | null>(
     null
@@ -642,10 +644,38 @@ function AdFormWizard({
   const handleEnhance = async () => {
     if (isAdFormTextEmpty(values.description)) return;
     const prev = values.description;
-    setOriginalDescription(prev);
-    await startStream(values.description, (full) => {
-      if (full) update('description', full);
-    });
+    setEnhanceError(null);
+
+    const adTypeName = adTypes.find((t) => t.id === values.type_id)?.name;
+    const context = {
+      type: adTypeName,
+      city: selectedCity?.name ?? selectedQuarter?.city_name,
+      quarter: selectedQuarter?.name,
+      bedrooms: values.bedrooms ? Number(values.bedrooms) : undefined,
+      surface: values.surface_area ? Number(values.surface_area) : undefined,
+      price: values.price ? Number(values.price) : undefined,
+      transaction_type: values.transaction_type,
+    };
+
+    await startStream(
+      values.description,
+      (full) => {
+        // Only surface the "Annuler" affordance when the text actually changed —
+        // a silent provider failure echoes the input verbatim and must not look
+        // like a successful rewrite.
+        if (full && full !== prev) {
+          setOriginalDescription(prev);
+          update('description', full);
+        }
+      },
+      {
+        context,
+        onError: () =>
+          setEnhanceError(
+            "L'amélioration IA a échoué. Réessayez dans un instant."
+          ),
+      }
+    );
   };
 
   const handleEnhanceTitle = async () => {
@@ -945,7 +975,21 @@ function AdFormWizard({
 
   /* ── Navigation ── */
   const handleNext = () => {
-    if (!validateStep(activeStep)) return;
+    if (!validateStep(activeStep)) {
+      // A silent refusal makes "Suivant" feel broken when the failing field is
+      // off-screen (e.g. the required quartier at the top of the Détails step).
+      // Surface the reason and bring the first invalid field into view.
+      setStepError(
+        'Veuillez remplir les champs obligatoires surlignés en rouge.'
+      );
+      requestAnimationFrame(() => {
+        if (!scrollToFirstInvalidField()) {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+      return;
+    }
+    setStepError(null);
     setActiveStep((prev) => Math.min(prev + 1, STEP_LABELS.length - 1));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1582,6 +1626,16 @@ function AdFormWizard({
           message={enhanceError}
           severity="error"
           onClose={() => setEnhanceError(null)}
+          duration={5000}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        />
+
+        {/* Step validation nudge — makes a blocked "Suivant" legible */}
+        <KhSnackbar
+          open={!!stepError}
+          message={stepError}
+          severity="warning"
+          onClose={() => setStepError(null)}
           duration={5000}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         />

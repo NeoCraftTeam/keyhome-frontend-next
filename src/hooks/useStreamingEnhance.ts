@@ -27,7 +27,11 @@ export function useStreamingEnhance() {
   const startStream = useCallback(
     async (
       description: string,
-      onComplete: (full: string) => void
+      onComplete: (full: string) => void,
+      opts?: {
+        context?: Record<string, unknown>;
+        onError?: () => void;
+      }
     ): Promise<void> => {
       abortRef.current?.abort();
       const controller = new AbortController();
@@ -53,13 +57,14 @@ export function useStreamingEnhance() {
             Accept: 'text/event-stream',
             ...(token ? { 'X-XSRF-TOKEN': decodeURIComponent(token) } : {}),
           },
-          body: JSON.stringify({ description }),
+          body: JSON.stringify({ description, ...(opts?.context ?? {}) }),
           credentials: 'include',
           signal: controller.signal,
         });
 
         if (!res.ok || !res.body) {
           setState({ isStreaming: false, streamedText: '' });
+          opts?.onError?.();
           return;
         }
 
@@ -109,6 +114,7 @@ export function useStreamingEnhance() {
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
           setState({ isStreaming: false, streamedText: '' });
+          opts?.onError?.();
         }
       }
     },
