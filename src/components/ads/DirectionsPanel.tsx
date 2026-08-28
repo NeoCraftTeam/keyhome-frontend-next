@@ -193,32 +193,35 @@ export default function DirectionsPanel({
     [onRouteComputed]
   );
 
-  const compute = useCallback(async () => {
-    if (!userLocation) return;
+  const compute = useCallback(
+    async (targetProfile: OrsProfile) => {
+      if (!userLocation) return;
 
-    setLoading(true);
-    setError(null);
+      setLoading(true);
+      setError(null);
 
-    try {
-      const res = await geoService.getDirections(
-        userLocation.latitude,
-        userLocation.longitude,
-        adLat,
-        adLng,
-        profile
-      );
-      // Replace or add the result for this profile
-      setResults((prev) => {
-        const filtered = prev.filter((r) => r.profile !== profile);
-        return [...filtered, res.data];
-      });
-      displayRoute(res.data);
-    } catch {
-      setError("Calcul d'itinéraire indisponible. Vérifiez votre connexion.");
-    } finally {
-      setLoading(false);
-    }
-  }, [userLocation, adLat, adLng, profile, displayRoute]);
+      try {
+        const res = await geoService.getDirections(
+          userLocation.latitude,
+          userLocation.longitude,
+          adLat,
+          adLng,
+          targetProfile
+        );
+        // Replace or add the result for this profile
+        setResults((prev) => {
+          const filtered = prev.filter((r) => r.profile !== targetProfile);
+          return [...filtered, res.data];
+        });
+        displayRoute(res.data);
+      } catch {
+        setError("Calcul d'itinéraire indisponible. Vérifiez votre connexion.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userLocation, adLat, adLng, displayRoute]
+  );
 
   const computeAll = useCallback(async () => {
     if (!userLocation) return;
@@ -388,7 +391,14 @@ export default function DirectionsPanel({
                   setProfile(v);
                   setError(null);
                   const existingResult = results.find((r) => r.profile === v);
-                  if (existingResult) displayRoute(existingResult);
+                  if (existingResult) {
+                    // Already computed — reuse the cached route, no refetch.
+                    displayRoute(existingResult);
+                  } else {
+                    // Not preloaded (e.g. wheelchair) or its background fetch
+                    // failed — fetch on demand so the map reflects this mode.
+                    compute(v);
+                  }
                 }
               }}
               size="small"
@@ -411,7 +421,7 @@ export default function DirectionsPanel({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                compute();
+                compute(profile);
               }}
               disabled={loading}
               sx={{
