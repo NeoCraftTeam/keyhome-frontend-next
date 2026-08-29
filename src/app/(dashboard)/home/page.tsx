@@ -3,6 +3,7 @@
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import HeroSearch from '@/components/ads/HeroSearch';
+import NearbyAdsSection from '@/components/ads/NearbyAdsSection';
 import ClientProfileBanner from '@/components/dashboard/ClientProfileBanner';
 import { EmptyState } from '@/components/ui/feedback/EmptyState';
 import FadeIn from '@/components/ui/layout/FadeIn';
@@ -13,6 +14,7 @@ import Image from 'next/image';
 
 import { useGreeting } from '@/hooks/useGreeting';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { useUserLocation } from '@/hooks/useUserLocation';
 import { dedupeById } from '@/lib/dedupe-by-id';
 import { useAuth } from '@/providers/AuthProvider';
 import { adsService } from '@/services/ads.service';
@@ -112,7 +114,7 @@ export default function HomePage() {
   const prefersReducedMotion = useReducedMotion();
   const [selectedCategory, setSelectedCategory] = useState('');
   const [feedSort, setFeedSort] = useState<
-    'newest' | 'price_asc' | 'price_desc'
+    'newest' | 'price_asc' | 'price_desc' | 'nearby'
   >('newest');
   const [showBackTop, setShowBackTop] = useState(false);
   const theme = useTheme();
@@ -123,6 +125,17 @@ export default function HomePage() {
   const { items: recentlyViewed } = useRecentlyViewed();
   const greeting = useGreeting();
   const router = useRouter();
+  const { location: userLocation, refresh: refreshLocation } =
+    useUserLocation();
+
+  // Coordinates ride along only when the visitor explicitly chose the proximity
+  // sort AND geolocation resolved; otherwise the backend degrades `sort=nearby`
+  // to the default ranking. Rounded to ~11 m so GPS jitter doesn't churn the
+  // query key on every render.
+  const nearbyActive = feedSort === 'nearby' && userLocation !== null;
+  const nearbyCoordKey = nearbyActive
+    ? `${userLocation!.latitude.toFixed(4)},${userLocation!.longitude.toFixed(4)}`
+    : null;
 
   // Hero search autocomplete state
   const [cityInput, setCityInput] = useState('');
@@ -255,13 +268,19 @@ export default function HomePage() {
     // reload miss the persisted cache (skeleton + full refetch). De-duplication
     // against the recommendations strip is done at render time (see `ads`),
     // which lets the key stay stable so the persisted feed restores instantly.
-    queryKey: ['ads-feed', selectedCategory, feedSort],
+    queryKey: ['ads-feed', selectedCategory, feedSort, nearbyCoordKey],
     queryFn: ({ pageParam }) =>
       adsService.feed({
         cursor: pageParam ?? undefined,
         per_page: 20,
         type: selectedCategory || undefined,
         sort: feedSort,
+        ...(nearbyActive
+          ? {
+              latitude: userLocation!.latitude,
+              longitude: userLocation!.longitude,
+            }
+          : {}),
       }),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.meta.next_cursor,
@@ -315,6 +334,19 @@ export default function HomePage() {
     [startTransition]
   );
 
+  const handleSortChange = useCallback(
+    (value: typeof feedSort) => {
+      setFeedSort(value);
+      // Picking proximity before geolocation resolved prompts the browser for
+      // it; once granted, the location singleton updates, the query key shifts,
+      // and the feed refetches with coordinates.
+      if (value === 'nearby' && userLocation === null) {
+        refreshLocation();
+      }
+    },
+    [userLocation, refreshLocation]
+  );
+
   // IntersectionObserver-driven auto-load, capped at MAX_AUTO_PAGES. Fires
   // `fetchNextPage()` when the sentinel enters the viewport (300px buffer for a
   // smooth feel). Once the budget is spent the observer stops arming itself, so
@@ -326,7 +358,7 @@ export default function HomePage() {
   // A new query identity (category or sort) is a fresh feed — reset the budget.
   useEffect(() => {
     setAutoLoadedPages(0);
-  }, [selectedCategory, feedSort]);
+  }, [selectedCategory, feedSort, nearbyCoordKey]);
 
   const autoLoadExhausted = autoLoadedPages >= MAX_AUTO_PAGES;
 
@@ -659,7 +691,7 @@ export default function HomePage() {
                     <Select
                       value={feedSort}
                       onChange={(e: SelectChangeEvent) =>
-                        setFeedSort(e.target.value as typeof feedSort)
+                        handleSortChange(e.target.value as typeof feedSort)
                       }
                       size="small"
                       variant="outlined"
@@ -678,6 +710,7 @@ export default function HomePage() {
                       <MenuItem value="newest">Plus récentes</MenuItem>
                       <MenuItem value="price_asc">Prix croissant</MenuItem>
                       <MenuItem value="price_desc">Prix décroissant</MenuItem>
+                      <MenuItem value="nearby">Près de moi</MenuItem>
                     </Select>
                   </Box>
                 </Box>
@@ -877,6 +910,11 @@ export default function HomePage() {
           </>
         ) : (
           <>
+            {/* Proximity strip — self-hides when geolocation is unavailable or
+                empty. Suppressed while the main feed itself is proximity-sorted
+                to avoid duplicating the "À proximité" heading. */}
+            {feedSort !== 'nearby' && <NearbyAdsSection />}
+
             {/* Default (Tous): Recommendations et Récemment consultés en premier */}
             {isAuthenticated &&
               (isRecommendationsLoading || recommendations.length > 0) && (
@@ -1005,7 +1043,9 @@ export default function HomePage() {
                     {selectedCategory
                       ? CATEGORIES.find((c) => c.value === selectedCategory)
                           ?.label || selectedCategory
-                      : 'Annonces récentes'}
+                      : feedSort === 'nearby'
+                        ? 'À proximité'
+                        : 'Annonces récentes'}
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     {isFetching && !showShimmer && (
@@ -1016,7 +1056,7 @@ export default function HomePage() {
                     <Select
                       value={feedSort}
                       onChange={(e: SelectChangeEvent) =>
-                        setFeedSort(e.target.value as typeof feedSort)
+                        handleSortChange(e.target.value as typeof feedSort)
                       }
                       size="small"
                       variant="outlined"
@@ -1035,6 +1075,7 @@ export default function HomePage() {
                       <MenuItem value="newest">Plus récentes</MenuItem>
                       <MenuItem value="price_asc">Prix croissant</MenuItem>
                       <MenuItem value="price_desc">Prix décroissant</MenuItem>
+                      <MenuItem value="nearby">Près de moi</MenuItem>
                     </Select>
                   </Box>
                 </Box>

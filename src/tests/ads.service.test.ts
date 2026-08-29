@@ -142,6 +142,34 @@ describe('adsService', () => {
     });
   });
 
+  describe('feed', () => {
+    // BUG CATCH: The proximity sort is inert unless sort + coordinates reach
+    // the backend query string. If they're dropped, "Près de moi" silently
+    // falls back to the default ranking.
+    it('forwards sort=nearby with coordinates to /ads/feed', async () => {
+      mockGet.mockResolvedValue({
+        data: { data: [mockAd], meta: { next_cursor: null } },
+      });
+
+      await adsService.feed({
+        per_page: 20,
+        sort: 'nearby',
+        latitude: 4.05,
+        longitude: 9.7,
+      });
+
+      expect(mockGet).toHaveBeenCalledWith('/ads/feed', {
+        params: {
+          per_page: 20,
+          sort: 'nearby',
+          latitude: 4.05,
+          longitude: 9.7,
+          cursor: undefined,
+        },
+      });
+    });
+  });
+
   describe('nearby', () => {
     // BUG CATCH: If coordinates aren't passed, the backend returns 422.
     it('passes latitude and longitude params', async () => {

@@ -56,7 +56,11 @@ export const adsService = {
     cursor?: string | null;
     per_page?: number;
     type?: string;
-    sort?: 'newest' | 'price_asc' | 'price_desc';
+    sort?: 'newest' | 'price_asc' | 'price_desc' | 'nearby';
+    /** Proximity sort inputs — only sent (and honoured) when sort='nearby'. */
+    latitude?: number;
+    longitude?: number;
+    radius?: number;
     exclude_ids?: string[];
   }): Promise<CursorPaginatedResponse<Ad>> {
     const { data } = await api.get<CursorPaginatedResponse<Ad>>('/ads/feed', {
