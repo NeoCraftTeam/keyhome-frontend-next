@@ -210,6 +210,21 @@ export const ownerLeaseService = {
     return publicFetch<PublicSignatureShowResponse>(`/signatures/${token}`);
   },
 
+  /**
+   * Full contract, rendered server-side as HTML (not the stored PDF blob) so
+   * it displays inside an `<iframe srcDoc>` on iOS Safari / WebKit, where a
+   * `blob:` PDF shows blank. Public + token-scoped; returns the raw markup.
+   */
+  async getPublicSignatureContractPreviewHtml(token: string): Promise<string> {
+    const res = await fetch(`${PUBLIC_API_URL}/signatures/${token}/preview`, {
+      headers: { Accept: 'text/html' },
+    });
+    if (!res.ok) {
+      throw new Error(`${res.status} ${res.statusText}`);
+    }
+    return res.text();
+  },
+
   async sendSignatureOtp(token: string): Promise<{ message?: string }> {
     return publicFetch<{ message?: string }>(`/signatures/${token}/send-otp`, {
       method: 'POST',

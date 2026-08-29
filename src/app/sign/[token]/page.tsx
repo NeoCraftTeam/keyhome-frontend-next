@@ -10,11 +10,14 @@ import {
 import {
   Cancel as CancelIcon,
   CheckCircle as CheckCircleIcon,
+  Close as CloseIcon,
+  Description as DescriptionIcon,
   Draw as DrawIcon,
   Error as ErrorIcon,
   Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import {
+  AppBar,
   Box,
   Button,
   Card,
@@ -28,8 +31,10 @@ import {
   DialogTitle,
   Divider,
   FormControlLabel,
+  IconButton,
   Stack,
   TextField,
+  Toolbar,
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -70,11 +75,23 @@ export default function SignPage() {
   const [finalStatus, setFinalStatus] = useState<'signed' | 'declined' | null>(
     null
   );
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [contractOpenedOnce, setContractOpenedOnce] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['public-signature', token],
     queryFn: () => ownerService.getPublicSignatureRequest(token),
     retry: false,
+  });
+
+  // Lazy: the full contract HTML is only fetched once the signer opens the
+  // reader, and cached for the session so re-opening is instant.
+  const previewQuery = useQuery({
+    queryKey: ['public-signature-preview', token],
+    queryFn: () => ownerService.getPublicSignatureContractPreviewHtml(token),
+    enabled: previewOpen,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 
   const signMutation = useMutation({
@@ -258,23 +275,44 @@ export default function SignPage() {
         <Stack spacing={2}>
           <AppAlert
             severity="info"
-            message="Lisez attentivement les détails du contrat ci-dessus avant de signer."
+            message="Lisez le contrat complet avant de signer. Votre signature vous engage à en respecter les termes."
           />
+          <Button
+            variant="outlined"
+            size="large"
+            fullWidth
+            startIcon={<DescriptionIcon />}
+            onClick={() => {
+              setContractOpenedOnce(true);
+              setPreviewOpen(true);
+            }}
+            sx={{
+              borderRadius: 3,
+              fontWeight: 700,
+              textTransform: 'none',
+              py: 1.5,
+            }}
+          >
+            Lire le contrat complet
+          </Button>
           <Typography
             variant="caption"
             color="text.secondary"
             sx={{ display: 'block', textAlign: 'center' }}
           >
-            En cliquant sur &quot;Je signe&quot;, vous confirmez avoir lu le
-            contrat ci-dessus et vous engagez à en respecter les termes.
+            {contractOpenedOnce
+              ? 'En signant, vous confirmez avoir lu le contrat et vous engagez à en respecter les termes.'
+              : 'Ouvrez et lisez le contrat complet pour pouvoir le signer.'}
           </Typography>
           <Button
             variant="contained"
             size="large"
             fullWidth
+            disabled={!contractOpenedOnce}
             startIcon={<DrawIcon />}
             onClick={() => {
               setAcceptedTerms(false);
+              setAcceptedConsent(false);
               setSignOtp('');
               setSignDialogOpen(true);
             }}
@@ -499,6 +537,64 @@ export default function SignPage() {
             {declineMutation.isPending ? 'Refus…' : 'Confirmer le refus'}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Full contract reader — rendered as HTML (never the stored PDF blob)
+          so it displays inside the iframe on iOS Safari / WebKit. */}
+      <Dialog
+        fullScreen
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+      >
+        <AppBar color="default" elevation={1} sx={{ position: 'relative' }}>
+          <Toolbar>
+            <Typography sx={{ flex: 1, fontWeight: 700 }} variant="h6">
+              Contrat de bail
+            </Typography>
+            <IconButton
+              edge="end"
+              onClick={() => setPreviewOpen(false)}
+              aria-label="Fermer le contrat"
+            >
+              <CloseIcon />
+            </IconButton>
+          </Toolbar>
+        </AppBar>
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            minHeight: 0,
+            bgcolor: '#E7EAEE',
+          }}
+        >
+          {previewQuery.isLoading ? (
+            <Box
+              sx={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          ) : previewQuery.isError ? (
+            <Box sx={{ p: 3, width: '100%' }}>
+              <AppAlert
+                severity="error"
+                message="Impossible de charger le contrat. Réessayez dans un instant."
+              />
+            </Box>
+          ) : (
+            <Box
+              component="iframe"
+              title="Aperçu du contrat de bail"
+              srcDoc={previewQuery.data ?? ''}
+              sx={{ flex: 1, width: '100%', border: 0 }}
+            />
+          )}
+        </Box>
       </Dialog>
     </Container>
   );
