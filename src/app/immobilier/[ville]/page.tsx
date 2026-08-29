@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://api.keyhome.app/api/v1';
+  process.env.NEXT_PUBLIC_API_URL || 'https://api.keyhome.app/api/v1';
 
 /** Approximate city centers (WGS84) for GEO / Local SEO structured data */
 const CITIES: Record<

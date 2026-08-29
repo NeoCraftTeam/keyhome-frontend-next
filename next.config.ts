@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  compiler: {
+    // Strip console.* from the production bundle (keep error/warn) so stray
+    // debug/log calls never reach end-user consoles. Dev keeps all output.
+    removeConsole:
+      process.env.NODE_ENV === 'production'
+        ? { exclude: ['error', 'warn'] }
+        : false,
+  },
   // /tour-proxy is handled by app/tour-proxy/[[...path]]/route.ts so Authorization (Bearer)
   // is forwarded to Laravel. Plain rewrites do not pass the client Authorization header.
   async rewrites() {
