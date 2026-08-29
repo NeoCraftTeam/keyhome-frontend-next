@@ -1,96 +1,134 @@
 import { describe, expect, it } from 'vitest';
-import { getLaravelApiErrorMessage } from '@/lib/api-errors';
+import {
+  getLaravelNestedApiError,
+  getLaravelNestedApiErrorCode,
+  parseLaravelNestedApiErrorPayload,
+} from '@/lib/api-errors';
 import { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 const dummyConfig = {} as InternalAxiosRequestConfig;
 
-describe('getLaravelApiErrorMessage', () => {
-  it('returns main message and validation errors from axios response', () => {
-    const err = new AxiosError('Request failed with status code 422');
-    err.response = {
-      data: {
+function axiosWith(data: unknown, status = 409): AxiosError {
+  const err = new AxiosError(`Request failed with status code ${status}`);
+  err.response = {
+    data,
+    status,
+    statusText: 'Conflict',
+    headers: {},
+    config: dummyConfig,
+  };
+  return err;
+}
+
+describe('parseLaravelNestedApiErrorPayload', () => {
+  it('parses the legacy nested { error: { code, message, hint } } shape', () => {
+    const parsed = parseLaravelNestedApiErrorPayload({
+      error: {
+        code: 'SLOT_NOT_AVAILABLE',
+        message: 'Ce créneau n’est pas disponible.',
+        hint: 'Choisissez un autre horaire.',
+      },
+    });
+
+    expect(parsed).toEqual({
+      code: 'SLOT_NOT_AVAILABLE',
+      message: 'Ce créneau n’est pas disponible.',
+      hint: 'Choisissez un autre horaire.',
+    });
+  });
+
+  it('parses the flat top-level { code, message, hint } envelope', () => {
+    const parsed = parseLaravelNestedApiErrorPayload({
+      code: 'SLOT_NOT_AVAILABLE',
+      message: 'Ce créneau n’est pas disponible.',
+      hint: 'Choisissez un autre horaire.',
+    });
+
+    expect(parsed).toEqual({
+      code: 'SLOT_NOT_AVAILABLE',
+      message: 'Ce créneau n’est pas disponible.',
+      hint: 'Choisissez un autre horaire.',
+    });
+  });
+
+  it('drops an empty hint to undefined on the flat envelope', () => {
+    const parsed = parseLaravelNestedApiErrorPayload({
+      code: 'SLOT_ALREADY_RESERVED',
+      message: 'Créneau déjà réservé.',
+      hint: '   ',
+    });
+
+    expect(parsed).toEqual({
+      code: 'SLOT_ALREADY_RESERVED',
+      message: 'Créneau déjà réservé.',
+      hint: undefined,
+    });
+  });
+
+  it('returns null for a generic { message } body without a code', () => {
+    expect(
+      parseLaravelNestedApiErrorPayload({ message: 'Champs invalides.' })
+    ).toBeNull();
+  });
+
+  it('returns null for a validation { message, errors } body without a code', () => {
+    expect(
+      parseLaravelNestedApiErrorPayload({
         message: 'Champs invalides.',
-        errors: { title: ['Le titre est obligatoire.'], price: ['Invalide'] },
-      },
-      status: 422,
-      statusText: 'Unprocessable Entity',
-      headers: {},
-      config: dummyConfig,
-    };
-
-    const msg = getLaravelApiErrorMessage(err, 'fallback');
-    expect(msg).toContain('Champs invalides.');
-    expect(msg).toContain('Le titre est obligatoire.');
-    expect(msg).toContain('Invalide');
+        errors: { title: ['Le titre est obligatoire.'] },
+      })
+    ).toBeNull();
   });
 
-  it('appends debug.message alongside user-facing message when present', () => {
-    const err = new AxiosError('Request failed');
-    err.response = {
-      data: {
-        message: 'Une erreur interne est survenue.',
-        code: 'SERVER_ERROR',
-        debug: { message: 'Meilisearch connection refused' },
-      },
-      status: 500,
-      statusText: 'Error',
-      headers: {},
-      config: dummyConfig,
-    };
-
-    const msg = getLaravelApiErrorMessage(err, 'fb');
-    expect(msg).toContain('Une erreur interne est survenue.');
-    expect(msg).toContain('Meilisearch connection refused');
+  it('returns null when the flat code is blank', () => {
+    expect(
+      parseLaravelNestedApiErrorPayload({ code: '   ', message: 'Erreur.' })
+    ).toBeNull();
   });
 
-  it('uses debug.message when no API message or errors', () => {
-    const err = new AxiosError('Request failed with status code 500');
-    err.response = {
-      data: {
-        code: 'SERVER_ERROR',
-        debug: { message: 'PDOException in …' },
-      },
-      status: 500,
-      statusText: 'Error',
-      headers: {},
-      config: dummyConfig,
-    };
-
-    expect(getLaravelApiErrorMessage(err, 'fb')).toBe('PDOException in …');
+  it('returns null when the nested envelope carries no message', () => {
+    expect(
+      parseLaravelNestedApiErrorPayload({ error: { code: 'X' } })
+    ).toBeNull();
   });
 
-  it('returns fallback for unknown axios errors', () => {
-    const err = new AxiosError('Request failed with status code 500');
-    err.response = {
-      data: null,
-      status: 500,
-      statusText: 'Error',
-      headers: {},
-      config: dummyConfig,
-    };
-    expect(getLaravelApiErrorMessage(err, 'fb')).toBe('fb');
+  it('returns null for null, arrays and non-objects', () => {
+    expect(parseLaravelNestedApiErrorPayload(null)).toBeNull();
+    expect(parseLaravelNestedApiErrorPayload([{ code: 'X' }])).toBeNull();
+    expect(parseLaravelNestedApiErrorPayload('nope')).toBeNull();
   });
+});
 
-  it('returns non-axios Error message when not generic', () => {
-    expect(getLaravelApiErrorMessage(new Error('réseau'), 'fb')).toBe('réseau');
-  });
+describe('getLaravelNestedApiError / getLaravelNestedApiErrorCode', () => {
+  it('reads the flat envelope from an Axios error response', () => {
+    const err = axiosWith({
+      code: 'CLIENT_ACTIVE_RESERVATION_EXISTS',
+      message: 'Vous avez déjà une réservation active.',
+    });
 
-  it('hides Laravel ModelNotFoundException text from API message', () => {
-    const err = new AxiosError('Request failed with status code 404');
-    err.response = {
-      data: {
-        message:
-          'No query results for model [App\\Models\\Ad] 019e4198-287b-713c-a536-6071afde0104',
-        code: 'NOT_FOUND',
-      },
-      status: 404,
-      statusText: 'Not Found',
-      headers: {},
-      config: dummyConfig,
-    };
-
-    expect(getLaravelApiErrorMessage(err, 'Annonce introuvable.')).toBe(
-      'Annonce introuvable.'
+    expect(getLaravelNestedApiError(err)?.message).toBe(
+      'Vous avez déjà une réservation active.'
     );
+    expect(getLaravelNestedApiErrorCode(err)).toBe(
+      'CLIENT_ACTIVE_RESERVATION_EXISTS'
+    );
+  });
+
+  it('still reads the legacy nested envelope from an Axios error response', () => {
+    const err = axiosWith({
+      error: { code: 'SELF_RESERVATION_NOT_ALLOWED', message: 'Interdit.' },
+    });
+
+    expect(getLaravelNestedApiErrorCode(err)).toBe(
+      'SELF_RESERVATION_NOT_ALLOWED'
+    );
+  });
+
+  it('returns null for a non-axios error and for a code-less body', () => {
+    expect(getLaravelNestedApiError(new Error('boom'))).toBeNull();
+    expect(getLaravelNestedApiErrorCode(new Error('boom'))).toBeNull();
+    expect(
+      getLaravelNestedApiErrorCode(axiosWith({ message: 'Sans code.' }))
+    ).toBeNull();
   });
 });

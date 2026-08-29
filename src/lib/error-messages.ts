@@ -155,9 +155,16 @@ export function getSafeErrorMessage(
     if (validationMsg) return validationMsg;
   }
 
-  // Domain envelope `{ error: { code, message, hint } }` (e.g. HTTP 410 SLOT_NOT_AVAILABLE).
+  // Domain envelope (flat `{ code, message, hint }` or legacy `{ error: {...} }`),
+  // e.g. HTTP 410 SLOT_NOT_AVAILABLE. Guarded against leaky-auth copy since a
+  // top-level `code` now routes these bodies through the domain parser.
   const nested = parseLaravelNestedApiErrorPayload(data);
-  if (nested && nested.message && !isUnsafeBackendMessage(nested.message)) {
+  if (
+    nested &&
+    nested.message &&
+    !isUnsafeBackendMessage(nested.message) &&
+    !isLeakyAuthMessage(nested.message)
+  ) {
     const hintOk =
       nested.hint &&
       nested.hint !== nested.message &&

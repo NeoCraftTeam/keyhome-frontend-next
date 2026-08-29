@@ -3,7 +3,7 @@
 import { useClerk } from '@clerk/nextjs';
 import AppAlert from '@/components/ui/feedback/AppAlert';
 import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
-import { isUnsafeBackendMessage } from '@/lib/error-messages';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Facebook from '@mui/icons-material/Facebook';
 import GitHub from '@mui/icons-material/GitHub';
@@ -177,11 +177,8 @@ export default function LinkedAccountsCard({
         } else if (msg.includes('verification') || msg.includes('unverified')) {
           message =
             'La vérification OAuth a échoué. Réessayez depuis le début.';
-        } else if (
-          err.message.length < 200 &&
-          !isUnsafeBackendMessage(err.message)
-        ) {
-          message = err.message;
+        } else {
+          message = getSafeErrorMessage(err, message);
         }
       }
 
@@ -248,11 +245,8 @@ export default function LinkedAccountsCard({
         ) {
           message =
             "Impossible de délier : c'est votre dernier moyen de connexion.";
-        } else if (
-          err.message.length < 200 &&
-          !isUnsafeBackendMessage(err.message)
-        ) {
-          message = err.message;
+        } else {
+          message = getSafeErrorMessage(err, message);
         }
       }
 
