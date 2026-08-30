@@ -207,7 +207,9 @@ export default function AdFormLocation({
             noOptionsText={
               !selectedCity?.id
                 ? "Sélectionnez d'abord une ville"
-                : 'Aucun quartier trouvé'
+                : quarterInput.trim().length < 2
+                  ? 'Saisissez au moins 2 caractères'
+                  : 'Aucun quartier trouvé'
             }
             disabled={!selectedCity?.id}
             slotProps={citySlotProps}

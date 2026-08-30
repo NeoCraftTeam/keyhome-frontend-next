@@ -4,6 +4,7 @@ import AuthFlowStepper from '@/components/auth/AuthFlowStepper';
 import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import ImageLightbox from '@/components/ui/overlay/ImageLightbox';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useServerAutoSave } from '@/hooks/useServerAutoSave';
 import { useStreamingEnhance } from '@/hooks/useStreamingEnhance';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
@@ -429,28 +430,45 @@ function AdFormWizard({
   });
 
   /* ── Data queries ── */
-  const { data: citiesData, isFetching: isCitiesLoading } = useQuery({
-    queryKey: ['ad-form-cities', cityInput],
+  // Debounce the autocomplete inputs so we fire one request when the user
+  // pauses typing instead of one per keystroke (the source of the perceived
+  // "ça prend du temps" slowness on the city/quarter pickers).
+  const debouncedCityInput = useDebounce(cityInput, 300);
+  const debouncedQuarterInput = useDebounce(quarterInput, 300);
+
+  const { data: citiesData, isFetching: isCitiesFetching } = useQuery({
+    queryKey: ['ad-form-cities', debouncedCityInput],
     queryFn: ({ signal }) =>
-      citiesService.list({ q: cityInput, per_page: 50 }, { signal }),
-    enabled: cityInput.length >= 1,
+      citiesService.list({ q: debouncedCityInput, per_page: 50 }, { signal }),
+    enabled: debouncedCityInput.trim().length >= 2,
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: quartersData, isFetching: isQuartersLoading } = useQuery({
-    queryKey: ['ad-form-quarters', selectedCity?.id, quarterInput],
+  const { data: quartersData, isFetching: isQuartersFetching } = useQuery({
+    queryKey: ['ad-form-quarters', selectedCity?.id, debouncedQuarterInput],
     queryFn: ({ signal }) =>
       quartersService.list(
         {
           city_id: selectedCity?.id,
-          q: quarterInput,
+          q: debouncedQuarterInput,
           per_page: 50,
         },
         { signal }
       ),
-    enabled: !!selectedCity?.id,
+    enabled: !!selectedCity?.id && debouncedQuarterInput.trim().length >= 2,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Keep the autocomplete spinner alive during the debounce window so typing
+  // still feels responsive before the (debounced) request actually fires.
+  const isCitiesLoading =
+    isCitiesFetching ||
+    (cityInput.trim().length >= 2 && cityInput !== debouncedCityInput);
+  const isQuartersLoading =
+    isQuartersFetching ||
+    (!!selectedCity?.id &&
+      quarterInput.trim().length >= 2 &&
+      quarterInput !== debouncedQuarterInput);
 
   const { data: adTypesData } = useQuery({
     queryKey: ['ad-types'],
