@@ -141,9 +141,12 @@ export function htmlToMarkdownLight(html: string | null | undefined): string {
     .trim();
 }
 
-export function markdownLightToHtml(input: string | null | undefined): string {
+export function markdownLightToHtml(
+  input: string | null | undefined,
+  maxLength: number = MAX_LENGTH
+): string {
   if (!input) return '';
-  const truncated = input.slice(0, MAX_LENGTH);
+  const truncated = input.slice(0, maxLength);
   const lines = truncated.split(/\r?\n/);
   const out: string[] = [];
   let listType: 'ul' | 'ol' | null = null;

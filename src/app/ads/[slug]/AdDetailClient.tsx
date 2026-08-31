@@ -33,6 +33,7 @@ import { useUserLocation } from '@/hooks/useUserLocation';
 import { trackViewAd } from '@/lib/analytics/track-events';
 import { formatDate, formatPrice, formatRelativeDate } from '@/lib/constants';
 import { getSafeErrorMessage } from '@/lib/error-messages';
+import { markdownLightToHtml } from '@/lib/markdown-light';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   COMPARATOR_MAX_ITEMS,
@@ -288,6 +289,21 @@ function AdDetailContent() {
     enabled: isAuthenticated,
   });
   const descriptionText = ad?.description ?? '';
+  // Ad descriptions accept light Markdown (bold/italic/lists/links) and are
+  // frequently AI-enhanced, which emits `**bold**` headers. Render through the
+  // same safe, whitelist-only renderer as owner bios so the formatting shows
+  // instead of raw asterisks; the 10 000-char cap matches the enhancer input.
+  const descriptionHtml = markdownLightToHtml(descriptionText, 10000);
+  const descriptionMarkdownSx = {
+    '& p': { my: 0, mb: 1.5 },
+    '& p:last-child': { mb: 0 },
+    '& strong': { fontWeight: 700, color: 'text.primary' },
+    '& em': { fontStyle: 'italic' },
+    '& h3': { fontWeight: 700, fontSize: '1.05rem', mt: 2, mb: 1 },
+    '& ul, & ol': { pl: 3, my: 1 },
+    '& li': { mb: 0.5 },
+    '& a': { color: 'primary.main', textDecoration: 'underline' },
+  };
 
   if (isError) {
     return (
@@ -1517,7 +1533,7 @@ function AdDetailContent() {
 
                 <Divider sx={{ mb: 3 }} />
 
-                {/* Publisher info — blurred if locked */}
+                {/* Carte de visite du bailleur — cliquable vers le profil public */}
                 <Box
                   component={ad.user?.id ? 'a' : 'div'}
                   href={
@@ -1538,39 +1554,71 @@ function AdDetailContent() {
                     alignItems: 'center',
                     gap: 2,
                     mb: 3,
+                    p: 2,
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(255,255,255,0.03)'
+                        : 'grey.50',
                     textDecoration: 'none',
                     color: 'inherit',
                     ...(ad.user?.id && {
                       cursor: 'pointer',
-                      borderRadius: 2,
-                      p: 1,
-                      mx: -1,
-                      transition: 'background-color 0.15s',
-                      '&:hover': { bgcolor: 'action.hover' },
+                      transition:
+                        'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease',
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        boxShadow: '0 6px 20px rgba(0,0,0,0.08)',
+                        transform: 'translateY(-1px)',
+                      },
                     }),
                   }}
                 >
                   <Avatar
                     src={ad.user?.avatar || undefined}
-                    sx={{ width: 48, height: 48 }}
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      fontSize: '1.35rem',
+                      fontWeight: 600,
+                      bgcolor: 'primary.main',
+                      color: '#fff',
+                      border: '2px solid',
+                      borderColor: 'background.paper',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                    }}
                   >
                     {publisherName[0]}
                   </Avatar>
-                  <Box sx={{ flex: 1 }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                      variant="overline"
+                      sx={{
+                        display: 'block',
+                        lineHeight: 1.2,
+                        letterSpacing: 0.5,
+                        color: 'text.secondary',
+                      }}
+                    >
+                      Publié par
+                    </Typography>
                     <Box
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 0.5,
+                        gap: 0.75,
                         flexWrap: 'wrap',
+                        mt: 0.25,
                       }}
                     >
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        Publié par {publisherName}
+                      <Typography variant="subtitle1" fontWeight={700} noWrap>
+                        {publisherName}
                       </Typography>
                       {ad.is_verified && (
                         <Verified
-                          sx={{ fontSize: 16, color: 'success.main' }}
+                          sx={{ fontSize: 18, color: 'success.main' }}
                           titleAccess="Annonce vérifiée"
                         />
                       )}
@@ -1581,11 +1629,35 @@ function AdDetailContent() {
                         />
                       )}
                     </Box>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: 'block', mt: 0.25 }}
+                    >
                       {formatRelativeDate(ad.created_at)}
-                      {ad.user?.id && ' · Voir le profil'}
                     </Typography>
                   </Box>
+                  {ad.user?.id && (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.25,
+                        flexShrink: 0,
+                        color: 'primary.main',
+                        fontWeight: 600,
+                        fontSize: '0.8125rem',
+                      }}
+                    >
+                      <Box
+                        component="span"
+                        sx={{ display: { xs: 'none', sm: 'inline' } }}
+                      >
+                        Voir le profil
+                      </Box>
+                      <KeyboardArrowRight sx={{ fontSize: 20 }} />
+                    </Box>
+                  )}
                 </Box>
 
                 {/* Description — Airbnb-style truncated + slide-up panel */}
@@ -1593,23 +1665,20 @@ function AdDetailContent() {
                   Description
                 </Typography>
                 <Box sx={{ position: 'relative', mb: 1 }}>
-                  <Typography
-                    variant="body1"
-                    color="text.secondary"
+                  <Box
                     sx={{
-                      whiteSpace: 'pre-line',
+                      color: 'text.secondary',
+                      fontSize: '1rem',
                       lineHeight: 1.8,
                       wordBreak: 'break-word',
                       overflowWrap: 'break-word',
                       minWidth: 0,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 6,
-                      WebkitBoxOrient: 'vertical',
+                      maxHeight: '10.8em',
                       overflow: 'hidden',
+                      ...descriptionMarkdownSx,
                     }}
-                  >
-                    {descriptionText}
-                  </Typography>
+                    dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+                  />
                   {descriptionText.length > 200 && (
                     <Box
                       sx={{
@@ -1714,20 +1783,18 @@ function AdDetailContent() {
                       {ad.title}
                     </Typography>
                     <Divider sx={{ mb: 3 }} />
-                    <Typography
-                      variant="body1"
+                    <Box
                       sx={{
-                        whiteSpace: 'pre-line',
                         lineHeight: 2,
                         wordBreak: 'break-word',
                         overflowWrap: 'break-word',
                         color: 'text.secondary',
                         fontSize: { xs: '0.95rem', sm: '1.05rem' },
                         letterSpacing: 0.2,
+                        ...descriptionMarkdownSx,
                       }}
-                    >
-                      {descriptionText}
-                    </Typography>
+                      dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+                    />
                   </Box>
                 </Dialog>
 
@@ -2180,12 +2247,9 @@ function AdDetailContent() {
                           py: 1.5,
                           fontWeight: 600,
                           fontSize: '1rem',
-                          background: (theme) =>
-                            theme.palette.gradient?.primary ?? gradient.primary,
+                          background: brand.primary,
                           '&:hover': {
-                            background: (theme) =>
-                              theme.palette.gradient?.primaryHover ??
-                              gradient.primaryHover,
+                            background: brand.primaryHover,
                           },
                         }}
                       >
@@ -2306,12 +2370,9 @@ function AdDetailContent() {
                           py: 1.5,
                           fontWeight: 600,
                           fontSize: '1rem',
-                          background: (theme) =>
-                            theme.palette.gradient?.primary ?? gradient.primary,
+                          background: brand.primary,
                           '&:hover': {
-                            background: (theme) =>
-                              theme.palette.gradient?.primaryHover ??
-                              gradient.primaryHover,
+                            background: brand.primaryHover,
                           },
                           '&:active': { transform: 'scale(0.97)' },
                         }}
@@ -2924,12 +2985,9 @@ function AdDetailContent() {
                           py: 1.2,
                           fontWeight: 700,
                           borderRadius: 2.5,
-                          background: (theme) =>
-                            theme.palette.gradient?.primary ?? gradient.primary,
+                          background: brand.primary,
                           '&:hover': {
-                            background: (theme) =>
-                              theme.palette.gradient?.primaryHover ??
-                              gradient.primaryHover,
+                            background: brand.primaryHover,
                           },
                           '&:active': { transform: 'scale(0.97)' },
                         }}
@@ -2979,12 +3037,9 @@ function AdDetailContent() {
                           py: 1.2,
                           fontWeight: 600,
                           borderRadius: 2.5,
-                          background: (theme) =>
-                            theme.palette.gradient?.primary ?? gradient.primary,
+                          background: brand.primary,
                           '&:hover': {
-                            background: (theme) =>
-                              theme.palette.gradient?.primaryHover ??
-                              gradient.primaryHover,
+                            background: brand.primaryHover,
                           },
                           '&:active': { transform: 'scale(0.97)' },
                         }}
@@ -3042,12 +3097,9 @@ function AdDetailContent() {
                           py: 1.2,
                           fontWeight: 600,
                           borderRadius: 2.5,
-                          background: (theme) =>
-                            theme.palette.gradient?.primary ?? gradient.primary,
+                          background: brand.primary,
                           '&:hover': {
-                            background: (theme) =>
-                              theme.palette.gradient?.primaryHover ??
-                              gradient.primaryHover,
+                            background: brand.primaryHover,
                           },
                           '&:active': { transform: 'scale(0.97)' },
                         }}

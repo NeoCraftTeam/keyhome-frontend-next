@@ -65,6 +65,19 @@ describe('markdownLightToHtml', () => {
     const inner = html.replace(/^<p>/, '').replace(/<\/p>$/, '');
     expect(inner.length).toBe(BIO_MAX_LENGTH);
   });
+
+  it('honors an explicit maxLength override above the bio default', () => {
+    const long = 'a'.repeat(BIO_MAX_LENGTH + 500);
+    const html = markdownLightToHtml(long, BIO_MAX_LENGTH + 500);
+    const inner = html.replace(/^<p>/, '').replace(/<\/p>$/, '');
+    // With a higher cap (e.g. ad descriptions) the full input renders — the
+    // 2000-char bio limit no longer clips it.
+    expect(inner.length).toBe(BIO_MAX_LENGTH + 500);
+    // Markdown still renders under the raised cap.
+    expect(markdownLightToHtml('**gras**', 10000)).toContain(
+      '<strong>gras</strong>'
+    );
+  });
 });
 
 describe('htmlToMarkdownLight (TipTap save path)', () => {
