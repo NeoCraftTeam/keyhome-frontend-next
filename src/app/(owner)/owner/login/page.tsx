@@ -20,7 +20,6 @@ import {
   RETURN_TO_PARAM,
 } from '@/lib/auth/return-to';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
-import { getConfiguredOAuthProviders } from '@/lib/auth/oauth-providers';
 import {
   OWNER_LOGIN_HERO_SRC,
   OWNER_LOGO_SRC,
@@ -34,7 +33,6 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
   Box,
   Button,
-  Collapse,
   Divider,
   IconButton,
   InputAdornment,
@@ -47,49 +45,6 @@ import { AxiosError } from 'axios';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
-function OwnerMoreLoginOptions({
-  onError,
-}: {
-  onError: (err: string) => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const secondaryProviders = getConfiguredOAuthProviders().filter(
-    (p) => p !== 'google'
-  );
-
-  return (
-    <Box sx={{ width: '100%', mt: 1 }}>
-      <Button
-        fullWidth
-        variant="text"
-        size="small"
-        onClick={() => setExpanded((v) => !v)}
-        sx={{
-          textTransform: 'none',
-          color: 'text.secondary',
-          fontWeight: 500,
-          fontSize: '0.8125rem',
-          '&:hover': { bgcolor: 'action.hover' },
-        }}
-      >
-        {expanded ? 'Moins d’options' : 'Plus d’options de connexion'}
-      </Button>
-      <Collapse in={expanded}>
-        {secondaryProviders.length > 0 && (
-          <SocialLoginButtons
-            registrationIntent="agent"
-            onError={onError}
-            disabled={false}
-            providers={secondaryProviders}
-            showDivider={false}
-          />
-        )}
-        <PasskeyLoginButton loginContext="owner" />
-      </Collapse>
-    </Box>
-  );
-}
 
 export default function OwnerLoginPage() {
   const { loginOwner, user, isAuthenticated, isLoading } = useAuth();
@@ -386,6 +341,11 @@ export default function OwnerLoginPage() {
                   fontSize: '1rem',
                   fontWeight: 600,
                   '&:active': { transform: 'scale(0.97)' },
+                  '&.Mui-disabled': {
+                    bgcolor: 'primary.main',
+                    color: '#fff',
+                    opacity: 0.65,
+                  },
                 }}
               >
                 {isSubmitting ? <ButtonSpinner size={24} /> : 'Se connecter'}
@@ -393,20 +353,19 @@ export default function OwnerLoginPage() {
             </Box>
           </FadeIn>
 
-          {/* Primary OAuth: Google only — reduces decision fatigue */}
+          {/* Toutes les méthodes OAuth affichées directement (aligné sur le panel client) */}
           <FadeIn delay={0.4} direction="up">
             <SocialLoginButtons
               registrationIntent="agent"
               onError={setError}
               showDivider
               disabled={false}
-              providers={['google']}
             />
           </FadeIn>
 
-          {/* Secondary options: other OAuth + Passkey (collapsed) */}
+          {/* Connexion par passkey (WebAuthn) — visible d'emblée, plus de section repliée */}
           <FadeIn delay={0.45} direction="up">
-            <OwnerMoreLoginOptions onError={setError} />
+            <PasskeyLoginButton loginContext="owner" />
           </FadeIn>
 
           <FadeIn delay={0.5} direction="up">
