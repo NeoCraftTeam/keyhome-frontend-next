@@ -1,12 +1,10 @@
 'use client';
 
-import { useCountUp } from '@/hooks/useCountUp';
-import { useLandingStats, type LandingStat } from '@/hooks/useLandingStats';
 import api from '@/lib/api';
 import { BRAND_TAGLINE } from '@/lib/brand';
 import { buildNlpParams } from '@/lib/nlp-search';
 import { useCurrency } from '@/providers/CurrencyProvider';
-import { brand, gradient, semantic } from '@/theme/tokens';
+import { brand, semantic } from '@/theme/tokens';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import Search from '@mui/icons-material/Search';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -32,56 +30,6 @@ const ThreeCanvas = dynamic(() => import('./ThreeCanvas'), {
 });
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
-
-/** Single animated stat number for the hero section */
-function AnimatedStatNumber({
-  stat,
-  textColor,
-  mutedColor,
-}: {
-  stat: LandingStat;
-  textColor: string;
-  mutedColor: string;
-}) {
-  const { value: counted, ref } = useCountUp({
-    end: stat.rawValue,
-    duration: 1400,
-    triggerOnce: true,
-  });
-
-  const formatted =
-    stat.rawValue > 0
-      ? new Intl.NumberFormat('fr-FR').format(counted) + stat.suffix
-      : stat.value;
-
-  return (
-    <div style={{ textAlign: 'center' }}>
-      <div
-        ref={ref as React.Ref<HTMLDivElement>}
-        style={{
-          fontSize: 28,
-          fontWeight: 800,
-          color: textColor,
-          letterSpacing: '-1px',
-          fontVariantNumeric: 'tabular-nums',
-          transition: 'color 0.4s ease',
-        }}
-      >
-        {formatted}
-      </div>
-      <div
-        style={{
-          fontSize: 13,
-          color: mutedColor,
-          marginTop: 2,
-          transition: 'color 0.4s ease',
-        }}
-      >
-        {stat.label}
-      </div>
-    </div>
-  );
-}
 
 const containerVariants = {
   hidden: {},
@@ -113,7 +61,6 @@ const QUICK_SUGGESTIONS = [
 export default function HeroSection() {
   const { isDark, text, textSub, textMuted, bg } = useLandingTheme();
   const router = useRouter();
-  const { stats, isLoading: statsLoading } = useLandingStats();
   const { currency } = useCurrency();
   const [, startTransition] = useTransition();
   const shouldReduce = useReducedMotion();
@@ -744,54 +691,6 @@ export default function HeroSection() {
             </div>
           </motion.div>
 
-          {/* Social proof — animated count-up */}
-          <motion.div
-            variants={itemVariants}
-            className="hero-stats"
-            style={{ marginTop: 56 }}
-          >
-            {statsLoading
-              ? [64, 48, 56].map((w, i) => (
-                  <div key={i} style={{ textAlign: 'center' }}>
-                    <div
-                      className={
-                        isDark
-                          ? 'hero-stat-skeleton'
-                          : 'hero-stat-skeleton-light'
-                      }
-                      style={{
-                        width: w,
-                        height: 32,
-                        marginBottom: 6,
-                        display: 'inline-block',
-                      }}
-                      aria-hidden
-                    />
-                    <div
-                      className={
-                        isDark
-                          ? 'hero-stat-skeleton'
-                          : 'hero-stat-skeleton-light'
-                      }
-                      style={{
-                        width: w - 8,
-                        height: 14,
-                        display: 'inline-block',
-                      }}
-                      aria-hidden
-                    />
-                  </div>
-                ))
-              : stats.map((stat) => (
-                  <AnimatedStatNumber
-                    key={stat.label}
-                    stat={stat}
-                    textColor={text}
-                    mutedColor={textMuted}
-                  />
-                ))}
-          </motion.div>
-
           {/* Mobile CTA buttons — visible only on small screens */}
           <motion.div
             variants={itemVariants}
@@ -829,7 +728,7 @@ export default function HeroSection() {
                 fontWeight: 600,
                 padding: '10px 24px',
                 borderRadius: 10,
-                background: gradient.primary135,
+                background: brand.primary,
                 boxShadow: '0 4px 20px rgba(246,71,95,0.4)',
                 display: 'inline-block',
                 whiteSpace: 'nowrap',

@@ -8,14 +8,13 @@ import AppAlert from '@/components/ui/feedback/AppAlert';
 import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import TurnstileWidget from '@/components/auth/TurnstileWidget';
 import FadeIn from '@/components/ui/layout/FadeIn';
-import { useLandingStats } from '@/hooks/useLandingStats';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { useTurnstileEmailSubmitReady } from '@/hooks/useTurnstileEmailSubmitReady';
 import { getAuthApiErrorMessage } from '@/lib/auth/auth-api-errors';
 import { adoptReturnToFromQuery, RETURN_TO_PARAM } from '@/lib/auth/return-to';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { useAuth } from '@/providers/AuthProvider';
-import { gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import EmailIcon from '@mui/icons-material/Email';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -36,7 +35,6 @@ import { useEffect, useState } from 'react';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const { authStats } = useLandingStats();
   const router = useRouter();
 
   // Legacy Clerk org-task hash on client signInUrl — route to dedicated task page.
@@ -184,20 +182,6 @@ export default function LoginPage() {
             >
               Trouvez votre bien immobilier idéal
             </Typography>
-          </FadeIn>
-          <FadeIn delay={0.6} direction="up">
-            <Box sx={{ mt: 3, display: 'flex', gap: 4 }}>
-              {authStats.map((stat) => (
-                <Box key={stat.label}>
-                  <Typography variant="h5" fontWeight={700} color="#fff">
-                    {stat.value}
-                  </Typography>
-                  <Typography variant="caption" color="rgba(255,255,255,0.7)">
-                    {stat.label}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
           </FadeIn>
         </Box>
       </Box>
@@ -365,19 +349,20 @@ export default function LoginPage() {
                   py: 1.5,
                   fontSize: '1rem',
                   fontWeight: 600,
-                  background: (theme) =>
-                    theme.palette.gradient?.primary ?? gradient.primary,
+                  background: brand.primary,
                   '&:hover': {
-                    background: (theme) =>
-                      theme.palette.gradient?.primaryHover ??
-                      gradient.primaryHover,
+                    background: brand.primaryHover,
                   },
                   transition:
                     'transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s',
                   '&:active': { transform: 'scale(0.97)' },
                 }}
               >
-                {isSubmitting ? <ButtonSpinner size={24} /> : 'Se connecter'}
+                {isSubmitting ? (
+                  <ButtonSpinner size={24} color="#fff" />
+                ) : (
+                  'Se connecter'
+                )}
               </Button>
             </Box>
           </FadeIn>
