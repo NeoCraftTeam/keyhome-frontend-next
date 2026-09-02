@@ -167,11 +167,16 @@ export const ownerAdsService = {
     return new Blob([data], { type: 'application/pdf' });
   },
 
-  async fetchAdPlacardePreview(adId: string): Promise<Blob> {
-    const { data } = await api.get(`/my/ads/${adId}/placarde/preview`, {
-      responseType: 'blob',
+  async fetchAdPlacardePreviewHtml(
+    adId: string,
+    config?: { signal?: AbortSignal }
+  ): Promise<string> {
+    const { data } = await api.get<string>(`/my/ads/${adId}/placarde/preview`, {
+      responseType: 'text',
+      headers: { Accept: 'text/html' },
+      ...config,
     });
-    return new Blob([data], { type: 'application/pdf' });
+    return data;
   },
 
   async getProfileQrMeta(config?: {

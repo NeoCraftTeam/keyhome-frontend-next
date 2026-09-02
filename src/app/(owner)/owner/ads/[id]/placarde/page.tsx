@@ -2,11 +2,9 @@
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
 import { getSafeErrorMessage } from '@/lib/error-messages';
-import { isLikelyIosWebKit } from '@/lib/ios-environment';
 import { ownerService } from '@/services/owner.service';
 import { brandAgent, neutral } from '@/theme/tokens';
 import DownloadIcon from '@mui/icons-material/Download';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
   Box,
   Button,
@@ -15,22 +13,19 @@ import {
   Typography,
 } from '@mui/material';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function AdPlacardePreviewPage() {
   const params = useParams<{ id: string }>();
   const adId = params?.id ?? '';
-  const objectUrlRef = useRef<string | null>(null);
-  const [preferInlinePreview, setPreferInlinePreview] = useState(true);
 
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [html, setHtml] = useState<string | null>(null);
   const [filename, setFilename] = useState('placarde-keyhome.pdf');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = 'Pancarte KeyHome';
-    setPreferInlinePreview(!isLikelyIosWebKit());
   }, []);
 
   useEffect(() => {
@@ -40,46 +35,34 @@ export default function AdPlacardePreviewPage() {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     (async () => {
       setLoading(true);
       setError(null);
       try {
-        const blob = await ownerService.fetchAdPlacardePreview(adId);
-        if (cancelled) {
-          return;
-        }
-        if (objectUrlRef.current) {
-          URL.revokeObjectURL(objectUrlRef.current);
-        }
-        const objectUrl = URL.createObjectURL(blob);
-        objectUrlRef.current = objectUrl;
-        setPdfUrl(objectUrl);
+        const markup = await ownerService.fetchAdPlacardePreviewHtml(adId, {
+          signal: controller.signal,
+        });
+        setHtml(markup);
         setFilename(`placarde-${adId.slice(0, 8)}.pdf`);
       } catch (err) {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setError(
             getSafeErrorMessage(
               err,
-              'Impossible de charger l\u2019aper\u00e7u de la pancarte.'
+              'Impossible de charger l’aperçu de la pancarte.'
             )
           );
         }
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
     })();
 
-    return () => {
-      cancelled = true;
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-        objectUrlRef.current = null;
-      }
-    };
+    return () => controller.abort();
   }, [adId]);
 
   const handleDownload = useCallback(async () => {
@@ -93,21 +76,9 @@ export default function AdPlacardePreviewPage() {
       a.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 2500);
     } catch (err) {
-      setError(
-        getSafeErrorMessage(err, 'Impossible de t\u00e9l\u00e9charger le PDF.')
-      );
+      setError(getSafeErrorMessage(err, 'Impossible de télécharger le PDF.'));
     }
   }, [adId, filename]);
-
-  const handleOpenPdf = useCallback(() => {
-    if (!pdfUrl) {
-      return;
-    }
-    const opened = window.open(pdfUrl, '_blank', 'noopener,noreferrer');
-    if (!opened) {
-      void handleDownload();
-    }
-  }, [pdfUrl, handleDownload]);
 
   return (
     <Box
@@ -115,7 +86,7 @@ export default function AdPlacardePreviewPage() {
         minHeight: '100dvh',
         height: '100dvh',
         position: 'relative',
-        bgcolor: '#525659',
+        bgcolor: '#E7EAEE',
         overflow: 'hidden',
       }}
     >
@@ -125,10 +96,10 @@ export default function AdPlacardePreviewPage() {
           justifyContent="center"
           sx={{ position: 'absolute', inset: 0, px: 2, zIndex: 2 }}
         >
-          <CircularProgress sx={{ color: neutral.white }} />
+          <CircularProgress sx={{ color: brandAgent.primary }} />
           <Typography
             variant="body2"
-            sx={{ color: neutral.white, mt: 2, textAlign: 'center' }}
+            sx={{ color: 'text.secondary', mt: 2, textAlign: 'center' }}
           >
             Génération de la pancarte…
           </Typography>
@@ -155,88 +126,46 @@ export default function AdPlacardePreviewPage() {
         </Box>
       )}
 
-      {pdfUrl && preferInlinePreview && (
-        <Box
-          component="iframe"
-          src={pdfUrl}
-          title="Aperçu pancarte KeyHome"
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            border: 0,
-            bgcolor: '#525659',
-          }}
-        />
-      )}
+      {html && (
+        <>
+          <Box
+            component="iframe"
+            srcDoc={html}
+            title="Aperçu pancarte KeyHome"
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              border: 0,
+              bgcolor: 'transparent',
+            }}
+          />
 
-      {pdfUrl && !preferInlinePreview && (
-        <Stack
-          alignItems="center"
-          justifyContent="center"
-          spacing={2}
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            px: 3,
-            textAlign: 'center',
-            bgcolor: '#334155',
-          }}
-        >
-          <Typography
-            variant="h6"
-            fontWeight={700}
-            sx={{ color: neutral.white }}
+          <Button
+            variant="contained"
+            startIcon={<DownloadIcon />}
+            onClick={handleDownload}
+            sx={{
+              position: 'absolute',
+              bottom: 'max(20px, env(safe-area-inset-bottom, 20px))',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 3,
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 3,
+              py: 1.25,
+              borderRadius: 999,
+              color: neutral.white,
+              bgcolor: brandAgent.primary,
+              boxShadow: '0 10px 30px -8px rgba(17,24,39,0.45)',
+              '&:hover': { bgcolor: brandAgent.primaryDark },
+            }}
           >
-            Pancarte prête
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{ color: 'rgba(255,255,255,0.82)', maxWidth: 360 }}
-          >
-            Sur iPhone et iPad, ouvrez le PDF dans le lecteur natif ou
-            téléchargez-le.
-          </Typography>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1.5}
-            sx={{ width: '100%', maxWidth: 360 }}
-          >
-            <Button
-              fullWidth
-              variant="contained"
-              startIcon={<OpenInNewIcon />}
-              onClick={handleOpenPdf}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-                bgcolor: brandAgent.primary,
-                '&:hover': { bgcolor: brandAgent.primaryDark },
-              }}
-            >
-              Ouvrir le PDF
-            </Button>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<DownloadIcon />}
-              onClick={handleDownload}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-                color: neutral.white,
-                borderColor: 'rgba(255,255,255,0.45)',
-                '&:hover': {
-                  borderColor: neutral.white,
-                  bgcolor: 'rgba(255,255,255,0.08)',
-                },
-              }}
-            >
-              Télécharger
-            </Button>
-          </Stack>
-        </Stack>
+            Télécharger le PDF (A5)
+          </Button>
+        </>
       )}
     </Box>
   );
