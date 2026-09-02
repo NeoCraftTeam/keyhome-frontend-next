@@ -73,7 +73,7 @@ export default function AuthLayout({
     return (
       <Box
         sx={{
-          height: '100vh',
+          height: '100dvh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -96,7 +96,11 @@ export default function AuthLayout({
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        // `dvh` (et non `vh`) : sur mobile `100vh` vaut la hauteur *large*,
+        // donc la page dépasse toujours la zone visible et scrolle d'un cran.
+        // Reste un `minHeight` pour que les pages longues (inscription) puissent
+        // grandir et défiler normalement.
+        minHeight: '100dvh',
         display: 'flex',
         bgcolor: 'background.default',
         animation: 'kh-auth-in 0.35s ease both',

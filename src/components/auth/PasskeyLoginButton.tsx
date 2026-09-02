@@ -20,10 +20,16 @@ import { useRouter } from 'next/navigation';
 
 interface PasskeyLoginButtonProps {
   loginContext: 'owner' | 'client';
+  /**
+   * Rythme vertical compact — les pages de connexion doivent tenir dans la
+   * hauteur de l'écran sans scroll.
+   */
+  dense?: boolean;
 }
 
 export default function PasskeyLoginButton({
   loginContext,
+  dense = false,
 }: PasskeyLoginButtonProps) {
   const theme = useTheme();
   const primary = theme.palette.primary.main;
@@ -84,7 +90,7 @@ export default function PasskeyLoginButton({
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Divider sx={{ my: 2.5 }}>
+      <Divider sx={{ my: dense ? 1.5 : 2.5 }}>
         <Typography
           variant="caption"
           sx={{
@@ -118,7 +124,7 @@ export default function PasskeyLoginButton({
             disabled={isLoading}
             sx={{
               borderRadius: 2.5,
-              py: 1.4,
+              py: dense ? 1 : 1.4,
               textTransform: 'none',
               border: 'none',
               boxShadow: 'none',
@@ -150,7 +156,9 @@ export default function PasskeyLoginButton({
               {isLoading ? (
                 <ButtonSpinner size={22} color={primary} />
               ) : (
-                <FingerprintIcon sx={{ fontSize: 26, color: primary }} />
+                <FingerprintIcon
+                  sx={{ fontSize: dense ? 23 : 26, color: primary }}
+                />
               )}
               <Typography variant="body2" fontWeight={600} lineHeight={1.3}>
                 {isLoading

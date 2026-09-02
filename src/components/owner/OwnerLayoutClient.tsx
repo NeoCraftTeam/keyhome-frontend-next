@@ -261,7 +261,9 @@ export default function OwnerLayoutClient({
     return (
       <Box
         sx={{
-          minHeight: '100vh',
+          // `dvh` : `100vh` vaut la hauteur *large* sur mobile, ce qui faisait
+          // toujours dépasser la page de connexion d'un cran de scroll.
+          minHeight: '100dvh',
           width: '100%',
           display: 'flex',
           bgcolor: 'background.default',

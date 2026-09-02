@@ -21,7 +21,6 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
   Box,
   Button,
-  Divider,
   IconButton,
   InputAdornment,
   Link,
@@ -119,7 +118,17 @@ export default function LoginPage() {
   };
 
   return (
-    <Box sx={{ flex: 1, display: 'flex', minHeight: '100vh' }}>
+    <Box
+      sx={{
+        flex: 1,
+        display: 'flex',
+        // Ancrée dans l'écran : la page de connexion ne scrolle jamais.
+        // `dvh` suit la barre d'outils mobile (contrairement à `vh`).
+        height: '100dvh',
+        maxHeight: '100dvh',
+        overflow: 'hidden',
+      }}
+    >
       {/* Left side — image */}
       <Box
         sx={{
@@ -192,241 +201,266 @@ export default function LoginPage() {
           flex: { xs: 1, md: '0 0 480px' },
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
           alignItems: 'center',
-          p: { xs: 3, sm: 6 },
+          px: { xs: 3, sm: 6 },
+          py: { xs: 2.5, sm: 3.5 },
           bgcolor: 'background.paper',
+          height: '100%',
+          minHeight: 0,
+          overflow: 'hidden',
         }}
       >
-        {/* Mobile logo */}
-        <FadeIn direction="none">
-          <Box
-            sx={{
-              display: { xs: 'flex', md: 'none' },
-              alignItems: 'center',
-              gap: 1,
-              mb: 4,
-            }}
-          >
-            <Image
-              src="/images/logo.png"
-              alt="KeyHome — Plateforme immobilière"
-              width={40}
-              height={40}
-              priority
-            />
-            <Typography variant="h5" fontWeight={700} color="primary.main">
-              KeyHome
-            </Typography>
-          </Box>
-        </FadeIn>
-
-        <Box sx={{ width: '100%', maxWidth: 400 }}>
-          <FadeIn delay={0.1} direction="up">
-            <Typography variant="h4" fontWeight={700} gutterBottom>
-              Bienvenue
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Connectez-vous pour accéder à vos annonces
-            </Typography>
-          </FadeIn>
-
-          {error && (
-            <FadeIn direction="none" duration={0.3}>
-              <AppAlert
-                severity="error"
-                id="login-error"
-                message={error}
-                sx={{ mb: 2 }}
-              />
+        {/* Zone centrale : centrée verticalement, et seule à défiler si l'écran
+            est vraiment trop court (clavier mobile,
+            fenêtre réduite) — le pied de page reste ancré. */}
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            width: '100%',
+            display: 'flex',
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
+            scrollbarWidth: 'thin',
+            '&::-webkit-scrollbar': { width: 6 },
+            '&::-webkit-scrollbar-thumb': {
+              borderRadius: 3,
+              bgcolor: 'divider',
+            },
+          }}
+        >
+          <Box sx={{ width: '100%', maxWidth: 400, m: 'auto', py: 0.5 }}>
+            {/* Mobile logo */}
+            <FadeIn direction="none">
+              <Box
+                sx={{
+                  display: { xs: 'flex', md: 'none' },
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 1,
+                  mb: 3,
+                }}
+              >
+                <Image
+                  src="/images/logo.png"
+                  alt="KeyHome — Plateforme immobilière"
+                  width={40}
+                  height={40}
+                  priority
+                />
+                <Typography variant="h5" fontWeight={700} color="primary.main">
+                  KeyHome
+                </Typography>
+              </Box>
             </FadeIn>
-          )}
+            <FadeIn delay={0.1} direction="up">
+              <Typography variant="h4" fontWeight={700} gutterBottom>
+                Bienvenue
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 2.5 }}
+              >
+                Connectez-vous pour accéder à vos annonces
+              </Typography>
+            </FadeIn>
 
-          <TurnstileConfigAlert code={turnstileIssueCode} />
+            {error && (
+              <FadeIn direction="none" duration={0.3}>
+                <AppAlert
+                  severity="error"
+                  id="login-error"
+                  message={error}
+                  sx={{ mb: 2 }}
+                />
+              </FadeIn>
+            )}
 
-          <FadeIn delay={0.2} direction="up">
-            <Box
-              component="form"
-              onSubmit={handleSubmit}
-              aria-describedby={error ? 'login-error' : undefined}
-            >
-              <TextField
-                fullWidth
-                label="Adresse email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onFocus={emailLabelShrink.onFocus}
-                onBlur={emailLabelShrink.onBlur}
-                required
-                autoComplete="email"
-                autoFocus
-                disabled={isSubmitting}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon
-                        sx={{ color: 'text.secondary', fontSize: 20 }}
-                      />
-                    </InputAdornment>
-                  ),
-                }}
-                InputLabelProps={outlinedStartIconInputLabelProps(
-                  emailLabelShrink.shrink
+            <TurnstileConfigAlert code={turnstileIssueCode} />
+
+            <FadeIn delay={0.2} direction="up">
+              <Box
+                component="form"
+                onSubmit={handleSubmit}
+                aria-describedby={error ? 'login-error' : undefined}
+              >
+                <TextField
+                  fullWidth
+                  label="Adresse email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onFocus={emailLabelShrink.onFocus}
+                  onBlur={emailLabelShrink.onBlur}
+                  required
+                  autoComplete="email"
+                  autoFocus
+                  disabled={isSubmitting}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <EmailIcon
+                          sx={{ color: 'text.secondary', fontSize: 20 }}
+                        />
+                      </InputAdornment>
+                    ),
+                  }}
+                  InputLabelProps={outlinedStartIconInputLabelProps(
+                    emailLabelShrink.shrink
+                  )}
+                  sx={{ mb: 2 }}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Mot de passe"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  disabled={isSubmitting}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                          size="small"
+                          aria-label={
+                            showPassword
+                              ? 'Masquer le mot de passe'
+                              : 'Afficher le mot de passe'
+                          }
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ mb: 1 }}
+                />
+
+                {turnstileEnabled && turnstileSiteKey && (
+                  <Box sx={{ mb: 2, minHeight: 65 }}>
+                    <TurnstileWidget
+                      siteKey={turnstileSiteKey}
+                      action="login"
+                      onToken={(t) => {
+                        setTurnstileToken(t);
+                        setTurnstileIssueCode(null);
+                      }}
+                      onExpire={() => setTurnstileToken(null)}
+                      onErrorCode={(code) => {
+                        setTurnstileToken(null);
+                        setTurnstileIssueCode(code);
+                      }}
+                    />
+                  </Box>
                 )}
-                sx={{ mb: 2 }}
-              />
 
-              <TextField
-                fullWidth
-                label="Mot de passe"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                disabled={isSubmitting}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                        size="small"
-                        aria-label={
-                          showPassword
-                            ? 'Masquer le mot de passe'
-                            : 'Afficher le mot de passe'
-                        }
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 1 }}
-              />
-
-              {turnstileEnabled && turnstileSiteKey && (
-                <Box sx={{ mb: 2, minHeight: 65 }}>
-                  <TurnstileWidget
-                    siteKey={turnstileSiteKey}
-                    action="login"
-                    onToken={(t) => {
-                      setTurnstileToken(t);
-                      setTurnstileIssueCode(null);
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}
+                >
+                  <Link
+                    href="/forgot-password"
+                    underline="hover"
+                    sx={{
+                      fontSize: '0.8125rem',
+                      color: 'primary.main',
+                      fontWeight: 500,
                     }}
-                    onExpire={() => setTurnstileToken(null)}
-                    onErrorCode={(code) => {
-                      setTurnstileToken(null);
-                      setTurnstileIssueCode(code);
-                    }}
-                  />
+                  >
+                    Mot de passe oublié ?
+                  </Link>
                 </Box>
-              )}
 
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                <Link
-                  href="/forgot-password"
-                  underline="hover"
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  disabled={Boolean(isSubmitting || !emailPasswordReady)}
                   sx={{
-                    fontSize: '0.8125rem',
-                    color: 'primary.main',
-                    fontWeight: 500,
+                    py: 1.5,
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    background: brand.primary,
+                    '&:hover': {
+                      background: brand.primaryHover,
+                    },
+                    transition:
+                      'transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s',
+                    '&:active': { transform: 'scale(0.97)' },
                   }}
                 >
-                  Mot de passe oublié ?
-                </Link>
+                  {isSubmitting ? (
+                    <ButtonSpinner size={24} color="#fff" />
+                  ) : (
+                    'Se connecter'
+                  )}
+                </Button>
               </Box>
+            </FadeIn>
 
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                disabled={Boolean(isSubmitting || !emailPasswordReady)}
-                sx={{
-                  py: 1.5,
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  background: brand.primary,
-                  '&:hover': {
-                    background: brand.primaryHover,
-                  },
-                  transition:
-                    'transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s',
-                  '&:active': { transform: 'scale(0.97)' },
-                }}
-              >
-                {isSubmitting ? (
-                  <ButtonSpinner size={24} color="#fff" />
-                ) : (
-                  'Se connecter'
-                )}
-              </Button>
-            </Box>
-          </FadeIn>
+            {/* Toutes les méthodes de connexion affichées directement : Google, Facebook, GitHub */}
+            <FadeIn delay={0.3} direction="up">
+              <SocialLoginButtons
+                onError={(err) => setError(err)}
+                disabled={false}
+                providers={['google', 'facebook', 'github']}
+                dense
+              />
+            </FadeIn>
 
-          {/* Toutes les méthodes de connexion affichées directement : Google, Facebook, GitHub */}
-          <FadeIn delay={0.3} direction="up">
-            <SocialLoginButtons
-              onError={(err) => setError(err)}
-              disabled={false}
-              providers={['google', 'facebook', 'github']}
-            />
-          </FadeIn>
-
-          {/* Connexion par passkey (WebAuthn) — visible d'emblée, plus de section repliée */}
-          <FadeIn delay={0.35} direction="up">
-            <PasskeyLoginButton loginContext="client" />
-          </FadeIn>
-
-          <FadeIn delay={0.4} direction="up">
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ mt: 3, textAlign: 'center' }}
-            >
-              Pas encore de compte ?{' '}
-              <Link
-                href="/register?lock=1"
-                underline="hover"
-                sx={{ fontWeight: 600, color: 'primary.main' }}
-              >
-                Créer un compte
-              </Link>
-            </Typography>
-          </FadeIn>
-
-          {/* One Tap uniquement client — ne pas monter sur /owner/login (nouveaux comptes = particulier). */}
-          <GoogleOneTap />
-
-          <FadeIn delay={0.5} direction="up">
-            <Divider sx={{ my: 2.5 }}>
-              <Typography
-                variant="caption"
-                color="text.disabled"
-                sx={{ px: 1 }}
-              >
-                ou
-              </Typography>
-            </Divider>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ textAlign: 'center' }}
-            >
-              Vous êtes propriétaire ?{' '}
-              <Link
-                href="/owner/login"
-                underline="hover"
-                sx={{ fontWeight: 600, color: 'text.primary' }}
-              >
-                Accéder à l&apos;espace bailleur →
-              </Link>
-            </Typography>
-          </FadeIn>
+            {/* Connexion par passkey (WebAuthn) — visible d'emblée, plus de section repliée */}
+            <FadeIn delay={0.35} direction="up">
+              <PasskeyLoginButton loginContext="client" dense />
+            </FadeIn>
+          </Box>
         </Box>
+
+        {/* Pied de page ancré au bas de l'écran — ne défile pas avec le formulaire. */}
+        <Box
+          sx={{
+            flexShrink: 0,
+            width: '100%',
+            maxWidth: 400,
+            pt: 2,
+            mt: 1.5,
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0.75,
+            textAlign: 'center',
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Pas encore de compte ?{' '}
+            <Link
+              href="/register?lock=1"
+              underline="hover"
+              sx={{ fontWeight: 600, color: 'primary.main' }}
+            >
+              Créer un compte
+            </Link>
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Vous êtes propriétaire ?{' '}
+            <Link
+              href="/owner/login"
+              underline="hover"
+              sx={{ fontWeight: 600, color: 'text.primary' }}
+            >
+              Accéder à l&apos;espace bailleur →
+            </Link>
+          </Typography>
+        </Box>
+
+        {/* One Tap uniquement client — ne pas monter sur /owner/login (nouveaux comptes = particulier). */}
+        <GoogleOneTap />
       </Box>
     </Box>
   );

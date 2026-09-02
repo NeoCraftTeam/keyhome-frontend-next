@@ -19,6 +19,12 @@ interface SocialLoginButtonsProps {
   providers?: OAuthProvider[];
   /** Inscription : indique au backend le rôle visé (compte Laravel après OTP + profil). */
   registrationIntent?: 'customer' | 'agent';
+  /**
+   * Rythme vertical compact — utilisé par les pages de connexion, qui doivent
+   * tenir dans la hauteur de l'écran sans scroll (séparateur et pastilles
+   * légèrement resserrés, sans descendre sous la cible tactile de 44px).
+   */
+  dense?: boolean;
 }
 
 const providerConfig: Record<
@@ -45,6 +51,7 @@ export default function SocialLoginButtons({
   showDivider = true,
   providers = getConfiguredOAuthProviders(),
   registrationIntent,
+  dense = false,
 }: SocialLoginButtonsProps) {
   const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(
     null
@@ -76,14 +83,20 @@ export default function SocialLoginButtons({
   return (
     <Box sx={{ width: '100%' }}>
       {showDivider && (
-        <Divider sx={{ my: 3 }}>
+        <Divider sx={{ my: dense ? 2 : 3 }}>
           <Typography variant="body2" color="text.secondary">
             ou continuer avec
           </Typography>
         </Divider>
       )}
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: dense ? 1.5 : 2,
+        }}
+      >
         {providers.map((provider) => {
           const config = providerConfig[provider];
           const isLoading = loadingProvider === provider;
@@ -95,8 +108,8 @@ export default function SocialLoginButtons({
                 onClick={() => handleOAuthLogin(provider)}
                 disabled={disabled || !!loadingProvider}
                 sx={{
-                  width: 52,
-                  height: 52,
+                  width: dense ? 46 : 52,
+                  height: dense ? 46 : 52,
                   bgcolor: accentBg,
                   color: '#ffffff',
                   transition: 'background-color 0.35s ease',
