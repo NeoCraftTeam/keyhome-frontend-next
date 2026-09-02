@@ -416,7 +416,8 @@ export default function PriceHeatmapLayer({ height = 500 }: Props) {
               {formatPrice(hoveredFeature.median_price)}/mois
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {hoveredFeature.ad_count} annonce(s)
+              {hoveredFeature.ad_count} annonce
+              {hoveredFeature.ad_count > 1 ? 's' : ''}
             </Typography>
           </Paper>
         )}

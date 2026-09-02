@@ -871,7 +871,10 @@ export default function PublishPage() {
                 },
                 { label: 'Chambres', value: form.bedrooms },
                 { label: 'Parking', value: form.has_parking ? 'Oui' : 'Non' },
-                { label: 'Photos', value: `${images.length} photo(s)` },
+                {
+                  label: 'Photos',
+                  value: `${images.length} photo${images.length > 1 ? 's' : ''}`,
+                },
                 {
                   label: 'Localisation GPS',
                   value: form.latitude ? 'Définie' : 'Non définie',
