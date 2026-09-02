@@ -51,14 +51,17 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useParams, useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { brandAgent } from '@/theme/tokens';
 
 export default function OwnerAdEditPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const id = params?.id as string;
+  const contractAutoOpenedRef = useRef(false);
   const [snackbar, setSnackbar] = useState<{
     message: string;
     severity: 'success' | 'error';
@@ -94,6 +97,31 @@ export default function OwnerAdEditPage() {
     queryFn: () => adsService.show(id),
     enabled: !!id,
   });
+
+  // Deep-link from the ads list "Générer un contrat" menu (?action=contract):
+  // auto-open the contract dialog once the ad is loaded and eligible.
+  useEffect(() => {
+    if (contractAutoOpenedRef.current) {
+      return;
+    }
+    if (searchParams.get('action') !== 'contract' || !ad) {
+      return;
+    }
+    if (ad.status !== AdStatus.AVAILABLE && ad.status !== AdStatus.RESERVED) {
+      return;
+    }
+    contractAutoOpenedRef.current = true;
+    setContractForm((prev) => ({
+      ...prev,
+      monthly_rent: ad.price != null ? String(ad.price) : '',
+      deposit_amount: ad.deposit_amount
+        ? String(ad.deposit_amount)
+        : ad.price != null
+          ? String(ad.price)
+          : '',
+    }));
+    setContractOpen(true);
+  }, [searchParams, ad]);
 
   const privateOwnerNoteQuery = useQuery({
     queryKey: ['private-owner-note', id],
@@ -1000,7 +1028,7 @@ export default function OwnerAdEditPage() {
         title="Suppression en cours…"
         subtitle="Ne quittez pas cette page — votre annonce est en cours de suppression."
         Icon={DeleteIcon}
-        accentColor="#d32f2f"
+        accentColor={brandAgent.primary}
       />
 
       {/* ═══ Delete Confirmation Dialog ═══ */}
@@ -1030,10 +1058,15 @@ export default function OwnerAdEditPage() {
               setDeleteOpen(false);
               deleteMutation.mutate();
             }}
-            color="error"
             variant="contained"
             disabled={deleteMutation.isPending}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 700,
+              bgcolor: brandAgent.primary,
+              '&:hover': { bgcolor: brandAgent.primaryDark },
+            }}
           >
             Supprimer définitivement
           </Button>

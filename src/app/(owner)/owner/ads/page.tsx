@@ -18,7 +18,7 @@ import { runAppRouterNavigation } from '@/lib/safe-app-router-push';
 import { adsService } from '@/services/ads.service';
 import { adTypesService, citiesService } from '@/services/cities.service';
 import { ownerService } from '@/services/owner.service';
-import { neutral, shadow } from '@/theme/tokens';
+import { brandAgent, neutral, shadow } from '@/theme/tokens';
 import { Ad, AdStatus, AdType, City } from '@/types';
 import {
   Add as AddIcon,
@@ -1132,7 +1132,7 @@ export default function OwnerAdsPage() {
                     handleMenuClose();
                     runAppRouterNavigation(
                       router,
-                      `/owner/ads/${selectedAd.id}`
+                      `/owner/ads/${selectedAd.id}?action=contract`
                     );
                   }}
                 >
@@ -1173,7 +1173,7 @@ export default function OwnerAdsPage() {
                     message:
                       'Cette action est irréversible. L’annonce et toutes ses photos seront définitivement supprimées.',
                     confirmLabel: 'Supprimer',
-                    variant: 'danger',
+                    variant: 'info',
                   });
                   if (ok) {
                     deleteMutation.mutate(selectedAd.id);
@@ -1257,7 +1257,7 @@ export default function OwnerAdsPage() {
         title="Suppression en cours…"
         subtitle="Ne quittez pas cette page — votre annonce est en cours de suppression."
         Icon={DeleteIcon}
-        accentColor="#d32f2f"
+        accentColor={brandAgent.primary}
       />
     </Box>
   );
