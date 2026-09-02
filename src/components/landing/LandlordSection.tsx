@@ -1,6 +1,6 @@
 'use client';
 
-import { brandAgent, gradient, semantic } from '@/theme/tokens';
+import { brandAgent, semantic } from '@/theme/tokens';
 import ArrowForward from '@mui/icons-material/ArrowForward';
 import Dashboard from '@mui/icons-material/Dashboard';
 import PeopleOutline from '@mui/icons-material/PeopleOutline';
@@ -9,7 +9,22 @@ import { motion } from 'framer-motion';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
 
-const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+import {
+  DURATION,
+  EASE_OUT as EASE,
+  PRESS,
+  REVEAL_HEADER,
+  REVEAL_ITEM,
+  REVEAL_VIEWPORT,
+  staggerContainer,
+} from './landing-motion';
+
+/**
+ * Les trois bénéfices arrivaient d'un bloc : le lecteur recevait trois titres
+ * en même temps sans ordre de lecture. La cascade les enchaîne dans l'ordre où
+ * ils doivent être lus, sans jamais faire attendre le dernier.
+ */
+const LIST = staggerContainer(0.08);
 
 const benefits = [
   {
@@ -46,12 +61,7 @@ export default function LandlordSection() {
         className="landlord-split"
       >
         {/* Left — pitch + CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: EASE }}
-        >
+        <motion.div {...REVEAL_HEADER}>
           <span
             style={{
               display: 'inline-block',
@@ -99,13 +109,13 @@ export default function LandlordSection() {
                 y: -2,
                 boxShadow: `0 10px 28px ${brandAgent.primaryAlpha25}`,
               }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.2, ease: EASE }}
+              whileTap={PRESS}
+              transition={{ duration: DURATION.hover, ease: EASE }}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 8,
-                background: gradient.agent,
+                background: brandAgent.primary,
                 color: '#fff',
                 border: 'none',
                 borderRadius: 12,
@@ -124,15 +134,16 @@ export default function LandlordSection() {
         </motion.div>
         {/* Right — benefits as an iconed list */}
         <motion.ul
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
+          variants={LIST}
+          initial="hidden"
+          whileInView="show"
+          viewport={REVEAL_VIEWPORT}
           style={{ listStyle: 'none', padding: 0, margin: 0 }}
         >
           {benefits.map((b, i) => (
-            <li
+            <motion.li
               key={b.title}
+              variants={REVEAL_ITEM}
               style={{
                 display: 'flex',
                 alignItems: 'flex-start',
@@ -179,7 +190,7 @@ export default function LandlordSection() {
                   {b.desc}
                 </p>
               </div>
-            </li>
+            </motion.li>
           ))}
         </motion.ul>
       </div>

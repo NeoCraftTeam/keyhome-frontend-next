@@ -2,373 +2,347 @@
 
 import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
 import { brand } from '@/theme/tokens';
+import type { SvgIconComponent } from '@mui/icons-material';
 import Code from '@mui/icons-material/Code';
+import EventAvailableOutlined from '@mui/icons-material/EventAvailableOutlined';
+import HistoryEduOutlined from '@mui/icons-material/HistoryEduOutlined';
+import LockOutlined from '@mui/icons-material/LockOutlined';
+import MailOutlineRounded from '@mui/icons-material/MailOutlineRounded';
+import VerifiedUserOutlined from '@mui/icons-material/VerifiedUserOutlined';
+import WhatsApp from '@mui/icons-material/WhatsApp';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
+import {
+  REVEAL_ITEM,
+  REVEAL_VIEWPORT,
+  staggerContainer,
+} from './landing-motion';
 import { useLandingTheme } from './LandingThemeContext';
 
-const links = {
-  Plateforme: [
-    { label: 'Rechercher un logement', href: '/search' },
-    { label: 'Publier une annonce', href: '/owner/login' },
-    { label: 'Comment ça marche', href: '#how-it-works' },
-    { label: 'Témoignages clients', href: '#testimonials' },
-  ],
-  'Guides & villes': [
-    { label: 'Immobilier à Douala', href: '/immobilier/douala' },
-    { label: 'Immobilier à Abidjan', href: '/immobilier/abidjan' },
-    { label: 'Immobilier à Yaoundé', href: '/immobilier/yaounde' },
-    { label: 'Immobilier à Dakar', href: '/immobilier/dakar' },
-    { label: 'Appartements (type de bien)', href: '/type-bien/appartement' },
-    { label: 'Maisons (type de bien)', href: '/type-bien/maison' },
-    { label: 'Comparaisons', href: '/comparaison' },
-    { label: 'Annonces à proximité', href: '/nearby' },
-  ],
-  'Villes populaires': [
-    { label: 'Immobilier Douala', href: '/search?city=douala' },
-    { label: 'Immobilier Garoua', href: '/search?city=garoua' },
-    { label: 'Immobilier Accra', href: '/search?city=accra' },
-    { label: 'Immobilier Cotonou', href: '/search?city=cotonou' },
-    { label: 'Immobilier Lomé', href: '/search?city=lomé' },
-    { label: 'Immobilier Bafoussam', href: '/search?city=bafoussam' },
-  ],
-  Ressources: [
-    { label: 'Inscription gratuite', href: '/register' },
-    { label: 'Se connecter', href: '/login' },
-    { label: 'Blog', href: '/blog' },
-  ],
-  Légal: [
-    { label: "Conditions d'utilisation", href: '/conditions' },
-    { label: 'Politique de confidentialité', href: '/confidentialite' },
-  ],
-};
+const SUPPORT_EMAIL = 'contact@keyhome.app';
+const WHATSAPP_HREF = `https://wa.me/${
+  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '237657507909'
+}?text=${encodeURIComponent(
+  "Bonjour *KeyHome* ! Je suis intéressé(e) par vos services immobiliers. Pouvez-vous m'aider ?"
+)}`;
+
+/**
+ * Colonnes de liens. Chaque `href` doit correspondre à une route qui existe :
+ * les ancres (`#pricing`, `#faq`…) ciblent les sections de cette même page,
+ * et un lien vers un espace privé (publier une annonce) passe volontairement
+ * par la page de connexion bailleur.
+ */
+const COLUMNS: ReadonlyArray<{
+  title: string;
+  items: ReadonlyArray<{ label: string; href: string }>;
+}> = [
+  {
+    title: 'Plateforme',
+    items: [
+      { label: 'Rechercher un logement', href: '/search' },
+      { label: 'Annonces à proximité', href: '/nearby' },
+      { label: 'Comparer des biens', href: '/comparaison' },
+      { label: 'Prix du marché', href: '/prix-marche' },
+      { label: 'Indices de loyers', href: '/indices-loyers' },
+    ],
+  },
+  {
+    title: 'Propriétaires',
+    items: [
+      { label: 'Publier une annonce', href: '/owner/login' },
+      { label: 'Créer un compte bailleur', href: '/owner/register' },
+      { label: 'Tarifs & crédits', href: '#pricing' },
+      { label: 'Pourquoi KeyHome', href: '#landlords' },
+    ],
+  },
+  {
+    title: 'Ressources',
+    items: [
+      { label: 'Comment ça marche', href: '#how-it-works' },
+      { label: 'Questions fréquentes', href: '#faq' },
+      { label: 'Témoignages clients', href: '#testimonials' },
+      { label: 'Blog', href: '/blog' },
+      { label: "Centre d'aide", href: '/aide' },
+    ],
+  },
+  {
+    title: 'Compte & légal',
+    items: [
+      { label: 'Se connecter', href: '/login' },
+      { label: 'Inscription gratuite', href: '/register' },
+      { label: 'Nous contacter', href: '/contact' },
+      { label: "Conditions d'utilisation", href: '/conditions' },
+      { label: 'Politique de confidentialité', href: '/confidentialite' },
+    ],
+  },
+];
+
+/**
+ * Garanties produit — chacune correspond à une capacité réellement livrée
+ * (modération `pending`/`declined`, paiements, réservation de créneaux,
+ * signature électronique du bail). Ne rien y ajouter qui ne soit pas tenu.
+ */
+const ASSURANCES: ReadonlyArray<{
+  Icon: SvgIconComponent;
+  title: string;
+  text: string;
+}> = [
+  {
+    Icon: VerifiedUserOutlined,
+    title: 'Annonces vérifiées',
+    text: 'Chaque annonce est validée avant sa mise en ligne.',
+  },
+  {
+    Icon: LockOutlined,
+    title: 'Paiements sécurisés',
+    text: 'Transactions chiffrées et reçus téléchargeables.',
+  },
+  {
+    Icon: EventAvailableOutlined,
+    title: 'Visites planifiées',
+    text: 'Créneaux réservés en ligne, confirmés en direct.',
+  },
+  {
+    Icon: HistoryEduOutlined,
+    title: 'Baux signés en ligne',
+    text: 'Signature électronique et archivage du contrat.',
+  },
+];
+
+/**
+ * Réseaux sociaux. Les glyphes sont des tracés en dur plutôt que des icônes
+ * MUI : le paquet n'expose ni TikTok ni le logo X actuel, et un jeu d'icônes
+ * mi-MUI mi-SVG donnerait quatre épaisseurs de trait différentes sur la même
+ * rangée. `viewBox="0 0 24 24"` et `fill="currentColor"` pour les quatre.
+ */
+const SOCIALS: ReadonlyArray<{ label: string; href: string; path: string }> = [
+  {
+    label: 'Facebook',
+    href: 'https://www.facebook.com/keyhomeApp',
+    path: 'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z',
+  },
+  {
+    label: 'Instagram',
+    href: 'https://www.instagram.com/keyhome.app',
+    path: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z',
+  },
+  {
+    /* « X (ex-Twitter) » : le seul logo que personne ne reconnaît sans
+       légende — le nom complet part dans l'`aria-label`. */
+    label: 'X (ex-Twitter)',
+    href: 'https://x.com/Keyhomeapp',
+    path: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z',
+  },
+  {
+    label: 'TikTok',
+    href: 'https://www.tiktok.com/@keyhome.app',
+    path: 'M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-1.84-2.48V9.75a5.68 5.68 0 1 0 4.93 5.62V8.9a7.35 7.35 0 0 0 4.3 1.38V7.2a4.29 4.29 0 0 1-3.24-1.38z',
+  },
+];
+
+/**
+ * Révélation en cascade. Le pied de page n'est atteint qu'une fois par visite,
+ * il peut donc s'animer ; `once: true` garantit qu'il ne rejoue jamais.
+ */
+const CONTAINER = staggerContainer();
 
 export default function LandingFooter() {
-  const { footerBg, footerBorder, text, textMuted, textSub, surface, border } =
-    useLandingTheme();
+  const {
+    footerBg,
+    footerBorder,
+    text,
+    textMuted,
+    textSub,
+    surface,
+    bgAlt,
+    border,
+  } = useLandingTheme();
+
+  /**
+   * Les états `:hover` / `:active` / `:focus-visible` vivent dans globals.css
+   * (hover neutralisé sur écran tactile, retour de pression au doigt) ; les
+   * couleurs du thème landing leur sont transmises par variables CSS.
+   */
+  const rootStyle = {
+    '--kh-footer-fg': text,
+    '--kh-footer-sub': textSub,
+    '--kh-footer-muted': textMuted,
+    '--kh-footer-surface': surface,
+    '--kh-footer-tile': bgAlt,
+    '--kh-footer-border': border,
+    '--kh-footer-hairline': footerBorder,
+    '--kh-footer-brand': brand.primary,
+    '--kh-footer-brand-soft': brand.primaryAlpha15,
+    '--kh-footer-brand-line': brand.primaryAlpha30,
+    '--kh-footer-brand-glow': brand.primaryAlpha40,
+    background: footerBg,
+    borderTop: `1px solid ${footerBorder}`,
+  } as CSSProperties;
+
   return (
-    <footer
-      className="landing-footer"
-      style={{
-        background: footerBg,
-        borderTop: `1px solid ${footerBorder}`,
-        transition: 'background 0.4s ease',
-        padding: '72px 24px 40px',
-      }}
-    >
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div
-          style={{
-            display: 'grid',
-            gap: 48,
-            marginBottom: 64,
-          }}
+    <footer className="landing-footer" style={rootStyle}>
+      <div className="landing-footer-inner">
+        <motion.div
           className="footer-grid"
+          variants={CONTAINER}
+          initial="hidden"
+          whileInView="show"
+          viewport={REVEAL_VIEWPORT}
         >
-          {/* Brand */}
-          <div>
+          {/* Marque, promesse, contacts directs */}
+          <motion.div variants={REVEAL_ITEM}>
             <Link
               href="/"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                textDecoration: 'none',
-                marginBottom: 20,
-              }}
+              className="footer-brand"
+              aria-label="KeyHome — retour à l'accueil"
             >
               <Image
                 src="/images/logo.png"
                 alt={BRAND_TITLE_WITH_TAGLINE}
                 width={36}
                 height={36}
-                quality={85}
                 loading="lazy"
                 style={{ borderRadius: 8 }}
               />
-              <span
-                style={{
-                  color: text,
-                  fontWeight: 700,
-                  fontSize: 20,
-                  letterSpacing: '-0.5px',
-                }}
-              >
+              <span className="footer-wordmark">
                 Key<span style={{ color: brand.primary }}>Home</span>
               </span>
             </Link>
-            <p
-              style={{
-                fontSize: 14,
-                color: textMuted,
-                lineHeight: 1.7,
-                maxWidth: 280,
-                margin: '0 0 24px',
-              }}
-            >
-              {BRAND_TAGLINE}. La plateforme immobilière numérique qui connecte
-              propriétaires, locataires et agents partout dans le monde.
-              Trouvez, louez ou achetez votre bien en toute confiance.
+
+            <p className="footer-tagline">
+              {BRAND_TAGLINE}. La plateforme qui réunit propriétaires,
+              locataires et agents — de la recherche du bien jusqu&apos;à la
+              signature du bail, dans un seul espace.
             </p>
-            {/* Social links */}
-            <div style={{ display: 'flex', gap: 12 }}>
-              {[
-                {
-                  label: 'Facebook',
-                  href: 'https://facebook.com/keyhome.africa',
-                  icon: 'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z',
-                },
-                {
-                  label: 'X',
-                  href: 'https://x.com/Keyhomeapp',
-                  icon: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z',
-                },
-                {
-                  label: 'Instagram',
-                  href: 'https://www.instagram.com/keyhome.app',
-                  icon: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z',
-                },
-                {
-                  label: 'WhatsApp',
-                  href: `https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '237657507909'}?text=${encodeURIComponent("Bonjour *KeyHome* ! Je suis intéressé(e) par vos services immobiliers. Pouvez-vous m'aider ?")}`,
-                  icon: 'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z',
-                },
-              ].map((social) => (
+
+            <div className="footer-contacts">
+              <a className="footer-contact" href={`mailto:${SUPPORT_EMAIL}`}>
+                <MailOutlineRounded aria-hidden style={{ fontSize: 17 }} />
+                {SUPPORT_EMAIL}
+              </a>
+              <a
+                className="footer-contact"
+                href={WHATSAPP_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <WhatsApp aria-hidden style={{ fontSize: 17 }} />
+                Écrire sur WhatsApp
+              </a>
+            </div>
+
+            <div className="footer-social-row">
+              {SOCIALS.map((social) => (
                 <a
                   key={social.label}
+                  className="footer-social"
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`KeyHome sur ${social.label}`}
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 10,
-                    background: surface,
-                    border: `1px solid ${border}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: textMuted,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    textDecoration: 'none',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.background =
-                      brand.primaryAlpha15;
-                    (e.currentTarget as HTMLElement).style.borderColor =
-                      brand.primaryAlpha30;
-                    (e.currentTarget as HTMLElement).style.color =
-                      brand.primary;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = surface;
-                    (e.currentTarget as HTMLElement).style.borderColor = border;
-                    (e.currentTarget as HTMLElement).style.color = textMuted;
-                  }}
                 >
                   <svg
                     aria-hidden
-                    width="16"
-                    height="16"
+                    width="19"
+                    height="19"
                     viewBox="0 0 24 24"
                     fill="currentColor"
                   >
-                    <path d={social.icon} />
+                    <path d={social.path} />
                   </svg>
                 </a>
               ))}
             </div>
+          </motion.div>
 
-            {/* App store badges */}
-            <div
-              style={{
-                display: 'flex',
-                gap: 10,
-                marginTop: 20,
-                flexWrap: 'wrap',
-              }}
-            >
-              <a
-                href="https://play.google.com/store/apps/details?id=app.keyhome"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Télécharger KeyHome sur Google Play"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '8px 14px',
-                  borderRadius: 10,
-                  background: surface,
-                  border: `1px solid ${border}`,
-                  color: text,
-                  textDecoration: 'none',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor =
-                    brand.primaryAlpha30;
-                  (e.currentTarget as HTMLElement).style.color = brand.primary;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = border;
-                  (e.currentTarget as HTMLElement).style.color = text;
-                }}
-              >
-                <svg
-                  aria-hidden
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M3.18 23.76c.3.18.65.19.96.04l11.34-6.35-2.7-2.7-9.6 9.01zm-1.63-20.4C1.22 3.7 1 4.15 1 4.7v14.6c0 .55.22 1 .55 1.34l.07.07 8.18-8.18v-.19L1.62 3.29l-.07.07zm18.18 7.72l-2.32-1.3-3.03 3.03 3.03 3.04 2.34-1.31c.67-.37.67-1.08 0-1.46zm-16.55 9.84l9.6-9.01-3.03-3.03L.18 18.5c0 .01 3 2.42 3 2.42z" />
-                </svg>
-                Google Play
-              </a>
-              <a
-                href="https://apps.apple.com/app/keyhome/id6446910075"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Télécharger KeyHome sur l'App Store"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '8px 14px',
-                  borderRadius: 10,
-                  background: surface,
-                  border: `1px solid ${border}`,
-                  color: text,
-                  textDecoration: 'none',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor =
-                    brand.primaryAlpha30;
-                  (e.currentTarget as HTMLElement).style.color = brand.primary;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = border;
-                  (e.currentTarget as HTMLElement).style.color = text;
-                }}
-              >
-                <svg
-                  aria-hidden
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98l-.09.06c-.22.15-2.18 1.27-2.16 3.79.02 2.99 2.63 3.99 2.65 4-.03.07-.41 1.4-1.34 2.78M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                </svg>
-                App Store
-              </a>
-            </div>
-          </div>
-
-          {/* Links */}
-          {Object.entries(links).map(([section, items]) => (
-            <div key={section}>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: textSub,
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  marginBottom: 20,
-                }}
-              >
-                {section}
+          {COLUMNS.map((column) => (
+            <motion.div key={column.title} variants={REVEAL_ITEM}>
+              <h2 className="footer-col-title">{column.title}</h2>
+              <div className="footer-links">
+                {column.items.map((item) =>
+                  /* Les ancres restent de simples `<a>` : pas de navigation
+                     client à déclencher pour un défilement interne. */
+                  item.href.startsWith('#') ? (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      className="footer-link"
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className="footer-link"
+                    >
+                      {item.label}
+                    </Link>
+                  )
+                )}
               </div>
-              <div
-                style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
-              >
-                {items.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    style={{
-                      color: textMuted,
-                      textDecoration: 'none',
-                      fontSize: 14,
-                      transition: 'color 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.color = text;
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.color = textMuted;
-                    }}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
-        {/* Bottom bar */}
-        <div
-          className="footer-bottom"
-          style={{
-            borderTop: `1px solid ${footerBorder}`,
-            paddingTop: 28,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 16,
-          }}
+        {/* Garanties : le seul bloc « décoratif » du pied de page, chaque
+            tuile renvoyant à une capacité réellement livrée. */}
+        <motion.div
+          className="footer-assurances"
+          variants={CONTAINER}
+          initial="hidden"
+          whileInView="show"
+          viewport={REVEAL_VIEWPORT}
         >
-          <span style={{ fontSize: 13, color: textMuted }}>
-            © {new Date().getFullYear()} KeyHome. Tous droits réservés.
-          </span>
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 13,
-              color: textMuted,
-            }}
-          >
-            <span>Propulsé par</span>
-            <a
-              href="https://neocraft.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                fontWeight: 700,
-                color: textSub,
-                textDecoration: 'none',
-                transition: 'color 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color = brand.primary;
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = textSub;
-              }}
+          {ASSURANCES.map(({ Icon, title, text }) => (
+            <motion.div
+              key={title}
+              className="footer-assurance"
+              variants={REVEAL_ITEM}
             >
-              <Code style={{ fontSize: 14 }} />
-              NeoCraftTeam
-            </a>
+              <span className="footer-assurance-icon">
+                <Icon aria-hidden style={{ fontSize: 19 }} />
+              </span>
+              <div>
+                <p className="footer-assurance-title">{title}</p>
+                <p className="footer-assurance-text">{text}</p>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <div className="footer-bottom">
+          <p className="footer-copy">
+            © {new Date().getFullYear()} KeyHome. Tous droits réservés.
+          </p>
+
+          <div className="footer-bottom-legal">
+            <Link href="/conditions" className="footer-legal-link">
+              Conditions
+            </Link>
+            <span className="footer-legal-dot" aria-hidden />
+            <Link href="/confidentialite" className="footer-legal-link">
+              Confidentialité
+            </Link>
+            <span className="footer-legal-dot" aria-hidden />
+            {/* La politique cookies est une section de la page confidentialité,
+                pas une route à part (`/confidentialite#cookies`). */}
+            <Link href="/confidentialite#cookies" className="footer-legal-link">
+              Cookies
+            </Link>
           </div>
+
+          <a
+            className="footer-credit"
+            href="https://www.neocraft.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Code aria-hidden style={{ fontSize: 15 }} />
+            Propulsé par <strong>NeoCraftTeam</strong>
+          </a>
         </div>
       </div>
     </footer>

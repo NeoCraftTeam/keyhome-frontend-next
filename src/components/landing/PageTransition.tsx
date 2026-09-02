@@ -5,6 +5,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 
+import { DURATION, EASE_IN_OUT, EASE_OUT } from './landing-motion';
+
 interface PageTransitionLinkProps {
   href: string;
   children: ReactNode;
@@ -31,6 +33,16 @@ export function PageTransitionLink({
   const router = useRouter();
 
   const handleClick = (e: React.MouseEvent) => {
+    /**
+     * On laisse le navigateur faire son travail dès qu'un modificateur est
+     * enfoncé (⌘/Ctrl/⇧/alt) ou que le clic n'est pas le clic principal :
+     * sinon « ouvrir dans un nouvel onglet » jouait le rideau et n'ouvrait
+     * rien du tout.
+     */
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+      return;
+    }
+
     e.preventDefault();
     onClick?.();
     if (_setActive && _setTarget) {
@@ -83,7 +95,7 @@ export function PageTransitionOverlay() {
             transition={
               shouldReduce
                 ? { duration: 0 }
-                : { duration: 0.45, ease: [0.76, 0, 0.24, 1] }
+                : { duration: 0.45, ease: EASE_IN_OUT }
             }
             onAnimationComplete={() => {
               if (target.startsWith('http')) {
@@ -104,10 +116,14 @@ export function PageTransitionOverlay() {
           {/* Logo + spinner centered on top of curtain */}
           <motion.div
             key="curtain-logo"
-            initial={shouldReduce ? false : { opacity: 0, scale: 0.85 }}
+            /* 0.92 et non 0.85 : le monogramme doit sembler s'approcher, pas
+               jaillir de nulle part. */
+            initial={shouldReduce ? false : { opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={
-              shouldReduce ? { duration: 0 } : { duration: 0.25, delay: 0.2 }
+              shouldReduce
+                ? { duration: 0 }
+                : { duration: DURATION.enter, delay: 0.2, ease: EASE_OUT }
             }
             style={{
               position: 'fixed',

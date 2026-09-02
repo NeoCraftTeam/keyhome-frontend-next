@@ -7,7 +7,23 @@ import Remove from '@mui/icons-material/Remove';
 import { useLandingTheme } from './LandingThemeContext';
 import { brand } from '@/theme/tokens';
 
-const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+import {
+  DURATION,
+  EASE_OUT as EASE,
+  PRESS_WIDE,
+  REVEAL_HEADER,
+  REVEAL_ITEM,
+  REVEAL_VIEWPORT,
+  staggerContainer,
+} from './landing-motion';
+
+/**
+ * L'accordéon révèle ses six lignes depuis un seul conteneur : chaque ligne
+ * portait auparavant son propre `whileInView` (six IntersectionObserver) et un
+ * `delay: idx * 0.05` figé — une ligne atteinte plus tard attendait encore son
+ * tour alors qu'elle était déjà à l'écran.
+ */
+const LIST = staggerContainer(0.05);
 
 const faqs = [
   {
@@ -60,10 +76,7 @@ export default function FAQSection() {
       <div style={{ maxWidth: 780, margin: '0 auto' }}>
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: EASE }}
+          {...REVEAL_HEADER}
           style={{ textAlign: 'center', marginBottom: 56 }}
         >
           <span
@@ -108,8 +121,12 @@ export default function FAQSection() {
         </motion.div>
 
         {/* Accordion */}
-        <div
+        <motion.div
           role="list"
+          variants={LIST}
+          initial="hidden"
+          whileInView="show"
+          viewport={REVEAL_VIEWPORT}
           style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
         >
           {faqs.map((faq, idx) => {
@@ -117,14 +134,7 @@ export default function FAQSection() {
             const triggerId = `faq-trigger-${idx}`;
             const panelId = `faq-panel-${idx}`;
             return (
-              <motion.div
-                key={idx}
-                role="listitem"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-20px' }}
-                transition={{ duration: 0.5, delay: idx * 0.05, ease: EASE }}
-              >
+              <motion.div key={idx} role="listitem" variants={REVEAL_ITEM}>
                 <div
                   style={{
                     borderRadius: 16,
@@ -135,12 +145,14 @@ export default function FAQSection() {
                   }}
                 >
                   <h3 style={{ margin: 0 }}>
-                    <button
+                    <motion.button
                       id={triggerId}
                       type="button"
                       aria-expanded={isOpen}
                       aria-controls={panelId}
                       onClick={() => toggle(idx)}
+                      whileTap={PRESS_WIDE}
+                      transition={{ duration: DURATION.press, ease: EASE }}
                       style={{
                         width: '100%',
                         display: 'flex',
@@ -192,7 +204,7 @@ export default function FAQSection() {
                           <Add style={{ fontSize: 20, color: textMuted }} />
                         )}
                       </span>
-                    </button>
+                    </motion.button>
                   </h3>
 
                   <AnimatePresence initial={false}>
@@ -203,9 +215,18 @@ export default function FAQSection() {
                         role="region"
                         aria-labelledby={triggerId}
                         initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: EASE }}
+                        /* Le repli est plus court que l'ouverture : une réponse
+                           qu'on referme ne doit pas se faire attendre. */
+                        animate={{
+                          height: 'auto',
+                          opacity: 1,
+                          transition: { duration: DURATION.enter, ease: EASE },
+                        }}
+                        exit={{
+                          height: 0,
+                          opacity: 0,
+                          transition: { duration: DURATION.exit, ease: EASE },
+                        }}
                         style={{ overflow: 'hidden' }}
                       >
                         <div
@@ -225,7 +246,7 @@ export default function FAQSection() {
               </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

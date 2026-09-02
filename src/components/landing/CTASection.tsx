@@ -1,6 +1,6 @@
 'use client';
 
-import { brand, gradient, semantic } from '@/theme/tokens';
+import { brand, semantic } from '@/theme/tokens';
 import ArrowForward from '@mui/icons-material/ArrowForward';
 import CheckRounded from '@mui/icons-material/CheckRounded';
 import PhoneIphoneOutlined from '@mui/icons-material/PhoneIphoneOutlined';
@@ -8,7 +8,22 @@ import { motion } from 'framer-motion';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
 
-const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+import {
+  DURATION,
+  EASE_OUT as EASE,
+  PRESS,
+  REVEAL_HEADER,
+  REVEAL_ITEM,
+  REVEAL_VIEWPORT,
+  staggerContainer,
+} from './landing-motion';
+
+/**
+ * Les quatre garanties se révèlent une à une après les boutons : révélées d'un
+ * bloc, elles se lisaient comme un bandeau décoratif ; en cascade, chacune est
+ * lue pour ce qu'elle est.
+ */
+const BADGES = staggerContainer(0.05);
 
 export default function CTASection() {
   const { bgAlt, text, textSub } = useLandingTheme();
@@ -63,12 +78,7 @@ export default function CTASection() {
           zIndex: 1,
         }}
       >
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: EASE }}
-        >
+        <motion.div {...REVEAL_HEADER}>
           <div
             style={{
               display: 'inline-flex',
@@ -136,14 +146,15 @@ export default function CTASection() {
                   scale: 1.03,
                   boxShadow: `0 8px 40px ${brand.primaryAlpha40}`,
                 }}
-                whileTap={{ scale: 0.97 }}
+                whileTap={PRESS}
+                transition={{ duration: DURATION.hover, ease: EASE }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: 10,
                   padding: '16px 32px',
                   borderRadius: 14,
-                  background: gradient.primary135,
+                  background: brand.primary,
                   color: '#fff',
                   fontSize: 17,
                   fontWeight: 700,
@@ -168,7 +179,8 @@ export default function CTASection() {
                   scale: 1.03,
                   boxShadow: `0 8px 40px ${brand.primaryAlpha40}`,
                 }}
-                whileTap={{ scale: 0.97 }}
+                whileTap={PRESS}
+                transition={{ duration: DURATION.hover, ease: EASE }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -192,8 +204,12 @@ export default function CTASection() {
           </div>
 
           {/* Trust badges */}
-          <ul
+          <motion.ul
             aria-label="Garanties KeyHome"
+            variants={BADGES}
+            initial="hidden"
+            whileInView="show"
+            viewport={REVEAL_VIEWPORT}
             style={{
               marginTop: 52,
               display: 'flex',
@@ -210,8 +226,9 @@ export default function CTASection() {
               'Support local',
               'Sans engagement',
             ].map((badge) => (
-              <li
+              <motion.li
                 key={badge}
+                variants={REVEAL_ITEM}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -225,9 +242,9 @@ export default function CTASection() {
                   style={{ color: semantic.successBright, fontSize: 16 }}
                 />
                 {badge}
-              </li>
+              </motion.li>
             ))}
-          </ul>
+          </motion.ul>
         </motion.div>
       </div>
     </section>

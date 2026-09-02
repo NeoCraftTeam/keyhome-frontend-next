@@ -1,11 +1,18 @@
 'use client';
 
-import { brand, gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
 import { useEffect, useState } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
+import {
+  DURATION,
+  EASE_IN_OUT,
+  EASE_OUT as EASE,
+  PRESS,
+} from './landing-motion';
 import { PageTransitionLink } from './PageTransition';
 
 /**
@@ -101,15 +108,30 @@ export default function LandingNav() {
     };
   }, [menuOpen]);
 
+  /**
+   * Échap referme le menu. Le panneau s'annonce `role="dialog"
+   * aria-modal="true"` : sans cette sortie clavier, la promesse est fausse et
+   * un utilisateur au clavier reste enfermé dans un calque qui masque la page.
+   */
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
+
   return (
     <>
       <motion.nav
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{
-          duration: 0.6,
-          ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-        }}
+        transition={{ duration: DURATION.reveal, ease: EASE }}
         style={{
           position: 'fixed',
           top: 0,
@@ -173,22 +195,19 @@ export default function LandingNav() {
             style={{ alignItems: 'center', gap: 32 }}
           >
             {NAV_LINKS.map((item) => (
+              /* Le survol est en CSS (`.landing-nav-link`) : posé en JS, il
+                 restait allumé sur le dernier lien touché au doigt, puisque
+                 `mouseleave` n'arrive jamais sur un écran tactile. */
               <a
                 key={item.href}
                 href={item.href}
-                style={{
-                  color: textNav,
-                  textDecoration: 'none',
-                  fontSize: 15,
-                  fontWeight: 500,
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  (e.target as HTMLElement).style.color = brand.primary;
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLElement).style.color = textNav;
-                }}
+                className="landing-nav-link"
+                style={
+                  {
+                    '--nav-fg': textNav,
+                    '--nav-fg-hover': brand.primary,
+                  } as CSSProperties
+                }
               >
                 {item.label}
               </a>
@@ -200,8 +219,13 @@ export default function LandingNav() {
             className="landing-nav-cta"
             style={{ alignItems: 'center', gap: 12 }}
           >
+            {/* `PageTransitionLink` rend un `<a>` : le retour de pression est
+                donc en CSS (`.landing-nav-cta-btn:active`) et non en
+                `whileTap`. Sans lui, les deux seuls boutons de la barre ne
+                répondent pas au doigt. */}
             <PageTransitionLink
               href="/home"
+              className="landing-nav-cta-btn"
               style={{
                 color: '#fff',
                 textDecoration: 'none',
@@ -219,6 +243,7 @@ export default function LandingNav() {
 
             <PageTransitionLink
               href={getOwnerLoginHref()}
+              className="landing-nav-cta-btn"
               style={{
                 color: '#fff',
                 textDecoration: 'none',
@@ -226,7 +251,7 @@ export default function LandingNav() {
                 fontWeight: 600,
                 padding: '8px 20px',
                 borderRadius: 10,
-                background: gradient.primary135,
+                background: brand.primary,
                 boxShadow: '0 4px 20px rgba(246,71,95,0.35)',
                 display: 'inline-block',
               }}
@@ -240,11 +265,13 @@ export default function LandingNav() {
             className="landing-hamburger"
             style={{ alignItems: 'center', gap: 10 }}
           >
-            <button
+            <motion.button
               onClick={() => setMenuOpen((o) => !o)}
               aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
               aria-expanded={menuOpen}
               aria-controls="landing-mobile-menu"
+              whileTap={PRESS}
+              transition={{ duration: DURATION.press, ease: EASE }}
               style={{
                 background: 'none',
                 border: 'none',
@@ -258,16 +285,19 @@ export default function LandingNav() {
                 justifyContent: 'center',
               }}
             >
+              {/* Les trois barres se déplacent à l'écran plutôt que d'entrer :
+                  `EASE_IN_OUT` accélère puis freine, là où une courbe de sortie
+                  ferait démarrer la croix d'un coup sec. */}
               <motion.span
                 animate={{ rotate: menuOpen ? 45 : 0, y: menuOpen ? 9 : 0 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: DURATION.enter, ease: EASE_IN_OUT }}
                 style={{
                   display: 'block',
                   width: 22,
                   height: 2,
                   borderRadius: 2,
                   background: text,
-                  transition: 'background 0.3s',
+                  transition: 'background-color 0.3s var(--ease-out)',
                 }}
               />
               <motion.span
@@ -275,29 +305,29 @@ export default function LandingNav() {
                   opacity: menuOpen ? 0 : 1,
                   scaleX: menuOpen ? 0 : 1,
                 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: DURATION.exit, ease: EASE_IN_OUT }}
                 style={{
                   display: 'block',
                   width: 22,
                   height: 2,
                   borderRadius: 2,
                   background: text,
-                  transition: 'background 0.3s',
+                  transition: 'background-color 0.3s var(--ease-out)',
                 }}
               />
               <motion.span
                 animate={{ rotate: menuOpen ? -45 : 0, y: menuOpen ? -9 : 0 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: DURATION.enter, ease: EASE_IN_OUT }}
                 style={{
                   display: 'block',
                   width: 22,
                   height: 2,
                   borderRadius: 2,
                   background: text,
-                  transition: 'background 0.3s',
+                  transition: 'background-color 0.3s var(--ease-out)',
                 }}
               />
-            </button>
+            </motion.button>
           </div>
         </div>
       </motion.nav>
@@ -312,11 +342,18 @@ export default function LandingNav() {
             aria-modal="true"
             aria-label="Menu de navigation"
             initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{
-              duration: 0.25,
-              ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+            /* Le panneau descend de la barre puis remonte s'y ranger, plus vite
+               qu'il n'est venu : un calque qu'on congédie ne doit pas se faire
+               attendre. */
+            animate={{
+              opacity: 1,
+              y: 0,
+              transition: { duration: DURATION.enter, ease: EASE },
+            }}
+            exit={{
+              opacity: 0,
+              y: -16,
+              transition: { duration: DURATION.exit, ease: EASE },
             }}
             className="landing-mobile-menu open"
             style={{ background: navBg }}
@@ -326,28 +363,27 @@ export default function LandingNav() {
               <motion.a
                 key={item.href}
                 href={item.href}
+                className="landing-mobile-link"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.07, duration: 0.3 }}
+                /* Les cinq liens montent tous en même temps que le panneau : le
+                   décalage n'est pas un retard hérité du défilement, il donne
+                   l'ordre de lecture. */
+                transition={{
+                  delay: i * 0.05,
+                  duration: DURATION.enter,
+                  ease: EASE,
+                }}
+                whileTap={PRESS}
                 onClick={() => setMenuOpen(false)}
-                style={{
-                  color: text,
-                  textDecoration: 'none',
-                  fontSize: 17,
-                  fontWeight: 600,
-                  padding: '14px 16px',
-                  borderRadius: 12,
-                  background: surface,
-                  border: `1px solid ${border}`,
-                  display: 'block',
-                  transition: 'color 0.2s, background 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = brand.primary;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = text;
-                }}
+                style={
+                  {
+                    '--nav-fg': text,
+                    '--nav-fg-hover': brand.primary,
+                    '--nav-line': border,
+                    background: surface,
+                  } as CSSProperties
+                }
               >
                 {item.label}
               </motion.a>
@@ -359,12 +395,17 @@ export default function LandingNav() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.3 }}
+              transition={{
+                delay: 0.2,
+                duration: DURATION.enter,
+                ease: EASE,
+              }}
               style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
             >
               <PageTransitionLink
                 href="/home"
                 onClick={() => setMenuOpen(false)}
+                className="landing-nav-cta-btn"
                 style={{
                   color: '#fff',
                   textDecoration: 'none',
@@ -383,6 +424,7 @@ export default function LandingNav() {
               <PageTransitionLink
                 href={getOwnerLoginHref()}
                 onClick={() => setMenuOpen(false)}
+                className="landing-nav-cta-btn"
                 style={{
                   color: '#fff',
                   textDecoration: 'none',
@@ -390,7 +432,7 @@ export default function LandingNav() {
                   fontWeight: 700,
                   padding: '14px 20px',
                   borderRadius: 12,
-                  background: gradient.primary135,
+                  background: brand.primary,
                   boxShadow: '0 4px 24px rgba(246,71,95,0.4)',
                   display: 'block',
                   textAlign: 'center',

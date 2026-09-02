@@ -7,10 +7,11 @@ import { useCurrency } from '@/providers/CurrencyProvider';
 import { brand, semantic } from '@/theme/tokens';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import Search from '@mui/icons-material/Search';
-import { motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { CSSProperties } from 'react';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import VoiceSearchButton from '../search/VoiceSearchButton';
 import { useLandingTheme } from './LandingThemeContext';
@@ -29,8 +30,15 @@ const ThreeCanvas = dynamic(() => import('./ThreeCanvas'), {
   ),
 });
 
-const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+import { DURATION, EASE_OUT as EASE } from './landing-motion';
 
+/**
+ * Le hero est la seule séquence jouée au montage et non au défilement : ses
+ * enfants avancent de 40 px, davantage qu'un `REVEAL_ITEM` de liste, et la
+ * cascade démarre après un souffle (`delayChildren`) pour laisser la vidéo
+ * s'établir. Seule la durée est empruntée au vocabulaire commun — elle n'a
+ * aucune raison de différer du reste de la page.
+ */
 const containerVariants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.12, delayChildren: 0.2 } },
@@ -38,10 +46,12 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: DURATION.reveal, ease: EASE },
+  },
 };
-
-const CITIES = ['Douala', 'Garoua', 'Accra', 'Cotonou', 'Lomé', 'Bafoussam'];
 
 const PLACEHOLDER_EXAMPLES = [
   'Appartement 3 pièces à Douala moins de 100 000 FCFA...',
@@ -358,7 +368,12 @@ export default function HeroSection() {
                   border: `1.5px solid ${isFocused ? 'rgba(246,71,95,0.5)' : isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
                   borderRadius: 24,
                   padding: '8px 10px 8px 24px',
-                  transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+                  /* Chaque propriété est nommée : `all` ferait transiter aussi
+                     `padding`/`border-width`, deux déclencheurs de relayout à
+                     chaque focus, et empêcherait de régler le temps du halo
+                     indépendamment de la couleur. */
+                  transition:
+                    'background-color 0.3s var(--ease-out), border-color 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out)',
                   backdropFilter: 'blur(20px)',
                   width: '100%',
                   boxSizing: 'border-box',
@@ -508,93 +523,93 @@ export default function HeroSection() {
               </div>
 
               {/* Quick suggestions — shown on focus without text */}
-              {isFocused && !query && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 6px)',
-                    left: 0,
-                    right: 0,
-                    background: isDark
-                      ? 'rgba(18,18,26,0.95)'
-                      : 'rgba(255,255,255,0.98)',
-                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-                    borderRadius: 16,
-                    overflow: 'hidden',
-                    zIndex: 50,
-                    backdropFilter: 'blur(20px)',
-                    boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-                    padding: '8px 0',
-                  }}
-                >
-                  <div
+              <AnimatePresence>
+                {isFocused && !query && (
+                  <motion.div
+                    key="quick-suggestions"
+                    /* Le panneau grandit depuis le bord de la barre, pas depuis
+                       son propre centre : ancré à son déclencheur, il se lit
+                       comme un prolongement du champ. Il se replie plus vite
+                       qu'il ne s'ouvre. */
+                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      transition: { duration: DURATION.enter, ease: EASE },
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: -4,
+                      scale: 0.98,
+                      transition: { duration: DURATION.exit, ease: EASE },
+                    }}
                     style={{
-                      padding: '6px 16px 8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      left: 0,
+                      right: 0,
+                      transformOrigin: 'top center',
+                      background: isDark
+                        ? 'rgba(18,18,26,0.95)'
+                        : 'rgba(255,255,255,0.98)',
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                      borderRadius: 16,
+                      overflow: 'hidden',
+                      zIndex: 50,
+                      backdropFilter: 'blur(20px)',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+                      padding: '8px 0',
                     }}
                   >
-                    <AutoAwesome
-                      style={{ fontSize: 13, color: brand.primary }}
-                    />
-                    <span
+                    <div
                       style={{
-                        fontSize: 11,
-                        color: textMuted,
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                      }}
-                    >
-                      Essayez par exemple
-                    </span>
-                  </div>
-                  {QUICK_SUGGESTIONS.map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setQuery(suggestion);
-                        handleAISearch(suggestion);
-                      }}
-                      className="hero-suggestion-btn"
-                      style={{
+                        padding: '6px 16px 8px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 10,
-                        width: '100%',
-                        padding: '12px 16px',
-                        minHeight: 44,
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: text,
-                        fontSize: 14,
-                        fontFamily: 'inherit',
-                        textAlign: 'left',
-                        transition: 'background 0.15s',
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.background =
-                          isDark
-                            ? 'rgba(246,71,95,0.1)'
-                            : 'rgba(246,71,95,0.05)';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.background =
-                          'transparent';
+                        gap: 6,
                       }}
                     >
-                      <Search style={{ fontSize: 15, color: textMuted }} />
-                      <span>{suggestion}</span>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
+                      <AutoAwesome
+                        style={{ fontSize: 13, color: brand.primary }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: textMuted,
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                        }}
+                      >
+                        Essayez par exemple
+                      </span>
+                    </div>
+                    {QUICK_SUGGESTIONS.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setQuery(suggestion);
+                          handleAISearch(suggestion);
+                        }}
+                        className="hero-suggestion-btn"
+                        style={
+                          {
+                            '--sugg-fg': text,
+                            '--sugg-hover': isDark
+                              ? 'rgba(246,71,95,0.1)'
+                              : 'rgba(246,71,95,0.05)',
+                          } as CSSProperties
+                        }
+                      >
+                        <Search style={{ fontSize: 15, color: textMuted }} />
+                        <span>{suggestion}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Error message */}
               {error && (
@@ -612,7 +627,12 @@ export default function HeroSection() {
               )}
             </div>
 
-            {/* AI badge + city chips */}
+            {/* Badge de recherche IA.
+                Aucune liste de villes ici : six villes d'un même continent
+                affichées sous le champ signent la portée du service — un
+                visiteur de Lisbonne ou de Montréal en déduit que KeyHome ne
+                couvre pas chez lui. La recherche, elle, accepte le monde
+                entier. */}
             <div
               style={{
                 display: 'flex',
@@ -640,54 +660,6 @@ export default function HeroSection() {
                 <AutoAwesome aria-hidden style={{ fontSize: 11 }} />
                 Recherche IA
               </span>
-              <span style={{ color: textMuted, fontSize: 12, margin: '0 4px' }}>
-                •
-              </span>
-              <span style={{ color: textMuted, fontSize: 12 }}>
-                Populaires :
-              </span>
-              {CITIES.map((city) => (
-                <Link
-                  key={city}
-                  href={`/search?city=${city.toLowerCase()}`}
-                  style={{ textDecoration: 'none' }}
-                >
-                  <span
-                    className="hero-city-chip"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 3,
-                      padding: '8px 14px',
-                      minHeight: 36,
-                      borderRadius: 100,
-                      background: 'transparent',
-                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
-                      color: textSub,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.background =
-                        'rgba(246,71,95,0.1)';
-                      (e.currentTarget as HTMLElement).style.borderColor =
-                        brand.primaryAlpha30;
-                      (e.currentTarget as HTMLElement).style.color =
-                        brand.primary;
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.background =
-                        'transparent';
-                      (e.currentTarget as HTMLElement).style.borderColor =
-                        isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
-                      (e.currentTarget as HTMLElement).style.color = textSub;
-                    }}
-                  >
-                    {city}
-                  </span>
-                </Link>
-              ))}
             </div>
           </motion.div>
 

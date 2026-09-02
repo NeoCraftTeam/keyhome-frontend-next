@@ -4,6 +4,8 @@ import type { SyntheticEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { DURATION, EASE_AMBIENT } from './landing-motion';
+
 const HERO_VIDEOS = [
   '/videos/hero1.mp4',
   '/videos/hero2.mp4',
@@ -19,6 +21,16 @@ const SHOWCASE_IMAGES = [
 ];
 
 const SLIDE_DURATION = 5000;
+
+/**
+ * Durée du fondu enchaîné entre deux clips.
+ *
+ * Volontairement plus courte que `CROSSFADE_MS` : la bascule d'état attend la
+ * fin du fondu, et sans cette marge le `src` du slot libéré pouvait être
+ * réassigné pendant les dernières frames — une image du clip suivant
+ * apparaissait un instant en plein fondu.
+ */
+const FADE_MS = 900;
 const CROSSFADE_MS = 1000;
 
 /** Slower hero motion; must be re-applied after `load()` (browsers reset rate to 1). */
@@ -200,11 +212,28 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
     [videoError]
   );
 
-  function slotOpacity(slot: 0 | 1): number {
-    if (isCrossfading && crossfadeTo !== null) {
-      return slot === crossfadeTo ? 1 : 0;
+  /**
+   * Un seul calque bouge : celui du dessus (`nextVideoRef`, plus loin dans le
+   * DOM donc peint par-dessus).
+   *
+   * Faire monter l'entrant de 0 à 1 pendant que le sortant descend de 1 à 0
+   * laissait passer le fond de page au milieu du fondu : à mi-course les deux
+   * vidéos sont translucides et leur somme ne couvre plus l'écran — un éclair
+   * du fond à chaque changement de clip, cinq fois par boucle. Le calque du bas
+   * reste donc opaque en permanence, et le fondu ne joue que sur celui du
+   * dessus, qui découvre ou recouvre une image déjà pleine.
+   */
+  function baseSlotOpacity(): number {
+    return videoReady ? 1 : 0;
+  }
+
+  function topSlotOpacity(): number {
+    if (!videoReady) {
+      return 0;
     }
-    return slot === activeSlot && videoReady ? 1 : 0;
+    const shown =
+      isCrossfading && crossfadeTo !== null ? crossfadeTo : activeSlot;
+    return shown === 1 ? 1 : 0;
   }
 
   // Image slideshow fallback when videos fail.
@@ -276,8 +305,8 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
               height: '100%',
               objectFit: 'cover',
               zIndex: 0,
-              opacity: slotOpacity(0),
-              transition: `opacity ${CROSSFADE_MS}ms ease`,
+              opacity: baseSlotOpacity(),
+              transition: `opacity ${FADE_MS}ms var(--ease-out)`,
             }}
           />
           <video
@@ -296,8 +325,8 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
               height: '100%',
               objectFit: 'cover',
               zIndex: 0,
-              opacity: slotOpacity(1),
-              transition: `opacity ${CROSSFADE_MS}ms ease`,
+              opacity: topSlotOpacity(),
+              transition: `opacity ${FADE_MS}ms var(--ease-out)`,
             }}
           />
         </>
@@ -318,7 +347,7 @@ export default function HeroVideoBackground({ isDark }: { isDark: boolean }) {
               initial={{ opacity: 0, scale: 1.05 }}
               animate={{ opacity: 0.35, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 1.2, ease: 'easeInOut' }}
+              transition={{ duration: DURATION.ambient, ease: EASE_AMBIENT }}
               style={{
                 position: 'absolute',
                 inset: 0,

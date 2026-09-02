@@ -7,6 +7,12 @@ import EmailOutlined from '@mui/icons-material/EmailOutlined';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
+import {
+  DURATION,
+  EASE_OUT as EASE,
+  PRESS,
+  REVEAL_VIEWPORT,
+} from './landing-motion';
 
 /** RFC-5322 compatible enough for client-side gating; backend re-validates. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -17,6 +23,8 @@ export default function NewsletterSection() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isDisabled = isLoading || !email.trim();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -93,8 +101,8 @@ export default function NewsletterSection() {
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          viewport={REVEAL_VIEWPORT}
+          transition={{ duration: DURATION.reveal, ease: EASE }}
         >
           <div
             aria-hidden
@@ -144,10 +152,7 @@ export default function NewsletterSection() {
               aria-live="polite"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{
-                duration: 0.4,
-                ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-              }}
+              transition={{ duration: DURATION.enter, ease: EASE }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -175,7 +180,7 @@ export default function NewsletterSection() {
                   borderRadius: 12,
                   overflow: 'hidden',
                   background: surface,
-                  transition: 'border-color 0.2s',
+                  transition: 'border-color 0.2s var(--ease-out)',
                 }}
               >
                 <input
@@ -204,25 +209,31 @@ export default function NewsletterSection() {
                   }}
                   aria-label="Adresse e-mail pour la newsletter"
                 />
-                <button
+                {/* Le bouton reflète l'état réellement désactivé, pas seulement
+                    le chargement : tant que le champ est vide il était plein
+                    couleur, curseur main — l'utilisateur cliquait sur un bouton
+                    qui refusait déjà de répondre. */}
+                <motion.button
                   type="submit"
-                  disabled={isLoading || !email.trim()}
+                  disabled={isDisabled}
+                  whileTap={isDisabled ? undefined : PRESS}
+                  transition={{ duration: DURATION.press, ease: EASE }}
                   style={{
                     padding: '14px 24px',
-                    background: isLoading ? textSub : gradient.primary,
+                    background: isDisabled ? textSub : brand.primary,
                     color: '#fff',
                     border: 'none',
                     fontWeight: 600,
                     fontSize: '0.95rem',
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
                     whiteSpace: 'nowrap',
-                    transition: 'background 0.2s',
+                    transition: 'background-color 0.2s var(--ease-out)',
                     minWidth: 120,
                     minHeight: 44,
                   }}
                 >
                   {isLoading ? 'En cours…' : "S'abonner"}
-                </button>
+                </motion.button>
               </div>
 
               {error && (

@@ -18,9 +18,10 @@ import PricingSection from '@/components/landing/PricingSection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import { brand } from '@/theme/tokens';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
+import type { CSSProperties } from 'react';
 import { useEffect, useState } from 'react';
 
-const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+import { DURATION, EASE_OUT as EASE, PRESS } from './landing-motion';
 
 function BackToTop() {
   const { border, text } = useLandingTheme();
@@ -37,45 +38,34 @@ function BackToTop() {
       {visible && (
         <motion.button
           type="button"
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.85 }}
+          /* 0.92 et non 0.85 : rien n'apparaît de nulle part. La sortie est
+             plus courte que l'entrée — un bouton qu'on quitte ne doit pas se
+             faire attendre. */
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            transition: { duration: DURATION.enter, ease: EASE },
+          }}
+          exit={{
+            opacity: 0,
+            scale: 0.92,
+            transition: { duration: DURATION.exit, ease: EASE },
+          }}
           whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ duration: 0.25, ease: EASE }}
+          whileTap={PRESS}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label="Revenir en haut de la page"
-          style={{
-            position: 'fixed',
-            bottom: 24,
-            left: 24,
-            zIndex: 90,
-            width: 48,
-            height: 48,
-            borderRadius: 14,
-            border: `1px solid ${border}`,
-            background: brand.primaryAlpha10,
-            backdropFilter: 'blur(10px)',
-            color: text,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 22,
-            lineHeight: 1,
-            transition: 'background 0.2s, border-color 0.2s, color 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background =
-              brand.primaryAlpha15;
-            (e.currentTarget as HTMLElement).style.borderColor =
-              brand.primaryAlpha30;
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background =
-              brand.primaryAlpha10;
-            (e.currentTarget as HTMLElement).style.borderColor = border;
-          }}
+          className="landing-back-to-top"
+          style={
+            {
+              '--btt-line': border,
+              '--btt-fg': text,
+              '--btt-bg': brand.primaryAlpha10,
+              '--btt-bg-hover': brand.primaryAlpha15,
+              '--btt-line-hover': brand.primaryAlpha30,
+            } as CSSProperties
+          }
         >
           <span aria-hidden>↑</span>
         </motion.button>

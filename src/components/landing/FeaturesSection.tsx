@@ -11,10 +11,19 @@ import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import ThreeSixtyOutlined from '@mui/icons-material/ThreeSixtyOutlined';
 import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
 import { motion } from 'framer-motion';
+import type { CSSProperties } from 'react';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
 
-const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+import {
+  DURATION,
+  EASE_OUT as EASE,
+  PRESS,
+  REVEAL_HEADER,
+  REVEAL_ITEM,
+  REVEAL_VIEWPORT,
+  staggerContainer,
+} from './landing-motion';
 
 /** The flagship promise — pulled out of the grid into a lead banner. */
 const lead = {
@@ -84,14 +93,16 @@ const features = [
   },
 ];
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.55, delay: i * 0.06, ease: EASE },
-  }),
-};
+/**
+ * Une seule cascade pour les sept cartes.
+ *
+ * Chaque carte portait auparavant son propre `whileInView` (sept
+ * IntersectionObserver) et un `delay: i * 0.06` figé dans la variante : la
+ * septième carte, atteinte bien après les autres, attendait encore 0,36 s avant
+ * d'apparaître alors qu'elle était déjà pleinement visible. Le conteneur décale
+ * ses enfants au moment où la grille entre à l'écran, une fois pour toutes.
+ */
+const CARDS = staggerContainer(0.06);
 
 export default function FeaturesSection() {
   const { bg, surface, border, text, textSub } = useLandingTheme();
@@ -105,10 +116,7 @@ export default function FeaturesSection() {
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* Asymmetric header — heading left, supporting line right */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: EASE }}
+          {...REVEAL_HEADER}
           style={{
             display: 'flex',
             flexWrap: 'wrap',
@@ -148,13 +156,7 @@ export default function FeaturesSection() {
           </p>
         </motion.div>
         {/* Flagship promise — lead banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.6, ease: EASE }}
-          style={{ marginBottom: 24 }}
-        >
+        <motion.div {...REVEAL_HEADER} style={{ marginBottom: 24 }}>
           <PageTransitionLink
             href={lead.href}
             style={{
@@ -166,25 +168,16 @@ export default function FeaturesSection() {
             <motion.article
               className="features-lead"
               whileHover={{ y: -4 }}
-              transition={{ duration: 0.25, ease: EASE }}
-              style={{
-                padding: 'clamp(28px, 4vw, 44px)',
-                borderRadius: 24,
-                background: `linear-gradient(120deg, ${brand.primaryAlpha10}, ${surface} 60%)`,
-                border: `1px solid ${brand.primaryAlpha30}`,
-                cursor: 'pointer',
-                transition: 'border-color 0.25s, box-shadow 0.25s',
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.borderColor = brand.primary;
-                el.style.boxShadow = `0 22px 50px ${brand.primaryAlpha25}`;
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.borderColor = brand.primaryAlpha30;
-                el.style.boxShadow = 'none';
-              }}
+              whileTap={PRESS}
+              transition={{ duration: DURATION.hover, ease: EASE }}
+              style={
+                {
+                  '--lead-line': brand.primaryAlpha30,
+                  '--lead-line-hover': brand.primary,
+                  '--lead-glow': brand.primaryAlpha25,
+                  background: `linear-gradient(120deg, ${brand.primaryAlpha10}, ${surface} 60%)`,
+                } as CSSProperties
+              }
             >
               <span
                 aria-hidden
@@ -246,12 +239,20 @@ export default function FeaturesSection() {
           </PageTransitionLink>
         </motion.div>
         {/* Supporting features — inline icon, de-boxed */}
-        <ul
+        <motion.ul
           className="features-grid"
+          variants={CARDS}
+          initial="hidden"
+          whileInView="show"
+          viewport={REVEAL_VIEWPORT}
           style={{ listStyle: 'none', padding: 0, margin: 0 }}
         >
-          {features.map((f, i) => (
-            <li key={f.title} style={{ display: 'flex' }}>
+          {features.map((f) => (
+            <motion.li
+              key={f.title}
+              variants={REVEAL_ITEM}
+              style={{ display: 'flex' }}
+            >
               <PageTransitionLink
                 href={f.href}
                 style={{
@@ -261,32 +262,21 @@ export default function FeaturesSection() {
                   width: '100%',
                 }}
               >
+                {/* Le liseré et l'ombre de survol sont en CSS (`.features-card`),
+                    la couleur d'accent passant par `--card-accent` : posés en JS,
+                    ils restaient allumés sur la dernière carte touchée au doigt. */}
                 <motion.article
-                  custom={i}
-                  variants={cardVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, margin: '-60px' }}
-                  whileHover={{ y: -6, transition: { duration: 0.25 } }}
-                  style={{
-                    padding: '28px',
-                    borderRadius: 16,
-                    background: surface,
-                    border: `1px solid ${border}`,
-                    cursor: 'pointer',
-                    transition: 'border-color 0.25s, box-shadow 0.25s',
-                    height: '100%',
-                  }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget as HTMLElement;
-                    el.style.borderColor = f.color;
-                    el.style.boxShadow = '0 16px 40px rgba(0,0,0,0.45)';
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget as HTMLElement;
-                    el.style.borderColor = border;
-                    el.style.boxShadow = 'none';
-                  }}
+                  className="features-card"
+                  whileHover={{ y: -6 }}
+                  whileTap={PRESS}
+                  transition={{ duration: DURATION.hover, ease: EASE }}
+                  style={
+                    {
+                      '--card-accent': f.color,
+                      '--card-line': border,
+                      background: surface,
+                    } as CSSProperties
+                  }
                 >
                   <div
                     style={{
@@ -330,9 +320,9 @@ export default function FeaturesSection() {
                   </p>
                 </motion.article>
               </PageTransitionLink>
-            </li>
+            </motion.li>
           ))}
-        </ul>
+        </motion.ul>
       </div>
     </section>
   );

@@ -8,7 +8,19 @@ import TravelExploreOutlined from '@mui/icons-material/TravelExploreOutlined';
 import LockOpenOutlined from '@mui/icons-material/LockOpenOutlined';
 import CallOutlined from '@mui/icons-material/CallOutlined';
 
-const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+import {
+  REVEAL_HEADER,
+  REVEAL_ITEM,
+  REVEAL_VIEWPORT,
+  staggerContainer,
+} from './landing-motion';
+
+/**
+ * Les quatre étapes se révèlent depuis la liste elle-même : chacune portait son
+ * propre observateur et un `delay: i * 0.1` figé, si bien qu'une étape déjà
+ * lisible attendait encore son tour parce qu'on avait descendu la page vite.
+ */
+const STEPS = staggerContainer(0.06);
 
 const steps = [
   {
@@ -78,10 +90,7 @@ export default function HowItWorksSection() {
       >
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: EASE }}
+          {...REVEAL_HEADER}
           style={{ textAlign: 'center', marginBottom: 80 }}
         >
           <h2
@@ -110,8 +119,12 @@ export default function HowItWorksSection() {
         </motion.div>
 
         {/* Steps */}
-        <ol
+        <motion.ol
           className="steps-grid"
+          variants={STEPS}
+          initial="hidden"
+          whileInView="show"
+          viewport={REVEAL_VIEWPORT}
           style={{
             position: 'relative',
             listStyle: 'none',
@@ -139,10 +152,7 @@ export default function HowItWorksSection() {
           {steps.map((step, i) => (
             <motion.li
               key={step.title}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.65, delay: i * 0.1, ease: EASE }}
+              variants={REVEAL_ITEM}
               style={{
                 textAlign: 'center',
                 position: 'relative',
@@ -220,7 +230,7 @@ export default function HowItWorksSection() {
               </p>
             </motion.li>
           ))}
-        </ol>
+        </motion.ol>
       </div>
     </section>
   );

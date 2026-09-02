@@ -230,10 +230,90 @@ body {
   width: 100%;
 }
 
+/*
+ * Bouton « revenir en haut ».
+ *
+ * Le survol allume le fond et le liseré depuis les variables posées par le
+ * composant ; en JS, l'état restait allumé après un tap au doigt puisqu'aucun
+ * `mouseleave` n'arrive jamais sur un écran tactile.
+ */
+.landing-back-to-top {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--btt-line);
+  border-radius: 14px;
+  background-color: var(--btt-bg);
+  backdrop-filter: blur(10px);
+  color: var(--btt-fg);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.2s var(--ease-out),
+    border-color 0.2s var(--ease-out),
+    color 0.2s var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing-back-to-top:hover {
+    background-color: var(--btt-bg-hover);
+    border-color: var(--btt-line-hover);
+  }
+}
+
+.landing-back-to-top:focus-visible {
+  outline: 2px solid var(--btt-line-hover);
+  outline-offset: 3px;
+}
+
 /* ---- Hero responsive ---- */
 .hero-search-bar {
   margin: 0 auto 20px;
   width: 100%;
+}
+
+/*
+ * Suggestions rapides du champ de recherche. 44px de haut minimum : la rangée
+ * est touchée au doigt sur mobile, où le survol n'existe pas — d'où le
+ * `:active` qui donne le seul retour disponible.
+ */
+.hero-suggestion-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 16px;
+  border: none;
+  background-color: transparent;
+  color: var(--sugg-fg);
+  font-family: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s var(--ease-out);
+}
+
+.hero-suggestion-btn:active {
+  background-color: var(--sugg-hover);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hero-suggestion-btn:hover {
+    background-color: var(--sugg-hover);
+  }
+}
+
+.hero-suggestion-btn:focus-visible {
+  outline: 2px solid var(--chip-brand, currentColor);
+  outline-offset: -2px;
 }
 
 /* ===== Global animations ===== */
@@ -702,12 +782,410 @@ img[data-nimg] {
   display: flex;
 }
 
+/* ===================================================================
+   Barre de navigation — états :hover / :active / :focus-visible
+   -------------------------------------------------------------------
+   Les couleurs arrivent par `--nav-*` posées en JSX (le thème landing
+   n'est pas exposé en CSS). Les états eux-mêmes sont ici : en JS via
+   `onMouseEnter`/`onMouseLeave`, le survol restait allumé sur le
+   dernier lien touché au doigt — `mouseleave` n'arrive jamais sur un
+   écran tactile. Chaque propriété transitionnée est nommée.
+   =================================================================== */
+.landing-nav-link {
+  color: var(--nav-fg);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  transition: color 0.22s var(--ease-out);
+}
+
+.landing-nav-link:focus-visible {
+  outline: 2px solid var(--nav-fg-hover);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.landing-mobile-link {
+  color: var(--nav-fg);
+  text-decoration: none;
+  font-size: 17px;
+  font-weight: 600;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--nav-line);
+  display: block;
+  /* 48px : la cible tactile reste confortable même sur le plus petit
+     écran, sans dépendre de la seule hauteur de ligne du texte. */
+  min-height: 48px;
+  transition:
+    color 0.22s var(--ease-out),
+    border-color 0.22s var(--ease-out);
+}
+
+.landing-mobile-link:focus-visible {
+  outline: 2px solid var(--nav-fg-hover);
+  outline-offset: 2px;
+}
+
+/* `PageTransitionLink` rend un `<a>`, hors de portée de `whileTap` :
+   la pression des deux appels à l'action se joue donc ici. */
+.landing-nav-cta-btn {
+  transition: transform 0.16s var(--ease-out);
+}
+
+.landing-nav-cta-btn:active {
+  transform: scale(0.97);
+}
+
+.landing-nav-cta-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing-nav-link:hover,
+  .landing-mobile-link:hover {
+    color: var(--nav-fg-hover);
+  }
+
+  .landing-mobile-link:hover {
+    border-color: var(--nav-fg-hover);
+  }
+}
+
+/* ===================================================================
+   Footer de la landing — états :hover / :active / :focus-visible
+   -------------------------------------------------------------------
+   Les couleurs viennent du thème landing via les variables
+   `--kh-footer-*` posées sur `<footer>` (voir LandingFooter.tsx) : le
+   composant n'a donc plus un seul gestionnaire JS de survol. Aucun
+   `transition: all` — chaque propriété animée est nommée, et seuls
+   `transform` / `opacity` / couleurs sont touchés.
+   =================================================================== */
+.landing-footer {
+  position: relative;
+  padding: 72px 24px 36px;
+  overflow: hidden;
+}
+
+/* Liseré lumineux de séparation : la marque « éclaire » le haut du pied
+   de page au lieu d'un simple filet gris. Purement décoratif. */
+.landing-footer::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(760px, 70%);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--kh-footer-brand-line),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.landing-footer-inner {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
 /* ---- Footer grid ---- */
 .footer-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 48px;
-  margin-bottom: 64px;
+  grid-template-columns: 2.1fr repeat(4, 1fr);
+  gap: 48px 40px;
+  margin-bottom: 56px;
+}
+
+/* ---- Colonne de marque ---- */
+.footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  border-radius: 10px;
+  transition: transform 0.18s var(--ease-out);
+}
+.footer-brand:active {
+  transform: scale(0.97);
+}
+
+.footer-wordmark {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--kh-footer-fg);
+}
+
+.footer-tagline {
+  margin: 16px 0 20px;
+  max-width: 36ch;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--kh-footer-sub);
+}
+
+.footer-contacts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 20px;
+}
+
+.footer-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--kh-footer-sub);
+  text-decoration: none;
+  border-radius: 8px;
+  transition:
+    color 0.18s var(--ease-out),
+    transform 0.18s var(--ease-out);
+}
+.footer-contact:active {
+  transform: scale(0.98);
+}
+
+/* ---- Réseaux sociaux ---- */
+.footer-social-row {
+  display: flex;
+  gap: 10px;
+}
+
+.footer-social {
+  display: grid;
+  place-items: center;
+  /* 44px : cible tactile minimale (WCAG 2.5.8). */
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--kh-footer-border);
+  background: var(--kh-footer-surface);
+  color: var(--kh-footer-sub);
+  transition:
+    transform 0.2s var(--ease-out),
+    color 0.2s var(--ease-out),
+    border-color 0.2s var(--ease-out),
+    background-color 0.2s var(--ease-out);
+}
+.footer-social:active {
+  transform: scale(0.94);
+}
+
+/* ---- Colonnes de liens ---- */
+.footer-col-title {
+  margin: 0 0 16px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--kh-footer-muted);
+}
+
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.footer-link {
+  position: relative;
+  padding-block: 2px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--kh-footer-sub);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: color 0.18s var(--ease-out);
+}
+
+/* Soulignement révélé depuis la gauche : `scaleX` (composé) plutôt que
+   `width` (relayout à chaque frame). */
+.footer-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.2s var(--ease-out);
+}
+.footer-link:active {
+  opacity: 0.72;
+}
+
+/* ---- Garanties (bandeau de confiance) ---- */
+.footer-assurances {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  /* Le `gap` de 1px sur fond de bordure dessine les filets internes :
+     aucune bordure double aux jonctions. */
+  gap: 1px;
+  margin-bottom: 40px;
+  border: 1px solid var(--kh-footer-border);
+  border-radius: 16px;
+  background: var(--kh-footer-border);
+  overflow: hidden;
+}
+
+.footer-assurance {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+  background: var(--kh-footer-tile);
+}
+
+.footer-assurance-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--kh-footer-brand-soft);
+  color: var(--kh-footer-brand);
+}
+
+.footer-assurance-title {
+  margin: 0 0 3px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--kh-footer-fg);
+}
+
+.footer-assurance-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--kh-footer-sub);
+}
+
+/* ---- Barre du bas ---- */
+.footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 24px;
+  border-top: 1px solid var(--kh-footer-hairline);
+}
+
+.footer-copy {
+  margin: 0;
+  font-size: 13px;
+  color: var(--kh-footer-muted);
+}
+
+.footer-bottom-legal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-legal-link {
+  font-size: 13px;
+  color: var(--kh-footer-muted);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: color 0.18s var(--ease-out);
+}
+.footer-legal-link:active {
+  opacity: 0.72;
+}
+
+.footer-legal-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--kh-footer-muted);
+  opacity: 0.45;
+}
+
+.footer-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--kh-footer-muted);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: color 0.18s var(--ease-out);
+}
+.footer-credit strong {
+  font-weight: 600;
+  color: var(--kh-footer-sub);
+  transition: color 0.18s var(--ease-out);
+}
+.footer-credit:active {
+  opacity: 0.72;
+}
+
+/* ---- Anneau de focus clavier commun ---- */
+.footer-brand:focus-visible,
+.footer-contact:focus-visible,
+.footer-social:focus-visible,
+.footer-link:focus-visible,
+.footer-legal-link:focus-visible,
+.footer-credit:focus-visible {
+  outline: 2px solid var(--kh-footer-brand);
+  outline-offset: 3px;
+}
+
+/* ---- Survol : réservé aux vrais pointeurs ----
+   Sur écran tactile, `:hover` reste « collé » après le tap et fait
+   clignoter la couleur ; ce bloc l'empêche entièrement sur mobile. */
+@media (hover: hover) and (pointer: fine) {
+  .footer-contact:hover {
+    color: var(--kh-footer-fg);
+  }
+  .footer-social:hover {
+    transform: translateY(-2px);
+    color: var(--kh-footer-brand);
+    border-color: var(--kh-footer-brand-line);
+    background: var(--kh-footer-brand-soft);
+  }
+  .footer-link:hover {
+    color: var(--kh-footer-fg);
+  }
+  .footer-link:hover::after {
+    transform: scaleX(1);
+  }
+  .footer-legal-link:hover {
+    color: var(--kh-footer-fg);
+  }
+  .footer-credit:hover {
+    color: var(--kh-footer-sub);
+  }
+  .footer-credit:hover strong {
+    color: var(--kh-footer-brand);
+  }
+}
+
+/* ---- Garanties : 4 → 2 → 1 colonnes ---- */
+@media (max-width: 1023px) {
+  .footer-assurances {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 639px) {
+  .footer-assurances {
+    grid-template-columns: 1fr;
+    margin-bottom: 32px;
+  }
 }
 
 /* ---- Hero responsive ---- */
@@ -820,6 +1298,47 @@ img[data-nimg] {
   display: flex;
   align-items: center;
   gap: 40px;
+  padding: clamp(28px, 4vw, 44px);
+  border: 1px solid var(--lead-line);
+  border-radius: 24px;
+  cursor: pointer;
+  transition:
+    border-color 0.25s var(--ease-out),
+    box-shadow 0.25s var(--ease-out);
+}
+
+/*
+ * Cartes de fonctionnalités. Le liseré prend la couleur d'accent de la carte
+ * (`--card-accent`, posée par le composant) et l'ombre ne se déclenche qu'au
+ * survol souris : sur un écran tactile, un état posé en JS restait figé après
+ * le tap, laissant une carte allumée sans raison.
+ */
+.features-card {
+  height: 100%;
+  padding: 28px;
+  border: 1px solid var(--card-line);
+  border-radius: 16px;
+  cursor: pointer;
+  transition:
+    border-color 0.25s var(--ease-out),
+    box-shadow 0.25s var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .features-lead:hover {
+    border-color: var(--lead-line-hover);
+    box-shadow: 0 22px 50px var(--lead-glow);
+  }
+  .features-card:hover {
+    border-color: var(--card-accent);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  }
+}
+
+a:focus-visible > .features-lead,
+a:focus-visible > .features-card {
+  outline: 2px solid var(--card-accent, var(--lead-line-hover));
+  outline-offset: 3px;
 }
 .landlord-split {
   display: grid;
@@ -849,6 +1368,11 @@ img[data-nimg] {
   .footer-grid {
     grid-template-columns: 1fr 1fr;
     gap: 36px;
+  }
+  /* La colonne de marque passe en pleine largeur : les 4 colonnes de
+     liens s'organisent ensuite en 2×2 sans écraser la promesse. */
+  .footer-grid > :first-child {
+    grid-column: 1 / -1;
   }
   .landing-nav-links {
     display: none;

@@ -8,7 +8,19 @@ import Verified from '@mui/icons-material/Verified';
 import { useLandingTheme } from './LandingThemeContext';
 import { brand, semantic } from '@/theme/tokens';
 
-const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+import {
+  REVEAL_HEADER,
+  REVEAL_ITEM,
+  REVEAL_VIEWPORT,
+  staggerContainer,
+} from './landing-motion';
+
+/**
+ * Les avis se révèlent depuis un conteneur unique : chaque carte portait son
+ * propre observateur et un `delay: i * 0.1` figé, si bien que la troisième
+ * carte attendait encore 0,2 s alors qu'elle était déjà lue.
+ */
+const CARDS = staggerContainer(0.06);
 
 /** Avatar colour palette — cycles through brand + semantic accents. */
 const AVATAR_COLORS = [
@@ -103,10 +115,7 @@ export default function TestimonialsSection() {
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: EASE }}
+          {...REVEAL_HEADER}
           style={{ textAlign: 'center', marginBottom: 72 }}
         >
           <span
@@ -181,20 +190,23 @@ export default function TestimonialsSection() {
         </motion.div>
 
         {/* Cards */}
-        <ul
+        <motion.ul
           className="testimonials-grid"
+          variants={CARDS}
+          initial="hidden"
+          whileInView="show"
+          viewport={REVEAL_VIEWPORT}
           style={{ listStyle: 'none', padding: 0, margin: 0 }}
         >
           {testimonials.map((t, i) => {
             const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length];
             return (
+              /* Aucun état de survol : la carte n'est ni un lien ni un bouton.
+                 Le soulèvement qu'elle portait promettait un clic qui n'existe
+                 pas — l'utilisateur essayait, rien ne se passait. */
               <motion.li
                 key={t.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.6, delay: i * 0.1, ease: EASE }}
-                whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                variants={REVEAL_ITEM}
                 style={{
                   padding: '28px',
                   borderRadius: 20,
@@ -283,7 +295,7 @@ export default function TestimonialsSection() {
               </motion.li>
             );
           })}
-        </ul>
+        </motion.ul>
       </div>
     </section>
   );

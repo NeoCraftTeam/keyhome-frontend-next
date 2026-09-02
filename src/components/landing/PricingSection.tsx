@@ -13,8 +13,24 @@ import Toll from '@mui/icons-material/Toll';
 import { Tooltip } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import {
+  DURATION,
+  EASE_OUT as EASE,
+  PRESS,
+  REVEAL_HEADER,
+  REVEAL_ITEM,
+  REVEAL_VIEWPORT,
+  staggerContainer,
+} from './landing-motion';
 import { useLandingTheme } from './LandingThemeContext';
 import { PageTransitionLink } from './PageTransition';
+
+/**
+ * Les trois offres se révèlent depuis la grille : chaque carte portait son
+ * propre observateur et un `delay: i * 0.1` figé — la troisième attendait
+ * encore 0,2 s alors que le regard l'avait déjà atteinte.
+ */
+const CARDS = staggerContainer(0.06);
 
 type LandingPackageCard = {
   id: string;
@@ -79,8 +95,6 @@ const fallbackPackages: LandingPackageCard[] = [
     sortOrder: 3,
   },
 ];
-
-const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
 const normalizeName = (name: string): string => {
   return name.replace(/^pack\s+/i, '').trim();
@@ -165,10 +179,7 @@ export default function PricingSection() {
       >
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: EASE }}
+          {...REVEAL_HEADER}
           style={{ textAlign: 'center', marginBottom: 64 }}
         >
           <span
@@ -213,8 +224,12 @@ export default function PricingSection() {
         </motion.div>
 
         {/* Pricing Grid */}
-        <div
+        <motion.div
           className="pricing-grid"
+          variants={CARDS}
+          initial="hidden"
+          whileInView="show"
+          viewport={REVEAL_VIEWPORT}
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
@@ -222,13 +237,10 @@ export default function PricingSection() {
             alignItems: 'stretch',
           }}
         >
-          {packages.map((pkg, i) => (
+          {packages.map((pkg) => (
             <motion.div
               key={pkg.id}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.65, delay: i * 0.1, ease: EASE }}
+              variants={REVEAL_ITEM}
               style={{
                 background: pkg.isPopular
                   ? `linear-gradient(145deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`
@@ -356,8 +368,8 @@ export default function PricingSection() {
               >
                 <motion.button
                   whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.2, ease: EASE }}
+                  whileTap={PRESS}
+                  transition={{ duration: DURATION.hover, ease: EASE }}
                   aria-label={`Choisir le pack ${pkg.name}`}
                   style={{
                     width: '100%',
@@ -380,14 +392,16 @@ export default function PricingSection() {
               </PageTransitionLink>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         {/* Comparison Note / Social Proof */}
+        {/* Ni `delay` ni fondu d'une seconde : le bloc n'entre que lorsqu'on
+            l'a atteint, l'attente n'y ajoutait qu'un vide. */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, delay: 0.4 }}
+          viewport={REVEAL_VIEWPORT}
+          transition={{ duration: DURATION.reveal, ease: EASE }}
           style={{
             marginTop: 64,
             textAlign: 'center',
@@ -445,10 +459,7 @@ export default function PricingSection() {
 
         {/* Bailleur block */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
+          {...REVEAL_HEADER}
           style={{
             marginTop: 48,
             borderRadius: 24,
@@ -546,7 +557,8 @@ export default function PricingSection() {
                 scale: 1.03,
                 boxShadow: `0 8px 30px ${brand.primaryAlpha40}`,
               }}
-              whileTap={{ scale: 0.97 }}
+              whileTap={PRESS}
+              transition={{ duration: DURATION.hover, ease: EASE }}
               style={{
                 padding: '14px 28px',
                 borderRadius: 14,
