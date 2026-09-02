@@ -4,7 +4,7 @@ import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { Button as MuiButton, type ButtonProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
-  gradient as gradientTokens,
+  brand,
   brandAgent,
   radius,
   shadow,
@@ -23,8 +23,8 @@ export interface GradientButtonProps extends Omit<
   loading?: boolean;
 }
 
-const agentGradient = `linear-gradient(to right, ${brandAgent.primary}, ${brandAgent.primaryDark})`;
-const agentGradientHover = `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`;
+const agentGradient = brandAgent.primary;
+const agentGradientHover = brandAgent.primaryDark;
 
 const StyledButton = styled(MuiButton)<{ $agent?: boolean }>(
   ({ theme, $agent }) => ({
@@ -37,11 +37,11 @@ const StyledButton = styled(MuiButton)<{ $agent?: boolean }>(
     color: '#fff',
     border: 'none',
     boxShadow: 'none',
-    background: $agent ? agentGradient : gradientTokens.primary,
+    background: $agent ? agentGradient : brand.primary,
     transition: `background 0.2s ease, ${transition.spring}`,
 
     '&:hover:not(:disabled)': {
-      background: $agent ? agentGradientHover : gradientTokens.primaryHover,
+      background: $agent ? agentGradientHover : brand.primaryHover,
       boxShadow: $agent ? shadow.agentGlow : shadow.primaryGlow,
       transform: 'translateY(-1px)',
     },
@@ -59,7 +59,7 @@ const StyledButton = styled(MuiButton)<{ $agent?: boolean }>(
     '&:disabled': {
       opacity: 0.55,
       cursor: 'not-allowed',
-      background: $agent ? agentGradient : gradientTokens.primary,
+      background: $agent ? agentGradient : brand.primary,
       color: '#fff',
     },
 

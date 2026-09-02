@@ -1,6 +1,6 @@
 import { BRAND_TAGLINE } from '@/lib/brand';
 import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
-import { brand, gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -336,7 +336,7 @@ export default async function CityPage({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 8,
-                background: gradient.primary135,
+                background: brand.primary,
                 color: '#fff',
                 padding: '14px 28px',
                 borderRadius: 12,
@@ -611,7 +611,7 @@ export default async function CityPage({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              background: gradient.primary135,
+              background: brand.primary,
               color: '#fff',
               padding: '14px 28px',
               borderRadius: 12,

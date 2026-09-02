@@ -470,6 +470,11 @@ export default function OwnerVerifyOtpPage() {
                 textTransform: 'none',
                 fontWeight: 700,
                 fontSize: '1rem',
+                '&.Mui-disabled': {
+                  bgcolor: 'primary.main',
+                  color: '#fff',
+                  opacity: 0.65,
+                },
               }}
             >
               {isSubmitting ? (

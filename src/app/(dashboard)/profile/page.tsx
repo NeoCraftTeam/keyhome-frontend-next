@@ -24,7 +24,7 @@ import { authService } from '@/services/auth.service';
 import { citiesService } from '@/services/cities.service';
 import { surveysService } from '@/services/surveys.service';
 import { unlockedAdsService, usersService } from '@/services/users.service';
-import { gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import { City } from '@/types';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -618,7 +618,7 @@ export default function ProfilePage() {
               disabled={isSaving}
               sx={{
                 textTransform: 'none',
-                background: gradient.primary,
+                background: brand.primary,
                 '&:active': { transform: 'scale(0.97)' },
               }}
             >
@@ -824,8 +824,8 @@ export default function ProfilePage() {
             sx={{
               textTransform: 'none',
               fontWeight: 600,
-              background: gradient.primary,
-              '&:hover': { background: gradient.primaryHover },
+              background: brand.primary,
+              '&:hover': { background: brand.primaryHover },
               '&:active': { transform: 'scale(0.97)' },
             }}
           >

@@ -14,7 +14,7 @@ import {
 } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { viewingsService } from '@/services/viewings.service';
-import { gradient, transition } from '@/theme/tokens';
+import { brand, transition } from '@/theme/tokens';
 import {
   type BookableSlot,
   CancelledBy,
@@ -889,8 +889,8 @@ export default function ViewingBookingPanel({
             py: 1.5,
             borderRadius: 2,
             fontWeight: 600,
-            background: gradient.primary,
-            '&:hover': { background: gradient.primaryHover },
+            background: brand.primary,
+            '&:hover': { background: brand.primaryHover },
           }}
         >
           {isCreating ? 'Réservation en cours…' : 'Confirmer la visite'}
@@ -982,8 +982,8 @@ export default function ViewingBookingPanel({
               setOpen(false);
             }}
             sx={{
-              background: gradient.primary,
-              '&:hover': { background: gradient.primaryHover },
+              background: brand.primary,
+              '&:hover': { background: brand.primaryHover },
             }}
           >
             Fermer

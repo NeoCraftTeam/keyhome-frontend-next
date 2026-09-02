@@ -1,7 +1,7 @@
 import { markdownBlogToHtml } from '@/lib/markdown-blog';
 import { absoluteAssetUrl, absoluteUrl, getSiteOrigin } from '@/lib/site-url';
 import { buildHreflangAlternates } from '@/i18n/routing';
-import { brand, gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -283,7 +283,7 @@ export default async function BlogPostPage({
                 display: 'inline-flex',
                 padding: '10px 20px',
                 borderRadius: 10,
-                background: gradient.primary135,
+                background: brand.primary,
                 color: '#fff',
                 fontWeight: 600,
                 fontSize: 14,

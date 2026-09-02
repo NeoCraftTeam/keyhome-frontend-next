@@ -13,7 +13,7 @@ import {
 } from '@/lib/payment/payment-gateway-return';
 import { consumePaymentReturnPath } from '@/lib/payment/payment-return';
 import { creditsKeys, paymentKeys } from '@/lib/query-keys';
-import { brand, gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import HomeIcon from '@mui/icons-material/Home';
@@ -199,8 +199,8 @@ export default function UnlockPaymentReturnView(): ReactElement {
               sx={{
                 py: 1.5,
                 fontWeight: 600,
-                background: gradient.primary,
-                '&:hover': { background: gradient.primaryHover },
+                background: brand.primary,
+                '&:hover': { background: brand.primaryHover },
                 '&:active': { transform: 'scale(0.97)' },
               }}
             >
@@ -248,8 +248,8 @@ export default function UnlockPaymentReturnView(): ReactElement {
                 sx={{
                   py: 1.5,
                   fontWeight: 600,
-                  background: gradient.primary,
-                  '&:hover': { background: gradient.primaryHover },
+                  background: brand.primary,
+                  '&:hover': { background: brand.primaryHover },
                 }}
               >
                 Se reconnecter
@@ -318,8 +318,8 @@ export default function UnlockPaymentReturnView(): ReactElement {
                   sx={{
                     py: 1.5,
                     fontWeight: 600,
-                    background: gradient.primary,
-                    '&:hover': { background: gradient.primaryHover },
+                    background: brand.primary,
+                    '&:hover': { background: brand.primaryHover },
                     '&:active': { transform: 'scale(0.97)' },
                   }}
                 >
@@ -338,8 +338,8 @@ export default function UnlockPaymentReturnView(): ReactElement {
                     : {
                         py: 1.5,
                         fontWeight: 600,
-                        background: gradient.primary,
-                        '&:hover': { background: gradient.primaryHover },
+                        background: brand.primary,
+                        '&:hover': { background: brand.primaryHover },
                         '&:active': { transform: 'scale(0.97)' },
                       }
                 }

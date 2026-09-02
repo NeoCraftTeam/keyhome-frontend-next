@@ -10,7 +10,7 @@ import { getSafeErrorMessage } from '@/lib/error-messages';
 import { OWNER_LOGO_SRC } from '@/lib/owner/owner-auth-assets';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { brandAgent, gradient } from '@/theme/tokens';
+import { brand, brandAgent } from '@/theme/tokens';
 import { User, UserRole } from '@/types';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -82,17 +82,11 @@ export default function VerifyEmailPage() {
   // Owner (teal) vs client (pink) theming
   const accentColor = isOwner ? brandAgent.primary : undefined;
   const buttonGradient = useMemo(
-    () =>
-      isOwner
-        ? `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`
-        : gradient.primary,
+    () => (isOwner ? brandAgent.primary : brand.primary),
     [isOwner]
   );
   const buttonGradientHover = useMemo(
-    () =>
-      isOwner
-        ? `linear-gradient(to right, ${brandAgent.primary}, ${brandAgent.primaryDark})`
-        : gradient.primaryHover,
+    () => (isOwner ? brandAgent.primaryDark : brand.primaryHover),
     [isOwner]
   );
   const logoSrc = isOwner ? OWNER_LOGO_SRC : '/images/logo.png';
@@ -490,21 +484,15 @@ export default function VerifyEmailPage() {
                 fontWeight: 600,
                 borderRadius: '14px',
                 textTransform: 'none',
-                background: (t) =>
-                  t.palette.mode === 'dark'
-                    ? `linear-gradient(to right, ${t.palette.primary.dark}, ${t.palette.primary.main})`
-                    : buttonGradient,
+                background: buttonGradient,
                 '&:hover': {
-                  background: (t) =>
-                    t.palette.mode === 'dark'
-                      ? `linear-gradient(to right, ${t.palette.primary.main}, ${t.palette.primary.light})`
-                      : buttonGradientHover,
+                  background: buttonGradientHover,
                 },
                 '&:active': { transform: 'scale(0.97)' },
               }}
             >
               {isSubmitting ? (
-                <ButtonSpinner size={24} />
+                <ButtonSpinner size={24} color="#fff" />
               ) : (
                 'V\u00e9rifier le code'
               )}

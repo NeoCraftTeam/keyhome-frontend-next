@@ -9,7 +9,7 @@ import { trackSignUp } from '@/lib/analytics/track-events';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { brandAgent, gradient } from '@/theme/tokens';
+import { brand, brandAgent } from '@/theme/tokens';
 import { User } from '@/types';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -50,10 +50,6 @@ export default function VerifyOtpPage() {
       if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
     };
   }, []);
-
-  const accentGradient = isAgent
-    ? `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`
-    : undefined;
 
   const otpInputRef = useRef<HTMLInputElement>(null);
 
@@ -501,25 +497,17 @@ export default function VerifyOtpPage() {
                     fontWeight: 600,
                     borderRadius: '14px',
                     textTransform: 'none',
-                    background: (t) =>
-                      isAgent
-                        ? accentGradient
-                        : t.palette.mode === 'dark'
-                          ? `linear-gradient(to right, ${t.palette.primary.dark}, ${t.palette.primary.main})`
-                          : gradient.primary,
+                    background: isAgent ? brandAgent.primary : brand.primary,
                     '&:hover': {
-                      background: (t) =>
-                        isAgent
-                          ? accentGradient
-                          : t.palette.mode === 'dark'
-                            ? `linear-gradient(to right, ${t.palette.primary.main}, ${t.palette.primary.light})`
-                            : gradient.primaryHover,
+                      background: isAgent
+                        ? brandAgent.primaryDark
+                        : brand.primaryHover,
                     },
                     '&:active': { transform: 'scale(0.97)' },
                   }}
                 >
                   {isSubmitting ? (
-                    <ButtonSpinner size={24} />
+                    <ButtonSpinner size={24} color="#fff" />
                   ) : (
                     'Vérifier le code'
                   )}

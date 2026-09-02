@@ -10,7 +10,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { brand, gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import { BRAND_TAGLINE } from '@/lib/brand';
 import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
 import { buildHreflangAlternates } from '@/i18n/routing';
@@ -384,7 +384,7 @@ export default async function PropertyTypePage({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              background: gradient.primary135,
+              background: brand.primary,
               color: '#fff',
               padding: '14px 28px',
               borderRadius: 12,

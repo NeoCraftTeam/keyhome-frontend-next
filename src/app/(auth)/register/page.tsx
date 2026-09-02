@@ -994,7 +994,7 @@ export default function RegisterPage() {
                         sx={containedGradientSx}
                       >
                         {isCheckingEmail ? (
-                          <ButtonSpinner size={22} />
+                          <ButtonSpinner size={22} color="#fff" />
                         ) : (
                           'Continuer'
                         )}
@@ -1273,7 +1273,7 @@ export default function RegisterPage() {
                         sx={containedGradientSx}
                       >
                         {isSubmitting ? (
-                          <ButtonSpinner size={24} />
+                          <ButtonSpinner size={24} color="#fff" />
                         ) : (
                           "S'inscrire"
                         )}

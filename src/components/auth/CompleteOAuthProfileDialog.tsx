@@ -25,7 +25,7 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 
 interface City {
   id: string;
@@ -234,8 +234,8 @@ export default function CompleteOAuthProfileDialog({
               py: 1.5,
               borderRadius: 2,
               fontWeight: 600,
-              background: gradient.primary,
-              '&:hover': { background: gradient.primaryHover },
+              background: brand.primary,
+              '&:hover': { background: brand.primaryHover },
             }}
           >
             {isSubmitting ? <ButtonSpinner size={22} /> : 'Créer mon compte'}

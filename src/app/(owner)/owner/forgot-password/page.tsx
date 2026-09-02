@@ -104,6 +104,11 @@ export default function OwnerForgotPasswordPage() {
               sx={{
                 py: 1.5,
                 '&:active': { transform: 'scale(0.97)' },
+                '&.Mui-disabled': {
+                  bgcolor: 'primary.main',
+                  color: '#fff',
+                  opacity: 0.65,
+                },
               }}
             >
               {isSubmitting ? <ButtonSpinner size={24} /> : 'Envoyer le lien'}

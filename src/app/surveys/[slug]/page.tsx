@@ -25,7 +25,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { brand, gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 
 export default function SurveySlugPage() {
   const params = useParams();
@@ -356,11 +356,10 @@ export default function SurveySlugPage() {
                 borderRadius: 3,
                 py: 1.5,
                 fontWeight: 700,
-                background: gradient.primary135Stops,
+                background: brand.primary,
                 boxShadow: '0 6px 20px rgba(246,71,95,0.30)',
                 '&:hover': {
-                  background:
-                    'linear-gradient(135deg, #E83D55 0%, #C93248 100%)',
+                  background: brand.primaryHover,
                   boxShadow: '0 8px 24px rgba(246,71,95,0.40)',
                   transform: 'translateY(-1px)',
                 },

@@ -3,7 +3,7 @@
 import type { SearchFiltersReturn } from '@/hooks/useSearchFilters';
 import { useCityAutocompleteConfig } from '@/lib/city-autocomplete-config';
 import { quartersService } from '@/services/cities.service';
-import { gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import type { City, Quarter } from '@/types';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -602,7 +602,7 @@ const SearchFiltersDrawerContent = memo(function SearchFiltersDrawerContent({
           variant="contained"
           onClick={onClose}
           sx={{
-            background: (t) => t.palette.gradient?.primary ?? gradient.primary,
+            background: brand.primary,
           }}
         >
           Voir {total} résultats

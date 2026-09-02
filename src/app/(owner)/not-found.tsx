@@ -1,6 +1,6 @@
 'use client';
 
-import { brandAgent, gradient } from '@/theme/tokens';
+import { brandAgent } from '@/theme/tokens';
 import { Box, Button, Container, Typography } from '@mui/material';
 import Link from 'next/link';
 
@@ -31,8 +31,8 @@ export default function OwnerNotFound() {
             fontWeight: 700,
             borderRadius: 2,
             px: 3,
-            background: gradient.agent,
-            '&:hover': { background: gradient.agentHover },
+            background: brandAgent.primary,
+            '&:hover': { background: brandAgent.primaryDark },
             '&:focus-visible': {
               outline: `2px solid ${brandAgent.primary}`,
               outlineOffset: 2,

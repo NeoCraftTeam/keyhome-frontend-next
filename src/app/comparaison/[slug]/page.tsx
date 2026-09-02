@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { COMPARISONS } from '../comparisons';
-import { brand, gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import { absoluteUrl, getSiteOrigin } from '@/lib/site-url';
 import { buildHreflangAlternates } from '@/i18n/routing';
 
@@ -197,7 +197,7 @@ export default async function ComparisonPage({
           <div
             style={{
               padding: '16px',
-              background: gradient.primary135,
+              background: brand.primary,
               color: '#fff',
               fontSize: 15,
               fontWeight: 700,
@@ -348,7 +348,7 @@ export default async function ComparisonPage({
                 style={{
                   padding: '12px 22px',
                   borderRadius: 100,
-                  background: gradient.primary135,
+                  background: brand.primary,
                   color: '#fff',
                   fontWeight: 600,
                   fontSize: 14,

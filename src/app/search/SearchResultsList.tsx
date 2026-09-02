@@ -4,7 +4,7 @@ import { buildAuthUrlWithReturnTo } from '@/lib/auth/return-to';
 import AdCard from '@/components/ads/AdCard';
 import AdCardSkeleton from '@/components/ads/AdCardSkeleton';
 import SearchAlertButton from '@/components/ads/SearchAlertButton';
-import { gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import type { Ad, AdType, City, FacetsResponse } from '@/types';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
@@ -225,8 +225,7 @@ const SearchResultsList = memo(function SearchResultsList({
               borderRadius: 99,
               fontWeight: 700,
               px: 4,
-              background: (t) =>
-                t.palette.gradient?.primary ?? gradient.primary,
+              background: brand.primary,
             }}
           >
             Réessayer
@@ -357,13 +356,11 @@ const SearchResultsList = memo(function SearchResultsList({
                   borderRadius: 99,
                   fontWeight: 700,
                   px: 3,
-                  background: (t) =>
-                    t.palette.gradient?.primary ?? gradient.primary,
+                  background: brand.primary,
                   color: 'white',
                   border: 'none',
                   '&:hover': {
-                    background: (t) =>
-                      t.palette.gradient?.primaryHover ?? gradient.primaryHover,
+                    background: brand.primaryHover,
                     border: 'none',
                   },
                 }}
@@ -385,11 +382,9 @@ const SearchResultsList = memo(function SearchResultsList({
                   borderRadius: 99,
                   fontWeight: 700,
                   px: 3,
-                  background: (t) =>
-                    t.palette.gradient?.primary ?? gradient.primary,
+                  background: brand.primary,
                   '&:hover': {
-                    background: (t) =>
-                      t.palette.gradient?.primaryHover ?? gradient.primaryHover,
+                    background: brand.primaryHover,
                   },
                 }}
               >
@@ -404,11 +399,9 @@ const SearchResultsList = memo(function SearchResultsList({
                 borderRadius: 99,
                 fontWeight: 700,
                 px: 3,
-                background: (t) =>
-                  t.palette.gradient?.primary ?? gradient.primary,
+                background: brand.primary,
                 '&:hover': {
-                  background: (t) =>
-                    t.palette.gradient?.primaryHover ?? gradient.primaryHover,
+                  background: brand.primaryHover,
                 },
               }}
             >

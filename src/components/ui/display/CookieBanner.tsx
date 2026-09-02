@@ -1,7 +1,7 @@
 'use client';
 
 import { API_URL } from '@/lib/api';
-import { brand, brandAgent, gradient } from '@/theme/tokens';
+import { brand, brandAgent } from '@/theme/tokens';
 import Close from '@mui/icons-material/Close';
 import CookieOutlined from '@mui/icons-material/CookieOutlined';
 import Shield from '@mui/icons-material/Shield';
@@ -113,9 +113,7 @@ export default function CookieBanner({ variant = 'auto' }: CookieBannerProps) {
   const accentBar = isOwner
     ? `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`
     : `linear-gradient(to right, ${brand.primary}, #6c5ce7)`;
-  const btnBg = isOwner
-    ? `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`
-    : gradient.primary;
+  const btnBg = isOwner ? brandAgent.primary : brand.primary;
 
   // Show the banner once — only if the user has not yet saved preferences.
   useEffect(() => {

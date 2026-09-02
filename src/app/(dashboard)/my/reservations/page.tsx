@@ -5,7 +5,7 @@ import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { viewingsService } from '@/services/viewings.service';
-import { gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import { CancelledBy, Reservation, ReservationStatus } from '@/types';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -617,8 +617,8 @@ export default function MyReservationsPage() {
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 700,
-                  background: gradient.primary,
-                  '&:hover': { background: gradient.primaryHover },
+                  background: brand.primary,
+                  '&:hover': { background: brand.primaryHover },
                 }}
               >
                 Parcourir les annonces

@@ -5,7 +5,7 @@ import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { authService } from '@/services/auth.service';
-import { gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import { Box, Button, Link, TextField, Typography } from '@mui/material';
 import Image from 'next/image';
@@ -108,12 +108,16 @@ export default function ForgotPasswordPage() {
               disabled={isSubmitting || !email.trim()}
               sx={{
                 py: 1.5,
-                background: gradient.primary,
-                '&:hover': { background: gradient.primaryHover },
+                background: brand.primary,
+                '&:hover': { background: brand.primaryHover },
                 '&:active': { transform: 'scale(0.97)' },
               }}
             >
-              {isSubmitting ? <ButtonSpinner size={24} /> : 'Envoyer le lien'}
+              {isSubmitting ? (
+                <ButtonSpinner size={24} color="#fff" />
+              ) : (
+                'Envoyer le lien'
+              )}
             </Button>
           </Box>
         </FadeIn>

@@ -2,7 +2,7 @@
 
 import ErrorIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Button, Link, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { brand } from '@/theme/tokens';
 
 interface QueryErrorProps {
   /** Called when the user clicks "Réessayer" — typically refetch() from useQuery */
@@ -27,9 +27,6 @@ export default function QueryError({
   compact = false,
   showSupportLink = false,
 }: QueryErrorProps) {
-  const theme = useTheme();
-  const gradient = theme.palette.gradient;
-
   return (
     <Box
       sx={{
@@ -78,10 +75,8 @@ export default function QueryError({
             onClick={onRetry}
             sx={{
               borderRadius: 2,
-              ...(gradient && {
-                background: gradient.primary,
-                '&:hover': { background: gradient.primaryHover },
-              }),
+              background: brand.primary,
+              '&:hover': { background: brand.primaryHover },
             }}
           >
             Réessayer

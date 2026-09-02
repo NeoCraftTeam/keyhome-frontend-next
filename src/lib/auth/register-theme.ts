@@ -1,4 +1,4 @@
-import { brand, brandAgent, gradient } from '@/theme/tokens';
+import { brand, brandAgent } from '@/theme/tokens';
 
 /**
  * Thèmes visuels du flux d'inscription : distinguer clairement particulier (rose) et agent (teal).
@@ -33,8 +33,8 @@ export const REGISTER_THEME: Record<
     primary: brand.primary,
     primaryDark: brand.primaryDark,
     primaryLight: brand.primaryHover,
-    gradient: gradient.primary,
-    gradientHover: `linear-gradient(to right, ${brand.primaryHover}, ${brand.primaryActive})`,
+    gradient: brand.primary,
+    gradientHover: brand.primaryHover,
     selectedBgAlpha: brand.primaryAlpha10,
     heroSrc: '/images/02Register.webp',
     overlayGradient:
@@ -48,8 +48,8 @@ export const REGISTER_THEME: Record<
     primary: brandAgent.primary,
     primaryDark: brandAgent.primaryDark,
     primaryLight: brandAgent.primaryLight,
-    gradient: `linear-gradient(to right, ${brandAgent.primaryLight}, ${brandAgent.primary})`,
-    gradientHover: `linear-gradient(to right, ${brandAgent.primary}, ${brandAgent.primaryDark})`,
+    gradient: brandAgent.primary,
+    gradientHover: brandAgent.primaryDark,
     selectedBgAlpha: 'rgba(13,148,136,0.14)',
     heroSrc: OWNER_HERO_ENCODED,
     overlayGradient:

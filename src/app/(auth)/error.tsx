@@ -2,7 +2,7 @@
 
 import { Box, Button, Typography } from '@mui/material';
 import ErrorIcon from '@mui/icons-material/ErrorOutline';
-import { gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 
 export default function AuthError({
   error: _error,
@@ -41,8 +41,8 @@ export default function AuthError({
           sx={{
             borderRadius: 2,
             fontWeight: 600,
-            background: gradient.primary,
-            '&:hover': { background: gradient.primaryHover },
+            background: brand.primary,
+            '&:hover': { background: brand.primaryHover },
           }}
         >
           Réessayer

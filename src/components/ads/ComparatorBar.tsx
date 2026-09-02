@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
-import { gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 
 export default function ComparatorBar() {
   const { items, remove, clear, maxReached, clearMaxReached } = useComparator();
@@ -140,8 +140,8 @@ export default function ComparatorBar() {
                     fontWeight: 700,
                     px: { xs: 1.5, sm: 2 },
                     fontSize: { xs: '0.7rem', sm: '0.8125rem' },
-                    background: gradient.primary,
-                    '&:hover': { background: gradient.primaryHover },
+                    background: brand.primary,
+                    '&:hover': { background: brand.primaryHover },
                     flexShrink: 0,
                   }}
                 >

@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { authService } from '@/services/auth.service';
-import { brand, gradient, semantic } from '@/theme/tokens';
+import { brand, semantic } from '@/theme/tokens';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import NotificationsActive from '@mui/icons-material/NotificationsActive';
 import Search from '@mui/icons-material/Search';
@@ -372,8 +372,8 @@ export default function WelcomeModal() {
             borderRadius: 2,
             fontWeight: 700,
             fontSize: '1rem',
-            background: gradient.primary,
-            '&:hover': { background: gradient.primaryHover },
+            background: brand.primary,
+            '&:hover': { background: brand.primaryHover },
             mb: 1,
           }}
         >

@@ -261,7 +261,7 @@ export default function SurveyStepper({
                 px: 5,
                 py: 1.25,
                 fontWeight: 700,
-                background: gradient.primary135Stops,
+                background: brand.primary,
                 boxShadow: '0 6px 20px rgba(246,71,95,0.30)',
                 '&:hover': {
                   boxShadow: '0 8px 28px rgba(246,71,95,0.40)',
@@ -291,7 +291,7 @@ export default function SurveyStepper({
                 px: 4,
                 py: 1.25,
                 fontWeight: 700,
-                background: gradient.primary135Stops,
+                background: brand.primary,
                 boxShadow: '0 6px 20px rgba(246,71,95,0.30)',
                 '&:hover': {
                   boxShadow: '0 8px 28px rgba(246,71,95,0.40)',

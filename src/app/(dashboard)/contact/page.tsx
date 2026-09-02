@@ -4,7 +4,7 @@ import AppAlert from '@/components/ui/feedback/AppAlert';
 import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { getSafeErrorMessage } from '@/lib/error-messages';
 import { supportService } from '@/services/support.service';
-import { brand, gradient } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -336,7 +336,7 @@ export default function ContactPage() {
                   transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                   style={{
                     height: '100%',
-                    background: gradient.primary,
+                    background: brand.primary,
                   }}
                 />
               </Box>
@@ -567,7 +567,7 @@ export default function ContactPage() {
                             py: 1.5,
                             fontWeight: 700,
                             textTransform: 'none',
-                            background: gradient.primary,
+                            background: brand.primary,
                             boxShadow: `0 8px 24px ${brand.primaryAlpha30}`,
                             '&:disabled': { opacity: 0.5, color: '#fff' },
                           }}
@@ -588,7 +588,7 @@ export default function ContactPage() {
                             py: 1.5,
                             fontWeight: 700,
                             textTransform: 'none',
-                            background: gradient.primary,
+                            background: brand.primary,
                             boxShadow: `0 8px 24px ${brand.primaryAlpha30}`,
                             '&:disabled': { opacity: 0.5, color: '#fff' },
                           }}

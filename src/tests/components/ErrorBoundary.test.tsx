@@ -3,6 +3,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@/theme/tokens', () => ({
+  brand: {
+    primary: '#F6475F',
+    primaryHover: '#E03E54',
+  },
   gradient: {
     primary: 'linear-gradient(135deg, #F6475F, #FF8A65)',
     primaryHover: 'linear-gradient(135deg, #E03050, #F07050)',

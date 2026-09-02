@@ -2,7 +2,7 @@
 
 import AppAlert from '@/components/ui/feedback/AppAlert';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { brandAgent, gradient, shadow } from '@/theme/tokens';
+import { brandAgent, shadow } from '@/theme/tokens';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Button, Container, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
@@ -87,8 +87,8 @@ export default function OwnerSegmentError({
               textTransform: 'none',
               borderRadius: 2,
               fontWeight: 600,
-              background: gradient.agent,
-              '&:hover': { background: gradient.agentHover },
+              background: brandAgent.primary,
+              '&:hover': { background: brandAgent.primaryDark },
               '&:focus-visible': {
                 outline: 'none',
                 boxShadow: shadow.agentFocusRing,
