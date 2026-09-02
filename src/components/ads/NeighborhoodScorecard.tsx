@@ -13,7 +13,7 @@ import Restaurant from '@mui/icons-material/Restaurant';
 import School from '@mui/icons-material/School';
 import Storefront from '@mui/icons-material/Storefront';
 import WarningAmberRounded from '@mui/icons-material/WarningAmberRounded';
-import { Box, Chip, Skeleton, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -293,42 +293,6 @@ function CategoryRow({
   );
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function ScorecardSkeleton() {
-  return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Skeleton variant="circular" width={80} height={80} />
-        <Box sx={{ flex: 1 }}>
-          <Skeleton variant="text" width="55%" height={24} />
-          <Skeleton variant="text" width="75%" height={18} sx={{ mt: 0.5 }} />
-        </Box>
-      </Box>
-      {[...Array(6)].map((_, i) => (
-        <Box key={i} sx={{ display: 'flex', gap: 1.5, mb: 2.5 }}>
-          <Skeleton
-            variant="rounded"
-            width={32}
-            height={32}
-            sx={{ flexShrink: 0 }}
-          />
-          <Box sx={{ flex: 1 }}>
-            <Skeleton variant="text" width="40%" height={14} />
-            <Skeleton
-              variant="rounded"
-              width="100%"
-              height={5}
-              sx={{ my: 0.5, borderRadius: 99 }}
-            />
-            <Skeleton variant="text" width="60%" height={12} />
-          </Box>
-        </Box>
-      ))}
-    </Box>
-  );
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 interface Props {
@@ -361,13 +325,18 @@ export default function NeighborhoodScorecard({ adId, onUnavailable }: Props) {
   }, [isUnavailable, onUnavailable]);
 
   if (isUnavailable) return null;
-  const totalPoi = scorecard
-    ? Object.values(scorecard.categories).reduce((s, c) => s + c.poi_count, 0)
-    : 0;
 
-  const globalLabel = !scorecard
-    ? ''
-    : scorecard.global_score >= 75
+  // Reveal only once the scorecard is confirmed available — avoids flashing a
+  // "KeyScore" header + skeleton for ads that turn out to have no scorecard.
+  if (isLoading || !scorecard) return null;
+
+  const totalPoi = Object.values(scorecard.categories).reduce(
+    (s, c) => s + c.poi_count,
+    0
+  );
+
+  const globalLabel =
+    scorecard.global_score >= 75
       ? 'Excellent quartier'
       : scorecard.global_score >= 50
         ? 'Bon quartier'
@@ -417,76 +386,69 @@ export default function NeighborhoodScorecard({ adId, onUnavailable }: Props) {
         </Tooltip>
       </Box>
 
-      {isLoading && <ScorecardSkeleton />}
-
-      {scorecard && (
-        <>
-          {scorecard.ors_used === false && (
-            <AppAlert severity="info" sx={{ mb: 2 }}>
-              <Typography variant="body2">
-                Distances en <strong>ligne droite</strong> (approximation). Les
-                distances <strong>à pied réelles</strong> utilisent
-                OpenRouteService — ajoutez <code>ORS_API_KEY</code> sur
-                l&apos;API backend.
-              </Typography>
-            </AppAlert>
-          )}
-
-          {/* Global score row */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-            <ScoreRing score={scorecard.global_score} />
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="subtitle1" fontWeight={700}>
-                {globalLabel}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {totalPoi} point{totalPoi !== 1 ? 's' : ''} d&apos;intérêt à
-                proximité
-              </Typography>
-              {scorecard.status === 'degraded' && (
-                <Chip
-                  icon={<WarningAmberRounded sx={{ fontSize: 13 }} />}
-                  label="Distances en ligne droite (ORS indisponible ou quota)"
-                  size="small"
-                  sx={{
-                    mt: 0.5,
-                    fontSize: 10,
-                    height: 20,
-                    maxWidth: '100%',
-                    bgcolor: 'warning.light',
-                    color: 'warning.dark',
-                    '& .MuiChip-label': {
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    },
-                  }}
-                />
-              )}
-            </Box>
-          </Box>
-
-          {/* Category rows */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {CATEGORY_CONFIG.map((cfg) => {
-              const cat = scorecard.categories[cfg.key];
-              if (!cat) return null;
-              return <CategoryRow key={cfg.key} cfg={cfg} data={cat} />;
-            })}
-          </Box>
-
-          {/* Footer */}
-          <Typography
-            variant="caption"
-            color="text.disabled"
-            sx={{ display: 'block', mt: 2, fontStyle: 'italic' }}
-          >
-            Source : OpenStreetMap · Mis à jour le{' '}
-            {scorecard.computed_at
-              ? new Date(scorecard.computed_at).toLocaleDateString('fr-FR')
-              : '—'}
+      {scorecard.ors_used === false && (
+        <AppAlert severity="info" sx={{ mb: 2 }}>
+          <Typography variant="body2">
+            Distances en <strong>ligne droite</strong> (approximation). Les
+            distances <strong>à pied réelles</strong> utilisent OpenRouteService
+            — ajoutez <code>ORS_API_KEY</code> sur l&apos;API backend.
           </Typography>
-        </>
+        </AppAlert>
       )}
+
+      {/* Global score row */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+        <ScoreRing score={scorecard.global_score} />
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="subtitle1" fontWeight={700}>
+            {globalLabel}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {totalPoi} point{totalPoi !== 1 ? 's' : ''} d&apos;intérêt à
+            proximité
+          </Typography>
+          {scorecard.status === 'degraded' && (
+            <Chip
+              icon={<WarningAmberRounded sx={{ fontSize: 13 }} />}
+              label="Distances en ligne droite (ORS indisponible ou quota)"
+              size="small"
+              sx={{
+                mt: 0.5,
+                fontSize: 10,
+                height: 20,
+                maxWidth: '100%',
+                bgcolor: 'warning.light',
+                color: 'warning.dark',
+                '& .MuiChip-label': {
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                },
+              }}
+            />
+          )}
+        </Box>
+      </Box>
+
+      {/* Category rows */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {CATEGORY_CONFIG.map((cfg) => {
+          const cat = scorecard.categories[cfg.key];
+          if (!cat) return null;
+          return <CategoryRow key={cfg.key} cfg={cfg} data={cat} />;
+        })}
+      </Box>
+
+      {/* Footer */}
+      <Typography
+        variant="caption"
+        color="text.disabled"
+        sx={{ display: 'block', mt: 2, fontStyle: 'italic' }}
+      >
+        Source : OpenStreetMap · Mis à jour le{' '}
+        {scorecard.computed_at
+          ? new Date(scorecard.computed_at).toLocaleDateString('fr-FR')
+          : '—'}
+      </Typography>
     </Box>
   );
 }
