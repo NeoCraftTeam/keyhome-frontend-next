@@ -151,8 +151,7 @@ export default function ScreeningSection({
     setFormExpires(14);
   }
 
-  function copyLink(token: string): void {
-    const url = `${window.location.origin}/screening/${token}`;
+  function copyLink(url: string): void {
     navigator.clipboard.writeText(url);
     setSnackbar({ message: 'Lien copié', severity: 'success' });
   }
@@ -241,7 +240,7 @@ export default function ScreeningSection({
                         size="small"
                         variant="outlined"
                         sx={{ minWidth: 0, borderRadius: 2 }}
-                        onClick={() => copyLink(s.token)}
+                        onClick={() => copyLink(s.screening_url)}
                       >
                         <CopyIcon fontSize="small" />
                       </Button>

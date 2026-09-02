@@ -37,7 +37,12 @@ export interface ScreeningRequest {
   lease_contract_id: string;
   tenant_name: string;
   tenant_email: string;
-  token: string;
+  /**
+   * Shareable public link (absolute URL) the owner can copy and send to the
+   * tenant. The raw upload `token` is intentionally NOT exposed by the API —
+   * see TenantScreeningRequestResource / TenantScreeningRequest::publicUrl().
+   */
+  screening_url: string;
   status: ScreeningStatus;
   status_label: string;
   required_documents: ScreeningDocumentType[];
