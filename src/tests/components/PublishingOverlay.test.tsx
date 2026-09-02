@@ -58,4 +58,24 @@ describe('PublishingOverlay', () => {
 
     expect(screen.queryByRole('status')).toBeNull();
   });
+
+  it('shows the exact percentage when driven by controlled progress', () => {
+    render(<PublishingOverlay open progress={42} />);
+
+    expect(screen.getByText('42%')).toBeInTheDocument();
+  });
+
+  it('exposes a determinate progressbar reflecting controlled progress', () => {
+    render(<PublishingOverlay open progress={42} />);
+
+    // MUI's determinate LinearProgress carries the value on aria-valuenow.
+    const bar = screen.getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-valuenow', '42');
+  });
+
+  it('clamps out-of-range controlled progress into 0–100', () => {
+    render(<PublishingOverlay open progress={140} />);
+
+    expect(screen.getByText('100%')).toBeInTheDocument();
+  });
 });

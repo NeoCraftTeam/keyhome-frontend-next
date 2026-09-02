@@ -7,6 +7,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import Portal from '@mui/material/Portal';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
+import { useEffect, useState } from 'react';
 
 import { brandAgent } from '@/theme/tokens';
 
@@ -22,7 +23,19 @@ interface PublishingOverlayProps {
    * must never fall back to the visitor coral brand.
    */
   accentColor?: string;
+  /**
+   * Optional real progress (0–100). When provided the bar is *controlled* and
+   * reflects this value exactly. When omitted, the overlay simulates a smooth,
+   * decelerating climb toward ~92% while `open` is true (Facebook / nprogress
+   * style): the publish request rarely reports byte progress, so the
+   * simulation gives a credible sense of movement instead of an indeterminate
+   * bar that could spin forever.
+   */
+  progress?: number;
 }
+
+const SIMULATED_START = 8;
+const SIMULATED_CEILING = 92;
 
 export default function PublishingOverlay({
   open,
@@ -30,9 +43,43 @@ export default function PublishingOverlay({
   subtitle = 'Ne quittez pas cette page — votre annonce est en cours de soumission.',
   Icon = CloudUploadOutlined,
   accentColor = brandAgent.primary,
+  progress,
 }: PublishingOverlayProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const isControlled = typeof progress === 'number';
+
+  const [simulated, setSimulated] = useState(SIMULATED_START);
+
+  useEffect(() => {
+    if (isControlled || !open) {
+      setSimulated(SIMULATED_START);
+      return;
+    }
+
+    setSimulated(SIMULATED_START);
+    const id = setInterval(() => {
+      setSimulated((prev) => {
+        if (prev >= SIMULATED_CEILING) {
+          return prev;
+        }
+        // Decelerating step: fast at first, crawling near the ceiling.
+        const step = Math.max(0.5, (SIMULATED_CEILING - prev) * 0.12);
+        return Math.min(SIMULATED_CEILING, prev + step);
+      });
+    }, 240);
+
+    return () => clearInterval(id);
+  }, [open, isControlled]);
+
+  if (!open) {
+    return null;
+  }
+
+  const value = isControlled
+    ? Math.min(100, Math.max(0, progress as number))
+    : simulated;
+  const rounded = Math.round(value);
 
   // Convert hex to rgba for backgrounds with opacity
   const bgAlpha = (opacity: number) => {
@@ -42,8 +89,6 @@ export default function PublishingOverlay({
     const b = parseInt(hex.substring(4, 6), 16);
     return `rgba(${r},${g},${b},${opacity})`;
   };
-
-  if (!open) return null;
 
   return (
     <Portal>
@@ -110,18 +155,48 @@ export default function PublishingOverlay({
             {title}
           </Typography>
 
-          {/* Progress bar */}
-          <LinearProgress
-            sx={{
-              my: 2.5,
-              borderRadius: 2,
-              height: 5,
-              bgcolor: bgAlpha(isDark ? 0.12 : 0.1),
-              '& .MuiLinearProgress-bar': {
-                bgcolor: accentColor,
-              },
-            }}
-          />
+          {/* Progress bar with live percentage */}
+          <Box sx={{ my: 2.5 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                mb: 0.75,
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{ color: 'text.secondary', fontWeight: 500 }}
+              >
+                Progression
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: accentColor,
+                  fontWeight: 700,
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {rounded}%
+              </Typography>
+            </Box>
+            <LinearProgress
+              variant="determinate"
+              value={value}
+              sx={{
+                borderRadius: 2,
+                height: 6,
+                bgcolor: bgAlpha(isDark ? 0.12 : 0.1),
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: accentColor,
+                  borderRadius: 2,
+                  transition: 'transform 0.35s ease',
+                },
+              }}
+            />
+          </Box>
 
           {/* Subtitle */}
           <Typography
