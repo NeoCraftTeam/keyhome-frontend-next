@@ -2,6 +2,7 @@
 
 import ButtonSpinner from '@/components/ui/feedback/ButtonSpinner';
 import { useUserLocation } from '@/hooks/useUserLocation';
+import { getSafeErrorMessage } from '@/lib/error-messages';
 import {
   geoService,
   type DirectionsResult,
@@ -214,8 +215,13 @@ export default function DirectionsPanel({
           return [...filtered, res.data];
         });
         displayRoute(res.data);
-      } catch {
-        setError("Calcul d'itinéraire indisponible. Vérifiez votre connexion.");
+      } catch (err) {
+        setError(
+          getSafeErrorMessage(
+            err,
+            "Calcul d'itinéraire indisponible. Vérifiez votre connexion."
+          )
+        );
       } finally {
         setLoading(false);
       }
@@ -282,8 +288,8 @@ export default function DirectionsPanel({
       if (!carResult && lazyValid.length === 0) {
         setError("Service d'itinéraires temporairement indisponible.");
       }
-    } catch {
-      setError("Calcul d'itinéraire indisponible.");
+    } catch (err) {
+      setError(getSafeErrorMessage(err, "Calcul d'itinéraire indisponible."));
     } finally {
       setLoading(false);
     }
