@@ -33,6 +33,9 @@ const AUTH_ROUTES = [
   '/public-status',
 ];
 
+/** One-shot guard so the cookie-only retry of a 401 can never loop. */
+const AUTH_RETRY_HEADER = 'x-auth-retry';
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -141,6 +144,13 @@ api.interceptors.request.use(
     if (config.headers?.Authorization) {
       return config;
     }
+    // Cookie-only replay of a request that 401'd on a stale bearer. Attaching
+    // a bearer again — even a fresh one — would make the server skip the
+    // session guard, so this request must stay bearer-less by construction
+    // and not depend on the token store having been cleared in time.
+    if (config.headers?.[AUTH_RETRY_HEADER]) {
+      return config;
+    }
     const token = await getAuthToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -154,6 +164,49 @@ api.interceptors.request.use(
 
 /** Track 419 retry to prevent infinite loops */
 const CSRF_RETRY_HEADER = 'x-csrf-retry';
+
+/* ---------- Stale-bearer recovery ---------- */
+
+/** In-flight liveness probe, shared by every request that 401s at once. */
+let sessionProbePromise: Promise<'alive' | 'dead' | 'unknown'> | null = null;
+
+/**
+ * Ask the server whether the cookie session is still alive — deliberately
+ * WITHOUT an `Authorization` header, and deliberately outside the `api`
+ * instance so no interceptor can put the dead bearer back on.
+ *
+ * `PreferBearerOverSession` empties `sanctum.guard` as soon as a bearer is
+ * present, so a revoked bearer makes the server ignore a perfectly valid
+ * `keyhome_session` cookie. Sending no bearer is what tells the two
+ * credentials apart.
+ *
+ * - `alive`   — 200, or 403 (authenticated, e-mail not verified yet)
+ * - `dead`    — 401: neither credential works, the session is really over
+ * - `unknown` — no response at all (offline, CORS, timeout). Never log a user
+ *               out on a guess; the next request re-probes.
+ */
+function probeCookieSession(): Promise<'alive' | 'dead' | 'unknown'> {
+  if (sessionProbePromise) {
+    return sessionProbePromise;
+  }
+  sessionProbePromise = axios
+    .get(`${API_URL}/auth/me`, {
+      withCredentials: true,
+      headers: { Accept: 'application/json' },
+    })
+    .then(() => 'alive' as const)
+    .catch((probeError: unknown) => {
+      const status = (probeError as AxiosError).response?.status;
+      if (status === undefined) {
+        return 'unknown' as const;
+      }
+      return status === 401 ? ('dead' as const) : ('alive' as const);
+    })
+    .finally(() => {
+      sessionProbePromise = null;
+    });
+  return sessionProbePromise;
+}
 
 api.interceptors.response.use(
   (response) => response,
@@ -177,7 +230,28 @@ api.interceptors.response.use(
         error.response?.status === 401 &&
         !AUTH_ROUTES.some((r) => error.config?.url?.includes(r))
       ) {
-        window.dispatchEvent(new CustomEvent('kh:auth-expired'));
+        // A cookie-only retry that still 401s leaves no doubt: both
+        // credentials are gone.
+        const liveness = error.config?.headers?.[AUTH_RETRY_HEADER]
+          ? ('dead' as const)
+          : await probeCookieSession();
+
+        if (liveness === 'alive' && error.config) {
+          // Only the bearer died — rotated away by a sibling tab, revoked
+          // server-side, or replaced by a refresh whose answer we never
+          // stored. Wiping the whole session here is what turned a single
+          // 401 on `/my/chat-e2ee/public-key` into a dashboard rendered in
+          // visitor mode right after a successful login. Drop the dead
+          // bearer and replay the request on the cookie session instead.
+          window.dispatchEvent(new CustomEvent('kh:bearer-stale'));
+          error.config.headers = error.config.headers ?? {};
+          error.config.headers[AUTH_RETRY_HEADER] = '1';
+          return api.request(error.config);
+        }
+
+        if (liveness === 'dead') {
+          window.dispatchEvent(new CustomEvent('kh:auth-expired'));
+        }
       }
 
       if (error.response?.status === 429) {

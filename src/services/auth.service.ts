@@ -35,6 +35,26 @@ interface OAuthRedirectResponse {
 
 export type OAuthProvider = 'google' | 'facebook' | 'github';
 
+/**
+ * In-flight `/auth/refresh` call, shared by every caller.
+ *
+ * Refresh has two independent triggers — the proactive timer in `AuthProvider`
+ * and the "Prolonger la session" button in `SessionTimeoutGuard`. Each call
+ * rotates the token server-side, so two overlapping calls mint two successors
+ * and only the last one to resolve gets stored: the other is already revoked
+ * by the time anything uses it, and the tab 401s on a bearer it just obtained.
+ * De-duplicating here keeps one rotation per session at a time.
+ */
+let refreshPromise: Promise<{
+  access_token: string;
+  expires_at: string;
+}> | null = null;
+
+/** @internal — lets tests start from a clean single-flight slot. */
+export function __resetRefreshSingleFlightForTests(): void {
+  refreshPromise = null;
+}
+
 export const authService = {
   async login(
     email: string,
@@ -271,12 +291,23 @@ export const authService = {
     access_token: string;
     expires_at: string;
   }> {
-    const { data } = await api.post<{
-      access_token: string;
-      token_type: string;
-      expires_at: string;
-    }>('/auth/refresh');
-    return { access_token: data.access_token, expires_at: data.expires_at };
+    if (refreshPromise) {
+      return refreshPromise;
+    }
+    refreshPromise = api
+      .post<{
+        access_token: string;
+        token_type: string;
+        expires_at: string;
+      }>('/auth/refresh')
+      .then(({ data }) => ({
+        access_token: data.access_token,
+        expires_at: data.expires_at,
+      }))
+      .finally(() => {
+        refreshPromise = null;
+      });
+    return refreshPromise;
   },
 
   async logout(): Promise<void> {

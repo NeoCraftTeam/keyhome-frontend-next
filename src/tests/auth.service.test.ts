@@ -10,7 +10,10 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import api from '@/lib/api';
-import { authService } from '@/services/auth.service';
+import {
+  __resetRefreshSingleFlightForTests,
+  authService,
+} from '@/services/auth.service';
 
 const mockedApi = vi.mocked(api);
 const mockGet = mockedApi.get as Mock;
@@ -36,6 +39,7 @@ const mockUser = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  __resetRefreshSingleFlightForTests();
   // Mock window.location for OAuth tests
   Object.defineProperty(window, 'location', {
     writable: true,
@@ -275,6 +279,116 @@ describe('authService', () => {
       mockPost.mockResolvedValue({ data: {} });
       await authService.logout();
       expect(mockPost).toHaveBeenCalledWith('/auth/logout');
+    });
+  });
+
+  // ── refreshToken ─────────────────────────────────────────────────
+  // `/auth/refresh` rotates the Sanctum token: the previous one is revoked the
+  // moment a successor is minted. Two overlapping refreshes therefore produce
+  // two successors of which only one can be stored — the loser is a token the
+  // browser holds but the server has already revoked, and the very next
+  // request 401s on a bearer obtained seconds earlier.
+  describe('refreshToken', () => {
+    it('returns the rotated token and its expiry', async () => {
+      mockPost.mockResolvedValue({
+        data: {
+          access_token: 'rotated-token-1',
+          token_type: 'Bearer',
+          expires_at: '2026-03-01T12:00:00Z',
+        },
+      });
+
+      const result = await authService.refreshToken();
+
+      expect(mockPost).toHaveBeenCalledWith('/auth/refresh');
+      expect(result).toEqual({
+        access_token: 'rotated-token-1',
+        expires_at: '2026-03-01T12:00:00Z',
+      });
+    });
+
+    // BUG CATCH: the proactive timer in AuthProvider and the "Prolonger la
+    // session" button both call this. Two concurrent rotations strand one of
+    // the two new tokens on the client.
+    it('issues a single request when callers overlap', async () => {
+      let resolveRefresh: ((value: unknown) => void) | undefined;
+      mockPost.mockReturnValue(
+        new Promise((resolve) => {
+          resolveRefresh = resolve;
+        })
+      );
+
+      const first = authService.refreshToken();
+      const second = authService.refreshToken();
+
+      resolveRefresh!({
+        data: {
+          access_token: 'rotated-token-2',
+          token_type: 'Bearer',
+          expires_at: '2026-03-01T12:00:00Z',
+        },
+      });
+
+      const [a, b] = await Promise.all([first, second]);
+
+      expect(mockPost).toHaveBeenCalledTimes(1);
+      expect(a.access_token).toBe('rotated-token-2');
+      expect(b.access_token).toBe('rotated-token-2');
+    });
+
+    // BUG CATCH: if the in-flight slot were never released, the session could
+    // only ever be refreshed once per page load — every later refresh would
+    // resolve to a token that has since been rotated away.
+    it('allows a later refresh once the previous one settled', async () => {
+      mockPost.mockResolvedValueOnce({
+        data: {
+          access_token: 'rotated-token-3',
+          token_type: 'Bearer',
+          expires_at: '2026-03-01T12:00:00Z',
+        },
+      });
+      mockPost.mockResolvedValueOnce({
+        data: {
+          access_token: 'rotated-token-4',
+          token_type: 'Bearer',
+          expires_at: '2026-03-01T13:00:00Z',
+        },
+      });
+
+      const firstToken = (await authService.refreshToken()).access_token;
+      const secondToken = (await authService.refreshToken()).access_token;
+
+      expect(mockPost).toHaveBeenCalledTimes(2);
+      expect(firstToken).toBe('rotated-token-3');
+      expect(secondToken).toBe('rotated-token-4');
+    });
+
+    // BUG CATCH: a rejected refresh must not poison the slot — the user would
+    // be stuck with a session that can never be extended again.
+    it('releases the in-flight slot after a failed refresh', async () => {
+      mockPost.mockRejectedValueOnce(
+        new AxiosError('Unauthenticated', undefined, undefined, undefined, {
+          status: 401,
+          data: { message: 'Non authentifié.' },
+        } as never)
+      );
+
+      await expect(authService.refreshToken()).rejects.toThrow(
+        'Unauthenticated'
+      );
+
+      mockPost.mockResolvedValueOnce({
+        data: {
+          access_token: 'rotated-token-5',
+          token_type: 'Bearer',
+          expires_at: '2026-03-01T14:00:00Z',
+        },
+      });
+
+      await expect(authService.refreshToken()).resolves.toEqual({
+        access_token: 'rotated-token-5',
+        expires_at: '2026-03-01T14:00:00Z',
+      });
     });
   });
 

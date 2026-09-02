@@ -18,7 +18,6 @@ import {
   persistClientToken,
   persistOwnerToken,
 } from '@/lib/auth/auth-session';
-import { syncChatE2eePublicKeyWithServer } from '@/lib/chat/chat-e2ee-identity';
 import { mayAccessOwnerPanel } from '@/lib/owner/owner-panel-access';
 import { authService, OAuthProvider } from '@/services/auth.service';
 import { User, UserRole } from '@/types';
@@ -222,14 +221,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [user, refreshSession]);
 
-  // ── Chat E2EE bootstrap (E2EE-1) ────────────────────────────────
-  // Ensures the device has an RSA-OAEP keypair registered with the server
-  // so peers can wrap a session AES key for this device. Non-blocking — chat
-  // falls back to server-encrypted messages if bootstrap fails.
-  useEffect(() => {
-    if (!user) return;
-    void syncChatE2eePublicKeyWithServer(null, user.id);
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ── Chat E2EE bootstrap (E2EE-1) — deliberately NOT called here ──
+  // The client-sealed path is off (`chat.client_sealed_enabled = false`
+  // server-side, `wantsE2ee = false` in `useChatSend`), so registering a
+  // keypair at startup buys nothing. It also cost us: it was the first
+  // authenticated request after login, so a stale bearer surfaced as a 401 on
+  // `/my/chat-e2ee/public-key`, which the global interceptor turned into a
+  // full logout. See `lib/chat/chat-e2ee-identity.ts` for the re-enable steps.
 
   // ── Derived ───────────────────────────────────────────────────
   const isAuthenticated = !!user;

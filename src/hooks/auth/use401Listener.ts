@@ -4,11 +4,18 @@
  * use401Listener — listens for `kh:auth-expired` window events and clears
  * the session without requiring a page reload.
  *
+ * Also handles `kh:bearer-stale`: the Axios interceptor raises it when a 401
+ * came from a dead bearer while the cookie session is still alive. Only the
+ * bearer of the current panel is dropped there — `user`, the React Query
+ * cache and the role cookie all survive, so the page keeps rendering as
+ * authenticated while requests fall back to the session cookie.
+ *
  * Extracted from AuthProvider to keep the provider file focused on composition.
  */
 
 import {
   clearAllInMemoryTokens,
+  clearInMemoryToken,
   clearRoleCookie,
 } from '@/lib/auth/auth-session';
 import type { User } from '@/types';
@@ -34,8 +41,16 @@ export function use401Listener(
       setUserState(null);
       clearRoleCookie();
     };
+    const handleBearerStale = () => {
+      if (!user) return;
+      clearInMemoryToken();
+      setToken(null);
+    };
     window.addEventListener('kh:auth-expired', handleAuthExpired);
-    return () =>
+    window.addEventListener('kh:bearer-stale', handleBearerStale);
+    return () => {
       window.removeEventListener('kh:auth-expired', handleAuthExpired);
+      window.removeEventListener('kh:bearer-stale', handleBearerStale);
+    };
   }, [user, queryClient, setToken, setUserState]);
 }

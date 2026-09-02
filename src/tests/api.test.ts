@@ -228,6 +228,197 @@ describe('api (Axios instance)', () => {
     });
   });
 
+  /* ── Stale bearer vs dead session ────────────────────────────────
+   * A 401 has two very different causes. The bearer alone can be dead —
+   * rotated away by a sibling tab or revoked server-side — while the
+   * `keyhome_session` cookie is perfectly valid. Treating that case as an
+   * expired session is what rendered the dashboard in visitor mode right
+   * after a successful login: the first authenticated call 401'd, the
+   * interceptor fired `kh:auth-expired`, and the whole session was wiped.
+   * ─────────────────────────────────────────────────────────────── */
+  describe('401 recovery', () => {
+    /** Drive the response error interceptor with a 401 on a protected route. */
+    function reject401(url = '/my/chat-e2ee/public-key', headers = {}) {
+      const interceptor = api.interceptors
+        .response as unknown as InterceptorManager;
+      const rejectedHandler = interceptor.handlers[0]?.rejected;
+
+      return rejectedHandler!(
+        Object.assign(new Error('Unauthenticated'), {
+          response: { status: 401, headers: {} },
+          config: { url, headers },
+          isAxiosError: true,
+        })
+      );
+    }
+
+    function dispatchedTypes(spy: { mock: { calls: unknown[][] } }): string[] {
+      return spy.mock.calls.map((call) => (call[0] as CustomEvent).type);
+    }
+
+    // BUG CATCH: wiping the session on a 401 the cookie could still serve
+    // signs the user out of a live session — the reported bug.
+    it('drops only the bearer when the cookie session is still alive', async () => {
+      const probeSpy = vi
+        .spyOn(axios, 'get')
+        .mockResolvedValue({ data: { id: 'user-1' } } as AxiosResponse);
+      const requestSpy = vi
+        .spyOn(api, 'request')
+        .mockResolvedValue({ data: {} } as AxiosResponse);
+      const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+      await reject401().catch(() => {});
+
+      expect(dispatchedTypes(dispatchSpy)).toContain('kh:bearer-stale');
+      expect(dispatchedTypes(dispatchSpy)).not.toContain('kh:auth-expired');
+
+      // The probe must ask the server WITHOUT a bearer: PreferBearerOverSession
+      // ignores the session guard as soon as one is present, so a probe
+      // carrying the dead bearer would always answer 401.
+      expect(probeSpy).toHaveBeenCalledTimes(1);
+      const [probeUrl, probeConfig] = probeSpy.mock.calls[0];
+      expect(probeUrl).toContain('/auth/me');
+      expect(probeConfig?.withCredentials).toBe(true);
+      expect(probeConfig?.headers).not.toHaveProperty('Authorization');
+
+      // …and the request the user was actually making gets replayed.
+      expect(requestSpy).toHaveBeenCalledTimes(1);
+      expect(requestSpy.mock.calls[0][0]?.headers).toMatchObject({
+        'x-auth-retry': '1',
+      });
+
+      probeSpy.mockRestore();
+      requestSpy.mockRestore();
+      dispatchSpy.mockRestore();
+    });
+
+    // BUG CATCH: the recovery path must not swallow a genuine expiry — a
+    // session that is really over has to log the user out.
+    it('dispatches kh:auth-expired when the cookie session is dead too', async () => {
+      const probeSpy = vi.spyOn(axios, 'get').mockRejectedValue(
+        Object.assign(new Error('Unauthenticated'), {
+          response: { status: 401, headers: {} },
+          isAxiosError: true,
+        })
+      );
+      const requestSpy = vi.spyOn(api, 'request');
+      const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+      await expect(reject401()).rejects.toThrow('Unauthenticated');
+
+      expect(dispatchedTypes(dispatchSpy)).toContain('kh:auth-expired');
+      expect(requestSpy).not.toHaveBeenCalled();
+
+      probeSpy.mockRestore();
+      requestSpy.mockRestore();
+      dispatchSpy.mockRestore();
+    });
+
+    // BUG CATCH: 403 means "authenticated, e-mail not verified". Reading it as
+    // a dead session would log out every user sitting on the OTP screen.
+    it('treats a 403 probe as a live session', async () => {
+      const probeSpy = vi.spyOn(axios, 'get').mockRejectedValue(
+        Object.assign(new Error('Forbidden'), {
+          response: { status: 403, headers: {} },
+          isAxiosError: true,
+        })
+      );
+      const requestSpy = vi
+        .spyOn(api, 'request')
+        .mockResolvedValue({ data: {} } as AxiosResponse);
+      const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+      await reject401().catch(() => {});
+
+      expect(dispatchedTypes(dispatchSpy)).not.toContain('kh:auth-expired');
+
+      probeSpy.mockRestore();
+      requestSpy.mockRestore();
+      dispatchSpy.mockRestore();
+    });
+
+    // BUG CATCH: offline or CORS-blocked probes answer nothing. Guessing
+    // "dead" there logs users out on every network blip.
+    it('logs nobody out when the probe gets no response at all', async () => {
+      const probeSpy = vi
+        .spyOn(axios, 'get')
+        .mockRejectedValue(
+          Object.assign(new Error('Network Error'), { isAxiosError: true })
+        );
+      const requestSpy = vi.spyOn(api, 'request');
+      const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+      await expect(reject401()).rejects.toThrow('Unauthenticated');
+
+      expect(dispatchedTypes(dispatchSpy)).not.toContain('kh:auth-expired');
+      expect(dispatchedTypes(dispatchSpy)).not.toContain('kh:bearer-stale');
+      expect(requestSpy).not.toHaveBeenCalled();
+
+      probeSpy.mockRestore();
+      requestSpy.mockRestore();
+      dispatchSpy.mockRestore();
+    });
+
+    // BUG CATCH: without the one-shot guard, a cookie-only replay that 401s
+    // again would probe and replay forever.
+    it('logs out instead of replaying when the cookie-only retry also 401s', async () => {
+      const probeSpy = vi.spyOn(axios, 'get');
+      const requestSpy = vi.spyOn(api, 'request');
+      const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+      await expect(
+        reject401('/my/chat-e2ee/public-key', { 'x-auth-retry': '1' })
+      ).rejects.toThrow('Unauthenticated');
+
+      expect(probeSpy).not.toHaveBeenCalled();
+      expect(requestSpy).not.toHaveBeenCalled();
+      expect(dispatchedTypes(dispatchSpy)).toContain('kh:auth-expired');
+
+      probeSpy.mockRestore();
+      requestSpy.mockRestore();
+      dispatchSpy.mockRestore();
+    });
+
+    // BUG CATCH: a dashboard fires many calls at once. One probe per 401 would
+    // hammer /auth/me with a burst of identical requests.
+    it('shares one liveness probe across simultaneous 401s', async () => {
+      const probeSpy = vi
+        .spyOn(axios, 'get')
+        .mockResolvedValue({ data: { id: 'user-1' } } as AxiosResponse);
+      const requestSpy = vi
+        .spyOn(api, 'request')
+        .mockResolvedValue({ data: {} } as AxiosResponse);
+
+      await Promise.all([
+        reject401('/my/notifications').catch(() => {}),
+        reject401('/my/conversations').catch(() => {}),
+        reject401('/my/credits').catch(() => {}),
+      ]);
+
+      expect(probeSpy).toHaveBeenCalledTimes(1);
+      expect(requestSpy).toHaveBeenCalledTimes(3);
+
+      probeSpy.mockRestore();
+      requestSpy.mockRestore();
+    });
+
+    // BUG CATCH: if the replay carried the dead bearer again, the server would
+    // skip the session guard and answer 401 a second time — the retry would be
+    // pointless. The header alone must be enough to force a cookie-only call,
+    // without depending on the token store having been cleared first.
+    it('sends the cookie-only replay without an Authorization header', async () => {
+      mockedGetAuthToken.mockResolvedValue('stale-but-still-stored-token');
+
+      const config = await runRequestInterceptors({
+        url: '/my/chat-e2ee/public-key',
+        method: 'get',
+        headers: { 'x-auth-retry': '1' },
+      } as unknown as InternalAxiosRequestConfig);
+
+      expect(config.headers.Authorization).toBeUndefined();
+    });
+  });
+
   describe('CSRF 419 retry logic', () => {
     // BUG CATCH: When the CSRF token expires mid-session, the server returns 419.
     // Without automatic retry, the user sees a confusing "Page Expired" error.

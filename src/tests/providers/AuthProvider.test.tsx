@@ -14,6 +14,7 @@ const {
   mockSignIn,
   mockAuthService,
   mockPathnameRef,
+  mockSyncChatE2eePublicKey,
 } = vi.hoisted(() => ({
   mockPush: vi.fn(),
   mockReplace: vi.fn(),
@@ -27,6 +28,7 @@ const {
     clerkExchange: vi.fn(),
   },
   mockPathnameRef: { current: '/home' },
+  mockSyncChatE2eePublicKey: vi.fn(),
 }));
 
 /* ── Mocks ─────────────────────────────────────────────────────────── */
@@ -79,7 +81,17 @@ vi.mock('@/lib/trusted-redirect', () => ({
   redirectToTrustedUrl: vi.fn(() => true),
 }));
 
+vi.mock('@/lib/chat/chat-e2ee-identity', () => ({
+  CHAT_E2EE_READY_EVENT: 'kh:chat-e2ee-ready',
+  syncChatE2eePublicKeyWithServer: mockSyncChatE2eePublicKey,
+  resetChatE2eeBootstrap: vi.fn(),
+}));
+
 // Import AFTER mocks are set up
+import {
+  getClientInMemoryToken,
+  persistClientToken,
+} from '@/lib/auth/auth-session';
 import { registerTokenGetter } from '@/lib/auth/auth-token';
 import {
   __resetModuleStateForTests,
@@ -359,18 +371,23 @@ describe('AuthProvider', () => {
       mockAuthService.me.mockResolvedValue(mockUser);
       const { getContext } = await renderAndWaitForAuth('authenticated');
 
-      // Logout calls resetCsrfState and clears session immediately,
-      // then waits for an overlay timer. Verify user is cleared.
+      // Logout clears the session immediately, then holds the overlay open for
+      // LOGOUT_OVERLAY_MIN_MS (3500ms) via `await new Promise(setTimeout(…))`.
+      // That await sits *behind* the network calls, so the timer is only
+      // scheduled once those promises settle: `advanceTimersByTime` alone fires
+      // nothing, and the pending continuation would then resolve on real timers
+      // in the middle of a *later* test and wipe its `user` state.
+      // `advanceTimersByTimeAsync` flushes microtasks between timers, so the
+      // whole logout finishes inside this test — and inside `act`.
       vi.useFakeTimers();
-      getContext().logout('/home');
-
-      // Advance past LOGOUT_OVERLAY_DURATION_MS (3500ms)
-      vi.advanceTimersByTime(5000);
+      const logoutCompleted = getContext().logout('/home');
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000);
+        await logoutCompleted;
+      });
       vi.useRealTimers();
 
-      await waitFor(() => {
-        expect(screen.getByTestId('user').textContent).toBe('none');
-      });
+      expect(screen.getByTestId('user').textContent).toBe('none');
     });
   });
 
@@ -414,6 +431,41 @@ describe('AuthProvider', () => {
       });
 
       expect(screen.getByTestId('user').textContent).toBe('none');
+    });
+
+    // BUG CATCH: `kh:bearer-stale` means the bearer died but the cookie
+    // session is alive. Wiping `user` there is the reported bug: the dashboard
+    // fell back to visitor mode moments after a successful login. Only the
+    // dead bearer may go, so later requests authenticate by cookie.
+    it('drops only the bearer on kh:bearer-stale and keeps the user signed in', async () => {
+      mockAuthService.me.mockResolvedValue(mockUser);
+      await renderAndWaitForAuth('authenticated');
+
+      act(() => {
+        persistClientToken('rotated-away-token');
+      });
+      expect(getClientInMemoryToken()).toBe('rotated-away-token');
+
+      act(() => {
+        window.dispatchEvent(new CustomEvent('kh:bearer-stale'));
+      });
+
+      expect(getClientInMemoryToken()).toBeNull();
+      expect(screen.getByTestId('user').textContent).toBe('Jean');
+      expect(screen.getByTestId('authenticated').textContent).toBe('true');
+    });
+  });
+
+  describe('chat E2EE bootstrap', () => {
+    // BUG CATCH: registering an E2EE keypair at startup made
+    // `/my/chat-e2ee/public-key` the first authenticated call after login.
+    // With the sealed path disabled server-side it buys nothing, and its 401
+    // on a stale bearer used to take the whole session down with it.
+    it('does not register an E2EE keypair on login', async () => {
+      mockAuthService.me.mockResolvedValue(mockUser);
+      await renderAndWaitForAuth('authenticated');
+
+      expect(mockSyncChatE2eePublicKey).not.toHaveBeenCalled();
     });
   });
 
