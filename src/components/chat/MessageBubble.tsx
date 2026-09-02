@@ -229,6 +229,7 @@ export function MessageBubble({
   const swipeAxisLockRef = useRef<'x' | 'y' | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [recipientAvatarError, setRecipientAvatarError] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -431,7 +432,7 @@ export function MessageBubble({
       {!isOwn && (
         <div className="w-8 shrink-0 self-end mb-4">
           {showAvatar ? (
-            recipientAvatar ? (
+            recipientAvatar && !recipientAvatarError ? (
               <Image
                 src={recipientAvatar}
                 alt="avatar"
@@ -439,6 +440,7 @@ export function MessageBubble({
                 height={30}
                 className="rounded-full object-cover"
                 style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
+                onError={() => setRecipientAvatarError(true)}
               />
             ) : (
               <div

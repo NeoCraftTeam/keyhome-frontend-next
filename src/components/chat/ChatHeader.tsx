@@ -466,9 +466,10 @@ function AvatarBadge({
   device: DeviceType;
   theme: ChatTheme;
 }) {
+  const [imgError, setImgError] = useState(false);
   return (
     <div className="relative shrink-0">
-      {avatar ? (
+      {avatar && !imgError ? (
         <Image
           src={avatar}
           alt=""
@@ -478,6 +479,7 @@ function AvatarBadge({
           style={{
             boxShadow: `0 0 0 2px ${theme.accent}20, 0 2px 6px rgba(0,0,0,0.06)`,
           }}
+          onError={() => setImgError(true)}
         />
       ) : (
         <div

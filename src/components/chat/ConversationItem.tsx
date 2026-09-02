@@ -43,6 +43,7 @@ export function ConversationItem({
   const router = useRouter();
   const prefetchedRef = useRef(false);
   const [e2eeListDecryptTick, setE2eeListDecryptTick] = useState(0);
+  const [avatarError, setAvatarError] = useState(false);
   const participant = conversation.other_participant;
 
   const messagesCache = useChatMessagesCacheEntry(user?.id, conversation.uuid);
@@ -273,7 +274,7 @@ export function ConversationItem({
 
       {/* Avatar */}
       <div className="relative shrink-0">
-        {participant?.avatar ? (
+        {participant?.avatar && !avatarError ? (
           <Image
             src={participant.avatar}
             alt={participant.name}
@@ -285,6 +286,7 @@ export function ConversationItem({
                 ? `0 0 0 2px ${theme.accent}30`
                 : '0 0 0 2px rgba(0,0,0,0.04)',
             }}
+            onError={() => setAvatarError(true)}
           />
         ) : (
           <div

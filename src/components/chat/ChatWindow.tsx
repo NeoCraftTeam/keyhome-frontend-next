@@ -126,6 +126,7 @@ export function ChatWindow({
   const router = useRouter();
   const queryClient = useQueryClient();
   const otherParticipant = conversation.other_participant;
+  const [emptyStateAvatarError, setEmptyStateAvatarError] = useState(false);
   const connectionState = useEchoConnectionState();
   const isReconnecting =
     connectionState === 'connecting' || connectionState === 'unavailable';
@@ -765,7 +766,7 @@ export function ChatWindow({
           ) : messages.length === 0 ? (
             /* ── Empty conversation state ───────────────────────────────── */
             <div className="flex-1 flex flex-col items-center justify-center gap-3 pb-10 px-6 select-none">
-              {otherParticipant?.avatar ? (
+              {otherParticipant?.avatar && !emptyStateAvatarError ? (
                 <Image
                   src={otherParticipant.avatar}
                   alt=""
@@ -773,6 +774,7 @@ export function ChatWindow({
                   height={64}
                   className="rounded-full object-cover"
                   style={{ boxShadow: `0 4px 16px ${theme.accent}30` }}
+                  onError={() => setEmptyStateAvatarError(true)}
                 />
               ) : (
                 <div
