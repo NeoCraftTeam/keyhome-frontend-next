@@ -1,3 +1,7 @@
+import {
+  ServerInsertedScripts,
+  type ServerInsertedScript,
+} from '@/components/ServerInsertedScripts';
 import { BRAND_TAGLINE, BRAND_TITLE_WITH_TAGLINE } from '@/lib/brand';
 import { getSiteOrigin } from '@/lib/site-url';
 
@@ -396,22 +400,31 @@ const allSchemas = [
   breadcrumbSchema,
 ];
 
+/** Serialised once at module scope — the objects never reach the client. */
+export const JSON_LD_SCRIPTS: readonly ServerInsertedScript[] = allSchemas.map(
+  (schema, index) => ({
+    id: `kh-json-ld-${index}`,
+    type: 'application/ld+json',
+    html: JSON.stringify(schema),
+  })
+);
+
 /**
  * Renders all JSON-LD schema scripts for rich snippets.
  *
  * 7 schemas covering: WebSite, Organization, RealEstateAgent,
  * SoftwareApplication, FAQPage (10 questions), HowTo, BreadcrumbList.
+ *
+ * Emitted through {@link ServerInsertedScripts} rather than as React children:
+ * inline `<script>` tags in `<head>` are hydrated positionally, so a single node
+ * injected before hydration (browser extension, gtm.js) shifted all 7 slots and
+ * made React report a hydration mismatch. The schemas stay server-only — just the
+ * serialised strings cross to the client shim.
  */
-export default function JsonLd(): React.JSX.Element {
-  return (
-    <>
-      {allSchemas.map((schema, i) => (
-        <script
-          key={i}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-        />
-      ))}
-    </>
-  );
+export default function JsonLd({
+  nonce,
+}: {
+  nonce?: string;
+}): React.JSX.Element {
+  return <ServerInsertedScripts nonce={nonce} scripts={JSON_LD_SCRIPTS} />;
 }

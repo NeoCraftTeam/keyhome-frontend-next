@@ -6,6 +6,7 @@ import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
 import ViewportInteractiveWidget from '@/components/pwa/ViewportInteractiveWidget';
 import JsonLd from '@/components/seo/JsonLd';
 import { WebVitals } from '@/components/seo/WebVitals';
+import { ServerInsertedScripts } from '@/components/ServerInsertedScripts';
 import { ThemeInitScript } from '@/components/ThemeInitScript';
 import CookieBanner from '@/components/ui/display/CookieBanner';
 import RouteProgressBar from '@/components/ui/navigation/RouteProgressBar';
@@ -200,23 +201,22 @@ export default async function RootLayout({
     >
       <html lang="fr" suppressHydrationWarning data-scroll-behavior="smooth">
         <head>
-          {gtmId !== undefined ? (
-            <script
-              nonce={nonce}
-              suppressHydrationWarning
-              dangerouslySetInnerHTML={{ __html: gtmBootstrapSnippet }}
-            />
-          ) : null}
-
-          {/* ThemeInitScript uses useServerInsertedHTML — injected server-side only,
-              never reconciled on the client, so React 19 never warns. */}
-          <ThemeInitScript nonce={nonce} />
-          <script
-            id="kh-safe-area-init"
+          {/* Both of these — and ThemeInitScript / JsonLd below — go through
+              useServerInsertedHTML: inline scripts placed in the head are
+              hydrated positionally, so a single node injected into the head
+              before hydration (browser extension, gtm.js, clarity.js) misaligns
+              them and React reports a hydration mismatch. Server-inserted markup
+              is never reconciled, so it cannot be misaligned. */}
+          <ServerInsertedScripts
             nonce={nonce}
-            suppressHydrationWarning
-            dangerouslySetInnerHTML={{ __html: KH_SAFE_AREA_INIT_SCRIPT }}
+            scripts={[
+              ...(gtmId !== undefined
+                ? [{ id: 'kh-gtm-init', html: gtmBootstrapSnippet }]
+                : []),
+              { id: 'kh-safe-area-init', html: KH_SAFE_AREA_INIT_SCRIPT },
+            ]}
           />
+          <ThemeInitScript nonce={nonce} />
           <link rel="preconnect" href="https://api.mapbox.com" />
           {clerkOrigin ? (
             <>
@@ -242,7 +242,7 @@ export default async function RootLayout({
               })()
             : null}
           <link rel="dns-prefetch" href="https://api.mapbox.com" />
-          <JsonLd />
+          <JsonLd nonce={nonce} />
         </head>
         <body className={`${inter.variable} ${jakarta.variable} antialiased`}>
           {gtmId !== undefined ? (
