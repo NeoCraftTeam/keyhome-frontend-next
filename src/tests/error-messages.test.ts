@@ -1,4 +1,7 @@
-import { getSafeErrorMessage } from '@/lib/error-messages';
+import {
+  getSafeErrorMessage,
+  isUnsafeBackendMessage,
+} from '@/lib/error-messages';
 import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { describe, expect, it } from 'vitest';
 
@@ -127,5 +130,33 @@ describe('getSafeErrorMessage', () => {
     expect(getSafeErrorMessage(new Error(''))).toBe(
       'Une erreur est survenue. Veuillez réessayer.'
     );
+  });
+
+  // Naming the missing credential would map out the deployment: a backend
+  // message mentioning an env var must be swapped for the status fallback.
+  it('replaces messages naming an env var with the status fallback', () => {
+    const err = makeAxiosError(503, {
+      message: 'Configuration manquante : ORS_API_KEY',
+    });
+    expect(getSafeErrorMessage(err)).toBe(
+      'Le service est temporairement indisponible. Réessayez plus tard.'
+    );
+  });
+});
+
+describe('isUnsafeBackendMessage', () => {
+  it.each([
+    'Configuration manquante : ORS_API_KEY',
+    'Ajoutez STRIPE_WEBHOOK_SECRET puis relancez',
+  ])('flags env var names as unsafe: %s', (message) => {
+    expect(isUnsafeBackendMessage(message)).toBe(true);
+  });
+
+  it.each([
+    'ATTENTION : votre dossier est incomplet.',
+    'Votre document PDF a bien été reçu.',
+    "Ce créneau n'est pas disponible.",
+  ])('keeps French user-facing copy safe: %s', (message) => {
+    expect(isUnsafeBackendMessage(message)).toBe(false);
   });
 });

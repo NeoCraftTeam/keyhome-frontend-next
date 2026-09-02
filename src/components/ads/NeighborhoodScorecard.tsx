@@ -377,7 +377,7 @@ export default function NeighborhoodScorecard({ adId, onUnavailable }: Props) {
           </Typography>
         </Box>
         <Tooltip
-          title="Scores depuis OpenStreetMap (Overpass). Distances « à pied » = réseau piéton OpenRouteService lorsque configuré ; sinon approximation en ligne droite."
+          title="Scores calculés depuis les données OpenStreetMap. Les distances sont mesurées sur le réseau piéton quand il est disponible, sinon estimées en ligne droite."
           arrow
         >
           <Info
@@ -389,9 +389,8 @@ export default function NeighborhoodScorecard({ adId, onUnavailable }: Props) {
       {scorecard.ors_used === false && (
         <AppAlert severity="info" sx={{ mb: 2 }}>
           <Typography variant="body2">
-            Distances en <strong>ligne droite</strong> (approximation). Les
-            distances <strong>à pied réelles</strong> utilisent OpenRouteService
-            — ajoutez <code>ORS_API_KEY</code> sur l&apos;API backend.
+            Distances estimées en <strong>ligne droite</strong> : le temps de
+            marche réel peut être un peu plus long.
           </Typography>
         </AppAlert>
       )}

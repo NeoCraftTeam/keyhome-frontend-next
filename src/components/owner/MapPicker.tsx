@@ -215,7 +215,7 @@ export default function MapPicker({
     return (
       <AppAlert
         severity="warning"
-        message="Token Mapbox manquant. Configurez NEXT_PUBLIC_MAPBOX_TOKEN."
+        message="La carte est momentanément indisponible. Saisissez l'adresse manuellement, vous pourrez ajuster la position plus tard."
       />
     );
   }

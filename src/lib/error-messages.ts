@@ -55,6 +55,10 @@ const UNSAFE_PATTERNS: RegExp[] = [
   /\bLaravel\b/i,
   /\bMeilisearch\b/i,
   /\bPostgres(?:ql)?\b/i,
+  // Env var / config key names (ORS_API_KEY, STRIPE_SECRET…). Naming the
+  // missing credential maps out the deployment; the case stays sensitive so
+  // French copy written in capitals remains safe.
+  /\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/,
 ];
 
 export function isUnsafeBackendMessage(msg: string): boolean {
