@@ -2,6 +2,7 @@
 
 import OwnerPushNotificationCard from '@/components/owner/OwnerPushNotificationCard';
 import LinkedAccountsCard from '@/components/settings/LinkedAccountsCard';
+import TwoFactorCard from '@/components/settings/TwoFactorCard';
 import KhSnackbar from '@/components/ui/feedback/KhSnackbar';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
@@ -215,11 +216,15 @@ export default function OwnerParametresPage() {
         </Grid>
         {/* end left col */}
 
-        {/* ── RIGHT col: Linked accounts + Notification Prefs + Automations ── */}
+        {/* ── RIGHT col: Linked accounts + 2FA + Notification Prefs + Automations ── */}
         <Grid size={{ xs: 12, lg: 7 }}>
           <Stack spacing={3}>
             {/* Linked accounts (Google / Facebook / Apple via Clerk) */}
             <LinkedAccountsCard redirectPath="/owner/parametres" />
+
+            {/* Second factor — the very same card as the client space, so the
+                two panels can never drift apart. */}
+            <TwoFactorCard />
 
             {/* Notification Preferences */}
             <Card

@@ -9,7 +9,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 /** Pages that must always render even when isAuthenticated is true (post-registration). */
-const VERIFICATION_PATHS = new Set(['/verify-email', '/verify-otp']);
+const VERIFICATION_PATHS = new Set([
+  '/verify-email',
+  '/verify-otp',
+  '/verify-2fa',
+]);
 
 export default function AuthLayout({
   children,

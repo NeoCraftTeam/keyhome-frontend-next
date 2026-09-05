@@ -26,6 +26,11 @@ import {
   setRoleCookie,
 } from '@/lib/auth/auth-session';
 import { registerTokenGetter } from '@/lib/auth/auth-token';
+import {
+  extractMfaChallenge,
+  mfaChallengePathFor,
+  rememberMfaChallenge,
+} from '@/lib/auth/mfa-challenge';
 import { consumeReturnTo } from '@/lib/auth/return-to';
 import { redirectToTrustedUrl } from '@/lib/trusted-redirect';
 import { authService } from '@/services/auth.service';
@@ -409,6 +414,29 @@ export function useClerkSync(
         } catch (err) {
           console.error('[useClerkSync] clerkExchange failed:', err);
           if (runId !== authRunRef.current) return;
+
+          // 2FA enabled: the exchange withholds the Sanctum token and returns a
+          // short-lived ticket. Same shape as the email/password login, so the
+          // OAuth user lands on the very same challenge page.
+          const mfaChallenge = extractMfaChallenge(err);
+
+          if (mfaChallenge) {
+            const mfaPath = pathnameRef.current ?? '';
+            const mfaContext =
+              mfaPath.startsWith('/owner') || intentRaw === 'agent'
+                ? 'owner'
+                : 'client';
+
+            // Mark the exchange as done and drop any half-session so the effect
+            // does not re-enter the gate while the user types their code.
+            clerkExchangeDoneRef.current = true;
+            clearSanctumInMemoryOnly();
+            setUserState(null);
+            rememberMfaChallenge(mfaChallenge, mfaContext);
+            router.replace(mfaChallengePathFor(mfaContext));
+
+            return;
+          }
 
           if (isAxiosError(err) && err.response?.status === 403) {
             const data = err.response.data as {

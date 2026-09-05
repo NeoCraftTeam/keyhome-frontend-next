@@ -1,6 +1,7 @@
 'use client';
 
 import LinkedAccountsCard from '@/components/settings/LinkedAccountsCard';
+import TwoFactorCard from '@/components/settings/TwoFactorCard';
 import FadeIn from '@/components/ui/layout/FadeIn';
 import PageBreadcrumbs from '@/components/ui/layout/PageBreadcrumbs';
 import { SOUND_ENABLED_KEY, useSoundFeedback } from '@/hooks/useSoundFeedback';
@@ -393,6 +394,10 @@ export default function ParametresPage() {
             {isAuthenticated && (
               <LinkedAccountsCard redirectPath="/parametres" />
             )}
+
+            {/* Second factor — same card as the owner space, right next to the
+                account-linking one so every login method lives together. */}
+            {isAuthenticated && <TwoFactorCard />}
 
             {/* Survey */}
             <Box>

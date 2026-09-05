@@ -11,6 +11,11 @@ import FadeIn from '@/components/ui/layout/FadeIn';
 import { useOutlinedInputLabelShrink } from '@/hooks/useOutlinedInputLabelShrink';
 import { useTurnstileEmailSubmitReady } from '@/hooks/useTurnstileEmailSubmitReady';
 import { getAuthApiErrorMessage } from '@/lib/auth/auth-api-errors';
+import {
+  extractMfaChallenge,
+  mfaChallengePathFor,
+  rememberMfaChallenge,
+} from '@/lib/auth/mfa-challenge';
 import { adoptReturnToFromQuery, RETURN_TO_PARAM } from '@/lib/auth/return-to';
 import { outlinedStartIconInputLabelProps } from '@/lib/mui-outlined-input-label-start-icon';
 import { useAuth } from '@/providers/AuthProvider';
@@ -84,6 +89,17 @@ export default function LoginPage() {
     try {
       await login(email, password, turnstileToken);
     } catch (err) {
+      // 2FA enabled on this account: the API withholds the token and hands us a
+      // short-lived ticket instead. Kept in memory only — see `mfa-challenge`.
+      const mfaChallenge = extractMfaChallenge(err);
+
+      if (mfaChallenge) {
+        rememberMfaChallenge(mfaChallenge, 'client');
+        router.push(mfaChallengePathFor('client'));
+
+        return;
+      }
+
       // If the backend says email is not verified, redirect to the OTP page.
       // The backend will have already re-sent a fresh OTP code.
       if (err instanceof AxiosError && err.response?.status === 403) {

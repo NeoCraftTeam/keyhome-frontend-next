@@ -15,6 +15,11 @@ import {
 } from '@/lib/auth/auth-api-errors';
 import { setRoleCookie } from '@/lib/auth/auth-session';
 import {
+  extractMfaChallenge,
+  mfaChallengePathFor,
+  rememberMfaChallenge,
+} from '@/lib/auth/mfa-challenge';
+import {
   adoptReturnToFromQuery,
   consumeReturnTo,
   RETURN_TO_PARAM,
@@ -98,6 +103,17 @@ export default function OwnerLoginPage() {
     try {
       await loginOwner(email, password, turnstileToken);
     } catch (err) {
+      // 2FA enabled on this account: the API withholds the token and hands us a
+      // short-lived ticket instead. Kept in memory only — see `mfa-challenge`.
+      const mfaChallenge = extractMfaChallenge(err);
+
+      if (mfaChallenge) {
+        rememberMfaChallenge(mfaChallenge, 'owner');
+        router.push(mfaChallengePathFor('owner'));
+
+        return;
+      }
+
       // Unverified email → redirect to OTP page (backend already re-sent a fresh code).
       if (err instanceof AxiosError && err.response?.status === 403) {
         const data = err.response.data as {
